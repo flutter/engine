@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
+import 'exceptions.dart';
 import 'pipeline.dart';
 import 'utils.dart';
 
@@ -65,9 +66,14 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   bool get host => boolArg('host');
 
   RuntimeMode get runtimeMode {
-    if (boolArg('profile')) {
+    final bool isProfile = boolArg('profile');
+    final bool isDebug = boolArg('debug');
+    if (isProfile && isDebug) {
+      throw ToolExit('Cannot specify both --profile and --debug at the same time.');
+    }
+    if (isProfile) {
       return RuntimeMode.profile;
-    } else if (boolArg('debug')) {
+    } else if (isDebug) {
       return RuntimeMode.debug;
     } else {
       return RuntimeMode.release;
@@ -126,16 +132,7 @@ class GnPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => false;
 
-  String get runtimeModeFlag {
-    switch (runtimeMode) {
-      case RuntimeMode.debug:
-        return 'debug';
-      case RuntimeMode.profile:
-        return 'profile';
-      case RuntimeMode.release:
-        return 'release';
-    }
-  }
+  String get runtimeModeFlag => runtimeMode.name;
 
   List<String> get _gnArgs {
     if (host) {

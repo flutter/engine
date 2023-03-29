@@ -11,31 +11,26 @@ import 'package:ui/src/engine.dart';
 class SkwasmFontCollection implements FlutterFontCollection {
   @override
   void clear() {
-    // TODO: implement clear
-    print('SkwasmFontCollection.clear()');
+    // TODO(jacksongardner): implement clear
   }
 
   @override
   FutureOr<void> debugDownloadTestFonts() {
-    // TODO: implement debugDownloadTestFonts
-    print('SkwasmFontCollection.debugDownloadTestFonts()');
+    // TODO(jacksongardner): implement debugDownloadTestFonts
   }
 
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    // TODO: implement downloadAssetFonts
-    print('SkwasmFontCollection.downloadAssetFonts($assetManager)');
+    // TODO(jacksongardner): implement downloadAssetFonts
   }
 
   @override
   Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) async {
-    // TODO: implement loadFontFromList
-    print('SkwasmFontCollection.loadFontFromList($list, $fontFamily)');
+    // TODO(jacksongardner): implement loadFontFromList
   }
 
   @override
   void registerDownloadedFonts() {
-    // TODO: implement registerDownloadedFonts
-    print('SkwasmFontCollection.registerDownloadedFonts()');
+    // TODO(jacksongardner): implement registerDownloadedFonts
   }
 }

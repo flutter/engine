@@ -6,7 +6,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
-// TODO(jacksongardner): implement this
+// TODO(jacksongardner): implement everything in this file
 class SkwasmLineMetrics implements ui.LineMetrics {
   factory SkwasmLineMetrics({
     required bool hardBreak,
@@ -173,30 +173,24 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    // TODO: implement addText
   }
 
   @override
   ui.Paragraph build() {
-    // TODO: implement build
     return SkwasmParagraph();
   }
 
   @override
-  // TODO: implement placeholderCount
   int get placeholderCount => 0;
 
   @override
-  // TODO: implement placeholderScales
   List<double> get placeholderScales => <double>[];
 
   @override
   void pop() {
-    // TODO: implement pop
   }
 
   @override
   void pushStyle(ui.TextStyle style) {
-    // TODO: implement pushStyle
   }
 }
