@@ -21,7 +21,11 @@ class MetalScreenshoter {
                                                   const ISize& size = {300,
                                                                        300});
 
-  const AiksContext& GetContext() { return *aiks_context_; }
+  AiksContext& GetContext() { return *aiks_context_; }
+
+  const AiksContext& GetContext() const { return *aiks_context_; }
+
+  const PlaygroundImpl& GetPlayground() const { return *playground_; }
 
  private:
   std::unique_ptr<PlaygroundImpl> playground_;
