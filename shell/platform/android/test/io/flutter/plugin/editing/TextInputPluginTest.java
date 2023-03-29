@@ -2128,7 +2128,7 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
     imeSyncCallback.getImeVisibleListener().onImeVisibleChanged(false);
-    verify(textInputChannel, times(0)).onConnectionClosed(anyInt());
+    verify(textInputChannel, times(1)).onConnectionClosed(anyInt());
   }
 
   interface EventHandler {
