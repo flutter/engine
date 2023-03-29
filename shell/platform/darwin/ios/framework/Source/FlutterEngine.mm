@@ -1095,8 +1095,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client) ]];
 }
 
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView
-                                             client:(int)client {
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    didResignFirstResponderWithTextInputClient:(int)client {
   // When flutter text input view resign first responder, send a message to
   // framework to ensure the focus state is correct. This is useful when close
   // keyboard from platform side.

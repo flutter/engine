@@ -323,7 +323,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine setBinaryMessenger:mockBinaryMessenger];
   [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
-  [engine flutterTextInputViewDidResignFirstResponder:nil client:1];
+  [engine flutterTextInputView:nil didResignFirstResponderWithTextInputClient:1];
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.onConnectionClosed"
                                         arguments:@[ @(1) ]];
