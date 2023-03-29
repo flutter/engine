@@ -168,7 +168,10 @@ void PlatformViewEmbedder::HandlePlatformMessage(
     TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler",
                              platform_message_id, "channel",
                              message->channel().c_str());
-    fml::closure run_handler = []() {};
+    // todo(Cyanglaz) capture message instead to avoid capturing raw pointer.
+    fml::closure run_handler = [data, size]() {
+
+    };
     // handler(data, size, handler_info.user_data, nullptr);
     // handler(data, size, handler_info.user_data, [&completer,
     // &platform_message_id](const uint8_t* data,

@@ -1466,6 +1466,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return [self setMessageHandlerOnChannel:channel binaryMessageHandler:handler taskQueue:nil];
 }
 
+struct Foo {
+  NSObject<FlutterTaskQueue>* task_queue;
+  typefo message message;
+};
+
 - (FlutterBinaryMessengerConnection)
     setMessageHandlerOnChannel:(NSString*)channel
           binaryMessageHandler:(FlutterBinaryMessageHandler)handler
@@ -1477,7 +1482,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     //     [[[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
     //                                                   handler:[handler copy]] autorelease];
     // return _currentMessengerConnection;
-
     FlutterTaskQueueEmbedder flutterTaskQueueStruct = {
         .struct_size = sizeof(flutterTaskQueueStruct),
         .task_queue_callback = [](DispatchCallback dispatch_call, void* user_data) -> void {
@@ -1488,6 +1492,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           };
           [callbackTaskQueue dispatch:block];
         },
+        // TODO(cyanglaz): retain taskqueue.
         .user_data = (__bridge void*)taskQueue,
     };
     auto embedderHandler = [](const uint8_t* data, size_t size, void* user_data,
