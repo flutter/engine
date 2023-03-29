@@ -20,9 +20,9 @@ impeller_component("golden_playground_test") {
 
   if (is_mac) {
     sources += [ "golden_playground_test_mac.cc" ]
+    deps += [ ":metal_screenshot" ]
   } else {
     sources += [ "golden_playground_test_stub.cc" ]
-    deps += [ ":metal_screenshot" ]
   }
 }
 

@@ -6,11 +6,7 @@
 
 namespace impeller {
 
-
-#include "golden_playground_test.h"
-
-GoldenPlaygroundTest::GoldenPlaygroundTest() {
-}
+GoldenPlaygroundTest::GoldenPlaygroundTest() {}
 
 void GoldenPlaygroundTest::SetUp() {
   GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");

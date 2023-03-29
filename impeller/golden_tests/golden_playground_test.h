@@ -43,6 +43,9 @@ class GoldenPlaygroundTest
   ISize GetWindowSize() const;
 
  private:
+  struct GoldenPlaygroundTestImpl;
+  // This is only a shared_ptr so it can work with a forward declared type.
+  std::shared_ptr<GoldenPlaygroundTestImpl> pimpl_;
   FML_DISALLOW_COPY_AND_ASSIGN(GoldenPlaygroundTest);
 };
 

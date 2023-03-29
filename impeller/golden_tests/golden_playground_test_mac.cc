@@ -4,12 +4,15 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
+#include "flutter/impeller/golden_tests/golden_digest.h"
+#include "flutter/impeller/golden_tests/metal_screenshoter.h"
+
 namespace impeller {
 
-#include "golden_playground_test.h"
+struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {};
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() {
-}
+GoldenPlaygroundTest::GoldenPlaygroundTest()
+    : pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
 
 void GoldenPlaygroundTest::SetUp() {
   if (GetBackend() != PlaygroundBackend::kMetal) {
