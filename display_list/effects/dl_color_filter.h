@@ -29,8 +29,7 @@ enum class DlColorFilterType {
   kLinearToSrgbGamma,
 };
 
-class DlColorFilter : public DlShareable,
-                      public DlAttribute<DlColorFilter, DlColorFilterType> {
+class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
  public:
   // Construct and return a |dl_shared| pointer to a |DlBlendColorFilter|
   // based on the supplied parameters, or nullptr if the parameters specify
@@ -47,11 +46,6 @@ class DlColorFilter : public DlShareable,
 
   // Return a |dl_shared| pointer to a |DlLinearToSrgbGammaColorFilter|.
   static dl_shared<DlColorFilter> MakeLinearToSrgbGamma();
-
-  std::shared_ptr<DlColorFilter> shared() const override {
-    FML_DCHECK(false);
-    return nullptr;
-  }
 
   // Return a boolean indicating whether the color filtering operation will
   // modify transparent black. This is typically used to determine if applying

@@ -42,8 +42,7 @@ class DlLocalMatrixImageFilter;
 class DlComposeImageFilter;
 class DlColorFilterImageFilter;
 
-class DlImageFilter : public DlShareable,
-                      public DlAttribute<DlImageFilter, DlImageFilterType> {
+class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
  public:
   enum class MatrixCapability {
     kTranslate,
@@ -70,11 +69,6 @@ class DlImageFilter : public DlShareable,
 
   static dl_shared<const DlImageFilter> MakeColorFilter(
       dl_shared<const DlColorFilter> filter);
-
-  virtual std::shared_ptr<DlImageFilter> shared() const override {
-    FML_DCHECK(false);
-    return nullptr;
-  }
 
   // Return a DlBlurImageFilter pointer to this object iff it is a Blur
   // type of ImageFilter, otherwise return nullptr.

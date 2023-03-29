@@ -61,8 +61,7 @@ enum class DlColorSourceType {
 #endif  // IMPELLER_ENABLE_3D
 };
 
-class DlColorSource : public DlShareable,
-                      public DlAttribute<DlColorSource, DlColorSourceType> {
+class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
  public:
   static dl_shared<DlColorSource> MakeColor(DlColor color);
 
@@ -118,11 +117,6 @@ class DlColorSource : public DlShareable,
       std::shared_ptr<impeller::scene::Node> node,
       impeller::Matrix camera_matrix);
 #endif  // IMPELLER_ENABLE_3D
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    FML_DCHECK(false);
-    return nullptr;
-  }
 
   virtual bool is_opaque() const = 0;
 

@@ -24,8 +24,7 @@ enum class DlPathEffectType {
   kDash,
 };
 
-class DlPathEffect : public DlShareable,
-                     public DlAttribute<DlPathEffect, DlPathEffectType> {
+class DlPathEffect : public DlAttribute<DlPathEffect, DlPathEffectType> {
  public:
   static dl_shared<DlPathEffect> MakeDash(const SkScalar intervals[],
                                           int count,
@@ -34,11 +33,6 @@ class DlPathEffect : public DlShareable,
   virtual const DlDashPathEffect* asDash() const { return nullptr; }
 
   virtual std::optional<SkRect> effect_bounds(SkRect&) const = 0;
-
-  std::shared_ptr<DlPathEffect> shared() const override {
-    FML_DCHECK(false);
-    return nullptr;
-  }
 
  protected:
   DlPathEffect() = default;

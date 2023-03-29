@@ -80,7 +80,7 @@ namespace flutter {
 // |T| is the enum that describes the specific subclasses
 //     (i.e DlColorFilterType, etc.)
 template <class D, typename T>
-class DlAttribute {
+class DlAttribute : public DlShareable {
  public:
   // Return the recognized specific type of the attribute.
   virtual T type() const = 0;
@@ -88,11 +88,6 @@ class DlAttribute {
   // Return the size of the instantiated data (typically used to allocate)
   // storage in the DisplayList buffer.
   virtual size_t size() const = 0;
-
-  // Return a shared version of |this| attribute. The |shared_ptr| returned
-  // will reference a copy of this object so that the lifetime of the shared
-  // version is not tied to the storage of this particular instance.
-  virtual std::shared_ptr<D> shared() const = 0;
 
   // Perform a content aware |==| comparison of the Attribute.
   bool operator==(D const& other) const {

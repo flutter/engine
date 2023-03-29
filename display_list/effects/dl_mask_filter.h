@@ -28,8 +28,7 @@ enum class DlBlurStyle {
   kInner,   //!< fuzzy inside, nothing outside
 };
 
-class DlMaskFilter : public DlShareable,
-                     public DlAttribute<DlMaskFilter, DlMaskFilterType> {
+class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
  public:
   static dl_shared<DlMaskFilter> MakeBlur(DlBlurStyle style,
                                           SkScalar sigma,
@@ -38,11 +37,6 @@ class DlMaskFilter : public DlShareable,
   // Return a DlBlurMaskFilter pointer to this object iff it is a Blur
   // type of MaskFilter, otherwise return nullptr.
   virtual const DlBlurMaskFilter* asBlur() const { return nullptr; }
-
-  std::shared_ptr<DlMaskFilter> shared() const override {
-    FML_DCHECK(false);
-    return nullptr;
-  }
 };
 
 // The Blur type of MaskFilter which specifies modifying the
