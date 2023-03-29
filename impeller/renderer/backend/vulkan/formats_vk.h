@@ -241,7 +241,7 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
     case SamplerAddressMode::kClampToEdge:
       return vk::SamplerAddressMode::eClampToEdge;
     case SamplerAddressMode::kDecal:
-      break;  // Unsupported.
+      return vk::SamplerAddressMode::eClampToBorder;
   }
 
   FML_UNREACHABLE();

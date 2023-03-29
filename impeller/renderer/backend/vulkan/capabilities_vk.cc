@@ -335,6 +335,10 @@ bool CapabilitiesVK::SupportsReadFromResolve() const {
   return false;
 }
 
+bool CapabilitiesVK::SupportsDecalTileMode() const {
+  return true;
+}
+
 // |Capabilities|
 PixelFormat CapabilitiesVK::GetDefaultColorFormat() const {
   return color_format_;
