@@ -8,6 +8,7 @@
 #include <Windows.h>
 
 #include <cstdint>
+#include <map>
 
 namespace flutter {
 
@@ -22,7 +23,7 @@ class WindowsLifecycleManager {
   WindowsLifecycleManager(FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
-  virtual void Quit(UINT exit_code) const;
+  virtual void Quit(UINT exit_code, HWND window);
 
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
@@ -30,6 +31,8 @@ class WindowsLifecycleManager {
   bool IsLastWindowOfProcess();
 
   FlutterWindowsEngine* engine_;
+
+  std::map<HWND, int> sent_msgs_;
 };
 
 }  // namespace flutter

@@ -763,12 +763,12 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
 }
 
 void FlutterWindowsEngine::RequestApplicationQuit(ExitType exit_type,
-                                                  UINT exit_code) {
-  platform_handler_->RequestAppExit(exit_type, exit_code);
+                                                  UINT exit_code, HWND hwnd) {
+  platform_handler_->RequestAppExit(exit_type, exit_code, hwnd);
 }
 
-void FlutterWindowsEngine::OnQuit(UINT exit_code) {
-  lifecycle_manager_->Quit(exit_code);
+void FlutterWindowsEngine::OnQuit(UINT exit_code, HWND hwnd) {
+  lifecycle_manager_->Quit(exit_code, hwnd);
 }
 
 }  // namespace flutter

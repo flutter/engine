@@ -372,12 +372,12 @@ void PlatformHandler::SystemExitApplication(
   rapidjson::Document result_doc;
   result_doc.SetObject();
   if (exit_type == ExitType::required) {
-    QuitApplication(exit_code);
+    QuitApplication(exit_code, nullptr);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseExit,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
   } else {
-    RequestAppExit(exit_type, exit_code);
+    RequestAppExit(exit_type, exit_code, nullptr);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
@@ -389,10 +389,10 @@ void PlatformHandler::SystemExitApplication(
 static constexpr const char* kExitTypeNames[] = {
     PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
 
-void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code) {
+void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code, HWND hwnd) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
-      [this, exit_code](const rapidjson::Document* response) {
-        RequestAppExitSuccess(response, exit_code);
+      [this, exit_code, hwnd](const rapidjson::Document* response) {
+        RequestAppExitSuccess(response, exit_code, hwnd);
       },
       nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
@@ -405,7 +405,7 @@ void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code) {
 }
 
 void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
-                                            UINT exit_code) {
+                                            UINT exit_code, HWND hwnd) {
   rapidjson::Value::ConstMemberIterator itr =
       result->FindMember(kExitResponseKey);
   if (itr == result->MemberEnd() || !itr->value.IsString()) {
@@ -416,12 +416,12 @@ void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
   const std::string& exit_type = itr->value.GetString();
 
   if (exit_type.compare(kExitResponseExit) == 0) {
-    QuitApplication(exit_code);
+    QuitApplication(exit_code, hwnd);
   }
 }
 
-void PlatformHandler::QuitApplication(UINT exit_code) {
-  engine_->OnQuit(exit_code);
+void PlatformHandler::QuitApplication(UINT exit_code, HWND hwnd) {
+  engine_->OnQuit(exit_code, hwnd);
 }
 
 void PlatformHandler::HandleMethodCall(

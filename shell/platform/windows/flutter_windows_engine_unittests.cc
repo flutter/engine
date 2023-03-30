@@ -625,7 +625,7 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
       : WindowsLifecycleManager(engine) {}
   virtual ~MockWindowsLifecycleManager() {}
 
-  MOCK_CONST_METHOD1(Quit, void(UINT));
+  MOCK_METHOD1(Quit, void(UINT));
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
