@@ -114,7 +114,8 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK());
+  auto caps = std::shared_ptr<CapabilitiesVK>(
+      new CapabilitiesVK(settings.enable_validation));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -176,7 +177,7 @@ void ContextVK::Setup(Settings settings) {
 
   auto instance = vk::createInstanceUnique(instance_info);
   if (instance.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create instance: "
+    VALIDATION_LOG << "Could not create Vulkan instance: "
                    << vk::to_string(instance.result);
     return;
   }
@@ -216,9 +217,16 @@ void ContextVK::Setup(Settings settings) {
   auto compute_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eCompute);
 
-  if (!graphics_queue.has_value() || !transfer_queue.has_value() ||
-      !compute_queue.has_value()) {
-    VALIDATION_LOG << "Could not pick device queues.";
+  if (!graphics_queue.has_value()) {
+    VALIDATION_LOG << "Could not pick graphics queue.";
+    return;
+  }
+  if (!transfer_queue.has_value()) {
+    FML_LOG(INFO) << "Dedicated transfer queue not avialable.";
+    transfer_queue = graphics_queue.value();
+  }
+  if (!compute_queue.has_value()) {
+    VALIDATION_LOG << "Could not pick compute queue.";
     return;
   }
 
@@ -354,7 +362,9 @@ void ContextVK::Setup(Settings settings) {
   SetDebugName(device_.get(), device_.get(), "ImpellerDevice");
   SetDebugName(device_.get(), graphics_queue_, "ImpellerGraphicsQ");
   SetDebugName(device_.get(), compute_queue_, "ImpellerComputeQ");
-  SetDebugName(device_.get(), transfer_queue_, "ImpellerTransferQ");
+  if (transfer_queue_ != graphics_queue_) {
+    SetDebugName(device_.get(), transfer_queue_, "ImpellerTransferQ");
+  }
 }
 
 bool ContextVK::IsValid() const {
@@ -397,6 +407,7 @@ vk::Device ContextVK::GetDevice() const {
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
+  TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
   if (surface && pipeline_library_) {
     pipeline_library_->DidAcquireSurfaceFrame();

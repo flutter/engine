@@ -18,17 +18,22 @@
 
 #include "flutter/fml/paths.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_impl.h"
-#include "impeller/renderer/allocator.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/renderer.h"
 #include "third_party/imgui/backends/imgui_impl_glfw.h"
 #include "third_party/imgui/imgui.h"
+
+#if FML_OS_MACOSX
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
 
 namespace impeller {
 
@@ -73,8 +78,9 @@ struct Playground::GLFWInitializer {
   }
 };
 
-Playground::Playground()
-    : glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
+Playground::Playground(PlaygroundSwitches switches)
+    : switches_(switches),
+      glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
 
 Playground::~Playground() = default;
 
@@ -109,7 +115,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
 void Playground::SetupContext(PlaygroundBackend backend) {
   FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(backend);
+  impl_ = PlaygroundImpl::Create(backend, switches_);
   if (!impl_) {
     return;
   }
@@ -177,9 +183,26 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
+#if FML_OS_MACOSX
+class AutoReleasePool {
+ public:
+  AutoReleasePool() {
+    pool_ = reinterpret_cast<msg_send>(objc_msgSend)(
+        objc_getClass("NSAutoreleasePool"), sel_getUid("new"));
+  }
+  ~AutoReleasePool() {
+    reinterpret_cast<msg_send>(objc_msgSend)(pool_, sel_getUid("drain"));
+  }
+
+ private:
+  typedef id (*msg_send)(void*, SEL);
+  id pool_;
+};
+#endif
+
 bool Playground::OpenPlaygroundHere(
     const Renderer::RenderCallback& render_callback) {
-  if (!is_enabled()) {
+  if (!switches_.enable_playground) {
     return true;
   }
 
@@ -238,6 +261,9 @@ bool Playground::OpenPlaygroundHere(
   ::glfwShowWindow(window);
 
   while (true) {
+#if FML_OS_MACOSX
+    AutoReleasePool pool;
+#endif
     ::glfwPollEvents();
 
     if (::glfwWindowShouldClose(window)) {

@@ -4,6 +4,8 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
@@ -26,8 +28,6 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/device_buffer_descriptor.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/renderer.h"
@@ -278,9 +278,6 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
 }
 
 TEST_P(RendererTest, CanRenderToTexture) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Temporarily disabled.");
-  }
   using VS = BoxFadeVertexShader;
   using FS = BoxFadeFragmentShader;
   auto context = GetContext();
@@ -312,9 +309,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(bridge && boston);
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
-
   std::shared_ptr<RenderPass> r2t_pass;
-
+  auto cmd_buffer = context->CreateCommandBuffer();
+  ASSERT_TRUE(cmd_buffer);
   {
     ColorAttachment color0;
     color0.load_action = LoadAction::kClear;
@@ -352,7 +349,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
     RenderTarget r2t_desc;
     r2t_desc.SetColorAttachment(color0, 0u);
     r2t_desc.SetStencilAttachment(stencil0);
-    auto cmd_buffer = context->CreateCommandBuffer();
     r2t_pass = cmd_buffer->CreateRenderPass(r2t_desc);
     ASSERT_TRUE(r2t_pass && r2t_pass->IsValid());
   }
@@ -383,10 +379,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(r2t_pass->EncodeCommands());
 }
 
-#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("Instancing is only supported on Metal.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Instancing is not supported on OpenGL.");
   }
   using VS = InstancedDrawVertexShader;
   using FS = InstancedDrawFragmentShader;
@@ -448,7 +443,6 @@ TEST_P(RendererTest, CanRenderInstanced) {
     return true;
   }));
 }
-#endif  // IMPELLER_ENABLE_METAL
 
 TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto context = GetContext();
@@ -971,8 +965,8 @@ TEST_P(RendererTest, InactiveUniforms) {
 }
 
 TEST_P(RendererTest, CanCreateCPUBackedTexture) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
   }
 
   auto context = GetContext();

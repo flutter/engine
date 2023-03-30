@@ -7,10 +7,10 @@
 #include <memory>
 
 #include "flutter/fml/memory/ref_ptr.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -309,37 +309,6 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
           allocation_                                                  //
       );
     }
-  }
-
-  bool SetContents(const TextureDescriptor& desc,
-                   const uint8_t* contents,
-                   size_t length,
-                   size_t slice) override {
-    void* data = nullptr;
-    if (::vmaMapMemory(allocator_, allocation_, &data) != VK_SUCCESS) {
-      VALIDATION_LOG << "Could not map texture memory to write to.";
-      return false;
-    }
-
-    std::memcpy(static_cast<uint8_t*>(data) + (length * slice),  //
-                contents,                                        //
-                length                                           //
-    );
-
-    const auto flushed = ::vmaFlushAllocation(allocator_,      // allocator
-                                              allocation_,     // allocation
-                                              length * slice,  // offset
-                                              length           // size
-                                              ) == VK_SUCCESS;
-
-    ::vmaUnmapMemory(allocator_, allocation_);
-
-    if (!flushed) {
-      VALIDATION_LOG << "Could not flush written mapped memory.";
-      return false;
-    }
-
-    return true;
   }
 
   bool IsValid() const { return is_valid_; }

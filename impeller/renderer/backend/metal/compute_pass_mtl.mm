@@ -13,14 +13,14 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "impeller/renderer/compute_command.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/host_buffer.h"
 #include "impeller/renderer/shader_types.h"
 
 namespace impeller {
@@ -54,6 +54,8 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context,
   if (!IsValid()) {
     return false;
   }
+
+  FML_DCHECK(!grid_size_.IsEmpty() && !thread_group_size_.IsEmpty());
 
   // TODO(dnfield): Support non-serial dispatch type on higher iOS versions.
   auto compute_command_encoder = [buffer_ computeCommandEncoder];
