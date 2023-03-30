@@ -130,8 +130,13 @@ bool SurfaceMTL::Present() const {
     return false;
   }
 
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+
   id<MTLCommandBuffer> command_buffer =
-      ContextMTL::Cast(context_.lock().get())->CreateMTLCommandBuffer();
+      ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
   [command_buffer presentDrawable:drawable_];
   [command_buffer commit];
 
