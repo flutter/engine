@@ -83,12 +83,12 @@ class SemanticsAction {
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
-  static List<SemanticsAction> get valuesAsList => values.values.toList(growable: false);
+  static List<SemanticsAction> get doNotUseWillBeDeletedWithoutWarningValuesAsList => values.values.toList(growable: false);
 
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
-  static Iterable<int> get keys => values.keys;
+  static Iterable<int> get doNotUseWillBeDeletedWithoutWarningKeys => values.keys;
 
   @override
   String toString() {
@@ -234,12 +234,12 @@ class SemanticsFlag {
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
-  static List<SemanticsFlag> get valuesAsList => values.values.toList(growable: false);
+  static List<SemanticsFlag> get doNotUseWillBeDeletedWithoutWarningValuesAsList => values.values.toList(growable: false);
 
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
-  static Iterable<int> get keys => values.keys;
+  static Iterable<int> get doNotUseWillBeDeletedWithoutWarningKeys => values.keys;
 
   @override
   String toString() {
