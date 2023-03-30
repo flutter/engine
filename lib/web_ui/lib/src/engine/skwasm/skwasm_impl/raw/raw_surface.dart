@@ -43,7 +43,7 @@ external void surfaceSetCanvasSize(
   int height
 );
 
-@Native<Void Function(SurfaceHandle, PictureHandle)>(
+@Native<Int32 Function(SurfaceHandle, PictureHandle)>(
   symbol: 'surface_renderPicture',
   isLeaf: true)
-external void surfaceRenderPicture(SurfaceHandle surface, PictureHandle picture);
+external int surfaceRenderPicture(SurfaceHandle surface, PictureHandle picture);

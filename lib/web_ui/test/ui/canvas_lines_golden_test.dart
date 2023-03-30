@@ -23,7 +23,7 @@ Future<void> testMain() async {
     final Canvas canvas = Canvas(recorder, region);
     paintLines(canvas);
 
-    drawPictureUsingCurrentRenderer(recorder.endRecording());
+    await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
     await matchGoldenFile('canvas_lines_thickness.png', region: region);
   });
@@ -57,7 +57,7 @@ Future<void> testMain() async {
     paintLinesFromPoints(canvas, paintWithStyle, points);
     paintLinesFromPoints(canvas, paintWithoutStyle, shiftedPoints);
 
-    drawPictureUsingCurrentRenderer(recorder.endRecording());
+    await drawPictureUsingCurrentRenderer(recorder.endRecording());
     await matchGoldenFile('canvas_lines_with_negative_offset.png', region: region);
   });
 
@@ -93,7 +93,7 @@ Future<void> testMain() async {
     paintLinesFromPoints(canvas, paintStrokeCapSquare, shiftedPoints);
     paintLinesFromPoints(canvas, paintStrokeCapButt, twiceShiftedPoints);
 
-    drawPictureUsingCurrentRenderer(recorder.endRecording());
+    await drawPictureUsingCurrentRenderer(recorder.endRecording());
     await matchGoldenFile('canvas_lines_with_strokeCap.png', region: region);
   });
 }

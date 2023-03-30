@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:js_interop';
-import 'dart:js_util';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
@@ -21,12 +21,16 @@ class SkwasmSurface {
 
   SkwasmSurface._fromHandle(this._handle);
   final SurfaceHandle _handle;
-  late final OnRenderCallbackHandle _callbackHandle;
+  OnRenderCallbackHandle _callbackHandle = nullptr;
+  final Map<int, Completer<void>> _pendingCallbacks = <int, Completer<void>>{};
 
   void _initialize() {
-    _callbackHandle = 
+    _callbackHandle =
       OnRenderCallbackHandle.fromAddress(
-        skwasmInstance.addFunction(allowInterop(_onRender), 'vi').toDart.toInt()
+        skwasmInstance.addFunction(
+          _onRender.toJS,
+          'vi'.toJS
+        ).toDart.toInt()
       );
     surfaceSetOnRenderCallback(_handle, _callbackHandle);
   }
@@ -34,11 +38,18 @@ class SkwasmSurface {
   void setSize(int width, int height) =>
     surfaceSetCanvasSize(_handle, width, height);
 
-  void renderPicture(SkwasmPicture picture) =>
-    surfaceRenderPicture(_handle, picture.handle);
+  Future<void> renderPicture(SkwasmPicture picture) {
+    final int renderId = surfaceRenderPicture(_handle, picture.handle);
+    final Completer<void> completer = Completer<void>();
+    _pendingCallbacks[renderId] = completer;
+    return completer.future;
+  }
 
-  void _onRender(int renderId) {
-    print('Render complete with ID $renderId');
+  void _onRender(JSNumber jsRenderId) {
+    final int renderId = jsRenderId.toDart.toInt();
+    final Completer<void> completer = _pendingCallbacks[renderId]!;
+    completer.complete();
+    _pendingCallbacks.remove(renderId);
   }
 
   void dispose() {

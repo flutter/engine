@@ -5,6 +5,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/ui.dart' as ui;
+
 import 'util.dart';
 
 class Matrix4 {
@@ -1012,6 +1014,31 @@ class Matrix4 {
     vector[1] = (_m4storage[1] * x) +
         (_m4storage[5] * y) +
         _m4storage[13];
+  }
+
+  /// Transforms the input rect and calculates the bounding box of the rect
+  /// after the transform.
+  ui.Rect transformRect(ui.Rect rect) {
+    double? minX;
+    double? minY;
+    double? maxX;
+    double? maxY;
+    final Float32List vector = Float32List(2);
+    for (final ui.Offset point in <ui.Offset>[
+      rect.topLeft,
+      rect.topRight,
+      rect.bottomLeft,
+      rect.bottomRight,
+    ]) {
+      vector[0] = point.dx;
+      vector[1] = point.dy;
+      transform2(vector);
+      minX = minX == null ? vector[0] : math.min(minX, vector[0]);
+      minY = minY == null ? vector[1] : math.min(minY, vector[1]);
+      maxX = maxX == null ? vector[0] : math.max(maxX, vector[0]);
+      maxY = maxY == null ? vector[1] : math.max(maxY, vector[1]);
+    }
+    return ui.Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
   }
 
   /// Copies [this] into [array] starting at [offset].

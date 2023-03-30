@@ -29,7 +29,7 @@ Future<void> testMain() async {
           ui.Paint()..color = const ui.Color(0xFF4CAF50) // Colors.green
         );
       }));
-      renderer.renderScene(sceneBuilder.build());
+      await renderer.renderScene(sceneBuilder.build());
 
       await matchGoldenFile('scene_builder_centered_circle.png', region: region);
     });

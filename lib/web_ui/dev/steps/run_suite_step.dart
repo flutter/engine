@@ -29,7 +29,7 @@ import '../utils.dart';
 /// them from another bot.
 class RunSuiteStep implements PipelineStep {
   RunSuiteStep(this.suite, {
-    required this.isDebug,
+    required this.isDebugBrowser,
     required this.isVerbose,
     required this.doUpdateScreenshotGoldens,
     required this.requireSkiaGold,
@@ -39,7 +39,7 @@ class RunSuiteStep implements PipelineStep {
 
   final TestSuite suite;
   final Set<FilePath>? testFiles;
-  final bool isDebug;
+  final bool isDebugBrowser;
   final bool isVerbose;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
@@ -76,7 +76,7 @@ class RunSuiteStep implements PipelineStep {
       ...<String>['-r', 'compact'],
       // Disable concurrency. Running with concurrency proved to be flaky.
       '--concurrency=1',
-      if (isDebug) '--pause-after-load',
+      if (isDebugBrowser) '--pause-after-load',
       '--platform=${browserEnvironment.packageTestRuntime.identifier}',
       '--precompiled=$bundleBuildPath',
       '--configuration=$configurationFilePath',

@@ -25,6 +25,7 @@ wasm_lib("skwasm") {
     "-sOFFSCREENCANVAS_SUPPORT",
     "-sPTHREAD_POOL_SIZE=1",
     "-sALLOW_MEMORY_GROWTH",
+    "-sALLOW_TABLE_GROWTH",
     "-sUSE_PTHREADS=1",
     "-lexports.js",
   ]
@@ -41,10 +42,10 @@ wasm_lib("skwasm") {
   } else {
     ldflags += [
       "-Oz",
-      "--closure=1",
+      "--closure=0",
       "-flto",
       "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-      "-g0",
+      "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
     ]
 
     cflags += [

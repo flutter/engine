@@ -17,11 +17,11 @@ void setUpUiTest() {
 }
 
 /// Draws the [Picture]. This is in preparation for a golden test.
-void drawPictureUsingCurrentRenderer(Picture picture) {
+Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
   final SceneBuilder sb = SceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(Offset.zero, picture);
-  renderer.renderScene(sb.build());
+  await renderer.renderScene(sb.build());
 }
 
 /// Returns [true] if this test is running in the CanvasKit renderer.

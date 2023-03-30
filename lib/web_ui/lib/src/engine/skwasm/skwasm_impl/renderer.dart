@@ -221,7 +221,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  void renderScene(ui.Scene scene) {
+  Future<void> renderScene(ui.Scene scene) async {
     final ui.Size frameSize = ui.window.physicalSize;
     if (frameSize != surfaceSize) {
       final double logicalWidth = frameSize.width.ceil() / window.devicePixelRatio;
@@ -234,7 +234,7 @@ class SkwasmRenderer implements Renderer {
       surfaceSize = frameSize;
     }
     final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    surface.renderPicture(picture);
+    await surface.renderPicture(picture);
   }
 
   @override

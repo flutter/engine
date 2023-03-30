@@ -9,15 +9,8 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
-import 'exceptions.dart';
 import 'pipeline.dart';
 import 'utils.dart';
-
-enum RuntimeMode {
-  debug,
-  profile,
-  release,
-}
 
 const Map<String, String> targetAliases = <String, String>{
   'sdk': 'flutter/web_sdk',
@@ -64,21 +57,6 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   bool get isWatchMode => boolArg('watch');
 
   bool get host => boolArg('host');
-
-  RuntimeMode get runtimeMode {
-    final bool isProfile = boolArg('profile');
-    final bool isDebug = boolArg('debug');
-    if (isProfile && isDebug) {
-      throw ToolExit('Cannot specify both --profile and --debug at the same time.');
-    }
-    if (isProfile) {
-      return RuntimeMode.profile;
-    } else if (isDebug) {
-      return RuntimeMode.debug;
-    } else {
-      return RuntimeMode.release;
-    }
-  }
 
   List<String> get targets => argResults?.rest ?? <String>[];
 
@@ -132,8 +110,6 @@ class GnPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => false;
 
-  String get runtimeModeFlag => runtimeMode.name;
-
   List<String> get _gnArgs {
     if (host) {
       return <String>[
@@ -143,7 +119,7 @@ class GnPipelineStep extends ProcessStep {
     } else {
       return <String>[
         '--web',
-        '--runtime-mode=$runtimeModeFlag',
+        '--runtime-mode=${runtimeMode.name}',
       ];
     }
   }
@@ -182,14 +158,7 @@ class NinjaPipelineStep extends ProcessStep {
     if (host) {
       return environment.hostDebugUnoptDir.path;
     }
-    switch (runtimeMode) {
-      case RuntimeMode.debug:
-        return environment.wasmDebugOutDir.path;
-      case RuntimeMode.profile:
-        return environment.wasmProfileOutDir.path;
-      case RuntimeMode.release:
-        return environment.wasmReleaseOutDir.path;
-    }
+    return getBuildDirectoryForRuntimeMode(runtimeMode).path;
   }
 
   @override
