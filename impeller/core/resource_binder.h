@@ -21,8 +21,8 @@ namespace impeller {
 
 //------------------------------------------------------------------------------
 /// @brief      An interface for binding resources. This is implemented by
-///             |Command| and |ComputeCommand| to make CPU resources available
-///             to the GPU.
+///             |Command| and |ComputeCommand| to make GPU resources available
+///             to a given command's pipeline.
 ///
 struct ResourceBinder {
   virtual ~ResourceBinder() = default;
