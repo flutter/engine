@@ -24,6 +24,7 @@ impeller_component("runtime_stage") {
   public_deps = [
     ":runtime_stage_flatbuffers",
     "../base",
+    "../core",
     "//flutter/fml",
   ]
 }
