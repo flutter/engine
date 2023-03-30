@@ -18,16 +18,18 @@ WASM_OPT_PATH = os.path.join(EMSDK_ROOT, 'upstream', 'bin', 'wasm-opt')
 
 
 def main():
-  parser = argparse.ArgumentParser(
-      description='Call wasm-opt on a .wasm file'
-  )
+  parser = argparse.ArgumentParser(description='Call wasm-opt on a .wasm file')
   parser.add_argument('--input', type=str, required=True)
   parser.add_argument('--output', type=str, required=True)
 
   args = parser.parse_args()
   try:
     subprocess.check_call([
-        WASM_OPT_PATH, '-O3', args.input, '-o', args.output,
+        WASM_OPT_PATH,
+        '-O3',
+        args.input,
+        '-o',
+        args.output,
     ],
                           stdout=subprocess.DEVNULL)
   except subprocess.CalledProcessError:
