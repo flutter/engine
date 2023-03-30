@@ -33,11 +33,13 @@ AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     const std::shared_ptr<AndroidContext>& context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool enable_impeller,
-    bool enable_vulkan_validation)
+    bool enable_vulkan_validation,
+    bool impeller_use_gl)
     : android_context_(context),
       jni_facade_(std::move(jni_facade)),
       enable_impeller_(enable_impeller),
-      enable_vulkan_validation_(enable_vulkan_validation) {}
+      enable_vulkan_validation_(enable_vulkan_validation),
+      impeller_use_gl_(impeller_use_gl) {}
 
 AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
@@ -48,10 +50,12 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
                                                       jni_facade_);
     case AndroidRenderingAPI::kGPU:
       if (enable_impeller_) {
-        auto vk_surface = std::make_unique<AndroidSurfaceVulkanImpeller>(
-            android_context_, jni_facade_, enable_vulkan_validation_);
-        if (vk_surface->IsValid()) {
-          return vk_surface;
+        if (!impeller_use_gl_) {
+          auto vk_surface = std::make_unique<AndroidSurfaceVulkanImpeller>(
+              android_context_, jni_facade_, enable_vulkan_validation_);
+          if (vk_surface->IsValid()) {
+            return vk_surface;
+          }
         }
         return std::make_unique<AndroidSurfaceGLImpeller>(android_context_,
                                                           jni_facade_);
@@ -114,10 +118,11 @@ PlatformViewAndroid::PlatformViewAndroid(
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
     surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-        android_context_,                                              //
-        jni_facade_,                                                   //
-        delegate.OnPlatformViewGetSettings().enable_impeller,          //
-        delegate.OnPlatformViewGetSettings().enable_vulkan_validation  //
+        android_context_,                                               //
+        jni_facade_,                                                    //
+        delegate.OnPlatformViewGetSettings().enable_impeller,           //
+        delegate.OnPlatformViewGetSettings().enable_vulkan_validation,  //
+        delegate.OnPlatformViewGetSettings().impeller_use_gl            //
     );
     android_surface_ = surface_factory_->CreateSurface();
     FML_CHECK(android_surface_ && android_surface_->IsValid())
