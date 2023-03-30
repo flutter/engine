@@ -1126,6 +1126,8 @@ ORIGIN: ../../../flutter/impeller/core/range.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/range.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/resource_binder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/resource_binder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/runtime_types.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/runtime_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/sampler.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/sampler.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/sampler_descriptor.cc + ../../../flutter/LICENSE
@@ -1574,8 +1576,6 @@ ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage.fbs + ../../../flu
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_types.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation_clip.cc + ../../../flutter/LICENSE
@@ -3697,6 +3697,8 @@ FILE: ../../../flutter/impeller/core/range.cc
 FILE: ../../../flutter/impeller/core/range.h
 FILE: ../../../flutter/impeller/core/resource_binder.cc
 FILE: ../../../flutter/impeller/core/resource_binder.h
+FILE: ../../../flutter/impeller/core/runtime_types.cc
+FILE: ../../../flutter/impeller/core/runtime_types.h
 FILE: ../../../flutter/impeller/core/sampler.cc
 FILE: ../../../flutter/impeller/core/sampler.h
 FILE: ../../../flutter/impeller/core/sampler_descriptor.cc

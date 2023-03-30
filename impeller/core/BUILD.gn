@@ -26,6 +26,8 @@ impeller_component("core") {
     "range.h",
     "resource_binder.cc",
     "resource_binder.h",
+    "runtime_types.cc",
+    "runtime_types.h",
     "sampler.cc",
     "sampler.h",
     "sampler_descriptor.cc",
