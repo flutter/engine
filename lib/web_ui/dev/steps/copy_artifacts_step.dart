@@ -43,7 +43,7 @@ class CopyArtifactsStep implements PipelineStep {
     }
     if (artifactDeps.canvasKitChromium) {
       print('Copying CanvasKit (Chromium)...');
-      await copyCanvasKitFiles('canvaskit_chromium', 'canvaskit/chromium');
+      await copyCanvasKitFiles('canvaskit/chromium', 'canvaskit/chromium');
     }
     if (artifactDeps.skwasm) {
       print('Copying Skwasm...');
