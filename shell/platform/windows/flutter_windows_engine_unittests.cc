@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
@@ -625,7 +626,7 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
       : WindowsLifecycleManager(engine) {}
   virtual ~MockWindowsLifecycleManager() {}
 
-  MOCK_METHOD1(Quit, void(UINT));
+  MOCK_METHOD2(Quit, void(UINT, HWND));
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
@@ -639,7 +640,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](UINT exit_code) {
+  ON_CALL(*handler, Quit).WillByDefault([&finished](UINT exit_code, HWND hwnd) {
     finished = exit_code == 0;
   });
   EXPECT_CALL(*handler, Quit).Times(1);
@@ -678,7 +679,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code) {
+  ON_CALL(*handler, Quit).WillByDefault([&finished](UINT exit_code, HWND hwnd) {
     finished = true;
   });
   EXPECT_CALL(*handler, Quit).Times(0);
@@ -704,6 +705,52 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   }
 
   EXPECT_FALSE(finished);
+}
+
+TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("exitTestExit");
+  bool did_call = false;
+  bool second_close = false;
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  binary_messenger->SetMessageHandler(
+      "flutter/platform", [&did_call](const uint8_t* message,
+                                      size_t message_size, BinaryReply reply) {
+        did_call = true;
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
+
+  engine->Run();
+
+  // This delegate will be registered after the lifecycle manager, so it will be called only when it returns false.
+  // This should be called on the second, synthesized WM_CLOSE message that the lifecycle manager posts.
+  engine->window_proc_delegate_manager()->RegisterTopLevelWindowProcDelegate([](HWND hwnd, UINT message, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result){
+    switch (message) {
+      case WM_CLOSE: {
+        bool* called = reinterpret_cast<bool*>(user_data);
+        *called = true;
+        return true;
+      }
+    }
+    return false;
+  }, reinterpret_cast<void*>(&second_close));
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
+
+  while (!second_close) {
+    engine->task_runner()->ProcessTasks();
+  }
+
+  EXPECT_FALSE(did_call);
 }
 
 }  // namespace testing
