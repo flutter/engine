@@ -1291,7 +1291,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
   SkFont sk_font(SkTypeface::MakeFromData(mapping), font_size);
 
   Paint text_paint;
-  text_paint.color = Color::White().WithAlpha(0.8);
+  text_paint.color = Color::Blue().WithAlpha(0.8);
 
   struct {
     Point position;
