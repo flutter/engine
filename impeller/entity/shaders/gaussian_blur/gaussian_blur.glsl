@@ -21,8 +21,7 @@
 uniform f16sampler2D texture_sampler;
 
 uniform BlurInfo {
-  f16vec2 texture_size;
-  f16vec2 blur_direction;
+  f16vec2 blur_uv_offset;
 
   // The blur sigma and radius have a linear relationship which is defined
   // host-side, but both are useful controls here. Sigma (pixels per standard
@@ -44,7 +43,7 @@ uniform MaskInfo {
 mask_info;
 #endif
 
-f16vec4 Sample(f16sampler2D tex, f16vec2 coords) {
+f16vec4 Sample(f16sampler2D tex, vec2 coords) {
 #if ENABLE_DECAL_SPECIALIZATION
   return IPHalfSampleDecal(tex, coords);
 #else
@@ -52,24 +51,23 @@ f16vec4 Sample(f16sampler2D tex, f16vec2 coords) {
 #endif
 }
 
-in f16vec2 v_texture_coords;
-in f16vec2 v_src_texture_coords;
+in vec2 v_texture_coords;
+in vec2 v_src_texture_coords;
 
 out f16vec4 frag_color;
 
 void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
-  f16vec2 blur_uv_offset = blur_info.blur_direction / blur_info.texture_size;
 
-  for (float i = blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
-    float16_t gaussian = float16_t(IPGaussian(i, blur_info.blur_sigma));
+  for (float i = -blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
+    float16_t gaussian =
+        IPGaussian(float16_t(i), float16_t(blur_info.blur_sigma));
     gaussian_integral += gaussian;
     total_color +=
-        gaussian * Sample(
-                       texture_sampler,  // sampler
-                       v_texture_coords +
-                           blur_uv_offset * float16_t(i)  // texture coordinates
+        gaussian * Sample(texture_sampler,  // sampler
+                          v_texture_coords + blur_info.blur_uv_offset *
+                                                 i  // texture coordinates
                    );
   }
 
