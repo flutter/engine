@@ -1124,6 +1124,14 @@ ORIGIN: ../../../flutter/impeller/core/platform.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/platform.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/range.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/range.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/resource_binder.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/resource_binder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/sampler.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/sampler.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/sampler_descriptor.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/sampler_descriptor.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/shader_types.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/core/shader_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/texture.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/texture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/texture_descriptor.cc + ../../../flutter/LICENSE
@@ -1544,10 +1552,6 @@ ORIGIN: ../../../flutter/impeller/renderer/render_target.cc + ../../../flutter/L
 ORIGIN: ../../../flutter/impeller/renderer/render_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/renderer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/renderer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/sampler.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/sampler.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/sampler_descriptor.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/sampler_descriptor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/sampler_library.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/sampler_library.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/shader_function.cc + ../../../flutter/LICENSE
@@ -1556,8 +1560,6 @@ ORIGIN: ../../../flutter/impeller/renderer/shader_key.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/renderer/shader_key.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/shader_library.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/shader_library.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/shader_types.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/shader_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/snapshot.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
@@ -3693,6 +3695,14 @@ FILE: ../../../flutter/impeller/core/platform.cc
 FILE: ../../../flutter/impeller/core/platform.h
 FILE: ../../../flutter/impeller/core/range.cc
 FILE: ../../../flutter/impeller/core/range.h
+FILE: ../../../flutter/impeller/core/resource_binder.cc
+FILE: ../../../flutter/impeller/core/resource_binder.h
+FILE: ../../../flutter/impeller/core/sampler.cc
+FILE: ../../../flutter/impeller/core/sampler.h
+FILE: ../../../flutter/impeller/core/sampler_descriptor.cc
+FILE: ../../../flutter/impeller/core/sampler_descriptor.h
+FILE: ../../../flutter/impeller/core/shader_types.cc
+FILE: ../../../flutter/impeller/core/shader_types.h
 FILE: ../../../flutter/impeller/core/texture.cc
 FILE: ../../../flutter/impeller/core/texture.h
 FILE: ../../../flutter/impeller/core/texture_descriptor.cc
@@ -4113,10 +4123,6 @@ FILE: ../../../flutter/impeller/renderer/render_target.cc
 FILE: ../../../flutter/impeller/renderer/render_target.h
 FILE: ../../../flutter/impeller/renderer/renderer.cc
 FILE: ../../../flutter/impeller/renderer/renderer.h
-FILE: ../../../flutter/impeller/renderer/sampler.cc
-FILE: ../../../flutter/impeller/renderer/sampler.h
-FILE: ../../../flutter/impeller/renderer/sampler_descriptor.cc
-FILE: ../../../flutter/impeller/renderer/sampler_descriptor.h
 FILE: ../../../flutter/impeller/renderer/sampler_library.cc
 FILE: ../../../flutter/impeller/renderer/sampler_library.h
 FILE: ../../../flutter/impeller/renderer/shader_function.cc
@@ -4125,8 +4131,6 @@ FILE: ../../../flutter/impeller/renderer/shader_key.cc
 FILE: ../../../flutter/impeller/renderer/shader_key.h
 FILE: ../../../flutter/impeller/renderer/shader_library.cc
 FILE: ../../../flutter/impeller/renderer/shader_library.h
-FILE: ../../../flutter/impeller/renderer/shader_types.cc
-FILE: ../../../flutter/impeller/renderer/shader_types.h
 FILE: ../../../flutter/impeller/renderer/snapshot.cc
 FILE: ../../../flutter/impeller/renderer/snapshot.h
 FILE: ../../../flutter/impeller/renderer/stroke.comp
