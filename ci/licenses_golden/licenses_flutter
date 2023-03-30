@@ -4147,8 +4147,6 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.fbs
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
-FILE: ../../../flutter/impeller/runtime_stage/runtime_types.cc
-FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
 FILE: ../../../flutter/impeller/scene/animation/animation.cc
 FILE: ../../../flutter/impeller/scene/animation/animation.h
 FILE: ../../../flutter/impeller/scene/animation/animation_clip.cc
