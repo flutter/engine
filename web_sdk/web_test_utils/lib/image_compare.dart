@@ -8,8 +8,6 @@ import 'package:image/image.dart';
 import 'package:path/path.dart' as p;
 import 'package:skia_gold_client/skia_gold_client.dart';
 
-import 'environment.dart';
-
 /// Compares a screenshot taken through a test with its golden.
 ///
 /// Used by Flutter Web Engine unit tests and the integration tests.
