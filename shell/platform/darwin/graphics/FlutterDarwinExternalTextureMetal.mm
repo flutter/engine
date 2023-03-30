@@ -210,8 +210,8 @@ FLUTTER_ASSERT_ARC
             ? impeller::YUVColorSpace::kBT601LimitedRange
             : impeller::YUVColorSpace::kBT601FullRange;
 
-    return impeller::DlImageImpeller::TextureFromYUVATextures(context.aiks_context, yTexture,
-                                                              uvTexture, yuvColorSpace);
+    return impeller::DlImageImpeller::MakeFromYUVTextures(context.aiks_context, yTexture,
+                                                          uvTexture, yuvColorSpace);
   }
 
   SkYUVColorSpace colorSpace = _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
