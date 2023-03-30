@@ -30,7 +30,7 @@ class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
                             std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                             bool enable_impeller,
                             bool enable_vulkan_validation,
-                            bool impeller_use_gl);
+                            bool impeller_force_gl);
 
   ~AndroidSurfaceFactoryImpl() override;
 
@@ -41,7 +41,7 @@ class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
   const bool enable_impeller_;
   const bool enable_vulkan_validation_;
-  const bool impeller_use_gl_;
+  const bool impeller_force_gl_;
 };
 
 class PlatformViewAndroid final : public PlatformView {
