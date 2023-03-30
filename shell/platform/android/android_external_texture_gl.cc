@@ -74,14 +74,15 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
 
     auto dl_image = DlImage::Make(image);
     if (!transform.isIdentity()) {
-      DlImageColorSource source(dl_image, DlTileMode::kRepeat,
-                                DlTileMode::kRepeat, sampling, &transform);
+      auto source =
+          DlColorSource::MakeImage(dl_image, DlTileMode::kRepeat,
+                                   DlTileMode::kRepeat, sampling, &transform);
 
       DlPaint paintWithShader;
       if (context.paint) {
         paintWithShader = *context.paint;
       }
-      paintWithShader.setColorSource(&source);
+      paintWithShader.setColorSource(source);
       context.canvas->DrawRect(SkRect::MakeWH(1, 1), paintWithShader);
     } else {
       context.canvas->DrawImage(dl_image, {0, 0}, sampling, context.paint);

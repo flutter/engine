@@ -716,7 +716,6 @@ ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc + ../.
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_attributes.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_builder.cc + ../../../flutter/LICENSE
@@ -738,6 +737,7 @@ ORIGIN: ../../../flutter/display_list/dl_shared.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_tile_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_vertices.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_vertices.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/effects/dl_attributes.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_color_filter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_color_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_color_source.cc + ../../../flutter/LICENSE
@@ -3287,7 +3287,6 @@ FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
-FILE: ../../../flutter/display_list/dl_attributes.h
 FILE: ../../../flutter/display_list/dl_blend_mode.cc
 FILE: ../../../flutter/display_list/dl_blend_mode.h
 FILE: ../../../flutter/display_list/dl_builder.cc
@@ -3309,6 +3308,7 @@ FILE: ../../../flutter/display_list/dl_shared.h
 FILE: ../../../flutter/display_list/dl_tile_mode.h
 FILE: ../../../flutter/display_list/dl_vertices.cc
 FILE: ../../../flutter/display_list/dl_vertices.h
+FILE: ../../../flutter/display_list/effects/dl_attributes.h
 FILE: ../../../flutter/display_list/effects/dl_color_filter.cc
 FILE: ../../../flutter/display_list/effects/dl_color_filter.h
 FILE: ../../../flutter/display_list/effects/dl_color_source.cc
