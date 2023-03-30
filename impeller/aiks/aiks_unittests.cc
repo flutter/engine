@@ -1358,6 +1358,168 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+namespace {
+void DrawColorWheel(Canvas& canvas) {
+  /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
+  /// cyan domain: r >= 0 (because modulo used is non euclidean)
+  auto color_wheel_sampler = [](Radians r) {
+    Scalar x = r.radians / k2Pi + 1;
+
+    // https://www.desmos.com/calculator/6nhjelyoaj
+    auto color_cycle = [](Scalar x) {
+      Scalar cycle = std::fmod(x, 6.0f);
+      return std::max(0.0f, std::min(1.0f, 2 - std::abs(2 - cycle)));
+    };
+    return Color(color_cycle(6 * x + 1),  //
+                 color_cycle(6 * x - 1),  //
+                 color_cycle(6 * x - 3),  //
+                 1);
+  };
+
+  Paint paint;
+  paint.blend_mode = BlendMode::kSourceOver;
+
+  // Draw a fancy color wheel for the backdrop.
+  // https://www.desmos.com/calculator/xw7kafthwd
+  const int max_dist = 900;
+  for (int i = 0; i <= 900; i++) {
+    Radians r(kPhi / k2Pi * i);
+    Scalar distance = r.radians / std::powf(4.12, 0.0026 * r.radians);
+    Scalar normalized_distance = static_cast<Scalar>(i) / max_dist;
+
+    paint.color = color_wheel_sampler(r).WithAlpha(1.0f - normalized_distance);
+    Point position(distance * std::sin(r.radians),
+                   -distance * std::cos(r.radians));
+
+    canvas.DrawCircle(position, 9 + normalized_distance * 3, paint);
+  }
+};
+
+bool DrawColorWheelSnapshot(AiksContext& renderer,
+                            const Vector2& content_scale,
+                            std::shared_ptr<Image>* color_wheel_image,
+                            Matrix* color_wheel_transform) {
+  Canvas canvas;
+  canvas.Scale(content_scale);
+
+  canvas.Translate(Vector2(500, 400));
+  canvas.Scale(Vector2(3, 3));
+
+  DrawColorWheel(canvas);
+  auto color_wheel_picture = canvas.EndRecordingAsPicture();
+  auto snapshot = color_wheel_picture.Snapshot(renderer);
+  if (!snapshot.has_value() || !snapshot->texture) {
+    return false;
+  }
+
+  *color_wheel_image = std::make_shared<Image>(snapshot->texture);
+  *color_wheel_transform = snapshot->transform;
+
+  return true;
+}
+
+Picture DrawColorWheelImage(const std::shared_ptr<Image>& color_wheel_image,
+                            const Matrix& color_wheel_transform,
+                            Scalar src_alpha,
+                            Scalar dst_alpha,
+                            const Vector2& content_scale,
+                            BlendMode blend_mode,
+                            Color color0,
+                            Color color1,
+                            Color color2) {
+  Canvas canvas;
+
+  // Blit the color wheel backdrop to the screen with managed alpha.
+  canvas.SaveLayer({.color = Color::White().WithAlpha(dst_alpha),
+                    .blend_mode = BlendMode::kSource});
+  {
+    canvas.DrawPaint({.color = Color::White()});
+
+    canvas.Save();
+    canvas.Transform(color_wheel_transform);
+    canvas.DrawImage(color_wheel_image, Point(), Paint());
+    canvas.Restore();
+  }
+  canvas.Restore();
+
+  canvas.Scale(content_scale);
+  canvas.Translate(Vector2(500, 400));
+  canvas.Scale(Vector2(3, 3));
+
+  // Draw 3 circles to a subpass and blend it in.
+  canvas.SaveLayer(
+      {.color = Color::White().WithAlpha(src_alpha), .blend_mode = blend_mode});
+  {
+    Paint paint;
+    paint.blend_mode = BlendMode::kPlus;
+    const Scalar x = std::sin(k2Pi / 3);
+    const Scalar y = -std::cos(k2Pi / 3);
+    paint.color = color0;
+    canvas.DrawCircle(Point(-x, y) * 45, 65, paint);
+    paint.color = color1;
+    canvas.DrawCircle(Point(0, -1) * 45, 65, paint);
+    paint.color = color2;
+    canvas.DrawCircle(Point(x, y) * 45, 65, paint);
+  }
+  canvas.Restore();
+
+  return canvas.EndRecordingAsPicture();
+}
+
+std::optional<Picture> DrawColorWheel(const AiksTest* test,
+                                      BlendMode blend_mode) {
+  AiksContext renderer(test->GetContext());
+  std::shared_ptr<Image> color_wheel_image;
+  Matrix color_wheel_transform;
+  if (!DrawColorWheelSnapshot(renderer, test->GetContentScale(),
+                              &color_wheel_image, &color_wheel_transform)) {
+    return {};
+  }
+
+  return DrawColorWheelImage(color_wheel_image, color_wheel_transform, 1.0f,
+                             1.0f, test->GetContentScale(), blend_mode,
+                             Color::Red(), Color::Green(), Color::Blue());
+}
+}  // namespace
+
+#define IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(blend_mode) \
+  TEST_P(AiksTest, ColorWheelBlendMode##blend_mode) {    \
+    std::optional<Picture> picture =                     \
+        DrawColorWheel(this, BlendMode::k##blend_mode);  \
+    ASSERT_TRUE(picture.has_value());                    \
+    OpenPlaygroundHere(*picture);                        \
+  }
+
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Clear)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Source)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Destination)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(SourceOver)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(DestinationOver)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(SourceIn)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(DestinationIn)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(SourceOut)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(DestinationOut)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(SourceATop)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(DestinationATop)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Xor)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Plus)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Modulate)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Screen)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Overlay)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Darken)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Lighten)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(ColorDodge)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(ColorBurn)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(HardLight)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(SoftLight)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Difference)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Exclusion)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Multiply)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Hue)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Saturation)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Color)
+IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Luminosity)
+
 TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
@@ -1405,43 +1567,6 @@ TEST_P(AiksTest, ColorWheel) {
     }
   }
 
-  auto draw_color_wheel = [](Canvas& canvas) {
-    /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
-    /// cyan domain: r >= 0 (because modulo used is non euclidean)
-    auto color_wheel_sampler = [](Radians r) {
-      Scalar x = r.radians / k2Pi + 1;
-
-      // https://www.desmos.com/calculator/6nhjelyoaj
-      auto color_cycle = [](Scalar x) {
-        Scalar cycle = std::fmod(x, 6.0f);
-        return std::max(0.0f, std::min(1.0f, 2 - std::abs(2 - cycle)));
-      };
-      return Color(color_cycle(6 * x + 1),  //
-                   color_cycle(6 * x - 1),  //
-                   color_cycle(6 * x - 3),  //
-                   1);
-    };
-
-    Paint paint;
-    paint.blend_mode = BlendMode::kSourceOver;
-
-    // Draw a fancy color wheel for the backdrop.
-    // https://www.desmos.com/calculator/xw7kafthwd
-    const int max_dist = 900;
-    for (int i = 0; i <= 900; i++) {
-      Radians r(kPhi / k2Pi * i);
-      Scalar distance = r.radians / std::powf(4.12, 0.0026 * r.radians);
-      Scalar normalized_distance = static_cast<Scalar>(i) / max_dist;
-
-      paint.color =
-          color_wheel_sampler(r).WithAlpha(1.0f - normalized_distance);
-      Point position(distance * std::sin(r.radians),
-                     -distance * std::cos(r.radians));
-
-      canvas.DrawCircle(position, 9 + normalized_distance * 3, paint);
-    }
-  };
-
   std::shared_ptr<Image> color_wheel_image;
   Matrix color_wheel_transform;
 
@@ -1470,65 +1595,20 @@ TEST_P(AiksTest, ColorWheel) {
 
     static Point content_scale;
     Point new_content_scale = GetContentScale();
-
     if (!cache_the_wheel || new_content_scale != content_scale) {
       content_scale = new_content_scale;
-
-      // Render the color wheel to an image.
-
-      Canvas canvas;
-      canvas.Scale(content_scale);
-
-      canvas.Translate(Vector2(500, 400));
-      canvas.Scale(Vector2(3, 3));
-
-      draw_color_wheel(canvas);
-      auto color_wheel_picture = canvas.EndRecordingAsPicture();
-      auto snapshot = color_wheel_picture.Snapshot(renderer);
-      if (!snapshot.has_value() || !snapshot->texture) {
+      if (!DrawColorWheelSnapshot(renderer, content_scale, &color_wheel_image,
+                                  &color_wheel_transform)) {
         return false;
       }
-      color_wheel_image = std::make_shared<Image>(snapshot->texture);
-      color_wheel_transform = snapshot->transform;
     }
 
-    Canvas canvas;
+    Picture picture = DrawColorWheelImage(
+        color_wheel_image, color_wheel_transform, src_alpha, dst_alpha,
+        content_scale, blend_mode_values[current_blend_index], color0, color1,
+        color2);
 
-    // Blit the color wheel backdrop to the screen with managed alpha.
-    canvas.SaveLayer({.color = Color::White().WithAlpha(dst_alpha),
-                      .blend_mode = BlendMode::kSource});
-    {
-      canvas.DrawPaint({.color = Color::White()});
-
-      canvas.Save();
-      canvas.Transform(color_wheel_transform);
-      canvas.DrawImage(color_wheel_image, Point(), Paint());
-      canvas.Restore();
-    }
-    canvas.Restore();
-
-    canvas.Scale(content_scale);
-    canvas.Translate(Vector2(500, 400));
-    canvas.Scale(Vector2(3, 3));
-
-    // Draw 3 circles to a subpass and blend it in.
-    canvas.SaveLayer({.color = Color::White().WithAlpha(src_alpha),
-                      .blend_mode = blend_mode_values[current_blend_index]});
-    {
-      Paint paint;
-      paint.blend_mode = BlendMode::kPlus;
-      const Scalar x = std::sin(k2Pi / 3);
-      const Scalar y = -std::cos(k2Pi / 3);
-      paint.color = color0;
-      canvas.DrawCircle(Point(-x, y) * 45, 65, paint);
-      paint.color = color1;
-      canvas.DrawCircle(Point(0, -1) * 45, 65, paint);
-      paint.color = color2;
-      canvas.DrawCircle(Point(x, y) * 45, 65, paint);
-    }
-    canvas.Restore();
-
-    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+    return renderer.Render(picture, render_target);
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
