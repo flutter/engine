@@ -12,6 +12,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -166,6 +167,18 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
+  bool is_clear =
+      paint.blend_mode == BlendMode::kSource ||
+      (paint.blend_mode == BlendMode::kSourceOver && paint.color.alpha == 1);
+  if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
+      GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
+      is_clear  // and the backdrop is being replaced
+  ) {
+    // Then we can absorb this drawPaint as the clear color of the pass.
+    GetCurrentPass().SetClearColor(paint.color);
+    return;
+  }
+
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
@@ -236,7 +249,20 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(), paint);
+  if (paint.style == Paint::Style::kFill) {
+    Entity entity;
+    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetBlendMode(paint.blend_mode);
+    entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+        Geometry::MakeRRect(rect, corner_radius))));
+
+    GetCurrentPass().AddEntity(entity);
+    return;
+  } else {
+    DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
+             paint);
+  }
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
@@ -249,8 +275,23 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
+}
+
+void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeRect(rect), clip_op);
+}
+
+void Canvas::ClipRRect(const Rect& rect,
+                       Scalar corner_radius,
+                       Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeRRect(rect, corner_radius), clip_op);
+}
+
+void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
+                          Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(std::move(geometry));
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -362,8 +403,15 @@ void Canvas::SaveLayer(
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
-  new_layer_pass.SetDelegate(
-      std::make_unique<PaintPassDelegate>(paint, bounds));
+
+  // Only apply opacity peephole on default blending.
+  if (paint.blend_mode == BlendMode::kSourceOver) {
+    new_layer_pass.SetDelegate(
+        std::make_unique<OpacityPeepholePassDelegate>(paint, bounds));
+  } else {
+    new_layer_pass.SetDelegate(
+        std::make_unique<PaintPassDelegate>(paint, bounds));
+  }
 
   if (bounds.has_value() && !backdrop_filter.has_value()) {
     // Render target switches due to a save layer can be elided. In such cases
@@ -371,7 +419,7 @@ void Canvas::SaveLayer(
     // the size of the render target that would have been allocated will be
     // absent. Explicitly add back a clip to reproduce that behavior. Since
     // clips never require a render target switch, this is a cheap operation.
-    ClipPath(PathBuilder{}.AddRect(bounds.value()).TakePath());
+    ClipRect(bounds.value());
   }
 }
 
@@ -380,16 +428,40 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            const Paint& paint) {
   lazy_glyph_atlas_->AddTextFrame(text_frame);
 
+  Entity entity;
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
   text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
+
+  if (paint.color_source.has_value()) {
+    auto& source = paint.color_source.value();
+    auto color_text_contents = std::make_shared<ColorSourceTextContents>();
+    entity.SetTransformation(GetCurrentTransformation());
+
+    Entity test;
+    auto cvg = text_contents->GetCoverage(test).value();
+    color_text_contents->SetTextPosition(cvg.origin + position);
+
+    text_contents->SetInverseMatrix(
+        Matrix::MakeTranslation(Vector3(-cvg.origin.x, -cvg.origin.y, 0)));
+    color_text_contents->SetTextContents(std::move(text_contents));
+    color_text_contents->SetColorSourceContents(source());
+
+    entity.SetContents(
+        paint.WithFilters(std::move(color_text_contents), false));
+
+    GetCurrentPass().AddEntity(entity);
+    return;
+  }
+
   text_contents->SetColor(paint.color);
 
-  Entity entity;
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
-  entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(paint.blend_mode);
+
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
   GetCurrentPass().AddEntity(entity);
@@ -425,7 +497,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     // the src contents should be. If neither has a value we fall back
     // to using the geometry coverage data.
     Rect src_coverage;
-    auto size = src_contents->ColorSourceSize();
+    auto size = src_contents->GetColorSourceSize();
     if (size.has_value()) {
       src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
     } else {

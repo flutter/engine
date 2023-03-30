@@ -9,10 +9,10 @@
 #include <variant>
 #include <vector>
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/sigma.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -78,7 +78,9 @@ class FilterContents : public Contents {
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
       FilterInput::Ref input,
       const Matrix& matrix,
-      const SamplerDescriptor& desc);
+      const SamplerDescriptor& desc,
+      const Matrix& effect_transform,
+      bool is_subpass);
 
   static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
       FilterInput::Ref input,

@@ -15,13 +15,16 @@
 
 #include "flutter/fml/mapping.h"
 #include "impeller/entity/mtl/entity_shaders.h"
+#include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/fixtures/mtl/fixtures_shaders.h"
+#include "impeller/fixtures/mtl/subgroup_fixtures_shaders.h"
 #include "impeller/playground/imgui/mtl/imgui_shaders.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
+#include "impeller/renderer/mtl/compute_shaders.h"
 #include "impeller/scene/shaders/mtl/scene_shaders.h"
 
 namespace impeller {
@@ -32,17 +35,24 @@ struct PlaygroundImplMTL::Data {
 
 static std::vector<std::shared_ptr<fml::Mapping>>
 ShaderLibraryMappingsForPlayground() {
-  return {
-      std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
-                                             impeller_entity_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_data,
-                                             impeller_modern_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_fixtures_shaders_data,
-                                             impeller_fixtures_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
-                                             impeller_imgui_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
-                                             impeller_scene_shaders_length),
+  return {std::make_shared<fml::NonOwnedMapping>(
+              impeller_entity_shaders_data, impeller_entity_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(
+              impeller_modern_shaders_data, impeller_modern_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(
+              impeller_framebuffer_blend_shaders_data,
+              impeller_framebuffer_blend_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(
+              impeller_fixtures_shaders_data, impeller_fixtures_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(
+              impeller_subgroup_fixtures_shaders_data,
+              impeller_subgroup_fixtures_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
+                                                 impeller_imgui_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
+                                                 impeller_scene_shaders_length),
+          std::make_shared<fml::NonOwnedMapping>(
+              impeller_compute_shaders_data, impeller_compute_shaders_length)
 
   };
 }
@@ -54,8 +64,10 @@ void PlaygroundImplMTL::DestroyWindowHandle(WindowHandle handle) {
   ::glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(handle));
 }
 
-PlaygroundImplMTL::PlaygroundImplMTL()
-    : handle_(nullptr, &DestroyWindowHandle), data_(std::make_unique<Data>()) {
+PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
+    : PlaygroundImpl(switches),
+      handle_(nullptr, &DestroyWindowHandle),
+      data_(std::make_unique<Data>()) {
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -74,9 +86,8 @@ PlaygroundImplMTL::PlaygroundImplMTL()
   }
   data_->metal_layer = [CAMetalLayer layer];
   data_->metal_layer.device = ContextMTL::Cast(*context).GetMTLDevice();
-  // This pixel format is one of the documented supported formats.
-  const auto color_fmt = context->GetColorAttachmentPixelFormat();
-  data_->metal_layer.pixelFormat = ToMTLPixelFormat(color_fmt);
+  data_->metal_layer.pixelFormat =
+      ToMTLPixelFormat(context->GetCapabilities()->GetDefaultColorFormat());
   data_->metal_layer.framebufferOnly = NO;
   cocoa_window.contentView.layer = data_->metal_layer;
   cocoa_window.contentView.wantsLayer = YES;

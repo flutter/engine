@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "fml/time/time_point.h"
+#include "impeller/image/backends/skia/compressed_image_skia.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
@@ -17,17 +18,22 @@
 
 #include "flutter/fml/paths.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_impl.h"
-#include "impeller/renderer/allocator.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/renderer.h"
 #include "third_party/imgui/backends/imgui_impl_glfw.h"
 #include "third_party/imgui/imgui.h"
+
+#if FML_OS_MACOSX
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
 
 namespace impeller {
 
@@ -72,8 +78,9 @@ struct Playground::GLFWInitializer {
   }
 };
 
-Playground::Playground()
-    : glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
+Playground::Playground(PlaygroundSwitches switches)
+    : switches_(switches),
+      glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
 
 Playground::~Playground() = default;
 
@@ -108,7 +115,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
 void Playground::SetupContext(PlaygroundBackend backend) {
   FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(backend);
+  impl_ = PlaygroundImpl::Create(backend, switches_);
   if (!impl_) {
     return;
   }
@@ -176,9 +183,26 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
+#if FML_OS_MACOSX
+class AutoReleasePool {
+ public:
+  AutoReleasePool() {
+    pool_ = reinterpret_cast<msg_send>(objc_msgSend)(
+        objc_getClass("NSAutoreleasePool"), sel_getUid("new"));
+  }
+  ~AutoReleasePool() {
+    reinterpret_cast<msg_send>(objc_msgSend)(pool_, sel_getUid("drain"));
+  }
+
+ private:
+  typedef id (*msg_send)(void*, SEL);
+  id pool_;
+};
+#endif
+
 bool Playground::OpenPlaygroundHere(
     const Renderer::RenderCallback& render_callback) {
-  if (!is_enabled()) {
+  if (!switches_.enable_playground) {
     return true;
   }
 
@@ -214,8 +238,7 @@ bool Playground::OpenPlaygroundHere(
         if (!playground) {
           return;
         }
-        playground->SetWindowSize(
-            ISize{std::max(width, 0), std::max(height, 0)});
+        playground->SetWindowSize(ISize{width, height}.Max({}));
       });
   ::glfwSetKeyCallback(window, &PlaygroundKeyCallback);
   ::glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x,
@@ -238,6 +261,9 @@ bool Playground::OpenPlaygroundHere(
   ::glfwShowWindow(window);
 
   while (true) {
+#if FML_OS_MACOSX
+    AutoReleasePool pool;
+#endif
     ::glfwPollEvents();
 
     if (::glfwWindowShouldClose(window)) {
@@ -301,6 +327,10 @@ bool Playground::OpenPlaygroundHere(
       VALIDATION_LOG << "Could not render into the surface.";
       return false;
     }
+
+    if (!ShouldKeepRendering()) {
+      break;
+    }
   }
 
   ::glfwHideWindow(window);
@@ -337,7 +367,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
 
 std::shared_ptr<CompressedImage> Playground::LoadFixtureImageCompressed(
     std::shared_ptr<fml::Mapping> mapping) const {
-  auto compressed_image = CompressedImage::Create(std::move(mapping));
+  auto compressed_image = CompressedImageSkia::Create(std::move(mapping));
   if (!compressed_image) {
     VALIDATION_LOG << "Could not create compressed image.";
     return nullptr;
@@ -397,13 +427,19 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   if (!image.has_value()) {
     return nullptr;
   }
-  return CreateTextureForFixture(image.value());
+  return CreateTextureForFixture(image.value(), enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name));
+  auto texture = CreateTextureForFixture(OpenAssetAsMapping(fixture_name),
+                                         enable_mipmapping);
+  if (texture == nullptr) {
+    return nullptr;
+  }
+  texture->SetLabel(fixture_name);
+  return texture;
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
@@ -448,6 +484,10 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
 
 void Playground::SetWindowSize(ISize size) {
   window_size_ = size;
+}
+
+bool Playground::ShouldKeepRendering() const {
+  return true;
 }
 
 }  // namespace impeller

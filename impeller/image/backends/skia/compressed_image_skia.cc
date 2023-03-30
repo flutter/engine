@@ -7,11 +7,21 @@
 #include <memory>
 
 #include "impeller/base/validation.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 
 namespace impeller {
+
+std::shared_ptr<CompressedImage> CompressedImageSkia::Create(
+    std::shared_ptr<const fml::Mapping> allocation) {
+  // There is only one backend today.
+  if (!allocation) {
+    return nullptr;
+  }
+  return std::make_shared<CompressedImageSkia>(std::move(allocation));
+}
 
 CompressedImageSkia::CompressedImageSkia(
     std::shared_ptr<const fml::Mapping> allocation)

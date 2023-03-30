@@ -327,19 +327,19 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->OnPreEngineRestart();
   };
-  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
-                                      void* user_data) {
+  args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                       void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
 
-    for (size_t i = 0; i < update->nodes_count; i++) {
-      const FlutterSemanticsNode* node = &update->nodes[i];
-      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+    for (size_t i = 0; i < update->node_count; i++) {
+      const FlutterSemanticsNode2* node = update->nodes[i];
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(*node);
     }
 
-    for (size_t i = 0; i < update->custom_actions_count; i++) {
-      const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+    for (size_t i = 0; i < update->custom_action_count; i++) {
+      const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
       host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-          action);
+          *action);
     }
 
     host->accessibility_bridge_->CommitUpdates();
@@ -404,9 +404,7 @@ bool FlutterWindowsEngine::Stop() {
 
 void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
-  if (view) {
-    InitializeKeyboard();
-  }
+  InitializeKeyboard();
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -679,17 +677,12 @@ void FlutterWindowsEngine::OnPreEngineRestart() {
   }
 }
 
-gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
-    AccessibilityNodeId id) {
+gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeViewAccessible() {
   if (!accessibility_bridge_) {
     return nullptr;
   }
-  std::shared_ptr<FlutterPlatformNodeDelegate> node_delegate =
-      accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(id).lock();
-  if (!node_delegate) {
-    return nullptr;
-  }
-  return node_delegate->GetNativeViewAccessible();
+
+  return accessibility_bridge_->GetChildOfAXFragmentRoot();
 }
 
 std::string FlutterWindowsEngine::GetExecutableName() const {

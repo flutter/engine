@@ -7,7 +7,9 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
 #include <utility>
 
 #include "flutter/fml/paths.h"
@@ -25,16 +27,43 @@ const uint32_t kFragBindingBase = 128;
 const size_t kNumUniformKinds =
     static_cast<int>(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
 
-static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
-                                         const SourceOptions& source_options) {
+static uint32_t ParseMSLVersion(const std::string& msl_version) {
+  std::stringstream sstream(msl_version);
+  std::string version_part;
+  uint32_t major = 1;
+  uint32_t minor = 2;
+  uint32_t patch = 0;
+  if (std::getline(sstream, version_part, '.')) {
+    major = std::stoi(version_part);
+    if (std::getline(sstream, version_part, '.')) {
+      minor = std::stoi(version_part);
+      if (std::getline(sstream, version_part, '.')) {
+        patch = std::stoi(version_part);
+      }
+    }
+  }
+  if (major < 1 || (major == 1 && minor < 2)) {
+    std::cerr << "--metal-version version must be at least 1.2. Have "
+              << msl_version << std::endl;
+  }
+  return spirv_cross::CompilerMSL::Options::make_msl_version(major, minor,
+                                                             patch);
+}
+
+static CompilerBackend CreateMSLCompiler(
+    const spirv_cross::ParsedIR& ir,
+    const SourceOptions& source_options,
+    std::optional<uint32_t> msl_version_override = {}) {
   auto sl_compiler = std::make_shared<spirv_cross::CompilerMSL>(ir);
   spirv_cross::CompilerMSL::Options sl_options;
   sl_options.platform =
       TargetPlatformToMSLPlatform(source_options.target_platform);
-  // If this version specification changes, the GN rules that process the
-  // Metal to AIR must be updated as well.
-  sl_options.msl_version =
-      spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.msl_version = msl_version_override.value_or(
+      ParseMSLVersion(source_options.metal_version));
+  sl_options.ios_use_simdgroup_functions =
+      sl_options.is_ios() &&
+      sl_options.msl_version >=
+          spirv_cross::CompilerMSL::Options::make_msl_version(2, 4, 0);
   sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
 
@@ -86,6 +115,20 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   return CompilerBackend(sl_compiler);
 }
 
+static CompilerBackend CreateVulkanCompiler(
+    const spirv_cross::ParsedIR& ir,
+    const SourceOptions& source_options) {
+  // TODO(dnfield): It seems like what we'd want is a CompilerGLSL with
+  // vulkan_semantics set to true, but that has regressed some things on GLES
+  // somehow. In the mean time, go back to using CompilerMSL, but set the Metal
+  // Language version to something really high so that we don't get weird
+  // complaints about using Metal features while trying to build Vulkan shaders.
+  // https://github.com/flutter/flutter/issues/123795
+  return CreateMSLCompiler(
+      ir, source_options,
+      spirv_cross::CompilerMSL::Options::make_msl_version(3, 0, 0));
+}
+
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                                           const SourceOptions& source_options) {
   auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
@@ -122,6 +165,7 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kVulkan:
     case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageVulkan:
       return false;
     case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
@@ -139,8 +183,11 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
-    case TargetPlatform::kVulkan:
       compiler = CreateMSLCompiler(ir, source_options);
+      break;
+    case TargetPlatform::kVulkan:
+    case TargetPlatform::kRuntimeStageVulkan:
+      compiler = CreateVulkanCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kOpenGLES:
@@ -342,6 +389,22 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
   switch (source_options.target_platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+      spirv_options.SetOptimizationLevel(
+          shaderc_optimization_level::shaderc_optimization_level_performance);
+      if (source_options.use_half_textures) {
+        spirv_options.SetTargetEnvironment(
+            shaderc_target_env::shaderc_target_env_opengl,
+            shaderc_env_version::shaderc_env_version_opengl_4_5);
+        spirv_options.SetTargetSpirv(
+            shaderc_spirv_version::shaderc_spirv_version_1_0);
+      } else {
+        spirv_options.SetTargetEnvironment(
+            shaderc_target_env::shaderc_target_env_vulkan,
+            shaderc_env_version::shaderc_env_version_vulkan_1_1);
+        spirv_options.SetTargetSpirv(
+            shaderc_spirv_version::shaderc_spirv_version_1_3);
+      }
+      break;
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
       spirv_options.SetOptimizationLevel(
@@ -353,13 +416,14 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kVulkan:
+    case TargetPlatform::kRuntimeStageVulkan:
       spirv_options.SetOptimizationLevel(
           shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_0);
+          shaderc_env_version::shaderc_env_version_vulkan_1_1);
       spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+          shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kRuntimeStageMetal:
     case TargetPlatform::kRuntimeStageGLES:
@@ -437,7 +501,11 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
                    << ShaderCErrorToString(spv_result_->GetCompilationStatus())
                    << ". " << spv_result_->GetNumErrors() << " error(s) and "
                    << spv_result_->GetNumWarnings() << " warning(s).";
-    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0) {
+    // It should normally be enough to check that there are errors or warnings,
+    // but some cases result in no errors or warnings and still have an error
+    // message. If there's a message we should print it.
+    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0 ||
+        !spv_result_->GetErrorMessage().empty()) {
       COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
     }
     return;

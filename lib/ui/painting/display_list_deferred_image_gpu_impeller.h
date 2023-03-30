@@ -5,13 +5,13 @@
 #pragma once
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
-#include "impeller/renderer/texture.h"
+#include "impeller/core/texture.h"
 
 namespace flutter {
 

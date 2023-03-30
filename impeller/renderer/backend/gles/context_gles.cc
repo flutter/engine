@@ -6,8 +6,6 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
-#include "impeller/base/work_queue_common.h"
-#include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
 
@@ -60,26 +58,20 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
   }
 
-  // Create the work queue.
-  {
-    work_queue_ = WorkQueueCommon::Create();
-    if (!work_queue_) {
-      VALIDATION_LOG << "Could not create work queue.";
-      return;
-    }
-  }
-
   // Create the device capabilities.
   {
     device_capabilities_ =
-        DeviceCapabilitiesBuilder()
+        CapabilitiesBuilder()
             .SetHasThreadingRestrictions(true)
             .SetSupportsOffscreenMSAA(false)
             .SetSupportsSSBO(false)
             .SetSupportsTextureToTextureBlits(
                 reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
+            .SetSupportsFramebufferFetch(false)
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .SetSupportsCompute(false, false)
+            .SetSupportsReadFromResolve(false)
             .Build();
   }
 
@@ -138,18 +130,9 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 }
 
 // |Context|
-std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
-  return work_queue_;
-}
-
-// |Context|
-const IDeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
-  return *device_capabilities_;
-}
-
-// |Context|
-PixelFormat ContextGLES::GetColorAttachmentPixelFormat() const {
-  return PixelFormat::kR8G8B8A8UNormInt;
+const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
+    const {
+  return device_capabilities_;
 }
 
 }  // namespace impeller

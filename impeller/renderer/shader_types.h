@@ -11,6 +11,7 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/runtime_stage/runtime_types.h"
 
@@ -121,6 +122,17 @@ struct SampledImageSlot {
   constexpr bool HasTexture() const { return texture_index < 32u; }
 
   constexpr bool HasSampler() const { return sampler_index < 32u; }
+};
+
+enum class DescriptorType {
+  kSampledImage,
+  kUniformBuffer,
+};
+
+struct DescriptorSetLayout {
+  uint32_t binding;
+  DescriptorType descriptor_type;
+  ShaderStage shader_stage;
 };
 
 template <size_t Size>

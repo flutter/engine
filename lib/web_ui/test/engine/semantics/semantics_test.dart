@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('chrome || safari || firefox')
+library;
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -250,7 +251,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
     final DomElement placeholder =
@@ -266,7 +267,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isTrue);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isTrue);
 
     // The placeholder should be removed

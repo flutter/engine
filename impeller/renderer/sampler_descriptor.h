@@ -8,7 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
@@ -18,7 +18,7 @@ class Context;
 struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
   MinMagFilter min_filter = MinMagFilter::kNearest;
   MinMagFilter mag_filter = MinMagFilter::kNearest;
-  MipFilter mip_filter = MipFilter::kNone;
+  MipFilter mip_filter = MipFilter::kNearest;
 
   SamplerAddressMode width_address_mode = SamplerAddressMode::kClampToEdge;
   SamplerAddressMode height_address_mode = SamplerAddressMode::kClampToEdge;

@@ -74,6 +74,8 @@ bool Main(const fml::CommandLine& command_line) {
       switches.entry_point);
   options.json_format = switches.json_format;
   options.gles_language_version = switches.gles_language_version;
+  options.metal_version = switches.metal_version;
+  options.use_half_textures = switches.use_half_textures;
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;
@@ -219,6 +221,7 @@ bool Main(const fml::CommandLine& command_line) {
       case TargetPlatform::kOpenGLDesktop:
       case TargetPlatform::kRuntimeStageMetal:
       case TargetPlatform::kRuntimeStageGLES:
+      case TargetPlatform::kRuntimeStageVulkan:
       case TargetPlatform::kSkSL:
       case TargetPlatform::kVulkan:
         result_file = switches.sl_file_name;

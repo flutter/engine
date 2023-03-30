@@ -50,7 +50,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher.viewData[viewId] = this;
-    engineDispatcher.windowConfigurations[viewId] = const ui.ViewConfiguration();
+    engineDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
@@ -191,8 +191,23 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
           return true;
         case 'routeInformationUpdated':
           assert(arguments != null);
+          final String? uriString = arguments!.tryString('uri');
+          final String path;
+          if (uriString != null) {
+            final Uri uri = Uri.parse(uriString);
+            // Need to remove scheme and authority.
+            path = Uri.decodeComponent(
+              Uri(
+                path: uri.path.isEmpty ? '/' : uri.path,
+                queryParameters: uri.queryParametersAll.isEmpty ? null : uri.queryParametersAll,
+                fragment: uri.fragment.isEmpty ? null : uri.fragment,
+              ).toString(),
+            );
+          } else {
+            path = arguments.tryString('location')!;
+          }
           browserHistory.setRouteName(
-            arguments!.tryString('location'),
+            path,
             state: arguments['state'],
             replace: arguments.tryBool('replace') ?? false,
           );
@@ -202,14 +217,31 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     });
   }
 
-  @override
-  ui.ViewConfiguration get viewConfiguration {
+  ViewConfiguration get _viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(viewId));
     return engineDispatcher.windowConfigurations[viewId] ??
-        const ui.ViewConfiguration();
+        const ViewConfiguration();
   }
+
+  @override
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
+
+  @override
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
+
+  @override
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
+
+  @override
+  ViewPadding get padding => _viewConfiguration.padding;
+
+  @override
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
 
   late DimensionsProvider _dimensionsProvider;
   void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {

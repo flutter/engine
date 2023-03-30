@@ -4,11 +4,13 @@
 
 #include "flutter/fml/time/time_point.h"
 
+#include "impeller/base/timing.h"
 #include "impeller/playground/playground_test.h"
 
 namespace impeller {
 
-PlaygroundTest::PlaygroundTest() = default;
+PlaygroundTest::PlaygroundTest()
+    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {}
 
 PlaygroundTest::~PlaygroundTest() = default;
 
@@ -25,6 +27,10 @@ void PlaygroundTest::SetUp() {
 
   SetupContext(GetParam());
   SetupWindow();
+}
+
+PlaygroundBackend PlaygroundTest::GetBackend() const {
+  return GetParam();
 }
 
 void PlaygroundTest::TearDown() {
@@ -59,6 +65,19 @@ static std::string FormatWindowTitle(const std::string& test_name) {
 // |Playground|
 std::string PlaygroundTest::GetWindowTitle() const {
   return FormatWindowTitle(flutter::testing::GetCurrentTestName());
+}
+
+// |Playground|
+bool PlaygroundTest::ShouldKeepRendering() const {
+  if (!switches_.timeout.has_value()) {
+    return true;
+  }
+
+  if (SecondsF{GetSecondsElapsed()} > switches_.timeout.value()) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace impeller

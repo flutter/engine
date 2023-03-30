@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/lib/ui/painting/image_encoding_impeller.h"
+
 #include "flutter/lib/ui/painting/image.h"
+#include "impeller/core/device_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/device_buffer.h"
-#include "impeller/renderer/formats.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 namespace flutter {
 namespace {
@@ -15,12 +18,14 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
   switch (format) {
     case impeller::PixelFormat::kR8G8B8A8UNormInt:
       return SkColorType::kRGBA_8888_SkColorType;
+    case impeller::PixelFormat::kR16G16B16A16Float:
+      return SkColorType::kRGBA_F16_SkColorType;
     case impeller::PixelFormat::kB8G8R8A8UNormInt:
       return SkColorType::kBGRA_8888_SkColorType;
-      break;
+    case impeller::PixelFormat::kB10G10R10XR:
+      return SkColorType::kBGR_101010x_XR_SkColorType;
     default:
       return std::nullopt;
-      break;
   }
 }
 
@@ -50,7 +55,23 @@ sk_sp<SkImage> ConvertBufferToSkImage(
   return raster_image;
 }
 
-void ConvertDlImageImpellerToSkImage(
+void DoConvertImageToRasterImpeller(
+    const sk_sp<DlImage>& dl_image,
+    std::function<void(sk_sp<SkImage>)> encode_task,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+    const std::shared_ptr<impeller::Context>& impeller_context) {
+  is_gpu_disabled_sync_switch->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&encode_task] { encode_task(nullptr); })
+          .SetIfFalse([&dl_image, &encode_task, &impeller_context] {
+            ImageEncodingImpeller::ConvertDlImageToSkImage(
+                dl_image, std::move(encode_task), impeller_context);
+          }));
+}
+
+}  // namespace
+
+void ImageEncodingImpeller::ConvertDlImageToSkImage(
     const sk_sp<DlImage>& dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
     const std::shared_ptr<impeller::Context>& impeller_context) {
@@ -111,23 +132,7 @@ void ConvertDlImageImpellerToSkImage(
   }
 }
 
-void DoConvertImageToRasterImpeller(
-    const sk_sp<DlImage>& dl_image,
-    std::function<void(sk_sp<SkImage>)> encode_task,
-    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
-    const std::shared_ptr<impeller::Context>& impeller_context) {
-  is_gpu_disabled_sync_switch->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfTrue([&encode_task] { encode_task(nullptr); })
-          .SetIfFalse([&dl_image, &encode_task, &impeller_context] {
-            ConvertDlImageImpellerToSkImage(dl_image, std::move(encode_task),
-                                            impeller_context);
-          }));
-}
-
-}  // namespace
-
-void ConvertImageToRasterImpeller(
+void ImageEncodingImpeller::ConvertImageToRaster(
     const sk_sp<DlImage>& dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
@@ -157,6 +162,18 @@ void ConvertImageToRasterImpeller(
                                    is_gpu_disabled_sync_switch,
                                    impeller_context);
   });
+}
+
+int ImageEncodingImpeller::GetColorSpace(
+    const std::shared_ptr<impeller::Texture>& texture) {
+  const impeller::TextureDescriptor& desc = texture->GetTextureDescriptor();
+  switch (desc.format) {
+    case impeller::PixelFormat::kB10G10R10XR:  // intentional_fallthrough
+    case impeller::PixelFormat::kR16G16B16A16Float:
+      return ColorSpace::kExtendedSRGB;
+    default:
+      return ColorSpace::kSRGB;
+  }
 }
 
 }  // namespace flutter

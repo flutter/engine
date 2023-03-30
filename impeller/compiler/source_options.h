@@ -27,6 +27,11 @@ struct SourceOptions {
   uint32_t gles_language_version = 100;
   std::vector<std::string> defines;
   bool json_format = false;
+  std::string metal_version;
+
+  /// @brief Whether half-precision textures should be supported, requiring
+  /// opengl semantics. Only used on metal targets.
+  bool use_half_textures = false;
 
   SourceOptions();
 
