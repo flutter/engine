@@ -123,6 +123,7 @@ static CompilerBackend CreateVulkanCompiler(
   // somehow. In the mean time, go back to using CompilerMSL, but set the Metal
   // Language version to something really high so that we don't get weird
   // complaints about using Metal features while trying to build Vulkan shaders.
+  // https://github.com/flutter/flutter/issues/123795
   return CreateMSLCompiler(
       ir, source_options,
       spirv_cross::CompilerMSL::Options::make_msl_version(3, 0, 0));
