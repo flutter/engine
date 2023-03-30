@@ -207,14 +207,14 @@ int ScopedClipboard::SetString(const std::wstring string) {
 
 }  // namespace
 
-static ExitType StringToExitType(const std::string& string) {
+static AppExitType StringToAppExitType(const std::string& string) {
   if (string.compare(PlatformHandler::kExitTypeRequired) == 0) {
-    return ExitType::required;
+    return AppExitType::required;
   } else if (string.compare(PlatformHandler::kExitTypeCancelable) == 0) {
-    return ExitType::cancelable;
+    return AppExitType::cancelable;
   }
   FML_LOG(ERROR) << string << " is not recognized as a valid exit type.";
-  return ExitType::required;
+  return AppExitType::required;
 }
 
 PlatformHandler::PlatformHandler(
@@ -366,12 +366,12 @@ void PlatformHandler::SystemSoundPlay(
 }
 
 void PlatformHandler::SystemExitApplication(
-    ExitType exit_type,
+    AppExitType exit_type,
     UINT exit_code,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   rapidjson::Document result_doc;
   result_doc.SetObject();
-  if (exit_type == ExitType::required) {
+  if (exit_type == AppExitType::required) {
     QuitApplication(exit_code, nullptr);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseExit,
                                       result_doc.GetAllocator());
@@ -389,7 +389,7 @@ void PlatformHandler::SystemExitApplication(
 static constexpr const char* kExitTypeNames[] = {
     PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
 
-void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code, HWND hwnd) {
+void PlatformHandler::RequestAppExit(AppExitType exit_type, UINT exit_code, HWND hwnd) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this, exit_code, hwnd](const rapidjson::Document* response) {
         RequestAppExitSuccess(response, exit_code, hwnd);
@@ -446,7 +446,7 @@ void PlatformHandler::HandleMethodCall(
     }
     UINT exit_code = arguments[kExitCodeKey].GetInt();
 
-    SystemExitApplication(StringToExitType(exit_type), exit_code,
+    SystemExitApplication(StringToAppExitType(exit_type), exit_code,
                           std::move(result));
   } else if (method.compare(kGetClipboardDataMethod) == 0) {
     // Only one string argument is expected.

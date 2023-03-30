@@ -762,7 +762,7 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
                               reinterpret_cast<const uint8_t*>(""), 0);
 }
 
-void FlutterWindowsEngine::RequestApplicationQuit(ExitType exit_type,
+void FlutterWindowsEngine::RequestApplicationQuit(AppExitType exit_type,
                                                   UINT exit_code, HWND hwnd) {
   platform_handler_->RequestAppExit(exit_type, exit_code, hwnd);
 }

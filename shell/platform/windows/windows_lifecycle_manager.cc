@@ -23,7 +23,7 @@ void WindowsLifecycleManager::Quit(UINT exit_code, HWND hwnd) {
     ::PostQuitMessage(exit_code);
   }
   else {
-    sent_msgs_[hwnd]++;
+    sent_close_messages_[hwnd]++;
     PostMessage(hwnd, WM_CLOSE, 0, 0);
   }
 }
@@ -35,17 +35,17 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                          LRESULT* result) {
   switch (msg) {
     case WM_CLOSE:
-      auto itr = sent_msgs_.find(hwnd);
-      if (itr != sent_msgs_.end()) {
+      auto itr = sent_close_messages_.find(hwnd);
+      if (itr != sent_close_messages_.end()) {
         if (itr->second == 1) {
-          sent_msgs_.erase(itr);
+          sent_close_messages_.erase(itr);
         } else {
-          sent_msgs_[hwnd]--;
+          sent_close_messages_[hwnd]--;
         }
         return false;
       }
       if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(ExitType::cancelable, 0, hwnd);
+        engine_->RequestApplicationQuit(AppExitType::cancelable, 0, hwnd);
       }
       return true;
   }
