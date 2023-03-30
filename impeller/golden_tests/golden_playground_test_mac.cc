@@ -77,7 +77,6 @@ void GoldenPlaygroundTest::SetUp() {
           "impeller_Play_AiksTest_CanRenderSweepGradientManyColors_Metal" ||
       test_name == "impeller_Play_AiksTest_CanPictureConvertToImage_Metal" ||
       test_name == "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal" ||
-      test_name == "impeller_Play_AiksTest_ColorWheel_Metal" ||
       test_name == "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal" ||
       test_name ==
           "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal" ||

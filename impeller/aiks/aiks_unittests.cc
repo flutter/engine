@@ -1490,6 +1490,7 @@ std::optional<Picture> DrawColorWheel(const AiksTest* test,
     OpenPlaygroundHere(*picture);                        \
   }
 
+// Compare with https://fiddle.skia.org/c/@BlendModes
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Clear)
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Source)
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Destination)
@@ -1519,100 +1520,6 @@ IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Hue)
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Saturation)
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Color)
 IMPELLER_COLOR_WHEEL_BLEND_MODE_TEST(Luminosity)
-
-TEST_P(AiksTest, ColorWheel) {
-  // Compare with https://fiddle.skia.org/c/@BlendModes
-
-  std::vector<const char*> blend_mode_names;
-  std::vector<BlendMode> blend_mode_values;
-  {
-    const std::vector<std::tuple<const char*, BlendMode>> blends = {
-        // Pipeline blends (Porter-Duff alpha compositing)
-        {"Clear", BlendMode::kClear},
-        {"Source", BlendMode::kSource},
-        {"Destination", BlendMode::kDestination},
-        {"SourceOver", BlendMode::kSourceOver},
-        {"DestinationOver", BlendMode::kDestinationOver},
-        {"SourceIn", BlendMode::kSourceIn},
-        {"DestinationIn", BlendMode::kDestinationIn},
-        {"SourceOut", BlendMode::kSourceOut},
-        {"DestinationOut", BlendMode::kDestinationOut},
-        {"SourceATop", BlendMode::kSourceATop},
-        {"DestinationATop", BlendMode::kDestinationATop},
-        {"Xor", BlendMode::kXor},
-        {"Plus", BlendMode::kPlus},
-        {"Modulate", BlendMode::kModulate},
-        // Advanced blends (color component blends)
-        {"Screen", BlendMode::kScreen},
-        {"Overlay", BlendMode::kOverlay},
-        {"Darken", BlendMode::kDarken},
-        {"Lighten", BlendMode::kLighten},
-        {"ColorDodge", BlendMode::kColorDodge},
-        {"ColorBurn", BlendMode::kColorBurn},
-        {"HardLight", BlendMode::kHardLight},
-        {"SoftLight", BlendMode::kSoftLight},
-        {"Difference", BlendMode::kDifference},
-        {"Exclusion", BlendMode::kExclusion},
-        {"Multiply", BlendMode::kMultiply},
-        {"Hue", BlendMode::kHue},
-        {"Saturation", BlendMode::kSaturation},
-        {"Color", BlendMode::kColor},
-        {"Luminosity", BlendMode::kLuminosity},
-    };
-    assert(blends.size() ==
-           static_cast<size_t>(Entity::kLastAdvancedBlendMode) + 1);
-    for (const auto& [name, mode] : blends) {
-      blend_mode_names.push_back(name);
-      blend_mode_values.push_back(mode);
-    }
-  }
-
-  std::shared_ptr<Image> color_wheel_image;
-  Matrix color_wheel_transform;
-
-  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
-    // UI state.
-    static bool cache_the_wheel = true;
-    static int current_blend_index = 3;
-    static float dst_alpha = 1;
-    static float src_alpha = 1;
-    static Color color0 = Color::Red();
-    static Color color1 = Color::Green();
-    static Color color2 = Color::Blue();
-
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    {
-      ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
-      ImGui::ListBox("Blending mode", &current_blend_index,
-                     blend_mode_names.data(), blend_mode_names.size());
-      ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
-      ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&color0));
-      ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
-      ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
-      ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
-    }
-    ImGui::End();
-
-    static Point content_scale;
-    Point new_content_scale = GetContentScale();
-    if (!cache_the_wheel || new_content_scale != content_scale) {
-      content_scale = new_content_scale;
-      if (!DrawColorWheelSnapshot(renderer, content_scale, &color_wheel_image,
-                                  &color_wheel_transform)) {
-        return false;
-      }
-    }
-
-    Picture picture = DrawColorWheelImage(
-        color_wheel_image, color_wheel_transform, src_alpha, dst_alpha,
-        content_scale, blend_mode_values[current_blend_index], color0, color1,
-        color2);
-
-    return renderer.Render(picture, render_target);
-  };
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
   Canvas canvas;
