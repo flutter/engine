@@ -6,8 +6,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
@@ -240,6 +240,8 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
       return vk::SamplerAddressMode::eMirroredRepeat;
     case SamplerAddressMode::kClampToEdge:
       return vk::SamplerAddressMode::eClampToEdge;
+    case SamplerAddressMode::kDecal:
+      return vk::SamplerAddressMode::eClampToBorder;
   }
 
   FML_UNREACHABLE();
