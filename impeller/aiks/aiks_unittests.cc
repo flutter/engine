@@ -121,76 +121,32 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
 TEST_P(AiksTest, CanRenderTiledTexture) {
   auto context = GetContext();
   ASSERT_TRUE(context);
-  bool first_frame = true;
   auto texture = CreateTextureForFixture("table_mountain_nx.png",
                                          /*enable_mipmapping=*/true);
-  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
-    if (first_frame) {
-      first_frame = false;
-      GenerateMipmap(context, texture, "table_mountain_nx");
-    }
-
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-    const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
-    const MipFilter mip_filters[] = {MipFilter::kNearest, MipFilter::kLinear};
-    const char* min_mag_filter_names[] = {"Nearest", "Linear"};
-    const MinMagFilter min_mag_filters[] = {MinMagFilter::kNearest,
-                                            MinMagFilter::kLinear};
-    static int selected_x_tile_mode = 0;
-    static int selected_y_tile_mode = 0;
-    static int selected_mip_filter = 0;
-    static int selected_min_mag_filter = 0;
-    static float alpha = 1.0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Alpha", &alpha, 0.0, 1.0);
-    ImGui::Combo("X tile mode", &selected_x_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    ImGui::Combo("Y tile mode", &selected_y_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    ImGui::Combo("Mip filter", &selected_mip_filter, mip_filter_names,
-                 sizeof(mip_filter_names) / sizeof(char*));
-    ImGui::Combo("Min Mag filter", &selected_min_mag_filter,
-                 min_mag_filter_names,
-                 sizeof(min_mag_filter_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
+  GenerateMipmap(context, texture, "table_mountain_nx");
+  const Entity::TileMode tile_modes[] = {
+      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  int count = 0;
+  for (auto tile_mode : tile_modes) {
+    canvas.Save();
+    canvas.Translate({static_cast<Scalar>(count % 2) * 512.0f,
+                      count > 1 ? 384.0f : 0.0f, 0});
+    count += 1;
     Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto x_tile_mode = tile_modes[selected_x_tile_mode];
-    auto y_tile_mode = tile_modes[selected_y_tile_mode];
-    SamplerDescriptor descriptor;
-    descriptor.mip_filter = mip_filters[selected_mip_filter];
-    descriptor.min_filter = min_mag_filters[selected_min_mag_filter];
-    descriptor.mag_filter = min_mag_filters[selected_min_mag_filter];
-    paint.color_source = [texture, x_tile_mode, y_tile_mode, descriptor]() {
+    paint.color_source = [texture, tile_mode]() {
       auto contents = std::make_shared<TiledTextureContents>();
       contents->SetTexture(texture);
-      contents->SetTileModes(x_tile_mode, y_tile_mode);
-      contents->SetSamplerDescriptor(descriptor);
-      contents->SetEffectTransform(matrix);
+      contents->SetTileModes(tile_mode, tile_mode);
       return contents;
     };
-    paint.color = Color(1, 1, 1, alpha);
-    canvas.DrawRect({0, 0, 600, 600}, paint);
-    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+    paint.color = Color(1, 1, 1, 1);
+    canvas.DrawRect({0, 0, 500, 375}, paint);
+    canvas.Restore();
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, CanRenderImageRect) {
