@@ -102,6 +102,7 @@ TEST_P(AiksTest, CanRenderInvertedImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
                     std::string label) {
@@ -118,35 +119,42 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   return buffer->SubmitCommands();
 }
 
-TEST_P(AiksTest, CanRenderTiledTexture) {
-  auto context = GetContext();
+void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
+  auto context = aiks_test->GetContext();
   ASSERT_TRUE(context);
-  auto texture = CreateTextureForFixture("table_mountain_nx.png",
-                                         /*enable_mipmapping=*/true);
+  auto texture = aiks_test->CreateTextureForFixture("table_mountain_nx.png",
+                                                    /*enable_mipmapping=*/true);
   GenerateMipmap(context, texture, "table_mountain_nx");
-  const Entity::TileMode tile_modes[] = {
-      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
   Canvas canvas;
-  canvas.Scale(GetContentScale());
-  int count = 0;
-  for (auto tile_mode : tile_modes) {
-    canvas.Save();
-    canvas.Translate({static_cast<Scalar>(count % 2) * 512.0f,
-                      count > 1 ? 384.0f : 0.0f, 0});
-    count += 1;
-    Paint paint;
-    paint.color_source = [texture, tile_mode]() {
-      auto contents = std::make_shared<TiledTextureContents>();
-      contents->SetTexture(texture);
-      contents->SetTileModes(tile_mode, tile_mode);
-      return contents;
-    };
-    paint.color = Color(1, 1, 1, 1);
-    canvas.DrawRect({0, 0, 500, 375}, paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  canvas.Scale(aiks_test->GetContentScale());
+  canvas.Translate({100.0f, 100.0f, 0});
+  Paint paint;
+  paint.color_source = [texture, tile_mode]() {
+    auto contents = std::make_shared<TiledTextureContents>();
+    contents->SetTexture(texture);
+    contents->SetTileModes(tile_mode, tile_mode);
+    return contents;
+  };
+  paint.color = Color(1, 1, 1, 1);
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderTiledTextureClamp) {
+  CanRenderTiledTexture(this, Entity::TileMode::kClamp);
+}
+
+TEST_P(AiksTest, CanRenderTiledTextureRepeat) {
+  CanRenderTiledTexture(this, Entity::TileMode::kRepeat);
+}
+
+TEST_P(AiksTest, CanRenderTiledTextureMirror) {
+  CanRenderTiledTexture(this, Entity::TileMode::kMirror);
+}
+
+TEST_P(AiksTest, CanRenderTiledTextureDecal) {
+  CanRenderTiledTexture(this, Entity::TileMode::kDecal);
 }
 
 TEST_P(AiksTest, CanRenderImageRect) {
@@ -305,36 +313,41 @@ TEST_P(AiksTest, CanSaveLayerStandalone) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderLinearGradient) {
-  const Entity::TileMode tile_modes[] = {
-      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
+namespace {
+void CanRenderLinearGradient(AiksTest* aiks_test, Entity::TileMode tile_mode) {
   Canvas canvas;
-  canvas.Scale(GetContentScale());
-  int count = 0;
-  for (auto tile_mode : tile_modes) {
-    Paint paint;
-    canvas.Save();
-    canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
-    count += 1;
-    paint.color_source = [tile_mode]() {
-      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                   Color{0.1294, 0.5882, 0.9529, 0.0}};
-      std::vector<Scalar> stops = {0.0, 1.0};
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100.0f, 0, 0});
+  paint.color_source = [tile_mode]() {
+    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                 Color{0.1294, 0.5882, 0.9529, 0.0}};
+    std::vector<Scalar> stops = {0.0, 1.0};
 
-      auto contents = std::make_shared<LinearGradientContents>();
-      contents->SetEndPoints({0, 0}, {200, 200});
-      contents->SetColors(std::move(colors));
-      contents->SetStops(std::move(stops));
-      contents->SetTileMode(tile_mode);
-      return contents;
-    };
-    paint.color = Color(1.0, 1.0, 1.0, 1.0);
-    canvas.DrawRect({0, 0, 256, 256}, paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetEndPoints({0, 0}, {200, 200});
+    contents->SetColors(std::move(colors));
+    contents->SetStops(std::move(stops));
+    contents->SetTileMode(tile_mode);
+    return contents;
+  };
+  paint.color = Color(1.0, 1.0, 1.0, 1.0);
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderLinearGradientClamp) {
+  CanRenderLinearGradient(this, Entity::TileMode::kClamp);
+}
+TEST_P(AiksTest, CanRenderLinearGradientRepeat) {
+  CanRenderLinearGradient(this, Entity::TileMode::kRepeat);
+}
+TEST_P(AiksTest, CanRenderLinearGradientMirror) {
+  CanRenderLinearGradient(this, Entity::TileMode::kMirror);
+}
+TEST_P(AiksTest, CanRenderLinearGradientDecal) {
+  CanRenderLinearGradient(this, Entity::TileMode::kDecal);
 }
 
 TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStops) {
@@ -390,50 +403,57 @@ TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStops) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(AiksTest, CanRenderLinearGradientManyColors) {
-  const Entity::TileMode tile_modes[] = {
-      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
+namespace {
+void CanRenderLinearGradientManyColors(AiksTest* aiks_test,
+                                       Entity::TileMode tile_mode) {
   Canvas canvas;
-  int count = 0;
-  canvas.Scale(GetContentScale());
-  for (Entity::TileMode tile_mode : tile_modes) {
-    Paint paint;
-    canvas.Save();
-    canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
-    count += 1;
-    paint.color_source = [tile_mode]() {
-      std::vector<Color> colors = {
-          Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-          Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-          Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-          Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-          Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-          Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-          Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-      std::vector<Scalar> stops = {
-          0.0,
-          (1.0 / 6.0) * 1,
-          (1.0 / 6.0) * 2,
-          (1.0 / 6.0) * 3,
-          (1.0 / 6.0) * 4,
-          (1.0 / 6.0) * 5,
-          1.0,
-      };
-
-      auto contents = std::make_shared<LinearGradientContents>();
-      contents->SetEndPoints({0, 0}, {100, 100});
-      contents->SetColors(std::move(colors));
-      contents->SetStops(std::move(stops));
-      contents->SetTileMode(tile_mode);
-      return contents;
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100, 100, 0});
+  paint.color_source = [tile_mode]() {
+    std::vector<Color> colors = {
+        Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+        Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+        Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+        Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+        Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+        Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+        Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+    std::vector<Scalar> stops = {
+        0.0,
+        (1.0 / 6.0) * 1,
+        (1.0 / 6.0) * 2,
+        (1.0 / 6.0) * 3,
+        (1.0 / 6.0) * 4,
+        (1.0 / 6.0) * 5,
+        1.0,
     };
-    paint.color = Color(1.0, 1.0, 1.0, 1.0);
-    canvas.DrawRect({0, 0, 256, 256}, paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetEndPoints({0, 0}, {200, 200});
+    contents->SetColors(std::move(colors));
+    contents->SetStops(std::move(stops));
+    contents->SetTileMode(tile_mode);
+    return contents;
+  };
+  paint.color = Color(1.0, 1.0, 1.0, 1.0);
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  canvas.Restore();
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderLinearGradientManyColorsClamp) {
+  CanRenderLinearGradientManyColors(this, Entity::TileMode::kClamp);
+}
+TEST_P(AiksTest, CanRenderLinearGradientManyColorsRepeat) {
+  CanRenderLinearGradientManyColors(this, Entity::TileMode::kRepeat);
+}
+TEST_P(AiksTest, CanRenderLinearGradientManyColorsMirror) {
+  CanRenderLinearGradientManyColors(this, Entity::TileMode::kMirror);
+}
+TEST_P(AiksTest, CanRenderLinearGradientManyColorsDecal) {
+  CanRenderLinearGradientManyColors(this, Entity::TileMode::kDecal);
 }
 
 TEST_P(AiksTest, CanRenderLinearGradientWayManyColors) {
@@ -658,34 +678,39 @@ TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(AiksTest, CanRenderSweepGradient) {
-  const Entity::TileMode tile_modes[] = {
-      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
+namespace {
+void CanRenderSweepGradient(AiksTest* aiks_test, Entity::TileMode tile_mode) {
   Canvas canvas;
-  canvas.Scale(GetContentScale());
-  int count = 0;
-  for (auto tile_mode : tile_modes) {
-    Paint paint;
-    canvas.Save();
-    canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
-    count += 1;
-    paint.color_source = [tile_mode]() {
-      auto contents = std::make_shared<SweepGradientContents>();
-      contents->SetCenterAndAngles({100, 100}, Degrees(45), Degrees(135));
-      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
-      std::vector<Scalar> stops = {0.0, 1.0};
-      contents->SetColors(std::move(colors));
-      contents->SetStops(std::move(stops));
-      contents->SetTileMode(tile_mode);
-      return contents;
-    };
-    canvas.DrawRect({0, 0, 256, 256}, paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100, 100, 0});
+  paint.color_source = [tile_mode]() {
+    auto contents = std::make_shared<SweepGradientContents>();
+    contents->SetCenterAndAngles({100, 100}, Degrees(45), Degrees(135));
+    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
+    std::vector<Scalar> stops = {0.0, 1.0};
+    contents->SetColors(std::move(colors));
+    contents->SetStops(std::move(stops));
+    contents->SetTileMode(tile_mode);
+    return contents;
+  };
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderSweepGradientClamp) {
+  CanRenderSweepGradient(this, Entity::TileMode::kClamp);
+}
+TEST_P(AiksTest, CanRenderSweepGradientRepeat) {
+  CanRenderSweepGradient(this, Entity::TileMode::kRepeat);
+}
+TEST_P(AiksTest, CanRenderSweepGradientMirror) {
+  CanRenderSweepGradient(this, Entity::TileMode::kMirror);
+}
+TEST_P(AiksTest, CanRenderSweepGradientDecal) {
+  CanRenderSweepGradient(this, Entity::TileMode::kDecal);
 }
 
 TEST_P(AiksTest, CanRenderSweepGradientManyColors) {
