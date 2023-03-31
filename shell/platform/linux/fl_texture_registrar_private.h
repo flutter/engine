@@ -37,11 +37,12 @@ FlTexture* fl_texture_registrar_lookup_texture(FlTextureRegistrar* registrar,
  * fl_texture_registrar_get_textures_locked:
  * @registrar: an #FlTextureRegistrar.
  *
- * Checks whether the textures is locked by the mutex.
+ * Get the number of the textures registered in the registrar.
  *
- * Returns: %TRUE on locked, %FALSE otherwise.
+ * Returns: an unsigned integer number of the textures registered in the
+ * registrar.
  */
-gboolean fl_texture_registrar_get_textures_locked(
+guint fl_texture_registrar_get_textures_table_size(
     FlTextureRegistrar* registrar);
 
 G_END_DECLS
