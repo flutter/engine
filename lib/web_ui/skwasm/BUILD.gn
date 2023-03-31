@@ -42,15 +42,9 @@ wasm_lib("skwasm") {
   } else {
     ldflags += [
       "-Oz",
-      "--closure=0",
-      "-flto",
+      "--closure=1",
       "-sEXPORTED_FUNCTIONS=[stackAlloc]",
       "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
-    ]
-
-    cflags += [
-      "-flto",
-      "-fvisibility=hidden",
     ]
   }
 
