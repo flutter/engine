@@ -626,7 +626,11 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
       : WindowsLifecycleManager(engine) {}
   virtual ~MockWindowsLifecycleManager() {}
 
-  MOCK_METHOD4(Quit, void(std::optional<HWND>, std::optional<WPARAM>, std::optional<LPARAM>, UINT));
+  MOCK_METHOD4(Quit,
+               void(std::optional<HWND>,
+                    std::optional<WPARAM>,
+                    std::optional<LPARAM>,
+                    UINT));
   MOCK_METHOD4(DispatchMessage, void(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(IsLastWindowOfProcess, bool(void));
 };
@@ -642,16 +646,19 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code) {
-    finished = exit_code == 0;
-  });
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
+  ON_CALL(*handler, Quit)
+      .WillByDefault(
+          [&finished](std::optional<HWND> hwnd, std::optional<WPARAM> wparam,
+                      std::optional<LPARAM> lparam,
+                      UINT exit_code) { finished = exit_code == 0; });
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
-  // If this callback is triggered, the test fails. The exit procedure should be called without checking with the framework.
+  // If this callback is triggered, the test fails. The exit procedure should be
+  // called without checking with the framework.
   binary_messenger->SetMessageHandler(
       "flutter/platform", [&did_call](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {
@@ -683,10 +690,12 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code) {
-    finished = true;
-  });
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
+  ON_CALL(*handler, Quit)
+      .WillByDefault([&finished](std::optional<HWND> hwnd,
+                                 std::optional<WPARAM> wparam,
+                                 std::optional<LPARAM> lparam,
+                                 UINT exit_code) { finished = true; });
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
 
@@ -696,7 +705,8 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
       "flutter/platform", [&did_call](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {
         std::string contents(message, message + message_size);
-        EXPECT_NE(contents.find("\"method\":\"System.exitApplication\""), std::string::npos);
+        EXPECT_NE(contents.find("\"method\":\"System.exitApplication\""),
+                  std::string::npos);
         EXPECT_NE(contents.find("\"type\":\"required\""), std::string::npos);
         EXPECT_NE(contents.find("\"exitCode\":0"), std::string::npos);
         did_call = true;
@@ -727,11 +737,19 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
-  ON_CALL(*handler, Quit).WillByDefault([&handler](std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code){
-    handler->WindowsLifecycleManager::Quit(hwnd, wparam, lparam, exit_code);
-  });
-  ON_CALL(*handler, DispatchMessage).WillByDefault([&engine](HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {engine->window_proc_delegate_manager()->OnTopLevelWindowProc(hwnd, msg, wparam, lparam);});
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
+  ON_CALL(*handler, Quit)
+      .WillByDefault([&handler](std::optional<HWND> hwnd,
+                                std::optional<WPARAM> wparam,
+                                std::optional<LPARAM> lparam, UINT exit_code) {
+        handler->WindowsLifecycleManager::Quit(hwnd, wparam, lparam, exit_code);
+      });
+  ON_CALL(*handler, DispatchMessage)
+      .WillByDefault(
+          [&engine](HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+            engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
+                hwnd, msg, wparam, lparam);
+          });
   modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
@@ -747,8 +765,9 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   engine->Run();
 
   // This delegate will be registered after the lifecycle manager, so it will be
-  // called only when a message is not consumed by the lifecycle manager. This should be called on the second,
-  // synthesized WM_CLOSE message that the lifecycle manager posts.
+  // called only when a message is not consumed by the lifecycle manager. This
+  // should be called on the second, synthesized WM_CLOSE message that the
+  // lifecycle manager posts.
   engine->window_proc_delegate_manager()->RegisterTopLevelWindowProcDelegate(
       [](HWND hwnd, UINT message, WPARAM wpar, LPARAM lpar, void* user_data,
          LRESULT* result) {
@@ -784,14 +803,18 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([&finished](){ finished = true; return false; });
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([&finished]() {
+    finished = true;
+    return false;
+  });
   // Quit should not be called when there is more than one window.
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
-  // If this callback is triggered, the test fails. The exit procedure should be called without checking with the framework.
+  // If this callback is triggered, the test fails. The exit procedure should be
+  // called without checking with the framework.
   binary_messenger->SetMessageHandler(
       "flutter/platform", [&did_call](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {

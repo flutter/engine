@@ -18,7 +18,10 @@ WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
-void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code) {
+void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd,
+                                   std::optional<WPARAM> wparam,
+                                   std::optional<LPARAM> lparam,
+                                   UINT exit_code) {
   if (!hwnd.has_value()) {
     ::PostQuitMessage(exit_code);
   } else {
@@ -28,7 +31,10 @@ void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd, std::optional<WPARA
   }
 }
 
-void WindowsLifecycleManager::DispatchMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+void WindowsLifecycleManager::DispatchMessage(HWND hwnd,
+                                              UINT message,
+                                              WPARAM wparam,
+                                              LPARAM lparam) {
   PostMessage(hwnd, message, wparam, lparam);
 }
 
@@ -38,7 +44,10 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                          LPARAM lpar,
                                          LRESULT* result) {
   switch (msg) {
-    // When WM_CLOSE is received from the final window of an application, we send a request to the framework to see if it is allowed to close. If it is, we re-dispatch a new WM_CLOSE message. In order to allow the new message to reach other delegates, we ignore it here.
+    // When WM_CLOSE is received from the final window of an application, we
+    // send a request to the framework to see if it is allowed to close. If it
+    // is, we re-dispatch a new WM_CLOSE message. In order to allow the new
+    // message to reach other delegates, we ignore it here.
     case WM_CLOSE:
       auto itr = sent_close_messages_.find(hwnd);
       if (itr != sent_close_messages_.end()) {
@@ -50,7 +59,8 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
         return false;
       }
       if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(hwnd, wpar, lpar, AppExitType::cancelable, 0);
+        engine_->RequestApplicationQuit(hwnd, wpar, lpar,
+                                        AppExitType::cancelable, 0);
         return true;
       }
       break;

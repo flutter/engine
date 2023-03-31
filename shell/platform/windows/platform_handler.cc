@@ -377,7 +377,8 @@ void PlatformHandler::SystemExitApplication(
                                       result_doc.GetAllocator());
     result->Success(result_doc);
   } else {
-    RequestAppExit(std::nullopt, std::nullopt, std::nullopt, exit_type, exit_code);
+    RequestAppExit(std::nullopt, std::nullopt, std::nullopt, exit_type,
+                   exit_code);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
@@ -389,11 +390,14 @@ void PlatformHandler::SystemExitApplication(
 static constexpr const char* kExitTypeNames[] = {
     PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
 
-void PlatformHandler::RequestAppExit(std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam,
+void PlatformHandler::RequestAppExit(std::optional<HWND> hwnd,
+                                     std::optional<WPARAM> wparam,
+                                     std::optional<LPARAM> lparam,
                                      AppExitType exit_type,
                                      UINT exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
-      [this, exit_code, hwnd, wparam, lparam](const rapidjson::Document* response) {
+      [this, exit_code, hwnd, wparam,
+       lparam](const rapidjson::Document* response) {
         RequestAppExitSuccess(hwnd, wparam, lparam, response, exit_code);
       },
       nullptr, nullptr);
@@ -406,7 +410,9 @@ void PlatformHandler::RequestAppExit(std::optional<HWND> hwnd, std::optional<WPA
                          std::move(callback));
 }
 
-void PlatformHandler::RequestAppExitSuccess(std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam,
+void PlatformHandler::RequestAppExitSuccess(std::optional<HWND> hwnd,
+                                            std::optional<WPARAM> wparam,
+                                            std::optional<LPARAM> lparam,
                                             const rapidjson::Document* result,
                                             UINT exit_code) {
   rapidjson::Value::ConstMemberIterator itr =
@@ -423,7 +429,10 @@ void PlatformHandler::RequestAppExitSuccess(std::optional<HWND> hwnd, std::optio
   }
 }
 
-void PlatformHandler::QuitApplication(std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code) {
+void PlatformHandler::QuitApplication(std::optional<HWND> hwnd,
+                                      std::optional<WPARAM> wparam,
+                                      std::optional<LPARAM> lparam,
+                                      UINT exit_code) {
   engine_->OnQuit(hwnd, wparam, lparam, exit_code);
 }
 
