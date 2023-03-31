@@ -730,18 +730,22 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
 
   engine->Run();
 
-  // This delegate will be registered after the lifecycle manager, so it will be called only when it returns false.
-  // This should be called on the second, synthesized WM_CLOSE message that the lifecycle manager posts.
-  engine->window_proc_delegate_manager()->RegisterTopLevelWindowProcDelegate([](HWND hwnd, UINT message, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result){
-    switch (message) {
-      case WM_CLOSE: {
-        bool* called = reinterpret_cast<bool*>(user_data);
-        *called = true;
-        return true;
-      }
-    }
-    return false;
-  }, reinterpret_cast<void*>(&second_close));
+  // This delegate will be registered after the lifecycle manager, so it will be
+  // called only when it returns false. This should be called on the second,
+  // synthesized WM_CLOSE message that the lifecycle manager posts.
+  engine->window_proc_delegate_manager()->RegisterTopLevelWindowProcDelegate(
+      [](HWND hwnd, UINT message, WPARAM wpar, LPARAM lpar, void* user_data,
+         LRESULT* result) {
+        switch (message) {
+          case WM_CLOSE: {
+            bool* called = reinterpret_cast<bool*>(user_data);
+            *called = true;
+            return true;
+          }
+        }
+        return false;
+      },
+      reinterpret_cast<void*>(&second_close));
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
                                                                0);

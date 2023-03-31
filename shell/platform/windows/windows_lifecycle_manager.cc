@@ -21,8 +21,7 @@ WindowsLifecycleManager::~WindowsLifecycleManager() {}
 void WindowsLifecycleManager::Quit(UINT exit_code, HWND hwnd) {
   if (hwnd == nullptr) {
     ::PostQuitMessage(exit_code);
-  }
-  else {
+  } else {
     sent_close_messages_[hwnd]++;
     PostMessage(hwnd, WM_CLOSE, 0, 0);
   }

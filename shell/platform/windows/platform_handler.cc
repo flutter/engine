@@ -389,7 +389,9 @@ void PlatformHandler::SystemExitApplication(
 static constexpr const char* kExitTypeNames[] = {
     PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
 
-void PlatformHandler::RequestAppExit(AppExitType exit_type, UINT exit_code, HWND hwnd) {
+void PlatformHandler::RequestAppExit(AppExitType exit_type,
+                                     UINT exit_code,
+                                     HWND hwnd) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this, exit_code, hwnd](const rapidjson::Document* response) {
         RequestAppExitSuccess(response, exit_code, hwnd);
@@ -405,7 +407,8 @@ void PlatformHandler::RequestAppExit(AppExitType exit_type, UINT exit_code, HWND
 }
 
 void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
-                                            UINT exit_code, HWND hwnd) {
+                                            UINT exit_code,
+                                            HWND hwnd) {
   rapidjson::Value::ConstMemberIterator itr =
       result->FindMember(kExitResponseKey);
   if (itr == result->MemberEnd() || !itr->value.IsString()) {
