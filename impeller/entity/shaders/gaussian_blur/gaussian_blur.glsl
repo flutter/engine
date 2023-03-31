@@ -60,7 +60,7 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
 
-  for (float i = -blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
+  for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
     float16_t gaussian = IPGaussian(i, blur_info.blur_sigma);
     gaussian_integral += gaussian;
     total_color +=
