@@ -1359,6 +1359,19 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
 }
 
 namespace {
+struct ColorWheelState {
+  bool cache_the_wheel = true;
+  BlendMode blend_mode = BlendMode::kSourceOver;
+  float dst_alpha = 1;
+  float src_alpha = 1;
+  Color color0 = Color::Red();
+  Color color1 = Color::Green();
+  Color color2 = Color::Blue();
+  Point content_scale;
+  std::shared_ptr<Image> color_wheel_image;
+  Matrix color_wheel_transform;
+};
+
 void DrawColorWheel(Canvas& canvas) {
   /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
   /// cyan domain: r >= 0 (because modulo used is non euclidean)
@@ -1418,47 +1431,39 @@ bool DrawColorWheelSnapshot(AiksContext& renderer,
   return true;
 }
 
-Picture DrawColorWheelImage(const std::shared_ptr<Image>& color_wheel_image,
-                            const Matrix& color_wheel_transform,
-                            Scalar src_alpha,
-                            Scalar dst_alpha,
-                            const Vector2& content_scale,
-                            BlendMode blend_mode,
-                            Color color0,
-                            Color color1,
-                            Color color2) {
+Picture DrawColorWheelImage(const ColorWheelState* state) {
   Canvas canvas;
 
   // Blit the color wheel backdrop to the screen with managed alpha.
-  canvas.SaveLayer({.color = Color::White().WithAlpha(dst_alpha),
+  canvas.SaveLayer({.color = Color::White().WithAlpha(state->dst_alpha),
                     .blend_mode = BlendMode::kSource});
   {
     canvas.DrawPaint({.color = Color::White()});
 
     canvas.Save();
-    canvas.Transform(color_wheel_transform);
-    canvas.DrawImage(color_wheel_image, Point(), Paint());
+    canvas.Transform(state->color_wheel_transform);
+    canvas.DrawImage(state->color_wheel_image, Point(), Paint());
     canvas.Restore();
   }
   canvas.Restore();
 
-  canvas.Scale(content_scale);
+  canvas.Scale(state->content_scale);
   canvas.Translate(Vector2(500, 400));
   canvas.Scale(Vector2(3, 3));
 
   // Draw 3 circles to a subpass and blend it in.
-  canvas.SaveLayer(
-      {.color = Color::White().WithAlpha(src_alpha), .blend_mode = blend_mode});
+  canvas.SaveLayer({.color = Color::White().WithAlpha(state->src_alpha),
+                    .blend_mode = state->blend_mode});
   {
     Paint paint;
     paint.blend_mode = BlendMode::kPlus;
     const Scalar x = std::sin(k2Pi / 3);
     const Scalar y = -std::cos(k2Pi / 3);
-    paint.color = color0;
+    paint.color = state->color0;
     canvas.DrawCircle(Point(-x, y) * 45, 65, paint);
-    paint.color = color1;
+    paint.color = state->color1;
     canvas.DrawCircle(Point(0, -1) * 45, 65, paint);
-    paint.color = color2;
+    paint.color = state->color2;
     canvas.DrawCircle(Point(x, y) * 45, 65, paint);
   }
   canvas.Restore();
@@ -1469,16 +1474,15 @@ Picture DrawColorWheelImage(const std::shared_ptr<Image>& color_wheel_image,
 std::optional<Picture> DrawColorWheel(const AiksTest* test,
                                       BlendMode blend_mode) {
   AiksContext renderer(test->GetContext());
-  std::shared_ptr<Image> color_wheel_image;
-  Matrix color_wheel_transform;
-  if (!DrawColorWheelSnapshot(renderer, test->GetContentScale(),
-                              &color_wheel_image, &color_wheel_transform)) {
+  ColorWheelState state;
+  state.content_scale = test->GetContentScale();
+  if (!DrawColorWheelSnapshot(renderer, state.content_scale,
+                              &state.color_wheel_image,
+                              &state.color_wheel_transform)) {
     return {};
   }
 
-  return DrawColorWheelImage(color_wheel_image, color_wheel_transform, 1.0f,
-                             1.0f, test->GetContentScale(), blend_mode,
-                             Color::Red(), Color::Green(), Color::Blue());
+  return DrawColorWheelImage(&state);
 }
 }  // namespace
 
@@ -1567,63 +1571,41 @@ TEST_P(AiksTest, ColorWheel) {
     }
   }
 
-  std::shared_ptr<Image> color_wheel_image;
-  Matrix color_wheel_transform;
-
-  // UI state.
-  struct GuiState {
-    bool cache_the_wheel = true;
-    int current_blend_index = 3;
-    float dst_alpha = 1;
-    float src_alpha = 1;
-    Color color0 = Color::Red();
-    Color color1 = Color::Green();
-    Color color2 = Color::Blue();
-    Point content_scale;
-  };
-  GuiState state;
-
-  auto updater = [blend_mode_names](void* state) {
-    GuiState* gui_state = static_cast<GuiState*>(state);
+  auto updater = [blend_mode_names, blend_mode_values](ColorWheelState* state) {
+    int current_blend_index = -1;
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
-      ImGui::Checkbox("Cache the wheel", &gui_state->cache_the_wheel);
-      ImGui::ListBox("Blending mode", &gui_state->current_blend_index,
-                     blend_mode_names.data(), blend_mode_names.size());
-      ImGui::SliderFloat("Source alpha", &gui_state->src_alpha, 0, 1);
-      ImGui::ColorEdit4("Color A",
-                        reinterpret_cast<float*>(&gui_state->color0));
-      ImGui::ColorEdit4("Color B",
-                        reinterpret_cast<float*>(&gui_state->color1));
-      ImGui::ColorEdit4("Color C",
-                        reinterpret_cast<float*>(&gui_state->color2));
-      ImGui::SliderFloat("Destination alpha", &gui_state->dst_alpha, 0, 1);
+      ImGui::Checkbox("Cache the wheel", &state->cache_the_wheel);
+      if (ImGui::ListBox("Blending mode", &current_blend_index,
+                         blend_mode_names.data(), blend_mode_names.size())) {
+        state->blend_mode = blend_mode_values[current_blend_index];
+      }
+      ImGui::SliderFloat("Source alpha", &state->src_alpha, 0, 1);
+      ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&state->color0));
+      ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&state->color1));
+      ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&state->color2));
+      ImGui::SliderFloat("Destination alpha", &state->dst_alpha, 0, 1);
     }
     ImGui::End();
   };
 
-  auto callback =
-      [this, &color_wheel_image, &color_wheel_transform, blend_mode_values](
-          void* state, AiksContext& renderer) -> std::optional<Picture> {
-    GuiState* gui_state = static_cast<GuiState*>(state);
+  auto callback = [this](ColorWheelState* state,
+                         AiksContext& renderer) -> std::optional<Picture> {
     Point new_content_scale = GetContentScale();
-    if (!gui_state->cache_the_wheel ||
-        new_content_scale != gui_state->content_scale) {
-      gui_state->content_scale = new_content_scale;
-      if (!DrawColorWheelSnapshot(renderer, gui_state->content_scale,
-                                  &color_wheel_image, &color_wheel_transform)) {
+    if (!state->cache_the_wheel || new_content_scale != state->content_scale) {
+      state->content_scale = new_content_scale;
+      if (!DrawColorWheelSnapshot(renderer, state->content_scale,
+                                  &state->color_wheel_image,
+                                  &state->color_wheel_transform)) {
         return {};
       }
     }
 
-    return DrawColorWheelImage(
-        color_wheel_image, color_wheel_transform, gui_state->src_alpha,
-        gui_state->dst_alpha, gui_state->content_scale,
-        blend_mode_values[gui_state->current_blend_index], gui_state->color0,
-        gui_state->color1, gui_state->color2);
+    return DrawColorWheelImage(state);
   };
 
-  ASSERT_TRUE(OpenPlaygroundHere(&state, updater, callback));
+  ColorWheelState state;
+  ASSERT_TRUE(OpenPlaygroundHere<ColorWheelState>(&state, updater, callback));
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {

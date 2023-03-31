@@ -20,8 +20,12 @@ class GoldenPlaygroundTest
   using AiksPlaygroundCallback =
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;
 
+  template <typename T>
   using PictureCallback =
-      std::function<std::optional<Picture>(void* state, AiksContext& renderer)>;
+      std::function<std::optional<Picture>(T* state, AiksContext& renderer)>;
+
+  template <typename T>
+  using UpdateCallback = std::function<void(T* state)>;
 
   GoldenPlaygroundTest();
 
@@ -34,9 +38,21 @@ class GoldenPlaygroundTest
   /// Deprecated: Use the PictureCallback variant.
   bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 
-  bool OpenPlaygroundHere(void* state,
-                          const std::function<void(void* state)>& update_imgui,
-                          const PictureCallback& callback);
+  template <typename T>
+  bool OpenPlaygroundHere(T* state,
+                          const UpdateCallback<T>& update_imgui,
+                          const PictureCallback<T>& callback) {
+    return OpenPlaygroundHereImpl(
+        state,
+        [update_imgui](void* state) {
+          T* t_state = static_cast<T*>(state);
+          update_imgui(t_state);
+        },
+        [callback](void* state, AiksContext& renderer) {
+          T* t_state = static_cast<T*>(state);
+          return callback(t_state, renderer);
+        });
+  }
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
@@ -52,6 +68,11 @@ class GoldenPlaygroundTest
 
  private:
   struct GoldenPlaygroundTestImpl;
+
+  bool OpenPlaygroundHereImpl(void* state,
+                              const UpdateCallback<void>& update_imgui,
+                              const PictureCallback<void>& callback);
+
   // This is only a shared_ptr so it can work with a forward declared type.
   std::shared_ptr<GoldenPlaygroundTestImpl> pimpl_;
   FML_DISALLOW_COPY_AND_ASSIGN(GoldenPlaygroundTest);

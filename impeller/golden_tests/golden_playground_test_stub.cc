@@ -25,10 +25,10 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return false;
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(
+bool GoldenPlaygroundTest::OpenPlaygroundHereImpl(
     void* state,
-    const std::function<void()>& update_imgui,
-    const PictureCallback& callback) {
+    const UpdateCallback<void>& update_imgui,
+    const PictureCallback<void>& callback) {
   return false;
 }
 

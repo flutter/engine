@@ -16,8 +16,12 @@ class AiksPlayground : public PlaygroundTest {
   using AiksPlaygroundCallback =
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;
 
+  template <typename T>
   using PictureCallback =
-      std::function<std::optional<Picture>(void* state, AiksContext& renderer)>;
+      std::function<std::optional<Picture>(T* state, AiksContext& renderer)>;
+
+  template <typename T>
+  using UpdateCallback = std::function<void(T* state)>;
 
   AiksPlayground();
 
@@ -30,11 +34,27 @@ class AiksPlayground : public PlaygroundTest {
 
   /// Opens an interactive playground window. All calls to imgui should happen
   /// in `update_imgui`.
-  bool OpenPlaygroundHere(void* state,
-                          const std::function<void(void* state)>& update_imgui,
-                          const PictureCallback& callback);
+  template <typename T>
+  bool OpenPlaygroundHere(T* state,
+                          const UpdateCallback<T>& update_imgui,
+                          const PictureCallback<T>& callback) {
+    return OpenPlaygroundHereImpl(
+        state,
+        [update_imgui](void* state) {
+          T* t_state = static_cast<T*>(state);
+          update_imgui(t_state);
+        },
+        [callback](void* state, AiksContext& renderer) {
+          T* t_state = static_cast<T*>(state);
+          return callback(t_state, renderer);
+        });
+  }
 
  private:
+  bool OpenPlaygroundHereImpl(void* state,
+                              const UpdateCallback<void>& update_imgui,
+                              const PictureCallback<void>& callback);
+
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);
 };
 
