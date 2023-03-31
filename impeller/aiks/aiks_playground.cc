@@ -43,8 +43,9 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
       });
 }
 
-bool AiksPlayground::OpenPlaygroundHere(std::function<void()> update_imgui,
-                                        PictureCallback callback) {
+bool AiksPlayground::OpenPlaygroundHere(
+    const std::function<void()>& update_imgui,
+    const PictureCallback& callback) {
   if (!switches_.enable_playground) {
     return true;
   }

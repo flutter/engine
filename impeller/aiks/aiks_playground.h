@@ -30,8 +30,8 @@ class AiksPlayground : public PlaygroundTest {
 
   /// Opens an interactive playground window. All calls to imgui should happen
   /// in `update_imgui`.
-  bool OpenPlaygroundHere(std::function<void()> update_imgui,
-                          PictureCallback callback);
+  bool OpenPlaygroundHere(const std::function<void()>& update_imgui,
+                          const PictureCallback& callback);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);

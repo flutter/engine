@@ -34,8 +34,8 @@ class GoldenPlaygroundTest
   /// Deprecated: Use the PictureCallback variant.
   bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 
-  bool OpenPlaygroundHere(std::function<void()> update_imgui,
-                          PictureCallback callback);
+  bool OpenPlaygroundHere(const std::function<void()>& update_imgui,
+                          const PictureCallback& callback);
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
