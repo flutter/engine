@@ -33,18 +33,6 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
 FlTexture* fl_texture_registrar_lookup_texture(FlTextureRegistrar* registrar,
                                                int64_t texture_id);
 
-/**
- * fl_texture_registrar_get_textures_locked:
- * @registrar: an #FlTextureRegistrar.
- *
- * Get the number of the textures registered in the registrar.
- *
- * Returns: an unsigned integer number of the textures registered in the
- * registrar.
- */
-guint fl_texture_registrar_get_textures_table_size(
-    FlTextureRegistrar* registrar);
-
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXTURE_REGISTRAR_PRIVATE_H_

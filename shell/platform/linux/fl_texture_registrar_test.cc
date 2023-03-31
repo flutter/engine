@@ -130,6 +130,9 @@ TEST(FlTextureRegistrarTest, RegistrarRegisterTextureInMultipleThreads) {
   for (uint64_t t = 0; t < kThreadCount; t++) {
     pthread_join(threads[t], NULL);
   };
-  EXPECT_EQ(fl_texture_registrar_get_textures_table_size(registrar),
-            kThreadCount);
+  // Check the texture named from [1, threadCount].
+  for (uint64_t t = 1; t <= kThreadCount; t++) {
+    EXPECT_TRUE(fl_texture_registrar_lookup_texture(registrar, (int64_t)t) !=
+                NULL);
+  };
 }

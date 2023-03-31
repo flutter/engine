@@ -208,13 +208,6 @@ fl_texture_registrar_unregister_texture(FlTextureRegistrar* self,
                                                                   texture);
 }
 
-guint fl_texture_registrar_get_textures_table_size(
-    FlTextureRegistrar* registrar) {
-  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR_IMPL(registrar), 0);
-  FlTextureRegistrarImpl* self = FL_TEXTURE_REGISTRAR_IMPL(registrar);
-  return g_hash_table_size(self->textures);
-}
-
 FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine) {
   FlTextureRegistrarImpl* self = FL_TEXTURE_REGISTRAR_IMPL(
       g_object_new(fl_texture_registrar_impl_get_type(), nullptr));
