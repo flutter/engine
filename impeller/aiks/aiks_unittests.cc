@@ -1476,6 +1476,7 @@ std::optional<Picture> DrawColorWheel(const AiksTest* test,
   AiksContext renderer(test->GetContext());
   ColorWheelState state;
   state.content_scale = test->GetContentScale();
+  state.blend_mode = blend_mode;
   if (!DrawColorWheelSnapshot(renderer, state.content_scale,
                               &state.color_wheel_image,
                               &state.color_wheel_transform)) {
