@@ -66,7 +66,6 @@ static void engine_weak_notify_cb(gpointer user_data,
                                          g_object_unref);
   g_hash_table_remove_all(textures);
   g_mutex_unlock(&self->textures_mutex);
-  g_mutex_clear(&self->textures_mutex);
 }
 
 static void fl_texture_registrar_impl_dispose(GObject* object) {
@@ -171,6 +170,8 @@ static void fl_texture_registrar_impl_init(FlTextureRegistrarImpl* self) {
   self->next_id = 1;
   self->textures = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
                                          g_object_unref);
+  // Initialize the mutex for textures.
+  g_mutex_init(&self->textures_mutex);
 }
 
 G_MODULE_EXPORT gboolean
@@ -228,9 +229,6 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine) {
 
   self->engine = engine;
   g_object_weak_ref(G_OBJECT(engine), engine_weak_notify_cb, self);
-
-  // Initialize the mutex for textures.
-  g_mutex_init(&self->textures_mutex);
 
   return FL_TEXTURE_REGISTRAR(self);
 }
