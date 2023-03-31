@@ -10,9 +10,11 @@ import 'package:ui/ui.dart';
 /// Initializes the renderer for this test.
 void setUpUiTest() {
   setUpAll(() async {
+    debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
     await renderer.fontCollection.debugDownloadTestFonts();
     renderer.fontCollection.registerDownloadedFonts();
+
   });
 }
 
