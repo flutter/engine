@@ -45,7 +45,8 @@ class PlatformHandler {
   static constexpr char kExitTypeRequired[] = "required";
 
   // Send a request to the framework to test if a cancelable exit request
-  // should be canceled or honored.
+  // should be canceled or honored. hwnd is std::nullopt for a request to quit the process, otherwise
+  // it holds the HWND of the window that initiated the quit request.
   virtual void RequestAppExit(std::optional<HWND> hwnd, AppExitType exit_type, UINT exit_code);
 
  protected:
@@ -76,11 +77,13 @@ class PlatformHandler {
       UINT exit_code,
       std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
-  // Actually quit the application with the provided exit code.
+  // Actually quit the application with the provided exit code. hwnd is std::nullopt for a request to quit the process, otherwise
+  // it holds the HWND of the window that initiated the quit request.
   virtual void QuitApplication(std::optional<HWND> hwnd, UINT exit_code);
 
   // Callback from when the cancelable exit request response request is
-  // answered by the framework.
+  // answered by the framework. hwnd is std::nullopt for a request to quit the process, otherwise
+  // it holds the HWND of the window that initiated the quit request.
   virtual void RequestAppExitSuccess(std::optional<HWND> hwnd,
                                      const rapidjson::Document* result,
                                      UINT exit_code);

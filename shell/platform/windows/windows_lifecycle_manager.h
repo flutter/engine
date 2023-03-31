@@ -24,8 +24,12 @@ class WindowsLifecycleManager {
   WindowsLifecycleManager(FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
+  // Called when the engine is notified it should quit, e.g. by an application call to `exitApplication`.
+  // When window is std::nullopt, this quits the application. Otherwise, it holds the HWND of the window that initiated the request, and exit_code
+  // is unused.
   virtual void Quit(std::optional<HWND> window, UINT exit_code);
 
+  // Intercept top level window messages, only paying attention to WM_CLOSE.
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
  private:

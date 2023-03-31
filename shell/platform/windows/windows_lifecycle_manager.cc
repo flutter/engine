@@ -33,6 +33,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                          LPARAM lpar,
                                          LRESULT* result) {
   switch (msg) {
+    // When WM_CLOSE is received from the final window of an application, we send a request to the framework to see if it is allowed to close. If it is, we re-dispatch a new WM_CLOSE message. In order to allow the new message to reach other delegates, we ignore it here.
     case WM_CLOSE:
       auto itr = sent_close_messages_.find(hwnd);
       if (itr != sent_close_messages_.end()) {
@@ -45,8 +46,9 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
       }
       if (IsLastWindowOfProcess()) {
         engine_->RequestApplicationQuit(hwnd, AppExitType::cancelable, 0);
+        return true;
       }
-      return true;
+      break;
   }
   return false;
 }
