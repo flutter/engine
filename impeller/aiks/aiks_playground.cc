@@ -44,7 +44,8 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
 }
 
 bool AiksPlayground::OpenPlaygroundHere(
-    const std::function<void()>& update_imgui,
+    void* state,
+    const std::function<void(void*)>& update_imgui,
     const PictureCallback& callback) {
   if (!switches_.enable_playground) {
     return true;
@@ -57,17 +58,17 @@ bool AiksPlayground::OpenPlaygroundHere(
   }
 
   return Playground::OpenPlaygroundHere(
-      [&renderer, &callback,
-       update_imgui](RenderTarget& render_target) -> bool {
+      [&renderer, &callback, update_imgui,
+       state](RenderTarget& render_target) -> bool {
         static bool wireframe = false;
         if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
           wireframe = !wireframe;
           renderer.GetContentContext().SetWireframe(wireframe);
         }
 
-        update_imgui();
+        update_imgui(state);
 
-        std::optional<Picture> picture = callback(renderer);
+        std::optional<Picture> picture = callback(state, renderer);
         if (!picture.has_value()) {
           return false;
         }

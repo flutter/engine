@@ -17,7 +17,7 @@ class AiksPlayground : public PlaygroundTest {
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;
 
   using PictureCallback =
-      std::function<std::optional<Picture>(AiksContext& renderer)>;
+      std::function<std::optional<Picture>(void* state, AiksContext& renderer)>;
 
   AiksPlayground();
 
@@ -30,7 +30,8 @@ class AiksPlayground : public PlaygroundTest {
 
   /// Opens an interactive playground window. All calls to imgui should happen
   /// in `update_imgui`.
-  bool OpenPlaygroundHere(const std::function<void()>& update_imgui,
+  bool OpenPlaygroundHere(void* state,
+                          const std::function<void(void* state)>& update_imgui,
                           const PictureCallback& callback);
 
  private:

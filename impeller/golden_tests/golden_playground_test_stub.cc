@@ -26,6 +26,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    void* state,
     const std::function<void()>& update_imgui,
     const PictureCallback& callback) {
   return false;

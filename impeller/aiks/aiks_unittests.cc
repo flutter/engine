@@ -1571,49 +1571,59 @@ TEST_P(AiksTest, ColorWheel) {
   Matrix color_wheel_transform;
 
   // UI state.
-  static bool cache_the_wheel = true;
-  static int current_blend_index = 3;
-  static float dst_alpha = 1;
-  static float src_alpha = 1;
-  static Color color0 = Color::Red();
-  static Color color1 = Color::Green();
-  static Color color2 = Color::Blue();
+  struct GuiState {
+    bool cache_the_wheel = true;
+    int current_blend_index = 3;
+    float dst_alpha = 1;
+    float src_alpha = 1;
+    Color color0 = Color::Red();
+    Color color1 = Color::Green();
+    Color color2 = Color::Blue();
+    Point content_scale;
+  };
+  GuiState state;
 
-  auto updater = [blend_mode_names]() {
+  auto updater = [blend_mode_names](void* state) {
+    GuiState* gui_state = static_cast<GuiState*>(state);
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
-      ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
-      ImGui::ListBox("Blending mode", &current_blend_index,
+      ImGui::Checkbox("Cache the wheel", &gui_state->cache_the_wheel);
+      ImGui::ListBox("Blending mode", &gui_state->current_blend_index,
                      blend_mode_names.data(), blend_mode_names.size());
-      ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
-      ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&color0));
-      ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
-      ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
-      ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
+      ImGui::SliderFloat("Source alpha", &gui_state->src_alpha, 0, 1);
+      ImGui::ColorEdit4("Color A",
+                        reinterpret_cast<float*>(&gui_state->color0));
+      ImGui::ColorEdit4("Color B",
+                        reinterpret_cast<float*>(&gui_state->color1));
+      ImGui::ColorEdit4("Color C",
+                        reinterpret_cast<float*>(&gui_state->color2));
+      ImGui::SliderFloat("Destination alpha", &gui_state->dst_alpha, 0, 1);
     }
     ImGui::End();
   };
 
   auto callback =
-      [this, &color_wheel_image, &color_wheel_transform,
-       blend_mode_values](AiksContext& renderer) -> std::optional<Picture> {
-    static Point content_scale;
+      [this, &color_wheel_image, &color_wheel_transform, blend_mode_values](
+          void* state, AiksContext& renderer) -> std::optional<Picture> {
+    GuiState* gui_state = static_cast<GuiState*>(state);
     Point new_content_scale = GetContentScale();
-    if (!cache_the_wheel || new_content_scale != content_scale) {
-      content_scale = new_content_scale;
-      if (!DrawColorWheelSnapshot(renderer, content_scale, &color_wheel_image,
-                                  &color_wheel_transform)) {
+    if (!gui_state->cache_the_wheel ||
+        new_content_scale != gui_state->content_scale) {
+      gui_state->content_scale = new_content_scale;
+      if (!DrawColorWheelSnapshot(renderer, gui_state->content_scale,
+                                  &color_wheel_image, &color_wheel_transform)) {
         return {};
       }
     }
 
-    return DrawColorWheelImage(color_wheel_image, color_wheel_transform,
-                               src_alpha, dst_alpha, content_scale,
-                               blend_mode_values[current_blend_index], color0,
-                               color1, color2);
+    return DrawColorWheelImage(
+        color_wheel_image, color_wheel_transform, gui_state->src_alpha,
+        gui_state->dst_alpha, gui_state->content_scale,
+        blend_mode_values[gui_state->current_blend_index], gui_state->color0,
+        gui_state->color1, gui_state->color2);
   };
 
-  ASSERT_TRUE(OpenPlaygroundHere(updater, callback));
+  ASSERT_TRUE(OpenPlaygroundHere(&state, updater, callback));
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {

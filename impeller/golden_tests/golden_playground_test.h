@@ -21,7 +21,7 @@ class GoldenPlaygroundTest
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;
 
   using PictureCallback =
-      std::function<std::optional<Picture>(AiksContext& renderer)>;
+      std::function<std::optional<Picture>(void* state, AiksContext& renderer)>;
 
   GoldenPlaygroundTest();
 
@@ -34,7 +34,8 @@ class GoldenPlaygroundTest
   /// Deprecated: Use the PictureCallback variant.
   bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 
-  bool OpenPlaygroundHere(const std::function<void()>& update_imgui,
+  bool OpenPlaygroundHere(void* state,
+                          const std::function<void(void* state)>& update_imgui,
                           const PictureCallback& callback);
 
   std::shared_ptr<Texture> CreateTextureForFixture(

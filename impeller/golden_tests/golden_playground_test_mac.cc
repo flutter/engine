@@ -107,7 +107,8 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const std::function<void()>& update_imgui,
+    void* state,
+    const std::function<void(void*)>& update_imgui,
     const PictureCallback& callback) {
   AiksContext renderer(GetContext());
 
@@ -115,7 +116,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
     return false;
   }
 
-  std::optional<Picture> picture = callback(renderer);
+  std::optional<Picture> picture = callback(state, renderer);
   if (!picture.has_value()) {
     return false;
   }
