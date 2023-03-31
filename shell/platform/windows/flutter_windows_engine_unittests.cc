@@ -627,6 +627,7 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
   virtual ~MockWindowsLifecycleManager() {}
 
   MOCK_METHOD2(Quit, void(std::optional<HWND>, UINT));
+  MOCK_METHOD0(IsLastWindowOfProcess, bool(void));
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
@@ -643,6 +644,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, UINT exit_code) {
     finished = exit_code == 0;
   });
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
   EXPECT_CALL(*handler, Quit).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
 
@@ -682,11 +684,13 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, UINT exit_code) {
     finished = true;
   });
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  // If this callback is triggered, the test fails. The exit procedure should be called without checking with the framework.
   binary_messenger->SetMessageHandler(
       "flutter/platform", [&did_call](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {
@@ -717,6 +721,9 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
 
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([](){ return true; });
+  modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
@@ -751,6 +758,45 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
                                                                0);
 
   while (!second_close) {
+    engine->task_runner()->ProcessTasks();
+  }
+
+  EXPECT_FALSE(did_call);
+}
+
+TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("exitTestExit");
+  bool finished = false;
+  bool did_call = false;
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([&finished](){ finished = true; return false; });
+  // Quit should not be called when there is more than one window.
+  EXPECT_CALL(*handler, Quit).Times(0);
+  modifier.SetLifecycleManager(std::move(handler));
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  // If this callback is triggered, the test fails. The exit procedure should be called without checking with the framework.
+  binary_messenger->SetMessageHandler(
+      "flutter/platform", [&did_call](const uint8_t* message,
+                                      size_t message_size, BinaryReply reply) {
+        did_call = true;
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
+
+  engine->Run();
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
+
+  while (!finished) {
     engine->task_runner()->ProcessTasks();
   }
 

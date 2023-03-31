@@ -32,9 +32,11 @@ class WindowsLifecycleManager {
   // Intercept top level window messages, only paying attention to WM_CLOSE.
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
- private:
-  bool IsLastWindowOfProcess();
+ protected:
+  // Check the number of top-level windows associated with this process, and return true only if there are 1 or fewer.
+  virtual bool IsLastWindowOfProcess();
 
+ private:
   FlutterWindowsEngine* engine_;
 
   std::map<HWND, int> sent_close_messages_;
