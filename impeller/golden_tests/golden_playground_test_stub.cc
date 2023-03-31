@@ -25,6 +25,12 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return false;
 }
 
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    std::function<void()> update_imgui,
+    PictureCallback callback) {
+  return false;
+}
+
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {

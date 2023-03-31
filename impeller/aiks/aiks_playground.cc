@@ -43,4 +43,36 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
       });
 }
 
+bool AiksPlayground::OpenPlaygroundHere(std::function<void()> update_imgui,
+                                        PictureCallback callback) {
+  if (!switches_.enable_playground) {
+    return true;
+  }
+
+  AiksContext renderer(GetContext());
+
+  if (!renderer.IsValid()) {
+    return false;
+  }
+
+  return Playground::OpenPlaygroundHere(
+      [&renderer, &callback,
+       update_imgui](RenderTarget& render_target) -> bool {
+        static bool wireframe = false;
+        if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
+          wireframe = !wireframe;
+          renderer.GetContentContext().SetWireframe(wireframe);
+        }
+
+        update_imgui();
+
+        std::optional<Picture> picture = callback(renderer);
+        if (!picture.has_value()) {
+          return false;
+        }
+
+        return renderer.Render(*picture, render_target);
+      });
+}
+
 }  // namespace impeller

@@ -1570,16 +1570,16 @@ TEST_P(AiksTest, ColorWheel) {
   std::shared_ptr<Image> color_wheel_image;
   Matrix color_wheel_transform;
 
-  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
-    // UI state.
-    static bool cache_the_wheel = true;
-    static int current_blend_index = 3;
-    static float dst_alpha = 1;
-    static float src_alpha = 1;
-    static Color color0 = Color::Red();
-    static Color color1 = Color::Green();
-    static Color color2 = Color::Blue();
+  // UI state.
+  static bool cache_the_wheel = true;
+  static int current_blend_index = 3;
+  static float dst_alpha = 1;
+  static float src_alpha = 1;
+  static Color color0 = Color::Red();
+  static Color color1 = Color::Green();
+  static Color color2 = Color::Blue();
 
+  auto updater = [blend_mode_names]() {
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
@@ -1592,26 +1592,28 @@ TEST_P(AiksTest, ColorWheel) {
       ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
     }
     ImGui::End();
+  };
 
+  auto callback =
+      [this, &color_wheel_image, &color_wheel_transform,
+       blend_mode_values](AiksContext& renderer) -> std::optional<Picture> {
     static Point content_scale;
     Point new_content_scale = GetContentScale();
     if (!cache_the_wheel || new_content_scale != content_scale) {
       content_scale = new_content_scale;
       if (!DrawColorWheelSnapshot(renderer, content_scale, &color_wheel_image,
                                   &color_wheel_transform)) {
-        return false;
+        return {};
       }
     }
 
-    Picture picture = DrawColorWheelImage(
-        color_wheel_image, color_wheel_transform, src_alpha, dst_alpha,
-        content_scale, blend_mode_values[current_blend_index], color0, color1,
-        color2);
-
-    return renderer.Render(picture, render_target);
+    return DrawColorWheelImage(color_wheel_image, color_wheel_transform,
+                               src_alpha, dst_alpha, content_scale,
+                               blend_mode_values[current_blend_index], color0,
+                               color1, color2);
   };
 
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+  ASSERT_TRUE(OpenPlaygroundHere(updater, callback));
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {

@@ -16,13 +16,22 @@ class AiksPlayground : public PlaygroundTest {
   using AiksPlaygroundCallback =
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;
 
+  using PictureCallback =
+      std::function<std::optional<Picture>(AiksContext& renderer)>;
+
   AiksPlayground();
 
   ~AiksPlayground();
 
   bool OpenPlaygroundHere(const Picture& picture);
 
+  /// Deprecated, use PictureCallback variant.
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+
+  /// Opens an interactive playground window. All calls to imgui should happen
+  /// in `update_imgui`.
+  bool OpenPlaygroundHere(std::function<void()> update_imgui,
+                          PictureCallback callback);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);

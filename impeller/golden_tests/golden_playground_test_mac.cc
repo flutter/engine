@@ -77,7 +77,6 @@ void GoldenPlaygroundTest::SetUp() {
           "impeller_Play_AiksTest_CanRenderSweepGradientManyColors_Metal" ||
       test_name == "impeller_Play_AiksTest_CanPictureConvertToImage_Metal" ||
       test_name == "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal" ||
-      test_name == "impeller_Play_AiksTest_ColorWheel_Metal" ||
       test_name == "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal" ||
       test_name ==
           "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal" ||
@@ -105,6 +104,23 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
     const AiksPlaygroundCallback& callback) {
   return false;
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    std::function<void()> update_imgui,
+    PictureCallback callback) {
+  AiksContext renderer(GetContext());
+
+  if (!renderer.IsValid()) {
+    return false;
+  }
+
+  std::optional<Picture> picture = callback(renderer);
+  if (!picture.has_value()) {
+    return false;
+  }
+
+  return OpenPlaygroundHere(picture.value());
 }
 
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
