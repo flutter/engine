@@ -61,8 +61,7 @@ void main() {
   float16_t gaussian_integral = 0.0hf;
 
   for (float i = -blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
-    float16_t gaussian =
-        IPGaussian(float16_t(i), float16_t(blur_info.blur_sigma));
+    float16_t gaussian = IPGaussian(i, blur_info.blur_sigma);
     gaussian_integral += gaussian;
     total_color +=
         gaussian * Sample(texture_sampler,  // sampler
@@ -77,9 +76,13 @@ void main() {
   f16vec4 src_color = Sample(alpha_mask_sampler,   // sampler
                              v_src_texture_coords  // texture coordinates
   );
-  float16_t blur_factor =
-      mask_info.inner_blur_factor * float16_t(src_color.a > 0.0hf) +
-      mask_info.outer_blur_factor * float16_t(src_color.a == 0.0hf);
+
+  float16_t blur_factor;
+  if (src_color.a > 0.0hf) {
+    blur_factor = mask_info.inner_blur_factor;
+  } else if (src_color.a == 0.0hf) {
+    blur_factor = mask_info.outer_blur_factor;
+  }
 
   frag_color = frag_color * blur_factor + src_color * mask_info.src_factor;
 #endif
