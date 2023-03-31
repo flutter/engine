@@ -9,9 +9,9 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
-#include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
 
@@ -53,6 +53,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
       .SetSupportsTextureToTextureBlits(true)
+      .SetSupportsDecalTileMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
@@ -288,6 +289,10 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   device_capabilities_ = InferMetalCapabilities(device_, format);
   return true;
+}
+
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
+  return [command_queue_ commandBuffer];
 }
 
 }  // namespace impeller

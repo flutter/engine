@@ -23,9 +23,10 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/golden_tests/golden_playground_test.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -39,7 +40,11 @@
 namespace impeller {
 namespace testing {
 
+#ifdef IMPELLER_GOLDEN_TESTS
+using AiksTest = GoldenPlaygroundTest;
+#else
 using AiksTest = AiksPlayground;
+#endif
 INSTANTIATE_PLAYGROUND_SUITE(AiksTest);
 
 TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
@@ -1286,7 +1291,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
   SkFont sk_font(SkTypeface::MakeFromData(mapping), font_size);
 
   Paint text_paint;
-  text_paint.color = Color::White().WithAlpha(0.8);
+  text_paint.color = Color::Blue().WithAlpha(0.8);
 
   struct {
     Point position;
@@ -1312,6 +1317,9 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
 }
 
 TEST_P(AiksTest, TextRotated) {
+#ifdef IMPELLER_GOLDEN_TESTS
+  GTEST_SKIP() << "Test has small differences on different mac hosts";
+#endif
   Canvas canvas;
   canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
                           0, 1, 0, 0,            //
