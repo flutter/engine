@@ -699,34 +699,17 @@ TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
 }
 
 TEST_P(AiksTest, CanRenderSweepGradient) {
-  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+  const Entity::TileMode tile_modes[] = {
+      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
 
-    static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  int count = 0;
+  for (auto tile_mode : tile_modes) {
     Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto tile_mode = tile_modes[selected_tile_mode];
+    canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
+    count += 1;
     paint.color_source = [tile_mode]() {
       auto contents = std::make_shared<SweepGradientContents>();
       contents->SetCenterAndAngles({100, 100}, Degrees(45), Degrees(135));
@@ -736,13 +719,11 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
       contents->SetColors(std::move(colors));
       contents->SetStops(std::move(stops));
       contents->SetTileMode(tile_mode);
-      contents->SetEffectTransform(matrix);
       return contents;
     };
-    canvas.DrawRect({0, 0, 600, 600}, paint);
-    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+    canvas.DrawRect({0, 0, 256, 256}, paint);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, CanRenderSweepGradientManyColors) {

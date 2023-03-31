@@ -67,7 +67,6 @@ void GoldenPlaygroundTest::SetUp() {
       test_name == "impeller_Play_AiksTest_CanRenderRadialGradient_Metal" ||
       test_name ==
           "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Metal" ||
-      test_name == "impeller_Play_AiksTest_CanRenderSweepGradient_Metal" ||
       test_name ==
           "impeller_Play_AiksTest_CanRenderSweepGradientManyColors_Metal" ||
       test_name == "impeller_Play_AiksTest_CanPictureConvertToImage_Metal" ||
