@@ -108,14 +108,26 @@ void ConfigureShorebird(std::string android_cache_path,
   app_parameters.release_version = version.c_str();
   app_parameters.cache_dir = cache_dir.c_str();
 
-  // This seems to be ['libapp.so', 'real/path/to/libapp.so']
-  // not sure why, but we need to use the real path (second entry).
-  app_parameters.original_libapp_path =
-      settings.application_library_path.back().c_str();
+  // Converting the strings in `settings.application_library_path` to `char*`.
+  // We maintain a separate vector so that the lifetime of the `char*` is clear.
+  // If we used `c_str` then we would have to be very careful not to modify the
+  // string or have taken a copy of the string as `c_str` is only valid for the
+  // lifetime of the string.
+  std::vector<std::vector<char>> libapp_paths_storage;
+  std::vector<const char*> original_libapp_paths;
+  for (auto& path : settings.application_library_path) {
+    libapp_paths_storage.push_back(std::vector<char>(path.begin(), path.end()));
+    original_libapp_paths.push_back(libapp_paths_storage.back().data());
+  }
+
+  app_parameters.original_libapp_paths = original_libapp_paths.data();
+  app_parameters.original_libapp_paths_size = original_libapp_paths.size();
+
   // TODO: How do can we get the path to libflutter.so?
-  // The Rust side doesn't actually use this yet.  The intent is so that
-  // Rust could hash it, or otherwise know that it matches the version the patch
-  // is intended for, but currently that's not implemented.
+  // The Rust side doesn't actually use this yet.  The intent is so
+  // that Rust could hash it, or otherwise know that it matches the
+  // version the patch is intended for, but currently that's not
+  // implemented.
   app_parameters.vm_path = "libflutter.so";
 
   shorebird_init(&app_parameters, shorebirdYaml.c_str());
