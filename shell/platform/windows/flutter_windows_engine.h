@@ -256,10 +256,10 @@ class FlutterWindowsEngine {
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
   // Called when the application quits in response to a quit request.
-  void OnQuit(UINT exit_code, HWND hwnd);
+  void OnQuit(std::optional<HWND> hwnd, UINT exit_code);
 
   // Called when a WM_CLOSE message is received.
-  void RequestApplicationQuit(AppExitType exit_type, UINT exit_code, HWND hwnd);
+  void RequestApplicationQuit(std::optional<HWND> hwnd, AppExitType exit_type, UINT exit_code);
 
  protected:
   // Creates the keyboard key handler.

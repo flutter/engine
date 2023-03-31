@@ -372,12 +372,12 @@ void PlatformHandler::SystemExitApplication(
   rapidjson::Document result_doc;
   result_doc.SetObject();
   if (exit_type == AppExitType::required) {
-    QuitApplication(exit_code, nullptr);
+    QuitApplication(std::nullopt, exit_code);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseExit,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
   } else {
-    RequestAppExit(exit_type, exit_code, nullptr);
+    RequestAppExit(std::nullopt, exit_type, exit_code);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
@@ -389,12 +389,12 @@ void PlatformHandler::SystemExitApplication(
 static constexpr const char* kExitTypeNames[] = {
     PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
 
-void PlatformHandler::RequestAppExit(AppExitType exit_type,
-                                     UINT exit_code,
-                                     HWND hwnd) {
+void PlatformHandler::RequestAppExit(std::optional<HWND> hwnd,
+                                     AppExitType exit_type,
+                                     UINT exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this, exit_code, hwnd](const rapidjson::Document* response) {
-        RequestAppExitSuccess(response, exit_code, hwnd);
+        RequestAppExitSuccess(hwnd, response, exit_code);
       },
       nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
@@ -406,9 +406,9 @@ void PlatformHandler::RequestAppExit(AppExitType exit_type,
                          std::move(callback));
 }
 
-void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
-                                            UINT exit_code,
-                                            HWND hwnd) {
+void PlatformHandler::RequestAppExitSuccess(std::optional<HWND> hwnd,
+                                            const rapidjson::Document* result,
+                                            UINT exit_code) {
   rapidjson::Value::ConstMemberIterator itr =
       result->FindMember(kExitResponseKey);
   if (itr == result->MemberEnd() || !itr->value.IsString()) {
@@ -419,12 +419,12 @@ void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
   const std::string& exit_type = itr->value.GetString();
 
   if (exit_type.compare(kExitResponseExit) == 0) {
-    QuitApplication(exit_code, hwnd);
+    QuitApplication(hwnd, exit_code);
   }
 }
 
-void PlatformHandler::QuitApplication(UINT exit_code, HWND hwnd) {
-  engine_->OnQuit(exit_code, hwnd);
+void PlatformHandler::QuitApplication(std::optional<HWND> hwnd, UINT exit_code) {
+  engine_->OnQuit(hwnd, exit_code);
 }
 
 void PlatformHandler::HandleMethodCall(

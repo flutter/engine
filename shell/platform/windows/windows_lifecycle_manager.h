@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 
 namespace flutter {
 
@@ -23,7 +24,7 @@ class WindowsLifecycleManager {
   WindowsLifecycleManager(FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
-  virtual void Quit(UINT exit_code, HWND window);
+  virtual void Quit(std::optional<HWND> window, UINT exit_code);
 
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 

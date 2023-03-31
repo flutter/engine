@@ -82,7 +82,7 @@ class MockPlatformHandler : public PlatformHandler {
                void(const std::string&,
                     std::unique_ptr<MethodResult<rapidjson::Document>>));
 
-  MOCK_METHOD2(QuitApplication, void(UINT exit_code, HWND hwnd));
+  MOCK_METHOD2(QuitApplication, void(std::optional<HWND> hwnd, UINT exit_code));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockPlatformHandler);
@@ -491,7 +491,7 @@ TEST_F(PlatformHandlerTest, SystemExitApplicationRequired) {
   MockPlatformHandler platform_handler(&messenger, engine());
 
   ON_CALL(platform_handler, QuitApplication)
-      .WillByDefault([&exit_code](UINT ec, HWND hwnd) { exit_code = ec; });
+      .WillByDefault([&exit_code](std::optional<HWND> hwnd, UINT ec) { exit_code = ec; });
   EXPECT_CALL(platform_handler, QuitApplication).Times(1);
 
   std::string result = SimulatePlatformMessage(
@@ -536,7 +536,7 @@ TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableExit) {
   MockPlatformHandler platform_handler(&messenger, engine());
 
   ON_CALL(platform_handler, QuitApplication)
-      .WillByDefault([&exit_code](UINT ec, HWND hwnd) { exit_code = ec; });
+      .WillByDefault([&exit_code](std::optional<HWND> hwnd, UINT ec) { exit_code = ec; });
   EXPECT_CALL(platform_handler, QuitApplication).Times(1);
 
   std::string result = SimulatePlatformMessage(

@@ -626,7 +626,7 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
       : WindowsLifecycleManager(engine) {}
   virtual ~MockWindowsLifecycleManager() {}
 
-  MOCK_METHOD2(Quit, void(UINT, HWND));
+  MOCK_METHOD2(Quit, void(std::optional<HWND>, UINT));
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
@@ -640,7 +640,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](UINT exit_code, HWND hwnd) {
+  ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, UINT exit_code) {
     finished = exit_code == 0;
   });
   EXPECT_CALL(*handler, Quit).Times(1);
@@ -679,7 +679,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, Quit).WillByDefault([&finished](UINT exit_code, HWND hwnd) {
+  ON_CALL(*handler, Quit).WillByDefault([&finished](std::optional<HWND> hwnd, UINT exit_code) {
     finished = true;
   });
   EXPECT_CALL(*handler, Quit).Times(0);
