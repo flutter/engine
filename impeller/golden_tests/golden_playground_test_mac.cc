@@ -58,8 +58,7 @@ void GoldenPlaygroundTest::SetUp() {
   }
 
   std::string test_name = GetTestName();
-  if (test_name == "impeller_Play_AiksTest_CanRenderTiledTexture_Metal" ||
-      test_name ==
+  if (test_name ==
           "impeller_Play_AiksTest_CanRenderLinearGradientWithOverlappingStops_"
           "Metal" ||
       test_name ==
