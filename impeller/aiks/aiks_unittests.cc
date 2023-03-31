@@ -456,6 +456,61 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsDecal) {
   CanRenderLinearGradientManyColors(this, Entity::TileMode::kDecal);
 }
 
+TEST_P(AiksTest, CanRenderLinearGradientWayManyColors) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const Entity::TileMode tile_modes[] = {
+        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+
+    static int selected_tile_mode = 0;
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                 sizeof(tile_mode_names) / sizeof(char*));
+    static Matrix matrix = {
+        1, 0, 0, 0,  //
+        0, 1, 0, 0,  //
+        0, 0, 1, 0,  //
+        0, 0, 0, 1   //
+    };
+    std::string label = "##1";
+    for (int i = 0; i < 4; i++) {
+      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
+                          4, NULL, NULL, "%.2f", 0);
+      label[2]++;
+    }
+    ImGui::End();
+
+    Canvas canvas;
+    Paint paint;
+    canvas.Translate({100.0, 100.0, 0});
+    auto tile_mode = tile_modes[selected_tile_mode];
+    auto color = Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0};
+    std::vector<Color> colors;
+    std::vector<Scalar> stops;
+    auto current_stop = 0.0;
+    for (int i = 0; i < 2000; i++) {
+      colors.push_back(color);
+      stops.push_back(current_stop);
+      current_stop += 1 / 2000.0;
+    }
+    stops[2000 - 1] = 1.0;
+    paint.color_source = [tile_mode, stops = std::move(stops),
+                          colors = std::move(colors)]() {
+      auto contents = std::make_shared<LinearGradientContents>();
+      contents->SetEndPoints({0, 0}, {200, 200});
+      contents->SetColors(colors);
+      contents->SetStops(stops);
+      contents->SetTileMode(tile_mode);
+      contents->SetEffectTransform(matrix);
+      return contents;
+    };
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
   auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
