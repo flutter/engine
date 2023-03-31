@@ -32,14 +32,16 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot,
+                    double threshold) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
-  GoldenDigest::Instance()->AddImage(
-      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
+  GoldenDigest::Instance()->AddImage(test_name, filename,
+                                     screenshot->GetWidth(),
+                                     screenshot->GetHeight(), threshold);
   return screenshot->WriteToPNG(
       WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -73,7 +75,7 @@ TEST_F(GoldenTests, ConicalGradient) {
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
   auto screenshot = Screenshoter().MakeScreenshot(picture);
-  ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
+  ASSERT_TRUE(SaveScreenshot(std::move(screenshot), 0.01));
 }
 }  // namespace testing
 }  // namespace impeller

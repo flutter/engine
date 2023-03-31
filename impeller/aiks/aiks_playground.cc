@@ -14,7 +14,8 @@ AiksPlayground::AiksPlayground() = default;
 
 AiksPlayground::~AiksPlayground() = default;
 
-bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
+bool AiksPlayground::OpenPlaygroundHere(const Picture& picture,
+                                        double threshold) {
   return OpenPlaygroundHere(
       [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
         return renderer.Render(picture, render_target);

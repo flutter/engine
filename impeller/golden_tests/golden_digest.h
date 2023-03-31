@@ -21,7 +21,8 @@ class GoldenDigest {
   void AddImage(const std::string& test_name,
                 const std::string& filename,
                 int32_t width,
-                int32_t height);
+                int32_t height,
+                double threshold);
 
   /// Writes a "digest.json" file to `working_directory`.
   ///
@@ -36,6 +37,7 @@ class GoldenDigest {
     std::string filename;
     int32_t width;
     int32_t height;
+    double threshold;
   };
 
   static GoldenDigest* instance_;

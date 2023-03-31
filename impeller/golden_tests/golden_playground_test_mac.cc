@@ -28,14 +28,16 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
+                    double threshold) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
-      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
+      threshold);
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -96,10 +98,11 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture,
+                                              double threshold) {
   auto screenshot =
       pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
-  return SaveScreenshot(std::move(screenshot));
+  return SaveScreenshot(std::move(screenshot), threshold);
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(

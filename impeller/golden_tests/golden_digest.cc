@@ -23,8 +23,9 @@ GoldenDigest::GoldenDigest() {}
 void GoldenDigest::AddImage(const std::string& test_name,
                             const std::string& filename,
                             int32_t width,
-                            int32_t height) {
-  entries_.push_back({test_name, filename, width, height});
+                            int32_t height,
+                            double threshold) {
+  entries_.push_back({test_name, filename, width, height, threshold});
 }
 
 bool GoldenDigest::Write(WorkingDirectory* working_directory) {
@@ -46,8 +47,15 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
          << "\"testName\" : \"" << entry.test_name << "\", "
          << "\"filename\" : \"" << entry.filename << "\", "
          << "\"width\" : " << entry.width << ", "
-         << "\"height\" : " << entry.height << " "
-         << "}";
+         << "\"height\" : " << entry.height << ", ";
+
+    if (entry.threshold == static_cast<int64_t>(entry.threshold)) {
+      fout << "\"threshold\" : " << entry.threshold << ".0 ";
+    } else {
+      fout << "\"threshold\" : " << entry.threshold << " ";
+    }
+
+    fout << "}";
   }
   fout << std::endl << "]" << std::endl;
 
