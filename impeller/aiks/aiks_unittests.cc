@@ -359,6 +359,7 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
   int count = 0;
   for (auto tile_mode : tile_modes) {
     Paint paint;
+    canvas.Save();
     canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
     count += 1;
     paint.color_source = [tile_mode]() {
@@ -375,6 +376,7 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
     };
     paint.color = Color(1.0, 1.0, 1.0, 1.0);
     canvas.DrawRect({0, 0, 256, 256}, paint);
+    canvas.Restore();
   }
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -442,6 +444,7 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColors) {
   canvas.Scale(GetContentScale());
   for (Entity::TileMode tile_mode : tile_modes) {
     Paint paint;
+    canvas.Save();
     canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
     count += 1;
     paint.color_source = [tile_mode]() {
@@ -472,6 +475,7 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColors) {
     };
     paint.color = Color(1.0, 1.0, 1.0, 1.0);
     canvas.DrawRect({0, 0, 256, 256}, paint);
+    canvas.Restore();
   }
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -708,6 +712,7 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
   int count = 0;
   for (auto tile_mode : tile_modes) {
     Paint paint;
+    canvas.Save();
     canvas.Translate({static_cast<Scalar>(count) * 256.0f, 0, 0});
     count += 1;
     paint.color_source = [tile_mode]() {
@@ -722,6 +727,7 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
       return contents;
     };
     canvas.DrawRect({0, 0, 256, 256}, paint);
+    canvas.Restore();
   }
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
