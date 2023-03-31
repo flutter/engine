@@ -118,6 +118,7 @@ class RunSuiteStep implements PipelineStep {
     if (io.exitCode != 0) {
       print('[${suite.name.ansiCyan}] ${'Some tests failed.'.ansiRed}');
       io.exitCode = 0;
+      throw ToolExit('Some unit tests failed in suite ${suite.name.ansiCyan}.');
     } else {
       print('[${suite.name.ansiCyan}] ${'All tests passed!'.ansiGreen}');
     }
