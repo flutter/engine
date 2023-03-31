@@ -18,13 +18,18 @@ WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
-void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd, UINT exit_code) {
+void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd, std::optional<WPARAM> wparam, std::optional<LPARAM> lparam, UINT exit_code) {
   if (!hwnd.has_value()) {
     ::PostQuitMessage(exit_code);
   } else {
+    BASE_CHECK(wparam.has_value() && lparam.has_value());
     sent_close_messages_[*hwnd]++;
-    PostMessage(*hwnd, WM_CLOSE, 0, 0);
+    DispatchMessage(*hwnd, WM_CLOSE, *wparam, *lparam);
   }
+}
+
+void WindowsLifecycleManager::DispatchMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+  PostMessage(hwnd, message, wparam, lparam);
 }
 
 bool WindowsLifecycleManager::WindowProc(HWND hwnd,
@@ -45,7 +50,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
         return false;
       }
       if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(hwnd, AppExitType::cancelable, 0);
+        engine_->RequestApplicationQuit(hwnd, wpar, lpar, AppExitType::cancelable, 0);
         return true;
       }
       break;
