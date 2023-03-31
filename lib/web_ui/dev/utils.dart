@@ -351,16 +351,12 @@ mixin ArgUtils<T> on Command<T> {
   }
 }
 
-io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) {
+io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) =>
   switch (runtimeMode) {
-    case RuntimeMode.debug:
-      return environment.wasmDebugOutDir;
-    case RuntimeMode.profile:
-      return environment.wasmProfileOutDir;
-    case RuntimeMode.release:
-      return environment.wasmReleaseOutDir;
-  }
-}
+    RuntimeMode.debug => environment.wasmDebugOutDir,
+    RuntimeMode.profile => environment.wasmProfileOutDir,
+    RuntimeMode.release => environment.wasmReleaseOutDir,
+  };
 
 /// There might be proccesses started during the tests.
 ///
