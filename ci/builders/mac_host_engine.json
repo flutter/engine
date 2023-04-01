@@ -150,7 +150,8 @@
 		    "flutter/build/dart:copy_dart_sdk",
                     "flutter/impeller/golden_tests:impeller_golden_tests",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
-                    "flutter/tools/font-subset"
+                    "flutter/tools/font-subset",
+                    "flutter:unittests"
                 ]
             },
             "tests": [
