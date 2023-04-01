@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '33f80c07a09cd58ef2e04eb2e77f21aa5313e5fe',
+  'skia_revision': '4d1e9cabf0c8c9d71f5749a2473b2ee5dee692b5',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -832,7 +832,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'kiAbXJ_MIn6CAC9-C5HSbJiB4kM2DVzwLdFJrBm-wqEC'
+        'version': 'f16HBH4MJdaKy7HlfDR0naUyEH1SZ0DUJINh2WDEYaYC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
