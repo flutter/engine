@@ -415,14 +415,6 @@ targets:
       - "**.m"
       - "**.mm"
 
-  - name: Mac iOS Engine
-    recipe: engine/engine
-    properties:
-      add_recipes_cq: "true"
-      build_ios: "true"
-      ios_debug: "true"
-    timeout: 60
-
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
     timeout: 60
@@ -482,28 +474,6 @@ targets:
     properties:
       add_recipes_cq: "true"
     timeout: 75
-
-  - name: Mac iOS Engine Profile
-    recipe: engine/engine
-    properties:
-      build_ios: "true"
-      ios_profile: "true"
-    timeout: 90
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - ci/**
-
-  - name: Mac iOS Engine Release
-    recipe: engine/engine
-    properties:
-      build_ios: "true"
-      ios_release: "true"
-    timeout: 90
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - ci/**
 
   - name: Linux ci_yaml engine roller
     bringup: true
