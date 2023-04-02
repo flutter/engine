@@ -269,10 +269,10 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
 }
 
 size_t ParagraphSkia::GetNextGlyphClusterBoundary(size_t offset, bool forward) {
-  struct GlyphClusterInfo glyphInfo;
+  struct skt::Paragraph::GlyphClusterInfo glyphInfo;
   bool found = paragraph_->getGlyphClusterAt(offset, &glyphInfo);
   if (found) {
-    return (forward == (glyphInfo.fGlyphClusterPosition == TextDirection::kLtr))
+    return (forward == (glyphInfo.fGlyphClusterPosition == skt::TextDirection::kLtr))
         ? glyphInfo.fClusterTextRange.end
         : glyphInfo.fClusterTextRange.start;
   }
