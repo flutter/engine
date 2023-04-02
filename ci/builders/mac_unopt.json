@@ -57,6 +57,12 @@
                     "name": "ios_debug_sim"
                 }
             ],
+	    "properties": [
+                { 
+                    "runtime_versions": [ "ios-16-0_14a5294e" ],
+                    "sdk_version": "14a5294e"
+		}
+	    ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-12",
