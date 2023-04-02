@@ -19,7 +19,8 @@
                 "download_android_deps": false
             },
             "gn": [
-		"--runtime-mode debug",
+               "--runtime-mode",
+               "debug",
 	       "--unoptimized",
 	       "--no-lto",
 	       "--prebuilt-dart-sdk"
@@ -66,7 +67,8 @@
             },
             "gn": [
 		"--ios",
-	        "--runtime-mode debug",
+                "--runtime-mode",
+                "debug",
 	        "--simulator",
 	       	"--no-lto"
             ],
