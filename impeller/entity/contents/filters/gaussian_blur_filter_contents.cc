@@ -240,6 +240,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
         break;
     }
+    input_descriptor.mag_filter = MinMagFilter::kLinear;
+    input_descriptor.min_filter = MinMagFilter::kLinear;
 
     bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
     bool has_decal_specialization =
