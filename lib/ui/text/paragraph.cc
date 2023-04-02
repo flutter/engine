@@ -116,6 +116,10 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
+unsigned Paragraph::getGlyphClusterIndex(unsigned offset) {
+  return m_paragraph->GetGlyphClusterIndex(offset);
+}
+
 Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
   txt::Paragraph::Range<size_t> point = m_paragraph->GetWordBoundary(offset);
   std::vector<size_t> result = {point.start, point.end};

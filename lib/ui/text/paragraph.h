@@ -45,6 +45,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
                                       unsigned boxWidthStyle);
   tonic::Float32List getRectsForPlaceholders();
   Dart_Handle getPositionForOffset(double dx, double dy);
+  unsigned getGlyphClusterIndex(unsigned offset);
   Dart_Handle getWordBoundary(unsigned offset);
   Dart_Handle getLineBoundary(unsigned offset);
   tonic::Float64List computeLineMetrics();
