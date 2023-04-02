@@ -23,7 +23,7 @@ namespace compiler {
 
 class Compiler {
  public:
-  Compiler(std::shared_ptr<const fml::Mapping> source_mapping,
+  Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
            const SourceOptions& options,
            Reflector::Options reflector_options);
 

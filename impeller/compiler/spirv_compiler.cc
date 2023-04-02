@@ -4,6 +4,8 @@
 
 #include "impeller/compiler/spirv_compiler.h"
 
+#include <array>
+
 #include "impeller/compiler/logger.h"
 #include "impeller/compiler/types.h"
 

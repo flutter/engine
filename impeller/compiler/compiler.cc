@@ -4,7 +4,6 @@
 
 #include "impeller/compiler/compiler.h"
 
-#include <array>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -207,7 +206,7 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
   return compiler;
 }
 
-Compiler::Compiler(std::shared_ptr<const fml::Mapping> source_mapping,
+Compiler::Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
                    const SourceOptions& source_options,
                    Reflector::Options reflector_options)
     : options_(source_options) {
