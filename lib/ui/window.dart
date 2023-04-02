@@ -803,8 +803,60 @@ class SingletonFlutterWindow extends FlutterView {
 //
 // When changes are made to this class, the equivalent APIs in each of the
 // embedders *must* be updated.
-class AccessibilityFeatures {
-  const AccessibilityFeatures._(this._index);
+enum AccessibilityFeatures {
+  /// No accessibility features are enabled.
+  none(0),
+  /// Whether there is a running accessibility service which is changing the
+  /// interaction model of the device.
+  ///
+  /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
+  accessibleNavigation(_kAccessibleNavigationIndex),
+
+  /// The platform is inverting the colors of the application.
+  invertColors(_kInvertColorsIndex),
+
+  /// The platform is requesting that animations be disabled or simplified.
+  disableAnimations(_kDisableAnimationsIndex),
+
+  /// The platform is requesting that text be rendered at a bold font weight.
+  ///
+  /// Only supported on iOS and Android API 31+.
+  boldText(_kBoldTextIndex),
+
+  /// The platform is requesting that certain animations be simplified and
+  /// parallax effects removed.
+  ///
+  /// Only supported on iOS.
+  reduceMotion(_kReduceMotionIndex),
+
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  highContrast(_kHighContrastIndex),
+
+  /// The platform is requesting to show on/off labels inside switches.
+  ///
+  /// Only supported on iOS.
+  onOffSwitchLabels(_kOnOffSwitchLabelsIndex);
+  
+  const AccessibilityFeatures(this.value);
+
+  /// The numerical value for this flag.
+  ///
+  /// Each flag has one bit set in this bit field.
+  final int value;
+
+  static const Map<int, AccessibilityFeatures> _kFeatureById = <int, AccessibilityFeatures>{
+    _kAccessibleNavigationIndex: accessibleNavigation,
+    _kInvertColorsIndex: invertColors,
+    _kDisableAnimationsIndex: disableAnimations,
+    _kBoldTextIndex: boldText,
+    _kReduceMotionIndex: reduceMotion,
+    _kHighContrastIndex: highContrast,
+    _kOnOffSwitchLabelsIndex: onOffSwitchLabels,
+  };
+
+  static AccessibilityFeatures? fromValue(int value) => _kFeatureById[value];
 
   static const int _kAccessibleNavigationIndex = 1 << 0;
   static const int _kInvertColorsIndex = 1 << 1;
@@ -813,81 +865,6 @@ class AccessibilityFeatures {
   static const int _kReduceMotionIndex = 1 << 4;
   static const int _kHighContrastIndex = 1 << 5;
   static const int _kOnOffSwitchLabelsIndex = 1 << 6;
-
-  // A bitfield which represents each enabled feature.
-  final int _index;
-
-  /// Whether there is a running accessibility service which is changing the
-  /// interaction model of the device.
-  ///
-  /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
-  bool get accessibleNavigation => _kAccessibleNavigationIndex & _index != 0;
-
-  /// The platform is inverting the colors of the application.
-  bool get invertColors => _kInvertColorsIndex & _index != 0;
-
-  /// The platform is requesting that animations be disabled or simplified.
-  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
-
-  /// The platform is requesting that text be rendered at a bold font weight.
-  ///
-  /// Only supported on iOS and Android API 31+.
-  bool get boldText => _kBoldTextIndex & _index != 0;
-
-  /// The platform is requesting that certain animations be simplified and
-  /// parallax effects removed.
-  ///
-  /// Only supported on iOS.
-  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
-
-  /// The platform is requesting that UI be rendered with darker colors.
-  ///
-  /// Only supported on iOS.
-  bool get highContrast => _kHighContrastIndex & _index != 0;
-
-  /// The platform is requesting to show on/off labels inside switches.
-  ///
-  /// Only supported on iOS.
-  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
-
-  @override
-  String toString() {
-    final List<String> features = <String>[];
-    if (accessibleNavigation) {
-      features.add('accessibleNavigation');
-    }
-    if (invertColors) {
-      features.add('invertColors');
-    }
-    if (disableAnimations) {
-      features.add('disableAnimations');
-    }
-    if (boldText) {
-      features.add('boldText');
-    }
-    if (reduceMotion) {
-      features.add('reduceMotion');
-    }
-    if (highContrast) {
-      features.add('highContrast');
-    }
-    if (onOffSwitchLabels) {
-      features.add('onOffSwitchLabels');
-    }
-    return 'AccessibilityFeatures$features';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is AccessibilityFeatures
-        && other._index == _index;
-  }
-
-  @override
-  int get hashCode => _index.hashCode;
 }
 
 /// Describes the contrast of a theme or color palette.

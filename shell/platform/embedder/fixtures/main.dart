@@ -133,12 +133,12 @@ void a11y_main() async {
 
   // Return initial state of accessibility features.
   notifyAccessibilityFeatures(
-      PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
+      PlatformDispatcher.instance.accessibilityFeatures == AccessibilityFeatures.reduceMotion);
 
   // Await accessibility features changed from embedder.
   await accessibilityFeaturesChanged;
   notifyAccessibilityFeatures(
-      PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
+      PlatformDispatcher.instance.accessibilityFeatures == AccessibilityFeatures.reduceMotion);
 
   // Fire semantics update.
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()

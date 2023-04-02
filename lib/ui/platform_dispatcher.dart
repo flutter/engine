@@ -760,7 +760,7 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _updateAccessibilityFeatures(int values) {
-    final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
+    final AccessibilityFeatures newFeatures = AccessibilityFeatures.fromValue(values)!;
     final _PlatformConfiguration previousConfiguration = _configuration;
     if (newFeatures == previousConfiguration.accessibilityFeatures) {
       return;
@@ -1244,7 +1244,7 @@ class PlatformDispatcher {
 /// Immutable class (but can't use @immutable in dart:ui)
 class _PlatformConfiguration {
   const _PlatformConfiguration({
-    this.accessibilityFeatures = const AccessibilityFeatures._(0),
+    this.accessibilityFeatures = AccessibilityFeatures.none,
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
