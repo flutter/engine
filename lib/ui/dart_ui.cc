@@ -219,6 +219,7 @@ typedef CanvasPath Path;
   V(Paragraph, getPositionForOffset, 3)                \
   V(Paragraph, getRectsForPlaceholders, 1)             \
   V(Paragraph, getRectsForRange, 5)                    \
+  V(Paragraph, getGlyphClusterIndex, 1)                \
   V(Paragraph, getWordBoundary, 2)                     \
   V(Paragraph, height, 1)                              \
   V(Paragraph, ideographicBaseline, 1)                 \
