@@ -33,6 +33,7 @@
 
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
+static constexpr CGFloat kMinDurationToExecuteKeyboardAnimation = 0.01;
 
 static NSString* const kFlutterRestorationStateAppData = @"FlutterRestorationStateAppData";
 
@@ -125,6 +126,7 @@ typedef struct MouseState {
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
+  fml::scoped_nsobject<UIViewPropertyAnimator> _keyboardAnimator;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -598,6 +600,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIView*)keyboardAnimationView {
   return _keyboardAnimationView.get();
+}
+
+- (UIViewPropertyAnimator*)keyboardAnimator {
+  return _keyboardAnimator.get();
 }
 
 - (UIScreen*)mainScreenIfViewLoaded {
@@ -1541,8 +1547,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
-  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing.
+  // If current physical_view_inset_bottom == targetViewInsetBottom, do nothing.
   if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
+    return;
+  }
+
+  // If the duation we get from notification is near zero, we just update the
+  // view inset instead of start a keyboard animation. This happens when we change
+  // the keyboard type.
+  // eg: We change the keyboard type from text to emoji.
+  if (duration < kMinDurationToExecuteKeyboardAnimation) {
+    _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
+    [self updateViewportMetrics];
     return;
   }
 
@@ -1558,8 +1574,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [self.view addSubview:[self keyboardAnimationView]];
   }
 
-  // Remove running animation when start another animation.
-  [[self keyboardAnimationView].layer removeAllAnimations];
+  // Stop previous running animation. And clear the animator to recreate it when
+  // next animation begins.
+  [[self keyboardAnimator] stopAnimation:YES];
+  _keyboardAnimator.reset();
 
   // Set animation begin value.
   [self keyboardAnimationView].frame =
@@ -1568,23 +1586,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
   [self setupKeyboardAnimationVsyncClient];
-  VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
-
-  [UIView animateWithDuration:duration
-      animations:^{
-        // Set end value.
-        [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
-      }
-      completion:^(BOOL finished) {
-        if (_keyboardAnimationVSyncClient == currentVsyncClient) {
-          // Indicates the vsync client captured by this block is the original one, which also
-          // indicates the animation has not been interrupted from its beginning. Moreover,
-          // indicates the animation is over and there is no more to execute.
-          [self invalidateKeyboardAnimationVSyncClient];
-          [self removeKeyboardAnimationView];
-          [self ensureViewportMetricsIsCorrect];
-        }
-      }];
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
@@ -1603,6 +1604,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       // Ensure the keyboardAnimationView is in view hierarchy when animation running.
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
+
+    double currentRefreshRate = [DisplayLinkManager displayRefreshRate];
+    if (flutterViewController.get().keyboardAnimationVSyncClient) {
+      currentRefreshRate =
+          [flutterViewController.get().keyboardAnimationVSyncClient getRefreshRate];
+    }
+    [flutterViewController activateKeyboardAnimatorIfNeeded:currentRefreshRate];
+
     if ([flutterViewController keyboardAnimationView].layer.presentationLayer) {
       CGFloat value =
           [flutterViewController keyboardAnimationView].layer.presentationLayer.frame.origin.y;
@@ -1624,6 +1633,56 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_keyboardAnimationVSyncClient invalidate];
   [_keyboardAnimationVSyncClient release];
   _keyboardAnimationVSyncClient = nil;
+}
+
+- (void)activateKeyboardAnimatorIfNeeded:(double)refreshRate {
+  if ([self keyboardAnimator] != nil) {
+    return;
+  }
+
+  // Change the initialVelocity according to current refresh rate.
+  // Using presentationLayer to tracking animation, the lower refresh rate
+  // (The larger frame interval time) will enlarge the gap with the
+  // system's keyboard we are tracking, so we should increase the
+  // initialVelocity when refresh rate is low to track the system's keyboard
+  // better.
+  const double maxRefreshRate = [DisplayLinkManager displayRefreshRate];
+  const double baseInitialVelocity = 8.5;
+  const double adaptiveInitialVelocity =
+      baseInitialVelocity + (maxRefreshRate - refreshRate) * 4.0 / 60.0;
+
+  VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
+
+  // iOS system's keyboard animation spring configuration.
+  const double damping = 500;
+  const double mass = 3;
+  const double stiffness = 1000;
+  UISpringTimingParameters* spring = [[[UISpringTimingParameters alloc]
+         initWithMass:mass
+            stiffness:stiffness
+              damping:damping
+      initialVelocity:CGVectorMake(0, adaptiveInitialVelocity)] autorelease];
+
+  // The duration doesn't matter, because the spring animation will not be
+  // impacted by duration, so just pass 0.
+  UIViewPropertyAnimator* animator = [[UIViewPropertyAnimator alloc] initWithDuration:0
+                                                                     timingParameters:spring];
+  [animator addAnimations:^{
+    [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+  }];
+  [animator addCompletion:^(UIViewAnimatingPosition finalPosition) {
+    if (_keyboardAnimationVSyncClient == currentVsyncClient) {
+      // Indicates the vsync client captured by this block is the original one,
+      // which also indicates the animation has not been interrupted from its
+      // beginning. Moreover, indicates the animation is over and there is no
+      // more to execute.
+      [self invalidateKeyboardAnimationVSyncClient];
+      [self removeKeyboardAnimationView];
+      [self ensureViewportMetricsIsCorrect];
+    }
+  }];
+  [animator startAnimation];
+  _keyboardAnimator.reset(animator);
 }
 
 - (void)removeKeyboardAnimationView {
