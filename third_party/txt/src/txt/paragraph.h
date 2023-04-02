@@ -175,7 +175,7 @@ class Paragraph {
 
   // Returns the next glyph cluster boundary offset after or before the given
   // index offset.
-  size_t GetNextGlyphClusterBoundary(size_t offset, bool forward) = 0;
+  virtual size_t GetNextGlyphClusterBoundary(size_t offset, bool forward) = 0;
 
   // Finds the first and last glyphs that define a word containing the glyph at
   // index offset.
