@@ -268,6 +268,10 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
       skia_pos.position, static_cast<Affinity>(skia_pos.affinity));
 }
 
+size_t ParagraphSkia::GetGlyphClusterIndex(size_t offset) {
+  return paragraph_->clusterIndex(offset);
+}
+
 Paragraph::Range<size_t> ParagraphSkia::GetWordBoundary(size_t offset) {
   skt::SkRange<size_t> range = paragraph_->getWordBoundary(offset);
   return Paragraph::Range<size_t>(range.start, range.end);
