@@ -37,7 +37,7 @@
                     "name": "Host Tests for host_debug_unopt",
                     "parameters": [
                         "--variant",
-                        "host_profile",
+                        "host_debug_unopt",
                         "--type",
                         "dart,engine",
                         "--engine-capture-core-dump"
@@ -76,6 +76,7 @@
             "ninja": {
                 "config": "ios_debug_sim",
                 "targets": [
+                    "shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
             "tests": [
