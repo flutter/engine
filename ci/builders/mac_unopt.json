@@ -76,7 +76,7 @@
             "ninja": {
                 "config": "ios_debug_sim",
                 "targets": [
-                    "shell/platform/darwin/ios:ios_test_flutter"
+                    "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
             "tests": [
