@@ -2815,12 +2815,12 @@ class Paragraph extends NativeFieldWrapperClass1 {
   external List<int> _getPositionForOffset(double dx, double dy);
 
   /// Returns the glyph cluster index at the given [offset].
-  int getGlyphClusterIndex(int offset) {
-    return _getGlyphClusterIndex(offset);
+  int getNextGlyphClusterBoundary(int offset, bool forward) {
+    return _getNextGlyphClusterBoundary(offset, forward ? 1 : 0);
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getGlyphClusterIndex')
-  external int _getGlyphClusterIndex(int offset);
+  @Native<Uint32 Function(Pointer<Void>, Uint32, Uint32)>(symbol: 'Paragraph::getNextGlyphClusterBoundary')
+  external int _getNextGlyphClusterBoundary(int offset, int forward);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///

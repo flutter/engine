@@ -116,8 +116,8 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-unsigned Paragraph::getGlyphClusterIndex(unsigned offset) {
-  return m_paragraph->GetGlyphClusterIndex(offset);
+unsigned Paragraph::getNextGlyphClusterBoundary(unsigned offset, int forward) {
+  return m_paragraph->GetNextGlyphClusterBoundary(offset, forward == 1);
 }
 
 Dart_Handle Paragraph::getWordBoundary(unsigned offset) {

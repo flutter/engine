@@ -66,7 +66,7 @@ class ParagraphSkia : public Paragraph {
   PositionWithAffinity GetGlyphPositionAtCoordinate(double dx,
                                                     double dy) override;
 
-  size_t GetGlyphClusterIndex(size_t offset) override;
+  size_t GetNextGlyphClusterBoundary(size_t offset, bool forward) override;
 
   Range<size_t> GetWordBoundary(size_t offset) override;
 

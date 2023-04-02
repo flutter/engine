@@ -173,8 +173,9 @@ class Paragraph {
   virtual PositionWithAffinity GetGlyphPositionAtCoordinate(double dx,
                                                             double dy) = 0;
 
-  // Returns the glyph cluster index at the given index offset.
-  virtual size_t GetGlyphClusterIndex(size_t offset) = 0;
+  // Returns the next glyph cluster boundary offset after or before the given
+  // index offset.
+  size_t GetNextGlyphClusterBoundary(size_t offset, bool forward) = 0;
 
   // Finds the first and last glyphs that define a word containing the glyph at
   // index offset.

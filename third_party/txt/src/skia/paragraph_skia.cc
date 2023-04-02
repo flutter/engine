@@ -268,8 +268,15 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
       skia_pos.position, static_cast<Affinity>(skia_pos.affinity));
 }
 
-size_t ParagraphSkia::GetGlyphClusterIndex(size_t offset) {
-  return paragraph_->clusterIndex(offset);
+size_t ParagraphSkia::GetNextGlyphClusterBoundary(size_t offset, bool forward) {
+  GlyphClusterInfo glyphInfo;
+  bool found = paragraph_->getGlyphClusterAt(offset, &glyphInfo);
+  if (found) {
+    return (forward == (glyphInfo.fGlyphClusterPosition == TextDirection::kLtr))
+        ? glyphInfo.fClusterTextRange.end
+        : glyphInfo.fClusterTextRange.start;
+  }
+  return -1;
 }
 
 Paragraph::Range<size_t> ParagraphSkia::GetWordBoundary(size_t offset) {
