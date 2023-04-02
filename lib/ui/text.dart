@@ -2814,7 +2814,8 @@ class Paragraph extends NativeFieldWrapperClass1 {
   @Native<Handle Function(Pointer<Void>, Double, Double)>(symbol: 'Paragraph::getPositionForOffset')
   external List<int> _getPositionForOffset(double dx, double dy);
 
-  /// Returns the glyph cluster index at the given [offset].
+  /// Returns the index of the next glyph cluster boundary in display order, in the given
+  /// direction.
   int getNextGlyphClusterBoundary(int offset, bool forward) {
     return _getNextGlyphClusterBoundary(offset, forward ? 1 : 0);
   }
