@@ -123,7 +123,9 @@ class AndroidEGLSurfaceDamage {
   // last two frames; Some Android devices (Pixel 4) use quad buffering.
   static const int kMaxHistorySize = 10;
 
-  bool SupportsPartialRepaint() const { return partial_redraw_supported_; }
+  /// This was disabled after discussion in
+  /// https://github.com/flutter/flutter/issues/123353
+  bool SupportsPartialRepaint() const { return false; }
 
   std::optional<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
     if (!partial_redraw_supported_) {
