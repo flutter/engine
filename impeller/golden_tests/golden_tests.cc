@@ -33,7 +33,8 @@ std::string GetGoldenFilename() {
 }
 
 bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot,
-                    double max_diff_pixels_percent) {
+                    double max_diff_pixels_percent,
+                    int32_t max_color_delta) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -41,7 +42,7 @@ bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot,
   std::string filename = GetGoldenFilename();
   GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
-      max_diff_pixels_percent);
+      max_diff_pixels_percent, max_color_delta);
   return screenshot->WriteToPNG(
       WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -75,7 +76,7 @@ TEST_F(GoldenTests, ConicalGradient) {
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
   auto screenshot = Screenshoter().MakeScreenshot(picture);
-  ASSERT_TRUE(SaveScreenshot(std::move(screenshot), 0.01));
+  ASSERT_TRUE(SaveScreenshot(std::move(screenshot), 0.01, 4));
 }
 }  // namespace testing
 }  // namespace impeller

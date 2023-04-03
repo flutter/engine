@@ -26,8 +26,7 @@ class GoldenPlaygroundTest
 
   PlaygroundBackend GetBackend() const;
 
-  bool OpenPlaygroundHere(const Picture& picture,
-                          double max_diff_pixels_percent = 0.01);
+  bool OpenPlaygroundHere(const Picture& picture);
 
   bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 
@@ -42,6 +41,9 @@ class GoldenPlaygroundTest
   Scalar GetSecondsElapsed() const;
 
   ISize GetWindowSize() const;
+
+  void SetGoldenThresholds(double max_diff_pixels_percent,
+                           int32_t max_color_delta);
 
  private:
   struct GoldenPlaygroundTestImpl;

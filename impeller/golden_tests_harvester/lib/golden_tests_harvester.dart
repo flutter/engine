@@ -32,11 +32,12 @@ Future<void> harvest(
     final String filename = (map['filename'] as String?)!;
     final int width = (map['width'] as int?)!;
     final int height = (map['height'] as int?)!;
-    final double threshold = (map['maxDiffPixelsPercent'] as double?)!;
+    final double maxDiffPixelsPercent = (map['maxDiffPixelsPercent'] as double?)!;
+    final int maxColorDelta = (map['maxColorDelta'] as int?)!;
     final File goldenImage = File(p.join(workDirectory.path, filename));
     final Future<void> future = skiaGoldClient
         .addImg(filename, goldenImage,
-            screenshotSize: width * height, differentPixelsRate: threshold)
+            screenshotSize: width * height, differentPixelsRate: maxDiffPixelsPercent, pixelColorDelta: maxColorDelta)
         .catchError((dynamic err) {
       Logger.instance.log('skia gold comparison failed: $err');
       throw Exception('Failed comparison: $filename');

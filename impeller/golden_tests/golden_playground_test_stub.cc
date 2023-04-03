@@ -16,8 +16,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture,
-                                              double max_diff_pixels_percent) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   return false;
 }
 
@@ -47,5 +46,8 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 ISize GoldenPlaygroundTest::GetWindowSize() const {
   return ISize();
 }
+
+void GoldenPlaygroundTest::SetGoldenThresholds(double max_diff_pixels_percent,
+                                               int32_t max_color_delta) {}
 
 }  // namespace impeller

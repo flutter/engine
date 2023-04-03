@@ -20,10 +20,12 @@ class AiksPlayground : public PlaygroundTest {
 
   ~AiksPlayground();
 
-  bool OpenPlaygroundHere(const Picture& picture,
-                          double max_diff_pixels_percent = 0.01);
+  bool OpenPlaygroundHere(const Picture& picture);
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+
+  void SetGoldenThresholds(double max_diff_pixels_percent,
+                           int32_t max_color_delta) {}
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);

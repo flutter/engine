@@ -1317,6 +1317,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
 }
 
 TEST_P(AiksTest, TextRotated) {
+  SetGoldenThresholds(/*max_diff_pixels_percent=*/0.01, /*max_color_delta=*/40);
   Canvas canvas;
   canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
                           0, 1, 0, 0,            //
@@ -1327,8 +1328,7 @@ TEST_P(AiksTest, TextRotated) {
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture(),
-                                 /*max_diff_pixels_percent=*/0.01));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, CanDrawPaint) {

@@ -14,8 +14,7 @@ AiksPlayground::AiksPlayground() = default;
 
 AiksPlayground::~AiksPlayground() = default;
 
-bool AiksPlayground::OpenPlaygroundHere(const Picture& picture,
-                                        double max_diff_pixels_percent) {
+bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
   return OpenPlaygroundHere(
       [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
         return renderer.Render(picture, render_target);

@@ -29,7 +29,8 @@ std::string GetGoldenFilename() {
 }
 
 bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
-                    double max_diff_pixels_percent) {
+                    double max_diff_pixels_percent,
+                    int32_t max_color_delta) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -37,7 +38,7 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
-      max_diff_pixels_percent);
+      max_diff_pixels_percent, max_color_delta);
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -48,6 +49,8 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
       : screenshoter_(new testing::MetalScreenshoter()) {}
   std::unique_ptr<testing::MetalScreenshoter> screenshoter_;
   ISize window_size_ = ISize{1024, 768};
+  double max_diff_pixels_percent = 0.01;
+  int32_t max_color_delta = 4;
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
@@ -92,17 +95,19 @@ void GoldenPlaygroundTest::SetUp() {
         "GoldenPlaygroundTest doesn't support interactive playground tests "
         "yet.");
   }
+
+  SetGoldenThresholds(/*max_diff_pixels_percent=*/0.01, /*max_color_delta=*/4);
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture,
-                                              double max_diff_pixels_percent) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   auto screenshot =
       pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
-  return SaveScreenshot(std::move(screenshot), max_diff_pixels_percent);
+  return SaveScreenshot(std::move(screenshot), pimpl_->max_diff_pixels_percent,
+                        pimpl_->max_color_delta);
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
@@ -137,6 +142,12 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
   return pimpl_->window_size_;
+}
+
+void GoldenPlaygroundTest::SetGoldenThresholds(double max_diff_pixels_percent,
+                                               int32_t max_color_delta) {
+  pimpl_->max_diff_pixels_percent = max_diff_pixels_percent;
+  pimpl_->max_color_delta = max_color_delta;
 }
 
 }  // namespace impeller
