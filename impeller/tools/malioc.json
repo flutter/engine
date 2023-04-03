@@ -3242,7 +3242,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 38,
+          "fp16_arithmetic": 33,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -3271,9 +3271,9 @@
               "arith_cvt"
             ],
             "shortest_path_cycles": [
-              0.3125,
+              0.328125,
               0.078125,
-              0.3125,
+              0.328125,
               0.25,
               0.0,
               0.25,
@@ -3284,19 +3284,19 @@
               "arith_sfu"
             ],
             "total_cycles": [
-              0.8125,
-              0.699999988079071,
-              0.737500011920929,
-              0.8125,
+              0.625,
+              0.515625,
+              0.609375,
+              0.625,
               0.0,
               0.5,
-              0.75
+              0.5
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 12,
-          "work_registers_used": 27
+          "work_registers_used": 22
         }
       }
     }
@@ -3314,7 +3314,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 32,
+          "fp16_arithmetic": 26,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -3343,31 +3343,32 @@
               "texture"
             ],
             "shortest_path_cycles": [
-              0.171875,
+              0.1875,
               0.078125,
-              0.171875,
+              0.1875,
               0.0625,
               0.0,
               0.25,
               0.25
             ],
             "total_bound_pipelines": [
-              "texture"
+              "arith_total",
+              "arith_fma"
             ],
             "total_cycles": [
-              0.699999988079071,
-              0.699999988079071,
-              0.40625,
+              0.515625,
+              0.515625,
+              0.375,
               0.25,
               0.0,
               0.5,
-              0.75
+              0.5
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
-          "work_registers_used": 25
+          "uniform_registers_used": 14,
+          "work_registers_used": 21
         }
       }
     }
@@ -3385,7 +3386,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 32,
+          "fp16_arithmetic": 23,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -3414,9 +3415,9 @@
               "arith_cvt"
             ],
             "shortest_path_cycles": [
-              0.09375,
+              0.109375,
               0.03125,
-              0.09375,
+              0.109375,
               0.0625,
               0.0,
               0.0,
@@ -3427,19 +3428,19 @@
               "arith_fma"
             ],
             "total_cycles": [
-              0.65625,
-              0.65625,
-              0.453125,
-              0.625,
+              0.46875,
+              0.46875,
+              0.328125,
+              0.4375,
               0.0,
               0.25,
-              0.5
+              0.25
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
-          "work_registers_used": 23
+          "uniform_registers_used": 10,
+          "work_registers_used": 18
         }
       }
     }
@@ -3457,7 +3458,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 27,
+          "fp16_arithmetic": 19,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -3486,9 +3487,9 @@
               "arith_cvt"
             ],
             "shortest_path_cycles": [
-              0.09375,
+              0.109375,
               0.03125,
-              0.09375,
+              0.109375,
               0.0625,
               0.0,
               0.0,
@@ -3499,19 +3500,19 @@
               "arith_fma"
             ],
             "total_cycles": [
-              0.65625,
-              0.65625,
-              0.265625,
+              0.46875,
+              0.46875,
+              0.234375,
               0.25,
               0.0,
               0.25,
-              0.5
+              0.25
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
-          "work_registers_used": 26
+          "uniform_registers_used": 10,
+          "work_registers_used": 19
         }
       }
     }
@@ -6602,7 +6603,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 45,
+          "fp16_arithmetic": 52,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -6646,19 +6647,19 @@
               "arith_sfu"
             ],
             "total_cycles": [
-              0.8125,
-              0.75,
-              0.675000011920929,
-              0.8125,
+              0.625,
+              0.578125,
+              0.546875,
+              0.625,
               0.0,
               0.5,
-              0.75
+              0.5
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 12,
-          "work_registers_used": 27
+          "work_registers_used": 25
         }
       }
     },
@@ -6685,20 +6686,20 @@
               "texture"
             ],
             "shortest_path_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "shortest_path_cycles": [
-              3.9600000381469727,
-              6.0,
+              3.630000114440918,
+              1.0,
               0.0
             ],
             "total_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "total_cycles": [
-              14.0,
-              15.0,
-              3.0
+              10.333333015441895,
+              6.0,
+              2.0
             ]
           },
           "thread_occupancy": 100,
@@ -6721,7 +6722,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 40,
+          "fp16_arithmetic": 47,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -6750,9 +6751,9 @@
               "texture"
             ],
             "shortest_path_cycles": [
-              0.15625,
+              0.140625,
               0.125,
-              0.15625,
+              0.140625,
               0.0625,
               0.0,
               0.25,
@@ -6760,23 +6761,22 @@
             ],
             "total_bound_pipelines": [
               "arith_total",
-              "arith_fma",
-              "texture"
+              "arith_fma"
             ],
             "total_cycles": [
-              0.75,
-              0.75,
-              0.375,
+              0.578125,
+              0.578125,
+              0.34375,
               0.25,
               0.0,
               0.5,
-              0.75
+              0.5
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 12,
-          "work_registers_used": 23
+          "work_registers_used": 22
         }
       }
     },
@@ -6806,17 +6806,17 @@
               "load_store"
             ],
             "shortest_path_cycles": [
-              2.640000104904175,
-              6.0,
+              2.9700000286102295,
+              7.0,
               1.0
             ],
             "total_bound_pipelines": [
               "load_store"
             ],
             "total_cycles": [
-              8.333333015441895,
-              10.0,
-              3.0
+              8.0,
+              11.0,
+              2.0
             ]
           },
           "thread_occupancy": 100,
@@ -6839,7 +6839,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 43,
+          "fp16_arithmetic": 50,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -6882,13 +6882,13 @@
               "arith_fma"
             ],
             "total_cycles": [
-              0.65625,
-              0.65625,
-              0.421875,
-              0.625,
+              0.484375,
+              0.484375,
+              0.296875,
+              0.4375,
               0.0,
               0.25,
-              0.5
+              0.25
             ]
           },
           "stack_spill_bytes": 0,
@@ -6921,20 +6921,20 @@
               "texture"
             ],
             "shortest_path_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "shortest_path_cycles": [
               1.9800000190734863,
-              5.0,
+              0.0,
               0.0
             ],
             "total_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "total_cycles": [
-              11.0,
-              14.0,
-              2.0
+              7.666666507720947,
+              5.0,
+              1.0
             ]
           },
           "thread_occupancy": 100,
@@ -6957,7 +6957,7 @@
       "uses_late_zs_update": false,
       "variants": {
         "Main": {
-          "fp16_arithmetic": 38,
+          "fp16_arithmetic": 47,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -6983,12 +6983,13 @@
             ],
             "shortest_path_bound_pipelines": [
               "arith_total",
-              "arith_cvt"
+              "arith_cvt",
+              "arith_sfu"
             ],
             "shortest_path_cycles": [
-              0.078125,
+              0.0625,
               0.03125,
-              0.078125,
+              0.0625,
               0.0625,
               0.0,
               0.0,
@@ -6999,19 +7000,19 @@
               "arith_fma"
             ],
             "total_cycles": [
-              0.65625,
-              0.65625,
-              0.25,
+              0.484375,
+              0.484375,
+              0.203125,
               0.25,
               0.0,
               0.25,
-              0.5
+              0.25
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 8,
-          "work_registers_used": 23
+          "work_registers_used": 22
         }
       }
     },
@@ -7022,7 +7023,7 @@
       "type": "Fragment",
       "variants": {
         "Main": {
-          "has_stack_spilling": true,
+          "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
               null
@@ -7038,25 +7039,25 @@
               "texture"
             ],
             "shortest_path_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "shortest_path_cycles": [
               1.649999976158142,
-              5.0,
+              1.0,
               0.0
             ],
             "total_bound_pipelines": [
-              "load_store"
+              "arithmetic"
             ],
             "total_cycles": [
-              6.666666507720947,
-              9.0,
-              2.0
+              5.666666507720947,
+              1.0,
+              1.0
             ]
           },
-          "thread_occupancy": 100,
+          "thread_occupancy": 50,
           "uniform_registers_used": 1,
-          "work_registers_used": 4
+          "work_registers_used": 6
         }
       }
     }
