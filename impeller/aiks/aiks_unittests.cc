@@ -1939,5 +1939,22 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
 }
 
+Picture BlendModeTest(BlendMode blend_mode) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75)});
+  canvas.SaveLayer({.blend_mode = blend_mode});
+  for (auto& color : {Color::White(), Color::LimeGreen(), Color::Black()}) {
+    canvas.DrawRect({100, 100, 200, 200}, {.color = color.WithAlpha(0.75)});
+    canvas.Translate(Vector2(150, 100));
+  }
+  return canvas.EndRecordingAsPicture();
+}
+
+#define BLEND_MODE_TEST(blend_mode)                              \
+  TEST_P(AiksTest, BlendMode##blend_mode) {                      \
+    OpenPlaygroundHere(BlendModeTest(BlendMode::k##blend_mode)); \
+  }
+IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
+
 }  // namespace testing
 }  // namespace impeller
