@@ -1640,28 +1640,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  // Change the initialVelocity according to current refresh rate.
-  // Using presentationLayer to tracking animation, the lower refresh rate
-  // (The larger frame interval time) will enlarge the gap with the
-  // system's keyboard we are tracking, so we should increase the
-  // initialVelocity when refresh rate is low to track the system's keyboard
-  // better.
-  const double maxRefreshRate = [DisplayLinkManager displayRefreshRate];
-  const double baseInitialVelocity = 8.5;
-  const double adaptiveInitialVelocity =
-      baseInitialVelocity + (maxRefreshRate - refreshRate) * 4.0 / 60.0;
-
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   // iOS system's keyboard animation spring configuration.
   const double damping = 500;
   const double mass = 3;
   const double stiffness = 1000;
+  const double initialVelocity = [self computeSpringAnimationAdaptiveInitialVelocity:refreshRate];
   UISpringTimingParameters* spring = [[[UISpringTimingParameters alloc]
          initWithMass:mass
             stiffness:stiffness
               damping:damping
-      initialVelocity:CGVectorMake(0, adaptiveInitialVelocity)] autorelease];
+      initialVelocity:CGVectorMake(0, initialVelocity)] autorelease];
 
   // The duration doesn't matter, because the spring animation will not be
   // impacted by duration, so just pass 0.
@@ -1683,6 +1673,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }];
   [animator startAnimation];
   _keyboardAnimator.reset(animator);
+}
+
+- (double)computeSpringAnimationAdaptiveInitialVelocity:(double)refreshRate {
+  // Return diffrent velocity according to current refresh rate.
+  // Using presentationLayer to tracking animation, the lower refresh rate
+  // (The larger frame interval time) will enlarge the gap with the
+  // system's keyboard we are tracking, so we should increase the
+  // initialVelocity when refresh rate is low to track the system's keyboard
+  // better.
+
+  const double epsilon = 0.1;
+  if (refreshRate >= 80.0 - epsilon) {
+    // For refresh rate at 80 ~ 120.
+    return 9.0;
+  } else {
+    // Below 80.
+    return 13.0;
+  }
 }
 
 - (void)removeKeyboardAnimationView {
