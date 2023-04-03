@@ -32,7 +32,7 @@ Future<void> harvest(
     final String filename = (map['filename'] as String?)!;
     final int width = (map['width'] as int?)!;
     final int height = (map['height'] as int?)!;
-    final double threshold = (map['threshold'] as double?)!;
+    final double threshold = (map['maxDiffPixelsPercent'] as double?)!;
     final File goldenImage = File(p.join(workDirectory.path, filename));
     final Future<void> future = skiaGoldClient
         .addImg(filename, goldenImage,

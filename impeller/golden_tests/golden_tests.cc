@@ -33,15 +33,15 @@ std::string GetGoldenFilename() {
 }
 
 bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot,
-                    double threshold) {
+                    double max_diff_pixels_percent) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
-  GoldenDigest::Instance()->AddImage(test_name, filename,
-                                     screenshot->GetWidth(),
-                                     screenshot->GetHeight(), threshold);
+  GoldenDigest::Instance()->AddImage(
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
+      max_diff_pixels_percent);
   return screenshot->WriteToPNG(
       WorkingDirectory::Instance()->GetFilenamePath(filename));
 }

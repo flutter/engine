@@ -22,7 +22,7 @@ class GoldenDigest {
                 const std::string& filename,
                 int32_t width,
                 int32_t height,
-                double threshold);
+                double max_diff_pixels_percent);
 
   /// Writes a "digest.json" file to `working_directory`.
   ///
@@ -37,7 +37,7 @@ class GoldenDigest {
     std::string filename;
     int32_t width;
     int32_t height;
-    double threshold;
+    double max_diff_pixels_percent;
   };
 
   static GoldenDigest* instance_;

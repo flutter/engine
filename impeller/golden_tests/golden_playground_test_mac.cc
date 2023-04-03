@@ -29,7 +29,7 @@ std::string GetGoldenFilename() {
 }
 
 bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
-                    double threshold) {
+                    double max_diff_pixels_percent) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -37,7 +37,7 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
-      threshold);
+      max_diff_pixels_percent);
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -99,10 +99,10 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture,
-                                              double threshold) {
+                                              double max_diff_pixels_percent) {
   auto screenshot =
       pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
-  return SaveScreenshot(std::move(screenshot), threshold);
+  return SaveScreenshot(std::move(screenshot), max_diff_pixels_percent);
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(

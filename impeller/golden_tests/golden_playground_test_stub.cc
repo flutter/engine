@@ -17,7 +17,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture,
-                                              double threshold) {
+                                              double max_diff_pixels_percent) {
   return false;
 }
 

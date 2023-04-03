@@ -26,7 +26,8 @@ class GoldenPlaygroundTest
 
   PlaygroundBackend GetBackend() const;
 
-  bool OpenPlaygroundHere(const Picture& picture, double threshold = 0.01);
+  bool OpenPlaygroundHere(const Picture& picture,
+                          double max_diff_pixels_percent = 0.01);
 
   bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 

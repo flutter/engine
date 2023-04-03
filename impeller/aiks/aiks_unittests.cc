@@ -1327,8 +1327,8 @@ TEST_P(AiksTest, TextRotated) {
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
-  ASSERT_TRUE(
-      OpenPlaygroundHere(canvas.EndRecordingAsPicture(), /*threshold=*/0.1));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture(),
+                                 /*max_diff_pixels_percent=*/0.01));
 }
 
 TEST_P(AiksTest, CanDrawPaint) {

@@ -24,8 +24,9 @@ void GoldenDigest::AddImage(const std::string& test_name,
                             const std::string& filename,
                             int32_t width,
                             int32_t height,
-                            double threshold) {
-  entries_.push_back({test_name, filename, width, height, threshold});
+                            double max_diff_pixels_percent) {
+  entries_.push_back(
+      {test_name, filename, width, height, max_diff_pixels_percent});
 }
 
 bool GoldenDigest::Write(WorkingDirectory* working_directory) {
@@ -49,10 +50,13 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
          << "\"width\" : " << entry.width << ", "
          << "\"height\" : " << entry.height << ", ";
 
-    if (entry.threshold == static_cast<int64_t>(entry.threshold)) {
-      fout << "\"threshold\" : " << entry.threshold << ".0 ";
+    if (entry.max_diff_pixels_percent ==
+        static_cast<int64_t>(entry.max_diff_pixels_percent)) {
+      fout << "\"maxDiffPixelsPercent\" : " << entry.max_diff_pixels_percent
+           << ".0 ";
     } else {
-      fout << "\"threshold\" : " << entry.threshold << " ";
+      fout << "\"maxDiffPixelsPercent\" : " << entry.max_diff_pixels_percent
+           << " ";
     }
 
     fout << "}";
