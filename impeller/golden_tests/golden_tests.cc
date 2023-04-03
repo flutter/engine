@@ -31,21 +31,6 @@ std::string GetTestName() {
 std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
-
-bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot,
-                    double max_diff_pixels_percent,
-                    int32_t max_color_delta) {
-  if (!screenshot || !screenshot->GetBytes()) {
-    return false;
-  }
-  std::string test_name = GetTestName();
-  std::string filename = GetGoldenFilename();
-  GoldenDigest::Instance()->AddImage(
-      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
-      max_diff_pixels_percent, max_color_delta);
-  return screenshot->WriteToPNG(
-      WorkingDirectory::Instance()->GetFilenamePath(filename));
-}
 }  // namespace
 
 class GoldenTests : public ::testing::Test {
@@ -54,8 +39,23 @@ class GoldenTests : public ::testing::Test {
 
   MetalScreenshoter& Screenshoter() { return *screenshoter_; }
 
+  bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
+    if (!screenshot || !screenshot->GetBytes()) {
+      return false;
+    }
+    std::string test_name = GetTestName();
+    std::string filename = GetGoldenFilename();
+    GoldenDigest::Instance()->AddImage(
+        test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
+        max_diff_pixels_percent_, max_color_delta_);
+    return screenshot->WriteToPNG(
+        WorkingDirectory::Instance()->GetFilenamePath(filename));
+  }
+
  private:
   std::unique_ptr<MetalScreenshoter> screenshoter_;
+  const double max_diff_pixels_percent_ = 0.01;
+  const int32_t max_color_delta_ = 8;
 };
 
 TEST_F(GoldenTests, ConicalGradient) {
@@ -76,7 +76,7 @@ TEST_F(GoldenTests, ConicalGradient) {
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
   auto screenshot = Screenshoter().MakeScreenshot(picture);
-  ASSERT_TRUE(SaveScreenshot(std::move(screenshot), 0.01, 4));
+  ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
 }
 }  // namespace testing
 }  // namespace impeller

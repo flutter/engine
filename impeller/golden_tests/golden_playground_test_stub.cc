@@ -47,7 +47,4 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
   return ISize();
 }
 
-void GoldenPlaygroundTest::SetGoldenThresholds(double max_diff_pixels_percent,
-                                               int32_t max_color_delta) {}
-
 }  // namespace impeller

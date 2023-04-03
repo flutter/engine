@@ -1317,7 +1317,6 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
 }
 
 TEST_P(AiksTest, TextRotated) {
-  SetGoldenThresholds(/*max_diff_pixels_percent=*/0.01, /*max_color_delta=*/40);
   Canvas canvas;
   canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
                           0, 1, 0, 0,            //

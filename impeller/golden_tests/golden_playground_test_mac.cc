@@ -45,12 +45,11 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  GoldenPlaygroundTestImpl()
-      : screenshoter_(new testing::MetalScreenshoter()) {}
-  std::unique_ptr<testing::MetalScreenshoter> screenshoter_;
-  ISize window_size_ = ISize{1024, 768};
-  double max_diff_pixels_percent = 0.01;
-  int32_t max_color_delta = 4;
+  GoldenPlaygroundTestImpl() : screenshoter(new testing::MetalScreenshoter()) {}
+  std::unique_ptr<testing::MetalScreenshoter> screenshoter;
+  ISize window_size = ISize{1024, 768};
+  const double max_diff_pixels_percent = 0.01;
+  const int32_t max_color_delta = 8;
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
@@ -95,8 +94,6 @@ void GoldenPlaygroundTest::SetUp() {
         "GoldenPlaygroundTest doesn't support interactive playground tests "
         "yet.");
   }
-
-  SetGoldenThresholds(/*max_diff_pixels_percent=*/0.01, /*max_color_delta=*/4);
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
@@ -105,7 +102,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   auto screenshot =
-      pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
+      pimpl_->screenshoter->MakeScreenshot(picture, pimpl_->window_size);
   return SaveScreenshot(std::move(screenshot), pimpl_->max_diff_pixels_percent,
                         pimpl_->max_color_delta);
 }
@@ -129,11 +126,11 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
-  return pimpl_->screenshoter_->GetContext().GetContext();
+  return pimpl_->screenshoter->GetContext().GetContext();
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
-  return pimpl_->screenshoter_->GetPlayground().GetContentScale();
+  return pimpl_->screenshoter->GetPlayground().GetContentScale();
 }
 
 Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
@@ -141,13 +138,7 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 }
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
-  return pimpl_->window_size_;
-}
-
-void GoldenPlaygroundTest::SetGoldenThresholds(double max_diff_pixels_percent,
-                                               int32_t max_color_delta) {
-  pimpl_->max_diff_pixels_percent = max_diff_pixels_percent;
-  pimpl_->max_color_delta = max_color_delta;
+  return pimpl_->window_size;
 }
 
 }  // namespace impeller

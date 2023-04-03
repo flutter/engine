@@ -24,9 +24,6 @@ class AiksPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
-  void SetGoldenThresholds(double max_diff_pixels_percent,
-                           int32_t max_color_delta) {}
-
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);
 };

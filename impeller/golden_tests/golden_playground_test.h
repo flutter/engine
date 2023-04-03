@@ -42,9 +42,6 @@ class GoldenPlaygroundTest
 
   ISize GetWindowSize() const;
 
-  void SetGoldenThresholds(double max_diff_pixels_percent,
-                           int32_t max_color_delta);
-
  private:
   struct GoldenPlaygroundTestImpl;
   // This is only a shared_ptr so it can work with a forward declared type.
