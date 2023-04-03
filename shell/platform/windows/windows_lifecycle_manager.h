@@ -49,7 +49,7 @@ class WindowsLifecycleManager {
  private:
   FlutterWindowsEngine* engine_;
 
-  std::map<HWND, int> sent_close_messages_;
+  std::map<std::tuple<HWND, WPARAM, LPARAM>, int> sent_close_messages_;
 };
 
 }  // namespace flutter

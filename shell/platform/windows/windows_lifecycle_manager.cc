@@ -26,7 +26,7 @@ void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd,
     ::PostQuitMessage(exit_code);
   } else {
     BASE_CHECK(wparam.has_value() && lparam.has_value());
-    sent_close_messages_[*hwnd]++;
+    sent_close_messages_[std::make_tuple(*hwnd, *wparam, *lparam)]++;
     DispatchMessage(*hwnd, WM_CLOSE, *wparam, *lparam);
   }
 }
@@ -49,12 +49,13 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
     // is, we re-dispatch a new WM_CLOSE message. In order to allow the new
     // message to reach other delegates, we ignore it here.
     case WM_CLOSE:
-      auto itr = sent_close_messages_.find(hwnd);
+      auto key = std::make_tuple(hwnd, wpar, lpar);
+      auto itr = sent_close_messages_.find(key);
       if (itr != sent_close_messages_.end()) {
         if (itr->second == 1) {
           sent_close_messages_.erase(itr);
         } else {
-          sent_close_messages_[hwnd]--;
+          sent_close_messages_[key]--;
         }
         return false;
       }
