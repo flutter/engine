@@ -2449,6 +2449,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/common/command_line.mm + ../../..
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm + ../../../flutter/LICENSE
@@ -2467,7 +2468,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTex
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngineGroup.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterHeadlessDartRunner.h + ../../../flutter/LICENSE
@@ -2604,7 +2604,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h + .
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlatformViews.h + ../../../flutter/LICENSE
@@ -5039,6 +5038,7 @@ FILE: ../../../flutter/shell/platform/darwin/common/command_line.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm
@@ -5057,7 +5057,6 @@ FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextu
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngineGroup.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterHeadlessDartRunner.h
@@ -5196,7 +5195,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlatformViews.h
