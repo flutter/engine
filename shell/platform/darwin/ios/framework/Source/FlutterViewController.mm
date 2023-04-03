@@ -1689,7 +1689,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return 9.0;
   } else {
     // Below 80.
-    return 13.0;
+    return 12.5;
   }
 }
 
