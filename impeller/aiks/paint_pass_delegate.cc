@@ -85,7 +85,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   // command wrapped in save layer. This would indicate something like an
   // Opacity or FadeTransition wrapping a very simple widget, like in the
   // CupertinoPicker.
-  if (entity_pass->GetEntityCount() > 3) {
+  if (entity_pass->GetElementCount() > 3) {
     // Single paint command with a save layer would be:
     // 1. clip
     // 2. draw command
@@ -97,7 +97,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
         auto contents = entity.GetContents();
-        if (!contents->CanAcceptOpacity(entity)) {
+        if (!contents->CanInheritOpacity(entity)) {
           all_can_accept = false;
           return false;
         }

@@ -5,11 +5,11 @@
 #pragma once
 
 #include "gmock/gmock.h"
-#include "impeller/renderer/allocator.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 namespace testing {
@@ -99,9 +99,8 @@ class MockImpellerContext : public Context {
 
   MOCK_CONST_METHOD0(GetGPUTracer, std::shared_ptr<GPUTracer>());
 
-  MOCK_CONST_METHOD0(GetColorAttachmentPixelFormat, PixelFormat());
-
-  MOCK_CONST_METHOD0(GetDeviceCapabilities, const IDeviceCapabilities&());
+  MOCK_CONST_METHOD0(GetCapabilities,
+                     const std::shared_ptr<const Capabilities>&());
 };
 
 class MockTexture : public Texture {

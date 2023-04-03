@@ -8,8 +8,8 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/shader_library.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -117,7 +117,7 @@ struct PipelineBuilder {
       // Configure the sole color attachments pixel format. This is by
       // convention.
       ColorAttachmentDescriptor color0;
-      color0.format = context.GetColorAttachmentPixelFormat();
+      color0.format = context.GetCapabilities()->GetDefaultColorFormat();
       color0.blending_enabled = true;
       desc.SetColorAttachmentDescriptor(0u, color0);
     }
@@ -128,7 +128,7 @@ struct PipelineBuilder {
       stencil0.stencil_compare = CompareFunction::kEqual;
       desc.SetStencilAttachmentDescriptors(stencil0);
       desc.SetStencilPixelFormat(
-          context.GetDeviceCapabilities().GetDefaultStencilFormat());
+          context.GetCapabilities()->GetDefaultStencilFormat());
     }
 
     return true;

@@ -9,11 +9,11 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/impeller/core/allocator.h"
+#include "flutter/impeller/core/texture.h"
 #include "flutter/impeller/display_list/display_list_image_impeller.h"
-#include "flutter/impeller/renderer/allocator.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/impeller/renderer/texture.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
 #include "impeller/geometry/size.h"
@@ -141,8 +141,8 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   auto decode_size = source_size;
   if (descriptor->is_compressed()) {
     decode_size = descriptor->get_scaled_dimensions(std::max(
-        static_cast<double>(target_size.width()) / source_size.width(),
-        static_cast<double>(target_size.height()) / source_size.height()));
+        static_cast<float>(target_size.width()) / source_size.width(),
+        static_cast<float>(target_size.height()) / source_size.height()));
   }
 
   //----------------------------------------------------------------------------
@@ -269,6 +269,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+  texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);

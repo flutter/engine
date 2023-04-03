@@ -166,7 +166,7 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   }
 
   [buffer_ commit];
-  [buffer_ waitUntilScheduled];
+
   buffer_ = nil;
   return true;
 }

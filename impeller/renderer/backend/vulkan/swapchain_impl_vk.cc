@@ -29,7 +29,7 @@ struct FrameSynchronizer {
     if (acquire_res.result != vk::Result::eSuccess ||
         render_res.result != vk::Result::eSuccess ||
         present_res.result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not create synchornizer.";
+      VALIDATION_LOG << "Could not create synchronizer.";
       return;
     }
     acquire = std::move(acquire_res.value);
@@ -41,14 +41,18 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    if (device.waitForFences(
+    if (auto result = device.waitForFences(
             *acquire,                             // fence
             true,                                 // wait all
             std::numeric_limits<uint64_t>::max()  // timeout (ns)
-            ) != vk::Result::eSuccess) {
+        );
+        result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Fence wait failed: " << vk::to_string(result);
       return false;
     }
-    if (device.resetFences(*acquire) != vk::Result::eSuccess) {
+    if (auto result = device.resetFences(*acquire);
+        result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not reset fence: " << vk::to_string(result);
       return false;
     }
     return true;
@@ -150,7 +154,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   }
 
   const auto format = ChooseSurfaceFormat(
-      formats, vk_context.GetDeviceCapabilities().GetDefaultColorFormat());
+      formats, vk_context.GetCapabilities()->GetDefaultColorFormat());
   if (!format.has_value()) {
     VALIDATION_LOG << "Swapchain has no supported formats.";
     return;
@@ -184,7 +188,11 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                  caps.maxImageExtent.height),
   };
   swapchain_info.minImageCount = std::clamp(
-      caps.minImageCount + 1u, caps.minImageCount, caps.maxImageCount);
+      caps.minImageCount + 1u,  // preferred image count
+      caps.minImageCount,       // min count cannot be zero
+      caps.maxImageCount == 0u ? caps.minImageCount + 1u
+                               : caps.maxImageCount  // max zero means no limit
+  );
   swapchain_info.imageArrayLayers = 1u;
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
   swapchain_info.preTransform = caps.currentTransform;
@@ -213,19 +221,33 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
     return;
   }
 
+  TextureDescriptor texture_desc;
+  texture_desc.usage =
+      static_cast<decltype(texture_desc.usage)>(TextureUsage::kRenderTarget);
+  texture_desc.storage_mode = StorageMode::kDevicePrivate;
+  texture_desc.format = ToPixelFormat(swapchain_info.imageFormat);
+  texture_desc.size = ISize::MakeWH(swapchain_info.imageExtent.width,
+                                    swapchain_info.imageExtent.height);
+
   std::vector<std::shared_ptr<SwapchainImageVK>> swapchain_images;
   for (const auto& image : images) {
-    auto swapchain_image = std::make_shared<SwapchainImageVK>(
-        vk_context.GetDevice(),                     //
-        image,                                      //
-        ToPixelFormat(swapchain_info.imageFormat),  //
-        ISize::MakeWH(swapchain_info.imageExtent.width,
-                      swapchain_info.imageExtent.height)  //
-    );
+    auto swapchain_image =
+        std::make_shared<SwapchainImageVK>(texture_desc,  // texture descriptor
+                                           vk_context.GetDevice(),  // device
+                                           image                    // image
+        );
     if (!swapchain_image->IsValid()) {
       VALIDATION_LOG << "Could not create swapchain image.";
       return;
     }
+
+    ContextVK::SetDebugName(
+        vk_context.GetDevice(), swapchain_image->GetImage(),
+        "SwapchainImage" + std::to_string(swapchain_images.size()));
+    ContextVK::SetDebugName(
+        vk_context.GetDevice(), swapchain_image->GetImageView(),
+        "SwapchainImageView" + std::to_string(swapchain_images.size()));
+
     swapchain_images.emplace_back(swapchain_image);
   }
 
@@ -314,7 +336,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr                                // fence
   );
 
-  if (acq_result == vk::Result::eSuboptimalKHR) {
+  if (acq_result == vk::Result::eSuboptimalKHR ||
+      acq_result == vk::Result::eErrorOutOfDateKHR) {
     return AcquireResult{true /* out of date */};
   }
 
@@ -366,24 +389,19 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
     auto vk_cmd_buffer =
         CommandBufferVK::Cast(*cmd_buffer).GetEncoder()->GetCommandBuffer();
-    vk::ImageMemoryBarrier image_barrier;
-    image_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-    image_barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead;
-    image_barrier.image = image->GetVKImage();
-    image_barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    image_barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-    image_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    image_barrier.subresourceRange.baseMipLevel = 0u;
-    image_barrier.subresourceRange.levelCount = 1u;
-    image_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_barrier.subresourceRange.layerCount = 1u;
-    vk_cmd_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllGraphics,  //
-                                  vk::PipelineStageFlagBits::eAllGraphics,  //
-                                  {},                                       //
-                                  nullptr,                                  //
-                                  nullptr,                                  //
-                                  image_barrier                             //
-    );
+
+    LayoutTransition transition;
+    transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
+    transition.cmd_buffer = vk_cmd_buffer;
+    transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+    transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    transition.dst_access = {};
+    transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+    if (!image->SetLayout(transition)) {
+      return false;
+    }
+
     if (!cmd_buffer->SubmitCommands()) {
       return false;
     }
@@ -400,7 +418,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     submit_info.setWaitSemaphores(*sync->render_ready);
     submit_info.setSignalSemaphores(*sync->present_ready);
     auto result =
-        context.GetGraphicsQueue().submit(submit_info, *sync->acquire);
+        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
     if (result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not wait on render semaphore: "
                      << vk::to_string(result);

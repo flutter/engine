@@ -16,19 +16,15 @@ constexpr std::string_view kReflectionHeaderTemplate =
 {# Note: The nogncheck decorations are only to make GN not mad at the template#}
 {# this file is generated from. There are no GN rule violations in the generated#}
 {# file itself and the no-check declarations will be stripped in generated files.#}
-#include "impeller/renderer/buffer_view.h"                {# // nogncheck #}
+#include "impeller/core/buffer_view.h"                {# // nogncheck #}
 
-#include "impeller/renderer/command.h"                    {# // nogncheck #}
+#include "impeller/core/sampler.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/compute_command.h"            {# // nogncheck #}
+#include "impeller/core/shader_types.h"               {# // nogncheck #}
 
-#include "impeller/renderer/descriptor_set_layout.h"      {# // nogncheck #}
+#include "impeller/core/resource_binder.h"            {# // nogncheck #}
 
-#include "impeller/renderer/sampler.h"                    {# // nogncheck #}
-
-#include "impeller/renderer/shader_types.h"               {# // nogncheck #}
-
-#include "impeller/renderer/texture.h"                    {# // nogncheck #}
+#include "impeller/core/texture.h"                    {# // nogncheck #}
 
 
 namespace impeller {
@@ -166,17 +162,15 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
 {% for buffer in buffers %}
     DescriptorSetLayout{
       {{buffer.binding}}, // binding = {{buffer.binding}}
-      DescriptorType::kUniformBuffer, // descriptorType = Uniform Buffer
-      1, // descriptorCount = 1
-      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+      DescriptorType::kUniformBuffer, // descriptor_type = Uniform Buffer
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
 {% for sampled_image in sampled_images %}
     DescriptorSetLayout{
       {{sampled_image.binding}}, // binding = {{sampled_image.binding}}
-      DescriptorType::kSampledImage, // descriptorType = Sampled Image
-      1, // descriptorCount = 1
-      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+      DescriptorType::kSampledImage, // descriptor_type = Sampled Image
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
   };
