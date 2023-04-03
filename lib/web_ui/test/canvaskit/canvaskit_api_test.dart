@@ -1900,7 +1900,7 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final SkObjectFinalizationRegistry registry = SkObjectFinalizationRegistry((String arg) {}.toJS);
+    final SkObjectFinalizationRegistry registry = createSkObjectFinalizationRegistry((String arg) {}.toJS);
     registry.register(Object(), Object());
   });
 }
