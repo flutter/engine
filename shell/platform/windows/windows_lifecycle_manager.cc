@@ -60,7 +60,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
       }
       if (IsLastWindowOfProcess()) {
         engine_->RequestApplicationQuit(hwnd, wpar, lpar,
-                                        AppExitType::cancelable, 0);
+                                        AppExitType::cancelable);
         return true;
       }
       break;

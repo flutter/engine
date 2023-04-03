@@ -262,11 +262,10 @@ class FlutterWindowsEngine {
               UINT exit_code);
 
   // Called when a WM_CLOSE message is received.
-  void RequestApplicationQuit(std::optional<HWND> hwnd,
-                              std::optional<WPARAM> wparam,
-                              std::optional<LPARAM> lparam,
-                              AppExitType exit_type,
-                              UINT exit_code);
+  void RequestApplicationQuit(HWND hwnd,
+                              WPARAM wparam,
+                              LPARAM lparam,
+                              AppExitType exit_type);
 
  protected:
   // Creates the keyboard key handler.
