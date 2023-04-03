@@ -350,57 +350,34 @@ TEST_P(AiksTest, CanRenderLinearGradientDecal) {
   CanRenderLinearGradient(this, Entity::TileMode::kDecal);
 }
 
-TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStops) {
-  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+namespace {
+void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
+                                                 Entity::TileMode tile_mode) {
+  Canvas canvas;
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+  paint.color_source = [tile_mode]() {
+    std::vector<Color> colors = {
+        Color{0.9568, 0.2627, 0.2118, 1.0}, Color{0.9568, 0.2627, 0.2118, 1.0},
+        Color{0.1294, 0.5882, 0.9529, 1.0}, Color{0.1294, 0.5882, 0.9529, 1.0}};
+    std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
 
-    static int selected_tile_mode = 0;
-    static float alpha = 1;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
-    Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto tile_mode = tile_modes[selected_tile_mode];
-    paint.color_source = [tile_mode]() {
-      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                   Color{0.9568, 0.2627, 0.2118, 1.0},
-                                   Color{0.1294, 0.5882, 0.9529, 1.0},
-                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
-      std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
-
-      auto contents = std::make_shared<LinearGradientContents>();
-      contents->SetEndPoints({0, 0}, {500, 500});
-      contents->SetColors(std::move(colors));
-      contents->SetStops(std::move(stops));
-      contents->SetTileMode(tile_mode);
-      contents->SetEffectTransform(matrix);
-      return contents;
-    };
-    paint.color = Color(1.0, 1.0, 1.0, alpha);
-    canvas.DrawRect({0, 0, 500, 500}, paint);
-    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetEndPoints({0, 0}, {500, 500});
+    contents->SetColors(std::move(colors));
+    contents->SetStops(std::move(stops));
+    contents->SetTileMode(tile_mode);
+    return contents;
   };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+  paint.color = Color(1.0, 1.0, 1.0, 1.0);
+  canvas.DrawRect({0, 0, 500, 500}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+// Only clamp is necessary, all tile modes are the same output.
+TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStopsClamp) {
+  CanRenderLinearGradientWithOverlappingStops(this, Entity::TileMode::kClamp);
 }
 
 namespace {
