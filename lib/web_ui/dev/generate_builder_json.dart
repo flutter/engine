@@ -149,7 +149,7 @@ Iterable<dynamic> _getTestStepsForPlatform(
           if (suite.runConfig.browser == BrowserName.chrome)
             <String, dynamic>{
               'dependency': 'chrome_and_driver',
-              'version': 'version:111.0',
+              'version': 'version:111.0a',
             },
           if (suite.runConfig.browser == BrowserName.firefox)
             <String, dynamic>{
