@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 
 #include <vector>
@@ -11,6 +11,15 @@
 
 static NSString* const kICUBundlePath = @"icudtl.dat";
 static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
+
+#pragma mark - Private interface declaration.
+@interface FlutterDartProject ()
+/**
+ Get the Flutter assets name path by pass the bundle. If bundle is nil, we use the main bundle as
+ default.
+ */
++ (NSString*)flutterAssetsNameWithBundle:(NSBundle*)bundle;
+@end
 
 @implementation FlutterDartProject {
   NSBundle* _dartBundle;
@@ -81,7 +90,7 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
   return path;
 }
 
-+ (NSString*)flutterAssetsName:(NSBundle*)bundle {
++ (NSString*)flutterAssetsNameWithBundle:(NSBundle*)bundle {
   if (bundle == nil) {
     bundle = [NSBundle bundleWithIdentifier:kAppBundleIdentifier];
   }
@@ -100,7 +109,7 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(nullable NSBundle*)bundle {
-  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsNameWithBundle:bundle];
   return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
 }
 

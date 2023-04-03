@@ -8,7 +8,7 @@
 #include "flutter/common/settings.h"
 #include "flutter/runtime/platform_data.h"
 #include "flutter/shell/common/engine.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

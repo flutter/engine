@@ -6,6 +6,7 @@
 #define FLUTTER_FLUTTERDARTPROJECT_H_
 
 #import <Foundation/Foundation.h>
+#import <TargetConditionals.h>
 
 #import "FlutterMacros.h"
 
@@ -29,6 +30,22 @@ FLUTTER_DARWIN_EXPORT
 - (nonnull instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle
     NS_DESIGNATED_INITIALIZER;
 
+#if TARGET_OS_IPHONE
+/**
+ * Unavailable - use `init` instead.
+ */
+- (nonnull instancetype)
+    initFromDefaultSourceForConfiguration FLUTTER_UNAVAILABLE("Use -init instead.");
+
+/**
+ * Returns the default identifier for the bundle where we expect to find the Flutter Dart
+ * application.
+ */
++ (nonnull NSString*)defaultBundleIdentifier;
+
+#endif
+
+#if TARGET_OS_OSX
 /**
  * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
  *
@@ -38,6 +55,7 @@ FLUTTER_DARWIN_EXPORT
  * Set this to nil to pass no arguments to the Dart entrypoint.
  */
 @property(nonatomic, nullable, copy) NSArray<NSString*>* dartEntrypointArguments;
+#endif
 
 /**
  * Returns the file name for the given asset. If the bundle with the identifier
