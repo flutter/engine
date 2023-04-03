@@ -380,7 +380,7 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
       auto contents = std::make_shared<AdvancedForegroundBlendContents>();
       contents->SetBlendMode(blend_mode_);
       contents->SetCoverage(coverage);
-      contents->SetSrcInput(std::move(inputs[0]));
+      contents->SetSrcInput(inputs[0]);
       contents->SetForegroundColor(foreground_color_.value());
       Entity entity;
       entity.SetTransformation(Matrix::MakeTranslation(coverage.origin));
