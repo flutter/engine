@@ -63,8 +63,6 @@ void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }
 
-constexpr int64_t kFlutterDefaultViewId = 0;
-
 std::unique_ptr<Studio> PlatformView::CreateStudio() {
   std::unique_ptr<Studio> studio;
   // Threading: We want to use the platform view on the non-platform thread.
@@ -89,7 +87,7 @@ std::unique_ptr<Studio> PlatformView::CreateStudio() {
   return studio;
 }
 
-std::unique_ptr<Surface> PlatformView::CreateSurface() {
+std::unique_ptr<Surface> PlatformView::CreateSurface(int64_t view_id) {
   std::unique_ptr<Surface> surface;
   // Threading: We want to use the platform view on the non-platform thread.
   // Using the weak pointer is illegal. But, we are going to introduce a latch
@@ -98,8 +96,8 @@ std::unique_ptr<Surface> PlatformView::CreateSurface() {
   auto* platform_view = this;
   fml::ManualResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
-        surface = platform_view->CreateRenderingSurface(kFlutterDefaultViewId);
+      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch, view_id]() {
+        surface = platform_view->CreateRenderingSurface(view_id);
         if (!surface || !surface->IsValid()) {
           surface.reset();
         }
