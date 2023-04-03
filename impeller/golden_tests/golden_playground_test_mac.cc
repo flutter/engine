@@ -28,17 +28,14 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot,
-                    double max_diff_pixels_percent,
-                    int32_t max_color_delta) {
+bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
-      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight(),
-      max_diff_pixels_percent, max_color_delta);
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -48,8 +45,6 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   GoldenPlaygroundTestImpl() : screenshoter(new testing::MetalScreenshoter()) {}
   std::unique_ptr<testing::MetalScreenshoter> screenshoter;
   ISize window_size = ISize{1024, 768};
-  const double max_diff_pixels_percent = 0.01;
-  const int32_t max_color_delta = 8;
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
@@ -103,8 +98,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   auto screenshot =
       pimpl_->screenshoter->MakeScreenshot(picture, pimpl_->window_size);
-  return SaveScreenshot(std::move(screenshot), pimpl_->max_diff_pixels_percent,
-                        pimpl_->max_color_delta);
+  return SaveScreenshot(std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(

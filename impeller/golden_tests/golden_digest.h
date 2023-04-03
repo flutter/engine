@@ -21,9 +21,7 @@ class GoldenDigest {
   void AddImage(const std::string& test_name,
                 const std::string& filename,
                 int32_t width,
-                int32_t height,
-                double max_diff_pixels_percent,
-                int32_t max_color_delta);
+                int32_t height);
 
   /// Writes a "digest.json" file to `working_directory`.
   ///
