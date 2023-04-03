@@ -58,8 +58,6 @@ void LogLastEGLError() {
   FML_LOG(ERROR) << "Unknown EGL Error";
 }
 
-namespace {}  // namespace
-
 class AndroidEGLSurfaceDamage {
  public:
   void init(EGLDisplay display, EGLContext context) {}
