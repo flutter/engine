@@ -195,7 +195,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+    frag_info.blur_radius = std::round(r.radius);
 
     // The blur direction is in input UV space.
     frag_info.blur_uv_offset =
