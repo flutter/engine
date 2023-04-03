@@ -59,8 +59,6 @@ void GoldenPlaygroundTest::SetUp() {
 
   std::string test_name = GetTestName();
   if (test_name ==
-          "impeller_Play_AiksTest_CanRenderLinearGradientWayManyColors_Metal" ||
-      test_name ==
           "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_"
           "Metal" ||
       test_name == "impeller_Play_AiksTest_CanRenderRadialGradient_Metal" ||
