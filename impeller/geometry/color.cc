@@ -21,7 +21,7 @@ namespace impeller {
   }                                                                        \
   ++i;
 
-constexpr inline bool ValidateBlendModes() {
+static constexpr inline bool ValidateBlendModes() {
   std::underlying_type_t<BlendMode> i = 0;
   // Ensure the order of the blend modes match.
   IMPELLER_FOR_EACH_BLEND_MODE(_IMPELLER_ASSERT_BLEND_MODE)
