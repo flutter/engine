@@ -887,8 +887,6 @@ void _testCkBrowserImageDecoder() {
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
     testCollector.collectNow();
-    // TODO(jacksongardner): enable on wasm
-    // see https://github.com/flutter/flutter/issues/118334
   });
 
   test('ImageDecoder expires after inactivity', () async {
@@ -934,8 +932,6 @@ void _testCkBrowserImageDecoder() {
 
     testCollector.collectNow();
     debugRestoreWebDecoderExpireDuration();
-    // TODO(jacksongardner): enable on wasm
-    // see https://github.com/flutter/flutter/issues/118334
   });
 }
 
