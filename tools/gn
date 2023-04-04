@@ -1036,12 +1036,14 @@ def validate_args(args):
   if args.simulator:
     if args.mac_cpu != 'x64':
       print(
-          "Specified a non-default mac-cpu for a simulator build. Did you mean to use `--simulator-cpu`?"
+          'Specified a non-default mac-cpu for a simulator build. Did you mean '
+          'to use `--simulator-cpu`?'
       )
       valid = False
     if args.ios_cpu != 'arm64':
       print(
-          "Specified a non-default ios-cpu for a simulator build. Did you mean to use `--simulator-cpu`?"
+          'Specified a non-default ios-cpu for a simulator build. Did you mean '
+          'to use `--simulator-cpu`?'
       )
       valid = False
 
