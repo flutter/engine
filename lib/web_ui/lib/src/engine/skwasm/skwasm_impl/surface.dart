@@ -47,9 +47,8 @@ class SkwasmSurface {
 
   void _onRender(JSNumber jsRenderId) {
     final int renderId = jsRenderId.toDart.toInt();
-    final Completer<void> completer = _pendingCallbacks[renderId]!;
+    final Completer<void> completer = _pendingCallbacks.remove(renderId)!;
     completer.complete();
-    _pendingCallbacks.remove(renderId);
   }
 
   void dispose() {
