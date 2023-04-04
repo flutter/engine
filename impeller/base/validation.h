@@ -44,10 +44,11 @@ struct ScopedValidationDisable {
 ///
 /// * Validation error are completely ignored in the Flutter release
 ///   runtime-mode.
-/// * In non-release runtime-modes, validation logs are redirected to the the
-///   Flutter INFO log. These logs typically show up when verbose logging is
+/// * In non-release runtime-modes, validation logs are redirected to the
+///   Flutter `INFO` log. These logs typically show up when verbose logging is
 ///   enabled.
 /// * If `ImpellerValidationErrorsSetFatal` is set to `true`, validation logs
-///   are fatal. The runtime-mode restriction still applies.
+///   are fatal. The runtime-mode restriction still applies. This usually
+///   happens in test environments.
 ///
 #define VALIDATION_LOG ::impeller::ValidationLog{}.GetStream()
