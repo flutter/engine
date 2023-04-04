@@ -1034,14 +1034,14 @@ class Matrix4 {
       transform2(vector);
       if (limits == null) {
         limits = ui.Rect.fromLTRB(
-          vector[0], 
+          vector[0],
           vector[1],
           vector[0],
           vector[1],
         );
       } else {
         limits = ui.Rect.fromLTRB(
-          math.min(limits.left, vector[0]), 
+          math.min(limits.left, vector[0]),
           math.min(limits.top, vector[1]),
           math.max(limits.right, vector[0]),
           math.max(limits.bottom, vector[1]),
