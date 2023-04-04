@@ -256,7 +256,7 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/mac_release_arm64/zip_archives/darwin-arm64/font-subset.zip",
-                        "out/mac_release_arm64/zip_archives/arwin-arm64-release/artifacts.zip "
+                        "out/mac_release_arm64/zip_archives/darwin-arm64-release/artifacts.zip "
                     ],
                     "name": "mac_release_arm64"
                 }
