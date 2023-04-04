@@ -382,10 +382,13 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
       contents->SetCoverage(coverage);
       contents->SetSrcInput(inputs[0]);
       contents->SetForegroundColor(foreground_color_.value());
-      Entity entity;
-      entity.SetTransformation(Matrix::MakeTranslation(coverage.origin));
-      entity.SetContents(std::move(contents));
-      return entity;
+
+      Entity sub_entity;
+      sub_entity.SetContents(std::move(contents));
+      sub_entity.SetStencilDepth(entity.GetStencilDepth());
+      sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
+                                   entity.GetTransformation());
+      return sub_entity;
     }
 
     return advanced_blend_proc_(inputs, renderer, entity, coverage,

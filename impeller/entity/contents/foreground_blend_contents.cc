@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "foreground_blend_contents.h"
+#include <iostream>
 
 #include "flutter/impeller/entity/contents/content_context.h"
 #include "flutter/impeller/renderer/render_pass.h"
@@ -57,13 +58,23 @@ bool AdvancedForegroundBlendContents::Render(const ContentContext& renderer,
 
   auto size = rect_.size;
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+  // hack
+  dst_uvs[0] = Point(0.0, 0.0);
+  dst_uvs[1] = Point(1.0, 0.0);
+  dst_uvs[2] = Point(0.0, 1.0);
+  dst_uvs[3] = Point(1.0, 1.0);
+
   vtx_builder.AddVertices({
-      {Point(0, 0), dst_uvs[0], dst_uvs[0]},
-      {Point(size.width, 0), dst_uvs[1], dst_uvs[1]},
-      {Point(size.width, size.height), dst_uvs[3], dst_uvs[3]},
-      {Point(0, 0), dst_uvs[0], dst_uvs[0]},
-      {Point(size.width, size.height), dst_uvs[3], dst_uvs[3]},
-      {Point(0, size.height), dst_uvs[2], dst_uvs[2]},
+      {rect_.origin, dst_uvs[0], dst_uvs[0]},
+      {Point(rect_.origin.x + size.width, rect_.origin.y), dst_uvs[1],
+       dst_uvs[1]},
+      {Point(rect_.origin.x + size.width, rect_.origin.y + size.height),
+       dst_uvs[3], dst_uvs[3]},
+      {rect_.origin, dst_uvs[0], dst_uvs[0]},
+      {Point(rect_.origin.x + size.width, rect_.origin.y + size.height),
+       dst_uvs[3], dst_uvs[3]},
+      {Point(rect_.origin.x, rect_.origin.y + size.height), dst_uvs[2],
+       dst_uvs[2]},
   });
   auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -147,8 +158,7 @@ bool AdvancedForegroundBlendContents::Render(const ContentContext& renderer,
   auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
   FS::BindBlendInfo(cmd, blend_uniform);
 
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
 
   auto uniform_view = host_buffer.EmplaceUniform(frame_info);
   VS::BindFrameInfo(cmd, uniform_view);
