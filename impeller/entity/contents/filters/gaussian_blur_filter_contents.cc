@@ -195,13 +195,12 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+    frag_info.blur_radius = std::round(r.radius);
 
     // The blur direction is in input UV space.
-    frag_info.blur_direction =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
-
-    frag_info.texture_size = Point(input_snapshot->GetCoverage().value().size);
+    frag_info.blur_uv_offset =
+        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
+        Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
     cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
@@ -241,6 +240,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
         break;
     }
+    input_descriptor.mag_filter = MinMagFilter::kLinear;
+    input_descriptor.min_filter = MinMagFilter::kLinear;
 
     bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
     bool has_decal_specialization =

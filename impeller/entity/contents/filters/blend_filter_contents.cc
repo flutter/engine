@@ -12,6 +12,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/foreground_blend_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
@@ -118,8 +119,13 @@ static std::optional<Entity> AdvancedBlend(
     typename FS::BlendInfo blend_info;
     typename VS::FrameInfo frame_info;
 
+    auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
+    if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+      dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+      dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+    }
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-        dst_snapshot->sampler_descriptor);
+        dst_sampler_descriptor);
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
     blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity : 1.0;
@@ -132,8 +138,13 @@ static std::optional<Entity> AdvancedBlend(
       // binding.
       FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
     } else {
+      auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
+      if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+        src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+        src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+      }
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-          src_snapshot->sampler_descriptor);
+          src_sampler_descriptor);
       blend_info.color_factor = 0;
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
@@ -220,9 +231,10 @@ static std::optional<Entity> PipelineBlend(
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                        Matrix::MakeTranslation(-coverage.origin) *
                        input->transform;
-      FS::FragInfo frag_info;
-      frag_info.texture_sampler_y_coord_scale =
+      frame_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
+
+      FS::FragInfo frag_info;
       frag_info.input_alpha = absorb_opacity ? input->opacity : 1.0;
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
@@ -257,10 +269,8 @@ static std::optional<Entity> PipelineBlend(
 
     if (foreground_color.has_value()) {
       auto contents = std::make_shared<SolidColorContents>();
-      contents->SetGeometry(Geometry::MakeFillPath(
-          PathBuilder{}
-              .AddRect(Rect::MakeSize(pass.GetRenderTargetSize()))
-              .TakePath()));
+      contents->SetGeometry(
+          Geometry::MakeRect(Rect::MakeSize(pass.GetRenderTargetSize())));
       contents->SetColor(foreground_color.value());
 
       Entity foreground_entity;
@@ -364,6 +374,20 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
   }
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
+    auto potential_alpha = GetAlpha().value_or(1.0);
+    if (inputs.size() == 1 && foreground_color_.has_value() &&
+        potential_alpha >= 1.0 - kEhCloseEnough) {
+      auto contents = std::make_shared<AdvancedForegroundBlendContents>();
+      contents->SetBlendMode(blend_mode_);
+      contents->SetCoverage(coverage);
+      contents->SetSrcInput(inputs[0]);
+      contents->SetForegroundColor(foreground_color_.value());
+      Entity entity;
+      entity.SetTransformation(Matrix::MakeTranslation(coverage.origin));
+      entity.SetContents(std::move(contents));
+      return entity;
+    }
+
     return advanced_blend_proc_(inputs, renderer, entity, coverage,
                                 foreground_color_, GetAbsorbOpacity(),
                                 GetAlpha());

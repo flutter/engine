@@ -1096,6 +1096,8 @@ ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl + 
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/source_options.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/source_options.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/spirv_compiler.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/spirv_compiler.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/spirv_sksl.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/spirv_sksl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/switches.cc + ../../../flutter/LICENSE
@@ -1198,6 +1200,8 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/foreground_blend_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/foreground_blend_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/gradient_generator.cc + ../../../flutter/LICENSE
@@ -1492,6 +1496,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/sampler_library_vk.cc + ../../../flutter/LICENSE
@@ -1872,7 +1878,6 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_scene_builder
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_tree.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/mask_filter.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/n_way_canvas.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/native_memory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/noto_font.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/painting.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path.dart + ../../../flutter/LICENSE
@@ -3130,6 +3135,8 @@ ORIGIN: ../../../flutter/shell/platform/windows/window_binding_handler_delegate.
 ORIGIN: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/window_state.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/windows_proc_table.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/windows_proc_table.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/windows_registry.cc + ../../../flutter/LICENSE
@@ -3677,6 +3684,8 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
 FILE: ../../../flutter/impeller/compiler/source_options.cc
 FILE: ../../../flutter/impeller/compiler/source_options.h
+FILE: ../../../flutter/impeller/compiler/spirv_compiler.cc
+FILE: ../../../flutter/impeller/compiler/spirv_compiler.h
 FILE: ../../../flutter/impeller/compiler/spirv_sksl.cc
 FILE: ../../../flutter/impeller/compiler/spirv_sksl.h
 FILE: ../../../flutter/impeller/compiler/switches.cc
@@ -3779,6 +3788,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_co
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/foreground_blend_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/foreground_blend_contents.h
 FILE: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.h
 FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
@@ -4073,6 +4084,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/sampler_library_vk.cc
@@ -4455,7 +4468,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_scene_builder.d
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_tree.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/mask_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/n_way_canvas.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/native_memory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/noto_font.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path.dart
@@ -5732,6 +5744,8 @@ FILE: ../../../flutter/shell/platform/windows/window_binding_handler_delegate.h
 FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.cc
 FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.h
 FILE: ../../../flutter/shell/platform/windows/window_state.h
+FILE: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.cc
+FILE: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.h
 FILE: ../../../flutter/shell/platform/windows/windows_proc_table.cc
 FILE: ../../../flutter/shell/platform/windows/windows_proc_table.h
 FILE: ../../../flutter/shell/platform/windows/windows_registry.cc
