@@ -238,8 +238,8 @@ public class SpellCheckPluginTest {
               (new SuggestionsInfo[] {
                 new SuggestionsInfo(
                     SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO,
-                    // These are the suggestions that may be provided by the Samsung spell checker:
-                    new String[] {"", " "})
+                    // This is the suggestion that may be provided by the Samsung spell checker:
+                    new String[] {""})
               }),
               new int[] {7},
               new int[] {5})
