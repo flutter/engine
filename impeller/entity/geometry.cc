@@ -626,8 +626,8 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
                               std::max(stroke_width_, min_size))
           .Abs();
   return Rect(path_coverage.origin - max_radius_xy,
-              Size(path_coverage.size.width + std::abs(max_radius_xy.x * 2),
-                   path_coverage.size.height + std::abs(max_radius_xy.y * 2)));
+              Size(path_coverage.size.width + max_radius_xy.x * 2,
+                   path_coverage.size.height + max_radius_xy.y * 2));
 }
 
 /////// Cover Geometry ///////
