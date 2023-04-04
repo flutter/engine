@@ -113,7 +113,7 @@ Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
       suite.runConfig.browser == BrowserName.firefox
     ),
     ..._getTestStepsForPlatform(suites, 'Mac', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.chrome
+      suite.runConfig.browser == BrowserName.safari
     ),
     ..._getTestStepsForPlatform(suites, 'Windows', (TestSuite suite) =>
       suite.runConfig.browser == BrowserName.chrome &&
