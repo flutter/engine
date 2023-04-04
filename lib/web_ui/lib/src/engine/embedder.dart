@@ -159,9 +159,9 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
+    _appRoot = domDocument.createElement(appRootTagName);
     _glassPaneElement = domDocument.createElement(glassPaneTagName);
 
-    _appRoot = domDocument.createElement(appRootTagName);
 
     // This must be attached to the DOM now, so the engine can create a host
     // node (ShadowDOM or a fallback) next.

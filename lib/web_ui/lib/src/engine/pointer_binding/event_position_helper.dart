@@ -37,7 +37,7 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
 /// the shadowDOM such as platform views or text editing nodes.
 ///
 /// This still uses offsetX/Y, but adds the offset from the top/left corner of the
-/// platform view to the glass pane (`actualTarget`).
+/// platform view to the app root (`actualTarget`).
 ///
 ///  ×--FlutterView(actualTarget)--------------+
 ///  |\                                        |
