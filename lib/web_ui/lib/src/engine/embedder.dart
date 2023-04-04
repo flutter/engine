@@ -24,7 +24,8 @@ import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 /// Manages several top-level elements that host Flutter-generated content,
 /// including:
 ///
-/// - [glassPaneElement], the root element of a Flutter view.
+/// - [appRoot], the root element of a Flutter view.
+/// - [glassPaneElement], the glass pane element that hosts the shadowDOM.
 /// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
 ///   content from the surrounding page content, including from the platform
 ///   views.
@@ -62,7 +63,10 @@ class FlutterViewEmbedder {
   /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
   final EmbeddingStrategy _embeddingStrategy;
 
-  // The tag name for the root view of the flutter app (glass-pane)
+  // The tag name for the app root, which hosts the app.
+  static const String appRootTagName = 'flt-app-root';
+
+  // The tag name for the glass-pane.
   static const String glassPaneTagName = 'flt-glass-pane';
 
   /// The element that contains the [sceneElement].
@@ -117,6 +121,9 @@ class FlutterViewEmbedder {
   /// which captures semantics input events. The semantics DOM tree must be a
   /// child of the glass pane element so that events bubble up to the glass pane
   /// if they are not handled by semantics.
+  DomElement get appRoot => _appRoot;
+  late DomElement _appRoot;
+
   DomElement get glassPaneElement => _glassPaneElement;
   late DomElement _glassPaneElement;
 
@@ -154,12 +161,15 @@ class FlutterViewEmbedder {
     // Create and inject the [_glassPaneElement].
     _glassPaneElement = domDocument.createElement(glassPaneTagName);
 
+    _appRoot = domDocument.createElement(appRootTagName);
+
     // This must be attached to the DOM now, so the engine can create a host
     // node (ShadowDOM or a fallback) next.
     //
     // The embeddingStrategy will take care of cleaning up the glassPane on hot
     // restart.
-    _embeddingStrategy.attachGlassPane(glassPaneElement);
+    _embeddingStrategy.attachGlassPane(appRoot);
+    appRoot.appendChild(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
@@ -172,7 +182,7 @@ class FlutterViewEmbedder {
     _glassPaneShadow = glassPaneElementHostNode;
 
     _textEditingHostNode =
-        createTextEditingHostNode(glassPaneElement, defaultCssFont);
+        createTextEditingHostNode(appRoot, defaultCssFont);
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = domDocument.createElement('flt-scene-host')
@@ -207,7 +217,7 @@ class FlutterViewEmbedder {
     // elements transparent. This way, if a platform view appears among other
     // interactive Flutter widgets, as long as those widgets do not intersect
     // with the platform view, the platform view will be reachable.
-    glassPaneElement.appendChild(semanticsHostElement);
+    appRoot.appendChild(semanticsHostElement);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
@@ -217,7 +227,7 @@ class FlutterViewEmbedder {
 
     KeyboardBinding.initInstance();
     PointerBinding.initInstance(
-      glassPaneElement,
+      appRoot,
       KeyboardBinding.instance!.converter,
     );
 
@@ -342,7 +352,7 @@ class FlutterViewEmbedder {
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
         _embeddingStrategy.attachResourcesHost(resourcesHost,
-            nextTo: glassPaneElement);
+            nextTo: appRoot);
       } else {
         glassPaneShadow.node
             .insertBefore(resourcesHost, glassPaneShadow.node.firstChild);
@@ -412,7 +422,7 @@ DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
   applyGlobalCssRulesToSheet(
     styleElement.sheet! as DomCSSStyleSheet,
     hasAutofillOverlay: browserHasAutofillOverlay(),
-    cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
+    cssSelectorPrefix: FlutterViewEmbedder.appRootTagName,
     defaultCssFont: defaultFont,
   );
 

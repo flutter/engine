@@ -22,7 +22,7 @@ import '../../common/matchers.dart';
 /// tree has moved outside of the shadowDOM as a workaround for a password
 /// autofill bug on Chrome.
 /// Ref: https://github.com/flutter/flutter/issues/87735
-DomElement get appHostNode => flutterViewEmbedder.glassPaneElement;
+DomElement get appHostNode => flutterViewEmbedder.appRoot;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
