@@ -889,7 +889,7 @@ void _testCkBrowserImageDecoder() {
     testCollector.collectNow();
     // TODO(jacksongardner): enable on wasm
     // see https://github.com/flutter/flutter/issues/118334
-  }, skip: isWasm);
+  });
 
   test('ImageDecoder expires after inactivity', () async {
     const Duration testExpireDuration = Duration(milliseconds: 100);
@@ -936,7 +936,7 @@ void _testCkBrowserImageDecoder() {
     debugRestoreWebDecoderExpireDuration();
     // TODO(jacksongardner): enable on wasm
     // see https://github.com/flutter/flutter/issues/118334
-  }, skip: isWasm);
+  });
 }
 
 Future<void> expectFrameData(ui.FrameInfo frame, List<int> data) async {
