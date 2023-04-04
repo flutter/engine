@@ -154,7 +154,7 @@ static bool CommonRender(
       Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
             static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
 
-  Vector2 screen_offset = (entity.GetTransformation().Basis() * offset).Round();
+  Vector2 screen_offset = (entity.GetTransformation() * offset).Round();
 
   for (const auto& run : frame.GetRuns()) {
     auto font = run.GetFont();
@@ -170,21 +170,34 @@ static bool CommonRender(
       // For each glyph, we compute two rectangles. One for the vertex positions
       // and one for the texture coordinates (UVs).
 
-      auto screen_space_glyph_origin =
-          (entity.GetTransformation() *
-           (glyph_position.position + glyph_position.glyph.bounds.origin))
-              .Floor() +
-          screen_offset;
-
       auto uv_origin =
           (atlas_glyph_bounds->origin - Point(0.5, 0.5)) / atlas_size;
       auto uv_size = (atlas_glyph_bounds->size + Size(1, 1)) / atlas_size;
 
+      // Rounding here prevents most jitter between glyphs in the run when
+      // nearest sampling.
+      auto screen_glyph_position =
+          screen_offset +
+          (entity.GetTransformation().Basis() *
+           (glyph_position.position + glyph_position.glyph.bounds.origin))
+              .Round();
+
       for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
 
-        vtx.position =
-            screen_space_glyph_origin + (point * atlas_glyph_bounds->size);
+        if (entity.GetTransformation().IsTranslationScaleOnly()) {
+          // Rouding up here prevents the bounds from becoming 1 pixel too small
+          // when nearest sampling. This path breaks down for projections.
+          vtx.position =
+              screen_glyph_position + (entity.GetTransformation().Basis() *
+                                       point * glyph_position.glyph.bounds.size)
+                                          .Ceil();
+        } else {
+          vtx.position = entity.GetTransformation() *
+                         Vector4(offset + glyph_position.position +
+                                 glyph_position.glyph.bounds.origin +
+                                 point * glyph_position.glyph.bounds.size);
+        }
         vtx.uv = uv_origin + point * uv_size;
 
         if constexpr (std::is_same_v<TPipeline, GlyphAtlasPipeline>) {
