@@ -63,7 +63,7 @@ class FlutterViewEmbedder {
   /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
   final EmbeddingStrategy _embeddingStrategy;
 
-  // The tag name for the app root, which hosts the app.
+  // The tag name for the Flutter View, which hosts the app.
   static const String flutterViewTagName = 'flutter-view';
 
   // The tag name for the glass-pane.
