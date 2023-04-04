@@ -676,7 +676,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
 
   auto dl_color_filter =
       DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
-  std::vector<dl_shared<const DlImageFilter>> dl_filters{
+  std::vector<std::shared_ptr<const DlImageFilter>> dl_filters{
       DlImageFilter::MakeBlur(5.0, 6.0, DlTileMode::kRepeat),
       DlImageFilter::MakeColorFilter(dl_color_filter),
       DlImageFilter::MakeDilate(5, 10),

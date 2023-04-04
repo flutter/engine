@@ -30,9 +30,9 @@ enum class DlBlurStyle {
 
 class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
  public:
-  static dl_shared<DlMaskFilter> MakeBlur(DlBlurStyle style,
-                                          SkScalar sigma,
-                                          bool respect_ctm = true);
+  static std::shared_ptr<DlMaskFilter> MakeBlur(DlBlurStyle style,
+                                                SkScalar sigma,
+                                                bool respect_ctm = true);
 
   // Return a DlBlurMaskFilter pointer to this object iff it is a Blur
   // type of MaskFilter, otherwise return nullptr.
@@ -46,9 +46,9 @@ class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
 // filter is then used to combine those colors.
 class DlBlurMaskFilter final : public DlMaskFilter {
  public:
-  static dl_shared<DlBlurMaskFilter> Make(DlBlurStyle style,
-                                          SkScalar sigma,
-                                          bool respect_ctm = true);
+  static std::shared_ptr<DlBlurMaskFilter> Make(DlBlurStyle style,
+                                                SkScalar sigma,
+                                                bool respect_ctm = true);
 
   DlMaskFilterType type() const override { return DlMaskFilterType::kBlur; }
   size_t size() const override { return sizeof(*this); }

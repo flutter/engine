@@ -17,7 +17,7 @@ class Shader : public RefCountedDartWrappable<Shader> {
  public:
   ~Shader() override;
 
-  virtual dl_shared<DlColorSource> shader(DlImageSampling) = 0;
+  virtual std::shared_ptr<const DlColorSource> shader(DlImageSampling) = 0;
 
  protected:
   Shader() {}

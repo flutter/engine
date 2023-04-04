@@ -45,7 +45,8 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
   return Dart_Null();
 }
 
-dl_shared<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
+std::shared_ptr<const DlColorSource> ImageShader::shader(
+    DlImageSampling sampling) {
   if (sampling_is_locked_) {
     return cached_shader_;
   }

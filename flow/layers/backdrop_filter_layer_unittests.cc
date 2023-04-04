@@ -251,7 +251,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
 }
 
 TEST_F(BackdropFilterLayerTest, Readback) {
-  dl_shared<DlImageFilter> no_filter;
+  std::shared_ptr<DlImageFilter> no_filter;
   auto layer_filter = DlBlurImageFilter::Make(5, 5, DlTileMode::kClamp);
   auto initial_transform = SkMatrix();
 

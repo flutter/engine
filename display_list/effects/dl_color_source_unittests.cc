@@ -31,16 +31,14 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, SkColor color) {
   return DlImage::Make(surface->makeImageSnapshot());
 }
 
-static const dl_shared<DlRuntimeEffect> kTestRuntimeEffect1 =
-    DlRuntimeEffect::MakeSkia(
-        SkRuntimeEffect::MakeForShader(
-            SkString("vec4 main(vec2 p) { return vec4(0); }"))
-            .effect);
-static const dl_shared<DlRuntimeEffect> kTestRuntimeEffect2 =
-    DlRuntimeEffect::MakeSkia(
-        SkRuntimeEffect::MakeForShader(
-            SkString("vec4 main(vec2 p) { return vec4(1); }"))
-            .effect);
+static const auto kTestRuntimeEffect1 = DlRuntimeEffect::MakeSkia(
+    SkRuntimeEffect::MakeForShader(
+        SkString("vec4 main(vec2 p) { return vec4(0); }"))
+        .effect);
+static const auto kTestRuntimeEffect2 = DlRuntimeEffect::MakeSkia(
+    SkRuntimeEffect::MakeForShader(
+        SkString("vec4 main(vec2 p) { return vec4(1); }"))
+        .effect);
 
 static const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
 static const sk_sp<DlImage> kTestAlphaImage1 =

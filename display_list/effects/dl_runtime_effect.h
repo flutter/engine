@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/display_list/dl_shared.h"
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/runtime_stage/runtime_stage.h"
 
@@ -15,21 +14,20 @@
 
 namespace flutter {
 
-class DlRuntimeEffect : public DlShareable {
+class DlRuntimeEffect : public std::enable_shared_from_this<DlRuntimeEffect> {
  public:
-  static dl_shared<DlRuntimeEffect> MakeSkia(
+  static std::shared_ptr<DlRuntimeEffect> MakeSkia(
       const sk_sp<SkRuntimeEffect>& runtime_effect);
 
-  static dl_shared<DlRuntimeEffect> MakeImpeller(
-      std::shared_ptr<impeller::RuntimeStage> runtime_stage);
+  static std::shared_ptr<DlRuntimeEffect> MakeImpeller(
+      const std::shared_ptr<impeller::RuntimeStage>& runtime_stage);
 
   virtual sk_sp<SkRuntimeEffect> skia_runtime_effect() const = 0;
 
   virtual std::shared_ptr<impeller::RuntimeStage> runtime_stage() const = 0;
 
  protected:
-  DlRuntimeEffect();
-  virtual ~DlRuntimeEffect();
+  DlRuntimeEffect() = default;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(DlRuntimeEffect);
@@ -44,11 +42,7 @@ class DlRuntimeEffectSkia final : public DlRuntimeEffect {
   std::shared_ptr<impeller::RuntimeStage> runtime_stage() const override;
 
  private:
-  DlRuntimeEffectSkia() = delete;
   explicit DlRuntimeEffectSkia(const sk_sp<SkRuntimeEffect>& runtime_effect);
-
-  // |DlRuntimeEffect|
-  ~DlRuntimeEffectSkia() override;
 
   sk_sp<SkRuntimeEffect> skia_runtime_effect_;
 
@@ -66,12 +60,9 @@ class DlRuntimeEffectImpeller final : public DlRuntimeEffect {
   std::shared_ptr<impeller::RuntimeStage> runtime_stage() const override;
 
  private:
-  DlRuntimeEffectImpeller() = delete;
   // |DlRuntimeEffect|
   explicit DlRuntimeEffectImpeller(
-      std::shared_ptr<impeller::RuntimeStage> runtime_stage);
-
-  ~DlRuntimeEffectImpeller() override;
+      const std::shared_ptr<impeller::RuntimeStage>& runtime_stage);
 
   std::shared_ptr<impeller::RuntimeStage> runtime_stage_;
 

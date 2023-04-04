@@ -495,7 +495,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
    public:
     explicit LayerInfo(size_t save_offset = 0,
                        bool has_layer = false,
-                       dl_shared<const DlImageFilter> filter = nullptr)
+                       std::shared_ptr<const DlImageFilter> filter = nullptr)
         : save_offset_(save_offset),
           has_layer_(has_layer),
           cannot_inherit_opacity_(false),
@@ -537,7 +537,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     }
 
     // The filter to apply to the layer bounds when it is restored
-    dl_shared<const DlImageFilter> filter() { return filter_; }
+    std::shared_ptr<const DlImageFilter> filter() { return filter_; }
 
     // is_unbounded should be set to true if we ever encounter an operation
     // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
@@ -572,7 +572,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool has_layer_;
     bool cannot_inherit_opacity_;
     bool has_compatible_op_;
-    dl_shared<const DlImageFilter> filter_;
+    std::shared_ptr<const DlImageFilter> filter_;
     bool is_unbounded_;
     bool has_deferred_save_op_ = false;
 

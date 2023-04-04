@@ -91,11 +91,11 @@ TEST(DisplayListPaint, NullPointerSetGet) {
 }
 
 TEST(DisplayListPaint, NullSharedPointerSetGet) {
-  dl_shared<DlColorSource> null_color_source;
-  dl_shared<DlColorFilter> null_color_filter;
-  dl_shared<DlImageFilter> null_image_filter;
-  dl_shared<DlMaskFilter> null_mask_filter;
-  dl_shared<DlPathEffect> null_path_effect;
+  std::shared_ptr<DlColorSource> null_color_source;
+  std::shared_ptr<DlColorFilter> null_color_filter;
+  std::shared_ptr<DlImageFilter> null_image_filter;
+  std::shared_ptr<DlMaskFilter> null_mask_filter;
+  std::shared_ptr<DlPathEffect> null_path_effect;
   DlPaint paint;
   EXPECT_EQ(paint.setColorSource(null_color_source).getColorSource(), nullptr);
   EXPECT_EQ(paint.setColorFilter(null_color_filter).getColorFilter(), nullptr);

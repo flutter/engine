@@ -273,7 +273,7 @@ class OpacityEntry : public LayerStateStack::StateEntry {
 class ImageFilterEntry : public LayerStateStack::StateEntry {
  public:
   ImageFilterEntry(const SkRect& bounds,
-                   const dl_shared<const DlImageFilter>& filter,
+                   const std::shared_ptr<const DlImageFilter>& filter,
                    const LayerStateStack::RenderingAttributes& prev)
       : bounds_(bounds),
         filter_(filter),
@@ -295,8 +295,8 @@ class ImageFilterEntry : public LayerStateStack::StateEntry {
 
  private:
   const SkRect bounds_;
-  const dl_shared<const DlImageFilter> filter_;
-  const dl_shared<const DlImageFilter> old_filter_;
+  const std::shared_ptr<const DlImageFilter> filter_;
+  const std::shared_ptr<const DlImageFilter> old_filter_;
   const SkRect old_bounds_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ImageFilterEntry);
@@ -305,7 +305,7 @@ class ImageFilterEntry : public LayerStateStack::StateEntry {
 class ColorFilterEntry : public LayerStateStack::StateEntry {
  public:
   ColorFilterEntry(const SkRect& bounds,
-                   const dl_shared<const DlColorFilter>& filter,
+                   const std::shared_ptr<const DlColorFilter>& filter,
                    const LayerStateStack::RenderingAttributes& prev)
       : bounds_(bounds),
         filter_(filter),
@@ -327,8 +327,8 @@ class ColorFilterEntry : public LayerStateStack::StateEntry {
 
  private:
   const SkRect bounds_;
-  const dl_shared<const DlColorFilter> filter_;
-  const dl_shared<const DlColorFilter> old_filter_;
+  const std::shared_ptr<const DlColorFilter> filter_;
+  const std::shared_ptr<const DlColorFilter> old_filter_;
   const SkRect old_bounds_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ColorFilterEntry);
@@ -337,7 +337,7 @@ class ColorFilterEntry : public LayerStateStack::StateEntry {
 class BackdropFilterEntry : public SaveLayerEntry {
  public:
   BackdropFilterEntry(const SkRect& bounds,
-                      const dl_shared<const DlImageFilter>& filter,
+                      const std::shared_ptr<const DlImageFilter>& filter,
                       DlBlendMode blend_mode,
                       const LayerStateStack::RenderingAttributes& prev)
       : SaveLayerEntry(bounds, blend_mode, prev), filter_(filter) {}
@@ -361,7 +361,7 @@ class BackdropFilterEntry : public SaveLayerEntry {
   }
 
  private:
-  const dl_shared<const DlImageFilter> filter_;
+  const std::shared_ptr<const DlImageFilter> filter_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(BackdropFilterEntry);
 };
@@ -537,7 +537,7 @@ void MutatorContext::applyOpacity(const SkRect& bounds, SkScalar opacity) {
 
 void MutatorContext::applyImageFilter(
     const SkRect& bounds,
-    const dl_shared<const DlImageFilter>& filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   if (filter) {
     layer_state_stack_->push_image_filter(bounds, filter);
   }
@@ -545,7 +545,7 @@ void MutatorContext::applyImageFilter(
 
 void MutatorContext::applyColorFilter(
     const SkRect& bounds,
-    const dl_shared<const DlColorFilter>& filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   if (filter) {
     layer_state_stack_->push_color_filter(bounds, filter);
   }
@@ -553,7 +553,7 @@ void MutatorContext::applyColorFilter(
 
 void MutatorContext::applyBackdropFilter(
     const SkRect& bounds,
-    const dl_shared<const DlImageFilter>& filter,
+    const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode) {
   layer_state_stack_->push_backdrop(bounds, filter, blend_mode);
 }
@@ -679,7 +679,7 @@ void LayerStateStack::push_opacity(const SkRect& bounds, SkScalar opacity) {
 
 void LayerStateStack::push_color_filter(
     const SkRect& bounds,
-    const dl_shared<const DlColorFilter>& filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   maybe_save_layer(filter);
   state_stack_.emplace_back(
       std::make_unique<ColorFilterEntry>(bounds, filter, outstanding_));
@@ -688,7 +688,7 @@ void LayerStateStack::push_color_filter(
 
 void LayerStateStack::push_image_filter(
     const SkRect& bounds,
-    const dl_shared<const DlImageFilter>& filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   maybe_save_layer(filter);
   state_stack_.emplace_back(
       std::make_unique<ImageFilterEntry>(bounds, filter, outstanding_));
@@ -697,7 +697,7 @@ void LayerStateStack::push_image_filter(
 
 void LayerStateStack::push_backdrop(
     const SkRect& bounds,
-    const dl_shared<const DlImageFilter>& filter,
+    const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode) {
   state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
       bounds, filter, blend_mode, outstanding_));
@@ -799,7 +799,7 @@ void LayerStateStack::maybe_save_layer(SkScalar opacity) {
 }
 
 void LayerStateStack::maybe_save_layer(
-    const dl_shared<const DlColorFilter>& filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   if (outstanding_.color_filter || outstanding_.image_filter ||
       (outstanding_.opacity < SK_Scalar1 &&
        !filter->can_commute_with_opacity())) {
@@ -809,7 +809,7 @@ void LayerStateStack::maybe_save_layer(
 }
 
 void LayerStateStack::maybe_save_layer(
-    const dl_shared<const DlImageFilter>& filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   if (outstanding_.image_filter) {
     // TBD: compose the 2 image filters together.
     save_layer(outstanding_.save_layer_bounds);

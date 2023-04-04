@@ -197,34 +197,35 @@ struct SetBlendModeOp final : DLOp {
 
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes
 //        (4 bytes unused)
-// Set: 4 byte header + unused 4 byte struct padding + dl_shared
-//      instance uses 16 bytes (4 bytes unused)
-#define DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(name, field_name)               \
-  struct Clear##name##Op final : DLOp {                                   \
-    static const auto kType = DisplayListOpType::kClear##name;            \
-                                                                          \
-    Clear##name##Op() {}                                                  \
-                                                                          \
-    void dispatch(DispatchContext& ctx) const {                           \
-      ctx.receiver.set##name(nullptr);                                    \
-    }                                                                     \
-  };                                                                      \
-  struct Set##name##Op final : DLOp {                                     \
-    static const auto kType = DisplayListOpType::kSet##name;              \
-                                                                          \
-    Set##name##Op(const Dl##name* field_name) : field_name(field_name) {} \
-                                                                          \
-    const dl_shared<const Dl##name> field_name;                           \
-                                                                          \
-    void dispatch(DispatchContext& ctx) const {                           \
-      ctx.receiver.set##name(field_name.get());                           \
-    }                                                                     \
-                                                                          \
-    DisplayListCompare equals(const Set##name##Op* other) const {         \
-      return Equals(field_name, other->field_name)                        \
-                 ? DisplayListCompare::kEqual                             \
-                 : DisplayListCompare::kNotEqual;                         \
-    }                                                                     \
+// Set: 4 byte header + unused 4 byte struct padding + shared_ptr
+//      instance uses 24 bytes (4 bytes unused)
+#define DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(name, field_name)       \
+  struct Clear##name##Op final : DLOp {                           \
+    static const auto kType = DisplayListOpType::kClear##name;    \
+                                                                  \
+    Clear##name##Op() {}                                          \
+                                                                  \
+    void dispatch(DispatchContext& ctx) const {                   \
+      ctx.receiver.set##name(nullptr);                            \
+    }                                                             \
+  };                                                              \
+  struct Set##name##Op final : DLOp {                             \
+    static const auto kType = DisplayListOpType::kSet##name;      \
+                                                                  \
+    Set##name##Op(const Dl##name* field_name)                     \
+        : field_name(field_name->shared_from_this()) {}           \
+                                                                  \
+    const std::shared_ptr<const Dl##name> field_name;             \
+                                                                  \
+    void dispatch(DispatchContext& ctx) const {                   \
+      ctx.receiver.set##name(field_name.get());                   \
+    }                                                             \
+                                                                  \
+    DisplayListCompare equals(const Set##name##Op* other) const { \
+      return Equals(field_name, other->field_name)                \
+                 ? DisplayListCompare::kEqual                     \
+                 : DisplayListCompare::kNotEqual;                 \
+    }                                                             \
   };
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorFilter, filter)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorSource, source)
@@ -299,9 +300,9 @@ struct SaveLayerBackdropOp final : SaveOpBase {
 
   explicit SaveLayerBackdropOp(const SaveLayerOptions options,
                                const DlImageFilter* backdrop)
-      : SaveOpBase(options), backdrop(backdrop) {}
+      : SaveOpBase(options), backdrop(backdrop->shared_from_this()) {}
 
-  const dl_shared<const DlImageFilter> backdrop;
+  const std::shared_ptr<const DlImageFilter> backdrop;
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
@@ -322,10 +323,12 @@ struct SaveLayerBackdropBoundsOp final : SaveOpBase {
   SaveLayerBackdropBoundsOp(const SaveLayerOptions options,
                             const SkRect& rect,
                             const DlImageFilter* backdrop)
-      : SaveOpBase(options), rect(rect), backdrop(backdrop) {}
+      : SaveOpBase(options),
+        rect(rect),
+        backdrop(backdrop->shared_from_this()) {}
 
   const SkRect rect;
-  const dl_shared<const DlImageFilter> backdrop;
+  const std::shared_ptr<const DlImageFilter> backdrop;
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {

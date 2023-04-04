@@ -7,9 +7,10 @@
 
 namespace flutter {
 
-ShaderMaskLayer::ShaderMaskLayer(dl_shared<DlColorSource> color_source,
-                                 const SkRect& mask_rect,
-                                 DlBlendMode blend_mode)
+ShaderMaskLayer::ShaderMaskLayer(
+    std::shared_ptr<const DlColorSource> color_source,
+    const SkRect& mask_rect,
+    DlBlendMode blend_mode)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       color_source_(std::move(color_source)),

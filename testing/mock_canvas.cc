@@ -49,10 +49,11 @@ void MockCanvas::SaveLayer(const SkRect* bounds,
                            const DlImageFilter* backdrop) {
   // saveLayer calls this prior to running, so we use it to track saveLayer
   // calls
+  auto filter = backdrop ? backdrop->shared_from_this() : nullptr;
   draw_calls_.emplace_back(DrawCall{
       current_layer_,
       SaveLayerData{bounds ? *bounds : SkRect(), paint ? *paint : DlPaint(),
-                    backdrop, current_layer_ + 1}});
+                    filter, current_layer_ + 1}});
   tracker_.save();
   current_layer_++;  // Must go here; func params order of eval is undefined
 }

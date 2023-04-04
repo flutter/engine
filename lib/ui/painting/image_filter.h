@@ -37,14 +37,14 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   void initColorFilter(ColorFilter* colorFilter);
   void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
-  const dl_shared<const DlImageFilter> filter() const { return filter_; }
+  const std::shared_ptr<const DlImageFilter> filter() const { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   ImageFilter();
 
-  dl_shared<const DlImageFilter> filter_;
+  std::shared_ptr<const DlImageFilter> filter_;
 };
 
 }  // namespace flutter

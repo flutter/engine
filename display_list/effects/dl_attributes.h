@@ -7,8 +7,6 @@
 
 #include <memory>
 
-#include "flutter/display_list/dl_shared.h"
-
 namespace flutter {
 
 // ===========================================================================
@@ -80,7 +78,7 @@ namespace flutter {
 // |T| is the enum that describes the specific subclasses
 //     (i.e DlColorFilterType, etc.)
 template <class D, typename T>
-class DlAttribute : public DlShareable {
+class DlAttribute : public std::enable_shared_from_this<D> {
  public:
   // Return the recognized specific type of the attribute.
   virtual T type() const = 0;

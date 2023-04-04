@@ -2404,7 +2404,7 @@ class CanvasCompareTester {
     return surface->makeImageSnapshot();
   }
 
-  static const dl_shared<DlColorSource> kTestDlImageColorSource;
+  static const std::shared_ptr<DlColorSource> kTestDlImageColorSource;
   static const sk_sp<SkShader> kTestSkImageColorSource;
 
   static sk_sp<SkTextBlob> MakeTextBlob(const std::string& string,
@@ -2423,11 +2423,12 @@ BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
 
 const sk_sp<SkImage> CanvasCompareTester::kTestImage = makeTestImage();
-const dl_shared<DlColorSource> CanvasCompareTester::kTestDlImageColorSource =
-    DlColorSource::MakeImage(DlImage::Make(kTestImage),
-                             DlTileMode::kRepeat,
-                             DlTileMode::kRepeat,
-                             DlImageSampling::kLinear);
+const std::shared_ptr<DlColorSource>
+    CanvasCompareTester::kTestDlImageColorSource =
+        DlColorSource::MakeImage(DlImage::Make(kTestImage),
+                                 DlTileMode::kRepeat,
+                                 DlTileMode::kRepeat,
+                                 DlImageSampling::kLinear);
 const sk_sp<SkShader> CanvasCompareTester::kTestSkImageColorSource =
     kTestImage->makeShader(SkTileMode::kRepeat,
                            SkTileMode::kRepeat,
@@ -3476,14 +3477,14 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
       0.5f,
       SK_Scalar1,
   };
-  std::vector<dl_shared<DlColorFilter>> color_filters = {
+  std::vector<std::shared_ptr<DlColorFilter>> color_filters = {
       DlColorFilter::MakeBlend(DlColor::kCyan(), DlBlendMode::kSrcATop),
       DlColorFilter::MakeMatrix(commutable_color_matrix),
       DlColorFilter::MakeMatrix(non_commutable_color_matrix),
       DlSrgbToLinearGammaColorFilter::Make(),
       DlLinearToSrgbGammaColorFilter::Make(),
   };
-  std::vector<dl_shared<const DlImageFilter>> image_filters = {
+  std::vector<std::shared_ptr<const DlImageFilter>> image_filters = {
       DlImageFilter::MakeBlur(5.0f, 5.0f, DlTileMode::kDecal),
       DlImageFilter::MakeDilate(5.0f, 5.0f),
       DlImageFilter::MakeErode(5.0f, 5.0f),

@@ -56,7 +56,7 @@ void testNotEquals(DlMaskFilter* a, DlMaskFilter* b) {
   ASSERT_TRUE(NotEquals(b, a));
 }
 
-void testEquals(const dl_shared<const DlMaskFilter>& a, DlMaskFilter* b) {
+void testEquals(const std::shared_ptr<const DlMaskFilter>& a, DlMaskFilter* b) {
   // a and b have the same nullness or values
   ASSERT_TRUE(Equals(a, b));
   ASSERT_FALSE(NotEquals(a, b));
@@ -64,7 +64,8 @@ void testEquals(const dl_shared<const DlMaskFilter>& a, DlMaskFilter* b) {
   ASSERT_FALSE(NotEquals(b, a));
 }
 
-void testNotEquals(const dl_shared<const DlMaskFilter>& a, DlMaskFilter* b) {
+void testNotEquals(const std::shared_ptr<const DlMaskFilter>& a,
+                   DlMaskFilter* b) {
   // a and b do not have the same nullness or values
   ASSERT_FALSE(Equals(a, b));
   ASSERT_TRUE(NotEquals(a, b));
@@ -72,8 +73,8 @@ void testNotEquals(const dl_shared<const DlMaskFilter>& a, DlMaskFilter* b) {
   ASSERT_TRUE(NotEquals(b, a));
 }
 
-void testEquals(const dl_shared<const DlMaskFilter>& a,
-                const dl_shared<const DlMaskFilter>& b) {
+void testEquals(const std::shared_ptr<const DlMaskFilter>& a,
+                const std::shared_ptr<const DlMaskFilter>& b) {
   // a and b have the same nullness or values
   ASSERT_TRUE(Equals(a, b));
   ASSERT_FALSE(NotEquals(a, b));
@@ -81,8 +82,8 @@ void testEquals(const dl_shared<const DlMaskFilter>& a,
   ASSERT_FALSE(NotEquals(b, a));
 }
 
-void testNotEquals(const dl_shared<const DlMaskFilter>& a,
-                   const dl_shared<const DlMaskFilter>& b) {
+void testNotEquals(const std::shared_ptr<const DlMaskFilter>& a,
+                   const std::shared_ptr<const DlMaskFilter>& b) {
   // a and b do not have the same nullness or values
   ASSERT_FALSE(Equals(a, b));
   ASSERT_TRUE(NotEquals(a, b));
@@ -94,7 +95,7 @@ TEST(DisplayListMaskFilter, ComparableTemplates) {
   auto filter1a = DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 3.0);
   auto filter1b = DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 3.0);
   auto filter2 = DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 5.0);
-  dl_shared<DlMaskFilter> shared_null;
+  std::shared_ptr<DlMaskFilter> shared_null;
 
   // null to null
   testEquals(nullptr, nullptr);
@@ -106,7 +107,7 @@ TEST(DisplayListMaskFilter, ComparableTemplates) {
   testNotEquals(filter1b.get(), nullptr);
   testNotEquals(filter2.get(), nullptr);
 
-  // dl_shared to null and shared_null to ptr
+  // std::shared_ptr to null and shared_null to ptr
   testNotEquals(filter1a, nullptr);
   testNotEquals(filter1b, nullptr);
   testNotEquals(filter2, nullptr);
@@ -121,7 +122,7 @@ TEST(DisplayListMaskFilter, ComparableTemplates) {
   testEquals(filter2.get(), filter2.get());
   testNotEquals(filter1a.get(), filter2.get());
 
-  // dl_shared to ptr
+  // std::shared_ptr to ptr
   testEquals(filter1a, filter1a.get());
   testEquals(filter1a, filter1b.get());
   testEquals(filter1b, filter1b.get());
@@ -131,7 +132,7 @@ TEST(DisplayListMaskFilter, ComparableTemplates) {
   testNotEquals(filter2, filter1a.get());
   testNotEquals(filter2, filter1b.get());
 
-  // dl_shared to dl_shared
+  // std::shared_ptr to std::shared_ptr
   testEquals(filter1a, filter1a);
   testEquals(filter1a, filter1b);
   testEquals(filter1b, filter1b);

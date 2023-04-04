@@ -10,8 +10,9 @@
 
 namespace flutter {
 
-ImageFilterLayer::ImageFilterLayer(const dl_shared<const DlImageFilter>& filter,
-                                   const SkPoint& offset)
+ImageFilterLayer::ImageFilterLayer(
+    const std::shared_ptr<const DlImageFilter>& filter,
+    const SkPoint& offset)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       offset_(offset),

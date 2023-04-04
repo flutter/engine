@@ -13,9 +13,9 @@ namespace flutter {
 
 namespace {
 
-dl_shared<DlColorSource> CreateCheckerboardShader(SkColor c1,
-                                                  SkColor c2,
-                                                  int size) {
+std::shared_ptr<DlColorSource> CreateCheckerboardShader(SkColor c1,
+                                                        SkColor c2,
+                                                        int size) {
   SkBitmap bm;
   bm.allocN32Pixels(2 * size, 2 * size);
   bm.eraseColor(c1);

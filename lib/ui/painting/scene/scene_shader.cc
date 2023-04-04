@@ -68,7 +68,8 @@ static impeller::Matrix DefaultCameraTransform() {
          impeller::Matrix::MakeLookAt({0, 0, -5}, {0, 0, 0}, {0, 1, 0});
 }
 
-dl_shared<DlColorSource> SceneShader::shader(DlImageSampling sampling) {
+std::shared_ptr<const DlColorSource> SceneShader::shader(
+    DlImageSampling sampling) {
   FML_CHECK(scene_node_);
 
   if (!scene_node_->node_) {

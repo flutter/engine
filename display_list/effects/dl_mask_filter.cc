@@ -6,17 +6,18 @@
 
 namespace flutter {
 
-dl_shared<DlMaskFilter> DlMaskFilter::MakeBlur(DlBlurStyle style,
-                                               SkScalar sigma,
-                                               bool respect_ctm) {
+std::shared_ptr<DlMaskFilter> DlMaskFilter::MakeBlur(DlBlurStyle style,
+                                                     SkScalar sigma,
+                                                     bool respect_ctm) {
   return DlBlurMaskFilter::Make(style, sigma, respect_ctm);
 }
 
-dl_shared<DlBlurMaskFilter> DlBlurMaskFilter::Make(DlBlurStyle style,
-                                                   SkScalar sigma,
-                                                   bool respect_ctm) {
+std::shared_ptr<DlBlurMaskFilter> DlBlurMaskFilter::Make(DlBlurStyle style,
+                                                         SkScalar sigma,
+                                                         bool respect_ctm) {
   if (SkScalarIsFinite(sigma) && sigma > 0) {
-    return dl_shared(new DlBlurMaskFilter(style, sigma, respect_ctm));
+    return std::shared_ptr<DlBlurMaskFilter>(
+        new DlBlurMaskFilter(style, sigma, respect_ctm));
   }
   return nullptr;
 }

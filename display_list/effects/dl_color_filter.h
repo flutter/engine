@@ -31,21 +31,22 @@ enum class DlColorFilterType {
 
 class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
  public:
-  // Construct and return a |dl_shared| pointer to a |DlBlendColorFilter|
+  // Construct and return a |std::shared_ptr| to a |DlBlendColorFilter|
   // based on the supplied parameters, or nullptr if the parameters specify
   // a NOP operation.
-  static dl_shared<DlColorFilter> MakeBlend(DlColor color, DlBlendMode mode);
+  static std::shared_ptr<DlColorFilter> MakeBlend(DlColor color,
+                                                  DlBlendMode mode);
 
-  // Construct and return a |dl_shared| pointer to a |DlMatrixColorFilter|
+  // Construct and return a |std::shared_ptr| to a |DlMatrixColorFilter|
   // based on the supplied parameters, or nullptr if the parameters specify
   // a NOP operation.
-  static dl_shared<DlColorFilter> MakeMatrix(const float matrix[20]);
+  static std::shared_ptr<DlColorFilter> MakeMatrix(const float matrix[20]);
 
-  // Return a |dl_shared| pointer to a |DlSrgbToLinearGammaColorFilter|.
-  static dl_shared<DlColorFilter> MakeSrgbToLinearGamma();
+  // Return a |std::shared_ptr| to a |DlSrgbToLinearGammaColorFilter|.
+  static std::shared_ptr<DlColorFilter> MakeSrgbToLinearGamma();
 
-  // Return a |dl_shared| pointer to a |DlLinearToSrgbGammaColorFilter|.
-  static dl_shared<DlColorFilter> MakeLinearToSrgbGamma();
+  // Return a |std::shared_ptr| to a |DlLinearToSrgbGammaColorFilter|.
+  static std::shared_ptr<DlColorFilter> MakeLinearToSrgbGamma();
 
   // Return a boolean indicating whether the color filtering operation will
   // modify transparent black. This is typically used to determine if applying
@@ -77,7 +78,8 @@ class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
 // filter is then used to combine those colors.
 class DlBlendColorFilter final : public DlColorFilter {
  public:
-  static dl_shared<DlBlendColorFilter> Make(DlColor color, DlBlendMode mode);
+  static std::shared_ptr<DlBlendColorFilter> Make(DlColor color,
+                                                  DlBlendMode mode);
 
   DlColorFilterType type() const override { return DlColorFilterType::kBlend; }
   size_t size() const override { return sizeof(*this); }
@@ -123,7 +125,7 @@ class DlBlendColorFilter final : public DlColorFilter {
 // pixel data, the necessary pre<->non-pre conversions must be performed.
 class DlMatrixColorFilter final : public DlColorFilter {
  public:
-  static dl_shared<DlMatrixColorFilter> Make(const float matrix[20]);
+  static std::shared_ptr<DlMatrixColorFilter> Make(const float matrix[20]);
 
   DlColorFilterType type() const override { return DlColorFilterType::kMatrix; }
   size_t size() const override { return sizeof(*this); }
@@ -157,7 +159,9 @@ class DlMatrixColorFilter final : public DlColorFilter {
 // gamma curve to the rendered pixels.
 class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
  public:
-  static dl_shared<DlSrgbToLinearGammaColorFilter> Make() { return instance; }
+  static std::shared_ptr<DlSrgbToLinearGammaColorFilter> Make() {
+    return instance;
+  }
 
   DlColorFilterType type() const override {
     return DlColorFilterType::kSrgbToLinearGamma;
@@ -173,7 +177,7 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   }
 
  private:
-  static dl_shared<DlSrgbToLinearGammaColorFilter> instance;
+  static std::shared_ptr<DlSrgbToLinearGammaColorFilter> instance;
 
   DlSrgbToLinearGammaColorFilter() {}
 };
@@ -182,7 +186,9 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
 // to the rendered pixels.
 class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
  public:
-  static dl_shared<DlLinearToSrgbGammaColorFilter> Make() { return instance; }
+  static std::shared_ptr<DlLinearToSrgbGammaColorFilter> Make() {
+    return instance;
+  }
 
   DlColorFilterType type() const override {
     return DlColorFilterType::kLinearToSrgbGamma;
@@ -198,7 +204,7 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   }
 
  private:
-  static dl_shared<DlLinearToSrgbGammaColorFilter> instance;
+  static std::shared_ptr<DlLinearToSrgbGammaColorFilter> instance;
 
   DlLinearToSrgbGammaColorFilter() {}
 };

@@ -26,9 +26,9 @@ enum class DlPathEffectType {
 
 class DlPathEffect : public DlAttribute<DlPathEffect, DlPathEffectType> {
  public:
-  static dl_shared<DlPathEffect> MakeDash(const SkScalar intervals[],
-                                          int count,
-                                          SkScalar phase);
+  static std::shared_ptr<DlPathEffect> MakeDash(const SkScalar intervals[],
+                                                int count,
+                                                SkScalar phase);
 
   virtual const DlDashPathEffect* asDash() const { return nullptr; }
 
@@ -64,9 +64,9 @@ class DlPathEffect : public DlAttribute<DlPathEffect, DlPathEffectType> {
 ///
 class DlDashPathEffect final : public DlPathEffect {
  public:
-  static dl_shared<DlPathEffect> Make(const SkScalar intervals[],
-                                      int count,
-                                      SkScalar phase);
+  static std::shared_ptr<DlPathEffect> Make(const SkScalar intervals[],
+                                            int count,
+                                            SkScalar phase);
 
   DlPathEffectType type() const override { return DlPathEffectType::kDash; }
   size_t size() const override {

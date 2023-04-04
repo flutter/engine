@@ -48,7 +48,7 @@ class MockCanvas final : public DlCanvas {
   struct SaveLayerData {
     SkRect save_bounds;
     DlPaint restore_paint;
-    dl_shared<const DlImageFilter> backdrop_filter;
+    std::shared_ptr<const DlImageFilter> backdrop_filter;
     int save_to_layer;
   };
 

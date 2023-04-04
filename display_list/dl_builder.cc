@@ -278,7 +278,7 @@ void DisplayListBuilder::Restore() {
 
     // Before we pop_back we will get the current layer bounds from the
     // current accumulator and adjust it as required based on the filter.
-    dl_shared<const DlImageFilter> filter = layer_info.filter();
+    std::shared_ptr<const DlImageFilter> filter = layer_info.filter();
     if (filter) {
       const SkRect clip = tracker_.device_cull_rect();
       if (!accumulator()->restore(

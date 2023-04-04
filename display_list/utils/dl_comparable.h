@@ -7,15 +7,12 @@
 
 #include <memory>
 
-#include "flutter/display_list/dl_shared.h"
-
 namespace flutter {
 
 // These templates implement content comparisons that compare any two
 // objects of the same type whether they are held as a raw pointer (T*),
-// a reference (T&), a standard shared pointer (std::shared_ptr<T>), or a
-// DisplayList shared pointer (dl_shared<T>) (provided that the <T> class
-// implements the == operator override).
+// a reference (T&), or a shared pointer (std::shared_ptr<T>) (provided
+// that the <T> class implements the == operator override).
 // Any combination of pointers or references to T are supported and
 // null pointers are not equal to anything but another null pointer.
 
@@ -28,11 +25,6 @@ namespace dl_comparable {
 // -----------------------------------------------------------------------
 // The ToPtr templates simply strip any of the supported reference types
 // down into a raw pointer to their underlying object type.
-
-template <typename T>
-T* ToPtr(dl_shared<T>& value) {
-  return value.get();
-}
 
 template <typename T>
 T* ToPtr(std::shared_ptr<T>& value) {
@@ -103,13 +95,14 @@ bool Equals(const U* a, const T* b) {
 
 }  // namespace dl_comparable
 
-// -----------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // The two Equals templates first break any pair of reference types down
 // into raw pointers and then attempt to pass them to the internal Equals
 // template, succeeding iff both underlying object types are identical.
 //
-// Thus Equals(T* a, dl_shared<const T> b) compiles (if T implements == T)
-// but  Equals(T* a, U* b)                 does not.
+// Thus Equals(T* a, shared_ptr<const T> b) compiles (if T implements == T)
+// but  Equals(T* a, U* b)                  (U related to T) compiles
+// but  Equals(T* a, V* b)                  (V unrelated to T) does not.
 
 template <typename T, typename U>
 bool Equals(T a, U b) {

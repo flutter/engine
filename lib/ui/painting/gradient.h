@@ -54,14 +54,15 @@ class CanvasGradient : public Shader {
                            DlTileMode tile_mode,
                            const tonic::Float64List& matrix4);
 
-  dl_shared<DlColorSource> shader(DlImageSampling sampling) override {
+  std::shared_ptr<const DlColorSource> shader(
+      DlImageSampling sampling) override {
     // Gradient color sources do not have image sampling variants...
     return dl_shader_;
   }
 
  private:
   CanvasGradient();
-  dl_shared<DlColorSource> dl_shader_;
+  std::shared_ptr<const DlColorSource> dl_shader_;
 };
 
 }  // namespace flutter

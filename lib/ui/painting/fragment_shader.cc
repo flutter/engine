@@ -84,7 +84,7 @@ void ReusableFragmentShader::SetImageSampler(Dart_Handle index_handle,
   uniform_floats[float_count_ + 2 * index + 1] = image->height();
 }
 
-dl_shared<DlColorSource> ReusableFragmentShader::shader(
+std::shared_ptr<const DlColorSource> ReusableFragmentShader::shader(
     DlImageSampling sampling) {
   FML_CHECK(program_);
 

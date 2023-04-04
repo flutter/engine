@@ -41,7 +41,7 @@ class ReusableFragmentShader : public Shader {
   void Dispose();
 
   // |Shader|
-  dl_shared<DlColorSource> shader(DlImageSampling) override;
+  std::shared_ptr<const DlColorSource> shader(DlImageSampling) override;
 
  private:
   ReusableFragmentShader(fml::RefPtr<FragmentProgram> program,
@@ -50,7 +50,7 @@ class ReusableFragmentShader : public Shader {
 
   fml::RefPtr<FragmentProgram> program_;
   sk_sp<SkData> uniform_data_;
-  std::vector<dl_shared<DlColorSource>> samplers_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
   size_t float_count_;
 };
 
