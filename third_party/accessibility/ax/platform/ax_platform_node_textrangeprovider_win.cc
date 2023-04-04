@@ -435,8 +435,13 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindAttributeRange(
   return S_OK;
 }
 
-static bool StringSearchBasic(const std::u16string_view search_string, const std::u16string_view find_in, size_t* find_start, size_t* find_length, bool backwards) {
-  size_t index = backwards ? find_in.rfind(search_string) : find_in.find(search_string);
+static bool StringSearchBasic(const std::u16string_view search_string,
+                              const std::u16string_view find_in,
+                              size_t* find_start,
+                              size_t* find_length,
+                              bool backwards) {
+  size_t index =
+      backwards ? find_in.rfind(search_string) : find_in.find(search_string);
   if (index == std::u16string::npos) {
     return false;
   }
@@ -446,19 +451,22 @@ static bool StringSearchBasic(const std::u16string_view search_string, const std
 }
 
 bool StringSearch(std::u16string_view search_string,
-                         std::u16string_view find_in,
-                         size_t* find_start,
-                         size_t* find_length,
-                         bool ignore_case,
-                         bool backwards) {
+                  std::u16string_view find_in,
+                  size_t* find_start,
+                  size_t* find_length,
+                  bool ignore_case,
+                  bool backwards) {
   UErrorCode status = U_ZERO_ERROR;
   UCollator* col = ucol_open(uloc_getDefault(), &status);
-  UStringSearch* search = usearch_openFromCollator(search_string.data(), search_string.size(), find_in.data(), find_in.size(), col, nullptr, &status);
+  UStringSearch* search = usearch_openFromCollator(
+      search_string.data(), search_string.size(), find_in.data(),
+      find_in.size(), col, nullptr, &status);
   if (!U_SUCCESS(status)) {
     if (search) {
       usearch_close(search);
     }
-    return StringSearchBasic(search_string, find_in, find_start, find_length, backwards);
+    return StringSearchBasic(search_string, find_in, find_start, find_length,
+                             backwards);
   }
   UCollator* collator = usearch_getCollator(search);
   ucol_setStrength(collator, ignore_case ? UCOL_PRIMARY : UCOL_TERTIARY);
@@ -469,9 +477,11 @@ bool StringSearch(std::u16string_view search_string,
     if (search) {
       usearch_close(search);
     }
-    return StringSearchBasic(search_string, find_in, find_start, find_length, backwards);
+    return StringSearchBasic(search_string, find_in, find_start, find_length,
+                             backwards);
   }
-  int32_t index = backwards ? usearch_last(search, &status) : usearch_first(search, &status);
+  int32_t index = backwards ? usearch_last(search, &status)
+                            : usearch_first(search, &status);
   bool match = false;
   if (U_SUCCESS(status) && index != USEARCH_DONE) {
     match = true;

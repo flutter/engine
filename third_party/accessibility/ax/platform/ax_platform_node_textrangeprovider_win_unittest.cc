@@ -147,25 +147,25 @@ namespace ui {
     EXPECT_STREQ(expected_content, provider_content.Get()); \
   }
 
-#define EXPECT_UIA_FIND_TEXT(text_range_provider, search_term, ignore_case,  \
-                             owner)                                          \
-  {                                                                          \
-    base::win::ScopedBstr find_string(search_term);                          \
-    ComPtr<ITextRangeProvider> text_range_provider_found;                    \
-    EXPECT_HRESULT_SUCCEEDED(text_range_provider->FindText(                  \
-        find_string.Get(), false, ignore_case, &text_range_provider_found)); \
-    if (text_range_provider_found == nullptr) {                              \
-      EXPECT_TRUE(false);                                                    \
-    } else {                                                                 \
-      SetOwner(owner, text_range_provider_found.Get());                      \
-      base::win::ScopedBstr found_content;                                   \
-      EXPECT_HRESULT_SUCCEEDED(                                              \
-          text_range_provider_found->GetText(-1, found_content.Receive()));  \
-      if (ignore_case)                                                       \
-        EXPECT_TRUE(StringCompareICU(found_content.Get(), find_string.Get()));           \
-      else                                                                   \
-        EXPECT_EQ(0, wcscmp(found_content.Get(), find_string.Get()));        \
-    }                                                                        \
+#define EXPECT_UIA_FIND_TEXT(text_range_provider, search_term, ignore_case,    \
+                             owner)                                            \
+  {                                                                            \
+    base::win::ScopedBstr find_string(search_term);                            \
+    ComPtr<ITextRangeProvider> text_range_provider_found;                      \
+    EXPECT_HRESULT_SUCCEEDED(text_range_provider->FindText(                    \
+        find_string.Get(), false, ignore_case, &text_range_provider_found));   \
+    if (text_range_provider_found == nullptr) {                                \
+      EXPECT_TRUE(false);                                                      \
+    } else {                                                                   \
+      SetOwner(owner, text_range_provider_found.Get());                        \
+      base::win::ScopedBstr found_content;                                     \
+      EXPECT_HRESULT_SUCCEEDED(                                                \
+          text_range_provider_found->GetText(-1, found_content.Receive()));    \
+      if (ignore_case)                                                         \
+        EXPECT_TRUE(StringCompareICU(found_content.Get(), find_string.Get())); \
+      else                                                                     \
+        EXPECT_EQ(0, wcscmp(found_content.Get(), find_string.Get()));          \
+    }                                                                          \
   }
 
 #define EXPECT_UIA_FIND_TEXT_NO_MATCH(text_range_provider, search_term,      \
@@ -214,7 +214,9 @@ namespace ui {
 
 static bool StringCompareICU(BSTR left, BSTR right) {
   size_t start, length;
-  if (!StringSearch(reinterpret_cast<char16_t*>(left), reinterpret_cast<char16_t*>(right), &start, &length, true, false)) {
+  if (!StringSearch(reinterpret_cast<char16_t*>(left),
+                    reinterpret_cast<char16_t*>(right), &start, &length, true,
+                    false)) {
     return false;
   }
   return start == 0 && length == wcslen(left);
@@ -5145,7 +5147,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
   // Accented lowercase e.
   EXPECT_UIA_FIND_TEXT(range, L"resum\xE9", false, owner);
-  // Accented uppercase e.
+  // Accented uppercase +e.
   EXPECT_UIA_FIND_TEXT(range, L"resum\xC9", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"resume", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"resumE", true, owner);

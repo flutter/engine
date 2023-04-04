@@ -284,11 +284,11 @@ class AX_EXPORT __declspec(uuid("3071e40d-a10d-45ff-a59f-6e8e1138e2c1"))
 //
 // Exposed as non-static for use in testing.
 bool StringSearch(std::u16string_view search_string,
-                         std::u16string_view find_in,
-                         size_t* find_start,
-                         size_t* find_length,
-                         bool ignore_case,
-                         bool backwards);
+                  std::u16string_view find_in,
+                  size_t* find_start,
+                  size_t* find_length,
+                  bool ignore_case,
+                  bool backwards);
 
 }  // namespace ui
 
