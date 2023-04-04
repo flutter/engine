@@ -179,7 +179,7 @@ class ElementHostNode implements HostNode {
     applyGlobalCssRulesToSheet(
       styleElement.sheet! as DomCSSStyleSheet,
       hasAutofillOverlay: browserHasAutofillOverlay(),
-      cssSelectorPrefix: FlutterViewEmbedder.appRootTagName,
+      cssSelectorPrefix: FlutterViewEmbedder.flutterViewTagName,
       defaultCssFont: defaultFont,
     );
 

@@ -24,7 +24,7 @@ import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 /// Manages several top-level elements that host Flutter-generated content,
 /// including:
 ///
-/// - [appRoot], the root element of a Flutter view.
+/// - [flutterViewElement], the root element of a Flutter view.
 /// - [glassPaneElement], the glass pane element that hosts the shadowDOM.
 /// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
 ///   content from the surrounding page content, including from the platform
@@ -64,7 +64,7 @@ class FlutterViewEmbedder {
   final EmbeddingStrategy _embeddingStrategy;
 
   // The tag name for the app root, which hosts the app.
-  static const String appRootTagName = 'flt-app-root';
+  static const String flutterViewTagName = 'flutter-view';
 
   // The tag name for the glass-pane.
   static const String glassPaneTagName = 'flt-glass-pane';
@@ -121,8 +121,8 @@ class FlutterViewEmbedder {
   /// which captures semantics input events. The semantics DOM tree must be a
   /// child of the glass pane element so that events bubble up to the glass pane
   /// if they are not handled by semantics.
-  DomElement get appRoot => _appRoot;
-  late DomElement _appRoot;
+  DomElement get flutterViewElement => _flutterViewElement;
+  late DomElement _flutterViewElement;
 
   DomElement get glassPaneElement => _glassPaneElement;
   late DomElement _glassPaneElement;
@@ -159,7 +159,7 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
-    _appRoot = domDocument.createElement(appRootTagName);
+    _flutterViewElement = domDocument.createElement(flutterViewTagName);
     _glassPaneElement = domDocument.createElement(glassPaneTagName);
 
 
@@ -168,8 +168,8 @@ class FlutterViewEmbedder {
     //
     // The embeddingStrategy will take care of cleaning up the glassPane on hot
     // restart.
-    _embeddingStrategy.attachGlassPane(appRoot);
-    appRoot.appendChild(glassPaneElement);
+    _embeddingStrategy.attachGlassPane(flutterViewElement);
+    flutterViewElement.appendChild(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
@@ -182,7 +182,7 @@ class FlutterViewEmbedder {
     _glassPaneShadow = glassPaneElementHostNode;
 
     _textEditingHostNode =
-        createTextEditingHostNode(appRoot, defaultCssFont);
+        createTextEditingHostNode(flutterViewElement, defaultCssFont);
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = domDocument.createElement('flt-scene-host')
@@ -217,7 +217,7 @@ class FlutterViewEmbedder {
     // elements transparent. This way, if a platform view appears among other
     // interactive Flutter widgets, as long as those widgets do not intersect
     // with the platform view, the platform view will be reachable.
-    appRoot.appendChild(semanticsHostElement);
+    flutterViewElement.appendChild(semanticsHostElement);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
@@ -227,7 +227,7 @@ class FlutterViewEmbedder {
 
     KeyboardBinding.initInstance();
     PointerBinding.initInstance(
-      appRoot,
+      flutterViewElement,
       KeyboardBinding.instance!.converter,
     );
 
@@ -352,7 +352,7 @@ class FlutterViewEmbedder {
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
         _embeddingStrategy.attachResourcesHost(resourcesHost,
-            nextTo: appRoot);
+            nextTo: flutterViewElement);
       } else {
         glassPaneShadow.node
             .insertBefore(resourcesHost, glassPaneShadow.node.firstChild);
@@ -422,7 +422,7 @@ DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
   applyGlobalCssRulesToSheet(
     styleElement.sheet! as DomCSSStyleSheet,
     hasAutofillOverlay: browserHasAutofillOverlay(),
-    cssSelectorPrefix: FlutterViewEmbedder.appRootTagName,
+    cssSelectorPrefix: FlutterViewEmbedder.flutterViewTagName,
     defaultCssFont: defaultFont,
   );
 

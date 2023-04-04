@@ -67,7 +67,7 @@ class MouseCursor {
 
   void activateSystemCursor(String? kind) {
     setElementStyle(
-      flutterViewEmbedder.appRoot,
+      flutterViewEmbedder.flutterViewElement,
       'cursor',
       _mapKindToCssValue(kind),
     );
