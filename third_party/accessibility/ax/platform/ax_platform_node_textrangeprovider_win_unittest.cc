@@ -5117,6 +5117,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
     fml::icu::InitializeICU(icudtl_path);
   }
 
+  // \xC3\xA9 are the UTF8 bytes for codepoint 0xE9 - accented lowercase e.
   Init(BuildTextDocument({"some text", "more text", "resum\xC3\xA9"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
@@ -5142,7 +5143,9 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   EXPECT_UIA_FIND_TEXT(range, L"more text", false, owner);
   EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
+  // Accented lowercase e.
   EXPECT_UIA_FIND_TEXT(range, L"resum\xE9", false, owner);
+  // Accented uppercase e.
   EXPECT_UIA_FIND_TEXT(range, L"resum\xC9", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"resume", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"resumE", true, owner);
