@@ -15,7 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
 NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID);
 
-flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* _Nullable bundle = nil,
+                                              NSProcessInfo* _Nullable processInfoOrNil = nil);
 
 @interface FlutterDartProject ()
 
