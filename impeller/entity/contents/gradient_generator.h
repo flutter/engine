@@ -9,12 +9,12 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "flutter/impeller/renderer/texture.h"
+#include "flutter/impeller/core/texture.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 

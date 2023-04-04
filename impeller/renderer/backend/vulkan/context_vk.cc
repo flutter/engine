@@ -50,7 +50,7 @@ static std::optional<vk::PhysicalDevice> PickPhysicalDevice(
 }
 
 static std::vector<vk::DeviceQueueCreateInfo> GetQueueCreateInfos(
-    std::initializer_list<QueueVK> queues) {
+    std::initializer_list<QueueIndexVK> queues) {
   std::map<size_t /* family */, size_t /* index */> family_index_map;
   for (const auto& queue : queues) {
     family_index_map[queue.family] = 0;
@@ -72,8 +72,8 @@ static std::vector<vk::DeviceQueueCreateInfo> GetQueueCreateInfos(
   return infos;
 }
 
-static std::optional<QueueVK> PickQueue(const vk::PhysicalDevice& device,
-                                        vk::QueueFlagBits flags) {
+static std::optional<QueueIndexVK> PickQueue(const vk::PhysicalDevice& device,
+                                             vk::QueueFlagBits flags) {
   // This can be modified to ensure that dedicated queues are returned for each
   // queue type depending on support.
   const auto families = device.getQueueFamilyProperties();
@@ -81,7 +81,7 @@ static std::optional<QueueVK> PickQueue(const vk::PhysicalDevice& device,
     if (!(families[i].queueFlags & flags)) {
       continue;
     }
-    return QueueVK{.family = i, .index = 0};
+    return QueueIndexVK{.family = i, .index = 0};
   }
   return std::nullopt;
 }
@@ -114,7 +114,8 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK());
+  auto caps = std::shared_ptr<CapabilitiesVK>(
+      new CapabilitiesVK(settings.enable_validation));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -176,7 +177,7 @@ void ContextVK::Setup(Settings settings) {
 
   auto instance = vk::createInstanceUnique(instance_info);
   if (instance.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create instance: "
+    VALIDATION_LOG << "Could not create Vulkan instance: "
                    << vk::to_string(instance.result);
     return;
   }
@@ -216,9 +217,16 @@ void ContextVK::Setup(Settings settings) {
   auto compute_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eCompute);
 
-  if (!graphics_queue.has_value() || !transfer_queue.has_value() ||
-      !compute_queue.has_value()) {
-    VALIDATION_LOG << "Could not pick device queues.";
+  if (!graphics_queue.has_value()) {
+    VALIDATION_LOG << "Could not pick graphics queue.";
+    return;
+  }
+  if (!transfer_queue.has_value()) {
+    FML_LOG(INFO) << "Dedicated transfer queue not avialable.";
+    transfer_queue = graphics_queue.value();
+  }
+  if (!compute_queue.has_value()) {
+    VALIDATION_LOG << "Could not pick compute queue.";
     return;
   }
 
@@ -324,6 +332,19 @@ void ContextVK::Setup(Settings settings) {
   }
 
   //----------------------------------------------------------------------------
+  /// Fetch the queues.
+  ///
+  QueuesVK queues(device.value.get(),      //
+                  graphics_queue.value(),  //
+                  compute_queue.value(),   //
+                  transfer_queue.value()   //
+  );
+  if (!queues.IsValid()) {
+    VALIDATION_LOG << "Could not fetch device queues.";
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// All done!
   ///
   instance_ = std::move(instance.value);
@@ -334,15 +355,7 @@ void ContextVK::Setup(Settings settings) {
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
   pipeline_library_ = std::move(pipeline_library);
-  graphics_queue_ =
-      device_->getQueue(graphics_queue->family, graphics_queue->index);
-  compute_queue_ =
-      device_->getQueue(compute_queue->family, compute_queue->index);
-  transfer_queue_ =
-      device_->getQueue(transfer_queue->family, transfer_queue->index);
-  graphics_queue_info_ = graphics_queue.value();
-  compute_queue_info_ = compute_queue.value();
-  transfer_queue_info_ = transfer_queue.value();
+  queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
   is_valid_ = true;
@@ -352,9 +365,6 @@ void ContextVK::Setup(Settings settings) {
   /// messengers have had a chance to be setup.
   ///
   SetDebugName(device_.get(), device_.get(), "ImpellerDevice");
-  SetDebugName(device_.get(), graphics_queue_, "ImpellerGraphicsQ");
-  SetDebugName(device_.get(), compute_queue_, "ImpellerComputeQ");
-  SetDebugName(device_.get(), transfer_queue_, "ImpellerTransferQ");
 }
 
 bool ContextVK::IsValid() const {
@@ -441,12 +451,8 @@ const std::shared_ptr<const Capabilities>& ContextVK::GetCapabilities() const {
   return device_capabilities_;
 }
 
-vk::Queue ContextVK::GetGraphicsQueue() const {
-  return graphics_queue_;
-}
-
-QueueVK ContextVK::GetGraphicsQueueInfo() const {
-  return graphics_queue_info_;
+const std::shared_ptr<QueueVK>& ContextVK::GetGraphicsQueue() const {
+  return queues_.graphics_queue;
 }
 
 vk::PhysicalDevice ContextVK::GetPhysicalDevice() const {
@@ -464,10 +470,10 @@ std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     return nullptr;
   }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      *device_,         //
-      graphics_queue_,  //
-      tls_pool,         //
-      fence_waiter_     //
+      *device_,                //
+      queues_.graphics_queue,  //
+      tls_pool,                //
+      fence_waiter_            //
       ));
   if (!encoder->IsValid()) {
     return nullptr;

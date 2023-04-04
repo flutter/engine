@@ -188,7 +188,11 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                  caps.maxImageExtent.height),
   };
   swapchain_info.minImageCount = std::clamp(
-      caps.minImageCount + 1u, caps.minImageCount, caps.maxImageCount);
+      caps.minImageCount + 1u,  // preferred image count
+      caps.minImageCount,       // min count cannot be zero
+      caps.maxImageCount == 0u ? caps.minImageCount + 1u
+                               : caps.maxImageCount  // max zero means no limit
+  );
   swapchain_info.imageArrayLayers = 1u;
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
   swapchain_info.preTransform = caps.currentTransform;
@@ -414,7 +418,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     submit_info.setWaitSemaphores(*sync->render_ready);
     submit_info.setSignalSemaphores(*sync->present_ready);
     auto result =
-        context.GetGraphicsQueue().submit(submit_info, *sync->acquire);
+        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
     if (result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not wait on render semaphore: "
                      << vk::to_string(result);

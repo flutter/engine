@@ -134,7 +134,6 @@
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
-../../../flutter/impeller/geometry/geometry_unittests.h
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/golden_tests_harvester/.dart_tool
 ../../../flutter/impeller/golden_tests_harvester/.gitignore
@@ -2626,6 +2625,10 @@
 ../../../third_party/skia/include/android/BUILD.bazel
 ../../../third_party/skia/include/codec/BUILD.bazel
 ../../../third_party/skia/include/config/BUILD.bazel
+../../../third_party/skia/include/config/OWNERS
+../../../third_party/skia/include/config/WORKSPACE.bazel
+../../../third_party/skia/include/config/copts.bzl
+../../../third_party/skia/include/config/linkopts.bzl
 ../../../third_party/skia/include/core/BUILD.bazel
 ../../../third_party/skia/include/docs/BUILD.bazel
 ../../../third_party/skia/include/effects/BUILD.bazel

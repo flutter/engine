@@ -1591,9 +1591,9 @@ void _paragraphTests() {
       ..forceStrutHeight = false;
 
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
 
     builder.addText('Hello');
@@ -1737,9 +1737,9 @@ void _paragraphTests() {
       ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder =
-        canvasKit.ParagraphBuilder.MakeFromFontProvider(
+        canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
     builder.addText('hello');
 
@@ -1866,9 +1866,11 @@ void _paragraphTests() {
 
       v8BreakIterator = Object();
       browserSupportsImageDecoder = false;
+      // TODO(mdebbar): we don't check image codecs for now.
+      // https://github.com/flutter/flutter/issues/122331
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;

@@ -15,14 +15,18 @@ namespace testing {
 
 MetalScreenshoter::MetalScreenshoter() {
   FML_CHECK(::glfwInit() == GLFW_TRUE);
-  playground_ = PlaygroundImpl::Create(PlaygroundBackend::kMetal);
+  playground_ =
+      PlaygroundImpl::Create(PlaygroundBackend::kMetal, PlaygroundSwitches{});
   aiks_context_.reset(new AiksContext(playground_->GetContext()));
 }
 
 std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
-    Picture&& picture,
+    const Picture& picture,
     const ISize& size) {
-  std::shared_ptr<Image> image = picture.ToImage(*aiks_context_, size);
+  Vector2 content_scale = playground_->GetContentScale();
+  std::shared_ptr<Image> image = picture.ToImage(
+      *aiks_context_,
+      ISize(size.width * content_scale.x, size.height * content_scale.y));
   std::shared_ptr<Texture> texture = image->GetTexture();
   id<MTLTexture> metal_texture =
       std::static_pointer_cast<TextureMTL>(texture)->GetMTLTexture();

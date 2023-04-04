@@ -15,6 +15,9 @@ static constexpr const char* kInstanceLayer = "ImpellerInstance";
 
 CapabilitiesVK::CapabilitiesVK(bool enable_validations)
     : enable_validations_(enable_validations) {
+  if (enable_validations_) {
+    FML_LOG(INFO) << "Vulkan validations are enabled.";
+  }
   auto extensions = vk::enumerateInstanceExtensionProperties();
   auto layers = vk::enumerateInstanceLayerProperties();
 
@@ -333,6 +336,10 @@ bool CapabilitiesVK::SupportsComputeSubgroups() const {
 // |Capabilities|
 bool CapabilitiesVK::SupportsReadFromResolve() const {
   return false;
+}
+
+bool CapabilitiesVK::SupportsDecalTileMode() const {
+  return true;
 }
 
 // |Capabilities|

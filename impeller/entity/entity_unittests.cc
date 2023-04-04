@@ -34,7 +34,7 @@
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
@@ -2449,6 +2449,22 @@ TEST_P(EntityTest, InheritOpacityTest) {
   // Runtime effect contents can't accept opacity.
   auto runtime_effect = std::make_shared<RuntimeEffectContents>();
   ASSERT_FALSE(runtime_effect->CanInheritOpacity(entity));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kColorBurn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

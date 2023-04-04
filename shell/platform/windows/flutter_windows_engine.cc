@@ -762,13 +762,18 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
                               reinterpret_cast<const uint8_t*>(""), 0);
 }
 
-void FlutterWindowsEngine::RequestApplicationQuit(ExitType exit_type,
-                                                  UINT exit_code) {
-  platform_handler_->RequestAppExit(exit_type, exit_code);
+void FlutterWindowsEngine::RequestApplicationQuit(HWND hwnd,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam,
+                                                  AppExitType exit_type) {
+  platform_handler_->RequestAppExit(hwnd, wparam, lparam, exit_type, 0);
 }
 
-void FlutterWindowsEngine::OnQuit(UINT exit_code) {
-  lifecycle_manager_->Quit(exit_code);
+void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
+                                  std::optional<WPARAM> wparam,
+                                  std::optional<LPARAM> lparam,
+                                  UINT exit_code) {
+  lifecycle_manager_->Quit(hwnd, wparam, lparam, exit_code);
 }
 
 }  // namespace flutter

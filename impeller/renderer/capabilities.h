@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
@@ -30,6 +30,8 @@ class Capabilities {
   virtual bool SupportsComputeSubgroups() const = 0;
 
   virtual bool SupportsReadFromResolve() const = 0;
+
+  virtual bool SupportsDecalTileMode() const = 0;
 
   virtual PixelFormat GetDefaultColorFormat() const = 0;
 
@@ -65,6 +67,8 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetDefaultStencilFormat(PixelFormat value);
 
+  CapabilitiesBuilder& SetSupportsDecalTileMode(bool value);
+
   std::unique_ptr<Capabilities> Build();
 
  private:
@@ -76,6 +80,7 @@ class CapabilitiesBuilder {
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
   bool supports_read_from_resolve_ = false;
+  bool supports_decal_tile_mode_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
 

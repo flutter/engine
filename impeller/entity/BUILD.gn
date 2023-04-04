@@ -11,6 +11,8 @@ impeller_shaders("entity_shaders") {
     vulkan_language_version = 130
   }
 
+  use_half_textures = true
+
   shaders = [
     "shaders/blending/advanced_blend.vert",
     "shaders/blending/advanced_blend_color.frag",
@@ -35,9 +37,11 @@ impeller_shaders("entity_shaders") {
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
     "shaders/conical_gradient_fill.frag",
-    "shaders/gaussian_blur.frag",
-    "shaders/gaussian_blur_decal.frag",
-    "shaders/gaussian_blur.vert",
+    "shaders/gaussian_blur/gaussian_blur.vert",
+    "shaders/gaussian_blur/gaussian_blur_alpha_decal.frag",
+    "shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag",
     "shaders/glyph_atlas.frag",
     "shaders/glyph_atlas.vert",
     "shaders/glyph_atlas_sdf.frag",
@@ -176,6 +180,8 @@ impeller_component("entity") {
     "contents/filters/srgb_to_linear_filter_contents.h",
     "contents/filters/yuv_to_rgb_filter_contents.cc",
     "contents/filters/yuv_to_rgb_filter_contents.h",
+    "contents/foreground_blend_contents.cc",
+    "contents/foreground_blend_contents.h",
     "contents/framebuffer_blend_contents.cc",
     "contents/framebuffer_blend_contents.h",
     "contents/gradient_generator.cc",
@@ -242,7 +248,7 @@ impeller_component("entity_unittests") {
 
   deps = [
     ":entity",
-    "../geometry:geometry_unittests",
+    "../geometry:geometry_asserts",
     "../playground:playground_test",
   ]
 }

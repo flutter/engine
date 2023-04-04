@@ -11,14 +11,15 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
+#include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
@@ -36,6 +37,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner;
+    bool enable_validation = false;
 
     Settings() = default;
 
@@ -109,9 +111,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
 #endif  // FML_OS_ANDROID
 
-  vk::Queue GetGraphicsQueue() const;
-
-  QueueVK GetGraphicsQueueInfo() const;
+  const std::shared_ptr<QueueVK>& GetGraphicsQueue() const;
 
   vk::PhysicalDevice GetPhysicalDevice() const;
 
@@ -126,12 +126,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
-  vk::Queue graphics_queue_ = {};
-  vk::Queue compute_queue_ = {};
-  vk::Queue transfer_queue_ = {};
-  QueueVK graphics_queue_info_ = {};
-  QueueVK compute_queue_info_ = {};
-  QueueVK transfer_queue_info_ = {};
+  QueuesVK queues_;
   std::shared_ptr<SwapchainVK> swapchain_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
