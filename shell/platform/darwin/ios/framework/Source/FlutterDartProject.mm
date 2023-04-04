@@ -32,8 +32,8 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
-  auto command_line = flutter::CommandLineFromNSProcessInfo();
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* processInfoOrNil) {
+  auto command_line = flutter::CommandLineFromNSProcessInfo(processInfoOrNil);
 
   // Precedence:
   // 1. Settings from the specified NSBundle (except for enable-impeller).
