@@ -26,7 +26,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   TestCommand() {
     argParser
       ..addFlag(
-        'debug-browser',
+        'start-paused',
         help: 'Pauses the browser before running a test, giving you an '
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
@@ -157,7 +157,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   ///
   /// In this mode the browser pauses before running the test to allow
   /// you set breakpoints or inspect the code.
-  bool get isDebugBrowser => boolArg('debug-browser');
+  bool get startPaused => boolArg('start-paused');
 
   bool get isVerbose => boolArg('verbose');
 
@@ -381,7 +381,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         for (final TestSuite suite in filteredSuites)
           RunSuiteStep(
             suite,
-            isDebugBrowser: isDebugBrowser,
+            startPaused: startPaused,
             isVerbose: isVerbose,
             doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
             requireSkiaGold: requireSkiaGold,

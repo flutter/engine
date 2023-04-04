@@ -68,7 +68,7 @@ host system. Some useful flags supported by this command:
   * `--list` will list all the test suites and test bundles and exit without
     compiling or running anything.
   * `--verbose` will output some extra information that may be useful for debugging.
-  * `--debug-browser` will open a browser window and pause the tests before starting
+  * `--start-paused` will open a browser window and pause the tests before starting
     so that breakpoints can be set before starting the test suites.
 
 Several other flags can be passed that filter which test suites should be run:

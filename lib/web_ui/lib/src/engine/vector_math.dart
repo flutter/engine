@@ -1016,14 +1016,13 @@ class Matrix4 {
         _m4storage[13];
   }
 
+  static final Float32List _scratchVector = Float32List(2);
+
   /// Transforms the input rect and calculates the bounding box of the rect
   /// after the transform.
   ui.Rect transformRect(ui.Rect rect) {
-    double? minX;
-    double? minY;
-    double? maxX;
-    double? maxY;
-    final Float32List vector = Float32List(2);
+    ui.Rect? limits;
+    final Float32List vector = _scratchVector;
     for (final ui.Offset point in <ui.Offset>[
       rect.topLeft,
       rect.topRight,
@@ -1033,12 +1032,23 @@ class Matrix4 {
       vector[0] = point.dx;
       vector[1] = point.dy;
       transform2(vector);
-      minX = minX == null ? vector[0] : math.min(minX, vector[0]);
-      minY = minY == null ? vector[1] : math.min(minY, vector[1]);
-      maxX = maxX == null ? vector[0] : math.max(maxX, vector[0]);
-      maxY = maxY == null ? vector[1] : math.max(maxY, vector[1]);
+      if (limits == null) {
+        limits = ui.Rect.fromLTRB(
+          vector[0], 
+          vector[1],
+          vector[0],
+          vector[1],
+        );
+      } else {
+        limits = ui.Rect.fromLTRB(
+          math.min(limits.left, vector[0]), 
+          math.min(limits.top, vector[1]),
+          math.max(limits.right, vector[0]),
+          math.max(limits.bottom, vector[1]),
+        );
+      }
     }
-    return ui.Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
+    return limits!;
   }
 
   /// Copies [this] into [array] starting at [offset].

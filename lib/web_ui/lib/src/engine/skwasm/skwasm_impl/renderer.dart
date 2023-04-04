@@ -203,6 +203,9 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FutureOr<void> initialize() {
+    // TODO(jacksongardner): This is very basic and doesn't work for element
+    // embedding or with platform views. We need to update this at some point
+    // to deal with those cases.
     sceneElement = createDomCanvasElement();
     sceneElement.id = 'flt-scene';
     domDocument.body!.appendChild(sceneElement);

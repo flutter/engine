@@ -280,7 +280,7 @@ class SkwasmCanvas implements ui.Canvas {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
     }
-    return transformRect(matrix, getDestinationClipBounds());
+    return matrix.transformRect(getDestinationClipBounds());
   }
 
   @override
