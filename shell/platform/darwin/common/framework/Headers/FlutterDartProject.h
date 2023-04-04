@@ -10,6 +10,8 @@
 
 #import "FlutterMacros.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * A set of Flutter and Dart assets used by a `FlutterEngine` to initialize execution.
  *
@@ -27,25 +29,19 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The bundle containing the Flutter assets directory. If nil, the App framework
  *               created by Flutter will be used.
  */
-- (nonnull instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle
-    NS_DESIGNATED_INITIALIZER;
-
-#if TARGET_OS_IPHONE
+- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle NS_DESIGNATED_INITIALIZER;
 /**
  * Unavailable - use `init` instead.
  */
-- (nonnull instancetype)
-    initFromDefaultSourceForConfiguration FLUTTER_UNAVAILABLE("Use -init instead.");
+- (instancetype)initFromDefaultSourceForConfiguration API_UNAVAILABLE(macos)
+    FLUTTER_UNAVAILABLE("Use -init instead.");
 
 /**
  * Returns the default identifier for the bundle where we expect to find the Flutter Dart
  * application.
  */
-+ (nonnull NSString*)defaultBundleIdentifier;
++ (NSString*)defaultBundleIdentifier API_UNAVAILABLE(macos);
 
-#endif
-
-#if TARGET_OS_OSX
 /**
  * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
  *
@@ -54,8 +50,8 @@ FLUTTER_DARWIN_EXPORT
  *
  * Set this to nil to pass no arguments to the Dart entrypoint.
  */
-@property(nonatomic, nullable, copy) NSArray<NSString*>* dartEntrypointArguments;
-#endif
+@property(nonatomic, nullable, copy)
+    NSArray<NSString*>* dartEntrypointArguments API_UNAVAILABLE(ios);
 
 /**
  * Returns the file name for the given asset. If the bundle with the identifier
@@ -66,7 +62,7 @@ FLUTTER_DARWIN_EXPORT
  * @param asset The name of the asset. The name can be hierarchical.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset;
++ (NSString*)lookupKeyForAsset:(NSString*)asset;
 
 /**
  * Returns the file name for the given asset.
@@ -76,8 +72,7 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The `NSBundle` to use for looking up the asset.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
-                            fromBundle:(nullable NSBundle*)bundle;
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(nullable NSBundle*)bundle;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -87,8 +82,7 @@ FLUTTER_DARWIN_EXPORT
  * @param package The name of the package from which the asset originates.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
-                           fromPackage:(nonnull NSString*)package;
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -99,10 +93,12 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The bundle to use when doing the lookup.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
-                           fromPackage:(nonnull NSString*)package
-                            fromBundle:(nullable NSBundle*)bundle;
++ (NSString*)lookupKeyForAsset:(NSString*)asset
+                   fromPackage:(NSString*)package
+                    fromBundle:(nullable NSBundle*)bundle;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_

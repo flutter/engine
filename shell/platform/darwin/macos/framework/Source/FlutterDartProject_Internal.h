@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+NSBundle* _Nullable FLTFrameworkBundleWithIdentifier(NSString* _Nonnull bundleID);
+
 /**
  * Provides access to data needed to construct a FlutterProjectArgs for the project.
  */

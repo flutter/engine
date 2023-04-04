@@ -13,6 +13,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
+NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID);
 
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
 
