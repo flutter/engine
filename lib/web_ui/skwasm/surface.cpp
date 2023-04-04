@@ -26,11 +26,13 @@ namespace {
 class Surface;
 void fDispose(Surface* surface);
 void fSetCanvasSize(Surface* surface, int width, int height);
-void fRenderPicture(Surface* surface, SkPicture* picture, uint32_t renderId);
+void fRenderPicture(Surface* surface, SkPicture* picture);
+void fNotifyRenderComplete(Surface* surface, uint32_t renderId);
 void fOnRenderComplete(Surface* surface, uint32_t renderId);
 
 class Surface {
  public:
+  // Main thread only
   Surface(const char* canvasID) : _canvasID(canvasID) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -46,37 +48,52 @@ class Surface {
         this);
   }
 
+  // Main thread only
   void dispose() {
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VI,
                                   reinterpret_cast<void*>(fDispose), nullptr,
                                   this);
   }
 
+  // Main thread only
   void setCanvasSize(int width, int height) {
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
                                   reinterpret_cast<void*>(fSetCanvasSize),
                                   nullptr, this, width, height);
   }
 
+  // Main thread only
   uint32_t renderPicture(SkPicture* picture) {
     uint32_t renderId = ++_currentRenderId;
     picture->ref();
-    emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
+    emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
                                   reinterpret_cast<void*>(fRenderPicture),
-                                  nullptr, this, picture, renderId);
+                                  nullptr, this, picture);
+
+    // After drawing to the surface, the browser implicitly flushed the drawing
+    // commands at the end of the event loop. As a result, in order to make
+    // sure we call back after the rendering has actually occurred, we issue
+    // the callback in a subsequent event, after the flushing has happened.
+    emscripten_dispatch_to_thread(
+        _thread, EM_FUNC_SIG_VII,
+        reinterpret_cast<void*>(fNotifyRenderComplete), nullptr, this,
+        renderId);
     return renderId;
   }
 
+  // Main thread only
   void setOnRenderCallback(OnRenderCompleteCallback* callback) {
     _onRenderCompleteCallback = callback;
   }
 
  private:
+  // Worker thread only
   void _runWorker() {
     _init();
     emscripten_unwind_to_js_event_loop();
   }
 
+  // Worker thread only
   void _init() {
     EmscriptenWebGLContextAttributes attributes;
     emscripten_webgl_init_context_attributes(&attributes);
@@ -123,8 +140,10 @@ class Surface {
     emscripten_glGetIntegerv(GL_STENCIL_BITS, &_stencil);
   }
 
+  // Worker thread only
   void _dispose() { delete this; }
 
+  // Worker thread only
   void _setCanvasSize(int width, int height) {
     if (_canvasWidth != width || _canvasHeight != height) {
       emscripten_set_canvas_element_size(_canvasID.c_str(), width, height);
@@ -134,6 +153,7 @@ class Surface {
     }
   }
 
+  // Worker thread only
   void _recreateSurface() {
     makeCurrent(_glContext);
     GrBackendRenderTarget target(_canvasWidth, _canvasHeight, _sampleCount,
@@ -143,7 +163,8 @@ class Surface {
         kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), nullptr);
   }
 
-  void _renderPicture(const SkPicture* picture, uint32_t renderId) {
+  // Worker thread only
+  void _renderPicture(const SkPicture* picture) {
     if (!_surface) {
       printf("Can't render picture with no surface.\n");
       return;
@@ -153,11 +174,15 @@ class Surface {
     auto canvas = _surface->getCanvas();
     canvas->drawPicture(picture);
     _surface->flush();
+  }
 
+  // Worker thread only
+  void _notifyRenderComplete(uint32_t renderId) {
     emscripten_sync_run_in_main_runtime_thread(
         EM_FUNC_SIG_VII, fOnRenderComplete, this, renderId);
   }
 
+  // Main thread only
   void _onRenderComplete(uint32_t renderId) {
     _onRenderCompleteCallback(renderId);
   }
@@ -180,9 +205,8 @@ class Surface {
 
   friend void fDispose(Surface* surface);
   friend void fSetCanvasSize(Surface* surface, int width, int height);
-  friend void fRenderPicture(Surface* surface,
-                             SkPicture* picture,
-                             uint32_t renderId);
+  friend void fRenderPicture(Surface* surface, SkPicture* picture);
+  friend void fNotifyRenderComplete(Surface* surface, uint32_t renderId);
   friend void fOnRenderComplete(Surface* surface, uint32_t renderId);
 };
 
@@ -194,9 +218,13 @@ void fSetCanvasSize(Surface* surface, int width, int height) {
   surface->_setCanvasSize(width, height);
 }
 
-void fRenderPicture(Surface* surface, SkPicture* picture, uint32_t renderId) {
-  surface->_renderPicture(picture, renderId);
+void fRenderPicture(Surface* surface, SkPicture* picture) {
+  surface->_renderPicture(picture);
   picture->unref();
+}
+
+void fNotifyRenderComplete(Surface* surface, uint32_t renderId) {
+  surface->_notifyRenderComplete(renderId);
 }
 
 void fOnRenderComplete(Surface* surface, uint32_t renderId) {
