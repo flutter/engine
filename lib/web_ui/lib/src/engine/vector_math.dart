@@ -1016,40 +1016,9 @@ class Matrix4 {
         _m4storage[13];
   }
 
-  static final Float32List _scratchVector = Float32List(2);
-
   /// Transforms the input rect and calculates the bounding box of the rect
   /// after the transform.
-  ui.Rect transformRect(ui.Rect rect) {
-    ui.Rect? limits;
-    final Float32List vector = _scratchVector;
-    for (final ui.Offset point in <ui.Offset>[
-      rect.topLeft,
-      rect.topRight,
-      rect.bottomLeft,
-      rect.bottomRight,
-    ]) {
-      vector[0] = point.dx;
-      vector[1] = point.dy;
-      transform2(vector);
-      if (limits == null) {
-        limits = ui.Rect.fromLTRB(
-          vector[0],
-          vector[1],
-          vector[0],
-          vector[1],
-        );
-      } else {
-        limits = ui.Rect.fromLTRB(
-          math.min(limits.left, vector[0]),
-          math.min(limits.top, vector[1]),
-          math.max(limits.right, vector[0]),
-          math.max(limits.bottom, vector[1]),
-        );
-      }
-    }
-    return limits!;
-  }
+  ui.Rect transformRect(ui.Rect rect) => transformRectWithMatrix(this, rect);
 
   /// Copies [this] into [array] starting at [offset].
   void copyIntoArray(List<num> array, [int offset = 0]) {

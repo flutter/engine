@@ -223,6 +223,27 @@ bool get assertionsEnabled {
   return k;
 }
 
+final Float32List _tempRectData = Float32List(4);
+
+/// Transforms a [ui.Rect] given the effective [transform].
+///
+/// The resulting rect is aligned to the pixel grid, i.e. two of
+/// its sides are vertical and two are horizontal. In the presence of rotations
+/// the rectangle is inflated such that it fits the rotated rectangle.
+ui.Rect transformRectWithMatrix(Matrix4 transform, ui.Rect rect) {
+  _tempRectData[0] = rect.left;
+  _tempRectData[1] = rect.top;
+  _tempRectData[2] = rect.right;
+  _tempRectData[3] = rect.bottom;
+  transformLTRB(transform, _tempRectData);
+  return ui.Rect.fromLTRB(
+    _tempRectData[0],
+    _tempRectData[1],
+    _tempRectData[2],
+    _tempRectData[3],
+  );
+}
+
 /// Temporary storage for intermediate data used by [transformLTRB].
 ///
 /// WARNING: do not use this outside [transformLTRB]. Sharing this variable in
