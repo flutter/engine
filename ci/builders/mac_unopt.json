@@ -21,9 +21,9 @@
             "gn": [
                "--runtime-mode",
                "debug",
-	       "--unoptimized",
-	       "--no-lto",
-	       "--prebuilt-dart-sdk"
+               "--unoptimized",
+               "--no-lto",
+               "--prebuilt-dart-sdk"
             ],
             "name": "host_debug_unopt",
             "ninja": {
@@ -45,7 +45,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "type": "local"
                 }
-	    ]
+            ]
         },
         {
             "archives": [
@@ -57,12 +57,12 @@
                     "name": "ios_debug_sim"
                 }
             ],
-	    "properties": {
+            "properties": {
                 "$flutter/osx_sdk": { 
                     "runtime_versions": [ "ios-16-0_14a5294e" ],
                     "sdk_version": "14a5294e"
-		}
-	    },
+                }
+            },
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-12",
@@ -72,11 +72,11 @@
                 "download_android_deps": false
             },
             "gn": [
-		"--ios",
+                "--ios",
                 "--runtime-mode",
                 "debug",
-	        "--simulator",
-	       	"--no-lto"
+                "--simulator",
+                "--no-lto"
             ],
             "name": "ios_debug_sim",
             "ninja": {
@@ -96,7 +96,7 @@
                         "--type",
                         "objc",
                         "--engine-capture-core-dump",
-			"--ios-variant",
+                        "--ios-variant",
                         "ios_debug_sim"
                     ],
                     "script": "flutter/testing/run_tests.py",
