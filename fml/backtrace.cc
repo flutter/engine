@@ -16,9 +16,9 @@
 #include <Windows.h>
 #include <crtdbg.h>
 #include <debugapi.h>
-#else  // FML_OS_WIN
+#elif !defined(FML_OS_LINUX) || defined(__GLIBC__)  // FML_OS_WIN
 #include <execinfo.h>
-#endif  // FML_OS_WIN
+#endif
 
 namespace fml {
 
@@ -35,9 +35,10 @@ static std::string GetSymbolName(void* symbol) {
 static int Backtrace(void** symbols, int size) {
 #if FML_OS_WIN
   return CaptureStackBackTrace(0, size, symbols, NULL);
-#else
+#elif !defined(FML_OS_LINUX) || defined(__GLIBC__)
   return ::backtrace(symbols, size);
 #endif  // FML_OS_WIN
+  // do nothing on musl
 }
 
 std::string BacktraceHere(size_t offset) {
@@ -52,10 +53,13 @@ std::string BacktraceHere(size_t offset) {
   offset += 2;
 
   std::stringstream stream;
+// do nothing on musl
+#if !defined(FML_OS_LINUX) || defined(__GLIBC__)
   for (int i = offset; i < available_frames; ++i) {
     stream << "Frame " << i - offset << ": " << symbols[i] << " "
            << GetSymbolName(symbols[i]) << std::endl;
   }
+#endif
   return stream.str();
 }
 
