@@ -3392,7 +3392,7 @@ abstract class Collector {
 class ProductionCollector implements Collector {
   ProductionCollector() {
     _skObjectFinalizationRegistry =
-        SkObjectFinalizationRegistry((SkDeletable deletable) {
+        createSkObjectFinalizationRegistry((SkDeletable deletable) {
       // This is called when GC decides to collect the wrapper object and
       // notify us, which may happen after the object is already deleted
       // explicitly, e.g. when its ref count drops to zero. When that happens
@@ -3568,10 +3568,13 @@ extension JsConstructorExtension on JsConstructor {
 /// 6. We call `delete` on SkPaint.
 @JS('window.FinalizationRegistry')
 @staticInterop
-class SkObjectFinalizationRegistry {
-  // TODO(hterkelsen): Add a type for the `cleanup` function when
-  // native constructors support type parameters.
-  external factory SkObjectFinalizationRegistry(JSFunction cleanup);
+class SkObjectFinalizationRegistry {}
+
+SkObjectFinalizationRegistry createSkObjectFinalizationRegistry(JSFunction cleanup) {
+  return js_util.callConstructor(
+    _finalizationRegistryConstructor!.toObjectShallow,
+    <Object>[cleanup],
+  );
 }
 
 extension SkObjectFinalizationRegistryExtension on SkObjectFinalizationRegistry {
@@ -3915,8 +3918,8 @@ Future<bool> _downloadCanvasKitJs(String url) {
     canvasKitLoadCompleter.complete(false);
   }
 
-  loadCallback = allowInterop(loadEventHandler);
-  errorCallback = allowInterop(errorEventHandler);
+  loadCallback = createDomEventListener(loadEventHandler);
+  errorCallback = createDomEventListener(errorEventHandler);
 
   canvasKitScript.addEventListener('load', loadCallback);
   canvasKitScript.addEventListener('error', errorCallback);
