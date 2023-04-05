@@ -213,5 +213,5 @@ abstract class Renderer {
 
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style);
 
-  Future<void> renderScene(ui.Scene scene);
+  FutureOr<void> renderScene(ui.Scene scene);
 }

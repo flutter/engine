@@ -329,7 +329,7 @@ class HtmlRenderer implements Renderer {
     CanvasParagraphBuilder(style as EngineParagraphStyle);
 
   @override
-  Future<void> renderScene(ui.Scene scene) async {
+  void renderScene(ui.Scene scene) {
     _viewEmbedder.addSceneToSceneHost((scene as SurfaceScene).webOnlyRootElement);
     frameTimingsOnRasterFinish();
   }

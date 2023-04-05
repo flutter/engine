@@ -373,7 +373,7 @@ class CanvasKitRenderer implements Renderer {
     CkParagraphBuilder(style);
 
   @override
-  Future<void> renderScene(ui.Scene scene) async {
+  void renderScene(ui.Scene scene) {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
