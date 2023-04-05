@@ -997,7 +997,7 @@ void _testVerticalScrolling() {
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testHorizontalScrolling() {
@@ -1130,7 +1130,7 @@ void _testHorizontalScrolling() {
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testIncrementables() {
