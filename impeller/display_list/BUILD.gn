@@ -10,6 +10,8 @@ impeller_component("display_list") {
     "display_list_dispatcher.h",
     "display_list_image_impeller.cc",
     "display_list_image_impeller.h",
+    "display_list_image_impeller_raster.cc",
+    "display_list_image_impeller_raster.h",
     "display_list_vertices_geometry.cc",
     "display_list_vertices_geometry.h",
     "nine_patch_converter.cc",
@@ -21,6 +23,11 @@ impeller_component("display_list") {
     "//flutter/display_list",
     "//flutter/fml",
     "//third_party/skia",
+  ]
+
+  deps = [
+    "../core",
+    "../renderer",
   ]
 
   if (!defined(defines)) {

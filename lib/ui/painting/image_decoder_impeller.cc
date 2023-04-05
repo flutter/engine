@@ -12,6 +12,7 @@
 #include "flutter/impeller/core/allocator.h"
 #include "flutter/impeller/core/texture.h"
 #include "flutter/impeller/display_list/display_list_image_impeller.h"
+#include "flutter/impeller/display_list/display_list_image_impeller_raster.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
@@ -180,7 +181,9 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
 
   auto bitmap = std::make_shared<SkBitmap>();
   bitmap->setInfo(image_info);
-  auto bitmap_allocator = std::make_shared<ImpellerAllocator>(allocator);
+  auto bitmap_allocator = allocator
+                              ? std::make_shared<ImpellerAllocator>(allocator)
+                              : std::shared_ptr<ImpellerAllocator>(nullptr);
 
   if (descriptor->is_compressed()) {
     if (!bitmap->tryAllocPixels(bitmap_allocator.get())) {
@@ -210,11 +213,14 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   }
 
   if (bitmap->dimensions() == target_size) {
-    auto buffer = bitmap_allocator->GetDeviceBuffer();
-    if (!buffer.has_value()) {
-      return std::nullopt;
+    std::optional<std::shared_ptr<impeller::DeviceBuffer>> buffer;
+    if (bitmap_allocator) {
+      buffer = bitmap_allocator->GetDeviceBuffer();
+      if (!buffer.has_value()) {
+        return std::nullopt;
+      }
     }
-    return DecompressResult{.device_buffer = buffer.value(),
+    return DecompressResult{.device_buffer = buffer.value_or(nullptr),
                             .sk_bitmap = bitmap,
                             .image_info = bitmap->info()};
   }
@@ -227,7 +233,9 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   const auto scaled_image_info = image_info.makeDimensions(target_size);
 
   auto scaled_bitmap = std::make_shared<SkBitmap>();
-  auto scaled_allocator = std::make_shared<ImpellerAllocator>(allocator);
+  auto scaled_allocator = allocator
+                              ? std::make_shared<ImpellerAllocator>(allocator)
+                              : std::shared_ptr<ImpellerAllocator>(nullptr);
   scaled_bitmap->setInfo(scaled_image_info);
   if (!scaled_bitmap->tryAllocPixels(scaled_allocator.get())) {
     FML_LOG(ERROR)
@@ -241,11 +249,14 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   }
   scaled_bitmap->setImmutable();
 
-  auto buffer = scaled_allocator->GetDeviceBuffer();
-  if (!buffer.has_value()) {
-    return std::nullopt;
+  std::optional<std::shared_ptr<impeller::DeviceBuffer>> buffer;
+  if (scaled_allocator) {
+    buffer = scaled_allocator->GetDeviceBuffer();
+    if (!buffer.has_value()) {
+      return std::nullopt;
+    }
   }
-  return DecompressResult{.device_buffer = buffer.value(),
+  return DecompressResult{.device_buffer = buffer.value_or(nullptr),
                           .sk_bitmap = scaled_bitmap,
                           .image_info = scaled_bitmap->info()};
 }
@@ -312,68 +323,8 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<SkBitmap> bitmap,
     bool create_mips) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context || !bitmap) {
-    return nullptr;
-  }
-  const auto image_info = bitmap->info();
-  const auto pixel_format = ToPixelFormat(image_info.colorType());
-  if (!pixel_format) {
-    FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
-    return nullptr;
-  }
-
-  impeller::TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
-  texture_descriptor.format = pixel_format.value();
-  texture_descriptor.size = {image_info.width(), image_info.height()};
-  texture_descriptor.mip_count =
-      create_mips ? texture_descriptor.size.MipCount() : 1;
-
-  auto texture =
-      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
-  if (!texture) {
-    FML_DLOG(ERROR) << "Could not create Impeller texture.";
-    return nullptr;
-  }
-
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  if (!texture->SetContents(mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
-    return nullptr;
-  }
-
-  texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
-
-  if (texture_descriptor.mip_count > 1u && create_mips) {
-    auto command_buffer = context->CreateCommandBuffer();
-    if (!command_buffer) {
-      FML_DLOG(ERROR)
-          << "Could not create command buffer for mipmap generation.";
-      return nullptr;
-    }
-    command_buffer->SetLabel("Mipmap Command Buffer");
-
-    auto blit_pass = command_buffer->CreateBlitPass();
-    if (!blit_pass) {
-      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
-      return nullptr;
-    }
-    blit_pass->SetLabel("Mipmap Blit Pass");
-    blit_pass->GenerateMipmap(texture);
-
-    blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!command_buffer->SubmitCommands()) {
-      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
-      return nullptr;
-    }
-  }
-
+  auto texture = impeller::DlImageImpellerRaster::UploadTextureToShared(
+      context, bitmap, create_mips);
   return impeller::DlImageImpeller::Make(std::move(texture));
 }
 
@@ -424,6 +375,11 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         auto upload_texture_and_invoke_result = [result, context,
                                                  bitmap_result =
                                                      bitmap_result.value()]() {
+          if (!bitmap_result.device_buffer) {
+            result(impeller::DlImageImpellerRaster::Make(
+                context, bitmap_result.sk_bitmap));
+            return;
+          }
 // TODO(jonahwilliams): remove ifdef once blit from buffer to texture is
 // implemented on other platforms.
 #ifdef FML_OS_IOS

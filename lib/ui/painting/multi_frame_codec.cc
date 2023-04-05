@@ -9,6 +9,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/image.h"
 #if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/impeller/display_list/display_list_image_impeller_raster.h"
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -147,12 +148,17 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   if (is_impeller_enabled_) {
     sk_sp<DlImage> result;
     // impeller, transfer to DlImageImpeller
-    gpu_disable_sync_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
-        [&result, &bitmap, &impeller_context_] {
-          result = ImageDecoderImpeller::UploadTextureToShared(
-              impeller_context_, std::make_shared<SkBitmap>(bitmap),
-              /*create_mips=*/false);
-        }));
+    gpu_disable_sync_switch->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfFalse([&result, &bitmap, &impeller_context_] {
+              result = ImageDecoderImpeller::UploadTextureToShared(
+                  impeller_context_, std::make_shared<SkBitmap>(bitmap),
+                  /*create_mips=*/false);
+            })
+            .SetIfTrue([&result, &bitmap, &impeller_context_] {
+              result = impeller::DlImageImpellerRaster::Make(
+                  impeller_context_, std::make_shared<SkBitmap>(bitmap));
+            }));
 
     return result;
   }
