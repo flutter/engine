@@ -190,7 +190,7 @@ class OpacityOperation implements LayerOperation {
   final ui.Offset offset;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => contentRect;
+  ui.Rect cullRect(ui.Rect contentRect) => contentRect.shift(offset);
 
   @override
   void pre(ui.Canvas canvas, ui.Rect cullRect) {
