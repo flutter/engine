@@ -66,7 +66,7 @@ TEST_P(AiksTest, RotateColorFilteredPath) {
       .color_filter =
           [](FilterInput::Ref input) {
             return ColorFilterContents::MakeBlend(
-                BlendMode::kSourceIn, {std::move(input)}, Color::White());
+                BlendMode::kSourceIn, {std::move(input)}, Color::AliceBlue());
           },
   };
 
