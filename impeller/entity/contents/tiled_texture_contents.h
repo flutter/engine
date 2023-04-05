@@ -9,11 +9,12 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
-#include "impeller/renderer/sampler_descriptor.h"
+#include "impeller/renderer/capabilities.h"
 
 namespace impeller {
 
@@ -53,7 +54,9 @@ class TiledTextureContents final : public ColorSourceContents {
   std::optional<std::shared_ptr<Texture>> CreateFilterTexture(
       const ContentContext& renderer) const;
 
-  SamplerDescriptor CreateDescriptor() const;
+  SamplerDescriptor CreateDescriptor(const Capabilities& capabilities) const;
+
+  bool UsesEmulatedTileMode(const Capabilities& capabilities) const;
 
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};

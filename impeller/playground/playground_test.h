@@ -26,6 +26,8 @@ class PlaygroundTest : public Playground,
 
   void TearDown() override;
 
+  PlaygroundBackend GetBackend() const;
+
   // |Playground|
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
@@ -37,8 +39,6 @@ class PlaygroundTest : public Playground,
   std::string GetWindowTitle() const override;
 
  private:
-  const PlaygroundSwitches switches_;
-
   // |Playground|
   bool ShouldKeepRendering() const;
 

@@ -7,10 +7,10 @@
 #include <utility>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/entity_pass_target.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/texture_descriptor.h"
 
 namespace impeller {
 
@@ -157,7 +157,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
 
   result.pass = pass_;
 
-  if (!context_->GetDeviceCapabilities().SupportsReadFromResolve() &&
+  if (!context_->GetCapabilities()->SupportsReadFromResolve() &&
       result.backdrop_texture ==
           result.pass->GetRenderTarget().GetRenderTargetTexture()) {
     VALIDATION_LOG << "EntityPass backdrop restore configuration is not valid "

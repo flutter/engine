@@ -8,12 +8,12 @@
 #include <type_traits>
 #include <utility>
 
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -51,16 +51,15 @@ void TextContents::SetColor(Color color) {
 }
 
 Color TextContents::GetColor() const {
-  return color_;
+  return color_.WithAlpha(color_.alpha * inherited_opacity_);
 }
 
-bool TextContents::CanAcceptOpacity(const Entity& entity) const {
+bool TextContents::CanInheritOpacity(const Entity& entity) const {
   return !frame_.MaybeHasOverlapping();
 }
 
 void TextContents::SetInheritedOpacity(Scalar opacity) {
-  auto color = color_;
-  color_ = color.WithAlpha(color.alpha * opacity);
+  inherited_opacity_ = opacity;
 }
 
 void TextContents::SetInverseMatrix(Matrix matrix) {
@@ -230,13 +229,14 @@ bool TextContents::RenderSdf(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
 
   return CommonRender<GlyphAtlasSdfPipeline>(
-      renderer, entity, pass, color_, frame_, inverse_matrix_, atlas, cmd);
+      renderer, entity, pass, GetColor(), frame_, inverse_matrix_, atlas, cmd);
 }
 
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
-  if (color_.IsTransparent()) {
+  auto color = GetColor();
+  if (color.IsTransparent()) {
     return true;
   }
 
@@ -264,8 +264,8 @@ bool TextContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGlyphAtlasPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color_,
-                                          frame_, inverse_matrix_, atlas, cmd);
+  return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color, frame_,
+                                          inverse_matrix_, atlas, cmd);
 }
 
 }  // namespace impeller

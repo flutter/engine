@@ -7,10 +7,10 @@
 #include <iostream>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -61,6 +61,8 @@ static GLint ToAddressMode(SamplerAddressMode mode) {
       return GL_REPEAT;
     case SamplerAddressMode::kMirror:
       return GL_MIRRORED_REPEAT;
+    case SamplerAddressMode::kDecal:
+      break;  // Unsupported.
   }
   FML_UNREACHABLE();
 }

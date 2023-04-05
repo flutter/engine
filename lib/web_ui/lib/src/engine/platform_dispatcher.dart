@@ -43,8 +43,8 @@ class HighContrastSupport {
 
   /// Reference to css media query that indicates whether high contrast is on.
   final DomMediaQueryList _highContrastMediaQuery = domWindow.matchMedia(_highContrastMediaQueryString);
-  late final JSFunction _onHighContrastChangeListener =
-      _onHighContrastChange.toJS;
+  late final DomEventListener _onHighContrastChangeListener =
+      createDomEventListener(_onHighContrastChange);
 
   bool get isHighContrastEnabled => _highContrastMediaQuery.matches;
 
@@ -484,7 +484,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // CanvasKit vs HTML before invoking this method.
             replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(<bool>[true]));
-            break;
         }
         return;
 
@@ -545,7 +544,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             ClipboardMessageHandler().getDataMethodCall(callback);
             return;
         }
-        break;
 
       // Dispatched by the bindings to delay service worker initialization.
       case 'flutter/service_worker':
@@ -805,11 +803,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
     updateLocales(); // First time, for good measure.
     _onLocaleChangedSubscription =
-      DomSubscription(domWindow, 'languagechange', allowInterop((DomEvent _) {
+      DomSubscription(domWindow, 'languagechange', (DomEvent _) {
         // Update internal config, then propagate the changes.
         updateLocales();
         invokeOnLocaleChanged();
-      }));
+      });
   }
 
   /// Removes the [_onLocaleChangedSubscription].
@@ -1035,7 +1033,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
   ///
   /// Updates the [_platformBrightness] with the new user preference.
-  JSFunction? _brightnessMediaQueryListener;
+  DomEventListener? _brightnessMediaQueryListener;
 
   /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
   void _addBrightnessMediaQueryListener() {
@@ -1043,12 +1041,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         ? ui.Brightness.dark
         : ui.Brightness.light);
 
-    _brightnessMediaQueryListener = (DomEvent event) {
+    _brightnessMediaQueryListener = createDomEventListener((DomEvent event) {
       final DomMediaQueryListEvent mqEvent =
           event as DomMediaQueryListEvent;
       _updatePlatformBrightness(
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
-    }.toJS;
+    });
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
   }
 

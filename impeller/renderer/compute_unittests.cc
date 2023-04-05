@@ -7,6 +7,7 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "impeller/base/strings.h"
+#include "impeller/core/formats.h"
 #include "impeller/fixtures/sample.comp.h"
 #include "impeller/fixtures/stage1.comp.h"
 #include "impeller/fixtures/stage2.comp.h"
@@ -16,7 +17,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
@@ -28,7 +28,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
   auto pipeline_desc =
@@ -111,7 +111,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   auto pipeline_desc_1 =
       Stage1PipelineBuilder::MakeDefaultPipelineDescriptor(*context);
@@ -208,7 +208,7 @@ TEST_P(ComputeTest, CanCorrectlyDownScaleLargeGridSize) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
   auto pipeline_desc =
@@ -283,6 +283,62 @@ TEST_P(ComputeTest, CanCorrectlyDownScaleLargeGridSize) {
       }));
 
   latch.Wait();
+}
+
+TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
+  using CS = SampleComputeShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+
+  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+  auto pipeline_desc =
+      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_desc.has_value());
+  auto compute_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  ASSERT_TRUE(compute_pipeline);
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto pass = cmd_buffer->CreateComputePass();
+  ASSERT_TRUE(pass && pass->IsValid());
+
+  static constexpr size_t kCount = 5;
+
+  // Intentionally making the grid size obscenely large. No GPU will tolerate
+  // this.
+  pass->SetGridSize(ISize(0, 1));
+  pass->SetThreadGroupSize(ISize(0, 1));
+
+  ComputeCommand cmd;
+  cmd.label = "Compute";
+  cmd.pipeline = compute_pipeline;
+
+  CS::Info info{.count = kCount};
+  CS::Input0<kCount> input_0;
+  CS::Input1<kCount> input_1;
+  for (size_t i = 0; i < kCount; i++) {
+    input_0.elements[i] = Vector4(2.0 + i, 3.0 + i, 4.0 + i, 5.0 * i);
+    input_1.elements[i] = Vector4(6.0, 7.0, 8.0, 9.0);
+  }
+
+  input_0.fixed_array[1] = IPoint32(2, 2);
+  input_1.fixed_array[0] = UintPoint32(3, 3);
+  input_0.some_int = 5;
+  input_1.some_struct = CS::SomeStruct{.vf = Point(3, 4), .i = 42};
+
+  auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
+      context, "Output Buffer");
+
+  CS::BindInfo(cmd, pass->GetTransientsBuffer().EmplaceUniform(info));
+  CS::BindInput0(cmd,
+                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
+  CS::BindInput1(cmd,
+                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
+  CS::BindOutput(cmd, output_buffer->AsBufferView());
+
+  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_FALSE(pass->EncodeCommands());
 }
 
 }  // namespace testing
