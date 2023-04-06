@@ -235,7 +235,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   auto scaled_bitmap = std::make_shared<SkBitmap>();
   auto scaled_allocator = allocator
                               ? std::make_shared<ImpellerAllocator>(allocator)
-                              : std::shared_ptr<ImpellerAllocator>(nullptr);
+                              : nullptr;
   scaled_bitmap->setInfo(scaled_image_info);
   if (!scaled_bitmap->tryAllocPixels(scaled_allocator.get())) {
     FML_LOG(ERROR)
