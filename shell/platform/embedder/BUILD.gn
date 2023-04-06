@@ -511,9 +511,7 @@ generated_file("flutter_embedder_codesign_whitelist") {
   outputs = [ "$target_gen_dir/embedder_whitelist.txt" ]
 
   # Flutter embedder is exempted from code signing. See https://github.com/flutter/flutter/issues/124322.
-  contents = [
-    "Exempted from mac code signing.",
-  ]
+  contents = [ "Exempted from mac code signing." ]
 
   deps = []
 }
