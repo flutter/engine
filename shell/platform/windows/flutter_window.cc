@@ -263,6 +263,10 @@ void FlutterWindow::OnResetImeComposing() {
 bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
                                            size_t row_bytes,
                                            size_t height) {
+  if (!IsWindow(GetWindowHandle())) {
+    BASE_CHECK(false);
+    return false;
+  }
   HDC dc = ::GetDC(GetWindowHandle());
   BITMAPINFO bmi = {};
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
