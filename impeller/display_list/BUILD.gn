@@ -14,6 +14,8 @@ impeller_component("display_list") {
     "display_list_vertices_geometry.h",
     "nine_patch_converter.cc",
     "nine_patch_converter.h",
+    "skia_conversions.cc",
+    "skia_conversions.h",
   ]
 
   public_deps = [
