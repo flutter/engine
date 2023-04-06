@@ -2467,5 +2467,21 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
+  auto arrow_head = PathBuilder{}
+                        .MoveTo({50, 120})
+                        .LineTo({120, 190})
+                        .LineTo({190, 120})
+                        .TakePath();
+  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
+                                           Join::kRound);
+
+  auto transform = Matrix::MakeTranslation({300, 300}) *
+                   Matrix::MakeRotationZ(Radians(kPiOver2));
+  EXPECT_LT(transform.e[0][0], 0.f);
+  auto coverage = geometry->GetCoverage(transform);
+  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
+}
+
 }  // namespace testing
 }  // namespace impeller
