@@ -29,11 +29,14 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace impeller {
 
 class TestImpellerTexture : public Texture {
  public:
-  TestImpellerTexture(TextureDescriptor desc) : Texture(std::move(desc)) {}
+  explicit TestImpellerTexture(TextureDescriptor desc) : Texture(desc) {}
 
   void SetLabel(std::string_view label) override {}
   bool IsValid() const override { return true; }
@@ -1150,3 +1153,5 @@ TEST_F(ImageDecoderFixtureTest,
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)
