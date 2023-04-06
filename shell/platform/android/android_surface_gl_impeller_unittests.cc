@@ -23,13 +23,41 @@ class MockDisplay : public impeller::egl::Display {
 };
 }  // namespace
 
+TEST(AndroidSurfaceGLImpeller, MSAAFirstAttempt) {
+  auto context =
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+  auto jni = std::make_shared<JNIMock>();
+  auto display = std::make_unique<MockDisplay>();
+  EXPECT_CALL(*display, IsValid).WillRepeatedly(Return(true));
+  auto first_result = std::make_unique<impeller::egl::Config>(
+      impeller::egl::ConfigDescriptor(), EGLConfig());
+  auto second_result = std::make_unique<impeller::egl::Config>(
+      impeller::egl::ConfigDescriptor(), EGLConfig());
+  EXPECT_CALL(*display,
+              ChooseConfig(Matcher<impeller::egl::ConfigDescriptor>(
+                  AllOf(Field(&impeller::egl::ConfigDescriptor::samples,
+                              impeller::egl::Samples::kFour),
+                        Field(&impeller::egl::ConfigDescriptor::surface_type,
+                              impeller::egl::SurfaceType::kWindow)))))
+      .WillOnce(Return(ByMove(std::move(first_result))));
+  EXPECT_CALL(*display,
+              ChooseConfig(Matcher<impeller::egl::ConfigDescriptor>(
+                  Field(&impeller::egl::ConfigDescriptor::surface_type,
+                        impeller::egl::SurfaceType::kPBuffer))))
+      .WillOnce(Return(ByMove(std::move(second_result))));
+  ON_CALL(*display, ChooseConfig(_))
+      .WillByDefault(Return(ByMove(std::unique_ptr<impeller::egl::Config>())));
+  auto surface = std::make_unique<AndroidSurfaceGLImpeller>(context, jni,
+                                                            std::move(display));
+  ASSERT_TRUE(surface);
+}
+
 TEST(AndroidSurfaceGLImpeller, FallbackForEmulator) {
   auto context =
       std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   auto jni = std::make_shared<JNIMock>();
   auto display = std::make_unique<MockDisplay>();
-  EXPECT_CALL(*display, IsFallbackForEmulatorValid)
-      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*display, IsValid).WillRepeatedly(Return(true));
   std::unique_ptr<impeller::egl::Config> first_result;
   auto second_result = std::make_unique<impeller::egl::Config>(
       impeller::egl::ConfigDescriptor(), EGLConfig());
