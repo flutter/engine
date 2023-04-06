@@ -43,6 +43,7 @@ bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
   return screenshot->WriteToPNG(
       WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
+
 }  // namespace
 
 class GoldenTests : public ::testing::Test {
@@ -72,7 +73,7 @@ TEST_F(GoldenTests, ConicalGradient) {
   paint.style = Paint::Style::kFill;
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
-  auto screenshot = Screenshoter().MakeScreenshot(std::move(picture));
+  auto screenshot = Screenshoter().MakeScreenshot(picture);
   ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
 }
 }  // namespace testing

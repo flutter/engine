@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -1865,9 +1866,11 @@ void _paragraphTests() {
 
       v8BreakIterator = Object();
       browserSupportsImageDecoder = false;
+      // TODO(mdebbar): we don't check image codecs for now.
+      // https://github.com/flutter/flutter/issues/122331
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;
@@ -1890,6 +1893,15 @@ void _paragraphTests() {
       canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/foo/'),
       'http://localhost:1234/foo/canvaskit.wasm',
     );
+  });
+
+  test('SkObjectFinalizationRegistry', () {
+    // There's no reliable way to test the actual functionality of
+    // FinalizationRegistry because it depends on GC, which cannot be controlled,
+    // So the test simply tests that a FinalizationRegistry can be constructed
+    // and its `register` method can be called.
+    final SkObjectFinalizationRegistry registry = createSkObjectFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object(), Object());
   });
 }
 

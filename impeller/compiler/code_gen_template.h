@@ -18,13 +18,11 @@ constexpr std::string_view kReflectionHeaderTemplate =
 {# file itself and the no-check declarations will be stripped in generated files.#}
 #include "impeller/core/buffer_view.h"                {# // nogncheck #}
 
-#include "impeller/renderer/command.h"                    {# // nogncheck #}
+#include "impeller/core/sampler.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/compute_command.h"            {# // nogncheck #}
+#include "impeller/core/shader_types.h"               {# // nogncheck #}
 
-#include "impeller/renderer/sampler.h"                    {# // nogncheck #}
-
-#include "impeller/renderer/shader_types.h"               {# // nogncheck #}
+#include "impeller/core/resource_binder.h"            {# // nogncheck #}
 
 #include "impeller/core/texture.h"                    {# // nogncheck #}
 
@@ -164,14 +162,14 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
 {% for buffer in buffers %}
     DescriptorSetLayout{
       {{buffer.binding}}, // binding = {{buffer.binding}}
-      DescriptorType::kUniformBuffer, // descriptor_type = Uniform Buffer
+      {{buffer.descriptor_type}}, // descriptor_type = {{buffer.descriptor_type}}
       {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
 {% for sampled_image in sampled_images %}
     DescriptorSetLayout{
       {{sampled_image.binding}}, // binding = {{sampled_image.binding}}
-      DescriptorType::kSampledImage, // descriptor_type = Sampled Image
+      {{sampled_image.descriptor_type}}, // descriptor_type = {{sampled_image.descriptor_type}}
       {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
