@@ -70,12 +70,18 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
+  if (!maybe_input_uvs.has_value()) {
+    return std::nullopt;
+  }
+  auto input_uvs = maybe_input_uvs.value();
+
   //----------------------------------------------------------------------------
   /// Create AnonymousContents for rendering.
   ///
 
   auto sigma = effect_transform * Vector2(sigma_x_.sigma, sigma_y_.sigma);
-  RenderProc render_proc = [coverage, input_snapshot,
+  RenderProc render_proc = [coverage, input_snapshot, input_uvs = input_uvs,
                             src_color_factor = src_color_factor_,
                             inner_blur_factor = inner_blur_factor_,
                             outer_blur_factor = outer_blur_factor_, sigma](
@@ -85,25 +91,25 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {coverage.origin, Point(0, 0)},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         Point(1, 0)},
+         input_uvs[1]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
-        {coverage.origin, Point(0, 0)},
+         input_uvs[3]},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
+         input_uvs[3]},
         {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         Point(0, 1)},
+         input_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
     cmd.label = "Border Mask Blur Filter";
     auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
+    options.blend_mode = BlendMode::kSourceOver;
     cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
@@ -118,7 +124,6 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     frag_info.src_factor = src_color_factor;
     frag_info.inner_blur_factor = inner_blur_factor;
     frag_info.outer_blur_factor = outer_blur_factor;
-    frag_info.alpha = input_snapshot->opacity;
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));

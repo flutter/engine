@@ -53,5 +53,5 @@ void main() {
       frag_info.outer_blur_factor * blur_factor * (1.0hf - within_bounds);
 
   float16_t mask_factor = inner_factor + outer_factor;
-  frag_color = image_color * mask_factor * frag_info.alpha;
+  frag_color = image_color * mask_factor;
 }
