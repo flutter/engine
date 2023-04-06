@@ -8,6 +8,7 @@
 #include "flutter/impeller/core/allocator.h"
 #include "flutter/impeller/core/device_buffer.h"
 #include "flutter/impeller/geometry/size.h"
+#include "flutter/impeller/renderer/context.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
@@ -29,6 +30,23 @@
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace impeller {
+
+class TestImpellerTexture : public Texture {
+ public:
+  TestImpellerTexture(TextureDescriptor desc) : Texture(std::move(desc)) {}
+
+  void SetLabel(std::string_view label) override {}
+  bool IsValid() const override { return true; }
+  ISize GetSize() const { return GetTextureDescriptor().size; }
+
+  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
+    return true;
+  }
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) {
+    return true;
+  }
+};
 
 class TestImpellerDeviceBuffer : public DeviceBuffer {
  public:
@@ -84,8 +102,42 @@ class TestImpellerAllocator : public impeller::Allocator {
 
   std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) override {
+    return std::make_shared<TestImpellerTexture>(desc);
+  }
+};
+
+class TestImpellerContext : public impeller::Context {
+ public:
+  TestImpellerContext() = default;
+
+  bool IsValid() const override { return true; }
+
+  const std::shared_ptr<const Capabilities>& GetCapabilities() const override {
+    return capabilities_;
+  }
+
+  std::shared_ptr<Allocator> GetResourceAllocator() const override {
+    return std::make_shared<TestImpellerAllocator>();
+  }
+
+  std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override {
     return nullptr;
   }
+
+  std::shared_ptr<SamplerLibrary> GetSamplerLibrary() const override {
+    return nullptr;
+  }
+
+  std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
+    return nullptr;
+  }
+
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
+    return nullptr;
+  }
+
+ private:
+  std::shared_ptr<const Capabilities> capabilities_;
 };
 
 }  // namespace impeller
@@ -98,6 +150,7 @@ class TestIOManager final : public IOManager {
   explicit TestIOManager(const fml::RefPtr<fml::TaskRunner>& task_runner,
                          bool has_gpu_context = true)
       : gl_surface_(SkISize::Make(1, 1)),
+        impeller_context_(std::make_shared<impeller::TestImpellerContext>()),
         gl_context_(has_gpu_context ? gl_surface_.CreateGrContext() : nullptr),
         weak_gl_context_factory_(
             has_gpu_context
@@ -149,6 +202,11 @@ class TestIOManager final : public IOManager {
     return is_gpu_disabled_sync_switch_;
   }
 
+  // |IOManager|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override {
+    return impeller_context_;
+  }
+
   void SetGpuDisabled(bool disabled) {
     is_gpu_disabled_sync_switch_->SetSwitch(disabled);
   }
@@ -157,6 +215,7 @@ class TestIOManager final : public IOManager {
 
  private:
   TestGLSurface gl_surface_;
+  std::shared_ptr<impeller::Context> impeller_context_;
   sk_sp<GrDirectContext> gl_context_;
   std::unique_ptr<fml::WeakPtrFactory<GrDirectContext>>
       weak_gl_context_factory_;
@@ -943,7 +1002,15 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
 
   std::unique_ptr<TestIOManager> io_manager;
   fml::RefPtr<MultiFrameCodec> codec;
+  fml::AutoResetWaitableEvent latch;
 
+  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+    latch.Signal();
+  };
+
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
   // Setup the IO manager.
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
@@ -981,6 +1048,8 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   });
+
+  latch.Wait();
 
   // Destroy the Isolate
   isolate = nullptr;
@@ -1024,7 +1093,8 @@ TEST_F(ImageDecoderFixtureTest,
     latch.Signal();
   };
 
-  AddNativeCallback"ValidateFrameCallback", CREATE_NATIVE_ENTRY(validate_frame_callback));
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
 
   // Setup the IO manager.
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
