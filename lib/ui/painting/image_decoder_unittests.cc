@@ -149,6 +149,10 @@ class TestIOManager final : public IOManager {
     return is_gpu_disabled_sync_switch_;
   }
 
+  void SetGpuDisabled(bool disabled) {
+    is_gpu_disabled_sync_switch_->SetSwitch(disabled);
+  }
+
   bool did_access_is_gpu_disabled_sync_switch_ = false;
 
  private:
@@ -1018,7 +1022,7 @@ TEST_F(ImageDecoderFixtureTest,
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
     // Mark GPU disabled.
-    io_manager->GetIsGpuDisabledSyncSwitch().SetSwitch(true);
+    io_manager->SetGpuDisabled(true);
   });
 
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
@@ -1041,12 +1045,17 @@ TEST_F(ImageDecoderFixtureTest,
         return false;
       }
 
+      EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
       codec->getNextFrame(closure);
       isolate_latch.Signal();
       return true;
     }));
     isolate_latch.Wait();
+  });
+
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+    EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   });
 
   // Destroy the Isolate

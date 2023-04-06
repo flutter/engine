@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io' show exit;
 import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:isolate';
@@ -249,8 +250,10 @@ external void _validatePath(Path path);
 
 @pragma('vm:entry-point')
 void frameCallback(Object? image, int durationMilliseconds) {
+  print('Image $image $durationMilliseconds');
   if (image == null) {
     throw Exception('Expeccted image in frame callback to be non-null');
+    exit(-1);
   }
 }
 
