@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
@@ -61,40 +62,49 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
                                 entity.GetStencilDepth());
   }
 
-  auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
-  if (!maybe_input_uvs.has_value()) {
-    return std::nullopt;
-  }
-  auto input_uvs = maybe_input_uvs.value();
-
   //----------------------------------------------------------------------------
-  /// Render to texture.
+  /// Create AnonymousContents for rendering.
   ///
+  RenderProc render_proc = [input_snapshot, coverage, effect_transform,
+                            morph_type = morph_type_, direction = direction_,
+                            radius = radius_](const ContentContext& renderer,
+                                              const Entity& entity,
+                                              RenderPass& pass) -> bool {
+    Command cmd;
+    cmd.label = "Morphology Filter";
+    cmd.stencil_reference = entity.GetStencilDepth();
 
-  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
-                                                 RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto options = OptionsFromPass(pass);
+    options.blend_mode = BlendMode::kSource;
+    cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 0), input_uvs[1]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 1), input_uvs[2]},
+        {coverage.origin, Point(0, 0)},
+        {{coverage.origin.x + coverage.size.width, coverage.origin.y},
+         Point(1, 0)},
+        {{coverage.origin.x + coverage.size.width,
+          coverage.origin.y + coverage.size.height},
+         Point(1, 1)},
+        {coverage.origin, Point(0, 0)},
+        {{coverage.origin.x + coverage.size.width,
+          coverage.origin.y + coverage.size.height},
+         Point(1, 1)},
+        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
+         Point(0, 1)},
     });
 
+    auto& host_buffer = pass.GetTransientsBuffer();
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
     auto transform = entity.GetTransformation() * effect_transform.Basis();
     auto transformed_radius =
-        transform.TransformDirection(direction_ * radius_.radius);
+        transform.TransformDirection(direction * radius.radius);
     auto transformed_texture_vertices =
         Rect(Size(input_snapshot->texture->GetSize()))
             .GetTransformedPoints(input_snapshot->transform);
@@ -107,18 +117,13 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
 
     FS::FragInfo frag_info;
     frag_info.radius = std::round(transformed_radius.GetLength());
-    frag_info.morph_type = static_cast<Scalar>(morph_type_);
+    frag_info.morph_type = static_cast<Scalar>(morph_type);
     frag_info.uv_offset =
         input_snapshot->transform.Invert()
             .TransformDirection(transformed_radius)
             .Normalize() /
         Point(transformed_texture_width, transformed_texture_height);
 
-    Command cmd;
-    cmd.label = "Morphology Filter";
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
-    cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
     cmd.BindVertices(vtx_buffer);
 
     auto sampler_descriptor = input_snapshot->sampler_descriptor;
@@ -137,22 +142,20 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     return pass.AddCommand(cmd);
   };
 
-  auto out_texture = renderer.MakeSubpass("Directional Morphology Filter",
-                                          ISize(coverage.size), callback);
-  if (!out_texture) {
-    return std::nullopt;
-  }
+  CoverageProc coverage_proc =
+      [coverage](const Entity& entity) -> std::optional<Rect> {
+    return coverage;
+  };
 
-  SamplerDescriptor sampler_desc;
-  sampler_desc.min_filter = MinMagFilter::kLinear;
-  sampler_desc.mag_filter = MinMagFilter::kLinear;
+  auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
-  return Entity::FromSnapshot(
-      Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
-               .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+  Entity sub_entity;
+  sub_entity.SetContents(std::move(contents));
+  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
+                               entity.GetTransformation());
+  sub_entity.SetBlendMode(entity.GetBlendMode());
+  return sub_entity;
 }
 
 std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
