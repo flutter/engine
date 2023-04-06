@@ -7,7 +7,21 @@
 #include "helpers.h"
 #include "wrappers.h"
 
+#include "third_party/skia/include/core/SkPoint3.h"
+#include "third_party/skia/include/utils/SkShadowUtils.h"
+
 using namespace Skwasm;
+
+namespace {
+// These numbers have been chosen empirically to give a result closest to the
+// material spec.
+constexpr SkScalar kShadowAmbientAlpha = 0.039;
+constexpr SkScalar kShadowSpotAlpha = 0.25;
+constexpr SkScalar kShadowLightRadius = 1.1;
+constexpr SkScalar kShadowLightHeight = 600.0;
+constexpr SkScalar kShadowLightXOffset = 0;
+constexpr SkScalar kShadowLightYOffset = -450;
+}  // namespace
 
 SKWASM_EXPORT void canvas_destroy(CanvasWrapper* wrapper) {
   delete wrapper;
@@ -160,6 +174,32 @@ SKWASM_EXPORT void canvas_drawPath(CanvasWrapper* wrapper,
   makeCurrent(wrapper->context);
 
   wrapper->canvas->drawPath(*path, *paint);
+}
+
+SKWASM_EXPORT void canvas_drawShadow(CanvasWrapper* wrapper,
+                                     SkPath* path,
+                                     SkScalar elevation,
+                                     SkScalar devicePixelRatio,
+                                     SkColor color,
+                                     bool transparentOccluder) {
+  makeCurrent(wrapper->context);
+
+  SkColor inAmbient =
+      SkColorSetA(color, kShadowAmbientAlpha * SkColorGetA(color));
+  SkColor inSpot = SkColorSetA(color, kShadowSpotAlpha * SkColorGetA(color));
+  SkColor outAmbient;
+  SkColor outSpot;
+  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &outAmbient, &outSpot);
+  uint32_t flags = transparentOccluder
+                       ? SkShadowFlags::kTransparentOccluder_ShadowFlag
+                       : SkShadowFlags::kNone_ShadowFlag;
+  flags |= SkShadowFlags::kDirectionalLight_ShadowFlag;
+  SkShadowUtils::DrawShadow(
+      wrapper->canvas, *path,
+      SkPoint3::Make(0.0f, 0.0f, elevation * devicePixelRatio),
+      SkPoint3::Make(kShadowLightXOffset, kShadowLightYOffset,
+                     kShadowLightHeight * devicePixelRatio),
+      devicePixelRatio * kShadowLightRadius, outAmbient, outSpot, flags);
 }
 
 SKWASM_EXPORT void canvas_drawPicture(CanvasWrapper* wrapper,
