@@ -27,7 +27,7 @@
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 
-#include "updater.h"
+#include "third_party/updater/library/include/updater.h"
 
 namespace flutter {
 

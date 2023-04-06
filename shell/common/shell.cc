@@ -41,7 +41,7 @@
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
 
-#include "updater.h"
+#include "third_party/updater/library/include/updater.h"
 
 namespace flutter {
 
