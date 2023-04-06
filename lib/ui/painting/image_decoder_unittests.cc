@@ -1017,6 +1017,14 @@ TEST_F(ImageDecoderFixtureTest,
 
   std::unique_ptr<TestIOManager> io_manager;
   fml::RefPtr<MultiFrameCodec> codec;
+  fml::AutoResetWaitableEvent latch;
+
+  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+    latch.Signal();
+  };
+
+  AddNativeCallback"ValidateFrameCallback", CREATE_NATIVE_ENTRY(validate_frame_callback));
 
   // Setup the IO manager.
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
@@ -1057,6 +1065,8 @@ TEST_F(ImageDecoderFixtureTest,
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   });
+
+  latch.Wait();
 
   // Destroy the Isolate
   isolate = nullptr;
