@@ -242,6 +242,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   flutter::Settings _settings;
 }
 
+// This property is marked unavailable on iOS in the common header.
+// That doesn't seem to be enough to prevent this property from being synthesized.
+// Mark dynamic to avoid warnings.
+@dynamic dartEntrypointArguments;
+
 #pragma mark - Override base class designated initializers
 
 - (instancetype)init {
