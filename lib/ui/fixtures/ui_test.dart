@@ -248,7 +248,7 @@ void createPath() {
 external void _validatePath(Path path);
 
 @pragma('vm:entry-point')
-void frameCallback(_Image? image, int durationMilliseconds) {
+void frameCallback(Object? image, int durationMilliseconds) {
   if (image == null) {
     throw Exception('Expeccted image in frame callback to be non-null');
   }
