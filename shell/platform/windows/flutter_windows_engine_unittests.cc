@@ -663,7 +663,8 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
                                                                0);
 
-  // The test will only succeed when this while loop exits. Otherwise it will timeout.
+  // The test will only succeed when this while loop exits. Otherwise it will
+  // timeout.
   while (!finished) {
     engine->task_runner()->ProcessTasks();
   }
@@ -735,13 +736,16 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
   auto& handler_obj = *handler;
-  ON_CALL(handler_obj, IsLastWindowOfProcess).WillByDefault([]() { return true; });
+  ON_CALL(handler_obj, IsLastWindowOfProcess).WillByDefault([]() {
+    return true;
+  });
   ON_CALL(handler_obj, Quit)
-      .WillByDefault([&handler_obj](std::optional<HWND> hwnd,
-                                std::optional<WPARAM> wparam,
-                                std::optional<LPARAM> lparam, UINT exit_code) {
-        handler_obj.WindowsLifecycleManager::Quit(hwnd, wparam, lparam, exit_code);
-      });
+      .WillByDefault(
+          [&handler_obj](std::optional<HWND> hwnd, std::optional<WPARAM> wparam,
+                         std::optional<LPARAM> lparam, UINT exit_code) {
+            handler_obj.WindowsLifecycleManager::Quit(hwnd, wparam, lparam,
+                                                      exit_code);
+          });
   ON_CALL(handler_obj, DispatchMessage)
       .WillByDefault(
           [&engine](HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
