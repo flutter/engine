@@ -54,9 +54,9 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
             android_context_, jni_facade_, enable_vulkan_validation_);
 
 #else
-        auto display = std::make_unique<impeller::egl::Display>();
         return std::make_unique<AndroidSurfaceGLImpeller>(
-            android_context_, jni_facade_, std::move(display));
+            android_context_, jni_facade_,
+            std::make_unique<impeller::egl::Display>());
 #endif
       } else {
         return std::make_unique<AndroidSurfaceGLSkia>(android_context_,

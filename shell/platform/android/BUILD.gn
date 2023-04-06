@@ -48,6 +48,7 @@ executable("flutter_shell_native_unittests") {
   public_configs = [ "//flutter:config" ]
   deps = [
     ":flutter_shell_native_src",
+    "//flutter/shell/platform/android/jni:jni_mock",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
