@@ -1,4 +1,4 @@
-Signature: cfc62da1662358812ed5c4e4991bba84
+Signature: 54e96f6f0e7d2f89e79b4d211fc52976
 
 ====================================================================================================
 LIBRARY: etc1
@@ -1073,7 +1073,6 @@ ORIGIN: ../../../third_party/skia/src/core/SkPtrRecorder.h + ../../../third_part
 ORIGIN: ../../../third_party/skia/src/core/SkStroke.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkWriter32.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkFontMgr_empty_factory.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/ports/SkImageEncoder_CG.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/core/SkMallocPixelRef.h
 FILE: ../../../third_party/skia/include/core/SkPixelRef.h
@@ -1089,7 +1088,6 @@ FILE: ../../../third_party/skia/src/core/SkPtrRecorder.h
 FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_empty_factory.cpp
-FILE: ../../../third_party/skia/src/ports/SkImageEncoder_CG.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2008 The Android Open Source Project
 
@@ -1516,7 +1514,6 @@ ORIGIN: ../../../third_party/skia/src/pdf/SkPDFTypes.cpp + ../../../third_party/
 ORIGIN: ../../../third_party/skia/src/pdf/SkPDFUtils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/pdf/SkPDFUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkGlobalInitialization_default.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/ports/SkImageEncoder_WIC.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkMemory_malloc.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkScalerContext_win_dw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/SkBitmapProcShader.cpp + ../../../third_party/skia/LICENSE
@@ -1701,7 +1698,6 @@ FILE: ../../../third_party/skia/src/pdf/SkPDFTypes.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFUtils.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFUtils.h
 FILE: ../../../third_party/skia/src/ports/SkGlobalInitialization_default.cpp
-FILE: ../../../third_party/skia/src/ports/SkImageEncoder_WIC.cpp
 FILE: ../../../third_party/skia/src/ports/SkMemory_malloc.cpp
 FILE: ../../../third_party/skia/src/ports/SkScalerContext_win_dw.cpp
 FILE: ../../../third_party/skia/src/shaders/SkBitmapProcShader.cpp
