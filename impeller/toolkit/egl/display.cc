@@ -136,48 +136,37 @@ std::unique_ptr<Config> Display::ChooseConfig(ConfigDescriptor config) const {
     attributes.push_back(static_cast<EGLint>(config.stencil_bits));
   }
 
-  // On android emulators multisample buffer configs don't work, so we fallback
-  // to a config without them.
-  std::vector<EGLint> attributes_sans_multisample = attributes;
-
   {
     const auto sample_count = static_cast<EGLint>(config.samples);
     if (sample_count > 1) {
       attributes.push_back(EGL_SAMPLE_BUFFERS);
       attributes.push_back(1);
+      attributes.push_back(EGL_SAMPLES);
+      attributes.push_back(sample_count);
     }
-    attributes.push_back(EGL_SAMPLES);
-    attributes.push_back(sample_count);
   }
 
   // termination sentinel must be present.
   attributes.push_back(EGL_NONE);
-  attributes_sans_multisample.push_back(EGL_NONE);
 
-  std::vector<std::vector<EGLint>> attribute_options = {
-      attributes, attributes_sans_multisample};
-
-  for (const auto& attribute_option : attribute_options) {
-    EGLConfig config_out = nullptr;
-    EGLint config_count_out = 0;
-    if (::eglChooseConfig(
-            display_,                 // display
-            attribute_option.data(),  // attributes (null terminated)
-            &config_out,              // matched configs
-            1,                        // configs array size
-            &config_count_out         // match configs count
-            ) != EGL_TRUE) {
-      IMPELLER_LOG_EGL_ERROR;
-      continue;
-    }
-
-    if (config_count_out == 1u) {
-      return std::make_unique<Config>(config, config_out);
-    }
+  EGLConfig config_out = nullptr;
+  EGLint config_count_out = 0;
+  if (::eglChooseConfig(display_,           // display
+                        attributes.data(),  // attributes (null terminated)
+                        &config_out,        // matched configs
+                        1,                  // configs array size
+                        &config_count_out   // match configs count
+                        ) != EGL_TRUE) {
+    IMPELLER_LOG_EGL_ERROR;
+    return nullptr;
   }
 
-  IMPELLER_LOG_EGL_ERROR;
-  return nullptr;
+  if (config_count_out != 1u) {
+    IMPELLER_LOG_EGL_ERROR;
+    return nullptr;
+  }
+
+  return std::make_unique<Config>(config, config_out);
 }
 
 std::unique_ptr<Surface> Display::CreateWindowSurface(
