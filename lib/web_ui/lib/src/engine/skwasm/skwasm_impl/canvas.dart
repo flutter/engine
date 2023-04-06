@@ -255,12 +255,19 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void drawShadow(
-    ui.Path path,
+    ui.Path uiPath,
     ui.Color color,
     double elevation,
     bool transparentOccluder,
   ) {
-    // TODO(jacksongardner): implement this
+    final SkwasmPath path = uiPath as SkwasmPath;
+    canvasDrawShadow(
+      _handle,
+      path.handle,
+      elevation,
+      ui.window.devicePixelRatio,
+      color.value,
+      transparentOccluder);
   }
 
   @override
