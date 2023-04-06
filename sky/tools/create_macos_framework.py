@@ -139,10 +139,11 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     if args.zip:
       whitelist_content = 'Exempted from mac code signing.'
       embed_codesign_configuration(
-        os.path.join(dst, 'whitelist.txt'), whitelist_content
+          os.path.join(dst, 'whitelist.txt'), whitelist_content
       )
       subprocess.check_call([
-          'zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', 'FlutterMacOS.dSYM', 'whitelist.txt'
+          'zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', 'FlutterMacOS.dSYM',
+          'whitelist.txt'
       ],
                             cwd=dst)
 
