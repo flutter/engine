@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -74,12 +75,12 @@ class SafariPointerEventWorkaround {
   static SafariPointerEventWorkaround instance = SafariPointerEventWorkaround();
 
   void workAroundMissingPointerEvents() {
-    domDocument.addEventListener('touchstart', allowInterop((DomEvent event) {}));
+    domDocument.addEventListener('touchstart', createDomEventListener((DomEvent event) {}));
   }
 }
 
 class PointerBinding {
-  PointerBinding(this.glassPaneElement, this._keyboardConverter)
+  PointerBinding(this.flutterViewElement, this._keyboardConverter)
     : _pointerDataConverter = PointerDataConverter(),
       _detector = const PointerSupportDetector() {
     if (isIosSafari) {
@@ -92,9 +93,9 @@ class PointerBinding {
   static PointerBinding? get instance => _instance;
   static PointerBinding? _instance;
 
-  static void initInstance(DomElement glassPaneElement, KeyboardConverter keyboardConverter) {
+  static void initInstance(DomElement flutterViewElement, KeyboardConverter keyboardConverter) {
     if (_instance == null) {
-      _instance = PointerBinding(glassPaneElement, keyboardConverter);
+      _instance = PointerBinding(flutterViewElement, keyboardConverter);
       assert(() {
         registerHotRestartListener(_instance!.dispose);
         return true;
@@ -109,7 +110,7 @@ class PointerBinding {
     _pointerDataConverter.clearPointerState();
   }
 
-  final DomElement glassPaneElement;
+  final DomElement flutterViewElement;
 
   PointerSupportDetector _detector;
   final PointerDataConverter _pointerDataConverter;
@@ -155,15 +156,15 @@ class PointerBinding {
   // TODO(dit): remove old API fallbacks, https://github.com/flutter/flutter/issues/116141
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
-      return _PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
+      return _PointerAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     // Fallback for Safari Mobile < 13. To be removed.
     if (_detector.hasTouchEvents) {
-      return _TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
+      return _TouchAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     // Fallback for Safari Desktop < 13. To be removed.
     if (_detector.hasMouseEvents) {
-      return _MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
+      return _MouseAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     throw UnsupportedError('This browser does not support pointer, touch, or mouse events.');
   }
@@ -204,10 +205,10 @@ class _Listener {
   factory _Listener.register({
     required String event,
     required DomEventTarget target,
-    required DomEventListener handler,
+    required DartDomEventListener handler,
     bool capture = false,
   }) {
-    final DomEventListener jsHandler = allowInterop((DomEvent event) => handler(event));
+    final DomEventListener jsHandler = createDomEventListener(handler);
     final _Listener listener = _Listener._(
       event: event,
       target: target,
@@ -223,15 +224,14 @@ class _Listener {
   factory _Listener.registerNative({
     required String event,
     required DomEventTarget target,
-    required DomEventListener handler,
+    required DomEventListener jsHandler,
     bool capture = false,
     bool passive = false,
   }) {
-    final Object eventOptions = createPlainJsObject(<String, Object?>{
+    final Map<String, Object> eventOptions = <String, Object>{
       'capture': capture,
       'passive': passive,
-    });
-    final DomEventListener jsHandler = allowInterop((DomEvent event) => handler(event));
+    };
     final _Listener listener = _Listener._(
       event: event,
       target: target,
@@ -239,7 +239,7 @@ class _Listener {
       useCapture: capture,
       isNative: true,
     );
-    addJsEventListener(target, event, jsHandler, eventOptions);
+    target.addEventListenerWithOptions(event, jsHandler, eventOptions);
     return listener;
   }
 
@@ -253,7 +253,7 @@ class _Listener {
 
   void unregister() {
     if (isNative) {
-      removeJsEventListener(target, event, handler, useCapture);
+      target.removeEventListener(event, handler, useCapture);
     } else {
       target.removeEventListener(event, handler, useCapture);
     }
@@ -264,7 +264,7 @@ class _Listener {
 abstract class _BaseAdapter {
   _BaseAdapter(
     this._callback,
-    this.glassPaneElement,
+    this.flutterViewElement,
     this._pointerDataConverter,
     this._keyboardConverter,
   ) {
@@ -272,7 +272,7 @@ abstract class _BaseAdapter {
   }
 
   final List<_Listener> _listeners = <_Listener>[];
-  final DomElement glassPaneElement;
+  final DomElement flutterViewElement;
   final _PointerDataCallback _callback;
   final PointerDataConverter _pointerDataConverter;
   final KeyboardConverter _keyboardConverter;
@@ -293,7 +293,7 @@ abstract class _BaseAdapter {
 
   /// Adds a listener for the given [eventName] to [target].
   ///
-  /// Generally speaking, down and leave events should use [glassPaneElement]
+  /// Generally speaking, down and leave events should use [flutterViewElement]
   /// as the [target], while move and up events should use [domWindow]
   /// instead, because the browser doesn't fire the latter two for DOM elements
   /// when the pointer is outside the window.
@@ -306,14 +306,14 @@ abstract class _BaseAdapter {
   void addEventListener(
     DomEventTarget target,
     String eventName,
-    DomEventListener handler, {
+    DartDomEventListener handler, {
     bool useCapture = true,
   }) {
-    dynamic loggedHandler(DomEvent event) {
+    JSVoid loggedHandler(DomEvent event) {
       if (_debugLogPointerEvents) {
         if (domInstanceOfString(event, 'PointerEvent')) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
-          final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
+          final ui.Offset offset = computeEventOffsetToTarget(event, flutterViewElement);
           print('${pointerEvent.type}    '
               '${offset.dx.toStringAsFixed(1)},'
               '${offset.dy.toStringAsFixed(1)}');
@@ -452,7 +452,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     }
 
     final List<ui.PointerData> data = <ui.PointerData>[];
-    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, flutterViewElement);
     bool ignoreCtrlKey = false;
     if (operatingSystem == OperatingSystem.macOs) {
       ignoreCtrlKey = (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlLeft) ?? false) ||
@@ -495,11 +495,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     return data;
   }
 
-  void _addWheelEventListener(DomEventListener handler) {
+  void _addWheelEventListener(DartDomEventListener handler) {
     _listeners.add(_Listener.registerNative(
       event: 'wheel',
-      target: glassPaneElement,
-      handler: (DomEvent event) => handler(event),
+      target: flutterViewElement,
+      jsHandler: createDomEventListener(handler),
     ));
   }
 
@@ -687,7 +687,7 @@ typedef _PointerEventListener = dynamic Function(DomPointerEvent event);
 class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
     super.callback,
-    super.glassPaneElement,
+    super.flutterViewElement,
     super.pointerDataConverter,
     super.keyboardConverter,
   );
@@ -744,7 +744,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
-    _addPointerEventListener(glassPaneElement, 'pointerdown', (DomPointerEvent event) {
+    _addPointerEventListener(flutterViewElement, 'pointerdown', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
@@ -779,7 +779,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addPointerEventListener(glassPaneElement, 'pointerleave', (DomPointerEvent event) {
+    _addPointerEventListener(flutterViewElement, 'pointerleave', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -790,7 +790,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, useCapture: false, checkModifiers: false);
 
-    // TODO(dit): This must happen in the glassPane, https://github.com/flutter/flutter/issues/116561
+    // TODO(dit): This must happen in the flutterViewElement, https://github.com/flutter/flutter/issues/116561
     _addPointerEventListener(domWindow, 'pointerup', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
@@ -804,11 +804,11 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     });
 
-    // TODO(dit): Synthesize a "cancel" event when 'pointerup' happens outside of the glassPane, https://github.com/flutter/flutter/issues/116561
+    // TODO(dit): Synthesize a "cancel" event when 'pointerup' happens outside of the flutterViewElement, https://github.com/flutter/flutter/issues/116561
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
-    _addPointerEventListener(glassPaneElement, 'pointercancel', (DomPointerEvent event) {
+    _addPointerEventListener(flutterViewElement, 'pointercancel', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -835,7 +835,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
     final num? pressure = event.pressure;
-    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, flutterViewElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -906,7 +906,7 @@ typedef _TouchEventListener = dynamic Function(DomTouchEvent event);
 class _TouchAdapter extends _BaseAdapter {
   _TouchAdapter(
     super.callback,
-    super.glassPaneElement,
+    super.flutterViewElement,
     super.pointerDataConverter,
     super.keyboardConverter,
   );
@@ -938,7 +938,7 @@ class _TouchAdapter extends _BaseAdapter {
 
   @override
   void setup() {
-    _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
+    _addTouchEventListener(flutterViewElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
@@ -957,7 +957,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(pointerData);
     });
 
-    _addTouchEventListener(glassPaneElement, 'touchmove', (DomTouchEvent event) {
+    _addTouchEventListener(flutterViewElement, 'touchmove', (DomTouchEvent event) {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -976,7 +976,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(pointerData);
     });
 
-    _addTouchEventListener(glassPaneElement, 'touchend', (DomTouchEvent event) {
+    _addTouchEventListener(flutterViewElement, 'touchend', (DomTouchEvent event) {
       // On Safari Mobile, the keyboard does not show unless this line is
       // added.
       event.preventDefault();
@@ -998,7 +998,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(pointerData);
     });
 
-    _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
+    _addTouchEventListener(flutterViewElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
@@ -1064,7 +1064,7 @@ typedef _MouseEventListener = dynamic Function(DomMouseEvent event);
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
     super.callback,
-    super.glassPaneElement,
+    super.flutterViewElement,
     super.pointerDataConverter,
     super.keyboardConverter,
   );
@@ -1099,7 +1099,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
-    _addMouseEventListener(glassPaneElement, 'mousedown', (DomMouseEvent event) {
+    _addMouseEventListener(flutterViewElement, 'mousedown', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? up =
           _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
@@ -1127,7 +1127,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addMouseEventListener(glassPaneElement, 'mouseleave', (DomMouseEvent event) {
+    _addMouseEventListener(flutterViewElement, 'mouseleave', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? details = _sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
       if (details != null) {
@@ -1136,7 +1136,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, useCapture: false);
 
-    // TODO(dit): This must happen in the glassPane, https://github.com/flutter/flutter/issues/116561
+    // TODO(dit): This must happen in the flutterViewElement, https://github.com/flutter/flutter/issues/116561
     _addMouseEventListener(domWindow, 'mouseup', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons?.toInt());
@@ -1158,7 +1158,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomMouseEvent event,
     required _SanitizedDetails details,
   }) {
-    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, flutterViewElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,
