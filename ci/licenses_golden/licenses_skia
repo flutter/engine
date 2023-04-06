@@ -1,4 +1,4 @@
-Signature: cfc62da1662358812ed5c4e4991bba84
+Signature: 5fdc7f7f2128a18810ee432bc6b6fa50
 
 ====================================================================================================
 LIBRARY: etc1
@@ -9012,6 +9012,7 @@ ORIGIN: ../../../third_party/skia/src/image/SkImage_Raster.h + ../../../third_pa
 ORIGIN: ../../../third_party/skia/src/image/SkImage_RasterFactories.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/image/SkSurface_Base.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/image/SkSurface_Null.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/ports/fontations/src/main.rs + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopControlFlowInfo.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/analysis/SkSLGetReturnComplexity.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/analysis/SkSLIsDynamicallyUniformExpression.cpp + ../../../third_party/skia/LICENSE
@@ -9082,6 +9083,7 @@ FILE: ../../../third_party/skia/src/image/SkImage_Raster.h
 FILE: ../../../third_party/skia/src/image/SkImage_RasterFactories.cpp
 FILE: ../../../third_party/skia/src/image/SkSurface_Base.cpp
 FILE: ../../../third_party/skia/src/image/SkSurface_Null.cpp
+FILE: ../../../third_party/skia/src/ports/fontations/src/main.rs
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopControlFlowInfo.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetReturnComplexity.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsDynamicallyUniformExpression.cpp
