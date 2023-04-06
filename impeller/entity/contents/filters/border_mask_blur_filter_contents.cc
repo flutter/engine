@@ -75,7 +75,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
   ///
 
   auto sigma = effect_transform * Vector2(sigma_x_.sigma, sigma_y_.sigma);
-  RenderProc render_proc = [input_uvs, input_snapshot,
+  RenderProc render_proc = [coverage, input_snapshot,
                             src_color_factor = src_color_factor_,
                             inner_blur_factor = inner_blur_factor_,
                             outer_blur_factor = outer_blur_factor_, sigma](
@@ -85,12 +85,18 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 0), input_uvs[1]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 1), input_uvs[2]},
+        {coverage.origin, Point(0, 0)},
+        {{coverage.origin.x + coverage.size.width, coverage.origin.y},
+         Point(1, 0)},
+        {{coverage.origin.x + coverage.size.width,
+          coverage.origin.y + coverage.size.height},
+         Point(1, 1)},
+        {coverage.origin, Point(0, 0)},
+        {{coverage.origin.x + coverage.size.width,
+          coverage.origin.y + coverage.size.height},
+         Point(1, 1)},
+        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
+         Point(0, 1)},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
