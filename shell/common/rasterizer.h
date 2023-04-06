@@ -191,6 +191,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   void AddSurface(int64_t view_id, std::unique_ptr<Surface> surface);
 
+  void RemoveSurface(int64_t view_id);
+
   //----------------------------------------------------------------------------
   ///
   /// @bug        https://github.com/flutter/flutter/issues/33939

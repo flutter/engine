@@ -5,6 +5,13 @@
 part of dart.ui;
 
 @pragma('vm:entry-point')
+void _addView(
+  Object id,
+) {
+  PlatformDispatcher.instance._addView(id);
+}
+
+@pragma('vm:entry-point')
 void _updateWindowMetrics(
   Object id,
   double devicePixelRatio,

@@ -88,22 +88,8 @@ std::unique_ptr<Studio> PlatformView::CreateStudio() {
 }
 
 std::unique_ptr<Surface> PlatformView::CreateSurface(int64_t view_id) {
-  std::unique_ptr<Surface> surface;
-  // Threading: We want to use the platform view on the non-platform thread.
-  // Using the weak pointer is illegal. But, we are going to introduce a latch
-  // so that the platform view is not collected till the studio and the surface
-  // are obtained.
-  auto* platform_view = this;
-  fml::ManualResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch, view_id]() {
-        surface = platform_view->CreateRenderingSurface(view_id);
-        if (!surface || !surface->IsValid()) {
-          surface.reset();
-        }
-        latch.Signal();
-      });
-  latch.Wait();
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  auto surface = CreateRenderingSurface(view_id);
   if (!surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
     return nullptr;

@@ -753,8 +753,7 @@ void Shell::OnPlatformViewCreated() {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   std::unique_ptr<Studio> studio = platform_view_->CreateStudio();
-  std::unique_ptr<Surface> surface = platform_view_->CreateSurface(kFlutterDefaultViewId);
-  if (studio == nullptr || surface == nullptr) {
+  if (studio == nullptr) {
     // TODO(dkwingsmt): This case is observed in windows unit tests. Anyway,
     // we're probably not creating the surface in this callback eventually.
     return;
@@ -786,9 +785,13 @@ void Shell::OnPlatformViewCreated() {
 
   fml::AutoResetWaitableEvent latch;
   auto raster_task = fml::MakeCopyable(
-      [&waiting_for_first_frame = waiting_for_first_frame_,
-       rasterizer = rasterizer_->GetWeakPtr(),  //
-       studio = std::move(studio), surface = std::move(surface)]() mutable {
+      [&waiting_for_first_frame = waiting_for_first_frame_,  //
+       rasterizer = rasterizer_->GetWeakPtr(),               //
+       platform_view = platform_view_.get(),                 //
+       studio = std::move(studio)                            //
+  ]() mutable {
+        std::unique_ptr<Surface> surface =
+            platform_view->CreateSurface(kFlutterDefaultViewId);
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
@@ -1987,20 +1990,53 @@ void Shell::AddRenderSurface(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::AddRenderSurface");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  if (!engine_) {
+    return;
+  }
+  if (view_id == kFlutterDefaultViewId) {
+    return;
+  }
 
-  std::unique_ptr<Surface> surface = platform_view_->CreateSurface(view_id);
-  fml::AutoResetWaitableEvent latch;
+  auto ui_task = [engine = engine_->GetWeakPtr(),  //
+                  view_id                          //
+  ] { engine->AddView(view_id); };
+  // TODO(dkwingsmt): platform_view_ is captured illegally here.
+  // We need some mechanism from it being collected.
   task_runners_.GetRasterTaskRunner()->PostTask(
-      fml::MakeCopyable([&latch,                                  //
+      fml::MakeCopyable([&task_runners = task_runners_,           //
+                         ui_task,                                 //
+                         platform_view = platform_view_.get(),    //
                          rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface),            //
                          view_id                                  //
   ]() mutable {
+        if (platform_view && rasterizer) {
+          std::unique_ptr<Surface> surface =
+              platform_view->CreateSurface(view_id);
+          if (surface) {
+            rasterizer->AddSurface(view_id, std::move(surface));
+          }
+          task_runners.GetUITaskRunner()->PostTask(ui_task);
+        }
+      }));
+}
+
+void Shell::RemoveRenderSurface(int64_t view_id) {
+  TRACE_EVENT0("flutter", "Shell::RemoveRenderSurface");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  fml::AutoResetWaitableEvent latch;
+  // platform_view_->RemoveSurface(view_id); // TODO
+  task_runners_.GetRasterTaskRunner()->PostTask(
+      [&latch,                                  //
+       rasterizer = rasterizer_->GetWeakPtr(),  //
+       view_id                                  //
+  ]() mutable {
         if (rasterizer) {
-          rasterizer->AddSurface(view_id, std::move(surface));
+          rasterizer->RemoveSurface(view_id);
         }
         latch.Signal();
-      }));
+      });
   latch.Wait();
 }
 

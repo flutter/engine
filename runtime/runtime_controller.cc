@@ -122,6 +122,15 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetInitialLifecycleState(platform_data_.lifecycle_state);
 }
 
+bool RuntimeController::AddView(int64_t view_id) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->AddView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
 bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   platform_data_.viewport_metrics = metrics;
 

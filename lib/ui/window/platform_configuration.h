@@ -267,6 +267,8 @@ class PlatformConfiguration final {
   ///
   void DidCreateIsolate();
 
+  void AddView(int64_t view_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Update the specified locale data in the framework.
   ///
@@ -434,6 +436,7 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue add_view_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_initial_lifecycle_state_;

@@ -298,6 +298,7 @@ class Shell final : public PlatformView::Delegate,
   bool IsSetup() const;
 
   void AddRenderSurface(int64_t view_id);
+  void RemoveRenderSurface(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data

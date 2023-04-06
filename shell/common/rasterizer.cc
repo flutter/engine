@@ -154,6 +154,10 @@ void Rasterizer::AddSurface(int64_t view_id, std::unique_ptr<Surface> surface) {
   }
 }
 
+void Rasterizer::RemoveSurface(int64_t view_id) {
+  surfaces_.erase(view_id);
+}
+
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
   return compositor_context_->texture_registry();
 }
