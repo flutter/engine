@@ -35,7 +35,7 @@ void testMain() {
           .singleWhere((NotoFont font) => font.name == 'Noto Sans Arabic')
           .url;
       final String notoEmojiUrl = fallbackFonts
-          .singleWhere((NotoFont font) => font.name == 'Noto Color Emoji')
+          .singleWhere((NotoFont font) => font.name == 'Noto Emoji')
           .url;
       TestDownloader.mockDownloads[notoSansArabicUrl] =
           '/assets/fonts/NotoNaskhArabic-Regular.ttf';
@@ -123,7 +123,7 @@ void testMain() {
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
         'Roboto',
-        'Noto Color Emoji',
+        'Noto Emoji',
         'Noto Sans Arabic',
       ]);
     });
@@ -144,7 +144,7 @@ void testMain() {
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
-          contains('Noto Color Emoji'));
+          contains('Noto Emoji'));
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
@@ -235,7 +235,7 @@ void testMain() {
       final Set<int> supportedUniqueCodeUnits = <int>{};
       final IntervalTree<NotoFont> notoTree =
           FontFallbackData.instance.notoTree;
-      for (final NotoFont font in fallbackFonts) {
+      for (final NotoFont font in notoTree.root.enumerateAllElements()) {
         testedFonts.add(font.name);
         for (final CodeunitRange range in font.computeUnicodeRanges()) {
           for (int codeUnit = range.start; codeUnit < range.end; codeUnit++) {
@@ -250,7 +250,7 @@ void testMain() {
           testedFonts,
           unorderedEquals(<String>{
             'Noto Sans',
-            'Noto Color Emoji',
+            'Noto Emoji',
             'Noto Sans Symbols',
             'Noto Sans Symbols 2',
             'Noto Sans Adlam',
@@ -332,7 +332,7 @@ void testMain() {
             'Noto Sans Mro',
             'Noto Sans Multani',
             'Noto Sans Myanmar',
-            'Noto Sans NKo',
+            'Noto Sans N Ko',
             'Noto Sans Nabataean',
             'Noto Sans New Tai Lue',
             'Noto Sans Newa',
@@ -397,10 +397,9 @@ void testMain() {
       final List<int> supportedCodeUnits = supportedUniqueCodeUnits.toList()
         ..shuffle(random);
       const int paragraphLength = 3;
-      const int totalTestSize = 1000;
 
       for (int batchStart = 0;
-          batchStart < totalTestSize;
+          batchStart < supportedCodeUnits.length;
           batchStart += paragraphLength) {
         final int batchEnd =
             math.min(batchStart + paragraphLength, supportedCodeUnits.length);
@@ -429,7 +428,7 @@ void testMain() {
           rethrow;
         }
       }
-    });
+    }, timeout: const Timeout.factor(50)); // This test is very slow.
   }, skip: isSafari);
 }
 
