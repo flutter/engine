@@ -237,6 +237,36 @@ class TransformOperation implements LayerOperation {
   }
 }
 
+class ShaderMaskLayer
+  with PictureLayer
+  implements ui.ShaderMaskEngineLayer {}
+class ShaderMaskOperation implements LayerOperation {
+  ShaderMaskOperation(this.shader, this.maskRect, this.blendMode);
+
+  final ui.Shader shader;
+  final ui.Rect maskRect;
+  final ui.BlendMode blendMode;
+
+  @override
+  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(maskRect);
+
+  @override
+  void pre(ui.Canvas canvas, ui.Rect contentRect) {
+    canvas.saveLayer(
+      maskRect, 
+      ui.Paint()
+        ..blendMode = blendMode
+        ..shader = shader
+    );
+  }
+
+  @override
+  void post(ui.Canvas canvas) {
+    canvas.restore();
+  }
+}
+
+
 mixin PictureLayer implements ui.EngineLayer {
   ui.Picture? picture;
 

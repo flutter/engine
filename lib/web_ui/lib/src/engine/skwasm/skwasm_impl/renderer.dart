@@ -65,9 +65,21 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Gradient createLinearGradient(ui.Offset from, ui.Offset to, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    throw UnimplementedError('createLinearGradientn not yet implemented');
-  }
+  ui.Gradient createLinearGradient(
+    ui.Offset from,
+    ui.Offset to,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4
+  ]) => SkwasmGradient.linear(
+    from: from,
+    to: to,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    matrix4: matrix4,
+  );
 
   @override
   ui.ImageFilter createMatrixImageFilter(Float64List matrix4, {ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
@@ -251,11 +263,20 @@ class SkwasmRenderer implements Renderer {
     embedder.addSceneToSceneHost(sceneElement);
   }
 
+  static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
+
   @override
-  void clearFragmentProgramCache() { }
+  void clearFragmentProgramCache() {
+    _programs.clear();
+  }
 
   @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
-    throw UnimplementedError('createFragmentProgram not yet implemented');
+    if (_programs.containsKey(assetKey)) {
+      return _programs[assetKey]!;
+    }
+    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+      return SkwasmFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
+    });
   }
 }
