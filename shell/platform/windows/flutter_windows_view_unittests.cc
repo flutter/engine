@@ -158,11 +158,11 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node{sizeof(FlutterSemanticsNode2), 0};
   node.label = "name";
   node.value = "value";
   node.platform_view_id = -1;
-  bridge->AddFlutterSemanticsNodeUpdate(&node);
+  bridge->AddFlutterSemanticsNodeUpdate(node);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -257,28 +257,28 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node0{sizeof(FlutterSemanticsNode2), 0};
   std::vector<int32_t> node0_children{1, 2};
   node0.child_count = node0_children.size();
   node0.children_in_traversal_order = node0_children.data();
   node0.children_in_hit_test_order = node0_children.data();
 
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   node1.label = "prefecture";
   node1.value = "Kyoto";
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   std::vector<int32_t> node2_children{3};
   node2.child_count = node2_children.size();
   node2.children_in_traversal_order = node2_children.data();
   node2.children_in_hit_test_order = node2_children.data();
-  FlutterSemanticsNode node3{sizeof(FlutterSemanticsNode), 3};
+  FlutterSemanticsNode2 node3{sizeof(FlutterSemanticsNode2), 3};
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -455,18 +455,18 @@ TEST(FlutterWindowsView, NonZeroSemanticsRoot) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   std::vector<int32_t> node1_children{2};
   node1.child_count = node1_children.size();
   node1.children_in_traversal_order = node1_children.data();
   node1.children_in_hit_test_order = node1_children.data();
 
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   node2.label = "prefecture";
   node2.value = "Kyoto";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -587,7 +587,7 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   ASSERT_TRUE(bridge);
 
   // Add root node at origin. Size 500x500.
-  FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node0{sizeof(FlutterSemanticsNode2), 0};
   std::vector<int32_t> node0_children{1, 2};
   node0.rect = {0, 0, 500, 500};
   node0.transform = kIdentityTransform;
@@ -596,14 +596,14 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   node0.children_in_hit_test_order = node0_children.data();
 
   // Add node 1 located at 0,0 relative to node 0. Size 250x500.
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   node1.rect = {0, 0, 250, 500};
   node1.transform = kIdentityTransform;
   node1.label = "prefecture";
   node1.value = "Kyoto";
 
   // Add node 2 located at 250,0 relative to node 0. Size 250x500.
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   std::vector<int32_t> node2_children{3};
   node2.rect = {0, 0, 250, 500};
   node2.transform = {1, 0, 250, 0, 1, 0, 0, 0, 1};
@@ -612,16 +612,16 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   node2.children_in_hit_test_order = node2_children.data();
 
   // Add node 3 located at 0,250 relative to node 2. Size 250, 250.
-  FlutterSemanticsNode node3{sizeof(FlutterSemanticsNode), 3};
+  FlutterSemanticsNode2 node3{sizeof(FlutterSemanticsNode2), 3};
   node3.rect = {0, 0, 250, 250};
   node3.transform = {1, 0, 0, 0, 1, 250, 0, 0, 1};
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -731,7 +731,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -743,7 +743,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -782,7 +782,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   // Test unchecked too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -821,7 +821,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -877,7 +877,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -889,7 +889,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsToggled);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -938,7 +938,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   // Test unpressed too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -994,7 +994,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -1006,7 +1006,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   root.custom_accessibility_actions_count = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -1030,33 +1030,6 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   ASSERT_EQ(uia_node->GetPropertyValue(UIA_HelpTextPropertyId, &varname), S_OK);
   std::string uia_tooltip = _com_util::ConvertBSTRToString(varname.bstrVal);
   EXPECT_EQ(uia_tooltip, "tooltip");
-}
-
-TEST(FlutterWindowsViewTest, DestructorTest) {
-  bool destroyed = false;
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  // Use this pointer to reference the view in the Destruct callback, which must
-  // be defined before the view is.
-  FlutterWindowsView* view_ptr = nullptr;
-
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  ON_CALL(*window_binding_handler, Destruct)
-      .WillByDefault([&destroyed, &view_ptr]() {
-        EXPECT_FALSE(destroyed);
-        destroyed = true;
-        ASSERT_NE(view_ptr, nullptr);
-        EXPECT_EQ(view_ptr->GetEngine()->view(), nullptr);
-      });
-
-  {
-    FlutterWindowsView view(std::move(window_binding_handler));
-    view_ptr = &view;
-    view.SetEngine(std::move(engine));
-    // Destruct view before continuing.
-  }
-
-  EXPECT_TRUE(destroyed);
 }
 
 }  // namespace testing

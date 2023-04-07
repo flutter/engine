@@ -8,16 +8,19 @@
 A top level harness to run all unit-tests in a specific engine build.
 """
 
+from pathlib import Path
+
 import argparse
-import glob
+import csv
 import errno
+import glob
 import multiprocessing
 import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
-import csv
 import xvfb
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -52,10 +55,17 @@ def is_asan(build_dir):
 
 
 def run_cmd(
-    cmd, forbidden_output=None, expect_failure=False, env=None, **kwargs
+    cmd,
+    forbidden_output=None,
+    expect_failure=False,
+    env=None,
+    allowed_failure_output=None,
+    **kwargs
 ):
   if forbidden_output is None:
     forbidden_output = []
+  if allowed_failure_output is None:
+    allowed_failure_output = []
 
   command_string = ' '.join(cmd)
 
@@ -63,8 +73,9 @@ def run_cmd(
   print('Running command "%s"' % command_string)
 
   start_time = time.time()
-  stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
-  stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
+  collect_output = forbidden_output or allowed_failure_output
+  stdout_pipe = sys.stdout if not collect_output else subprocess.PIPE
+  stderr_pipe = sys.stderr if not collect_output else subprocess.PIPE
   process = subprocess.Popen(
       cmd,
       stdout=stdout_pipe,
@@ -92,10 +103,17 @@ def run_cmd(
 
     print_divider('!')
 
-    raise Exception(
-        'Command "%s" exited with code %d.' %
-        (command_string, process.returncode)
-    )
+    allowed_failure = False
+    for allowed_string in allowed_failure_output:
+      if (stdout and allowed_string in stdout) or (stderr and
+                                                   allowed_string in stderr):
+        allowed_failure = True
+
+    if not allowed_failure:
+      raise Exception(
+          'Command "%s" exited with code %d.' %
+          (command_string, process.returncode)
+      )
 
   if stdout or stderr:
     print(stdout)
@@ -192,6 +210,7 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     flags=None,
     cwd=BUILDROOT_DIR,
     forbidden_output=None,
+    allowed_failure_output=None,
     expect_failure=False,
     coverage=False,
     extra_env=None,
@@ -205,6 +224,8 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     flags = []
   if forbidden_output is None:
     forbidden_output = []
+  if allowed_failure_output is None:
+    allowed_failure_output = []
   if extra_env is None:
     extra_env = {}
 
@@ -249,7 +270,8 @@ def run_engine_executable( # pylint: disable=too-many-arguments
         cwd=cwd,
         forbidden_output=forbidden_output,
         expect_failure=expect_failure,
-        env=env
+        env=env,
+        allowed_failure_output=allowed_failure_output
     )
   except:
     # The LUCI environment may provide a variable containing a directory path
@@ -287,6 +309,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
       flags=None,
       cwd=BUILDROOT_DIR,
       forbidden_output=None,
+      allowed_failure_output=None,
       expect_failure=False,
       coverage=False,
       extra_env=None,
@@ -297,6 +320,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
     self.flags = flags
     self.cwd = cwd
     self.forbidden_output = forbidden_output
+    self.allowed_failure_output = allowed_failure_output
     self.expect_failure = expect_failure
     self.coverage = coverage
     self.extra_env = extra_env
@@ -309,6 +333,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
         flags=self.flags,
         cwd=self.cwd,
         forbidden_output=self.forbidden_output,
+        allowed_failure_output=self.allowed_failure_output,
         expect_failure=self.expect_failure,
         coverage=self.coverage,
         extra_env=self.extra_env,
@@ -442,28 +467,32 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage
     )
-    # TODO(117122): Re-enable impeller_unittests after shader compiler errors
-    #               are addressed.
     # Impeller tests are only supported on macOS for now.
-    # run_engine_executable(
-    #     build_dir,
-    #     'impeller_unittests',
-    #     executable_filter,
-    #     shuffle_flags,
-    #     coverage=coverage,
-    #     extra_env={
-    #         # pylint: disable=line-too-long
-    #         # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-    #         'MTL_SHADER_VALIDATION':
-    #             '1',  # Enables all shader validation tests.
-    #         'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-    #             '1',  # Validates accesses to device and constant memory.
-    #         'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-    #             '1',  # Validates accesses to threadgroup memory.
-    #         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-    #             '1',  # Validates that texture references are not nil.
-    #     }
-    # )
+    run_engine_executable(
+        build_dir,
+        'impeller_unittests',
+        executable_filter,
+        shuffle_flags,
+        coverage=coverage,
+        extra_env={
+            # pylint: disable=line-too-long
+            # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+            'MTL_SHADER_VALIDATION':
+                '1',  # Enables all shader validation tests.
+            'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+                '1',  # Validates accesses to device and constant memory.
+            'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+                '1',  # Validates accesses to threadgroup memory.
+            'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+                '1',  # Validates that texture references are not nil.
+        },
+        # TODO(117122): Remove this allowlist.
+        # https://github.com/flutter/flutter/issues/114872
+        allowed_failure_output=[
+            '[MTLCompiler createVertexStageAndLinkPipelineWithFragment:',
+            '[MTLCompiler pipelineStateWithVariant:',
+        ]
+    )
 
 
 def parse_impeller_vulkan_filter():
@@ -946,6 +975,46 @@ def run_engine_tasks_in_parallel(tasks):
     raise Exception()
 
 
+class DirectoryChange():
+  """
+  A scoped change in the CWD.
+  """
+  old_cwd: str = ''
+  new_cwd: str = ''
+
+  def __init__(self, new_cwd: str):
+    self.new_cwd = new_cwd
+
+  def __enter__(self):
+    self.old_cwd = os.getcwd()
+    os.chdir(self.new_cwd)
+
+  def __exit__(self, exception_type, exception_value, exception_traceback):
+    os.chdir(self.old_cwd)
+
+
+def run_impeller_golden_tests(build_dir: str):
+  """
+  Executes the impeller golden image tests from in the `variant` build.
+  """
+  tests_path: str = os.path.join(build_dir, 'impeller_golden_tests')
+  if not os.path.exists(tests_path):
+    raise Exception(
+        'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.'
+        % (build_dir)
+    )
+  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('impeller').joinpath(
+      'golden_tests_harvester'
+  )
+  with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
+    with DirectoryChange(harvester_path):
+      run_cmd(['dart', 'pub', 'get'])
+      bin_path = Path('.').joinpath('bin'
+                                   ).joinpath('golden_tests_harvester.dart')
+      run_cmd(['dart', 'run', str(bin_path), temp_dir])
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="""
@@ -954,7 +1023,14 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
 """
   )
   all_types = [
-      'engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset'
+      'engine',
+      'dart',
+      'benchmarks',
+      'java',
+      'android',
+      'objc',
+      'font-subset',
+      'impeller-golden',
   ]
 
   parser.add_argument(
@@ -1144,6 +1220,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
   if ('engine' in types or
       'font-subset' in types) and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
+
+  if 'impeller-golden' in types:
+    run_impeller_golden_tests(build_dir)
 
 
 if __name__ == '__main__':

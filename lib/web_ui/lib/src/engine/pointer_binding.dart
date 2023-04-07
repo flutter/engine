@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -74,7 +75,7 @@ class SafariPointerEventWorkaround {
   static SafariPointerEventWorkaround instance = SafariPointerEventWorkaround();
 
   void workAroundMissingPointerEvents() {
-    domDocument.addEventListener('touchstart', allowInterop((DomEvent event) {}));
+    domDocument.addEventListener('touchstart', createDomEventListener((DomEvent event) {}));
   }
 }
 
@@ -204,10 +205,10 @@ class _Listener {
   factory _Listener.register({
     required String event,
     required DomEventTarget target,
-    required DomEventListener handler,
+    required DartDomEventListener handler,
     bool capture = false,
   }) {
-    final DomEventListener jsHandler = allowInterop((DomEvent event) => handler(event));
+    final DomEventListener jsHandler = createDomEventListener(handler);
     final _Listener listener = _Listener._(
       event: event,
       target: target,
@@ -223,15 +224,14 @@ class _Listener {
   factory _Listener.registerNative({
     required String event,
     required DomEventTarget target,
-    required DomEventListener handler,
+    required DomEventListener jsHandler,
     bool capture = false,
     bool passive = false,
   }) {
-    final Object eventOptions = createPlainJsObject(<String, Object?>{
+    final Map<String, Object> eventOptions = <String, Object>{
       'capture': capture,
       'passive': passive,
-    });
-    final DomEventListener jsHandler = allowInterop((DomEvent event) => handler(event));
+    };
     final _Listener listener = _Listener._(
       event: event,
       target: target,
@@ -239,7 +239,7 @@ class _Listener {
       useCapture: capture,
       isNative: true,
     );
-    addJsEventListener(target, event, jsHandler, eventOptions);
+    target.addEventListenerWithOptions(event, jsHandler, eventOptions);
     return listener;
   }
 
@@ -253,7 +253,7 @@ class _Listener {
 
   void unregister() {
     if (isNative) {
-      removeJsEventListener(target, event, handler, useCapture);
+      target.removeEventListener(event, handler, useCapture);
     } else {
       target.removeEventListener(event, handler, useCapture);
     }
@@ -306,10 +306,10 @@ abstract class _BaseAdapter {
   void addEventListener(
     DomEventTarget target,
     String eventName,
-    DomEventListener handler, {
+    DartDomEventListener handler, {
     bool useCapture = true,
   }) {
-    dynamic loggedHandler(DomEvent event) {
+    JSVoid loggedHandler(DomEvent event) {
       if (_debugLogPointerEvents) {
         if (domInstanceOfString(event, 'PointerEvent')) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
@@ -437,11 +437,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
         deltaX *= _defaultScrollLineHeight!;
         deltaY *= _defaultScrollLineHeight!;
-        break;
       case domDeltaPage:
         deltaX *= ui.window.physicalSize.width;
         deltaY *= ui.window.physicalSize.height;
-        break;
       case domDeltaPixel:
         if (operatingSystem == OperatingSystem.macOs && (isSafari || isFirefox)) {
           // Safari and Firefox seem to report delta in logical pixels while
@@ -449,38 +447,59 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
           deltaX *= ui.window.devicePixelRatio;
           deltaY *= ui.window.devicePixelRatio;
         }
-        break;
       default:
         break;
     }
 
     final List<ui.PointerData> data = <ui.PointerData>[];
     final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
-    _pointerDataConverter.convert(
-      data,
-      change: ui.PointerChange.hover,
-      timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
-      kind: kind,
-      signalKind: ui.PointerSignalKind.scroll,
-      device: deviceId,
-      physicalX: offset.dx * ui.window.devicePixelRatio,
-      physicalY: offset.dy * ui.window.devicePixelRatio,
-      buttons: event.buttons!.toInt(),
-      pressure: 1.0,
-      pressureMax: 1.0,
-      scrollDeltaX: deltaX,
-      scrollDeltaY: deltaY,
-    );
+    bool ignoreCtrlKey = false;
+    if (operatingSystem == OperatingSystem.macOs) {
+      ignoreCtrlKey = (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlLeft) ?? false) ||
+                      (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlRight) ?? false);
+    }
+    if (event.ctrlKey && !ignoreCtrlKey) {
+      _pointerDataConverter.convert(
+        data,
+        change: ui.PointerChange.hover,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+        kind: kind,
+        signalKind: ui.PointerSignalKind.scale,
+        device: deviceId,
+        physicalX: offset.dx * ui.window.devicePixelRatio,
+        physicalY: offset.dy * ui.window.devicePixelRatio,
+        buttons: event.buttons!.toInt(),
+        pressure: 1.0,
+        pressureMax: 1.0,
+        scale: math.exp(-deltaY / 200),
+      );
+    } else {
+      _pointerDataConverter.convert(
+        data,
+        change: ui.PointerChange.hover,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+        kind: kind,
+        signalKind: ui.PointerSignalKind.scroll,
+        device: deviceId,
+        physicalX: offset.dx * ui.window.devicePixelRatio,
+        physicalY: offset.dy * ui.window.devicePixelRatio,
+        buttons: event.buttons!.toInt(),
+        pressure: 1.0,
+        pressureMax: 1.0,
+        scrollDeltaX: deltaX,
+        scrollDeltaY: deltaY,
+      );
+    }
     _lastWheelEvent = event;
     _lastWheelEventWasTrackpad = kind == ui.PointerDeviceKind.trackpad;
     return data;
   }
 
-  void _addWheelEventListener(DomEventListener handler) {
+  void _addWheelEventListener(DartDomEventListener handler) {
     _listeners.add(_Listener.registerNative(
       event: 'wheel',
       target: glassPaneElement,
-      handler: (DomEvent event) => handler(event),
+      jsHandler: createDomEventListener(handler),
     ));
   }
 
@@ -491,14 +510,6 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       print(event.type);
     }
     _callback(_convertWheelEventToPointerData(event));
-    if (event.getModifierState('Control') &&
-        operatingSystem != OperatingSystem.macOs &&
-        operatingSystem != OperatingSystem.iOs) {
-      // Ignore Control+wheel events since the default handler
-      // will change browser zoom level instead of scrolling.
-      // The exception is MacOs where Control+wheel will still scroll and zoom.
-      return;
-    }
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
     //

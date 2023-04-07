@@ -11,6 +11,8 @@ impeller_component("playground") {
     "playground.h",
     "playground_impl.cc",
     "playground_impl.h",
+    "switches.cc",
+    "switches.h",
     "widgets.cc",
     "widgets.h",
   ]
@@ -40,8 +42,10 @@ impeller_component("playground") {
 
   public_deps = [
     "../entity:entity_shaders",
+    "../entity:framebuffer_blend_entity_shaders",
     "../entity:modern_entity_shaders",
     "../fixtures:shader_fixtures",
+    "../image:image_skia_backend",
     "../renderer",
     "../scene/shaders",
     "imgui:imgui_impeller_backend",
@@ -50,11 +54,9 @@ impeller_component("playground") {
     "//third_party/imgui:imgui_glfw",
   ]
 
-  if (impeller_enable_vulkan || impeller_enable_metal) {
+  if (impeller_enable_compute) {
     public_deps += [ "../fixtures:shader_subgroup_fixtures" ]
   }
-
-  public_configs = [ ":playground_config" ]
 
   if (is_mac) {
     frameworks = [
@@ -76,12 +78,6 @@ impeller_component("playground_test") {
 
   public_deps = [
     ":playground",
-    "//flutter/testing",
+    "//flutter/testing:testing_lib",
   ]
-}
-
-config("playground_config") {
-  if (impeller_enable_playground) {
-    defines = [ "IMPELLER_ENABLE_PLAYGROUND" ]
-  }
 }

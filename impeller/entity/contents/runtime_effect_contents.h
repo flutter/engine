@@ -6,8 +6,8 @@
 #include <memory>
 #include <vector>
 
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/color_source_contents.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
@@ -24,6 +24,9 @@ class RuntimeEffectContents final : public ColorSourceContents {
   void SetUniformData(std::shared_ptr<std::vector<uint8_t>> uniform_data);
 
   void SetTextureInputs(std::vector<TextureInput> texture_inputs);
+
+  // | Contents|
+  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,

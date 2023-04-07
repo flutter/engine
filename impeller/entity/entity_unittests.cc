@@ -26,6 +26,7 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
@@ -33,7 +34,7 @@
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
@@ -74,7 +75,9 @@ class TestPassDelegate final : public EntityPassDelegate {
   bool CanElide() override { return false; }
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override { return collapse_; }
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override {
+    return collapse_;
+  }
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
@@ -216,6 +219,18 @@ TEST_P(EntityTest, CanDrawRect) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
+TEST_P(EntityTest, CanDrawRRect) {
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
   auto geometry = Geometry::MakeRect({100, 100, 100, 100});
   auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
@@ -239,6 +254,27 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   auto contents = std::make_unique<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, StrokeWithTextureContents) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  Path path = PathBuilder{}
+                  .MoveTo({100, 100})
+                  .LineTo({100, 200})
+                  .MoveTo({100, 300})
+                  .LineTo({100, 400})
+                  .MoveTo({100, 500})
+                  .LineTo({100, 600})
+                  .TakePath();
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto contents = std::make_unique<TiledTextureContents>();
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 100.0));
+  contents->SetTexture(bridge);
+  contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
@@ -1016,7 +1052,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+      texture->SetRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1140,7 +1176,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+    texture->SetRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -2306,7 +2342,7 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 
 TEST_P(EntityTest, RuntimeEffect) {
   if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This test only has a Metal fixture at the moment.");
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
   auto runtime_stage =
@@ -2343,6 +2379,108 @@ TEST_P(EntityTest, RuntimeEffect) {
     return contents->Render(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, InheritOpacityTest) {
+  Entity entity;
+
+  // Texture contents can always accept opacity.
+  auto texture_contents = std::make_shared<TextureContents>();
+  texture_contents->SetOpacity(0.5);
+  ASSERT_TRUE(texture_contents->CanInheritOpacity(entity));
+
+  texture_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
+  texture_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
+
+  // Solid color contents can accept opacity if their geometry
+  // doesn't overlap.
+  auto solid_color = std::make_shared<SolidColorContents>();
+  solid_color->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  solid_color->SetColor(Color::Blue().WithAlpha(0.5));
+
+  ASSERT_TRUE(solid_color->CanInheritOpacity(entity));
+
+  solid_color->SetInheritedOpacity(0.5);
+  ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
+  solid_color->SetInheritedOpacity(0.5);
+  ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
+
+  // Color source contents can accept opacity if their geometry
+  // doesn't overlap.
+  auto tiled_texture = std::make_shared<TiledTextureContents>();
+  tiled_texture->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  tiled_texture->SetOpacity(0.5);
+
+  ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
+
+  tiled_texture->SetInheritedOpacity(0.5);
+  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  tiled_texture->SetInheritedOpacity(0.5);
+  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+
+  // Text contents can accept opacity if the text frames do not
+  // overlap
+  SkFont font;
+  font.setSize(30);
+  auto blob = SkTextBlob::MakeFromString("A", font);
+  auto frame = TextFrameFromTextBlob(blob);
+  auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
+  lazy_glyph_atlas->AddTextFrame(frame);
+
+  auto text_contents = std::make_shared<TextContents>();
+  text_contents->SetTextFrame(frame);
+  text_contents->SetColor(Color::Blue().WithAlpha(0.5));
+
+  ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
+
+  text_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
+  text_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
+
+  // Clips and restores trivially accept opacity.
+  ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));
+  ASSERT_TRUE(ClipRestoreContents().CanInheritOpacity(entity));
+
+  // Runtime effect contents can't accept opacity.
+  auto runtime_effect = std::make_shared<RuntimeEffectContents>();
+  ASSERT_FALSE(runtime_effect->CanInheritOpacity(entity));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kColorBurn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
+  auto arrow_head = PathBuilder{}
+                        .MoveTo({50, 120})
+                        .LineTo({120, 190})
+                        .LineTo({190, 120})
+                        .TakePath();
+  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
+                                           Join::kRound);
+
+  auto transform = Matrix::MakeTranslation({300, 300}) *
+                   Matrix::MakeRotationZ(Radians(kPiOver2));
+  EXPECT_LT(transform.e[0][0], 0.f);
+  auto coverage = geometry->GetCoverage(transform);
+  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
 }
 
 }  // namespace testing

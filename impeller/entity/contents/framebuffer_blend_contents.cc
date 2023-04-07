@@ -32,6 +32,10 @@ std::optional<Rect> FramebufferBlendContents::GetCoverage(
 bool FramebufferBlendContents::Render(const ContentContext& renderer,
                                       const Entity& entity,
                                       RenderPass& pass) const {
+  if (!renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    return false;
+  }
+
   using VS = FramebufferBlendScreenPipeline::VertexShader;
   using FS = FramebufferBlendScreenPipeline::FragmentShader;
 
@@ -124,8 +128,15 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
 
+  auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
+  if (!renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+    // No known devices that support framebuffer fetch but not decal tile mode.
+    return false;
+  }
+  src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+  src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
   auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-      src_snapshot->sampler_descriptor);
+      src_sampler_descriptor);
   FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
 
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

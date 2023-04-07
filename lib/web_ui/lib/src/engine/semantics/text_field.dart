@@ -9,7 +9,6 @@ import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
 import '../text_editing/text_editing.dart';
 import 'semantics.dart';
 
@@ -33,8 +32,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// This method must be called prior to accessing [instance].
   static SemanticsTextEditingStrategy ensureInitialized(
       HybridTextEditing owner) {
-    if (_instance != null && instance.owner == owner) {
-      return instance;
+    if (_instance != null && _instance?.owner == owner) {
+      return _instance!;
     }
     return _instance = SemanticsTextEditingStrategy(owner);
   }
@@ -139,13 +138,13 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 
     // Subscribe to text and selection changes.
     subscriptions.add(
-        DomSubscription(activeDomElement, 'input', allowInterop(handleChange)));
+        DomSubscription(activeDomElement, 'input', handleChange));
     subscriptions.add(
         DomSubscription(activeDomElement, 'keydown',
-            allowInterop(maybeSendAction)));
+            maybeSendAction));
     subscriptions.add(
         DomSubscription(domDocument, 'selectionchange',
-            allowInterop(handleChange)));
+            handleChange));
     preventDefaultForMouseEvents();
   }
 
@@ -286,10 +285,8 @@ class TextField extends RoleManager {
       case BrowserEngine.blink:
       case BrowserEngine.firefox:
         _initializeForBlink();
-        break;
       case BrowserEngine.webkit:
         _initializeForWebkit();
-        break;
     }
   }
 
@@ -300,7 +297,7 @@ class TextField extends RoleManager {
   void _initializeForBlink() {
     _initializeEditableElement();
     activeEditableElement.addEventListener('focus',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
           if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
             return;
           }
@@ -341,14 +338,14 @@ class TextField extends RoleManager {
     num? lastPointerDownOffsetY;
 
     semanticsObject.element.addEventListener('pointerdown',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
           lastPointerDownOffsetX = pointerEvent.clientX;
           lastPointerDownOffsetY = pointerEvent.clientY;
         }), true);
 
     semanticsObject.element.addEventListener('pointerup',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
       final DomPointerEvent pointerEvent = event as DomPointerEvent;
 
       if (lastPointerDownOffsetX != null) {
@@ -398,10 +395,10 @@ class TextField extends RoleManager {
     semanticsObject.element.removeAttribute('role');
 
     activeEditableElement.addEventListener('blur',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
       semanticsObject.element.setAttribute('role', 'textbox');
       activeEditableElement.remove();
-      SemanticsTextEditingStrategy.instance.deactivate(this);
+      SemanticsTextEditingStrategy._instance?.deactivate(this);
 
       // Focus on semantics element before removing the editable element, so that
       // the user can continue navigating the page with the assistive technology.
@@ -430,11 +427,11 @@ class TextField extends RoleManager {
             activeEditableElement.focus();
           });
         }
-        SemanticsTextEditingStrategy.instance.activate(this);
+        SemanticsTextEditingStrategy._instance?.activate(this);
       } else if (flutterViewEmbedder.glassPaneShadow.activeElement ==
           activeEditableElement) {
         if (!isIosSafari) {
-          SemanticsTextEditingStrategy.instance.deactivate(this);
+          SemanticsTextEditingStrategy._instance?.deactivate(this);
           // Only apply text, because this node is not focused.
         }
         activeEditableElement.blur();
@@ -460,6 +457,6 @@ class TextField extends RoleManager {
     if (!isIosSafari) {
       editableElement?.remove();
     }
-    SemanticsTextEditingStrategy.instance.deactivate(this);
+    SemanticsTextEditingStrategy._instance?.deactivate(this);
   }
 }

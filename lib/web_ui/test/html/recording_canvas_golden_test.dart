@@ -7,11 +7,11 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' hide ColorSpace;
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -780,6 +780,9 @@ class TestImage implements Image {
 
   @override
   List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
+
+  @override
+  ColorSpace get colorSpace => ColorSpace.sRGB;
 }
 
 Paragraph createTestParagraph() {

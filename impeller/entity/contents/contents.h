@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -30,22 +30,24 @@ ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
 
 class Contents {
  public:
-  Contents();
-
-  virtual ~Contents();
-
   struct StencilCoverage {
-    enum class Type { kNone, kAppend, kRestore };
+    enum class Type { kNoChange, kAppend, kRestore };
 
-    Type type = Type::kNone;
+    Type type = Type::kNoChange;
     std::optional<Rect> coverage = std::nullopt;
   };
 
-  /// @brief  Create an entity that renders a given snapshot.
-  static std::optional<Entity> EntityFromSnapshot(
-      const std::optional<Snapshot>& snapshot,
-      BlendMode blend_mode = BlendMode::kSourceOver,
-      uint32_t stencil_depth = 0);
+  using RenderProc = std::function<bool(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass)>;
+  using CoverageProc = std::function<std::optional<Rect>(const Entity& entity)>;
+
+  static std::shared_ptr<Contents> MakeAnonymous(RenderProc render_proc,
+                                                 CoverageProc coverage_proc);
+
+  Contents();
+
+  virtual ~Contents();
 
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
@@ -77,13 +79,27 @@ class Contents {
 
   /// @brief  Return the color source's intrinsic size, if available.
   ///
-  /// For example, a gradient has a size based on its end and beginning points,
-  /// ignoring any tiling. Solid colors and runtime effects have no size.
-  std::optional<Size> ColorSourceSize() const { return color_source_size_; }
+  ///         For example, a gradient has a size based on its end and beginning
+  ///         points, ignoring any tiling. Solid colors and runtime effects have
+  ///         no size.
+  std::optional<Size> GetColorSourceSize() const;
 
-  void SetColorSourceSize(Size size) { color_source_size_ = size; }
+  void SetColorSourceSize(Size size);
 
- protected:
+  /// @brief Whether or not this contents can accept the opacity peephole
+  ///        optimization.
+  ///
+  ///        By default all contents return false. Contents are responsible
+  ///        for determining whether or not their own geometries intersect in
+  ///        a way that makes accepting opacity impossible. It is always safe
+  ///        to return false, especially if computing overlap would be
+  ///        computationally expensive.
+  virtual bool CanInheritOpacity(const Entity& entity) const;
+
+  /// @brief Inherit the provided opacity.
+  ///
+  ///        Use of this method is invalid if CanAcceptOpacity returns false.
+  virtual void SetInheritedOpacity(Scalar opacity);
 
  private:
   std::optional<Size> color_source_size_;

@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
+#include "flutter/fml/trace_event.h"
 
 namespace flutter {
 
@@ -89,6 +90,7 @@ void DlSkCanvasAdapter::SaveLayer(const SkRect* bounds,
                                   const DlImageFilter* backdrop) {
   sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
   SkOptionalPaint sk_paint(paint);
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   delegate_->saveLayer(
       SkCanvas::SaveLayerRec{bounds, sk_paint(), sk_backdrop.get(), 0});
 }
@@ -331,16 +333,16 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                         SkScalar opacity) {
-  int restore_count = delegate_->getSaveCount();
+  const int restore_count = delegate_->getSaveCount();
 
   // Figure out whether we can apply the opacity during dispatch or
   // if we need a saveLayer.
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
-    DlPaint save_paint = DlPaint().setOpacity(opacity);
-    SaveLayer(&display_list->bounds(), &save_paint);
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+    delegate_->saveLayerAlphaf(&display_list->bounds(), opacity);
     opacity = SK_Scalar1;
   } else {
-    Save();
+    delegate_->save();
   }
 
   DlSkCanvasDispatcher dispatcher(delegate_, opacity);

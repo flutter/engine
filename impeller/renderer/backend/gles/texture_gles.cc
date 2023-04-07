@@ -12,8 +12,8 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -425,7 +425,7 @@ bool TextureGLES::Bind() const {
   return true;
 }
 
-bool TextureGLES::GenerateMipmaps() const {
+bool TextureGLES::GenerateMipmap() {
   if (!IsValid()) {
     return false;
   }
@@ -453,6 +453,7 @@ bool TextureGLES::GenerateMipmaps() const {
 
   const auto& gl = reactor_->GetProcTable();
   gl.GenerateMipmap(ToTextureType(type));
+  mipmap_generated_ = true;
   return true;
 }
 

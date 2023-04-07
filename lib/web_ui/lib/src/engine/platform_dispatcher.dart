@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/canvaskit/renderer.dart';
@@ -43,7 +44,7 @@ class HighContrastSupport {
   /// Reference to css media query that indicates whether high contrast is on.
   final DomMediaQueryList _highContrastMediaQuery = domWindow.matchMedia(_highContrastMediaQueryString);
   late final DomEventListener _onHighContrastChangeListener =
-      allowInterop(_onHighContrastChange);
+      createDomEventListener(_onHighContrastChange);
 
   bool get isHighContrastEnabled => _highContrastMediaQuery.matches;
 
@@ -63,7 +64,7 @@ class HighContrastSupport {
     }
   }
 
-  void _onHighContrastChange(DomEvent event) {
+  JSVoid _onHighContrastChange(DomEvent event) {
     final DomMediaQueryListEvent mqEvent = event as DomMediaQueryListEvent;
     final bool isHighContrastEnabled = mqEvent.matches!;
     for (final HighContrastListener listener in _listeners) {
@@ -483,7 +484,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // CanvasKit vs HTML before invoking this method.
             replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(<bool>[true]));
-            break;
         }
         return;
 
@@ -540,7 +540,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             ClipboardMessageHandler().getDataMethodCall(callback);
             return;
         }
-        break;
 
       // Dispatched by the bindings to delay service worker initialization.
       case 'flutter/service_worker':
@@ -800,11 +799,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
     updateLocales(); // First time, for good measure.
     _onLocaleChangedSubscription =
-      DomSubscription(domWindow, 'languagechange', allowInterop((DomEvent _) {
+      DomSubscription(domWindow, 'languagechange', (DomEvent _) {
         // Update internal config, then propagate the changes.
         updateLocales();
         invokeOnLocaleChanged();
-      }));
+      });
   }
 
   /// Removes the [_onLocaleChangedSubscription].
@@ -934,17 +933,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
-    _fontSizeObserver = createDomMutationObserver(allowInterop(
-        (List<dynamic> mutations, DomMutationObserver _) {
-      for (final dynamic mutation in mutations) {
-        final DomMutationRecord record = mutation as DomMutationRecord;
+    _fontSizeObserver = createDomMutationObserver(
+        (JSArray mutations, DomMutationObserver _) {
+      for (final JSAny? mutation in mutations.toDart) {
+        final DomMutationRecord record = mutation! as DomMutationRecord;
         if (record.type == 'attributes' &&
             record.attributeName == styleAttribute) {
           final double newTextScaleFactor = findBrowserTextScaleFactor();
           _updateTextScaleFactor(newTextScaleFactor);
         }
       }
-    }));
+    });
     _fontSizeObserver!.observe(
       domDocument.documentElement!,
       attributes: true,
@@ -1038,7 +1037,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         ? ui.Brightness.dark
         : ui.Brightness.light);
 
-    _brightnessMediaQueryListener = allowInterop((DomEvent event) {
+    _brightnessMediaQueryListener = createDomEventListener((DomEvent event) {
       final DomMediaQueryListEvent mqEvent =
           event as DomMediaQueryListEvent;
       _updatePlatformBrightness(

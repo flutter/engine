@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import 'package:js/js.dart';
 
 import 'package:test/bootstrap/browser.dart';
@@ -10,8 +12,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../matchers.dart';
-import '../spy.dart';
 import 'common.dart';
 
 void main() {
@@ -111,242 +111,6 @@ void _tests() {
       expect(SkiaObjects.expensiveCache.debugContains(object2), isFalse);
     });
   });
-
-  group(SkiaObjectBox, () {
-    test('Records stack traces and respects refcounts', () async {
-      final ZoneSpy spy = ZoneSpy();
-      spy.run(() {
-        Instrumentation.enabled = true;
-        TestSkDeletableMock.deleteCount = 0;
-        TestBoxWrapper.resurrectCount = 0;
-        final TestBoxWrapper original = TestBoxWrapper();
-
-        expect(original.box.debugGetStackTraces().length, 1);
-        expect(original.box.refCount, 1);
-        expect(original.box.isDeletedPermanently, isFalse);
-
-        final TestBoxWrapper clone = original.clone();
-        expect(clone.box, same(original.box));
-        expect(clone.box.debugGetStackTraces().length, 2);
-        expect(clone.box.refCount, 2);
-        expect(original.box.debugGetStackTraces().length, 2);
-        expect(original.box.refCount, 2);
-        expect(original.box.isDeletedPermanently, isFalse);
-
-        original.dispose();
-
-        testCollector.collectNow();
-        expect(TestSkDeletableMock.deleteCount, 0);
-
-        spy.fakeAsync.elapse(const Duration(seconds: 2));
-        expect(
-          spy.printLog,
-          <String>[
-            'Engine counters:\n  TestSkDeletable created: 1\n'
-          ],
-        );
-
-        expect(clone.box.debugGetStackTraces().length, 1);
-        expect(clone.box.refCount, 1);
-        expect(original.box.debugGetStackTraces().length, 1);
-        expect(original.box.refCount, 1);
-
-        clone.dispose();
-        expect(clone.box.debugGetStackTraces().length, 0);
-        expect(clone.box.refCount, 0);
-        expect(original.box.debugGetStackTraces().length, 0);
-        expect(original.box.refCount, 0);
-        expect(original.box.isDeletedPermanently, isTrue);
-
-        testCollector.collectNow();
-        expect(TestSkDeletableMock.deleteCount, 1);
-        expect(TestBoxWrapper.resurrectCount, 0);
-
-        expect(() => clone.box.unref(clone), throwsAssertionError);
-        spy.printLog.clear();
-        spy.fakeAsync.elapse(const Duration(seconds: 2));
-        expect(
-          spy.printLog,
-          <String>[
-            'Engine counters:\n  TestSkDeletable created: 1\n  TestSkDeletable deleted: 1\n'
-          ],
-        );
-        Instrumentation.enabled = false;
-      });
-    });
-
-    test('Can resurrect Skia objects', () async {
-      TestSkDeletableMock.deleteCount = 0;
-      TestBoxWrapper.resurrectCount = 0;
-      final TestBoxWrapper object = TestBoxWrapper();
-      expect(TestSkDeletableMock.deleteCount, 0);
-      expect(TestBoxWrapper.resurrectCount, 0);
-
-      // Test 3 cycles of delete/resurrect.
-      for (int i = 0; i < 3; i++) {
-        object.box.delete();
-        object.box.didDelete();
-        expect(TestSkDeletableMock.deleteCount, i + 1);
-        expect(TestBoxWrapper.resurrectCount, i);
-        expect(object.box.isDeletedTemporarily, isTrue);
-        expect(object.box.isDeletedPermanently, isFalse);
-
-        expect(object.box.skiaObject, isNotNull);
-        expect(TestSkDeletableMock.deleteCount, i + 1);
-        expect(TestBoxWrapper.resurrectCount, i + 1);
-        expect(object.box.isDeletedTemporarily, isFalse);
-        expect(object.box.isDeletedPermanently, isFalse);
-      }
-
-      object.dispose();
-      expect(object.box.isDeletedPermanently, isTrue);
-    });
-
-    test('Can dispose temporarily deleted object', () async {
-      TestSkDeletableMock.deleteCount = 0;
-      TestBoxWrapper.resurrectCount = 0;
-      final TestBoxWrapper object = TestBoxWrapper();
-      expect(TestSkDeletableMock.deleteCount, 0);
-      expect(TestBoxWrapper.resurrectCount, 0);
-
-      object.box.delete();
-      object.box.didDelete();
-      expect(TestSkDeletableMock.deleteCount, 1);
-      expect(TestBoxWrapper.resurrectCount, 0);
-      expect(object.box.isDeletedTemporarily, isTrue);
-      expect(object.box.isDeletedPermanently, isFalse);
-
-      object.dispose();
-      expect(object.box.isDeletedPermanently, isTrue);
-    });
-  });
-
-  group('$SynchronousSkiaObjectCache', () {
-    test('is initialized empty', () {
-      expect(SynchronousSkiaObjectCache(10), hasLength(0));
-    });
-
-    test('adds objects', () {
-      final SynchronousSkiaObjectCache cache = SynchronousSkiaObjectCache(2);
-      cache.add(TestSelfManagedObject());
-      expect(cache, hasLength(1));
-      cache.add(TestSelfManagedObject());
-      expect(cache, hasLength(2));
-    });
-
-    test('forbids adding the same object twice', () {
-      final SynchronousSkiaObjectCache cache = SynchronousSkiaObjectCache(2);
-      final TestSelfManagedObject object = TestSelfManagedObject();
-      cache.add(object);
-      expect(cache, hasLength(1));
-      expect(() => cache.add(object), throwsAssertionError);
-    });
-
-    void expectObjectInCache(
-      SynchronousSkiaObjectCache cache,
-      TestSelfManagedObject object,
-    ) {
-      expect(cache.debugContains(object), isTrue);
-      expect(object._skiaObject, isNotNull);
-    }
-
-    void expectObjectNotInCache(
-      SynchronousSkiaObjectCache cache,
-      TestSelfManagedObject object,
-    ) {
-      expect(cache.debugContains(object), isFalse);
-      expect(object._skiaObject, isNull);
-    }
-
-    test('respects maximumSize', () {
-      final SynchronousSkiaObjectCache cache = SynchronousSkiaObjectCache(2);
-      final TestSelfManagedObject object1 = TestSelfManagedObject();
-      final TestSelfManagedObject object2 = TestSelfManagedObject();
-      final TestSelfManagedObject object3 = TestSelfManagedObject();
-      final TestSelfManagedObject object4 = TestSelfManagedObject();
-
-      cache.add(object1);
-      expect(cache, hasLength(1));
-      expectObjectInCache(cache, object1);
-
-      cache.add(object2);
-      expect(cache, hasLength(2));
-      expectObjectInCache(cache, object1);
-      expectObjectInCache(cache, object2);
-
-      cache.add(object3);
-      expect(cache, hasLength(2));
-      expectObjectNotInCache(cache, object1);
-      expectObjectInCache(cache, object2);
-      expectObjectInCache(cache, object3);
-
-      cache.add(object4);
-      expect(cache, hasLength(2));
-      expectObjectNotInCache(cache, object1);
-      expectObjectNotInCache(cache, object2);
-      expectObjectInCache(cache, object3);
-      expectObjectInCache(cache, object4);
-    });
-
-    test('uses RLU strategy', () {
-      final SynchronousSkiaObjectCache cache = SynchronousSkiaObjectCache(2);
-      final TestSelfManagedObject object1 = TestSelfManagedObject();
-      final TestSelfManagedObject object2 = TestSelfManagedObject();
-      final TestSelfManagedObject object3 = TestSelfManagedObject();
-      final TestSelfManagedObject object4 = TestSelfManagedObject();
-
-      cache.add(object1);
-      expectObjectInCache(cache, object1);
-      cache.add(object2);
-      expectObjectInCache(cache, object2);
-      cache.add(object3);
-      expectObjectInCache(cache, object3);
-      expectObjectNotInCache(cache, object1);
-
-      cache.markUsed(object2);
-      cache.add(object4);
-      expectObjectInCache(cache, object2);
-      expectObjectNotInCache(cache, object3);
-      expectObjectInCache(cache, object4);
-    });
-  });
-}
-
-/// A simple class that wraps a [SkiaObjectBox].
-///
-/// Can be [clone]d such that the clones share the same ref counted box.
-class TestBoxWrapper implements StackTraceDebugger {
-  TestBoxWrapper() {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
-    box = SkiaObjectBox<TestBoxWrapper, TestSkDeletable>.resurrectable(
-        this, TestSkDeletable(), () {
-      resurrectCount += 1;
-      return TestSkDeletable();
-    });
-  }
-
-  TestBoxWrapper.cloneOf(this.box) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
-    box.ref(this);
-  }
-
-  static int resurrectCount = 0;
-
-  @override
-  StackTrace get debugStackTrace => _debugStackTrace;
-  late StackTrace _debugStackTrace;
-
-  late SkiaObjectBox<TestBoxWrapper, TestSkDeletable> box;
-
-  void dispose() {
-    box.unref(this);
-  }
-
-  TestBoxWrapper clone() => TestBoxWrapper.cloneOf(box);
 }
 
 class TestSkDeletableMock {
@@ -363,7 +127,8 @@ class TestSkDeletableMock {
     deleteCount++;
   }
 
-  JsConstructor get constructor => TestJsConstructor(name: 'TestSkDeletable');
+  JsConstructor get constructor => TestJsConstructor(name:
+      'TestSkDeletable'.toJS);
 }
 
 @JS()
@@ -373,14 +138,14 @@ class TestSkDeletable implements SkDeletable {
   factory TestSkDeletable() {
     final TestSkDeletableMock mock = TestSkDeletableMock();
     return TestSkDeletable._(
-        isDeleted: allowInterop(() => mock.isDeleted()),
-        delete: allowInterop(() => mock.delete()),
+        isDeleted: () { return mock.isDeleted(); }.toJS,
+        delete: () { return mock.delete(); }.toJS,
         constructor: mock.constructor);
   }
 
   external factory TestSkDeletable._({
-    bool Function() isDeleted,
-    void Function() delete,
+    JSFunction isDeleted,
+    JSFunction delete,
     JsConstructor constructor});
 }
 
@@ -388,7 +153,7 @@ class TestSkDeletable implements SkDeletable {
 @anonymous
 @staticInterop
 class TestJsConstructor implements JsConstructor {
-  external factory TestJsConstructor({String name});
+  external factory TestJsConstructor({JSString name});
 }
 
 class TestSkiaObject extends ManagedSkiaObject<SkPaint> {

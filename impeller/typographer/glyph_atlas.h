@@ -10,9 +10,9 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
 class SkBitmap;
@@ -119,7 +119,7 @@ class GlyphAtlas {
   /// @return     The location of the font-glyph pair in the atlas.
   ///             `std::nullopt` of the pair in not in the atlas.
   ///
-  std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
+  std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
   //----------------------------------------------------------------------------
   /// @brief      whether this atlas contains all of the same font-glyph pairs

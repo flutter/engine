@@ -85,15 +85,6 @@ def to_command_line(gn_args):
   return [merge(x, y) for x, y in gn_args.items()]
 
 
-def cpu_for_target_arch(arch):
-  if arch in ['ia32', 'x86', 'arm', 'armv6', 'armv5te', 'mips', 'simarm',
-              'simarmv6', 'simarmv5te', 'simmips', 'simdbc', 'armsimdbc']:
-    return 'x86'
-  if arch in ['x64', 'arm64', 'simarm64', 'simdbc64', 'armsimdbc64']:
-    return 'x64'
-  return None
-
-
 def is_host_build(args):
   # If target_os == None, then this is a host build.
   if args.target_os is None:
@@ -208,6 +199,47 @@ def get_target_cpu(args):
   return 'x64'
 
 
+def setup_goma(args):
+  goma_gn_args = {}
+
+  goma_dir = os.environ.get('GOMA_DIR')
+  goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
+
+  # GOMA has a different default (home) path on gWindows.
+  if not os.path.exists(goma_home_dir) and sys.platform.startswith(
+      ('cygwin', 'win')):
+    goma_home_dir = os.path.join('c:\\', 'src', 'goma', 'goma-win64')
+
+  if args.target_os == 'wasm' or args.web:
+    goma_gn_args['use_goma'] = False
+    goma_gn_args['goma_dir'] = None
+    print('Disabling GOMA for wasm builds, it is not supported yet.')
+  elif args.goma and goma_dir and os.path.exists(goma_dir):
+    goma_gn_args['use_goma'] = True
+    goma_gn_args['goma_dir'] = goma_dir
+  elif args.goma and os.path.exists(goma_home_dir):
+    goma_gn_args['use_goma'] = True
+    goma_gn_args['goma_dir'] = goma_home_dir
+  elif args.goma:
+    raise Exception(
+        'GOMA was specified but was not found. Set the GOMA_DIR environment '
+        'variable, install goma at $HOME/goma following the instructions at '
+        'https://github.com/flutter/flutter/wiki/Compiling-the-engine, or '
+        'run this script with the --no-goma flag to do a non-goma-enabled '
+        'build.',
+    )
+  else:
+    goma_gn_args['use_goma'] = False
+    goma_gn_args['goma_dir'] = None
+
+  if goma_gn_args['use_goma'] and sys.platform == 'darwin':
+    if (os.environ.get('LUCI_CONTEXT') is None or args.xcode_symlinks or
+        os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS', '0') == '1'):
+      goma_gn_args['create_xcode_symlinks'] = True
+
+  return goma_gn_args
+
+
 def to_gn_args(args):
   if args.simulator:
     if args.target_os != 'ios':
@@ -219,41 +251,7 @@ def to_gn_args(args):
 
   gn_args['is_debug'] = args.unoptimized
 
-  goma_dir = os.environ.get('GOMA_DIR')
-  goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
-  depot_tools_bin_dir = os.path.join(args.depot_tools, '.cipd_bin')
-
-  # GOMA has a different default (home) path on gWindows.
-  if not os.path.exists(goma_home_dir) and sys.platform.startswith(
-      ('cygwin', 'win')):
-    goma_home_dir = os.path.join('c:\\', 'src', 'goma', 'goma-win64')
-
-  if args.target_os == 'wasm' or args.web:
-    gn_args['use_goma'] = False
-    gn_args['goma_dir'] = None
-    print('Disabling GOMA for wasm builds, it is not supported yet.')
-  elif args.goma and goma_dir:
-    gn_args['use_goma'] = True
-    gn_args['goma_dir'] = goma_dir
-  elif args.goma and os.path.exists(goma_home_dir):
-    gn_args['use_goma'] = True
-    gn_args['goma_dir'] = goma_home_dir
-  elif args.goma and os.path.exists(depot_tools_bin_dir):
-    gn_args['use_goma'] = True
-    gn_args['goma_dir'] = depot_tools_bin_dir
-  else:
-    if args.goma:
-      print(
-          "GOMA usage was specified but can't be found, falling back to local "
-          'builds. Set the GOMA_DIR environment variable to fix GOMA.'
-      )
-    gn_args['use_goma'] = False
-    gn_args['goma_dir'] = None
-
-  if gn_args['use_goma']:
-    if args.xcode_symlinks or os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS',
-                                        '0') == '1':
-      gn_args['create_xcode_symlinks'] = True
+  gn_args.update(setup_goma(args))
 
   # If building for WASM, set the GN args using 'to_gn_wasm_args' as most
   # of the Flutter SDK specific arguments are unused.
@@ -264,7 +262,9 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
-    gn_args['enable_unittests'] = args.enable_unittests
+    gn_args['enable_unittests'] = True
+  if args.no_enable_unittests:
+    gn_args['enable_unittests'] = False
 
   # Skia GN args.
   gn_args['skia_enable_flutter_defines'
@@ -323,6 +323,9 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
+  if not args.build_engine_artifacts:
+    gn_args['flutter_build_engine_artifacts'] = False
+
   # We cannot cross-compile for 32 bit arm on a Windows host. We work around
   # this by leaving 'target_cpu' and 'dart_target_arch' set to 'arm' so that
   # Dart tools such as gen_snapshot that are built for the host will correctly
@@ -380,11 +383,24 @@ def to_gn_args(args):
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
 
+  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+  # it doesn't build properly with our gn configuration.
+  gn_args['dart_include_wasm_opt'] = False
+
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
   # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
+
+  # Determine whether backtace support should be compiled in.
+  if args.backtrace:
+    gn_args['enable_backtrace'] = (
+        args.target_os in ['linux', 'mac', 'win'] or
+        args.target_os == 'ios' and runtime_mode == 'debug'
+    )
+  else:
+    gn_args['enable_backtrace'] = False
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
   # on Android.
@@ -437,7 +453,7 @@ def to_gn_args(args):
   # Enable Vulkan on all platforms except for iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['ios']:
+  if gn_args['target_os'] not in ['ios', 'mac']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
@@ -537,19 +553,24 @@ def to_gn_args(args):
     gn_args['dart_use_mallinfo2'] = args.use_mallinfo2
 
   # Impeller flags.
-  if args.enable_impeller_playground:
-    gn_args['impeller_enable_playground'] = args.enable_impeller_playground
-  elif os.getenv('FLUTTER_IMPELLER_ENABLE_PLAYGROUND', '0') == '1':
-    gn_args['impeller_enable_playground'] = True
-
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
+
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_vulkan'] = True
+
+  if args.enable_impeller_opengles:
+    gn_args['impeller_enable_opengles'] = True
 
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
   if args.malioc_path is not None:
     gn_args['impeller_malioc_path'] = args.malioc_path
+  else:
+    malioc_path = os.environ.get('MALIOC_PATH')
+    if malioc_path:
+      gn_args['impeller_malioc_path'] = malioc_path
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -604,17 +625,16 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_vulkan'] = False
   gn_args['skia_use_webgpu'] = False
   gn_args['skia_use_libheif'] = False
-  gn_args['skia_use_libjpeg_turbo_decode'] = True
   gn_args['skia_use_libjpeg_turbo_encode'] = False
-  gn_args['skia_use_libpng_decode'] = True
+  # TODO(yjbanov): https://github.com/flutter/flutter/issues/122759
+  # Remove this and implement it through Canvas2d.
   gn_args['skia_use_libpng_encode'] = True
-  gn_args['skia_use_libwebp_decode'] = True
   gn_args['skia_use_libwebp_encode'] = False
   gn_args['skia_use_lua'] = False
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_zlib'] = True
   gn_args['skia_gl_standard'] = 'webgl'
-  gn_args['skia_enable_gpu'] = True
+  gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
@@ -656,7 +676,18 @@ def parse_args(args):
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
-  parser.add_argument('--enable-unittests', action='store_true', default=False)
+  parser.add_argument(
+      '--enable-unittests',
+      action='store_true',
+      default=False,
+      help='Force enable building unit test binaries.'
+  )
+  parser.add_argument(
+      '--no-enable-unittests',
+      default=False,
+      action='store_true',
+      help='Force disable building unit test binaries.'
+  )
 
   parser.add_argument(
       '--runtime-mode',
@@ -749,6 +780,30 @@ def parse_args(args):
   )
   parser.add_argument(
       '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
+  )
+
+  # Whether to compile in backtrace support.
+  # Available for Windows and POSIX platforms whose libc includes execinfo.h.
+  # MUSL doesn't include execinfo.h should be build with --no-backtrace.
+  parser.add_argument(
+      '--backtrace',
+      default=True,
+      action='store_true',
+      help='Whether OS support exists for collecting backtraces.'
+  )
+  parser.add_argument('--no-backtrace', dest='backtrace', action='store_false')
+
+  parser.add_argument(
+      '--build-engine-artifacts',
+      default=True,
+      action='store_true',
+      help='Build the host-side development artifacts.'
+  )
+  parser.add_argument(
+      '--no-build-engine-artifacts',
+      dest='build_engine_artifacts',
+      action='store_false',
+      help='Do not build the host-side development artifacts.'
   )
 
   parser.add_argument('--goma', default=True, action='store_true')
@@ -936,10 +991,17 @@ def parse_args(args):
 
   # Impeller flags.
   parser.add_argument(
-      '--enable-impeller-playground',
+      '--enable-impeller-vulkan',
       default=False,
       action='store_true',
-      help='Whether impeller unit tests run in playground mode.'
+      help='Enable the Impeller Vulkan backend.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-opengles',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller OpenGL ES backend.'
   )
 
   parser.add_argument(
@@ -989,8 +1051,29 @@ def parse_args(args):
   return parser.parse_args(args)
 
 
+def validate_args(args):
+  valid = True
+  if args.simulator:
+    if args.mac_cpu != 'x64':
+      print(
+          'Specified a non-default mac-cpu for a simulator build. Did you mean '
+          'to use `--simulator-cpu`?'
+      )
+      valid = False
+    if args.ios_cpu != 'arm64':
+      print(
+          'Specified a non-default ios-cpu for a simulator build. Did you mean '
+          'to use `--simulator-cpu`?'
+      )
+      valid = False
+
+  if not valid:
+    sys.exit(-1)
+
+
 def main(argv):
   args = parse_args(argv)
+  validate_args(args)
 
   exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
 

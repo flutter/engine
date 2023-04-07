@@ -5,11 +5,11 @@
 #include "linear_gradient_contents.h"
 
 #include "flutter/fml/logging.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -71,7 +71,7 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   frag_info.end_point = end_point_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
   frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
                                  0.5 / gradient_texture->GetSize().height);
 
@@ -126,7 +126,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.start_point = start_point_;
   frag_info.end_point = end_point_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);

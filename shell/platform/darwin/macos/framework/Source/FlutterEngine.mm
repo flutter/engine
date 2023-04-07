@@ -13,9 +13,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
@@ -151,6 +149,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
 - (void)setUpPlatformViewChannel;
 
 /**
+ * Creates an accessibility channel and sets up the message handler.
+ */
+- (void)setUpAccessibilityChannel;
+
+/**
  * Handles messages received from the Flutter engine on the _*Channel channels.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -171,15 +174,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
     // allow tests to override it so that an actual exit doesn't occur.
-    FlutterApplication* flutterApp = [FlutterApplication sharedApplication];
-    if (flutterApp && [flutterApp respondsToSelector:@selector(terminateApplication:)]) {
-      [[FlutterApplication sharedApplication] terminateApplication:sender];
-    } else if (flutterApp) {
-      [flutterApp terminate:sender];
-    }
+    NSApplication* flutterApp = [NSApplication sharedApplication];
+    [flutterApp terminate:sender];
   };
   FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
+      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
   appDelegate.terminationHandler = self;
   return self;
 }
@@ -197,7 +196,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
   FlutterAppExitType exitType =
       [type isEqualTo:@"cancelable"] ? kFlutterAppExitTypeCancelable : kFlutterAppExitTypeRequired;
 
-  [self requestApplicationTermination:[FlutterApplication sharedApplication]
+  [self requestApplicationTermination:[NSApplication sharedApplication]
                              exitType:exitType
                                result:result];
 }
@@ -207,6 +206,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 - (void)requestApplicationTermination:(id)sender
                              exitType:(FlutterAppExitType)type
                                result:(nullable FlutterResult)result {
+  _shouldTerminate = YES;
   switch (type) {
     case kFlutterAppExitTypeCancelable: {
       FlutterJSONMethodCodec* codec = [FlutterJSONMethodCodec sharedInstance];
@@ -215,10 +215,26 @@ constexpr char kTextPlainFormat[] = "text/plain";
       [_engine sendOnChannel:kFlutterPlatformChannel
                      message:[codec encodeMethodCall:methodCall]
                  binaryReply:^(NSData* _Nullable reply) {
-                   NSDictionary* replyArgs = [codec decodeEnvelope:reply];
-                   if ([replyArgs[@"response"] isEqual:@"exit"]) {
-                     NSAssert(_terminator, @"terminator shouldn't be nil");
+                   NSAssert(_terminator, @"terminator shouldn't be nil");
+                   id decoded_reply = [codec decodeEnvelope:reply];
+                   if ([decoded_reply isKindOfClass:[FlutterError class]]) {
+                     FlutterError* error = (FlutterError*)decoded_reply;
+                     NSLog(@"Method call returned error[%@]: %@ %@", [error code], [error message],
+                           [error details]);
                      _terminator(sender);
+                     return;
+                   }
+                   if (![decoded_reply isKindOfClass:[NSDictionary class]]) {
+                     NSLog(@"Call to System.requestAppExit returned an unexpected object: %@",
+                           decoded_reply);
+                     _terminator(sender);
+                     return;
+                   }
+                   NSDictionary* replyArgs = (NSDictionary*)decoded_reply;
+                   if ([replyArgs[@"response"] isEqual:@"exit"]) {
+                     _terminator(sender);
+                   } else if ([replyArgs[@"response"] isEqual:@"cancel"]) {
+                     _shouldTerminate = NO;
                    }
                    if (result != nil) {
                      result(replyArgs);
@@ -352,6 +368,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A message channel for sending user settings to the flutter engine.
   FlutterBasicMessageChannel* _settingsChannel;
 
+  // A message channel for accessibility.
+  FlutterBasicMessageChannel* _accessibilityChannel;
+
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
@@ -395,6 +414,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
   [self setUpPlatformViewChannel];
+  [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
 
   return self;
@@ -441,8 +461,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
-  flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
-                                                  void* user_data) {
+  flutterArguments.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                                   void* user_data) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
     // only operates on the default view. To support multi-view, we need a
     // way to pass in the ID (probably through FlutterSemanticsUpdate).
@@ -556,7 +576,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
   [controller attachToEngine:self withId:viewId];
-  NSAssert(controller.id == viewId, @"Failed to assign view ID.");
+  NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }
 
@@ -576,7 +596,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (FlutterViewController*)viewControllerForId:(uint64_t)viewId {
   FlutterViewController* controller = [_viewControllers objectForKey:@(viewId)];
-  NSAssert(controller == nil || controller.id == viewId,
+  NSAssert(controller == nil || controller.viewId == viewId,
            @"The stored controller has unexpected view ID.");
   return controller;
 }
@@ -598,8 +618,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              controller.engine);
     [self registerViewController:controller forId:kFlutterDefaultViewId];
   } else if (currentController != nil && controller == nil) {
-    NSAssert(currentController.id == kFlutterDefaultViewId,
-             @"The default controller has an unexpected ID %llu", currentController.id);
+    NSAssert(currentController.viewId == kFlutterDefaultViewId,
+             @"The default controller has an unexpected ID %llu", currentController.viewId);
     // From non-nil to nil.
     [self deregisterViewControllerForId:kFlutterDefaultViewId];
     [self shutDownIfNeeded];
@@ -669,7 +689,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)removeViewController:(nonnull FlutterViewController*)viewController {
   NSAssert([viewController attached] && viewController.engine == self,
            @"The given view controller is not associated with this engine.");
-  [self deregisterViewControllerForId:viewController.id];
+  [self deregisterViewControllerForId:viewController.viewId];
   [self shutDownIfNeeded];
 }
 
@@ -733,7 +753,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
-  if (viewController.id != kFlutterDefaultViewId) {
+  if (viewController.viewId != kFlutterDefaultViewId) {
     // TODO(dkwingsmt): The embedder API only supports single-view for now. As
     // embedder APIs are converted to multi-view, this method should support any
     // views.
@@ -742,7 +762,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if (!_engine || !viewController || !viewController.viewLoaded) {
     return;
   }
-  NSAssert([self viewControllerForId:viewController.id] == viewController,
+  NSAssert([self viewControllerForId:viewController.viewId] == viewController,
            @"The provided view controller is not attached to this engine.");
   NSView* view = viewController.flutterView;
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
@@ -909,6 +929,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }];
 }
 
+- (void)setUpAccessibilityChannel {
+  _accessibilityChannel = [FlutterBasicMessageChannel
+      messageChannelWithName:@"flutter/accessibility"
+             binaryMessenger:self.binaryMessenger
+                       codec:[FlutterStandardMessageCodec sharedInstance]];
+  __weak FlutterEngine* weakSelf = self;
+  [_accessibilityChannel setMessageHandler:^(id message, FlutterReply reply) {
+    [weakSelf handleAccessibilityEvent:message];
+  }];
+}
 - (void)setUpNotificationCenterListeners {
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   // macOS fires this private message when VoiceOver turns on or off.
@@ -953,7 +983,30 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   self.semanticsEnabled = enabled;
 }
+- (void)handleAccessibilityEvent:(NSDictionary<NSString*, id>*)annotatedEvent {
+  NSString* type = annotatedEvent[@"type"];
+  if ([type isEqualToString:@"announce"]) {
+    NSString* message = annotatedEvent[@"data"][@"message"];
+    NSNumber* assertiveness = annotatedEvent[@"data"][@"assertiveness"];
+    if (message == nil) {
+      return;
+    }
 
+    NSAccessibilityPriorityLevel priority = [assertiveness isEqualToNumber:@1]
+                                                ? NSAccessibilityPriorityHigh
+                                                : NSAccessibilityPriorityMedium;
+
+    [self announceAccessibilityMessage:message withPriority:priority];
+  }
+}
+
+- (void)announceAccessibilityMessage:(NSString*)message
+                        withPriority:(NSAccessibilityPriorityLevel)priority {
+  NSAccessibilityPostNotificationWithUserInfo(
+      [self viewControllerForId:kFlutterDefaultViewId].flutterView,
+      NSAccessibilityAnnouncementRequestedNotification,
+      @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
+}
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
     [NSApp terminate:self];

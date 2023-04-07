@@ -10,7 +10,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
@@ -27,7 +27,10 @@
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+#include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {

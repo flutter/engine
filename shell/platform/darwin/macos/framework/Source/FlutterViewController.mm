@@ -278,6 +278,34 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   return @[ _flutterView ];
 }
 
+- (void)mouseDown:(NSEvent*)event {
+  // Work around an AppKit bug where mouseDown/mouseUp are not called on the view controller if the
+  // view is the content view of an NSPopover AND macOS's Reduced Transparency accessibility setting
+  // is enabled.
+  //
+  // This simply calls mouseDown on the next responder in the responder chain as the default
+  // implementation on NSResponder is documented to do.
+  //
+  // See: https://github.com/flutter/flutter/issues/115015
+  // See: http://www.openradar.me/FB12050037
+  // See: https://developer.apple.com/documentation/appkit/nsresponder/1524634-mousedown
+  [self.nextResponder mouseDown:event];
+}
+
+- (void)mouseUp:(NSEvent*)event {
+  // Work around an AppKit bug where mouseDown/mouseUp are not called on the view controller if the
+  // view is the content view of an NSPopover AND macOS's Reduced Transparency accessibility setting
+  // is enabled.
+  //
+  // This simply calls mouseUp on the next responder in the responder chain as the default
+  // implementation on NSResponder is documented to do.
+  //
+  // See: https://github.com/flutter/flutter/issues/115015
+  // See: http://www.openradar.me/FB12050037
+  // See: https://developer.apple.com/documentation/appkit/nsresponder/1535349-mouseup
+  [self.nextResponder mouseUp:event];
+}
+
 @end
 
 #pragma mark - FlutterViewController implementation.
@@ -287,12 +315,9 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
-
-  uint64_t _id;
 }
 
-@dynamic id;
-@dynamic view;
+@synthesize viewId = _viewId;
 @dynamic accessibilityBridge;
 
 /**
@@ -313,7 +338,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             @"The FlutterViewController unexpectedly stays unattached after initialization. "
             @"In unit tests, this is likely because either the FlutterViewController or "
             @"the FlutterEngine is mocked. Please subclass these classes instead.",
-            controller.engine, controller.id);
+            controller.engine, controller.viewId);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
   [controller initializeKeyboard];
@@ -429,9 +454,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)id {
+- (uint64_t)viewId {
   NSAssert([self attached], @"This view controller is not attched.");
-  return _id;
+  return _viewId;
 }
 
 - (void)onPreEngineRestart {
@@ -461,7 +486,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 - (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
-  _id = viewId;
+  _viewId = viewId;
 }
 
 - (void)detachFromEngine {
@@ -473,19 +498,19 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _engine != nil;
 }
 
-- (void)updateSemantics:(const FlutterSemanticsUpdate*)update {
+- (void)updateSemantics:(const FlutterSemanticsUpdate2*)update {
   NSAssert(_engine.semanticsEnabled, @"Semantics must be enabled.");
   if (!_engine.semanticsEnabled) {
     return;
   }
-  for (size_t i = 0; i < update->nodes_count; i++) {
-    const FlutterSemanticsNode* node = &update->nodes[i];
-    _bridge->AddFlutterSemanticsNodeUpdate(node);
+  for (size_t i = 0; i < update->node_count; i++) {
+    const FlutterSemanticsNode2* node = update->nodes[i];
+    _bridge->AddFlutterSemanticsNodeUpdate(*node);
   }
 
-  for (size_t i = 0; i < update->custom_actions_count; i++) {
-    const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
-    _bridge->AddFlutterSemanticsCustomActionUpdate(action);
+  for (size_t i = 0; i < update->custom_action_count; i++) {
+    const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
+    _bridge->AddFlutterSemanticsCustomActionUpdate(*action);
   }
 
   _bridge->CommitUpdates();

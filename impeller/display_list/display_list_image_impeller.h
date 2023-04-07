@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/texture.h"
+#include "impeller/core/texture.h"
 
 namespace impeller {
 

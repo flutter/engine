@@ -61,7 +61,7 @@ FLUTTER_DARWIN_EXPORT
  * If the view controller is unattached (see FlutterViewController#attached),
  * reading this property throws an assertion.
  */
-@property(nonatomic, readonly) uint64_t id;
+@property(nonatomic, readonly) uint64_t viewId;
 
 /**
  * The style of mouse tracking to use for the view. Defaults to
@@ -131,7 +131,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * class MainFlutterWindow: NSWindow {
  *   override func awakeFromNib() {
- *     let flutterViewController = FlutterViewController.init()
+ *     let flutterViewController = FlutterViewController()
  *
  *     // The background color of the window and `FlutterViewController`
  *     // are retained separately.
