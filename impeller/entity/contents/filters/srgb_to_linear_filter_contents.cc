@@ -47,8 +47,7 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
     cmd.label = "sRGB to Linear Filter";
     cmd.stencil_reference = entity.GetStencilDepth();
 
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
+    auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetSrgbToLinearFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;

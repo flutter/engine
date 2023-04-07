@@ -108,8 +108,8 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
 
     Command cmd;
     cmd.label = "Border Mask Blur Filter";
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSourceOver;
+    auto options = OptionsFromPassAndEntity(pass, entity);
+
     cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();

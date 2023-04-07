@@ -57,8 +57,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     cmd.label = "Color Matrix Filter";
     cmd.stencil_reference = entity.GetStencilDepth();
 
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
+    auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;

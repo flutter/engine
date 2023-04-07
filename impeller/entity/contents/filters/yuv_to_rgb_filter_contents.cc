@@ -74,8 +74,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     cmd.label = "YUV to RGB Filter";
     cmd.stencil_reference = entity.GetStencilDepth();
 
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
+    auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetYUVToRGBFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;

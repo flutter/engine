@@ -74,8 +74,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     cmd.label = "Morphology Filter";
     cmd.stencil_reference = entity.GetStencilDepth();
 
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
+    auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
