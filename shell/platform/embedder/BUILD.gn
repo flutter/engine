@@ -520,7 +520,7 @@ if (is_mac) {
   zip_bundle("flutter_embedder_framework_archive") {
     deps = [
       ":generate_symlinks",
-      "flutter_embedder_codesign_whitelist",
+      ":flutter_embedder_codesign_whitelist",
     ]
     output = "$full_platform_name/FlutterEmbedder.framework.zip"
     files = [
