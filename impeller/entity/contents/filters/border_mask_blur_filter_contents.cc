@@ -144,8 +144,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
-                               entity.GetTransformation());
+  sub_entity.SetTransformation(entity.GetTransformation());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

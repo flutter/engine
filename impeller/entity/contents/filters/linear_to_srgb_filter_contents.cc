@@ -36,10 +36,16 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
+  if (!maybe_input_uvs.has_value()) {
+    return std::nullopt;
+  }
+  auto input_uvs = maybe_input_uvs.value();
+
   //----------------------------------------------------------------------------
   /// Create AnonymousContents for rendering.
   ///
-  RenderProc render_proc = [input_snapshot, coverage,
+  RenderProc render_proc = [input_snapshot, coverage, input_uvs,
                             absorb_opacity = GetAbsorbOpacity()](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
@@ -52,18 +58,18 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {coverage.origin, Point(0, 0)},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         Point(1, 0)},
+         input_uvs[1]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
-        {coverage.origin, Point(0, 0)},
+         input_uvs[3]},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
+         input_uvs[3]},
         {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         Point(0, 1)},
+         input_uvs[2]},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
@@ -96,8 +102,7 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
-                               entity.GetTransformation());
+  sub_entity.SetTransformation(entity.GetTransformation());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

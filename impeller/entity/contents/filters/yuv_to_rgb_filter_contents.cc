@@ -56,6 +56,12 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  auto maybe_input_uvs = y_input_snapshot->GetCoverageUVs(coverage);
+  if (!maybe_input_uvs.has_value()) {
+    return std::nullopt;
+  }
+  auto input_uvs = maybe_input_uvs.value();
+
   if (y_input_snapshot->texture->GetTextureDescriptor().format !=
           PixelFormat::kR8UNormInt ||
       uv_input_snapshot->texture->GetTextureDescriptor().format !=
@@ -67,7 +73,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
   /// Create AnonymousContents for rendering.
   ///
   RenderProc render_proc = [y_input_snapshot, uv_input_snapshot, coverage,
-                            yuv_color_space = yuv_color_space_](
+                            yuv_color_space = yuv_color_space_, input_uvs](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
@@ -79,18 +85,18 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {coverage.origin, Point(0, 0)},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         Point(1, 0)},
+         input_uvs[1]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
-        {coverage.origin, Point(0, 0)},
+         input_uvs[3]},
+        {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
+         input_uvs[3]},
         {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         Point(0, 1)},
+         input_uvs[2]},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
@@ -133,8 +139,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
-                               entity.GetTransformation());
+  sub_entity.SetTransformation(entity.GetTransformation());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }
