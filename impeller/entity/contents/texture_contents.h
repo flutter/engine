@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/path.h"
-#include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
 
@@ -30,7 +30,7 @@ class TextureContents final : public Contents {
 
   void SetLabel(std::string label);
 
-  void SetPath(const Path& path);
+  void SetRect(Rect rect);
 
   void SetTexture(std::shared_ptr<Texture> texture);
 
@@ -66,7 +66,7 @@ class TextureContents final : public Contents {
               RenderPass& pass) const override;
 
   // |Contents|
-  bool CanAcceptOpacity(const Entity& entity) const override;
+  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
@@ -76,14 +76,14 @@ class TextureContents final : public Contents {
  private:
   std::string label_;
 
-  Path path_;
-  std::optional<Rect> rect_;
+  Rect rect_;
   bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
   Rect source_rect_;
   Scalar opacity_ = 1.0f;
+  Scalar inherited_opacity_ = 1.0f;
   bool defer_applying_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureContents);

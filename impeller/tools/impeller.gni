@@ -8,9 +8,6 @@ import("//flutter/impeller/tools/malioc.gni")
 import("//flutter/testing/testing.gni")
 
 declare_args() {
-  # Whether playgrounds are enabled for unit tests.
-  impeller_enable_playground = false
-
   # Whether the Metal backend is enabled.
   impeller_enable_metal = is_mac || is_ios
 
@@ -46,6 +43,8 @@ declare_args() {
   impeller_supports_rendering =
       impeller_enable_metal || impeller_enable_opengles ||
       impeller_enable_vulkan
+
+  impeller_enable_compute = impeller_enable_vulkan || impeller_enable_metal
 }
 
 # ------------------------------------------------------------------------------
@@ -301,8 +300,13 @@ template("impellerc") {
     }
 
     if (defined(invoker.metal_version)) {
+      assert(is_mac || is_ios)
       metal_version = invoker.metal_version
       args += [ "--metal-version=$metal_version" ]
+    }
+
+    if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+      args += [ "--use-half-textures" ]
     }
 
     if (json) {
@@ -388,7 +392,7 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/renderer",
+      "//flutter/impeller/core",
       impellerc_invocation,
     ]
   }
@@ -403,6 +407,11 @@ template("_impeller_shaders_metal") {
     metal_version = invoker.metal_version
   }
 
+  use_half_textures = false
+  if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+    use_half_textures = invoker.use_half_textures
+  }
+
   shaders_base_name = string_join("",
                                   [
                                     invoker.name,
@@ -413,6 +422,7 @@ template("_impeller_shaders_metal") {
     shaders = invoker.shaders
     metal_version = metal_version
     sl_file_extension = "metal"
+    use_half_textures = use_half_textures
     shader_target_flag = ""
     defines = [ "IMPELLER_TARGET_METAL" ]
     if (is_ios) {
@@ -571,12 +581,13 @@ template("_impeller_shaders_vk") {
   impellerc(impellerc_vk) {
     shaders = invoker.shaders
     sl_file_extension = "vkspv"
-    if (defined(invoker.metal_version)) {
-      metal_version = invoker.metal_version
-    }
 
     # Metal reflectors generate a superset of information.
     if (impeller_enable_metal) {
+      if (defined(invoker.metal_version)) {
+        metal_version = invoker.metal_version
+      }
+
       intermediates_subdir = "vk"
     }
     shader_target_flag = "--vulkan"
@@ -666,12 +677,25 @@ template("_impeller_shaders_vk") {
 #
 #    The SPIR-V version required by the shaders.
 #
+# @param[options] use_half_textures
+#
+#    Whether the metal shader is using half-precision textures and requires
+#    openGL semantics when compilig SPIR-V.
+#
 template("impeller_shaders") {
-  metal_version = "1.2"
   if (defined(invoker.metal_version)) {
     metal_version = invoker.metal_version
   }
-  not_needed([ "metal_version" ])
+
+  use_half_textures = false
+  if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+    use_half_textures = true
+  }
+
+  not_needed([
+               "metal_version",
+               "use_half_textures",
+             ])
 
   enable_opengles = impeller_enable_opengles
   if (defined(invoker.enable_opengles)) {
@@ -679,12 +703,16 @@ template("impeller_shaders") {
   }
 
   if (impeller_enable_metal) {
+    if (!defined(metal_version)) {
+      metal_version = "1.2"
+    }
     not_needed(invoker, [ "analyze" ])
     mtl_shaders = "mtl_$target_name"
     _impeller_shaders_metal(mtl_shaders) {
       name = invoker.name
       shaders = invoker.shaders
       metal_version = metal_version
+      use_half_textures = use_half_textures
     }
   }
 
@@ -720,7 +748,6 @@ template("impeller_shaders") {
         vulkan_language_version = invoker.vulkan_language_version
       }
       shaders = invoker.shaders
-      metal_version = metal_version
       analyze = analyze
     }
   }

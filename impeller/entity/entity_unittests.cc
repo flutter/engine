@@ -34,7 +34,7 @@
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
@@ -1052,7 +1052,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+      texture->SetRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1176,7 +1176,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+    texture->SetRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -2342,7 +2342,7 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 
 TEST_P(EntityTest, RuntimeEffect) {
   if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This test only has a Metal fixture at the moment.");
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
   auto runtime_stage =
@@ -2387,8 +2387,10 @@ TEST_P(EntityTest, InheritOpacityTest) {
   // Texture contents can always accept opacity.
   auto texture_contents = std::make_shared<TextureContents>();
   texture_contents->SetOpacity(0.5);
-  ASSERT_TRUE(texture_contents->CanAcceptOpacity(entity));
+  ASSERT_TRUE(texture_contents->CanInheritOpacity(entity));
 
+  texture_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
   texture_contents->SetInheritedOpacity(0.5);
   ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
 
@@ -2399,8 +2401,10 @@ TEST_P(EntityTest, InheritOpacityTest) {
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
   solid_color->SetColor(Color::Blue().WithAlpha(0.5));
 
-  ASSERT_TRUE(solid_color->CanAcceptOpacity(entity));
+  ASSERT_TRUE(solid_color->CanInheritOpacity(entity));
 
+  solid_color->SetInheritedOpacity(0.5);
+  ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
   solid_color->SetInheritedOpacity(0.5);
   ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
 
@@ -2409,12 +2413,14 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto tiled_texture = std::make_shared<TiledTextureContents>();
   tiled_texture->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  tiled_texture->SetAlpha(0.5);
+  tiled_texture->SetOpacity(0.5);
 
-  ASSERT_TRUE(tiled_texture->CanAcceptOpacity(entity));
+  ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
 
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetAlpha(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  tiled_texture->SetInheritedOpacity(0.5);
+  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
   // overlap
@@ -2429,14 +2435,52 @@ TEST_P(EntityTest, InheritOpacityTest) {
   text_contents->SetTextFrame(frame);
   text_contents->SetColor(Color::Blue().WithAlpha(0.5));
 
-  ASSERT_TRUE(text_contents->CanAcceptOpacity(entity));
+  ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
 
+  text_contents->SetInheritedOpacity(0.5);
+  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
   text_contents->SetInheritedOpacity(0.5);
   ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
 
   // Clips and restores trivially accept opacity.
-  ASSERT_TRUE(ClipContents().CanAcceptOpacity(entity));
-  ASSERT_TRUE(ClipRestoreContents().CanAcceptOpacity(entity));
+  ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));
+  ASSERT_TRUE(ClipRestoreContents().CanInheritOpacity(entity));
+
+  // Runtime effect contents can't accept opacity.
+  auto runtime_effect = std::make_shared<RuntimeEffectContents>();
+  ASSERT_FALSE(runtime_effect->CanInheritOpacity(entity));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kColorBurn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
+  auto arrow_head = PathBuilder{}
+                        .MoveTo({50, 120})
+                        .LineTo({120, 190})
+                        .LineTo({190, 120})
+                        .TakePath();
+  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
+                                           Join::kRound);
+
+  auto transform = Matrix::MakeTranslation({300, 300}) *
+                   Matrix::MakeRotationZ(Radians(kPiOver2));
+  EXPECT_LT(transform.e[0][0], 0.f);
+  auto coverage = geometry->GetCoverage(transform);
+  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
 }
 
 }  // namespace testing

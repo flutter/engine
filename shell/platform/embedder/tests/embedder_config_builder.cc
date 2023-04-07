@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -100,7 +101,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
         }
         bitmap.setImmutable();
         return reinterpret_cast<EmbedderTestContextSoftware*>(context)->Present(
-            SkImage::MakeFromBitmap(bitmap));
+            SkImages::RasterFromBitmap(bitmap));
       };
 
   // The first argument is always the executable name. Don't make tests have to
@@ -247,6 +248,8 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
+  project_args_.update_semantics_callback2 =
+      context_.GetUpdateSemanticsCallback2Hook();
   project_args_.update_semantics_callback =
       context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =

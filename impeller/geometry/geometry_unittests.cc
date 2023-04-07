@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
 #include <sstream>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -589,6 +591,10 @@ TEST(GeometryTest, SimplePath) {
       .AddCubicComponent({300, 300}, {400, 400}, {500, 500}, {600, 600});
 
   ASSERT_EQ(path.GetComponentCount(), 4u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 1u);
 
   path.EnumerateComponents(
       [](size_t index, const LinearPathComponent& linear) {
@@ -2084,6 +2090,40 @@ TEST(GeometryTest, Gradient) {
     ASSERT_EQ(gradient.texture_size, 1024u);
     ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
   }
+}
+
+TEST(GeometryTest, HalfConversions) {
+#ifdef FML_OS_WIN
+  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
+                  "unavailable on Windows.";
+#else
+  ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
+  ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
+  ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
+  ASSERT_EQ(ScalarToHalf(-1.45), -1.45f16);
+
+  // 65504 is the largest possible half.
+  ASSERT_EQ(ScalarToHalf(65504.0f), 65504.0f16);
+  ASSERT_EQ(ScalarToHalf(65504.0f + 1), 65504.0f16);
+
+  // Colors
+  ASSERT_EQ(HalfVector4(Color::Red()),
+            HalfVector4(1.0f16, 0.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Green()),
+            HalfVector4(0.0f16, 1.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Blue()),
+            HalfVector4(0.0f16, 0.0f16, 1.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Black().WithAlpha(0)),
+            HalfVector4(0.0f16, 0.0f16, 0.0f16, 0.0f16));
+
+  ASSERT_EQ(HalfVector3(Vector3(4.0, 6.0, -1.0)),
+            HalfVector3(4.0f16, 6.0f16, -1.0f16));
+  ASSERT_EQ(HalfVector2(Vector2(4.0, 6.0)), HalfVector2(4.0f16, 6.0f16));
+
+  ASSERT_EQ(Half(0.5f), Half(0.5f16));
+  ASSERT_EQ(Half(0.5), Half(0.5f16));
+  ASSERT_EQ(Half(5), Half(5.0f16));
+#endif  // FML_OS_WIN
 }
 
 }  // namespace testing

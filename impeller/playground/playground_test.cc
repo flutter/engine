@@ -5,12 +5,13 @@
 #include "flutter/fml/time/time_point.h"
 
 #include "impeller/base/timing.h"
+#include "impeller/base/validation.h"
 #include "impeller/playground/playground_test.h"
 
 namespace impeller {
 
 PlaygroundTest::PlaygroundTest()
-    : switches_(flutter::testing::GetArgsForProcess()) {}
+    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {}
 
 PlaygroundTest::~PlaygroundTest() = default;
 
@@ -25,8 +26,14 @@ void PlaygroundTest::SetUp() {
     return;
   }
 
+  ImpellerValidationErrorsSetFatal(true);
+
   SetupContext(GetParam());
   SetupWindow();
+}
+
+PlaygroundBackend PlaygroundTest::GetBackend() const {
+  return GetParam();
 }
 
 void PlaygroundTest::TearDown() {

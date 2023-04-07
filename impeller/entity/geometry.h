@@ -4,14 +4,17 @@
 
 #pragma once
 
+#include "impeller/core/allocator.h"
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
-#include "impeller/renderer/allocator.h"
-#include "impeller/renderer/host_buffer.h"
-#include "impeller/renderer/vertex_buffer.h"
+#include "impeller/geometry/point.h"
+#include "impeller/geometry/scalar.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -28,18 +31,6 @@ enum GeometryVertexType {
   kPosition,
   kColor,
   kUV,
-};
-
-enum class Cap {
-  kButt,
-  kRound,
-  kSquare,
-};
-
-enum class Join {
-  kMiter,
-  kRound,
-  kBevel,
 };
 
 class Geometry {
@@ -149,7 +140,8 @@ class StrokePathGeometry : public Geometry {
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
                          const Point& offset,
-                         Scalar scale)>;
+                         Scalar scale,
+                         bool reverse)>;
   using JoinProc =
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
@@ -188,7 +180,6 @@ class StrokePathGeometry : public Geometry {
   CreateSolidStrokeVertices(const Path& path,
                             Scalar stroke_width,
                             Scalar scaled_miter_limit,
-                            Cap cap,
                             const JoinProc& join_proc,
                             const CapProc& cap_proc,
                             Scalar scale);

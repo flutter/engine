@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "color_source_contents.h"
+#include "impeller/entity/contents/color_source_contents.h"
 
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -21,12 +22,12 @@ const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
   return geometry_;
 }
 
-void ColorSourceContents::SetAlpha(Scalar alpha) {
-  alpha_ = alpha;
+void ColorSourceContents::SetOpacity(Scalar alpha) {
+  opacity_ = alpha;
 }
 
-Scalar ColorSourceContents::GetAlpha() const {
-  return alpha_;
+Scalar ColorSourceContents::GetOpacity() const {
+  return opacity_ * inherited_opacity_;
 }
 
 void ColorSourceContents::SetEffectTransform(Matrix matrix) {
@@ -42,12 +43,12 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
   return geometry_->GetCoverage(entity.GetTransformation());
 };
 
-bool ColorSourceContents::CanAcceptOpacity(const Entity& entity) const {
+bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
   return true;
 }
 
 void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
-  SetAlpha(GetAlpha() * opacity);
+  inherited_opacity_ = opacity;
 }
 
 bool ColorSourceContents::ShouldRender(

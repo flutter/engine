@@ -10,6 +10,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/paths.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
@@ -19,9 +20,10 @@
 
 namespace flutter {
 
-std::shared_ptr<impeller::Context> CreateImpellerContext(
+static std::shared_ptr<impeller::Context> CreateImpellerContext(
     const fml::RefPtr<vulkan::VulkanProcTable>& proc_table,
-    const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop) {
+    const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop,
+    bool enable_vulkan_validation) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
                                              impeller_entity_shaders_vk_length),
@@ -34,24 +36,24 @@ std::shared_ptr<impeller::Context> CreateImpellerContext(
   PFN_vkGetInstanceProcAddr instance_proc_addr =
       proc_table->NativeGetInstanceProcAddr();
 
-  auto context =
-      impeller::ContextVK::Create(instance_proc_addr,                //
-                                  shader_mappings,                   //
-                                  nullptr,                           //
-                                  concurrent_loop->GetTaskRunner(),  //
-                                  "Android Impeller Vulkan Lib"      //
-      );
-
-  return context;
+  impeller::ContextVK::Settings settings;
+  settings.proc_address_callback = instance_proc_addr;
+  settings.shader_libraries_data = std::move(shader_mappings);
+  settings.cache_directory = fml::paths::GetCachesDirectory();
+  settings.worker_task_runner = concurrent_loop->GetTaskRunner();
+  settings.enable_validation = enable_vulkan_validation;
+  return impeller::ContextVK::Create(std::move(settings));
 }
 
 AndroidSurfaceVulkanImpeller::AndroidSurfaceVulkanImpeller(
     const std::shared_ptr<AndroidContext>& android_context,
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    bool enable_vulkan_validation)
     : AndroidSurface(android_context),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
       workers_(fml::ConcurrentMessageLoop::Create()) {
-  impeller_context_ = CreateImpellerContext(proc_table_, workers_);
+  impeller_context_ =
+      CreateImpellerContext(proc_table_, workers_, enable_vulkan_validation);
   is_valid_ =
       proc_table_->HasAcquiredMandatoryProcAddresses() && impeller_context_;
 }
@@ -91,13 +93,11 @@ bool AndroidSurfaceVulkanImpeller::OnScreenSurfaceResize(const SkISize& size) {
 }
 
 bool AndroidSurfaceVulkanImpeller::ResourceContextMakeCurrent() {
-  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
-  return false;
+  return true;
 }
 
 bool AndroidSurfaceVulkanImpeller::ResourceContextClearCurrent() {
-  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
-  return false;
+  return true;
 }
 
 bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
