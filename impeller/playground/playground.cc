@@ -437,7 +437,7 @@ std::shared_ptr<Texture> CreateTextureForDecompressedImage(
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
   blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
-  if (texture_descriptor.size.MipCount() > 1) {
+  if (enable_mipmapping) {
     blit_pass->GenerateMipmap(dest_texture);
   }
 
