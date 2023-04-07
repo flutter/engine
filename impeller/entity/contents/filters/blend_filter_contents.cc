@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -176,6 +177,114 @@ static std::optional<Entity> AdvancedBlend(
                .opacity = (absorb_opacity ? 1.0f : dst_snapshot->opacity) *
                           alpha.value_or(1.0)},
       entity.GetBlendMode(), entity.GetStencilDepth());
+}
+
+std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
+    const std::shared_ptr<FilterInput>& input,
+    const ContentContext& renderer,
+    const Entity& entity,
+    const Rect& coverage,
+    Color foreground_color,
+    BlendMode blend_mode,
+    std::optional<Scalar> alpha,
+    bool absorb_opacity) const {
+  auto dst_snapshot = input->GetSnapshot(renderer, entity);
+  if (!dst_snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
+                            blend_mode](const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass) -> bool {
+    using VS = PipelineBlendPipeline::VertexShader;
+    using FS = PipelineBlendPipeline::FragmentShader;
+
+    auto& host_buffer = pass.GetTransientsBuffer();
+
+    auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
+    if (!maybe_dst_uvs.has_value()) {
+      return false;
+    }
+    auto dst_uvs = maybe_dst_uvs.value();
+
+    auto size = coverage.size;
+    auto origin = coverage.origin;
+    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    vtx_builder.AddVertices({
+        {origin, dst_uvs[0]},
+        {Point(origin.x + size.width, origin.y), dst_uvs[1]},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
+        {origin, dst_uvs[0]},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
+        {Point(origin.x, origin.y + size.height), dst_uvs[2]},
+    });
+    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+
+    Command cmd;
+    cmd.label = "Foreground Pipeline Blend Filter";
+    cmd.BindVertices(vtx_buffer);
+    cmd.stencil_reference = entity.GetStencilDepth();
+    auto options = OptionsFromPass(pass);
+    cmd.pipeline = renderer.GetPipelineBlendPipeline(options);
+
+    // TODO: clear, src, dst.
+
+    FS::FragInfo frag_info;
+    VS::FrameInfo frame_info;
+
+    auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
+    if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+      dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+      dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+    }
+    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+        dst_sampler_descriptor);
+    FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
+    frame_info.texture_sampler_y_coord_scale =
+        dst_snapshot->texture->GetYCoordScale();
+
+    frag_info.color = foreground_color.Premultiply();
+    frag_info.operation = static_cast<Scalar>(blend_mode);
+
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+
+    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
+    VS::BindFrameInfo(cmd, uniform_view);
+
+    return pass.AddCommand(cmd);
+  };
+
+  CoverageProc coverage_proc =
+      [coverage](const Entity& entity) -> std::optional<Rect> {
+    return coverage;
+  };
+
+  auto contents = AnonymousContents::Make(render_proc, coverage_proc);
+
+  // If there is pending opacity but it was not absorbed by this entity, we have
+  // to convert this back to a snapshot so it can be passed on. This generally
+  // implies that there is another filter about to run, so we'd perform this
+  // operation anyway.
+  auto potential_opacity = alpha.value_or(1.0) * dst_snapshot->opacity;
+  if (!absorb_opacity && potential_opacity < 1.0) {
+    auto result_snapshot = contents->RenderToSnapshot(renderer, entity);
+    if (!result_snapshot.has_value()) {
+      return std::nullopt;
+    }
+    result_snapshot->opacity = potential_opacity;
+    return Entity::FromSnapshot(result_snapshot.value(), entity.GetBlendMode(),
+                                entity.GetStencilDepth());
+  }
+
+  Entity sub_entity;
+  sub_entity.SetContents(std::move(contents));
+  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetTransformation(entity.GetTransformation());
+
+  return sub_entity;
 }
 
 static std::optional<Entity> PipelineBlend(
@@ -368,6 +477,11 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
   }
 
   if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
+    if (inputs.size() == 1 && foreground_color_.has_value()) {
+      return CreatePipelineForegroundBlend(inputs[0], renderer, entity, coverage,
+                                   foreground_color_.value(), blend_mode_,
+                                   GetAlpha(), GetAbsorbOpacity());
+    }
     return PipelineBlend(inputs, renderer, entity, coverage, blend_mode_,
                          foreground_color_, GetAbsorbOpacity(), GetAlpha());
   }

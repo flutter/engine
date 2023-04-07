@@ -31,6 +31,16 @@ class BlendFilterContents : public ColorFilterContents {
   void SetForegroundColor(std::optional<Color> color);
 
  private:
+  std::optional<Entity> CreatePipelineForegroundBlend(
+      const std::shared_ptr<FilterInput>& input,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      Color foreground_color,
+      BlendMode blend_mode,
+      std::optional<Scalar> alpha,
+      bool absorb_opacity) const;
+
   // |FilterContents|
   std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
                                      const ContentContext& renderer,
