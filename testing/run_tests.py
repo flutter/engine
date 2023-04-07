@@ -477,6 +477,8 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         extra_env={
             # pylint: disable=line-too-long
             # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+            'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+            'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
             'MTL_SHADER_VALIDATION':
                 '1',  # Enables all shader validation tests.
             'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
