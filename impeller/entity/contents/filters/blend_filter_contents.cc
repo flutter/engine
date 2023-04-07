@@ -179,14 +179,22 @@ static std::optional<Entity> AdvancedBlend(
       entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
-Entity BlendFilterContents::CreateForgroundBlend(
+std::optional<Entity> BlendFilterContents::CreateForegroundBlend(
     const std::shared_ptr<FilterInput>& input,
     const ContentContext& renderer,
     const Entity& entity,
     const Rect& coverage,
     Color foreground_color,
-    BlendMode blend_mode) const {
-  RenderProc render_proc = [foreground_color, coverage, input, blend_mode](
+    BlendMode blend_mode,
+    std::optional<Scalar> alpha,
+    bool absorb_opacity) const {
+  auto dst_snapshot = input->GetSnapshot(renderer, entity);
+  if (!dst_snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
+                            blend_mode, alpha, absorb_opacity](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     using VS = BlendScreenPipeline::VertexShader;
@@ -194,17 +202,11 @@ Entity BlendFilterContents::CreateForgroundBlend(
 
     auto& host_buffer = pass.GetTransientsBuffer();
 
-    auto dst_snapshot = input->GetSnapshot(renderer, entity);
-    if (!dst_snapshot.has_value()) {
+    auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
+    if (!maybe_dst_uvs.has_value()) {
       return false;
     }
-
-    // This does not use the snapshot transform, since this value will
-    // be different depending on whether the filter was applied via a
-    // saveLayer or directly to a particular contents. By construction,
-    // the provided rectangle should exactly map to the texture coordinates.
-    std::array<Point, 4> dst_uvs = {Point(0.0, 0.0), Point(1.0, 0.0),
-                                    Point(0.0, 1.0), Point(1.0, 1.0)};
+    auto dst_uvs = maybe_dst_uvs.value();
 
     auto size = coverage.size;
     auto origin = coverage.origin;
@@ -289,7 +291,8 @@ Entity BlendFilterContents::CreateForgroundBlend(
         dst_sampler_descriptor);
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
-    blend_info.dst_input_alpha = dst_snapshot->opacity;
+    blend_info.dst_input_alpha =
+        absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
 
     blend_info.color_factor = 1;
     blend_info.color = foreground_color;
@@ -315,11 +318,26 @@ Entity BlendFilterContents::CreateForgroundBlend(
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
+  // If there is pending opacity but it was not absorbed by this entity, we have
+  // to convert this back to a snapshot so it can be passed on. This generally
+  // implies that there is another filter about to run, so we'd perform this
+  // operation anyway.
+  auto potential_opacity = alpha.value_or(1.0) * dst_snapshot->opacity;
+  if (!absorb_opacity && potential_opacity < 1.0) {
+    auto result_snapshot = contents->RenderToSnapshot(renderer, entity);
+    if (!result_snapshot.has_value()) {
+      return std::nullopt;
+    }
+    result_snapshot->opacity = potential_opacity;
+    return Entity::FromSnapshot(result_snapshot.value(), entity.GetBlendMode(),
+                                entity.GetStencilDepth());
+  }
+
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
-                               entity.GetTransformation());
+  sub_entity.SetTransformation(entity.GetTransformation());
+
   return sub_entity;
 }
 
@@ -518,11 +536,10 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
   }
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
-    auto potential_alpha = GetAlpha().value_or(1.0);
-    if (inputs.size() == 1 && foreground_color_.has_value() &&
-        potential_alpha >= 1.0 - kEhCloseEnough) {
-      return CreateForgroundBlend(inputs[0], renderer, entity, coverage,
-                                  foreground_color_.value(), blend_mode_);
+    if (inputs.size() == 1 && foreground_color_.has_value()) {
+      return CreateForegroundBlend(inputs[0], renderer, entity, coverage,
+                                   foreground_color_.value(), blend_mode_,
+                                   GetAlpha(), GetAbsorbOpacity());
     }
 
     return advanced_blend_proc_(inputs, renderer, entity, coverage,

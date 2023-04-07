@@ -42,12 +42,15 @@ class BlendFilterContents : public ColorFilterContents {
   ///        only a single input and a foreground color.
   ///
   /// These contents cannot absorb opacity.
-  Entity CreateForgroundBlend(const std::shared_ptr<FilterInput>& input,
-                              const ContentContext& renderer,
-                              const Entity& entity,
-                              const Rect& coverage,
-                              Color foreground_color,
-                              BlendMode blend_mode) const;
+  std::optional<Entity> CreateForegroundBlend(
+      const std::shared_ptr<FilterInput>& input,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      Color foreground_color,
+      BlendMode blend_mode,
+      std::optional<Scalar> alpha,
+      bool absorb_opacity) const;
 
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;
