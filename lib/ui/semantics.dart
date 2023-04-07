@@ -13,7 +13,7 @@ part of dart.ui;
 /// See also:
 ///   - file://./../../lib/ui/semantics/semantics_node.h
 class SemanticsAction {
-  const SemanticsAction._(this.index);
+  const SemanticsAction._(this.index): value = index;
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -45,6 +45,11 @@ class SemanticsAction {
   ///
   /// Each action has one bit set in this bit field.
   final int index;
+
+  /// Temporary API until the following is complete:
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This property is temporary and might be removed shortly.')
+  final int value;
 
   /// The equivalent of a user briefly tapping the screen with the finger
   /// without moving it.
@@ -299,12 +304,17 @@ class SemanticsAction {
 // accessibility services, `flutter_test/controller.dart#SemanticsController._importantFlags`
 // must be updated as well.
 class SemanticsFlag {
-  const SemanticsFlag._(this.index);
+  const SemanticsFlag._(this.index): value = index;
 
   /// The numerical value for this flag.
   ///
   /// Each flag has one bit set in this bit field.
   final int index;
+
+  /// Temporary API to represent [index] until the following is complete:
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This property is temporary and might be removed shortly.')
+  final int value;
 
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;

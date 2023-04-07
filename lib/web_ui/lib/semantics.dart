@@ -5,7 +5,7 @@
 part of ui;
 
 class SemanticsAction {
-  const SemanticsAction._(this.index);
+  const SemanticsAction._(this.index): value = index;
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -31,6 +31,9 @@ class SemanticsAction {
   static const int _kSetTextIndex = 1 << 21;
 
   final int index;
+
+  @Deprecated('This property is temporary and might be removed shortly.')
+  final int value;
 
   static const SemanticsAction tap = SemanticsAction._(_kTapIndex);
   static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex);
@@ -144,9 +147,12 @@ class SemanticsAction {
 }
 
 class SemanticsFlag {
-  const SemanticsFlag._(this.index);
+  const SemanticsFlag._(this.index): value = index;
 
   final int index;
+
+  @Deprecated('This property is temporary and might be removed shortly.')
+  final int value;
 
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
