@@ -342,7 +342,7 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
       make_test('embedder_a11y_unittests'),
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
-      make_test('fml_unittests', flags=[fml_unittests_filter] + repeat_flags),
+      make_test('fml_unittests', flags=[FML_UNITTESTS_FILTER] + repeat_flags),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
       make_test('testing_unittests'),
