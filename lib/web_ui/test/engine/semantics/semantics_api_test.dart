@@ -33,9 +33,9 @@ void testMain() {
   test('SemanticsAction.values refers to all actions.', () async {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
     for (int index = 0; index < numSemanticsActions; ++index) {
-      final int flag = 1 << index;
-      expect(SemanticsAction.fromAction(flag), isNotNull);
-      expect(SemanticsAction.fromAction(flag).toString(), startsWith('SemanticsAction.'));
+      final int action = 1 << index;
+      expect(SemanticsAction.fromAction(action), isNotNull);
+      expect(SemanticsAction.fromAction(action).toString(), startsWith('SemanticsAction.'));
     }
   });
 
