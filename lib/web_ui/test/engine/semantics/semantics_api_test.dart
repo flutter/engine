@@ -23,8 +23,8 @@ void testMain() {
     expect(SemanticsFlag.values.length, equals(numSemanticsFlags));
     for (int index = 0; index < numSemanticsFlags; ++index) {
       final int flag = 1 << index;
-      expect(SemanticsFlag.values[flag], isNotNull);
-      expect(SemanticsFlag.values[flag].toString(), startsWith('SemanticsFlag.'));
+      expect(SemanticsFlag.fromFlag(flag), isNotNull);
+      expect(SemanticsFlag.fromFlag(flag).toString(), startsWith('SemanticsFlag.'));
     }
   });
 
@@ -34,8 +34,8 @@ void testMain() {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
     for (int index = 0; index < numSemanticsActions; ++index) {
       final int flag = 1 << index;
-      expect(SemanticsAction.values[flag], isNotNull);
-      expect(SemanticsAction.values[flag].toString(), startsWith('SemanticsAction.'));
+      expect(SemanticsAction.fromAction(flag), isNotNull);
+      expect(SemanticsAction.fromAction(flag).toString(), startsWith('SemanticsAction.'));
     }
   });
 

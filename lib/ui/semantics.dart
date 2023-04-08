@@ -233,6 +233,8 @@ class SemanticsAction {
 
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);
 
+  static SemanticsAction? fromAction(int index) => _kActionById[index];
+
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
@@ -568,6 +570,8 @@ class SemanticsFlag {
   };
 
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
+
+  static SemanticsFlag? fromFlag(int index) => _kFlagById[index];
 
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
