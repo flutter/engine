@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/dl_op_spy.h"
+#include "flutter/shell/common/canvas_spy.h"
 
 namespace flutter {
 
@@ -30,8 +30,10 @@ EmbedderExternalView::EmbedderExternalView(
       surface_transformation_(surface_transformation),
       view_identifier_(view_identifier),
       embedded_view_params_(std::move(params)),
-      slice_(std::make_unique<DisplayListEmbedderViewSlice>(
-          SkRect::Make(frame_size))) {}
+      recorder_(std::make_unique<SkPictureRecorder>()),
+      canvas_spy_(std::make_unique<CanvasSpy>(
+          recorder_->beginRecording(frame_size.width(), frame_size.height()))) {
+}
 
 EmbedderExternalView::~EmbedderExternalView() = default;
 
@@ -41,7 +43,7 @@ EmbedderExternalView::CreateRenderTargetDescriptor() const {
 }
 
 DlCanvas* EmbedderExternalView::GetCanvas() {
-  return slice_->canvas();
+  return canvas_spy_->GetSpyingCanvas();
 }
 
 SkISize EmbedderExternalView::GetRenderSurfaceSize() const {
@@ -56,15 +58,8 @@ bool EmbedderExternalView::HasPlatformView() const {
   return view_identifier_.platform_view_id.has_value();
 }
 
-bool EmbedderExternalView::HasEngineRenderedContents() {
-  if (has_engine_rendered_contents_.has_value()) {
-    return has_engine_rendered_contents_.value();
-  }
-  TryEndRecording();
-  DlOpSpy dl_op_spy;
-  slice_->dispatch(dl_op_spy);
-  has_engine_rendered_contents_ = dl_op_spy.did_draw() && !slice_->is_empty();
-  return has_engine_rendered_contents_.value();
+bool EmbedderExternalView::HasEngineRenderedContents() const {
+  return canvas_spy_->DidDrawIntoCanvas();
 }
 
 EmbedderExternalView::ViewIdentifier EmbedderExternalView::GetViewIdentifier()
@@ -78,10 +73,15 @@ const EmbeddedViewParams* EmbedderExternalView::GetEmbeddedViewParams() const {
 
 bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
-  TryEndRecording();
+
   FML_DCHECK(HasEngineRenderedContents())
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
+
+  auto picture = recorder_->finishRecordingAsPicture();
+  if (!picture) {
+    return false;
+  }
 
   auto surface = render_target.GetRenderSurface();
   if (!surface) {
@@ -95,22 +95,13 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   if (!canvas) {
     return false;
   }
-  DlSkCanvasAdapter dl_canvas(canvas);
-  int restore_count = dl_canvas.GetSaveCount();
-  dl_canvas.SetTransform(surface_transformation_);
-  dl_canvas.Clear(DlColor::kTransparent());
-  slice_->render_into(&dl_canvas);
-  dl_canvas.RestoreToCount(restore_count);
-  dl_canvas.Flush();
+
+  canvas->setMatrix(surface_transformation_);
+  canvas->clear(SK_ColorTRANSPARENT);
+  canvas->drawPicture(picture);
+  canvas->flush();
 
   return true;
-}
-
-void EmbedderExternalView::TryEndRecording() const {
-  if (slice_->recording_ended()) {
-    return;
-  }
-  slice_->end_recording();
 }
 
 }  // namespace flutter
