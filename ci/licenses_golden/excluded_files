@@ -207,6 +207,7 @@
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/canvas_spy_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
+../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
 ../../../flutter/shell/common/fixtures
 ../../../flutter/shell/common/input_events_unittests.cc
@@ -2593,6 +2594,7 @@
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
+../../../third_party/skia/gn/bazel_build.py
 ../../../third_party/skia/gn/call.py
 ../../../third_party/skia/gn/checkdir.py
 ../../../third_party/skia/gn/codesign_ios.py
@@ -2801,6 +2803,7 @@
 ../../../third_party/skia/src/pathops/BUILD.bazel
 ../../../third_party/skia/src/pdf/BUILD.bazel
 ../../../third_party/skia/src/ports/BUILD.bazel
+../../../third_party/skia/src/ports/fontations/BUILD.bazel
 ../../../third_party/skia/src/sfnt/BUILD.bazel
 ../../../third_party/skia/src/shaders/BUILD.bazel
 ../../../third_party/skia/src/shaders/gradients/BUILD.bazel
