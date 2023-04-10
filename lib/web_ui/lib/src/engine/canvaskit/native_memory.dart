@@ -23,7 +23,9 @@ NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemory
 /// mock implementation of a finalization registry.
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
-    _finalizationRegistry.register(owner, ref);
+    if (browserSupportsFinalizationRegistry) {
+      _finalizationRegistry.register(owner, ref);
+    }
   }
 }
 
