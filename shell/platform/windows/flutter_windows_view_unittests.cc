@@ -140,8 +140,8 @@ TEST(FlutterWindowsViewTest, Shutdown) {
 
   // The engine must be stopped before the surface can be destroyed.
   InSequence s;
-  EXPECT_CALL(*engine.get(), Stop);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface);
+  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
   view.SetEngine(std::move(engine));
