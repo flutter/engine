@@ -1025,7 +1025,7 @@ def parse_args(args):
 
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')
-  parser.add_argument('--lsan', default=False, action='store_true')
+  parser.add_argument('--lsan', default=True, action='store_true')
   parser.add_argument('--msan', default=False, action='store_true')
   parser.add_argument('--tsan', default=False, action='store_true')
   parser.add_argument('--ubsan', default=False, action='store_true')
