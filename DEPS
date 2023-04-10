@@ -242,7 +242,7 @@ deps = {
   # TODO(jacksongardner): This targets a commit that is not on the master branch.
   # This needs to be removed before this PR lands, but this will allow us to verify
   # these changes in CI.
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '1e16f21fe0b423e08765e594eba9af3dccef0e4d',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '5adf0d1951587debc612831a285d765d8603dfbb',
 
    # Fuchsia compatibility
    #
