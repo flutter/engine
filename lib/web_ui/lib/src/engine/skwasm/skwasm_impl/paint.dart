@@ -97,7 +97,7 @@ class SkwasmPaint implements ui.Paint {
 
   @override
   set shader(ui.Shader? uiShader) {
-    final SkwasmShader? skwasmShader = shader as SkwasmShader?;
+    final SkwasmShader? skwasmShader = uiShader as SkwasmShader?;
     _shader = skwasmShader;
     final ShaderHandle shaderHandle =
       skwasmShader != null ? skwasmShader.handle : nullptr;

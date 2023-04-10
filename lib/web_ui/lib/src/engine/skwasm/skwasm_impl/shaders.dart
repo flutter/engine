@@ -57,10 +57,7 @@ class SkwasmGradient extends SkwasmShader implements ui.Gradient {
 
   @override
   ShaderHandle handle;
-  
-  @override
-  bool get debugDisposed => handle == nullptr;
-  
+
   @override
   void dispose() {
     super.dispose();
@@ -131,7 +128,6 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
           childCount,
         );
       });
-      _uniformData = nullptr;
     }
     return _handle;
   }
@@ -143,16 +139,27 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
 
   @override
   void setFloat(int index, double value) {
-    // We should not set any values after creating the shader.
-    assert(_handle == nullptr);
+    if (_handle != nullptr) {
+      // Invalidate the previous shader so that it is recreated with the new
+      // uniform data.
+      shaderDispose(_handle);
+      _handle = nullptr;
+    }
     final Pointer<Float> dataPointer = dataGetPointer(_uniformData).cast<Float>();
     dataPointer[index] = value;
   }
 
   @override
   void setImageSampler(int index, ui.Image image) {
-    // We should not set any values after creating the shader.
-    assert(_handle == nullptr);
     // TODO(jacksongardner): implement this when images are implemented
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (_uniformData != nullptr) {
+      dataDispose(_uniformData);
+      _uniformData = nullptr;
+    }
   }
 }
