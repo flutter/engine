@@ -239,7 +239,10 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e18c162be6327beb90fc885e81db8fadceafb94f',
+  # TODO(jacksongardner): This targets a commit that is not on the master branch.
+  # This needs to be removed before this PR lands, but this will allow us to verify
+  # these changes in CI.
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '1e16f21fe0b423e08765e594eba9af3dccef0e4d',
 
    # Fuchsia compatibility
    #
