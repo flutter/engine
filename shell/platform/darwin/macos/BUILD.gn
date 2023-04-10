@@ -351,7 +351,7 @@ shared_library("_generate_symlinks_and_verify_framework_module") {
   ]
   frameworks = [ "FlutterMacOS.framework" ]
 
-  sources = [ "framework/Source/tFlutterUmbrellaImportTests.m" ]
+  sources = [ "framework/Source/FlutterUmbrellaImportTests.m" ]
 
   deps = [ ":_generate_symlinks" ]
 }

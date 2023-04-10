@@ -2541,7 +2541,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextu
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/tFlutterUmbrellaImportTests.m + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImportTests.m + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.mm + ../../../flutter/LICENSE
@@ -2673,7 +2673,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTex
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObjectTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/tFlutterUmbrellaImportTests.m + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterUmbrellaImportTests.m + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm + ../../../flutter/LICENSE
@@ -5133,7 +5133,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTexture
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/tFlutterUmbrellaImportTests.m
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImportTests.m
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.mm
@@ -5269,7 +5269,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextu
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/tFlutterUmbrellaImportTests.m
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterUmbrellaImportTests.m
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
