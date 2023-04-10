@@ -29,23 +29,30 @@ class SurfaceMTL final : public Surface {
   /// @param[in]  context  The context
   /// @param[in]    layer  The layer whose current drawable to wrap to create a
   ///                      surface.
+  /// @param[in]  texture_size The size of the layer.
   ///
   /// @return     A pointer to the wrapped surface or null.
   ///
   static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
-      const std::shared_ptr<Context>& context,
-      CAMetalLayer* layer);
+      std::shared_ptr<Context> context,
+      CAMetalLayer* layer,
+      ISize texture_size);
 #pragma GCC diagnostic pop
 
   // |Surface|
   ~SurfaceMTL() override;
 
-  id<MTLDrawable> drawable() const { return drawable_; }
+  id<MTLDrawable> drawable() const { return nil; }
 
  private:
-  id<MTLDrawable> drawable_ = nil;
+  std::shared_ptr<Context> context_;
+  std::shared_ptr<Texture> root_resolve_texture_;
+  CAMetalLayer* layer_;
 
-  SurfaceMTL(const RenderTarget& target, id<MTLDrawable> drawable);
+  SurfaceMTL(std::shared_ptr<Context> context,
+             const RenderTarget& target,
+             std::shared_ptr<Texture> root_resolve_texture,
+             CAMetalLayer* layer);
 
   // |Surface|
   bool Present() const override;

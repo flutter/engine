@@ -60,10 +60,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   auto* mtl_layer = (CAMetalLayer*)layer;
 
   auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
-      impeller_renderer_->GetContext(), mtl_layer);
-  if (Settings::kSurfaceDataAccessible) {
-    last_drawable_.reset([surface->drawable() retain]);
-  }
+      impeller_renderer_->GetContext(), mtl_layer, {frame_info.width(), frame_info.height()});
+  // if (Settings::kSurfaceDataAccessible) {
+  //   last_drawable_.reset([surface->drawable() retain]);
+  // }
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
@@ -134,41 +134,41 @@ impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
 }
 
 Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
-  if (!(last_drawable_ && [last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)])) {
-    return {};
-  }
-  id<CAMetalDrawable> metal_drawable = static_cast<id<CAMetalDrawable>>(last_drawable_);
-  id<MTLTexture> texture = metal_drawable.texture;
-  int bytesPerPixel = 0;
-  std::string pixel_format;
-  switch (texture.pixelFormat) {
-    case MTLPixelFormatBGR10_XR:
-      bytesPerPixel = 4;
-      pixel_format = "MTLPixelFormatBGR10_XR";
-      break;
-    case MTLPixelFormatBGRA10_XR:
-      bytesPerPixel = 8;
-      pixel_format = "MTLPixelFormatBGRA10_XR";
-      break;
-    case MTLPixelFormatBGRA8Unorm:
-      bytesPerPixel = 4;
-      pixel_format = "MTLPixelFormatBGRA8Unorm";
-      break;
-    default:
-      return {};
-  }
+  // if (!(last_drawable_ && [last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)])) {
+  //   return {};
+  // }
+  // id<CAMetalDrawable> metal_drawable = static_cast<id<CAMetalDrawable>>(last_drawable_);
+  // id<MTLTexture> texture = metal_drawable.texture;
+  // int bytesPerPixel = 0;
+  // std::string pixel_format;
+  // switch (texture.pixelFormat) {
+  //   case MTLPixelFormatBGR10_XR:
+  //     bytesPerPixel = 4;
+  //     pixel_format = "MTLPixelFormatBGR10_XR";
+  //     break;
+  //   case MTLPixelFormatBGRA10_XR:
+  //     bytesPerPixel = 8;
+  //     pixel_format = "MTLPixelFormatBGRA10_XR";
+  //     break;
+  //   case MTLPixelFormatBGRA8Unorm:
+  //     bytesPerPixel = 4;
+  //     pixel_format = "MTLPixelFormatBGRA8Unorm";
+  //     break;
+  //   default:
+  //     return {};
+  // }
 
-  // Zero initialized so that errors are easier to find at the cost of
-  // performance.
-  sk_sp<SkData> result =
-      SkData::MakeZeroInitialized(texture.width * texture.height * bytesPerPixel);
-  [texture getBytes:result->writable_data()
-        bytesPerRow:texture.width * bytesPerPixel
-         fromRegion:MTLRegionMake2D(0, 0, texture.width, texture.height)
-        mipmapLevel:0];
+  // // Zero initialized so that errors are easier to find at the cost of
+  // // performance.
+  // sk_sp<SkData> result =
+  //     SkData::MakeZeroInitialized(texture.width * texture.height * bytesPerPixel);
+  // [texture getBytes:result->writable_data()
+  //       bytesPerRow:texture.width * bytesPerPixel
+  //        fromRegion:MTLRegionMake2D(0, 0, texture.width, texture.height)
+  //       mipmapLevel:0];
   return {
-      .pixel_format = pixel_format,
-      .data = result,
+      // .pixel_format = pixel_format,
+      // .data = result,
   };
 }
 
