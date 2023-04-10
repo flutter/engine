@@ -159,7 +159,7 @@ class Chrome extends Browser {
       return process;
     }), remoteDebuggerCompleter.future);
   }
-  
+
   Chrome._(this._process, this.remoteDebuggerUrl);
 
   static Future<String> generateUserDirectory(
