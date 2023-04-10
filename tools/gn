@@ -1028,7 +1028,7 @@ def parse_args(args):
   parser.add_argument('--lsan', default=False, action='store_true')
   parser.add_argument('--msan', default=False, action='store_true')
   parser.add_argument('--tsan', default=False, action='store_true')
-  parser.add_argument('--ubsan', default=False, action='store_true')
+  parser.add_argument('--ubsan', default=True, action='store_true')
 
   parser.add_argument(
       '--fstack-protector',
