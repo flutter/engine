@@ -390,6 +390,7 @@ def to_gn_args(args):
     gn_args['dart_debug'] = True
     gn_args['dart_debug_optimization_level'] = '0'
 
+  gn_args['dart_debug'] = True
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.

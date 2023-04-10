@@ -53,6 +53,10 @@ static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
+    "--verify-before-gc",
+    "--verify-after -gc",
+    "--verify-store-buffer",
+    "--verify-after-marking",
     // 'mark_when_idle' appears to cause a regression, turning off for now.
     // "--mark_when_idle",
     // clang-format on
