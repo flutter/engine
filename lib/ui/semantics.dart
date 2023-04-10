@@ -233,7 +233,7 @@ class SemanticsAction {
 
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);
 
-  static SemanticsAction? fromAction(int index) => _kActionById[index];
+  static SemanticsAction? fromIndex(int index) => _kActionById[index];
 
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
@@ -571,7 +571,7 @@ class SemanticsFlag {
 
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
 
-  static SemanticsFlag? fromFlag(int index) => _kFlagById[index];
+  static SemanticsFlag? fromIndex(int index) => _kFlagById[index];
 
   /// Temporary API until [values] return a list.
   /// https://github.com/flutter/flutter/issues/123346
