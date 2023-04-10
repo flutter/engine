@@ -27,7 +27,7 @@ config("icu_bidi_public") {
   }
 }
 
-static_library("icu_bidi") {
+source_set("icu_bidi") {
   defines = [
     "U_COMMON_IMPLEMENTATION",
     "U_STATIC_IMPLEMENTATION",
@@ -47,6 +47,7 @@ static_library("icu_bidi") {
     "//third_party/icu/source/common/ustrtrns.cpp",
     "//third_party/icu/source/common/utf_impl.cpp",
     "//third_party/icu/source/common/utrie2.cpp",
+    "//third_party/icu/source/common/utypes.cpp",
   ]
   public_configs = [ ":icu_bidi_public" ]
   cflags = [ "-w" ]
