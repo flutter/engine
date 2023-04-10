@@ -414,7 +414,7 @@ shared_library("copy_and_verify_framework_module") {
   visibility = [ ":*" ]
   cflags_objc = [ "-F$framework_search_path" ]
 
-  sources = [ "framework/Source/FlutterUmbrellaImportTests.m" ]
+  sources = [ "framework/Source/FlutterUmbrellaImport.m" ]
   deps = [
     ":copy_framework_headers",
     ":copy_framework_info_plist",

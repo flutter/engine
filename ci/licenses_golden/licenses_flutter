@@ -2541,7 +2541,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextu
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImportTests.m + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.mm + ../../../flutter/LICENSE
@@ -5133,7 +5133,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTexture
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImportTests.m
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.mm
