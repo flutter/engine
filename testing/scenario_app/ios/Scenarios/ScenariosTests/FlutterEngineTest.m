@@ -12,6 +12,8 @@
 
 @implementation FlutterEngineTest
 
+extern NSNotificationName const FlutterViewControllerWillDealloc;
+
 - (void)testIsolateId {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   XCTAssertNil(engine.isolateId);
