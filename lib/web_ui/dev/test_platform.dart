@@ -17,6 +17,7 @@ import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_packages_handler/shelf_packages_handler.dart';
+import 'package:shelf_static/shelf_static.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:skia_gold_client/skia_gold_client.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -88,6 +89,10 @@ class BrowserPlatform extends PlatformPlugin {
 
         // Serves source files from the engine src root for devtools debugging.
         .add(_createSourceHandler())
+
+        // Serves files from the root of web_ui. Some tests download assets that are embedded
+        // directly in the test folder, such as test/engine/image/sample_image1.png etc
+        .add(createStaticHandler(env.environment.webUiRootDir.path))
 
         // Serves absolute package URLs (i.e. not /packages/* but /Users/user/*/hosted/pub.dartlang.org/*).
         // This handler goes last, after all more specific handlers failed to handle the request.
