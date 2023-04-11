@@ -514,14 +514,26 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
-            final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
+            final Map<String, Object?> arguments = decoded.arguments as Map<String, Object?>;
             // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
+            final int? primaryColor = arguments['primaryColor'] as int?;
+            if (primaryColor != null) {
+              domWindow.console.warn(
+                  'The `primaryColor` in `SystemChrome.setApplicationSwitcherDescription` '
+                      'is deprecated on the web.\n'
+                      'Use `SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: ...)) '
+                      'instead.\n'
+                      'If you did not directly call the `SystemChrome.setSystemUIOverlayStyle` '
+                      'method, you can ignore this message. It is most likely '
+                      'triggered by the `Title` widget, which is used by `MaterialApp` / `CupertinoApp` / `WidgetsApp`.\n'
+                      'See: https://github.com/flutter/flutter/issues/123365');
+            }
             domDocument.title = label;
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setSystemUIOverlayStyle':
-            final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
+            final Map<String, Object?> arguments = decoded.arguments as Map<String, Object?>;
             final int? statusBarColor = arguments['statusBarColor'] as int?;
             setThemeColor(statusBarColor == null ? null : ui.Color(statusBarColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));

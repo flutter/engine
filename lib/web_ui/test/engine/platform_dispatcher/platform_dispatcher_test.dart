@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import 'common.dart';
+import '../../canvaskit/common.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);

@@ -691,8 +691,8 @@ void setThemeColor(ui.Color? color) {
       domDocument.head!.append(theme);
     }
     theme.content = colorToCssString(color)!;
-  } else if (theme != null) {
-    theme.remove();
+  } else {
+    theme?.remove();
   }
 }
 
