@@ -524,7 +524,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                       'is deprecated on the web.\n'
                       'Use `SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: ...)) '
                       'instead.\n'
-                      'If you did not directly call the `SystemChrome.setSystemUIOverlayStyle` '
+                      'If you did not directly call the `SystemChrome.setApplicationSwitcherDescription` '
                       'method, you can ignore this message. It is most likely '
                       'triggered by the `Title` widget, which is used by `MaterialApp` / `CupertinoApp` / `WidgetsApp`.\n'
                       'See: https://github.com/flutter/flutter/issues/123365');
