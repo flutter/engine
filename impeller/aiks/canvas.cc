@@ -169,8 +169,9 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 void Canvas::DrawPaint(const Paint& paint) {
   if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
       GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
-      // TODO(bdero): Add remaining blend modes to Color::BlendColor.
-      paint.blend_mode < BlendMode::kHue  //
+      // TODO(bdero): Fix the advanced blends in Color::BlendColor.
+      //              https://github.com/flutter/flutter/issues/124623
+      paint.blend_mode <= Entity::kLastPipelineBlendMode  //
   ) {
     // Then we can absorb this drawPaint as the clear color of the pass.
     auto color = Color::BlendColor(
