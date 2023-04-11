@@ -38,7 +38,12 @@ flutter::DlColor toColor(const float* components) {
       Color(components[0], components[1], components[2], components[3])));
 }
 
+
+#ifdef IMPELLER_GOLDEN_TESTS
+using DisplayListTest = GoldenPlaygroundDLTest;
+#else
 using DisplayListTest = DisplayListPlayground;
+#endif
 INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
 
 TEST_P(DisplayListTest, CanDrawRect) {

@@ -23,6 +23,17 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
     "Metal",
     "impeller_Play_AiksTest_SceneColorSource_Metal",
+    "impeller_Play_DisplayList_CanDrawArc_Metal",
+    "impeller_Play_DisplayList_StrokedPathsDrawCorrectly_Metal",
+    "impeller_Play_DisplayList_CanDrawWithImageBlurFilter_Metal",
+    "impeller_Play_DisplayList_"
+    "SaveLayerWithColorMatrixFiltersAndAlphaDrawCorrectly_Metal",
+    "impeller_Play_DisplayList_SaveLayerWithBlendFiltersAndAlphaDrawCorrectly_"
+    "Metal",
+    "impeller_Play_DisplayList_CanDrawBackdropFilter_Metal",
+    "impeller_Play_DisplayList_CanDrawWithMatrixFilter_Metal",
+    "impeller_Play_DisplayList_CanDrawWithMatrixFilterWhenSavingLayer_Metal",
+    "impeller_Play_DisplayList_DrawVerticesBlendModes_Metal",
 };
 
 namespace {
