@@ -390,8 +390,6 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
     auto options = OptionsFromPass(pass);
     cmd.pipeline = renderer.GetPipelineBlendPipeline(options);
 
-    // TODO: clear, src, dst.
-
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
 
