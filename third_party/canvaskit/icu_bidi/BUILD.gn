@@ -27,7 +27,7 @@ config("icu_bidi_public") {
   }
 }
 
-source_set("icu_bidi") {
+static_library("icu_bidi") {
   defines = [
     "U_COMMON_IMPLEMENTATION",
     "U_STATIC_IMPLEMENTATION",

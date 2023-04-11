@@ -49,7 +49,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     );
     argParser.addFlag(
       'dwarf',
-      help: 'Embed dwarf debugging info into the output wasm modules. This is'
+      help: 'Embed DWARF debugging info into the output wasm modules. This is '
           'only valid in debug mode.',
     );
   }
@@ -70,7 +70,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   @override
   FutureOr<bool> run() async {
     if (embedDwarf && runtimeMode != RuntimeMode.debug) {
-      throw ToolExit('Embedding dwarf data requires debug runtime mode.');
+      throw ToolExit('Embedding DWARF data requires debug runtime mode.');
     }
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[

@@ -86,7 +86,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'dwarf',
-        help: 'Debug wasm modules using embedded dwarf data.'
+        help: 'Debug wasm modules using embedded DWARF data.'
       )
       ..addFlag(
         'require-skia-gold',

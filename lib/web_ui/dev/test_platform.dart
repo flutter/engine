@@ -87,15 +87,7 @@ class BrowserPlatform extends PlatformPlugin {
         // Serves the initial HTML for the test.
         .add(_testBootstrapHandler)
 
-        // Serves files from the root of web_ui.
-        //
-        // This is needed because sourcemaps refer to local files, i.e. those
-        // that don't come from package dependencies, relative to web_ui/.
-        //
-        // Examples of URLs that this handles:
-        //  * /test/alarm_clock_test.dart
-        //  * /lib/src/engine/alarm_clock.dart
-        .add(createStaticHandler(env.environment.webUiRootDir.path))
+        // Serves source files from the engine src root for devtools debugging.
         .add(_createSourceHandler())
 
         // Serves absolute package URLs (i.e. not /packages/* but /Users/user/*/hosted/pub.dartlang.org/*).
