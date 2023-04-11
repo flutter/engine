@@ -880,7 +880,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   node.label = "foo";
   [object setSemanticsNode:&node];
   XCTAssertTrue((object.accessibilityTraits & UIAccessibilityTraitButton) > 0);
-  XCTAssertEqual(object.accessibilityValue, nil);
+  XCTAssertNil(object.accessibilityValue);
 }
 
 - (void)testFlutterSwitchSemanticsObjectMatchesUISwitchDisabled {

@@ -699,7 +699,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   FlutterSemanticsObject* rootNode = [rootContainer accessibilityElementAtIndex:0];
 
   XCTAssertTrue((rootNode.accessibilityTraits & UIAccessibilityTraitButton) > 0);
-  XCTAssertEqual(rootNode.accessibilityValue, nil);
+  XCTAssertNil(rootNode.accessibilityValue);
 }
 
 - (void)testLayoutChangeWithNonAccessibilityElement {
