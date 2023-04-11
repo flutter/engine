@@ -13,10 +13,6 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-class NotAColor extends Color {
-  const NotAColor(super.value);
-}
-
 Future<void> testMain() async {
   setUpUiTest();
 
