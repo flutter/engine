@@ -3987,19 +3987,19 @@ TEST_F(ShellTest, PictureToImageSync) {
 }
 
 TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
-#if !SHELL_ENABLE_GL
-  // This test uses the GL backend.
+#if !SHELL_ENABLE_METAL
+  // This test uses the Metal backend.
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_GL
+#endif  // !SHELL_ENABLE_METAL
   auto settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   std::unique_ptr<Shell> shell =
-      CreateShell(settings,                                       //
-                  GetTaskRunnersForFixture(),                     //
-                  false,                                          //
-                  nullptr,                                        //
-                  false,                                          //
-                  ShellTestPlatformView::BackendType::kGLBackend  //
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
       );
 
   AddNativeCallback("NativeOnBeforeToImageSync",

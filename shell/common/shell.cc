@@ -208,7 +208,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
-        rasterizer->SetImpellerContext(std::move(impeller_context));
+        rasterizer->SetImpellerContext(impeller_context);
         snapshot_delegate_promise.set_value(rasterizer->GetSnapshotDelegate());
         rasterizer_promise.set_value(std::move(rasterizer));
       });
