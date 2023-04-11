@@ -65,10 +65,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   bool get host => boolArg('host');
 
   List<String> get targets => argResults?.rest ?? <String>[];
+  bool get embedDwarf => boolArg('dwarf');
 
   @override
   FutureOr<bool> run() async {
-    final bool embedDwarf = boolArg('dwarf');
     if (embedDwarf && runtimeMode != RuntimeMode.debug) {
       throw ToolExit('Embedding dwarf data requires debug runtime mode.');
     }
