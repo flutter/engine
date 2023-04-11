@@ -20,16 +20,6 @@ AndroidSurfaceGLImpeller::AndroidSurfaceGLImpeller(
     return;
   }
 
-  if (!android_context_->ResourceContextMakeCurrent(offscreen_surface_.get())) {
-    FML_DLOG(ERROR) << "Could not make offscreen context current.";
-    return;
-  }
-
-  if (!android_context_->ResourceContextClearCurrent()) {
-    FML_DLOG(ERROR) << "Could not clear offscreen context.";
-    return;
-  }
-
   // The onscreen surface will be acquired once the native window is set.
 
   is_valid_ = true;
