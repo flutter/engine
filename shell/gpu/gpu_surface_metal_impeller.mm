@@ -91,7 +91,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         }
 
         if (!disable_partial_repaint_) {
+          // this isn't correct.
+
           uintptr_t texture = reinterpret_cast<uintptr_t>(metal_drawable.texture);
+          auto damage_rect = damage_[texture];
+          surface->SetDamageRect(damage_rect.x(), damage_rect.y(), damage_rect.width(),
+                                 damage_rect.height());
+
           for (auto& entry : damage_) {
             if (entry.first != texture) {
               // Accumulate damage for other framebuffers

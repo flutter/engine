@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -33,7 +34,7 @@ class SurfaceMTL final : public Surface {
   /// @return     A pointer to the wrapped surface or null.
   ///
   static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
-      const std::shared_ptr<Context>& context,
+      std::shared_ptr<Context> context,
       CAMetalLayer* layer);
 #pragma GCC diagnostic pop
 
@@ -42,10 +43,20 @@ class SurfaceMTL final : public Surface {
 
   id<MTLDrawable> drawable() const { return drawable_; }
 
- private:
-  id<MTLDrawable> drawable_ = nil;
+  void SetDamageRect(Scalar x, Scalar y, Scalar width, Scalar height) {
+    damage_rect_ = IRect::MakeXYWH(x,y, width, height);
+  }
 
-  SurfaceMTL(const RenderTarget& target, id<MTLDrawable> drawable);
+ private:
+  std::shared_ptr<Context> context_;
+  std::shared_ptr<Texture> resolve_texture_;
+  id<CAMetalDrawable> drawable_ = nil;
+  std::optional<IRect> damage_rect_ = std::nullopt;
+
+  SurfaceMTL(std::shared_ptr<Context> context,
+             const RenderTarget& target,
+             std::shared_ptr<Texture> resolve_texture,
+             id<CAMetalDrawable> drawable);
 
   // |Surface|
   bool Present() const override;

@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/impeller/renderer/command_buffer.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
@@ -16,7 +17,7 @@ namespace impeller {
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
 std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
-    const std::shared_ptr<Context>& context,
+    std::shared_ptr<Context> context,
     CAMetalLayer* layer) {
   TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
 
@@ -67,8 +68,12 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   resolve_tex_desc.sample_count = SampleCount::kCount1;
   resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
+  // Create color resolve texture.
   std::shared_ptr<Texture> resolve_tex =
-      std::make_shared<TextureMTL>(resolve_tex_desc, current_drawable.texture);
+      context->GetResourceAllocator()->CreateTexture(resolve_tex_desc);
+  // std::shared_ptr<Texture> resolve_tex =
+  //     std::make_shared<TextureMTL>(resolve_tex_desc,
+  //     current_drawable.texture);
   if (!resolve_tex) {
     VALIDATION_LOG << "Could not wrap resolve texture.";
     return nullptr;
@@ -111,12 +116,18 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   render_target_desc.SetStencilAttachment(stencil0);
 
   // The constructor is private. So make_unique may not be used.
-  return std::unique_ptr<SurfaceMTL>(
-      new SurfaceMTL(render_target_desc, current_drawable));
+  return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(
+      context, render_target_desc, resolve_tex, current_drawable));
 }
 
-SurfaceMTL::SurfaceMTL(const RenderTarget& target, id<MTLDrawable> drawable)
-    : Surface(target), drawable_(drawable) {}
+SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
+                       const RenderTarget& target,
+                       std::shared_ptr<Texture> resolve_texture,
+                       id<CAMetalDrawable> drawable)
+    : Surface(target),
+      context_(context),
+      resolve_texture_(resolve_texture),
+      drawable_(drawable) {}
 
 // |Surface|
 SurfaceMTL::~SurfaceMTL() = default;
@@ -124,6 +135,19 @@ SurfaceMTL::~SurfaceMTL() = default;
 // |Surface|
 bool SurfaceMTL::Present() const {
   if (drawable_ == nil) {
+    return false;
+  }
+  auto command_buffer = context_->CreateCommandBuffer();
+  if (!command_buffer) {
+    return false;
+  }
+
+  auto blit_pass = command_buffer->CreateBlitPass();
+  auto current = TextureMTL::Wrapper({}, drawable_.texture);
+  blit_pass->AddCopy(resolve_texture_, current, damage_rect_.value(),
+                     damage_rect_->origin);
+  blit_pass->EncodeCommands(context_->GetResourceAllocator());
+  if (!command_buffer->SubmitCommands()) {
     return false;
   }
 
