@@ -1980,5 +1980,45 @@ static Picture BlendModeSaveLayerTest(BlendMode blend_mode) {
   }
 IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
 
+TEST_P(AiksTest, SaveLayerWithColorBlendFilterDrawsCorrectly) {
+  Canvas canvas;
+  FilterInput::Ref input;
+
+  canvas.DrawRect(Rect::MakeLTRB(100, 100, 400, 400), {.color = Color::Blue()});
+  canvas.SaveLayer({
+      .color = Color::Black(),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+  canvas.DrawRect(Rect::MakeLTRB(100, 300, 400, 400), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SaveLayerWithImageBlendFilterDrawsCorrectly) {
+  Canvas canvas;
+  FilterInput::Ref input;
+
+  canvas.DrawRect(Rect::MakeLTRB(100, 100, 400, 400), {.color = Color::Blue()});
+  canvas.SaveLayer({
+      .color = Color::Black(),
+      .image_filter =
+          [](FilterInput::Ref input, const Matrix& effect_transform,
+             bool is_subpass) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+
+  canvas.DrawRect(Rect::MakeLTRB(100, 300, 400, 400), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
