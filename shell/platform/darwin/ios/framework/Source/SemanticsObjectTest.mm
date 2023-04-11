@@ -879,7 +879,6 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
                static_cast<int32_t>(flutter::SemanticsFlags::kIsEnabled);
   node.label = "foo";
   [object setSemanticsNode:&node];
-  NSLog(@"object.accessibilityTraits %llu", object.accessibilityTraits);
   XCTAssertTrue((object.accessibilityTraits & UIAccessibilityTraitButton) > 0);
   XCTAssertEqual(object.accessibilityValue, nil);
 }
