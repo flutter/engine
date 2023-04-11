@@ -23,8 +23,10 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
+#if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/renderer/context.h"
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
@@ -34,6 +36,13 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+
+#if !IMPELLER_SUPPORTS_RENDERING
+namespace impeller {
+class Context;
+class AiksContext;
+}  // namespace impeller
+#endif  // !IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -515,12 +524,14 @@ class Rasterizer final : public SnapshotDelegate,
 
   // |SnapshotController::Delegate|
   std::shared_ptr<impeller::AiksContext> GetAiksContext() const override {
+#if IMPELLER_SUPPORTS_RENDERING
     if (surface_) {
       return surface_->GetAiksContext();
     }
     if (auto context = impeller_context_.lock()) {
       return std::make_shared<impeller::AiksContext>(context);
     }
+#endif
     return nullptr;
   }
 
