@@ -15,6 +15,10 @@ using namespace Skwasm;
 namespace {
 // These numbers have been chosen empirically to give a result closest to the
 // material spec.
+// These values are also used by the CanvasKit renderer and the native engine.
+// See:
+//   flutter/display_list/skia/dl_sk_dispatcher.cc
+//   flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 constexpr SkScalar kShadowAmbientAlpha = 0.039;
 constexpr SkScalar kShadowSpotAlpha = 0.25;
 constexpr SkScalar kShadowLightRadius = 1.1;
