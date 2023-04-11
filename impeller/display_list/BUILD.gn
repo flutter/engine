@@ -67,3 +67,20 @@ impeller_component("display_list_unittests") {
     defines += [ "IMPELLER_ENABLE_3D" ]
   }
 }
+
+impeller_component("display_list_unittests_golden") {
+  testonly = true
+
+  defines = [ "IMPELLER_GOLDEN_TESTS" ]
+
+  sources = [
+    "display_list_playground.cc",
+    "display_list_playground.h",
+    "display_list_unittests.cc",
+  ]
+
+  deps = [
+    ":display_list",
+    "../playground:playground_test",
+  ]
+}

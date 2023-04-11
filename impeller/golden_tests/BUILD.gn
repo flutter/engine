@@ -72,6 +72,8 @@ if (is_mac) {
       ":metal_screenshot",
       "//flutter/impeller/aiks",
       "//flutter/impeller/aiks:aiks_unittests_golden",
+      "//flutter/impeller/display_list",
+      "//flutter/impeller/display_list:display_list_unittests_golden",
       "//flutter/impeller/fixtures",
       "//third_party/googletest:gtest",
     ]
