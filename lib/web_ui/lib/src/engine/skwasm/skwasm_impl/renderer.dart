@@ -240,7 +240,7 @@ class SkwasmRenderer implements Renderer {
     await surface.renderPicture(picture);
 
     // TODO(jacksongardner): Remove this hack. See https://github.com/flutter/flutter/issues/124616
-    await Future.delayed(Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
   }
 
   @override
