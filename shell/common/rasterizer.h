@@ -24,9 +24,10 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #if IMPELLER_SUPPORTS_RENDERING
-#include "flutter/impeller/aiks/aiks_context.h"
-#include "flutter/impeller/renderer/context.h"
-#endif  // IMPELLER_SUPPORTS_RENDERING
+// GN is having trouble understanding how this works in the Fuchsia builds.
+#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
+#include "flutter/impeller/renderer/context.h"   // nogncheck
+#endif                                           // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"

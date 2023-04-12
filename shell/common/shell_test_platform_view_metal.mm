@@ -34,7 +34,8 @@ class DarwinContextMetal {
   DarwinContextMetal(bool impeller)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
         impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc] init] : nil),
-        offscreen_texture_(CreateOffscreenTexture(MTLCreateSystemDefaultDevice())) {}
+        offscreen_texture_(CreateOffscreenTexture(
+            impeller ? [impeller_context_ context]->GetMTLDevice() : [context_ device])) {}
 
   ~DarwinContextMetal() = default;
 
