@@ -1985,7 +1985,7 @@ TEST_P(AiksTest, SaveLayerWithBlendColorFilterDrawsCorrectly) {
 
   canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
   canvas.SaveLayer({
-      .color = Color::Black(),
+      .color = Color::Black().WithAlpha(0.5),
       .color_filter =
           [](FilterInput::Ref input) {
             return ColorFilterContents::MakeBlend(
@@ -2003,7 +2003,7 @@ TEST_P(AiksTest, SaveLayerWithBlendImageFilterDrawsCorrectly) {
 
   canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
   canvas.SaveLayer({
-      .color = Color::Black(),
+      .color = Color::Black().WithAlpha(0.5),
       .image_filter =
           [](FilterInput::Ref input, const Matrix& effect_transform,
              bool is_subpass) {
@@ -2025,7 +2025,7 @@ TEST_P(AiksTest, SaveLayerWithColorMatrixColorFiltersDrawsCorrectly) {
 
   canvas.DrawImage(image, {100, 100}, {});
   canvas.SaveLayer({
-      .color = Color::Black(),
+      .color = Color::Black().WithAlpha(0.5),
       .color_filter =
           [](FilterInput::Ref input) {
             return ColorFilterContents::MakeColorMatrix({std::move(input)},
@@ -2050,7 +2050,7 @@ TEST_P(AiksTest, SaveLayerWithColorMatrixImageFiltersDrawsCorrectly) {
   auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
   canvas.DrawImage(image, {100, 100}, {});
   canvas.SaveLayer({
-      .color = Color::Black(),
+      .color = Color::Black().WithAlpha(0.5),
       .image_filter =
           [](FilterInput::Ref input, const Matrix& effect_transform,
              bool is_subpass) {
