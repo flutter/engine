@@ -44,8 +44,6 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 #endif
 }
 
-// Note: this shader reduces the number of branches required by conditionally
-// modifying the foreground color.
 void main() {
   f16vec4 dst_color =
       texture(texture_sampler_dst, v_texture_coords) * frag_info.input_alpha;

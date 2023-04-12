@@ -8442,6 +8442,128 @@
       }
     }
   },
+  "flutter/impeller/entity/gles/pipeline_blend.frag.gles": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/gles/pipeline_blend.frag.gles",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 100,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt",
+              "varying",
+              "texture"
+            ],
+            "longest_path_cycles": [
+              0.25,
+              0.0625,
+              0.25,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "varying",
+              "texture"
+            ],
+            "shortest_path_cycles": [
+              0.0625,
+              0.0625,
+              0.046875,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ],
+            "total_bound_pipelines": [
+              "arith_total",
+              "arith_fma"
+            ],
+            "total_cycles": [
+              0.53125,
+              0.53125,
+              0.390625,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 18,
+          "work_registers_used": 20
+        }
+      }
+    },
+    "Mali-T880": {
+      "core": "Mali-T880",
+      "filename": "flutter/impeller/entity/gles/pipeline_blend.frag.gles",
+      "has_uniform_computation": false,
+      "type": "Fragment",
+      "variants": {
+        "Main": {
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "arithmetic"
+            ],
+            "longest_path_cycles": [
+              3.9600000381469727,
+              1.0,
+              1.0
+            ],
+            "pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_cycles": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "total_bound_pipelines": [
+              "arithmetic"
+            ],
+            "total_cycles": [
+              13.333333015441895,
+              1.0,
+              1.0
+            ]
+          },
+          "thread_occupancy": 100,
+          "uniform_registers_used": 1,
+          "work_registers_used": 2
+        }
+      }
+    }
+  },
   "flutter/impeller/entity/gles/position_color.vert.gles": {
     "Mali-G78": {
       "core": "Mali-G78",
@@ -11853,6 +11975,79 @@
           "thread_occupancy": 100,
           "uniform_registers_used": 22,
           "work_registers_used": 9
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/pipeline_blend.frag.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/pipeline_blend.frag.vkspv",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 100,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "varying",
+              "texture"
+            ],
+            "longest_path_cycles": [
+              0.21875,
+              0.0625,
+              0.21875,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "varying",
+              "texture"
+            ],
+            "shortest_path_cycles": [
+              0.0625,
+              0.0625,
+              0.046875,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ],
+            "total_bound_pipelines": [
+              "arith_total",
+              "arith_fma"
+            ],
+            "total_cycles": [
+              0.53125,
+              0.53125,
+              0.359375,
+              0.0,
+              0.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 18,
+          "work_registers_used": 7
         }
       }
     }

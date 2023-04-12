@@ -354,6 +354,7 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
+  // TODO clear, src, dst.
 
   RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
                             blend_mode, absorb_opacity, alpha](
@@ -408,6 +409,7 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
     frag_info.input_alpha =
         absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
 
+    FML_DCHECK(blend_mode > BlendMode::kDestination);
     frag_info.operation = static_cast<Scalar>(blend_mode);
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
