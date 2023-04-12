@@ -1980,11 +1980,10 @@ static Picture BlendModeSaveLayerTest(BlendMode blend_mode) {
   }
 IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
 
-TEST_P(AiksTest, SaveLayerWithColorBlendFilterDrawsCorrectly) {
+TEST_P(AiksTest, SaveLayerWithBlendColorFilterDrawsCorrectly) {
   Canvas canvas;
-  FilterInput::Ref input;
 
-  canvas.DrawRect(Rect::MakeLTRB(100, 100, 400, 400), {.color = Color::Blue()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
   canvas.SaveLayer({
       .color = Color::Black(),
       .color_filter =
@@ -1993,17 +1992,16 @@ TEST_P(AiksTest, SaveLayerWithColorBlendFilterDrawsCorrectly) {
                 BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
           },
   });
-  canvas.DrawRect(Rect::MakeLTRB(100, 300, 400, 400), {.color = Color::Blue()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, SaveLayerWithImageBlendFilterDrawsCorrectly) {
+TEST_P(AiksTest, SaveLayerWithBlendImageFilterDrawsCorrectly) {
   Canvas canvas;
-  FilterInput::Ref input;
 
-  canvas.DrawRect(Rect::MakeLTRB(100, 100, 400, 400), {.color = Color::Blue()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
   canvas.SaveLayer({
       .color = Color::Black(),
       .image_filter =
@@ -2014,7 +2012,58 @@ TEST_P(AiksTest, SaveLayerWithImageBlendFilterDrawsCorrectly) {
           },
   });
 
-  canvas.DrawRect(Rect::MakeLTRB(100, 300, 400, 400), {.color = Color::Blue()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SaveLayerWithColorMatrixColorFiltersDrawsCorrectly) {
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+
+  Canvas canvas;
+
+  canvas.DrawImage(image, {100, 100}, {});
+  canvas.SaveLayer({
+      .color = Color::Black(),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeColorMatrix({std::move(input)},
+                                                        {.array = {
+                                                             1, 0, 0, 0, 0,  //
+                                                             0, 1, 0, 0, 0,  //
+                                                             0, 0, 1, 0, 0,  //
+                                                             0, 0, 0, 2, 0   //
+                                                         }});
+          },
+  });
+  canvas.DrawImage(image, {100, 500}, {});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SaveLayerWithColorMatrixImageFiltersDrawsCorrectly) {
+  Canvas canvas;
+  FilterInput::Ref input;
+
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {100, 100}, {});
+  canvas.SaveLayer({
+      .color = Color::Black(),
+      .image_filter =
+          [](FilterInput::Ref input, const Matrix& effect_transform,
+             bool is_subpass) {
+            return ColorFilterContents::MakeColorMatrix({std::move(input)},
+                                                        {.array = {
+                                                             1, 0, 0, 0, 0,  //
+                                                             0, 1, 0, 0, 0,  //
+                                                             0, 0, 1, 0, 0,  //
+                                                             0, 0, 0, 2, 0   //
+                                                         }});
+          },
+  });
+  canvas.DrawImage(image, {100, 500}, {});
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
