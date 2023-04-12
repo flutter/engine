@@ -59,6 +59,27 @@ external ShaderHandle shaderCreateRadialGradient(
   RawMatrix33 localMatrix,
 );
 
+@Native<ShaderHandle Function(
+  RawPointArray,
+  Float,
+  Float,
+  RawColorArray,
+  Pointer<Float>,
+  Int,
+  Int,
+  RawMatrix33,
+)>(symbol: 'shader_createConicalGradient', isLeaf: true)
+external ShaderHandle shaderCreateConicalGradient(
+  RawPointArray endPoints, // Two points,
+  double startRadius,
+  double endRadius,
+  RawColorArray colors,
+  Pointer<Float> stops,
+  int count,
+  int tileMode,
+  RawMatrix33 localMatrix,
+);
+
 @Native<Void Function(ShaderHandle)>(symbol: 'shader_dispose', isLeaf: true)
 external void shaderDispose(ShaderHandle handle);
 

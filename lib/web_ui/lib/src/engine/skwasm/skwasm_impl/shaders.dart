@@ -81,6 +81,38 @@ class SkwasmGradient extends SkwasmShader implements ui.Gradient {
     return SkwasmGradient._(handle);
   });
 
+  factory SkwasmGradient.conical({
+    required ui.Offset focal,
+    required double focalRadius,
+    required ui.Offset center,
+    required double centerRadius,
+    required List<ui.Color> colors,
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4,
+  }) => withStackScope((StackScope scope) {
+    final RawPointArray endPoints = 
+      scope.convertPointArrayToNative(<ui.Offset>[focal, center]);
+    final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
+    final Pointer<Float> rawStops = colorStops != null
+      ? scope.convertDoublesToNative(colorStops)
+      : nullptr;
+    final Pointer<Float> matrix = matrix4 != null
+      ? scope.convertMatrix4toSkMatrix(matrix4)
+      : nullptr;
+    final ShaderHandle handle = shaderCreateConicalGradient(
+      endPoints,
+      focalRadius,
+      centerRadius,
+      rawColors,
+      rawStops,
+      colors.length,
+      tileMode.index,
+      matrix
+    );
+    return SkwasmGradient._(handle);
+  });
+
   SkwasmGradient._(this.handle);
 
   @override

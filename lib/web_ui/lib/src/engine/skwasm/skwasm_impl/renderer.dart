@@ -45,9 +45,24 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Gradient createConicalGradient(ui.Offset focal, double focalRadius, ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix]) {
-    throw UnimplementedError('createConicalGradient not yet implemented');
-  }
+  ui.Gradient createConicalGradient(
+    ui.Offset focal,
+    double focalRadius,
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix]) => SkwasmGradient.conical(
+      focal: focal,
+      focalRadius: focalRadius,
+      center: center,
+      centerRadius: radius,
+      colors: colors,
+      colorStops: colorStops,
+      tileMode: tileMode,
+      matrix4: matrix,
+    );
 
   @override
   ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {

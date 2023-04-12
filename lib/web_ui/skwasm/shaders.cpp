@@ -36,9 +36,7 @@ SKWASM_EXPORT SkShader *shader_createLinearGradient(
             colors,
             stops,
             count,
-            tileMode,
-            0,
-            nullptr
+            tileMode
         ).release();
     }
 }
@@ -72,12 +70,50 @@ SKWASM_EXPORT SkShader *shader_createRadialGradient(
             colors,
             stops,
             count,
-            tileMode,
-            0,
-            nullptr
+            tileMode
         ).release();
     }
 }
+
+SKWASM_EXPORT SkShader *shader_createConicalGradient(
+    SkPoint *endPoints, // Two points
+    SkScalar startRadius,
+    SkScalar endRadius,
+    SkColor *colors,
+    SkScalar *stops,
+    int count,
+    SkTileMode tileMode,
+    SkScalar *matrix33
+) {
+    if (matrix33) {
+        SkMatrix localMatrix = createMatrix(matrix33);
+        return SkGradientShader::MakeTwoPointConical(
+            endPoints[0],
+            startRadius,
+            endPoints[1],
+            endRadius,
+            colors,
+            stops,
+            count,
+            tileMode,
+            0,
+            &localMatrix
+        ).release();
+
+    } else {
+        return SkGradientShader::MakeTwoPointConical(
+            endPoints[0],
+            startRadius,
+            endPoints[1],
+            endRadius,
+            colors,
+            stops,
+            count,
+            tileMode
+        ).release();
+    }
+}
+
 
 SKWASM_EXPORT void shader_dispose(SkShader *shader) {
     shader->unref();
