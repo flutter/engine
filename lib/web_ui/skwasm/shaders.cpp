@@ -114,6 +114,46 @@ SKWASM_EXPORT SkShader *shader_createConicalGradient(
     }
 }
 
+SKWASM_EXPORT SkShader *shader_createSweepGradient(
+    SkScalar centerX,
+    SkScalar centerY,
+    SkColor *colors,
+    SkScalar *stops,
+    int count,
+    SkTileMode tileMode,
+    SkScalar startAngle,
+    SkScalar endAngle,
+    SkScalar *matrix33
+) {
+    if (matrix33) {
+        SkMatrix localMatrix = createMatrix(matrix33);
+        return SkGradientShader::MakeSweep(
+            centerX,
+            centerY,
+            colors,
+            stops,
+            count,
+            tileMode,
+            startAngle,
+            endAngle,
+            0,
+            &localMatrix
+        ).release();
+    } else {
+        return SkGradientShader::MakeSweep(
+            centerX,
+            centerY,
+            colors,
+            stops,
+            count,
+            tileMode,
+            startAngle,
+            endAngle,
+            0,
+            nullptr
+        ).release();
+    }
+}
 
 SKWASM_EXPORT void shader_dispose(SkShader *shader) {
     shader->unref();

@@ -172,9 +172,15 @@ class SkwasmRenderer implements Renderer {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float32List? matrix4
-  ]) {
-    throw UnimplementedError('createSweepGradient not yet implemented');
-  }
+  ]) => SkwasmGradient.sweep(
+    center: center,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    startAngle: startAngle,
+    endAngle: endAngle,
+    matrix4: matrix4
+  );
 
   @override
   ui.TextStyle createTextStyle({

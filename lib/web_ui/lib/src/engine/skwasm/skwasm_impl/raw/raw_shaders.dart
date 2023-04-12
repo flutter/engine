@@ -80,6 +80,29 @@ external ShaderHandle shaderCreateConicalGradient(
   RawMatrix33 localMatrix,
 );
 
+@Native<ShaderHandle Function(
+  Float,
+  Float,
+  RawColorArray,
+  Pointer<Float>,
+  Int,
+  Int,
+  Float,
+  Float,
+  RawMatrix33,
+)>(symbol: 'shader_createSweepGradient', isLeaf: true)
+external ShaderHandle shaderCreateSweepGradient(
+  double centerX,
+  double centerY,
+  RawColorArray colors,
+  Pointer<Float> stops,
+  int count,
+  int tileMode,
+  double startAngle,
+  double endAngle,
+  RawMatrix33 localMatrix
+);
+
 @Native<Void Function(ShaderHandle)>(symbol: 'shader_dispose', isLeaf: true)
 external void shaderDispose(ShaderHandle handle);
 
