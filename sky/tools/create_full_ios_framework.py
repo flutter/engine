@@ -104,7 +104,6 @@ def main():
       args, dst, framework, arm64_framework, simulator_framework,
       simulator_x64_framework, simulator_arm64_framework
   )
-  framework_binary = os.path.join(framework, 'Flutter')
   generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir)
   zip_archive(dst)
   return 0
