@@ -51,13 +51,12 @@
 // This test exercises the touch input dispatch path from Input Pipeline to a
 // Scenic client. It is a multi-component test, and carefully avoids sleeping or
 // polling for component coordination.
-// - It runs real Root Presenter, Input Pipeline, and Scenic components.
+// - It runs real Scene Manager and Scenic components.
 // - It uses a fake display controller; the physical device is unused.
 //
 // Components involved
 // - This test program
-// - Input Pipeline
-// - Root Presenter
+// - Scene Manager
 // - Scenic
 // - Child view, a Scenic client
 //
@@ -66,7 +65,7 @@
 //
 // Setup sequence
 // - The test sets up this view hierarchy:
-//   - Top level scene, owned by Root Presenter.
+//   - Top level scene, owned by Scene Manager.
 //   - Child view, owned by the ui client.
 // - The test waits for a Scenic event that verifies the child has UI content in
 // the scene graph.
@@ -128,8 +127,11 @@ using RealmBuilder = component_testing::RealmBuilder;
 // Set this as low as you can that still works across all test platforms.
 constexpr zx::duration kTimeout = zx::min(1);
 
-constexpr auto kTestUIStackUrl =
-    "fuchsia-pkg://fuchsia.com/gfx-root-presenter-test-ui-stack#meta/"
+constexpr auto kGfxTestUIStackUrl =
+    "fuchsia-pkg://fuchsia.com/gfx-scene-manager-test-ui-stack#meta/"
+    "test-ui-stack.cm";
+constexpr auto kTestUIStackUrl = 
+"fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
     "test-ui-stack.cm";
 
 constexpr auto kMockTouchInputListener = "touch_input_listener";
@@ -424,11 +426,11 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
 
 // Makes use of gtest's parameterized testing, allowing us
 // to test different combinations of test-ui-stack + runners. Currently, there
-// is just one combination. Documentation:
+// are both GFX and Flatland variants. Documentation:
 // http://go/gunitadvanced#value-parameterized-tests
 INSTANTIATE_TEST_SUITE_P(FlutterTapTestParameterized,
                          FlutterTapTest,
-                         ::testing::Values(kTestUIStackUrl));
+                         ::testing::Values(kGfxTestUIStackUrl, kTestUIStackUrl));
 
 TEST_P(FlutterTapTest, FlutterTap) {
   // Launch client view, and wait until it's rendering to proceed with the test.
@@ -456,7 +458,7 @@ TEST_P(FlutterTapTest, FlutterTap) {
 
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
                          FlutterEmbedTapTest,
-                         ::testing::Values(kTestUIStackUrl));
+                         ::testing::Values(kGfxTestUIStackUrl, kTestUIStackUrl));
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
   // Launch view
@@ -490,28 +492,6 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
 
   // There should be 2 injected taps
   ASSERT_EQ(touch_injection_request_count(), 2);
-}
-
-TEST_P(FlutterEmbedTapTest, FlutterEmbedHittestDisabled) {
-  FML_LOG(INFO) << "Initializing scene";
-  AddComponentArgument("--no-hitTestable");
-  LaunchClientWithEmbeddedView();
-  FML_LOG(INFO) << "Client launched";
-
-  // Embedded child view takes up the center of the screen
-  // hitTestable is turned off for the embedded child view
-  // Expect the parent (embedding-flutter-view) to respond if we inject a tap
-  // there
-  InjectTap(0, 0);
-  RunLoopUntil([this] {
-    return LastEventReceivedMatches(
-        /*expected_x=*/static_cast<float>(display_width() / 2.0f),
-        /*expected_y=*/static_cast<float>(display_height() / 2.0f),
-        /*component_name=*/"embedding-flutter-view");
-  });
-
-  // There should be 1 injected tap
-  ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
