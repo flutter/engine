@@ -41,7 +41,6 @@ class BlendFilterContents : public ColorFilterContents {
       std::optional<Scalar> alpha,
       bool absorb_opacity) const;
 
-
   // |FilterContents|
   std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
                                      const ContentContext& renderer,
