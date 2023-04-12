@@ -22,6 +22,12 @@
 
 namespace impeller {
 
+std::unique_ptr<TextRenderContext> TextRenderContext::Create(
+    std::shared_ptr<Context> context) {
+  // There is only one backend today.
+  return std::make_unique<TextRenderContextSkia>(std::move(context));
+}
+
 // TODO(bdero): We might be able to remove this per-glyph padding if we fix
 //              the underlying causes of the overlap.
 //              https://github.com/flutter/flutter/issues/114563
@@ -336,7 +342,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
   for (const auto& pair : new_pairs) {
-    auto pos = atlas.FindFontGlyphPosition(pair);
+    auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
       continue;
     }

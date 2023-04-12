@@ -118,6 +118,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln();
     sb.writeln('// DO NOT EDIT! This file is generated. See:');
     sb.writeln('// dev/generate_fallback_font_data.dart');
+    sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
     sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');

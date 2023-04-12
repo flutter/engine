@@ -32,6 +32,7 @@ if (impeller_enable_compute) {
     deps = [
       ":compute_shaders",
       ":renderer",
+      "../display_list:skia_conversions",
       "../entity",
       "../fixtures",
       "../playground:playground_test",
@@ -62,8 +63,6 @@ impeller_component("renderer") {
     "compute_pipeline_descriptor.h",
     "context.cc",
     "context.h",
-    "gpu_tracer.cc",
-    "gpu_tracer.h",
     "pipeline.cc",
     "pipeline.h",
     "pipeline_builder.cc",
