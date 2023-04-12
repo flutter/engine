@@ -48,6 +48,9 @@ abstract class PlatformDispatcher {
   KeyDataCallback? get onKeyData;
   set onKeyData(KeyDataCallback? callback);
 
+  List<int> get initialKeyboardState;
+  set initialKeyboardState(List<int> keys);
+
   TimingsCallback? get onReportTimings;
   set onReportTimings(TimingsCallback? callback);
 

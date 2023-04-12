@@ -36,6 +36,10 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
+void PlatformView::SetInitialKeyboardState(const std::vector<int64_t>& keys) {
+  delegate_.OnPlatformViewSetInitialKeyboardState(keys);
+}
+
 void PlatformView::DispatchSemanticsAction(int32_t node_id,
                                            SemanticsAction action,
                                            fml::MallocMapping args) {

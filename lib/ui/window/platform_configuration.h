@@ -299,6 +299,22 @@ class PlatformConfiguration final {
   void UpdateInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
+  /// @brief      Both engine and framework maintain a state representing the
+  ///             current pressed keys. The engine registers to system key
+  ///             events and notifies the framework using a BinaryMessenger.
+  ///             Because the engine starts quicker than the framework, initial
+  ///             pressed keys events can be lost. This method is used by the
+  ///             the engine to send the initial keyboard state which will be
+  ///             read on the framework side when it is ready to initialize its
+  ///             keyboard manager.
+  ///
+  /// @param[in]  keys  A vector representing the pressed keys. Even indexes are
+  ///                   physical key codes and odd indexes the corresponding
+  ///                   logical key codes.
+  ///
+  void UpdateInitialKeyboardState(const std::vector<int64_t>& keys);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the embedder has
   ///             expressed an opinion about whether the accessibility tree
   ///             should be generated or not. This call originates in the
@@ -444,6 +460,7 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;
   tonic::DartPersistentValue report_timings_;
+  tonic::DartPersistentValue update_initial_keyboard_state_;
 
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 

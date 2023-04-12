@@ -714,6 +714,13 @@ void key_data_late_echo() async {
   signalNativeTest();
 }
 
+// After platform channel 'test/starts_echo' receives a message, starts echoing
+// the event data with `_echoKeyEvent`, and returns synthesized as handled.
+@pragma('vm:entry-point')
+void can_send_keyboard_initial_state() async {
+  notifyStringValue('${PlatformDispatcher.instance.initialKeyboardState}');
+}
+
 @pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {

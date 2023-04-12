@@ -101,6 +101,9 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
     message_ = std::move(message);
   }
   // |flutter::PlatformView::Delegate|
+  void OnPlatformViewSetInitialKeyboardState(
+      const std::vector<int64_t>& keys){};
+  // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet) {
     pointer_packets_.push_back(std::move(packet));

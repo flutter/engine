@@ -72,6 +72,11 @@ void _updateInitialLifecycleState(String state) {
 }
 
 @pragma('vm:entry-point')
+void _updateInitialKeyboardState(List<int> state) {
+  PlatformDispatcher.instance._updateInitialKeyboardState(state);
+}
+
+@pragma('vm:entry-point')
 void _updateSemanticsEnabled(bool enabled) {
   PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
 }

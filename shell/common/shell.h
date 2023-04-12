@@ -545,6 +545,10 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<PointerDataPacket> packet) override;
 
   // |PlatformView::Delegate|
+  void OnPlatformViewSetInitialKeyboardState(
+      const std::vector<int64_t>& keys) override;
+
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                              SemanticsAction action,
                                              fml::MallocMapping args) override;

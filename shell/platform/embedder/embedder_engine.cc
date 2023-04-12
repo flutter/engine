@@ -128,6 +128,23 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   return true;
 }
 
+bool EmbedderEngine::SetInitialKeyboardState(const int64_t* keys,
+                                             size_t keys_count) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+
+  std::vector<int64_t> pressedKeys(keys, keys + keys_count);
+
+  platform_view->SetInitialKeyboardState(pressedKeys);
+  return true;
+}
+
 bool EmbedderEngine::SendPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   if (!IsValid() || !message) {

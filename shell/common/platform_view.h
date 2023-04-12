@@ -138,6 +138,18 @@ class PlatformView {
     virtual void OnPlatformViewDispatchPointerDataPacket(
         std::unique_ptr<PointerDataPacket> packet) = 0;
 
+    //----------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform view has specified a
+    ///             new keyboard state. This information needs to be forwarded
+    ///             to the root isolate running on the UI thread.
+    ///
+    /// @param[in]  keys  A vector representing the pressed keys. Even indexes
+    ///                   are physical key codes and odd indexes the
+    ///                   corresponding logical key codes.
+    ///
+    virtual void OnPlatformViewSetInitialKeyboardState(
+        const std::vector<int64_t>& keys) = 0;
+
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
     ///             an accessibility related action on the specified node. This
@@ -604,6 +616,16 @@ class PlatformView {
   /// @param[in]  packet  The pointer data packet to dispatch to the framework.
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Forward the initial keyboard state from the embadder to the
+  ///             framework.
+  ///
+  /// @param[in]  keys  A vector representing the pressed keys. Even indexes are
+  ///                   physical key codes and odd indexes the corresponding
+  ///                   logical key codes.
+  ///
+  void SetInitialKeyboardState(const std::vector<int64_t>& keys);
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the

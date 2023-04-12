@@ -995,6 +995,19 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 }
 
 // |PlatformView::Delegate|
+void Shell::OnPlatformViewSetInitialKeyboardState(
+    const std::vector<int64_t>& keys) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, keys = keys]() mutable {
+        if (engine) {
+          engine->SetInitialKeyboardState(keys);
+        }
+      }));
+}
+
+// |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                                   SemanticsAction action,
                                                   fml::MallocMapping args) {

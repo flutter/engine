@@ -2280,6 +2280,24 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
                                               FlutterKeyEventCallback callback,
                                               void* user_data);
 
+//------------------------------------------------------------------------------
+/// @brief      Set the initial keyboard state of the engine. The framework will
+///             use this value to initialize its keyboard manager.
+///
+/// @param[in]  engine      A running engine instance.
+/// @param[in]  keys        The array containing the pressed keys. Even indexes
+///                         are physical key codes and odd indexes the
+///                         corresponding logical key codes.
+/// @param[in]  keys_count  The length of the keys array.
+///
+/// @return     The result of the call.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSetInitialKeyboardState(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const int64_t* keys,
+    size_t keys_count);
+
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -2829,6 +2847,10 @@ typedef FlutterEngineResult (*FlutterEngineSendKeyEventFnPtr)(
     const FlutterKeyEvent* event,
     FlutterKeyEventCallback callback,
     void* user_data);
+typedef FlutterEngineResult (*FlutterEngineSetInitialKeyboardStateFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const int64_t* keys,
+    size_t keys_count);
 typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);
@@ -2929,6 +2951,7 @@ typedef struct {
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
   FlutterEngineSendKeyEventFnPtr SendKeyEvent;
+  FlutterEngineSetInitialKeyboardStateFnPtr SetInitialKeyboardState;
   FlutterEngineSendPlatformMessageFnPtr SendPlatformMessage;
   FlutterEnginePlatformMessageCreateResponseHandleFnPtr
       PlatformMessageCreateResponseHandle;

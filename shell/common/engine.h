@@ -696,6 +696,18 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it the current
+  ///             keyboard state. This call originates on the platform view and
+  ///             has been forwarded to the engine here on the UI task runner by
+  ///             the shell.
+  ///
+  /// @param[in]  keys  A vector representing the pressed keys. Even indexes are
+  ///                   physical key codes and odd indexes the corresponding
+  ///                   logical key codes.
+  ///
+  void SetInitialKeyboardState(std::vector<int64_t>& keys);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
   ///             data packet. A pointer data packet may contain multiple
   ///             input events. This call originates in the platform view and

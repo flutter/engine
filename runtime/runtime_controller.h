@@ -222,6 +222,15 @@ class RuntimeController : public PlatformConfigurationClient {
   bool SetInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
+  /// @brief      Forward the initial keyboard state to the running isolate.
+  ///
+  /// @param[in]  keys  A vector representing the pressed keys. Even indexes are
+  ///                   physical key codes and odd indexes the corresponding
+  ///                   logical key codes.
+  ///
+  bool SetInitialKeyboardState(const std::vector<int64_t>& keys);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate about whether the semantics tree
   ///             should be generated or not. If the isolate is not running,
   ///             this preference will be saved and flushed to the isolate when

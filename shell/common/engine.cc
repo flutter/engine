@@ -408,6 +408,10 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   }
 }
 
+void Engine::SetInitialKeyboardState(std::vector<int64_t>& keys) {
+  runtime_controller_->SetInitialKeyboardState(keys);
+}
+
 void Engine::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet,
     uint64_t trace_flow_id) {

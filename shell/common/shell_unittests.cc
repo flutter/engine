@@ -80,6 +80,9 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
 
+  MOCK_METHOD1(OnPlatformViewSetInitialKeyboardState,
+               void(const std::vector<int64_t>& keys));
+
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
                     SemanticsAction action,

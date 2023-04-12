@@ -2342,6 +2342,35 @@ TEST_F(EmbedderTest, BackToBackKeyEventResponsesCorrectlyInvoked) {
   shutdown_latch.Wait();
 }
 
+TEST_F(EmbedderTest, CanSetKeyboardInitialState) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("can_send_keyboard_initial_state");
+
+  // Supply a callback to Dart for the test fixture to pass initial keyboard
+  // state back to us.
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "NotifyStringValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        const auto dart_string = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        EXPECT_EQ("[1, 2, 3, 4]", dart_string);
+        latch.Signal();
+      }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  std::vector<int64_t> keys{1, 2, 3, 4};
+  ASSERT_EQ(FlutterEngineSetInitialKeyboardState(engine.get(), keys.data(),
+                                                 keys.size()),
+            kSuccess);
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+}
+
 //------------------------------------------------------------------------------
 // Vsync waiter
 //------------------------------------------------------------------------------

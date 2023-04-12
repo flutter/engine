@@ -170,6 +170,16 @@ bool RuntimeController::SetInitialLifecycleState(const std::string& data) {
   return false;
 }
 
+bool RuntimeController::SetInitialKeyboardState(
+    const std::vector<int64_t>& keys) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateInitialKeyboardState(keys);
+    return true;
+  }
+
+  return false;
+}
+
 bool RuntimeController::SetSemanticsEnabled(bool enabled) {
   platform_data_.semantics_enabled = enabled;
 

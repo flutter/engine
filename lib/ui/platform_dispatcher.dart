@@ -506,6 +506,24 @@ class PlatformDispatcher {
     return keyData;
   }
 
+  /// The engine keyboard state during framework startup.
+  ///
+  /// This is list of int representing the pressed keys. Even indexes are
+  /// physical key codes and odd indexes the corresponding logical key codes.
+  ///
+  /// It is used to initialize [HardwareKeyboard] pressed keys at startup.
+  List<int> get initialKeyboardState {
+    return _initialKeyboardState ?? <int>[];
+  }
+
+  List<int>? _initialKeyboardState;
+
+  // Called from the engine, via hooks.dart
+  void _updateInitialKeyboardState(List<int> pressedKeys) {
+    assert(pressedKeys.length.isEven);
+    _initialKeyboardState = pressedKeys;
+  }
+
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///

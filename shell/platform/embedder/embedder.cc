@@ -2365,6 +2365,26 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
       message_data);
 }
 
+FlutterEngineResult FlutterEngineSetInitialKeyboardState(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const int64_t* keys,
+    size_t keys_count) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  if (keys == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid keys.");
+  }
+
+  if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
+           ->SetInitialKeyboardState(keys, keys_count)) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Could not send the initial keyboard state.");
+  }
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* flutter_message) {
@@ -3082,6 +3102,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
   SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);
+  SET_PROC(SetInitialKeyboardState, FlutterEngineSetInitialKeyboardState);
   SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
   SET_PROC(PlatformMessageCreateResponseHandle,
            FlutterPlatformMessageCreateResponseHandle);

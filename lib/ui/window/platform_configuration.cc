@@ -69,6 +69,9 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
+  update_initial_keyboard_state_.Set(
+      tonic::DartState::Current(),
+      Dart_GetField(library, tonic::ToDart("_updateInitialKeyboardState")));
 
   // TODO(loicsharma): This should only be created if the embedder enables the
   // implicit view.
@@ -249,6 +252,34 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
       tonic::DartInvoke(report_timings_.Get(), {
                                                    data_handle,
                                                }));
+}
+
+void PlatformConfiguration::UpdateInitialKeyboardState(
+    const std::vector<int64_t>& keys) {
+  std::shared_ptr<tonic::DartState> dart_state =
+      update_initial_keyboard_state_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+
+  Dart_Handle data_handle =
+      Dart_NewTypedData(Dart_TypedData_kInt64, keys.size());
+
+  Dart_TypedData_Type type;
+  void* data = nullptr;
+  intptr_t num_acquired = 0;
+  FML_CHECK(!Dart_IsError(
+      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_acquired)));
+  FML_DCHECK(num_acquired == static_cast<int>(keys.size()));
+
+  memcpy(data, keys.data(), sizeof(int64_t) * keys.size());
+  FML_CHECK(Dart_TypedDataReleaseData(data_handle));
+
+  tonic::CheckAndHandleError(
+      tonic::DartInvoke(update_initial_keyboard_state_.Get(), {
+                                                                  data_handle,
+                                                              }));
 }
 
 void PlatformConfiguration::CompletePlatformMessageEmptyResponse(

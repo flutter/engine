@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <vector>
 #define FML_USED_ON_EMBEDDER
 
 #import <OCMock/OCMock.h>
@@ -29,6 +30,7 @@ class FakeDelegate : public PlatformView::Delegate {
   void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
+  void OnPlatformViewSetInitialKeyboardState(const std::vector<int64_t>& keys) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
                                              fml::MallocMapping args) override {}
