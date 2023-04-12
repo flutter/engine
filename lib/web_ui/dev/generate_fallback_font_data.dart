@@ -56,6 +56,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     if (response.statusCode != 200) {
       throw ToolExit('Failed to download Google Fonts list.');
     }
+    final List<String> fallbackFonts = <String>[];
     final Map<String, dynamic> googleFontsResult =
         jsonDecode(response.body) as Map<String, dynamic>;
     final List<Map<String, dynamic>> fontDatas =
@@ -63,12 +64,15 @@ class GenerateFallbackFontDataCommand extends Command<bool>
             .cast<Map<String, dynamic>>();
     final Map<String, Uri> urlForFamily = <String, Uri>{};
     for (final Map<String, dynamic> fontData in fontDatas) {
-      if (fallbackFonts.contains(fontData['family'])) {
+      if (apiFallbackFonts.contains(fontData['family'])) {
+        final String family = fontData['family'] as String;
         final Uri uri = Uri.parse(fontData['files']['regular'] as String)
             .replace(scheme: 'https');
-        urlForFamily[fontData['family'] as String] = uri;
+        urlForFamily[family] = uri;
+        fallbackFonts.add(family);
       }
     }
+    await addSplitFonts(fallbackFonts, urlForFamily);
     final Map<String, String> charsetForFamily = <String, String>{};
     final io.Directory fontDir = downloadTestFonts
         ? await io.Directory(path.join(
@@ -161,11 +165,20 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     ));
     await fontDataFile.writeAsString(sb.toString());
   }
+
+  Future<void> addSplitFonts(List<String> fallbackFonts, Map<String, Uri> urlForFamily) async {
+    for (final String font in splitFonts) {
+      final String modifiedFontName = font.replaceAll(' ', '+');
+      final Uri cssUri = Uri.parse('https://fonts.googleapis.com/css2?family=$modifiedFontName');
+      final http.Client client = http.Client();
+      final http.Response response = await client.get(cssUri);
+    }
+  }
 }
 
-const List<String> fallbackFonts = <String>[
+/// Fonts that should be downloaded directly from the Google Fonts API.
+const List<String> apiFallbackFonts = <String>[
   'Noto Sans',
-  'Noto Color Emoji',
   'Noto Sans Symbols',
   'Noto Sans Symbols 2',
   'Noto Sans Adlam',
@@ -305,6 +318,12 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Warang Citi',
   'Noto Sans Yi',
   'Noto Sans Zanabazar Square',
+];
+
+/// Fonts which are split up into several smaller subfonts. These need special
+/// handling.
+const List<String> splitFonts = <String>[
+  'Noto Color Emoji',
 ];
 
 String _packFontRanges(List<String> starts, List<String> ends) {
