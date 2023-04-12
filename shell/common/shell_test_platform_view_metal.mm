@@ -31,7 +31,7 @@ static fml::scoped_nsprotocol<id<MTLTexture>> CreateOffscreenTexture(id<MTLDevic
 // non-Objective-C TUs.
 class DarwinContextMetal {
  public:
-  DarwinContextMetal(bool impeller)
+  explicit DarwinContextMetal(bool impeller)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
         impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc] init] : nil),
         offscreen_texture_(CreateOffscreenTexture(
