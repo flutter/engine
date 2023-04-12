@@ -23,17 +23,6 @@ std::optional<Matrix> Snapshot::GetUVTransform() const {
          transform.Invert();
 }
 
-// void foo() {
-//   std::vector<Point> data(8);
-//   auto points = source_rect.GetPoints();
-//   for (auto i = 0u, j = 0u; i < 8; i += 2, j++) {
-//     data[i] = points[j];
-//     data[i + 1] = effect_transform * ((points[j] - texture_coverage.origin) /
-//                                       texture_coverage.size);
-//   }
-
-// }
-
 std::optional<std::array<Point, 4>> Snapshot::GetCoverageUVs(
     const Rect& coverage) const {
   auto uv_transform = GetUVTransform();

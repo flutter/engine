@@ -67,9 +67,6 @@ class Geometry {
   virtual GeometryVertexType GetVertexType() const = 0;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
-
-  /// @brief  If this geometry source is a rectangle, return that rectangle.
-  virtual std::optional<Rect> AsRect() const;
 };
 
 /// @brief A geometry that is created from a vertices object.
@@ -254,9 +251,6 @@ class RectGeometry : public Geometry {
                                      const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) override;
-
-  // |Geometry|
-  std::optional<Rect> AsRect() const override;
 
   Rect rect_;
 
