@@ -43,6 +43,42 @@ SKWASM_EXPORT SkShader *shader_createLinearGradient(
     }
 }
 
+SKWASM_EXPORT SkShader *shader_createRadialGradient(
+    SkScalar centerX,
+    SkScalar centerY,
+    SkScalar radius,
+    SkColor *colors,
+    SkScalar *stops,
+    int count,
+    SkTileMode tileMode,
+    SkScalar *matrix33
+) {
+    if (matrix33) {
+        SkMatrix localMatrix = createMatrix(matrix33);
+        return SkGradientShader::MakeRadial(
+            {centerX, centerY},
+            radius,
+            colors,
+            stops,
+            count,
+            tileMode,
+            0,
+            &localMatrix
+        ).release();
+    } else {
+        return SkGradientShader::MakeRadial(
+            {centerX, centerY},
+            radius,
+            colors,
+            stops,
+            count,
+            tileMode,
+            0,
+            nullptr
+        ).release();
+    }
+}
+
 SKWASM_EXPORT void shader_dispose(SkShader *shader) {
     shader->unref();
 }

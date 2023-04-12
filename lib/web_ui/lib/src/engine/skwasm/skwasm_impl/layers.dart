@@ -253,7 +253,7 @@ class ShaderMaskOperation implements LayerOperation {
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     canvas.saveLayer(
-      maskRect, 
+      maskRect,
       ui.Paint()
         ..blendMode = blendMode
         ..shader = shader

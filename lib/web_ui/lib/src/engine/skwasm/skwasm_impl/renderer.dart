@@ -114,9 +114,21 @@ class SkwasmRenderer implements Renderer {
   ui.PictureRecorder createPictureRecorder() => SkwasmPictureRecorder();
 
   @override
-  ui.Gradient createRadialGradient(ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    throw UnimplementedError('createRadialGradient not yet implemented');
-  }
+  ui.Gradient createRadialGradient(
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4
+  ]) => SkwasmGradient.radial(
+    center: center,
+    radius: radius,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    matrix4: matrix4
+  );
 
   @override
   ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();

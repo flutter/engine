@@ -43,4 +43,30 @@ Future<void> testMain() async {
       await matchGoldenFile('linear_gradient_paint.png', region: region);
     });
   });
+
+  group('Radial Gradient', () {
+    test('Using a linear gradient on a paint', () async {
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder, region);
+      canvas.drawRect(
+        const Rect.fromLTRB(50, 50, 250, 250),
+        Paint()
+          ..shader = Gradient.radial(
+            const Offset(150, 150),
+            100,
+            <Color>[
+              const Color(0xFFFF0000),
+              const Color(0xFF00FF00),
+              const Color(0xFF0000FF),
+            ],
+            <double>[0.0, 0.5, 1.0],
+          )
+          ..color = const Color(0XFF00FF00)
+        );
+
+      await drawPictureUsingCurrentRenderer(recorder.endRecording());
+
+      await matchGoldenFile('radial_gradient_paint.png', region: region);
+    });
+  });
 }

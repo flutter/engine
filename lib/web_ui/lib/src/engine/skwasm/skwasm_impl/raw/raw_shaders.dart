@@ -38,6 +38,27 @@ external ShaderHandle shaderCreateLinearGradient(
   RawMatrix33 matrix, // Can be nullptr
 );
 
+@Native<ShaderHandle Function(
+  Float,
+  Float,
+  Float,
+  RawColorArray,
+  Pointer<Float>,
+  Int,
+  Int,
+  RawMatrix33,
+)>(symbol: 'shader_createRadialGradient', isLeaf: true)
+external ShaderHandle shaderCreateRadialGradient(
+  double centerX,
+  double centerY,
+  double radius,
+  RawColorArray colors,
+  Pointer<Float> stops,
+  int count,
+  int tileMode,
+  RawMatrix33 localMatrix,
+);
+
 @Native<Void Function(ShaderHandle)>(symbol: 'shader_dispose', isLeaf: true)
 external void shaderDispose(ShaderHandle handle);
 
