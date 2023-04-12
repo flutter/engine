@@ -356,9 +356,9 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
   }
 
   RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
-                            blend_mode](const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass) -> bool {
+                            blend_mode, absorb_opacity, alpha](
+                               const ContentContext& renderer,
+                               const Entity& entity, RenderPass& pass) -> bool {
     using VS = PipelineBlendPipeline::VertexShader;
     using FS = PipelineBlendPipeline::FragmentShader;
 
@@ -405,6 +405,9 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
         dst_snapshot->texture->GetYCoordScale();
 
     frag_info.color = foreground_color.Premultiply();
+    frag_info.input_alpha =
+        absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
+
     frag_info.operation = static_cast<Scalar>(blend_mode);
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));

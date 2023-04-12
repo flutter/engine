@@ -26,6 +26,7 @@ const float16_t kModulate = 13.0hf;
 
 uniform FragInfo {
   float16_t operation;
+  float16_t input_alpha;
   f16vec4 color;
 }
 frag_info;
@@ -46,7 +47,8 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 // Note: this shader reduces the number of branches required by conditionally
 // modifying the foreground color.
 void main() {
-  f16vec4 dst_color = texture(texture_sampler_dst, v_texture_coords);
+  f16vec4 dst_color =
+      texture(texture_sampler_dst, v_texture_coords) * frag_info.input_alpha;
 
   if (frag_info.operation == kSourceOver) {
     frag_color = IPBlendSourceOver(frag_info.color, dst_color);
