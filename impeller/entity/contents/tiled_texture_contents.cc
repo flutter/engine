@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
-#include <iostream>
 
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
