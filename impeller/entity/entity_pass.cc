@@ -213,9 +213,16 @@ bool EntityPass::Render(ContentContext& renderer,
       .coverage = Rect::MakeSize(render_target.GetRenderTargetSize()),
       .stencil_depth = 0}};
 
-  if (GetTotalPassReads(renderer) > 0) {
-    auto offscreen_target = CreateRenderTarget(
-        renderer, render_target.GetRenderTargetSize(), true, clear_color_);
+  //
+  bool supports_root_pass_reads =
+      renderer.GetDeviceCapabilities().SupportsReadFromOnscreenTexture() &&
+      // If the backend doesn't have `SupportsReadFromResolve`, we need to flip
+      // between two textures when restoring a previous MSAA pass.
+      renderer.GetDeviceCapabilities().SupportsReadFromResolve();
+  if (!supports_root_pass_reads && GetTotalPassReads(renderer) > 0) {
+    auto offscreen_target =
+        CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true,
+                           clear_color_.Premultiply());
 
     if (!OnRender(renderer,  // renderer
                   offscreen_target.GetRenderTarget()
@@ -277,7 +284,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
   // Set up the clear color of the root pass.
   auto color0 = render_target.GetColorAttachments().find(0)->second;
-  color0.clear_color = clear_color_;
+  color0.clear_color = clear_color_.Premultiply();
 
   auto root_render_target = render_target;
   root_render_target.SetColorAttachment(color0, 0);
@@ -390,19 +397,24 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       }
     }
 
-    if (!subpass_coverage.has_value() || subpass_coverage->size.IsEmpty()) {
+    if (!subpass_coverage.has_value()) {
       // The subpass doesn't contain anything visible, so skip it.
       return EntityPass::EntityResult::Skip();
     }
 
     subpass_coverage =
         subpass_coverage->Intersection(Rect::MakeSize(root_pass_size));
+    if (!subpass_coverage.has_value() ||
+        ISize(subpass_coverage->size).IsEmpty()) {
+      // The subpass doesn't contain anything visible, so skip it.
+      return EntityPass::EntityResult::Skip();
+    }
 
     auto subpass_target =
         CreateRenderTarget(renderer,                                  //
                            ISize(subpass_coverage->size),             //
                            subpass->GetTotalPassReads(renderer) > 0,  //
-                           clear_color_);
+                           clear_color_.Premultiply());
 
     if (!subpass_target.GetRenderTarget().GetRenderTargetTexture()) {
       return EntityPass::EntityResult::Failure();
