@@ -6,6 +6,9 @@ import 'dart:convert' show jsonDecode;
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
+import 'package:csslib/parser.dart' as csslib;
+import 'package:csslib/visitor.dart'
+    show Declaration, FontFaceDirective, StyleSheet, UriTerm, Visitor;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -167,13 +170,43 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     await fontDataFile.writeAsString(sb.toString());
   }
 
-  Future<void> addSplitFonts(List<String> fallbackFonts, Map<String, Uri> urlForFamily) async {
+  Future<void> addSplitFonts(
+      List<String> fallbackFonts, Map<String, Uri> urlForFamily) async {
     for (final String font in splitFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
-      final Uri cssUri = Uri.parse('https://fonts.googleapis.com/css2?family=$modifiedFontName');
+      final Uri cssUri = Uri.parse(
+          'https://fonts.googleapis.com/css2?family=$modifiedFontName');
       final http.Client client = http.Client();
-      final http.Response response = await client.get(cssUri);
+      final http.Response response =
+          await client.get(cssUri, headers: <String, String>{
+        // Spoof the User-Agent so Google Fonts serves WOFF2 fonts
+        'User-Agent':
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/112.0.0.0 Safari/537.36'
+      });
+      final String cssString = response.body;
+      final StyleSheet stylesheet = csslib.parse(cssString);
+      final UriCollector uriCollector = UriCollector();
+      stylesheet.visit(uriCollector);
+      int familyCount = 0;
+      for (final Uri uri in uriCollector.uris) {
+        final String fontName = '$font $familyCount';
+        fallbackFonts.add(fontName);
+        urlForFamily[fontName] = uri;
+        familyCount += 1;
+      }
     }
+    print(urlForFamily);
+  }
+}
+
+class UriCollector extends Visitor {
+  final List<Uri> uris = <Uri>[];
+
+  @override
+  void visitUriTerm(UriTerm uriTerm) {
+    print(uriTerm.value);
+    uris.add(Uri.parse(uriTerm.value as String));
   }
 }
 

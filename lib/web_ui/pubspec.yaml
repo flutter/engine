@@ -21,6 +21,7 @@ dev_dependencies:
   archive: 3.1.2
   args: any
   async: any
+  csslib: 0.17.2
   html: 0.15.0
   http: 0.13.5
   http_multi_server: any
