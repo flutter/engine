@@ -582,8 +582,6 @@ def to_gn_args(args):
   # for a host Windows build and make GN think we will be building ANGLE.
   if is_host_build(args) or (args.target_os == 'android' and
                              get_host_os() == 'win'):
-    # Do not build unnecessary parts of the ANGLE tree.
-    gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False
     # Force ANGLE context checks on Windows to prevent crashes.
     # TODO(loic-sharma): Remove this once ANGLE crashes have been fixed.
