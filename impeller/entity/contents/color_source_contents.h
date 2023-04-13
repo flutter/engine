@@ -22,7 +22,9 @@ class ColorSourceContents : public Contents {
 
   void SetEffectTransform(Matrix matrix);
 
-  void SetAlpha(Scalar alpha);
+  const Matrix& GetInverseMatrix() const;
+
+  void SetOpacity(Scalar opacity);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -31,17 +33,22 @@ class ColorSourceContents : public Contents {
   bool ShouldRender(const Entity& entity,
                     const std::optional<Rect>& stencil_coverage) const override;
 
+  // |Contents|
+  bool CanInheritOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
+
+  Scalar GetOpacity() const;
+
  protected:
   const std::shared_ptr<Geometry>& GetGeometry() const;
-
-  const Matrix& GetInverseMatrix() const;
-
-  Scalar GetAlpha() const;
 
  private:
   std::shared_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
-  Scalar alpha_ = 1.0;
+  Scalar opacity_ = 1.0;
+  Scalar inherited_opacity_ = 1.0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorSourceContents);
 };

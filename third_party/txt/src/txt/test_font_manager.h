@@ -40,7 +40,7 @@ class TestFontManager : public AssetFontManager {
  private:
   std::vector<std::string> test_font_family_names_;
 
-  SkFontStyleSet* onMatchFamily(const char family_name[]) const override;
+  sk_sp<SkFontStyleSet> onMatchFamily(const char family_name[]) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestFontManager);
 };

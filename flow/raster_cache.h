@@ -19,6 +19,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+class GrDirectContext;
 class SkColorSpace;
 
 namespace flutter {
@@ -133,7 +134,7 @@ class RasterCache {
   explicit RasterCache(
       size_t access_threshold = 3,
       size_t picture_and_display_list_cache_limit_per_frame =
-          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame);
+          RasterCacheUtil::kDefaultPictureAndDisplayListCacheLimitPerFrame);
 
   virtual ~RasterCache() = default;
 

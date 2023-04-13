@@ -4,12 +4,7 @@
 
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
-import("//flutter/third_party/canvaskit/canvaskit.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
-
-declare_args() {
-  archive_flutter_web_sdk = true
-}
 
 dart_sdk_package_config = "//third_party/dart/.dart_tool/package_config.json"
 
@@ -25,8 +20,10 @@ web_engine_libraries = [
   ":skwasm_stub_library",
   ":web_engine_library",
   ":web_ui_library",
+  ":web_ui_ui_web",
   ":web_ui_library_sources",
   ":web_unicode_library",
+  ":web_test_fonts_library",
   ":web_locale_keymap_library",
 ]
 
@@ -35,10 +32,6 @@ group("web_sdk") {
     ":flutter_ddc_modules",
     ":flutter_platform_dills",
   ]
-
-  if (archive_flutter_web_sdk && !is_fuchsia) {
-    deps += [ ":flutter_web_sdk_archive" ]
-  }
 }
 
 template("sdk_rewriter") {
@@ -85,6 +78,11 @@ template("sdk_rewriter") {
       "--stamp",
       rebase_path(stamp_location, root_build_dir),
     ]
+
+    if (defined(invoker.is_public) && invoker.is_public) {
+      args += [ "--public" ]
+    }
+
     if (ui) {
       args += [ "--ui" ]
     } else {
@@ -110,6 +108,14 @@ sdk_rewriter("web_ui_library_sources") {
 
   # exclude everything in the engine directory, it will be a separate internal library
   exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
+}
+
+sdk_rewriter("web_ui_ui_web") {
+  library_name = "ui_web"
+  is_public = true
+  api_file = "//flutter/lib/web_ui/lib/ui_web/src/ui_web.dart"
+  input_dir = "//flutter/lib/web_ui/lib/ui_web/src/ui_web/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/ui_web/"
 }
 
 sdk_rewriter("web_engine_library") {
@@ -142,6 +148,13 @@ sdk_rewriter("web_unicode_library") {
   api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
   input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
+}
+
+sdk_rewriter("web_test_fonts_library") {
+  library_name = "web_test_fonts"
+  api_file = "//flutter/third_party/web_test_fonts/lib/web_test_fonts.dart"
+  input_dir = "//flutter/third_party/web_test_fonts/lib/web_test_fonts/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_test_fonts/"
 }
 
 sdk_rewriter("web_locale_keymap_library") {
@@ -308,6 +321,8 @@ template("_compile_platform") {
       "--source",
       "dart:ui",
       "--source",
+      "dart:ui_web",
+      "--source",
       "dart:_engine",
       "--source",
       "dart:_skwasm_stub",
@@ -443,6 +458,7 @@ template("_compile_ddc_modules") {
 
       # Additional Flutter web dart libraries
       "dart:ui",
+      "dart:ui_web",
       "dart:_engine",
       "dart:_skwasm_stub",
       "dart:_web_unicode",
@@ -560,11 +576,12 @@ if (!is_fuchsia) {
              ":flutter_platform_dills",
            ] + web_engine_libraries
 
-    if (build_canvaskit) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit_group" ]
-    }
-    if (build_canvaskit_chromium) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit_chromium_group" ]
+    if (is_wasm) {
+      deps += [
+        "//flutter/third_party/canvaskit:canvaskit_chromium_group",
+        "//flutter/third_party/canvaskit:canvaskit_group",
+        "//flutter/third_party/canvaskit:skwasm_group",
+      ]
     }
 
     # flutter_ddc_modules
@@ -583,6 +600,17 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
     sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_unsound")
     sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_sound")
+    if (is_wasm) {
+      sources += [
+        "$root_out_dir/flutter_web_sdk/canvaskit/canvaskit.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/canvaskit.wasm",
+        "$root_out_dir/flutter_web_sdk/canvaskit/chromium/canvaskit.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/chromium/canvaskit.wasm",
+        "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.wasm",
+        "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.worker.js",
+      ]
+    }
 
     # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
     # https://github.com/flutter/flutter/issues/113303
@@ -596,36 +624,13 @@ if (!is_fuchsia) {
     }
 
     tmp_files = []
-    foreach(source, sources) {
+    web_sdk_files =
+        filter_include(sources, [ "$root_build_dir/flutter_web_sdk/**" ])
+    foreach(source, web_sdk_files) {
       tmp_files += [
         {
           source = rebase_path(source)
-          destination = rebase_path(source, "$root_build_dir")
-        },
-      ]
-    }
-    if (build_canvaskit) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.js"
-        },
-        {
-          source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
-        },
-      ]
-    }
-    if (build_canvaskit_chromium) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
-          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
-        },
-        {
-          source =
-              rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
-          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
+          destination = rebase_path(source, "$root_build_dir/flutter_web_sdk")
         },
       ]
     }

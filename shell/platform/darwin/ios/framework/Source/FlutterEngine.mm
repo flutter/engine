@@ -98,6 +98,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+
+#pragma mark - Embedder API properties
+
+@property(nonatomic, assign) BOOL enableEmbedderAPI;
+// Function pointers for interacting with the embedder.h API.
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
 @implementation FlutterEngine {
@@ -184,6 +190,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([[FlutterDartProject alloc] init]);
   } else {
     _dartProject.reset([project retain]);
+  }
+
+  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  if (_enableEmbedderAPI) {
+    NSLog(@"============== iOS: enable_embedder_api is on ==============");
+    _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
+    FlutterEngineGetProcAddresses(&_embedderAPI);
   }
 
   if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
@@ -421,7 +434,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
-  } else {
+  } else if (_shell) {
     flutter::PlatformViewIOS* platform_view = [self iosPlatformView];
     if (platform_view) {
       platform_view->SetOwnerViewController({});
@@ -1082,7 +1095,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client) ]];
 }
 
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    didResignFirstResponderWithTextInputClient:(int)client {
+  // When flutter text input view resign first responder, send a message to
+  // framework to ensure the focus state is correct. This is useful when close
+  // keyboard from platform side.
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.onConnectionClosed"
+                              arguments:@[ @(client) ]];
+
   // Platform view's first responder detection logic:
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view

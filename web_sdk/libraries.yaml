@@ -21,6 +21,9 @@ dartdevc:
     ui:
       uri: "lib/ui/ui.dart"
 
+    ui_web:
+      uri: "lib/ui_web/ui_web.dart"
+
     _engine:
       uri: "lib/_engine/engine.dart"
 
@@ -32,6 +35,9 @@ dartdevc:
 
     _web_locale_keymap:
       uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
+
+    _web_test_fonts:
+      uri: "lib/_web_test_fonts/web_test_fonts.dart"
 
 dart2js:
   include:
@@ -41,6 +47,9 @@ dart2js:
     ui:
       uri: "lib/ui/ui.dart"
 
+    ui_web:
+      uri: "lib/ui_web/ui_web.dart"
+
     _engine:
       uri: "lib/_engine/engine.dart"
 
@@ -53,6 +62,9 @@ dart2js:
     _web_locale_keymap:
       uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
 
+    _web_test_fonts:
+      uri: "lib/_web_test_fonts/web_test_fonts.dart"
+
 wasm:
   include:
     - {path: "../dart-sdk/lib/libraries.json", target: wasm}
@@ -60,6 +72,9 @@ wasm:
   libraries:
     ui:
       uri: "lib/ui/ui.dart"
+
+    ui_web:
+      uri: "lib/ui_web/ui_web.dart"
 
     _engine:
       uri: "lib/_engine/engine.dart"
@@ -72,3 +87,6 @@ wasm:
 
     _web_locale_keymap:
       uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
+
+    _web_test_fonts:
+      uri: "lib/_web_test_fonts/web_test_fonts.dart"

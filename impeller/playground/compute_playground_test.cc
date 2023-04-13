@@ -4,11 +4,13 @@
 
 #include "flutter/fml/time/time_point.h"
 
+#include "flutter/testing/test_args.h"
 #include "impeller/playground/compute_playground_test.h"
 
 namespace impeller {
 
-ComputePlaygroundTest::ComputePlaygroundTest() = default;
+ComputePlaygroundTest::ComputePlaygroundTest()
+    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {}
 
 ComputePlaygroundTest::~ComputePlaygroundTest() = default;
 
@@ -24,6 +26,7 @@ void ComputePlaygroundTest::SetUp() {
   }
 
   SetupContext(GetParam());
+  SetupWindow();
 
   start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }

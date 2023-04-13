@@ -4,6 +4,7 @@
 # found in the LICENSE file.
 
 import argparse
+import difflib
 import json
 import os
 import sys
@@ -32,6 +33,12 @@ import sys
 # If there are differences between before and after, whether positive or
 # negative, the exit code for this script will be 1, and 0 otherwise.
 
+SRC_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+)
+
 CORES = [
     'Mali-G78',  # Pixel 6 / 2020
     'Mali-T880',  # 2016
@@ -53,6 +60,13 @@ def parse_args(argv):
       '-b',
       type=str,
       help='The path to a json file containing existing malioc results.',
+  )
+  parser.add_argument(
+      '--print-diff',
+      '-p',
+      default=False,
+      action='store_true',
+      help='Print a unified diff to stdout when differences are found.',
   )
   parser.add_argument(
       '--update',
@@ -119,6 +133,8 @@ def read_malioc_file(malioc_tree, json_file):
     filename = os.path.relpath(shader['filename'], build_gen_dir)
     if filename.startswith('../..'):
       filename = filename[6:]
+    if filename.startswith('../'):
+      filename = filename[3:]
     result['filename'] = filename
     result['core'] = shader['hardware']['core']
     result['type'] = shader['shader']['type']
@@ -164,8 +180,12 @@ def read_malioc_tree(malioc_tree):
 # a space of `width` characters, and separated by `sep`. The separator does not
 # count against the `width`. If `width` is 0, then the width is unconstrained.
 def pretty_list(lst, fmt='s', sep='', width=12):
-  return (sep.join(['{:<{width}{fmt}}'] * len(lst))).format(
-      width='' if width == 0 else width, fmt=fmt, *lst
+  formats = [
+      '{:<{width}{fmt}}' if ele is not None else '{:<{width}s}' for ele in lst
+  ]
+  sanitized_list = [x if x is not None else 'null' for x in lst]
+  return (sep.join(formats)).format(
+      width='' if width == 0 else width, fmt=fmt, *sanitized_list
   )
 
 
@@ -221,6 +241,8 @@ def compare_variants(befores, afters):
   return differences
 
 
+# Compares two shaders. Prints a report and returns True if there are
+# differences, and returns False otherwise.
 def compare_shaders(malioc_tree, before_shader, after_shader):
   differences = []
   for key, before_val in before_shader.items():
@@ -266,7 +288,7 @@ def main(argv):
   if args.update:
     # Write the new results to the file given by --before, then exit.
     with open(args.before, 'w') as file:
-      json.dump(after_json, file, sort_keys=True)
+      json.dump(after_json, file, sort_keys=True, indent=2)
     return 0
 
   with open(args.before, 'r') as file:
@@ -274,6 +296,10 @@ def main(argv):
 
   changed = False
   for filename, shaders in before_json.items():
+    if filename not in after_json.keys():
+      print('Shader "{}" has been removed.'.format(filename))
+      changed = True
+      continue
     for core, before_shader in shaders.items():
       if core not in after_json[filename].keys():
         continue
@@ -283,11 +309,35 @@ def main(argv):
 
   for filename, shaders in after_json.items():
     if filename not in before_json:
-      print(
-          'Shader {} is new. Run with --update to update checked-in results'
-          .format(filename)
-      )
+      print('Shader "{}" is new.'.format(filename))
       changed = True
+
+  if changed:
+    print(
+        'There are new shaders, shaders have been removed, or performance '
+        'changes to existing shaders. The golden file must be updated after a '
+        'build of android_debug_unopt using the --malioc-path flag to the '
+        'flutter/tools/gn script.\n\n'
+        '$ ./flutter/impeller/tools/malioc_diff.py --before {} --after {} --update'
+        .format(args.before, args.after)
+    )
+    if args.print_diff:
+      before_lines = json.dumps(
+          before_json, sort_keys=True, indent=2
+      ).splitlines(keepends=True)
+      after_lines = json.dumps(
+          after_json, sort_keys=True, indent=2
+      ).splitlines(keepends=True)
+      before_path = os.path.relpath(
+          os.path.abspath(args.before), start=SRC_ROOT
+      )
+      diff = difflib.unified_diff(
+          before_lines, after_lines, fromfile=before_path
+      )
+      print('\nYou can alternately apply the diff below:')
+      print('patch -p0 <<DONE')
+      print(*diff, sep='')
+      print('DONE')
 
   return 1 if changed else 0
 

@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/time/time_point.h"
@@ -210,7 +211,15 @@ struct Settings {
 
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
+#if FML_OS_IOS || FML_OS_IOS_SIMULATOR
+  bool enable_impeller = true;
+#else
   bool enable_impeller = false;
+#endif
+
+  // Enable Vulkan validation on backends that support it. The validation layers
+  // must be available to the application.
+  bool enable_vulkan_validation = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;
@@ -316,6 +325,11 @@ struct Settings {
   /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
   /// GPU does not support the requested sampling value, MSAA will be disabled.
   uint8_t msaa_samples = 0;
+
+  /// Enable embedder api on the embedder.
+  ///
+  /// This is currently only used by iOS.
+  bool enable_embedder_api = false;
 };
 
 }  // namespace flutter

@@ -49,9 +49,12 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  // The engine renders into the view's surface. The engine must be
+  // shutdown before the view's resources can be destroyed.
   if (engine_) {
-    engine_->SetView(nullptr);
+    engine_->Stop();
   }
+
   DestroyRenderSurface();
 }
 
@@ -250,7 +253,7 @@ void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
 }
 
 gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
-  return engine_->GetNativeAccessibleFromId(AccessibilityBridge::kRootNodeId);
+  return engine_->GetNativeViewAccessible();
 }
 
 void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {

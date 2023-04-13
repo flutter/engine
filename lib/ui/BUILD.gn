@@ -5,9 +5,25 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
+  cflags = [
+    # Dart gives us doubles. Skia and Impeller work in floats.
+    # If Dart gives us a double > FLT_MAX or < -FLT_MAX, implicit conversion
+    # will convert it to either inf/-inf or FLT_MAX/-FLT_MAX (undefined
+    # behavior). This can result in surprising and difficult to debug behavior
+    # for Flutter application developers, so it should be explicitly handled
+    # via SafeNarrow.
+    "-Wimplicit-float-conversion",
+  ]
+
+  if (is_win) {
+    # This causes build failures in third_party dependencies on Windows.
+    cflags += [ "-Wno-implicit-int-float-conversion" ]
+  }
+
   sources = [
     "compositing/scene.cc",
     "compositing/scene.h",
@@ -18,6 +34,7 @@ source_set("ui") {
     "dart_ui.cc",
     "dart_ui.h",
     "dart_wrapper.h",
+    "floating_point.h",
     "io_manager.cc",
     "io_manager.h",
     "isolate_name_server/isolate_name_server.cc",
@@ -176,7 +193,10 @@ source_set("ui") {
       "painting/image_encoding_impeller.h",
     ]
 
-    deps += [ "//flutter/impeller" ]
+    deps += [
+      "//flutter/impeller",
+      "//flutter/impeller/display_list:skia_conversions",
+    ]
   }
 
   if (!defined(defines)) {
@@ -260,6 +280,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/impeller",
       "//flutter/lib/snapshot",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
@@ -270,7 +291,7 @@ if (enable_unittests) {
     ]
 
     # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
-    if (!is_fuchsia) {
+    if (shell_enable_gl) {
       sources += [ "painting/image_decoder_unittests.cc" ]
 
       deps += [ "//flutter/testing:opengl" ]

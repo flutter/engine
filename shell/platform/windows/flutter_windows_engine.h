@@ -35,6 +35,7 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
 #include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
@@ -108,7 +109,7 @@ class FlutterWindowsEngine {
   // Stops the engine. This invalidates the pointer returned by engine().
   //
   // Returns false if stopping the engine fails, or if it was not running.
-  bool Stop();
+  virtual bool Stop();
 
   // Sets the view that is displaying this engine's content.
   void SetView(FlutterWindowsView* view);
@@ -231,8 +232,9 @@ class FlutterWindowsEngine {
   // Returns true if the high contrast feature is enabled.
   bool high_contrast_enabled() const { return high_contrast_enabled_; }
 
-  // Returns the native accessibility node with the given id.
-  gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
+  // Returns the native accessibility root node, or nullptr if one does not
+  // exist.
+  gfx::NativeViewAccessible GetNativeViewAccessible();
 
   // Register a root isolate create callback.
   //
@@ -252,6 +254,18 @@ class FlutterWindowsEngine {
 
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
+
+  // Called when the application quits in response to a quit request.
+  void OnQuit(std::optional<HWND> hwnd,
+              std::optional<WPARAM> wparam,
+              std::optional<LPARAM> lparam,
+              UINT exit_code);
+
+  // Called when a WM_CLOSE message is received.
+  void RequestApplicationQuit(HWND hwnd,
+                              WPARAM wparam,
+                              LPARAM lparam,
+                              AppExitType exit_type);
 
  protected:
   // Creates the keyboard key handler.
@@ -393,6 +407,9 @@ class FlutterWindowsEngine {
 
   // Wrapper providing Windows registry access.
   std::unique_ptr<WindowsRegistry> windows_registry_;
+
+  // Handler for top level window messages.
+  std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

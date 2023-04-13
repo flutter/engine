@@ -13,15 +13,16 @@ import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../matchers.dart';
+import '../../common/matchers.dart';
 
 /// Gets the DOM host where the Flutter app is being rendered.
 ///
 /// This function returns the correct host for the flutter app under testing,
-/// so we don't have to hardcode domDocument across the test. (The host of a
-/// normal flutter app used to be domDocument, but now that the app is wrapped
-/// in a Shadow DOM, that's not the case anymore.)
-DomShadowRoot get appHostNode => flutterViewEmbedder.glassPaneShadow;
+/// so we don't have to hardcode domDocument across the test. The semantics
+/// tree has moved outside of the shadowDOM as a workaround for a password
+/// autofill bug on Chrome.
+/// Ref: https://github.com/flutter/flutter/issues/87735
+DomElement get appHostNode => flutterViewEmbedder.flutterViewElement;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
@@ -273,7 +274,7 @@ class SemanticsTester {
 
     // Other attributes
     ui.Rect childRect(SemanticsNodeUpdate child) {
-      return transformRect(Matrix4.fromFloat32List(child.transform), child.rect);
+      return Matrix4.fromFloat32List(child.transform).transformRect(child.rect);
     }
 
     // If a rect is not provided, generate one than covers all children.

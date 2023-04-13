@@ -44,15 +44,11 @@
 @JS()
 library configuration;
 
+import 'dart:js_interop';
 import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
-
-/// The version of CanvasKit used by the web engine by default.
-// DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
-// See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-const String _canvaskitVersion = '0.38.0';
 
 /// The Web Engine configuration for the current application.
 FlutterConfiguration get configuration =>
@@ -157,6 +153,32 @@ class FlutterConfiguration {
   // runtime. Runtime-supplied values take precedence over environment
   // variables.
 
+  /// The absolute base URL of the location of the `assets` directory of the app.
+  ///
+  /// This value is useful when Flutter web assets are deployed to a separate
+  /// domain (or subdirectory) from which the index.html is served, for example:
+  ///
+  /// * Application: https://www.my-app.com/
+  /// * Flutter Assets: https://cdn.example.com/my-app/build-hash/assets/
+  ///
+  /// The `assetBase` value would be set to:
+  ///
+  /// * `'https://cdn.example.com/my-app/build-hash/'`
+  ///
+  /// It is also useful in the case that a Flutter web application is embedded
+  /// into another web app, in a way that the `<base>` tag of the index.html
+  /// cannot be set (because it'd break the host app), for example:
+  ///
+  /// * Application: https://www.my-app.com/
+  /// * Flutter Assets: https://www.my-app.com/static/companion/flutter/assets/
+  ///
+  /// The `assetBase` would be set to:
+  ///
+  /// * `'/static/companion/flutter/'`
+  ///
+  /// Do not confuse this configuration value with [canvasKitBaseUrl].
+  String? get assetBase => _configuration?.assetBase;
+
   /// The base URL to use when downloading the CanvasKit script and associated
   /// wasm.
   ///
@@ -182,7 +204,7 @@ class FlutterConfiguration {
   String get canvasKitBaseUrl => _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
-    defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
+    defaultValue: 'canvaskit/',
   );
 
   /// The variant of CanvasKit to download.
@@ -255,6 +277,12 @@ class FlutterConfiguration {
   ///
   /// This is used by the Renderer class to decide how to initialize the engine.
   String? get requestedRendererType => _configuration?.renderer ?? _requestedRendererType;
+
+  /// Whether to use color emojis or not.
+  ///
+  /// The font used to render color emojis is large (~24MB). This configuration
+  /// gives developers the ability to decide for their app.
+  bool get useColorEmoji => _configuration?.useColorEmoji ?? false;
 }
 
 @JS('window.flutterConfiguration')
@@ -266,16 +294,43 @@ external JsFlutterConfiguration? get _jsConfiguration;
 class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
-  external String? get canvasKitBaseUrl;
-  external String? get canvasKitVariant;
-  external bool? get canvasKitForceCpuOnly;
-  external double? get canvasKitMaximumSurfaces;
-  external bool? get debugShowSemanticsNodes;
+  @JS('assetBase')
+  external JSString? get _assetBase;
+  String? get assetBase => _assetBase?.toDart;
+
+  @JS('canvasKitBaseUrl')
+  external JSString? get _canvasKitBaseUrl;
+  String? get canvasKitBaseUrl => _canvasKitBaseUrl?.toDart;
+
+  @JS('canvasKitVariant')
+  external JSString? get _canvasKitVariant;
+  String? get canvasKitVariant => _canvasKitVariant?.toDart;
+
+  @JS('canvasKitForceCpuOnly')
+  external JSBoolean? get _canvasKitForceCpuOnly;
+  bool? get canvasKitForceCpuOnly => _canvasKitForceCpuOnly?.toDart;
+
+  @JS('canvasKitMaximumSurfaces')
+  external JSNumber? get _canvasKitMaximumSurfaces;
+  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDart;
+
+  @JS('debugShowSemanticsNodes')
+  external JSBoolean? get _debugShowSemanticsNodes;
+  bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
+
   external DomElement? get hostElement;
-  external String? get renderer;
+
+  @JS('renderer')
+  external JSString? get _renderer;
+  String? get renderer => _renderer?.toDart;
+
+  @JS('useColorEmoji')
+  external JSBoolean? get _useColorEmoji;
+  bool? get useColorEmoji => _useColorEmoji?.toDart;
 }
 
 /// A JavaScript entrypoint that allows developer to set rendering backend
 /// at runtime before launching the application.
 @JS('window.flutterWebRenderer')
-external String? get _requestedRendererType;
+external JSString? get __requestedRendererType;
+String? get _requestedRendererType => __requestedRendererType?.toDart;

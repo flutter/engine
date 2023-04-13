@@ -261,6 +261,11 @@ DEF_SWITCH(EnableImpeller,
            "enable-impeller",
            "Enable the Impeller renderer on supported platforms. Ignored if "
            "Impeller is not supported on the platform.")
+DEF_SWITCH(EnableVulkanValidation,
+           "enable-vulkan-validation",
+           "Enable loading Vulkan validation layers. The layers must be "
+           "available to the application and loadable. On non-Vulkan backends, "
+           "this flag does nothing.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
@@ -273,6 +278,9 @@ DEF_SWITCH(
     "Setting this value to 0 or 1 disables MSAA. If it is not 0 or 1, it must "
     "be one of 2, 4, 8, or 16. However, if the GPU does not support the "
     "requested sampling value, MSAA will be disabled.")
+DEF_SWITCH(EnableEmbedderAPI,
+           "enable-embedder-api",
+           "Enable the embedder api. Defaults to false. iOS only.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

@@ -8,8 +8,8 @@
 uniform sampler2D texture_sampler;
 
 uniform FragInfo {
-  vec2 start_point;
-  vec2 end_point;
+  highp vec2 start_point;
+  highp vec2 end_point;
   float tile_mode;
   float texture_sampler_y_coord_scale;
   float alpha;
@@ -17,15 +17,15 @@ uniform FragInfo {
 }
 frag_info;
 
-in vec2 v_position;
+highp in vec2 v_position;
 
 out vec4 frag_color;
 
 void main() {
-  float len = length(frag_info.end_point - frag_info.start_point);
-  float dot = dot(v_position - frag_info.start_point,
-                  frag_info.end_point - frag_info.start_point);
-  float t = dot / (len * len);
+  vec2 start_to_end = frag_info.end_point - frag_info.start_point;
+  vec2 start_to_position = v_position - frag_info.start_point;
+  float t =
+      dot(start_to_position, start_to_end) / dot(start_to_end, start_to_end);
   frag_color = IPSampleLinearWithTileMode(
       texture_sampler, vec2(t, 0.5), frag_info.texture_sampler_y_coord_scale,
       frag_info.half_texel, frag_info.tile_mode);

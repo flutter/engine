@@ -9,7 +9,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
-#include "impeller/renderer/allocator.h"
+#include "impeller/core/allocator.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -21,6 +21,12 @@
 #include "third_party/skia/src/gpu/GrRectanizer.h"  // nogncheck
 
 namespace impeller {
+
+std::unique_ptr<TextRenderContext> TextRenderContext::Create(
+    std::shared_ptr<Context> context) {
+  // There is only one backend today.
+  return std::make_unique<TextRenderContextSkia>(std::move(context));
+}
 
 // TODO(bdero): We might be able to remove this per-glyph padding if we fix
 //              the underlying causes of the overlap.
@@ -336,7 +342,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
   for (const auto& pair : new_pairs) {
-    auto pos = atlas.FindFontGlyphPosition(pair);
+    auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
       continue;
     }
