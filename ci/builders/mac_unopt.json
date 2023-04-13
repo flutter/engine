@@ -127,7 +127,7 @@
                 "os=Mac-12",
                 "cpu=arm64"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -168,7 +168,7 @@
                 "os=Mac-12",
                 "cpu=arm64"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
