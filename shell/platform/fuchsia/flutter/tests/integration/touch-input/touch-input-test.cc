@@ -130,8 +130,8 @@ constexpr zx::duration kTimeout = zx::min(1);
 constexpr auto kGfxTestUIStackUrl =
     "fuchsia-pkg://fuchsia.com/gfx-scene-manager-test-ui-stack#meta/"
     "test-ui-stack.cm";
-constexpr auto kTestUIStackUrl = 
-"fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
+constexpr auto kTestUIStackUrl =
+    "fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
     "test-ui-stack.cm";
 
 constexpr auto kMockTouchInputListener = "touch_input_listener";
@@ -430,7 +430,8 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
 // http://go/gunitadvanced#value-parameterized-tests
 INSTANTIATE_TEST_SUITE_P(FlutterTapTestParameterized,
                          FlutterTapTest,
-                         ::testing::Values(kGfxTestUIStackUrl, kTestUIStackUrl));
+                         ::testing::Values(kGfxTestUIStackUrl,
+                                           kTestUIStackUrl));
 
 TEST_P(FlutterTapTest, FlutterTap) {
   // Launch client view, and wait until it's rendering to proceed with the test.
@@ -458,7 +459,8 @@ TEST_P(FlutterTapTest, FlutterTap) {
 
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
                          FlutterEmbedTapTest,
-                         ::testing::Values(kGfxTestUIStackUrl, kTestUIStackUrl));
+                         ::testing::Values(kGfxTestUIStackUrl,
+                                           kTestUIStackUrl));
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
   // Launch view
@@ -535,7 +537,7 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestHittestDisabledParameterized,
                          FlutterEmbedTapTest,
                          ::testing::Values(kGfxTestUIStackUrl));
-                         
+
 TEST_P(FlutterEmbedTapTest, FlutterEmbedHittestDisabled) {
   FML_LOG(INFO) << "Initializing scene";
   AddComponentArgument("--no-hitTestable");
