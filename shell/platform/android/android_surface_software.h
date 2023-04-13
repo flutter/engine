@@ -19,7 +19,9 @@ namespace flutter {
 class AndroidSurfaceSoftware final : public AndroidSurface,
                                      public GPUSurfaceSoftwareDelegate {
  public:
-  AndroidSurfaceSoftware();
+  AndroidSurfaceSoftware(
+      const std::shared_ptr<AndroidContext>& android_context,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 
   ~AndroidSurfaceSoftware() override;
 
