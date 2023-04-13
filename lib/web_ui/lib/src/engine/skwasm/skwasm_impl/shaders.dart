@@ -91,7 +91,7 @@ class SkwasmGradient extends SkwasmShader implements ui.Gradient {
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
   }) => withStackScope((StackScope scope) {
-    final RawPointArray endPoints = 
+    final RawPointArray endPoints =
       scope.convertPointArrayToNative(<ui.Offset>[focal, center]);
     final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
     final Pointer<Float> rawStops = colorStops != null

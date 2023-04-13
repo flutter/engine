@@ -84,7 +84,7 @@ SKWASM_EXPORT SkScalar paint_getMiterLImit(SkPaint* paint) {
   return paint->getStrokeMiter();
 }
 
-SKWASM_EXPORT void paint_setShader(SkPaint *paint, SkShader *shader) {
+SKWASM_EXPORT void paint_setShader(SkPaint* paint, SkShader* shader) {
   if (shader == nullptr) {
     paint->setShader(nullptr);
     return;

@@ -248,20 +248,27 @@ class ShaderMaskOperation implements LayerOperation {
   final ui.BlendMode blendMode;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(maskRect);
+  ui.Rect cullRect(ui.Rect contentRect) => contentRect;
 
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     canvas.saveLayer(
-      maskRect,
-      ui.Paint()
-        ..blendMode = blendMode
-        ..shader = shader
+      contentRect,
+      ui.Paint(),
     );
   }
 
   @override
   void post(ui.Canvas canvas) {
+    canvas.save();
+    canvas.translate(maskRect.left, maskRect.top);
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, maskRect.width, maskRect.height),
+      ui.Paint()
+        ..blendMode = blendMode
+        ..shader = shader
+    );
+    canvas.restore();
     canvas.restore();
   }
 }
