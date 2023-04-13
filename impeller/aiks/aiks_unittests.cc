@@ -1068,6 +1068,7 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
 
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
   ASSERT_TRUE(RenderTextInCanvas(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -1119,6 +1120,8 @@ TEST_P(AiksTest, TextFrameSubpixelAlignment) {
 
 TEST_P(AiksTest, CanRenderItalicizedText) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "HomemadeApple.ttf"));
@@ -1127,6 +1130,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
                                  "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
@@ -1139,6 +1144,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
                                  "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
@@ -1152,7 +1159,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
 
 TEST_P(AiksTest, CanRenderTextInSaveLayer) {
   Canvas canvas;
-  canvas.DrawPaint({.color = Color::White()});
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   canvas.Translate({100, 100});
   canvas.Scale(Vector2{0.5, 0.5});
 
@@ -1211,12 +1219,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
 TEST_P(AiksTest, TextRotated) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
-
-  Paint paint;
-  paint.color = Color(0.1, 0.1, 0.1, 1.0);
-  canvas.DrawRect(
-      Rect::MakeLTRB(0, 0, GetWindowSize().width, GetWindowSize().height),
-      paint);
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
   canvas.Transform(Matrix(0.25, -0.3, 0, -0.002,  //
                           0, 0.5, 0, 0,           //
@@ -2092,6 +2095,26 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
   });
   canvas.DrawImage(image, {100, 500}, {});
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+/// This is a regression check for https://github.com/flutter/engine/pull/41129
+/// The entire screen is green if successful. If failing, no frames will render,
+/// or the entire screen will be transparent black.
+TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Red()});
+
+  // Draw two overlapping subpixel circles.
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+
+  canvas.DrawPaint({.color = Color::Green()});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
