@@ -182,7 +182,7 @@ Future<void> testMain() async {
       await renderer.renderScene(sceneBuilder.build());
       await awaitNextFrame();
       await matchGoldenFile('scene_builder_shader_mask.png', region: region);
-    });
+    }, skip: isFirefox && isHtml); // https://github.com/flutter/flutter/issues/86623
   });
 }
 
