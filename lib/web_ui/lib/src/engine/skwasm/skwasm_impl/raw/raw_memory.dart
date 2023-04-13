@@ -132,12 +132,10 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Float> convertDoublesToNative(Iterable<double> values) {
+  Pointer<Float> convertDoublesToNative(List<double> values) {
     final Pointer<Float> pointer = allocFloatArray(values.length);
-    int i = 0;
-    for (final double value in values) {
-      pointer[i] = value;
-      i++;
+    for (int i = 0; i < values.length; i++) {
+      pointer[i] = values[i];
     }
     return pointer;
   }

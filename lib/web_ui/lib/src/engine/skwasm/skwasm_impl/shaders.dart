@@ -205,10 +205,9 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
         if (childCount != 0) {
           childShaders = s.allocPointerArray(childCount)
             .cast<ShaderHandle>();
-          int i = 0;
-          for (final SkwasmShader shader in _childShaders!) {
-            childShaders[i] = shader.handle;
-            i++;
+          final List<SkwasmShader> shaders = _childShaders!;
+          for (int i = 0; i < childCount; i++) {
+            childShaders[i] = shaders[i].handle;
           }
         }
         return shaderCreateRuntimeEffectShader(
