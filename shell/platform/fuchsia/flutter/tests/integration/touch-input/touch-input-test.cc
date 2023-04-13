@@ -532,7 +532,7 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
 
 
 // Only test GFX Test UI stack for this case.
-INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
+INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestHittestDisabledParameterized,
                          FlutterEmbedTapTest,
                          ::testing::Values(kGfxTestUIStackUrl));
                          
