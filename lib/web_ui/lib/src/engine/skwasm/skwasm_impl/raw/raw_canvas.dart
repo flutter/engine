@@ -108,7 +108,7 @@ external void canvasDrawCircle(
     CanvasHandle canvas, double x, double y, double radius, PaintHandle paint);
 
 @Native<Void Function(CanvasHandle, RawRect, Float, Float, Bool, PaintHandle)>(
-    symbol: 'canvas_drawCircle', isLeaf: true)
+    symbol: 'canvas_drawArc', isLeaf: true)
 external void canvasDrawArc(
     CanvasHandle canvas,
     RawRect rect,
@@ -125,6 +125,17 @@ external void canvasDrawPath(
 @Native<Void Function(CanvasHandle, PictureHandle)>(
     symbol: 'canvas_drawPicture', isLeaf: true)
 external void canvasDrawPicture(CanvasHandle canvas, PictureHandle picture);
+
+@Native<Void Function(CanvasHandle, PathHandle, Float, Float, Int32, Bool)>(
+    symbol: 'canvas_drawShadow', isLeaf: true)
+external void canvasDrawShadow(
+  CanvasHandle canvas,
+  PathHandle path,
+  double elevation,
+  double devicePixelRatio,
+  int color,
+  bool transparentOccluder,
+);
 
 @Native<Void Function(CanvasHandle, RawMatrix44)>(
     symbol: 'canvas_getTransform', isLeaf: true)
