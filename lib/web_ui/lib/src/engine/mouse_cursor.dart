@@ -62,7 +62,19 @@ class MouseCursor {
     'zoomOut': 'zoom-out',
   };
   static String _mapKindToCssValue(String? kind) {
-    return _kindToCssValueMap[kind] ?? 'default';
+    // Allow 'image-set(...)'/'-webkit-image-set(...)' css commands thru for setting DevicePixelRatio
+    // aware images for cursors (for newer browsers) and allow 'url(...)' strings thru as fallback
+    // for older browsers (bare url() commands are always 1.0x dpr).  The hotspot coordinates are always
+    // supplied in 1.0x dpr coordinates.  All of these css methods can use data-uri versions of url's
+    // which allow for inline definition of image data to define the cursor.
+    if (kind != null &&
+        ((kind.startsWith('url') ||
+            kind.startsWith('image-set') ||
+            kind.startsWith('-webkit-image-set')))) {
+      return kind;
+    } else {
+      return _kindToCssValueMap[kind] ?? 'default';
+    }
   }
 
   void activateSystemCursor(String? kind) {
