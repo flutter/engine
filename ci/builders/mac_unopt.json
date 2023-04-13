@@ -146,21 +146,7 @@
                 "targets": [
                 ]
             },
-            "tests": [
-                {
-                    "language": "python3",
-                    "name": "Host Tests for host_debug_unopt_arm64",
-                    "parameters": [
-                        "--variant",
-                        "host_debug_unopt_arm64",
-                        "--type",
-                        "dart,engine",
-                        "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
-                }
-            ]
+            "tests": []
         },
         {
             "archives": [

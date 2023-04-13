@@ -11,11 +11,8 @@ is_aot_test =
     flutter_runtime_mode == "profile" || flutter_runtime_mode == "release"
 
 # Unit tests targets are only enabled for host machines and Fuchsia right now
-# Special case Mac arm64, since gn thinks the host_cpu is x64 in that case.
-# TODO(dnfield): Remove this special case when https://github.com/flutter/flutter/issues/103386
-# is fixed.
 declare_args() {
-  enable_unittests = current_toolchain == host_toolchain || is_fuchsia || is_mac
+  enable_unittests = current_toolchain == host_toolchain || is_fuchsia
 }
 
 # Creates a translation unit that defines the flutter::testing::GetFixturesPath

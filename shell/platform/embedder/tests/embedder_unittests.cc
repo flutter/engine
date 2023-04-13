@@ -811,10 +811,7 @@ TEST_F(EmbedderTest,
 
   latch.Wait();
 
-// The image bytes need to be updated for arm64 Mac.
-#if !(FML_OS_MACOSX && FML_ARCH_CPU_ARM64)
   ASSERT_TRUE(ImageMatchesFixture("compositor_software.png", scene_image));
-#endif  // !(FML_OS_MACOSX && FML_ARCH_CPU_ARM64)
 
   // There should no present calls on the root surface.
   ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
