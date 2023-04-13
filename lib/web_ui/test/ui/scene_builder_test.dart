@@ -161,15 +161,15 @@ Future<void> testMain() async {
       }));
 
       final ui.Shader shader = ui.Gradient.linear(
-        const ui.Offset(125, 125),
-        const ui.Offset(175, 175), <ui.Color>[
+        ui.Offset.zero,
+        const ui.Offset(50, 50), <ui.Color>[
           const ui.Color(0xFFFFFFFF),
           const ui.Color(0x00000000),
         ]);
       sceneBuilder.pushShaderMask(
         shader,
-        ui.Rect.fromCircle(center: const ui.Offset(150, 150), radius: 25),
-        ui.BlendMode.multiply
+        const ui.Rect.fromLTRB(125, 125, 175, 175),
+        ui.BlendMode.srcATop
       );
 
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
