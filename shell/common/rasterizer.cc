@@ -52,6 +52,7 @@ fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
     const {
   return weak_factory_.GetWeakPtr();
 }
+
 void Rasterizer::SetImpellerContext(
     std::weak_ptr<impeller::Context> impeller_context) {
   impeller_context_ = std::move(impeller_context);
