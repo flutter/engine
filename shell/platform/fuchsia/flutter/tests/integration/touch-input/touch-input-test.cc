@@ -532,7 +532,6 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
   ASSERT_EQ(touch_injection_request_count(), 2);
 }
 
-
 // Only test GFX Test UI stack for this case.
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestHittestDisabledParameterized,
                          FlutterEmbedTapTest,
