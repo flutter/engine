@@ -165,7 +165,7 @@
         {
             "archives": [
                 {
-                    "base_path": "out/ios_debug_sim/zip_archives/",
+                    "base_path": "out/ios_debug_sim_arm64/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
                     ],
@@ -195,7 +195,7 @@
                 "--simulator-cpu",
                 "arm64"
             ],
-            "name": "ios_debug_sim",
+            "name": "ios_debug_sim_arm64",
             "ninja": {
                 "config": "ios_debug_sim_arm64",
                 "targets": [
