@@ -16,6 +16,7 @@ import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
+import 'package:ui/ui_web/src/ui_web.dart';
 
 import '../common/spy.dart';
 
