@@ -13,6 +13,8 @@ import 'environment.dart';
 import 'exceptions.dart';
 import 'utils.dart';
 
+final http.Client client = http.Client();
+
 class GenerateFallbackFontDataCommand extends Command<bool>
     with ArgUtils<bool> {
   GenerateFallbackFontDataCommand() {
@@ -50,26 +52,23 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
-    final http.Client client = http.Client();
     final http.Response response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
       throw ToolExit('Failed to download Google Fonts list.');
     }
-    final Map<String, dynamic> googleFontsResult =
-        jsonDecode(response.body) as Map<String, dynamic>;
-    final List<Map<String, dynamic>> fontDatas =
-        (googleFontsResult['items'] as List<dynamic>)
-            .cast<Map<String, dynamic>>();
-    final Map<String, Uri> urlForFamily = <String, Uri>{};
-    for (final Map<String, dynamic> fontData in fontDatas) {
-      if (fallbackFonts.contains(fontData['family'])) {
-        final Uri uri = Uri.parse(fontData['files']['regular'] as String)
-            .replace(scheme: 'https');
-        urlForFamily[fontData['family'] as String] = uri;
+    final Map<String, dynamic> googleFontsResponse =
+        jsonDecode(response.body) as GoogleFontsResponse;
+    final Map<String, FontResponse> fontItems = googleFontsResponse.itemsMap;
+
+    // Check that each font family we care about is available in Google Fonts.
+    for (final String family in fallbackFonts) {
+      if (!fontItems.containsKey(family)) {
+        throw ToolExit('Unable to determine URL to download $family. '
+            'Check if it is still hosted on Google Fonts.');
       }
     }
-    final Map<String, String> charsetForFamily = <String, String>{};
+
     final io.Directory fontDir = downloadTestFonts
         ? await io.Directory(path.join(
             environment.webUiBuildDir.path,
@@ -77,32 +76,20 @@ class GenerateFallbackFontDataCommand extends Command<bool>
             'noto',
           )).create(recursive: true)
         : await io.Directory.systemTemp.createTemp('fonts');
+
     // Delete old fonts in the font directory.
     await for (final io.FileSystemEntity file in fontDir.list()) {
       await file.delete();
     }
-    for (final String family in fallbackFonts) {
-      print('Downloading $family...');
-      final Uri? uri = urlForFamily[family];
-      if (uri == null) {
-        throw ToolExit('Unable to determine URL to download $family. '
-            'Check if it is still hosted on Google Fonts.');
-      }
-      final http.Response fontResponse = await client.get(uri);
-      if (fontResponse.statusCode != 200) {
-        throw ToolExit('Failed to download font for $family');
-      }
-      final io.File fontFile =
-          io.File(path.join(fontDir.path, path.basename(uri.path)));
-      await fontFile.writeAsBytes(fontResponse.bodyBytes);
-      final io.ProcessResult fcQueryResult =
-          await io.Process.run('fc-query', <String>[
-        '--format=%{charset}',
-        '--',
-        fontFile.path,
-      ]);
-      final String encodedCharset = fcQueryResult.stdout as String;
-      charsetForFamily[family] = encodedCharset;
+
+    final List<FontData> fontDatas = <FontData>[];
+    for (final FontResponse fontResponse in fontItems.values) {
+      // TODO(mdebbar): For "Noto Color Emoji" we should use the css API to get
+      // the split font files.
+      fontDatas.add(await extractFontDataUsingFcQuery(
+        fontResponse: fontResponse,
+        fontDir: fontDir,
+      ));
     }
 
     final StringBuffer sb = StringBuffer();
@@ -119,41 +106,29 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln();
     sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');
 
-    for (final String family in fallbackFonts) {
-      if (family == 'Noto Emoji') {
+    for (final FontData fontData in fontDatas) {
+      if (fontData.family == 'Noto Emoji') {
         sb.write(' if (!configuration.useColorEmoji)');
       }
-      if (family == 'Noto Color Emoji') {
+      if (fontData.family == 'Noto Color Emoji') {
         sb.write(' if (configuration.useColorEmoji)');
       }
-      sb.writeln(" NotoFont('$family', '${urlForFamily[family]!}',");
-      final List<String> starts = <String>[];
-      final List<String> ends = <String>[];
-      for (final String range in charsetForFamily[family]!.split(' ')) {
-        final List<String> parts = range.split('-');
-        if (parts.length == 1) {
-          starts.add(parts[0]);
-          ends.add(parts[0]);
-        } else {
-          starts.add(parts[0]);
-          ends.add(parts[1]);
-        }
-      }
+      sb.writeln(" NotoFont('${fontData.family}', '${fontData.uri}',");
 
       // Print the unicode ranges in a readable format for easier review. This
       // shouldn't affect code size because comments are removed in release mode.
       sb.write('   // <int>[');
-      for (final String start in starts) {
+      for (final String start in fontData.starts) {
         sb.write('0x$start,');
       }
       sb.writeln('],');
       sb.write('   // <int>[');
-      for (final String end in ends) {
+      for (final String end in fontData.ends) {
         sb.write('0x$end,');
       }
       sb.writeln(']');
 
-      sb.writeln("   '${_packFontRanges(starts, ends)}',");
+      sb.writeln("   '${_packFontRanges(fontData.starts, fontData.ends)}',");
       sb.writeln(' ),');
     }
     sb.writeln('];');
@@ -168,6 +143,116 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     ));
     await fontDataFile.writeAsString(sb.toString());
   }
+}
+
+typedef GoogleFontsResponse = Map<String, dynamic>;
+extension GoogleFontsResponseExtension on GoogleFontsResponse {
+  Iterable<FontResponse> get items => (this['items'] as List<dynamic>).cast<FontResponse>();
+
+  /// Maps each font family to its corresponding [FontResponse].
+  Map<String, FontResponse> get itemsMap {
+    final Map<String, FontResponse> map = <String, FontResponse>{};
+    for (final String family in fallbackFonts) {
+      final FontResponse? fontResponse = items.getFontResponseForFamily(family);
+      if (fontResponse != null) {
+        map[family] = fontResponse;
+      }
+    }
+    return map;
+  }
+}
+
+extension on Iterable<FontResponse> {
+  FontResponse? getFontResponseForFamily(String family) {
+    for (final FontResponse fontResponse in this) {
+      if (fontResponse.family == family) {
+        return fontResponse;
+      }
+    }
+    return null;
+  }
+}
+
+typedef FontResponse = Map<String, dynamic>;
+extension FontResponseExtension on FontResponse {
+  String get family => this['family'] as String;
+  Iterable<String> get variants => (this['variants'] as List<dynamic>).cast<String>();
+  Iterable<String> get subsets => (this['subsets'] as List<dynamic>).cast<String>();
+  String get version => this['version'] as String;
+  String get lastModified => this['lastModified'] as String;
+  Map<String, String> get files => (this['files'] as Map<dynamic, dynamic>).cast<String, String>();
+  String get category => this['category'] as String;
+  String get kind => this['kind'] as String;
+}
+
+typedef FontData = ({
+  String family,
+  Uri uri,
+  List<String> starts,
+  List<String> ends,
+});
+
+Future<FontData> extractFontDataUsingFcQuery({
+  required FontResponse fontResponse,
+  required io.Directory fontDir,
+}) async {
+  // 1. Download the font file.
+  final Uri fontUri = Uri.parse(fontResponse.files['regular']!).replace(scheme: 'https');
+  final io.File fontFile = await downloadFont(
+    family: fontResponse.family,
+    uri: fontUri,
+    fontDir: fontDir,
+  );
+
+  // 2. Run fc-query to get the list of unicode ranges.
+  final io.ProcessResult fcQueryResult = await io.Process.run(
+    'fc-query',
+    <String>[
+      '--format=%{charset}',
+      '--',
+      fontFile.path,
+    ],
+  );
+  final String encodedCharset = fcQueryResult.stdout as String;
+
+  // 3. Parse the list of unicode ranges.
+  final List<String> starts = <String>[];
+  final List<String> ends = <String>[];
+  for (final String range in encodedCharset.split(' ')) {
+    final List<String> parts = range.split('-');
+    switch (parts) {
+      case [final String start, final String end]:
+        starts.add(start);
+        ends.add(end);
+      case [final String start]:
+        starts.add(start);
+        ends.add(start);
+    }
+  }
+
+  // 4. Create the font data.
+  return (
+    family: fontResponse.family,
+    uri: fontUri,
+    starts: starts,
+    ends: ends,
+  );
+}
+
+Future<io.File> downloadFont({
+  required String family,
+  required Uri uri,
+  required io.Directory fontDir,
+}) async {
+  print('Downloading $family...');
+  final http.Response httpResponse = await client.get(uri);
+  if (httpResponse.statusCode != 200) {
+    throw ToolExit('Failed to download font for "$family" (uri: $uri)');
+  }
+  final io.File fontFile =
+      io.File(path.join(fontDir.path, path.basename(uri.path)));
+  await fontFile.writeAsBytes(httpResponse.bodyBytes);
+  return fontFile;
 }
 
 const List<String> fallbackFonts = <String>[
