@@ -198,7 +198,7 @@ class EntityPass {
                 StencilCoverageStack& stencil_coverage_stack,
                 size_t stencil_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
-                std::optional<InlinePassContext::RenderPassResult>
+                const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
 
   /// The list of renderable items in the scene. Each of these items is

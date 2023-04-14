@@ -491,14 +491,14 @@ bool EntityPass::OnRender(ContentContext& renderer,
                           StencilCoverageStack& stencil_coverage_stack,
                           size_t stencil_depth_floor,
                           std::shared_ptr<Contents> backdrop_filter_contents,
-                          std::optional<InlinePassContext::RenderPassResult>
+                          const std::optional<InlinePassContext::RenderPassResult>&
                               collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
   InlinePassContext pass_context(context, pass_target,
                                  GetTotalPassReads(renderer),
-                                 std::move(collapsed_parent_pass));
+                                 collapsed_parent_pass);
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
