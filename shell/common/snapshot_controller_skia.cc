@@ -34,15 +34,7 @@ sk_sp<SkImage> DrawSnapshot(
     return nullptr;
   }
 
-  //  {
-  //    TRACE_EVENT0("flutter", "DeviceHostTransfer");
-  //    if (auto raster_image = device_snapshot->makeRasterImage()) {
-  //      return raster_image;
-  //    }
-  //  }
   return device_snapshot;
-
-  return nullptr;
 }
 }  // namespace
 
