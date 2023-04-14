@@ -33,11 +33,11 @@ void main(List<String> args) {
 
   // TODO(fxbug.dev/125514): Support Flatland Child View.
   TestApp app = TestApp(
-      ChildView.gfx(_launchGfxChildView()),
-      showOverlay: arguments['showOverlay'],
-      hitTestable: arguments['hitTestable'],
-      focusable: arguments['focusable'],
-    );
+    ChildView.gfx(_launchGfxChildView()),
+    showOverlay: arguments['showOverlay'],
+    hitTestable: arguments['hitTestable'],
+    focusable: arguments['focusable'],
+  );
 
   app.run();
 }
