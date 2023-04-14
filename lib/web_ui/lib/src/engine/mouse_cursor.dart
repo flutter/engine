@@ -68,9 +68,9 @@ class MouseCursor {
     // supplied in 1.0x dpr coordinates.  All of these css methods can use data-uri versions of url's
     // which allow for inline definition of image data to define the cursor.
     if (kind != null &&
-        ((kind.startsWith('url') ||
+        (kind.startsWith('url') ||
             kind.startsWith('image-set') ||
-            kind.startsWith('-webkit-image-set')))) {
+            kind.startsWith('-webkit-image-set'))) {
       return kind;
     } else {
       return _kindToCssValueMap[kind] ?? 'default';
