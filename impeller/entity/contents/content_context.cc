@@ -170,6 +170,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
+  checkerboard_pipelines_[{}] =
+      CreateDefaultPipeline<CheckerboardPipeline>(*context_);
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
   linear_gradient_fill_pipelines_[{}] =

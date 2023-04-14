@@ -54,6 +54,10 @@ void Canvas::Initialize() {
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
 
+void Canvas::SetOffscreenCheckerboard(bool enabled) {
+  checkerboard_offscreen_ = enabled;
+}
+
 void Canvas::Reset() {
   base_pass_ = nullptr;
   current_pass_ = nullptr;
@@ -75,6 +79,7 @@ void Canvas::Save(
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
+    subpass->SetCheckerboardOffscreen(checkerboard_offscreen_);
     subpass->SetBackdropFilter(std::move(backdrop_filter));
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));

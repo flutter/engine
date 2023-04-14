@@ -33,6 +33,8 @@ class Canvas {
 
   ~Canvas();
 
+  void SetOffscreenCheckerboard(bool enabled);
+
   void Save();
 
   void SaveLayer(const Paint& paint,
@@ -126,6 +128,7 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  bool checkerboard_offscreen_ = true;
 
   void Initialize();
 

@@ -16,6 +16,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -725,6 +726,22 @@ bool EntityPass::OnRender(ContentContext& renderer,
     }
   }
 
+  //--------------------------------------------------------------------------
+  /// Draw debug checkerboard over offscreen textures.
+  ///
+
+  // When the pass depth is > 0, this EntityPass is being rendered to an
+  // offscreen texture.
+  if (checkerboard_offscreen_ && pass_depth > 0) {
+    auto result = pass_context.GetRenderPass(pass_depth);
+    if (!result.pass) {
+      // Failure to produce a render pass should be explained by specific errors
+      // in `InlinePassContext::GetRenderPass()`.
+      return false;
+    }
+    CheckerboardContents().Render(renderer, {}, *result.pass);
+  }
+
   return true;
 }
 
@@ -820,6 +837,10 @@ void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
   }
 
   backdrop_filter_proc_ = std::move(proc);
+}
+
+void EntityPass::SetCheckerboardOffscreen(bool enabled) {
+  checkerboard_offscreen_ = enabled;
 }
 
 }  // namespace impeller
