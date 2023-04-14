@@ -2377,7 +2377,6 @@ Future<void> testMain() async {
       expect(textArea.selectionEnd, 2);
     });
 
-
     test('Configure input element editing state for a flipped base and extent',
         () {
       final DomHTMLInputElement input =
