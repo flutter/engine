@@ -482,23 +482,23 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   return EntityPass::EntityResult::Success(element_entity);
 }
 
-bool EntityPass::OnRender(ContentContext& renderer,
-                          ISize root_pass_size,
-                          EntityPassTarget& pass_target,
-                          Point global_pass_position,
-                          Point local_pass_position,
-                          uint32_t pass_depth,
-                          StencilCoverageStack& stencil_coverage_stack,
-                          size_t stencil_depth_floor,
-                          std::shared_ptr<Contents> backdrop_filter_contents,
-                          const std::optional<InlinePassContext::RenderPassResult>&
-                              collapsed_parent_pass) const {
+bool EntityPass::OnRender(
+    ContentContext& renderer,
+    ISize root_pass_size,
+    EntityPassTarget& pass_target,
+    Point global_pass_position,
+    Point local_pass_position,
+    uint32_t pass_depth,
+    StencilCoverageStack& stencil_coverage_stack,
+    size_t stencil_depth_floor,
+    std::shared_ptr<Contents> backdrop_filter_contents,
+    const std::optional<InlinePassContext::RenderPassResult>&
+        collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, pass_target,
-                                 GetTotalPassReads(renderer),
-                                 collapsed_parent_pass);
+  InlinePassContext pass_context(
+      context, pass_target, GetTotalPassReads(renderer), collapsed_parent_pass);
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
@@ -726,6 +726,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
     }
   }
 
+#ifdef IMPELLER_DEBUG
   //--------------------------------------------------------------------------
   /// Draw debug checkerboard over offscreen textures.
   ///
@@ -744,6 +745,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
     checkerboard.SetColor(*checkerboard_color_);
     checkerboard.Render(renderer, {}, *result.pass);
   }
+#endif
 
   return true;
 }

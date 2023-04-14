@@ -34,8 +34,6 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
     "shaders/border_mask_blur.vert",
-    "shaders/checkerboard.frag",
-    "shaders/checkerboard.vert",
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
     "shaders/conical_gradient_fill.frag",
@@ -74,6 +72,13 @@ impeller_shaders("entity_shaders") {
     "shaders/yuv_to_rgb_filter.vert",
     "shaders/blending/porter_duff_blend.frag",
   ]
+
+  if (impeller_debug) {
+    shaders += [
+      "shaders/debug/checkerboard.frag",
+      "shaders/debug/checkerboard.vert",
+    ]
+  }
 }
 
 impeller_shaders("modern_entity_shaders") {
@@ -139,8 +144,6 @@ impeller_component("entity") {
     "contents/anonymous_contents.h",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
-    "contents/checkerboard_contents.cc",
-    "contents/checkerboard_contents.h",
     "contents/clip_contents.cc",
     "contents/clip_contents.h",
     "contents/color_source_contents.cc",
@@ -224,6 +227,13 @@ impeller_component("entity") {
     "inline_pass_context.cc",
     "inline_pass_context.h",
   ]
+
+  if (impeller_debug) {
+    sources += [
+      "contents/checkerboard_contents.cc",
+      "contents/checkerboard_contents.h",
+    ]
+  }
 
   public_deps = [
     ":entity_shaders",

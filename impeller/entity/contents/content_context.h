@@ -18,8 +18,10 @@
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
+#ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
 #include "impeller/entity/checkerboard.vert.h"
+#endif  // IMPELLER_DEBUG
 
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
@@ -106,8 +108,11 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
 using CheckerboardPipeline =
     RenderPipelineT<CheckerboardVertexShader, CheckerboardFragmentShader>;
+#endif  // IMPELLER_DEBUG
+
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
 using SolidFillPipeline =
@@ -332,10 +337,12 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
+#ifdef IMPELLER_DEBUG
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(checkerboard_pipelines_, opts);
   }
+#endif  // IMPELLER_DEBUG
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -684,7 +691,11 @@ class ContentContext {
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
   // map.
+
+#ifdef IMPELLER_DEBUG
   mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
+#endif  // IMPELLER_DEBUG
+
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
