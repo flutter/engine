@@ -139,6 +139,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (UIView*)keyboardAnimationView;
 - (SpringAnimation*)keyboardSpringAnimation;
 - (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
+- (void)keyboardAnimationDelayUpdateViewportMetrics;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;
@@ -183,6 +184,26 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
 
   return mockView;
+}
+
+- (void)testKeyboardAnimationDelayUpdateViewportMetricsWillWorkCorrectly {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect viewFrame = UIScreen.mainScreen.bounds;
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+
+  [viewControllerMock keyboardAnimationDelayUpdateViewportMetrics];
+
+  // Expect the updateViewportMetrics will invoke after some time.
+  XCTestExpectation* expectation = [self expectationWithDescription:@"delay update viewport"];
+  OCMStub([viewControllerMock updateViewportMetrics]).andDo(^(NSInvocation* invocation) {
+    [expectation fulfill];
+  });
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
 }
 
 - (void)testViewDidLoadWillInvokeCreateTouchRateCorrectionVSyncClient {
