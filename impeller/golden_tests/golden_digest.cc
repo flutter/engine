@@ -25,10 +25,11 @@ GoldenDigest::GoldenDigest() {}
 
 void GoldenDigest::AddImage(const std::string& test_name,
                             const std::string& filename,
+                            const std::string& gpu_string,
                             int32_t width,
                             int32_t height) {
-  entries_.push_back({test_name, filename, width, height, kMaxDiffPixelsPercent,
-                      kMaxColorDelta});
+  entries_.push_back({test_name, filename, gpu_string, width, height,
+                      kMaxDiffPixelsPercent, kMaxColorDelta});
 }
 
 bool GoldenDigest::Write(WorkingDirectory* working_directory) {
@@ -49,6 +50,7 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
     fout << "  { "
          << "\"testName\" : \"" << entry.test_name << "\", "
          << "\"filename\" : \"" << entry.filename << "\", "
+         << "\"gpu_string\" : \"" << entry.gpu_string << "\", "
          << "\"width\" : " << entry.width << ", "
          << "\"height\" : " << entry.height << ", ";
 

@@ -43,14 +43,16 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(const std::string& gpu_string,
+                    std::unique_ptr<testing::MetalScreenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
-  testing::GoldenDigest::Instance()->AddImage(
-      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
+  testing::GoldenDigest::Instance()->AddImage(test_name, filename, gpu_string,
+                                              screenshot->GetWidth(),
+                                              screenshot->GetHeight());
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -87,7 +89,8 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   auto screenshot =
       pimpl_->screenshoter->MakeScreenshot(picture, pimpl_->window_size);
-  return SaveScreenshot(std::move(screenshot));
+  return SaveScreenshot(GetContext()->DescribeGpuModel(),
+                        std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(

@@ -30,24 +30,3 @@ if (impeller_concurrent_malioc_jobs == -1) {
 pool("malioc_pool") {
   depth = impeller_concurrent_malioc_jobs
 }
-
-impeller_component("gpu_model") {
-  target_type = "executable"
-
-  sources = [ "gpu_model_main.mm" ]
-
-  deps = [
-    "../entity",
-    "../renderer",
-    "../renderer/backend",
-    "//flutter/vulkan/procs",
-    "//third_party/swiftshader",
-  ]
-
-  if (is_mac) {
-    frameworks = [
-      "Foundation.framework",
-      "Metal.framework",
-    ]
-  }
-}

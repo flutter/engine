@@ -20,6 +20,7 @@ class GoldenDigest {
 
   void AddImage(const std::string& test_name,
                 const std::string& filename,
+                const std::string& gpu_string,
                 int32_t width,
                 int32_t height);
 
@@ -34,6 +35,7 @@ class GoldenDigest {
   struct Entry {
     std::string test_name;
     std::string filename;
+    std::string gpu_string;
     int32_t width;
     int32_t height;
     double max_diff_pixels_percent;
