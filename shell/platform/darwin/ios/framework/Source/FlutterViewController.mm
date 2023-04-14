@@ -1590,29 +1590,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
-  // Because the keyboard animation is driven by vsync callback in platform
-  // thread, and it is extremely closed to vsync callback in UI thread, so it maybe
-  // run before the vsync process callback in UI thread.
-  // And if this happens, will cause jitter behavior in rendering, so adding a
-  // tiny delay to keep the updateViewportMetrics signal run after the vsync
-  // process callback in UI thread to keep things smooth.
-  auto delayUpdateViewportMetricsCallback = [weakSelf = [self getWeakPtr]] {
-    if (!weakSelf) {
-      return;
-    }
-    fml::scoped_nsobject<FlutterViewController> flutterViewController(
-        [(FlutterViewController*)weakSelf.get() retain]);
-    if (!flutterViewController) {
-      return;
-    }
-    flutter::Shell& shell = flutterViewController.get().engine.shell;
-    shell.GetTaskRunners().GetPlatformTaskRunner()->PostDelayedTask(
-        [flutterViewController] { [flutterViewController updateViewportMetrics]; },
-        kKeyboardAnimationUpdateViewportMetricsDelay);
-  };
-
-  auto callback = [weakSelf = [self getWeakPtr], delayUpdateViewportMetricsCallback](
-                      std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+  auto callback = [weakSelf =
+                       [self getWeakPtr]](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     if (!weakSelf) {
       return;
     }
@@ -1632,7 +1611,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
             flutterViewController.get()
                 .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        delayUpdateViewportMetricsCallback();
+        [flutterViewController keyboardAnimationDelayUpdateViewportMetrics];
       }
     } else {
       // Because updateViewportMetrics will work in next frame and the frame will
@@ -1644,7 +1623,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      delayUpdateViewportMetricsCallback();
+      [flutterViewController keyboardAnimationDelayUpdateViewportMetrics];
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
@@ -1655,6 +1634,29 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                      callback:callback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
+}
+
+- (void)keyboardAnimationDelayUpdateViewportMetrics {
+  // Because the keyboard animation is driven by vsync callback in platform
+  // thread, and it is extremely closed to vsync callback in UI thread, so it maybe
+  // run before the vsync process callback in UI thread.
+  // And if this happens, will cause jitter behavior in rendering, so adding a
+  // tiny delay to keep the updateViewportMetrics signal run after the vsync
+  // process callback in UI thread to keep things smooth.
+  flutter::Shell& shell = [_engine.get() shell];
+  shell.GetTaskRunners().GetPlatformTaskRunner()->PostDelayedTask(
+      [weakSelf = [self getWeakPtr]] {
+        if (!weakSelf) {
+          return;
+        }
+        fml::scoped_nsobject<FlutterViewController> flutterViewController(
+            [(FlutterViewController*)weakSelf.get() retain]);
+        if (!flutterViewController) {
+          return;
+        }
+        [flutterViewController updateViewportMetrics];
+      },
+      kKeyboardAnimationUpdateViewportMetricsDelay);
 }
 
 - (void)invalidateKeyboardAnimationVSyncClient {
