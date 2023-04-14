@@ -57,6 +57,11 @@ void Rasterizer::SetImpellerContext(
   impeller_context_ = std::move(impeller_context);
 }
 
+void Rasterizer::SetImpellerContext(
+    std::weak_ptr<impeller::Context> impeller_context) {
+  impeller_context_ = std::move(impeller_context);
+}
+
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
 
