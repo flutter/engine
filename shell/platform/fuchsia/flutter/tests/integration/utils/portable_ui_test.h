@@ -113,6 +113,10 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // Configures the test-specific component topology.
   virtual void ExtendRealm() = 0;
 
+  // Control the test-ui-stack parameters. Override as necessary.
+  virtual bool use_scene_manager() = 1;
+  virtual bool use_flatland() = 1;
+
   // Returns the test-specific test-ui-stack component url to use.
   // Usually overridden to return a value from gtest GetParam()
   virtual std::string GetTestUIStackUrl() = 0;

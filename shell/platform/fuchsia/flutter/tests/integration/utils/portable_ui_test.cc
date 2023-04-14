@@ -20,6 +20,7 @@ namespace {
 // Types imported for the realm_builder library.
 using component_testing::ChildOptions;
 using component_testing::ChildRef;
+using component_testing::ConfigValue;
 using component_testing::ParentRef;
 using component_testing::Protocol;
 using component_testing::RealmRoot;
@@ -73,6 +74,12 @@ void PortableUITest::SetUpRealmBase() {
 
   // Add test UI stack component.
   realm_builder_.AddChild(kTestUIStack, GetTestUIStackUrl());
+
+  // Configure test-ui-stack.
+  realm_builder_.SetConfigValue(kTestUIStack, "use_scene_manager",
+                                ConfigValue::Bool(use_scene_manager()));
+  realm_builder_.SetConfigValue(kTestUIStack, "use_flatland", 
+                                ConfigValue::Bool(use_flatland()));
 
   // // Route base system services to flutter and the test UI stack.
   realm_builder_.AddRoute(Route{

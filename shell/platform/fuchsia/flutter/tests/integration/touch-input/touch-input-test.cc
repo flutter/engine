@@ -288,10 +288,8 @@ class FlutterTapTestBase : public PortableUITest,
   uint32_t display_height() const { return display_height_; }
 
   // Override test-ui-stack config.
-  bool use_scene_manager() override { return true; }
   bool use_flatland() override { return GetParam(); }
-
-  ParamType GetTestUIStackUrl() override {
+  std::string GetTestUIStackUrl() override {
     return GetParam() ? kTestUIStackUrl : kGfxTestUIStackUrl;
   };
 
