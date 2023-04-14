@@ -2139,5 +2139,34 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+/// Tests that the debug checkerboard displays for offscreen textures when
+/// enabled. Most of the complexity here is just to future proof by making pass
+/// collapsing hard.
+TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
+  Canvas canvas;
+
+  canvas.SetEnableOffscreenCheckerboard(true);
+  // The default behavior is to generate random checkerboard colors for each
+  // layer, so override the color proc and make the test deterministic.
+  canvas.SetCheckerboardColorProc(
+      []() { return Color::SpringGreen().WithAlpha(0.50); });
+
+  canvas.DrawPaint({.color = Color::AntiqueWhite()});
+  canvas.DrawCircle({400, 300}, 200,
+                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
+
+  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
+  {
+    canvas.DrawCircle({500, 400}, 200,
+                      {.color = Color::DarkBlue().WithAlpha(0.75)});
+    canvas.DrawCircle({550, 450}, 200,
+                      {.color = Color::LightCoral().WithAlpha(0.75),
+                       .blend_mode = BlendMode::kLuminosity});
+  }
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
