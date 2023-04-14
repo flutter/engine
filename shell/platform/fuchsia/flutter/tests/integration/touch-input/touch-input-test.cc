@@ -460,7 +460,8 @@ TEST_P(FlutterTapTest, FlutterTap) {
   ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
-INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized, FlutterEmbedTapTest,
+INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
+                         FlutterEmbedTapTest,
                          ::testing::Values(/* use_flatland */ true, false));
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
