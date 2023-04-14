@@ -1897,5 +1897,25 @@ static Picture BlendModeSaveLayerTest(BlendMode blend_mode) {
   }
 IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
 
+/// This is a regression check for https://github.com/flutter/engine/pull/41129
+/// The entire screen is green if successful. If failing, no frames will render,
+/// or the entire screen will be transparent black.
+TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Red()});
+
+  // Draw two overlapping subpixel circles.
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+
+  canvas.DrawPaint({.color = Color::Green()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
