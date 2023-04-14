@@ -457,10 +457,12 @@ TEST_P(FlutterTapTest, FlutterTap) {
   ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
+
+// TODO(fxbug.dev/125514): Embedded Child View needs to support Flatland.
+// Only test GFX Test UI stack for embedded test cases for now.
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
                          FlutterEmbedTapTest,
-                         ::testing::Values(kGfxTestUIStackUrl,
-                                           kTestUIStackUrl));
+                         ::testing::Values(kGfxTestUIStackUrl));
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
   // Launch view
@@ -494,6 +496,28 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
 
   // There should be 2 injected taps
   ASSERT_EQ(touch_injection_request_count(), 2);
+}
+
+TEST_P(FlutterEmbedTapTest, FlutterEmbedHittestDisabled) {
+  FML_LOG(INFO) << "Initializing scene";
+  AddComponentArgument("--no-hitTestable");
+  LaunchClientWithEmbeddedView();
+  FML_LOG(INFO) << "Client launched";
+
+  // Embedded child view takes up the center of the screen
+  // hitTestable is turned off for the embedded child view
+  // Expect the parent (embedding-flutter-view) to respond if we inject a tap
+  // there
+  InjectTap(0, 0);
+  RunLoopUntil([this] {
+    return LastEventReceivedMatches(
+        /*expected_x=*/static_cast<float>(display_width() / 2.0f),
+        /*expected_y=*/static_cast<float>(display_height() / 2.0f),
+        /*component_name=*/"embedding-flutter-view");
+  });
+
+  // There should be 1 injected tap
+  ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
@@ -530,33 +554,6 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
 
   // There should be 2 injected taps
   ASSERT_EQ(touch_injection_request_count(), 2);
-}
-
-// Only test GFX Test UI stack for this case.
-INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestHittestDisabledParameterized,
-                         FlutterEmbedTapTest,
-                         ::testing::Values(kGfxTestUIStackUrl);
-
-TEST_P(FlutterEmbedTapTest, FlutterEmbedHittestDisabled) {
-  FML_LOG(INFO) << "Initializing scene";
-  AddComponentArgument("--no-hitTestable");
-  LaunchClientWithEmbeddedView();
-  FML_LOG(INFO) << "Client launched";
-
-  // Embedded child view takes up the center of the screen
-  // hitTestable is turned off for the embedded child view
-  // Expect the parent (embedding-flutter-view) to respond if we inject a tap
-  // there
-  InjectTap(0, 0);
-  RunLoopUntil([this] {
-    return LastEventReceivedMatches(
-        /*expected_x=*/static_cast<float>(display_width() / 2.0f),
-        /*expected_y=*/static_cast<float>(display_height() / 2.0f),
-        /*component_name=*/"embedding-flutter-view");
-  });
-
-  // There should be 1 injected tap
-  ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
 }  // namespace
