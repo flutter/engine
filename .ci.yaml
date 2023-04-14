@@ -448,7 +448,6 @@ targets:
         ]
 
   - name: Mac impeller-cmake-example
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
