@@ -91,7 +91,8 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   layer.Paint(paint_context);
 
   sk_sp<SkImage> snapshot = surface->makeImageSnapshot();
-  sk_sp<SkData> snapshot_data = SkPngEncoder::Encode(nullptr, snapshot.get(), {});
+  sk_sp<SkData> snapshot_data =
+      SkPngEncoder::Encode(nullptr, snapshot.get(), {});
 
   sk_sp<SkData> golden_data =
       SkData::MakeFromFileName(golden_file_path.c_str());

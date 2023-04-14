@@ -892,7 +892,8 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
 
   auto assert_image = [&](auto decoded_image) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    ASSERT_TRUE(SkPngEncoder::Encode(nullptr, decoded_image.get(), {})->equals(expected_data.get()));
+    ASSERT_TRUE(SkPngEncoder::Encode(nullptr, decoded_image.get(), {})
+                    ->equals(expected_data.get()));
   };
 
   assert_image(decode(300, 100));
