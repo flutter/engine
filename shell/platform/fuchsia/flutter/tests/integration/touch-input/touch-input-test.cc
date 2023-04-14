@@ -207,7 +207,7 @@ class TouchInputListenerServer
 
 class FlutterTapTestBase : public PortableUITest,
                            public ::testing::Test,
-                           public ::testing::WithParamInterface<bool> {
+                           public ::testing::WithParamInterface<std::string> {
  protected:
   ~FlutterTapTestBase() override {
     FML_CHECK(touch_injection_request_count() > 0)
@@ -287,11 +287,7 @@ class FlutterTapTestBase : public PortableUITest,
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
 
-  // Override test-ui-stack config.
-  bool use_flatland() override { return GetParam(); }
-  std::string GetTestUIStackUrl() override {
-    return GetParam() ? kTestUIStackUrl : kGfxTestUIStackUrl;
-  };
+  ParamType GetTestUIStackUrl() override { return GetParam(); };
 
   TouchInputListenerServer* touch_input_listener_server_;
 };
@@ -434,7 +430,8 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
 // http://go/gunitadvanced#value-parameterized-tests
 INSTANTIATE_TEST_SUITE_P(FlutterTapTestParameterized,
                          FlutterTapTest,
-                         ::testing::Values(/* use_flatland */ true, false));
+                         ::testing::Values(kGfxTestUIStackUrl,
+                                           kTestUIStackUrl));
 
 TEST_P(FlutterTapTest, FlutterTap) {
   // Launch client view, and wait until it's rendering to proceed with the test.
@@ -462,7 +459,8 @@ TEST_P(FlutterTapTest, FlutterTap) {
 
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
                          FlutterEmbedTapTest,
-                         ::testing::Values(/* use_flatland */ true, false));
+                         ::testing::Values(kGfxTestUIStackUrl,
+                                           kTestUIStackUrl));
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
   // Launch view
@@ -537,7 +535,7 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
 // Only test GFX Test UI stack for this case.
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestHittestDisabledParameterized,
                          FlutterEmbedTapTest,
-                         ::testing::Values(/* use_flatland */ false));
+                         ::testing::Values(kGfxTestUIStackUrl);
 
 TEST_P(FlutterEmbedTapTest, FlutterEmbedHittestDisabled) {
   FML_LOG(INFO) << "Initializing scene";

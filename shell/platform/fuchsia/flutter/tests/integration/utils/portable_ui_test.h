@@ -107,9 +107,6 @@ class PortableUITest : public ::loop_fixture::RealLoop {
     return touch_injection_request_count_;
   }
 
-  // Control the test-ui-stack parameters. Override as necessary.
-  virtual bool use_flatland() = 0;
-
  private:
   void SetUpRealmBase();
 
