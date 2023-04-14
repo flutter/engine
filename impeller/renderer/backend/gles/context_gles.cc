@@ -106,7 +106,7 @@ bool ContextGLES::IsValid() const {
 
 // |Context|
 std::string ContextGLES::DescribeGpuModel() const {
-  return reactor_->GetProcTable().GetDescription().GetString();
+  return reactor_->GetProcTable().GetDescription()->GetString();
 }
 
 // |Context|
