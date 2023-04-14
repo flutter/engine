@@ -179,7 +179,7 @@ static std::optional<Entity> AdvancedBlend(
       entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
-std::optional<Entity> BlendFilterContents::CreateForegroundBlend(
+std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     const std::shared_ptr<FilterInput>& input,
     const ContentContext& renderer,
     const Entity& entity,
@@ -341,7 +341,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundBlend(
   return sub_entity;
 }
 
-std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
+std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     const std::shared_ptr<FilterInput>& input,
     const ContentContext& renderer,
     const Entity& entity,
@@ -354,14 +354,34 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
-  // TODO clear, src, dst.
+
+  if (blend_mode == BlendMode::kClear) {
+    return std::nullopt;
+  }
+
+  if (blend_mode == BlendMode::kDestination) {
+    return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
+                                entity.GetStencilDepth());
+  }
+
+  if (blend_mode == BlendMode::kSource) {
+    auto contents = std::make_shared<SolidColorContents>();
+    contents->SetGeometry(Geometry::MakeRect(coverage));
+    contents->SetColor(foreground_color);
+
+    Entity foreground_entity;
+    foreground_entity.SetBlendMode(entity.GetBlendMode());
+    foreground_entity.SetStencilDepth(entity.GetStencilDepth());
+    foreground_entity.SetContents(std::move(contents));
+    return foreground_entity;
+  }
 
   RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
                             blend_mode, absorb_opacity, alpha](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
-    using VS = PipelineBlendPipeline::VertexShader;
-    using FS = PipelineBlendPipeline::FragmentShader;
+    using VS = PorterDuffBlendPipeline::VertexShader;
+    using FS = PorterDuffBlendPipeline::FragmentShader;
 
     auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -385,11 +405,11 @@ std::optional<Entity> BlendFilterContents::CreatePipelineForegroundBlend(
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = "Foreground Pipeline Blend Filter";
+    cmd.label = "Foreground PorterDuff Blend Filter";
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
-    cmd.pipeline = renderer.GetPipelineBlendPipeline(options);
+    cmd.pipeline = renderer.GetPorterDuffBlendPipeline(options);
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
@@ -643,7 +663,7 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
 
   if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
     if (inputs.size() == 1 && foreground_color_.has_value()) {
-      return CreatePipelineForegroundBlend(
+      return CreateForegroundPorterDuffBlend(
           inputs[0], renderer, entity, coverage, foreground_color_.value(),
           blend_mode_, GetAlpha(), GetAbsorbOpacity());
     }
@@ -653,9 +673,9 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
     if (inputs.size() == 1 && foreground_color_.has_value()) {
-      return CreateForegroundBlend(inputs[0], renderer, entity, coverage,
-                                   foreground_color_.value(), blend_mode_,
-                                   GetAlpha(), GetAbsorbOpacity());
+      return CreateForegroundAdvancedBlend(
+          inputs[0], renderer, entity, coverage, foreground_color_.value(),
+          blend_mode_, GetAlpha(), GetAbsorbOpacity());
     }
     return advanced_blend_proc_(inputs, renderer, entity, coverage,
                                 foreground_color_, GetAbsorbOpacity(),
