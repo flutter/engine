@@ -432,7 +432,8 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
 // to test different combinations of test-ui-stack + runners. Currently, there
 // are both GFX and Flatland variants. Documentation:
 // http://go/gunitadvanced#value-parameterized-tests
-INSTANTIATE_TEST_SUITE_P(FlutterTapTestParameterized, FlutterTapTest,
+INSTANTIATE_TEST_SUITE_P(FlutterTapTestParameterized,
+                         FlutterTapTest,
                          ::testing::Values(/* use_flatland */ true, false));
 
 TEST_P(FlutterTapTest, FlutterTap) {
