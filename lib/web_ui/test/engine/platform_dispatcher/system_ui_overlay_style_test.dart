@@ -7,24 +7,24 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../ui/utils.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  setUpUiTest();
+  ensureFlutterViewEmbedderInitialized();
 
   const MethodCodec codec = JSONMethodCodec();
 
   void sendSetSystemUIOverlayStyle({ui.Color? statusBarColor}) {
     ui.window.sendPlatformMessage(
       'flutter/platform',
-      codec.encodeMethodCall(
-          MethodCall('SystemChrome.setSystemUIOverlayStyle', <String, dynamic>{
-        'statusBarColor': statusBarColor?.value,
-      })),
+      codec.encodeMethodCall(MethodCall(
+        'SystemChrome.setSystemUIOverlayStyle',
+        <String, dynamic>{
+          'statusBarColor': statusBarColor?.value,
+        },
+      )),
       null,
     );
   }

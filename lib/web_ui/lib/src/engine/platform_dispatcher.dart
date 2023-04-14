@@ -515,22 +515,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
             final Map<String, Object?> arguments = decoded.arguments as Map<String, Object?>;
-            // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
-            assert(() {
-              final int? primaryColor = arguments['primaryColor'] as int?;
-              if (primaryColor != null) {
-                domWindow.console.warn(
-                  'The `primaryColor` in `SystemChrome.setApplicationSwitcherDescription is deprecated on the web.\n'
-                  'Use `SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: ...)) instead.\n'
-                  'If you did not directly call the `SystemChrome.setApplicationSwitcherDescription` method, you can ignore this message. '
-                  'It is most likely  triggered by the `Title` widget, which is used by `MaterialApp` / `CupertinoApp` / `WidgetsApp`.\n'
-                  'See: https://github.com/flutter/flutter/issues/123365',
-                );
-              }
-              return true;
-            }());
+            // TODO(web): Stop setting the color from here, https://github.com/flutter/flutter/issues/123365
+            final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
             domDocument.title = label;
+            setThemeColor(ui.Color(primaryColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setSystemUIOverlayStyle':
