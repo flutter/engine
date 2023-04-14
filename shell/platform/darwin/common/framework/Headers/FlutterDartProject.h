@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * A set of Flutter and Dart assets used by a `FlutterEngine` to initialize execution.
  *
- * TODO(stuartmorgan): Align API with FlutterDartProject, and combine.
  */
 FLUTTER_DARWIN_EXPORT
 @interface FlutterDartProject : NSObject
@@ -40,7 +39,7 @@ FLUTTER_DARWIN_EXPORT
  * Returns the default identifier for the bundle where we expect to find the Flutter Dart
  * application.
  */
-+ (NSString*)defaultBundleIdentifier API_UNAVAILABLE(macos);
++ (NSString*)defaultBundleIdentifier;
 
 /**
  * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.

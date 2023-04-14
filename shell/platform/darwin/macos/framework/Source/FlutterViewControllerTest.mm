@@ -67,6 +67,7 @@
 - (bool)testViewWillAppearCalledMultipleTimes;
 - (bool)testFlutterViewIsConfigured;
 - (bool)testLookupKeyAssets;
+- (bool)testLookupKeyAssetsWithPackage;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -239,6 +240,10 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 
 TEST(FlutterViewControllerTest, testLookupKeyAssets) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssets]);
+}
+
+TEST(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssetsWithPackage]);
 }
 
 }  // namespace flutter::testing
@@ -842,9 +847,13 @@ TEST(FlutterViewControllerTest, testLookupKeyAssets) {
   NSString* key = [viewController lookupKeyForAsset:@"test.png"];
   EXPECT_TRUE(
       [key isEqualToString:@"Contents/Frameworks/App.framework/Resources/flutter_assets/test.png"]);
+  return true;
+}
+
+- (bool)testLookupKeyAssetsWithPackage {
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:nil];
 
   NSString* packageKey = [viewController lookupKeyForAsset:@"test.png" fromPackage:@"test"];
-  NSLog(@"%@", packageKey);
   EXPECT_TRUE([packageKey
       isEqualToString:
           @"Contents/Frameworks/App.framework/Resources/flutter_assets/packages/test/test.png"]);

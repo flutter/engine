@@ -2,28 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <Foundation/Foundation.h>
+#ifndef SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
+#define SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
+
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 // Finds a bundle with the named `bundleID` within `searchURL`.
 //
 // Returns `nil` if the bundle cannot be found or if errors are encountered.
-NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
-  NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
-                 enumeratorAtURL:searchURL
-      includingPropertiesForKeys:nil
-                         options:NSDirectoryEnumerationSkipsSubdirectoryDescendants |
-                                 NSDirectoryEnumerationSkipsHiddenFiles
-                    // Skip directories where errors are encountered.
-                    errorHandler:nil];
-
-  for (NSURL* candidate in frameworkEnumerator) {
-    NSBundle* bundle = [NSBundle bundleWithURL:candidate];
-    if ([bundle.bundleIdentifier isEqualToString:bundleID]) {
-      return bundle;
-    }
-  }
-  return nil;
-}
+NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
 
 // Finds a bundle with the named `bundleID`.
 //
@@ -39,11 +28,8 @@ NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
 // frameworks used by this file are placed. If the desired bundle cannot be
 // found here, the implementation falls back to
 // `+[NSBundle bundleWithIdentifier:]`.
-NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID) {
-  NSBundle* bundle = FLTFrameworkBundleInternal(bundleID, NSBundle.mainBundle.privateFrameworksURL);
-  if (bundle != nil) {
-    return bundle;
-  }
-  // Fallback to slow implementation.
-  return [NSBundle bundleWithIdentifier:bundleID];
-}
+NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID);
+
+NS_ASSUME_NONNULL_END
+
+#endif  // SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_

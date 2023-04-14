@@ -6,11 +6,10 @@
 #define SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERDARTPROJECT_INTERNAL_H_
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterNSBundleUtils.h"
 
 #include <string>
 #include <vector>
-
-NSBundle* _Nullable FLTFrameworkBundleWithIdentifier(NSString* _Nonnull bundleID);
 
 /**
  * Provides access to data needed to construct a FlutterProjectArgs for the project.

@@ -124,4 +124,8 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
                       fromBundle:bundle];
 }
 
++ (NSString*)defaultBundleIdentifier {
+  return kAppBundleIdentifier;
+}
+
 @end
