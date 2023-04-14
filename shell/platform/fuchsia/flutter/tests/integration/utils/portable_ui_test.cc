@@ -77,7 +77,7 @@ void PortableUITest::SetUpRealmBase() {
 
   // Configure test-ui-stack.
   realm_builder_.SetConfigValue(kTestUIStack, "use_scene_manager",
-                                ConfigValue::Bool(use_scene_manager()));
+                                ConfigValue::Bool(true));
   realm_builder_.SetConfigValue(kTestUIStack, "use_flatland", 
                                 ConfigValue::Bool(use_flatland()));
 

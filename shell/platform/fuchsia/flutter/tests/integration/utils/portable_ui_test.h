@@ -108,8 +108,7 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   }
 
   // Control the test-ui-stack parameters. Override as necessary.
-  virtual bool use_scene_manager() = 1;
-  virtual bool use_flatland() = 1;
+  virtual bool use_flatland() = 0;
 
  private:
   void SetUpRealmBase();
