@@ -67,7 +67,6 @@ source_set("display_list_surface_provider") {
   deps = [
     "//flutter/common/graphics",
     "//flutter/testing:testing_lib",
-    "//third_party/skia:png_encode",
   ]
 
   public_configs = [ ":surface_provider_config" ]
