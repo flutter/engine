@@ -13,6 +13,11 @@ import 'environment.dart';
 import 'exceptions.dart';
 import 'utils.dart';
 
+// This is needed when making the request for the CSS font to get the split font
+// declaration.
+const String kBrowserUserAgent =
+    'Mozilla/5.0 AppleWebKit/537.36 Chrome/111.0.0.0';
+
 final http.Client client = http.Client();
 
 class GenerateFallbackFontDataCommand extends Command<bool>
@@ -84,12 +89,17 @@ class GenerateFallbackFontDataCommand extends Command<bool>
 
     final List<FontData> fontDatas = <FontData>[];
     for (final FontResponse fontResponse in fontItems.values) {
-      // TODO(mdebbar): For "Noto Color Emoji" we should use the css API to get
-      // the split font files.
-      fontDatas.add(await extractFontDataUsingFcQuery(
-        fontResponse: fontResponse,
-        fontDir: fontDir,
-      ));
+      if (cssFonts.contains(fontResponse.family)) {
+        fontDatas.addAll(await extractFontDatasForCssFont(
+          fontResponse: fontResponse,
+          fontDir: fontDir,
+        ));
+      } else {
+        fontDatas.add(await extractFontDataUsingFcQuery(
+          fontResponse: fontResponse,
+          fontDir: fontDir,
+        ));
+      }
     }
 
     final StringBuffer sb = StringBuffer();
@@ -104,8 +114,8 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
-    sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');
 
+    sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');
     for (final FontData fontData in fontDatas) {
       if (fontData.family == 'Noto Emoji') {
         sb.write(' if (!configuration.useColorEmoji)');
@@ -114,7 +124,6 @@ class GenerateFallbackFontDataCommand extends Command<bool>
         sb.write(' if (configuration.useColorEmoji)');
       }
       sb.writeln(" NotoFont('${fontData.family}', '${fontData.uri}',");
-
       // Print the unicode ranges in a readable format for easier review. This
       // shouldn't affect code size because comments are removed in release mode.
       sb.write('   // <int>[');
@@ -183,6 +192,8 @@ extension FontResponseExtension on FontResponse {
   Map<String, String> get files => (this['files'] as Map<dynamic, dynamic>).cast<String, String>();
   String get category => this['category'] as String;
   String get kind => this['kind'] as String;
+
+  String get cssFontUri => 'https://fonts.googleapis.com/css?family=${Uri.encodeComponent(family)}';
 }
 
 typedef FontData = ({
@@ -191,6 +202,110 @@ typedef FontData = ({
   List<String> starts,
   List<String> ends,
 });
+
+typedef UnicodeRanges = Iterable<String>;
+extension on UnicodeRanges {
+  (List<String> starts, List<String> ends) toStartsAndEnds() {
+    final List<String> starts = <String>[];
+    final List<String> ends = <String>[];
+    for (final String range in this) {
+      final List<String> parts = range.split('-');
+      switch (parts) {
+        case [final String start, final String end]:
+          starts.add(start);
+          ends.add(end);
+        case [final String start]:
+          starts.add(start);
+          ends.add(start);
+      }
+    }
+    return (starts, ends);
+  }
+}
+
+typedef CssString = String;
+extension on CssString {
+  Iterable<String> getFontFaces() {
+    final RegExp fontFaceRegex =
+        RegExp(r'@font-face\s*{.+?}', multiLine: true, dotAll: true);
+    return fontFaceRegex.allMatches(this).map((Match match) => match.group(0)!);
+  }
+}
+
+typedef FontFaceString = String;
+extension on FontFaceString {
+  Uri getSrcUri() {
+    final RegExp srcRegex = RegExp(r'src:\s*url\((.+?)\)');
+    final Match? match = srcRegex.firstMatch(this);
+    if (match == null) {
+      throw ToolExit('Failed to find src in font face:\n$this');
+    }
+    return Uri.parse(match.group(1)!);
+  }
+
+  UnicodeRanges getUnicodeRanges() {
+    final RegExp unicodeRangeRegex = RegExp(r'unicode-range:(.+?);');
+    final Match? match = unicodeRangeRegex.firstMatch(this);
+    if (match == null) {
+      throw ToolExit('Failed to find unicode-range in font face:\n$this');
+    }
+    return match
+        .group(1)!
+        .split(',')
+        .map((String item) => item.replaceFirst('U+', '').trim());
+  }
+}
+
+final RegExp cssUnicodeRange = RegExp(r'unicode-range:\s*U\+([0-9A-F]+)-U\+([0-9A-F]+)');
+Future<List<FontData>> extractFontDatasForCssFont({
+  required FontResponse fontResponse,
+  required io.Directory fontDir,
+}) async {
+  final CssString css = await downloadCssForFont(fontResponse);
+
+  final List<FontData> fontDatas = <FontData>[];
+  final Iterable<String> fontFaces = css.getFontFaces();
+  // We expect at least 3 font faces to make sure that we got the split version
+  // of the font.
+  assert(fontFaces.length >= 3, 'Expected at least 3 font faces, but found only ${fontFaces.length}.');
+
+  for (final String fontFace in fontFaces) {
+    final Iterable<String> unicodeRanges = fontFace.getUnicodeRanges();
+    final (List<String> starts, List<String> ends) =
+        unicodeRanges.toStartsAndEnds();
+
+    fontDatas.add((
+      family: fontResponse.family,
+      uri: fontFace.getSrcUri(),
+      starts: starts,
+      ends: ends,
+    ));
+  }
+  return fontDatas;
+}
+
+Future<CssString> downloadCssForFont(FontResponse fontResponse) async {
+  final Uri cssFontUri = Uri.parse(fontResponse.cssFontUri);
+  print('Downloading css for font ${fontResponse.family}...');
+  final http.Response httpResponse = await client.get(
+    cssFontUri,
+    headers: <String, String>{'User-Agent': kBrowserUserAgent},
+  );
+  if (httpResponse.statusCode != 200) {
+    throw ToolExit(
+      'Failed to download css for font "${fontResponse.family}" (uri: $cssFontUri)',
+    );
+  }
+  final CssString css = httpResponse.body;
+  if (!css.contains('unicode-range:')) {
+    throw ToolExit(
+      'Failed to find unicode-range in css for font "${fontResponse.family}". '
+      'Try adjusting http headers to fool the server into thinking we are a '
+      'browser.',
+    );
+  }
+  return css;
+}
 
 Future<FontData> extractFontDataUsingFcQuery({
   required FontResponse fontResponse,
@@ -214,23 +329,10 @@ Future<FontData> extractFontDataUsingFcQuery({
     ],
   );
   final String encodedCharset = fcQueryResult.stdout as String;
+  final UnicodeRanges unicodeRanges = encodedCharset.split(' ');
+  final (List<String> starts, List<String> ends) = unicodeRanges.toStartsAndEnds();
 
-  // 3. Parse the list of unicode ranges.
-  final List<String> starts = <String>[];
-  final List<String> ends = <String>[];
-  for (final String range in encodedCharset.split(' ')) {
-    final List<String> parts = range.split('-');
-    switch (parts) {
-      case [final String start, final String end]:
-        starts.add(start);
-        ends.add(end);
-      case [final String start]:
-        starts.add(start);
-        ends.add(start);
-    }
-  }
-
-  // 4. Create the font data.
+  // 3. Create the font data.
   return (
     family: fontResponse.family,
     uri: fontUri,
@@ -254,6 +356,10 @@ Future<io.File> downloadFont({
   await fontFile.writeAsBytes(httpResponse.bodyBytes);
   return fontFile;
 }
+
+const List<String> cssFonts = <String>[
+  'Noto Color Emoji',
+];
 
 const List<String> fallbackFonts = <String>[
   'Noto Sans',
