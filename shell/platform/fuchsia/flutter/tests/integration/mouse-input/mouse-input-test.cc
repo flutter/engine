@@ -248,6 +248,9 @@ class MouseInputTest : public PortableUITest,
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
 
+  // Override test-ui-stack config.
+  bool use_flatland() override { return true; }
+
  private:
   void ExtendRealm() override {
     FML_LOG(INFO) << "Extending realm";
