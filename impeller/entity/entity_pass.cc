@@ -16,7 +16,6 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
-#include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -25,10 +24,15 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
+
+#ifdef IMPELLER_DEBUG
+#include "impeller/entity/contents/checkerboard_contents.h"
+#endif  // IMPELLER_DEBUG
 
 namespace impeller {
 
@@ -733,8 +737,8 @@ bool EntityPass::OnRender(
 
   // When the pass depth is > 0, this EntityPass is being rendered to an
   // offscreen texture.
-  if (checkerboard_color_.has_value() && !collapsed_parent_pass.has_value() &&
-      pass_depth > 0) {
+  if (enable_offscreen_debug_checkerboard_ &&
+      !collapsed_parent_pass.has_value() && pass_depth > 0) {
     auto result = pass_context.GetRenderPass(pass_depth);
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
@@ -742,7 +746,11 @@ bool EntityPass::OnRender(
       return false;
     }
     auto checkerboard = CheckerboardContents();
-    checkerboard.SetColor(*checkerboard_color_);
+    auto color = ColorHSB(0,                                    // hue
+                          1,                                    // saturation
+                          std::max(0.0, 0.6 - pass_depth / 5),  // brightness
+                          0.25);                                // alpha
+    checkerboard.SetColor(Color(color));
     checkerboard.Render(renderer, {}, *result.pass);
   }
 #endif
@@ -844,9 +852,8 @@ void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
   backdrop_filter_proc_ = std::move(proc);
 }
 
-void EntityPass::SetOffscreenCheckerboard(
-    std::optional<Color> checkerboard_color) {
-  checkerboard_color_ = checkerboard_color;
+void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
+  enable_offscreen_debug_checkerboard_ = enabled;
 }
 
 }  // namespace impeller

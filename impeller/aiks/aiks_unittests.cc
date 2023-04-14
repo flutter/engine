@@ -2144,12 +2144,7 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
 /// collapsing hard.
 TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
   Canvas canvas;
-
-  canvas.SetEnableOffscreenCheckerboard(true);
-  // The default behavior is to generate random checkerboard colors for each
-  // layer, so override the color proc and make the test deterministic.
-  canvas.SetCheckerboardColorProc(
-      []() { return Color::SpringGreen().WithAlpha(0.50); });
+  canvas.debug_options.offscreen_texture_checkerboard = true;
 
   canvas.DrawPaint({.color = Color::AntiqueWhite()});
   canvas.DrawCircle({400, 300}, 200,

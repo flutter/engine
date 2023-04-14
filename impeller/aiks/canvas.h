@@ -30,15 +30,17 @@ class Entity;
 
 class Canvas {
  public:
+  struct DebugOptions {
+    /// When enabled, layers that are rendered to an offscreen texture
+    /// internally get a translucent checkerboard pattern painted over them.
+    ///
+    /// Requires the `IMPELLER_DEBUG` preprocessor flag.
+    bool offscreen_texture_checkerboard = false;
+  } debug_options;
+
   Canvas();
 
   ~Canvas();
-
-  using CheckerboardColorProc = std::function<Color()>;
-
-  void SetEnableOffscreenCheckerboard(bool enabled);
-
-  void SetCheckerboardColorProc(CheckerboardColorProc color_proc);
 
   void Save();
 
@@ -133,9 +135,6 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
-
-  bool enable_offscreen_checkerboard_ = false;
-  CheckerboardColorProc checkerboard_color_proc_;  // Default set in the ctor.
 
   void Initialize();
 
