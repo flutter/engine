@@ -122,6 +122,7 @@ vars = {
   "upstream_boolean_selector": "https://github.com/dart-lang/boolean_selector.git",
   "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
+  "upstream_brotli": "https://github.com/google/brotli.git",
   "upstream_browser_launcher": "https://github.com/dart-lang/browser_launcher.git",
   "upstream_buildroot": "https://github.com/flutter/buildroot.git",
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
@@ -289,6 +290,9 @@ deps = {
 
   'src/third_party/boringssl':
    Var('github_git') + '/dart-lang/boringssl_gen.git' + '@' + Var('dart_boringssl_gen_rev'),
+
+  'src/third_party/brotli':
+   Var('skia_git') + '/external/github.com/google/brotli.git' + '@' + 'ed1995b6bda19244070ab5d331111f16f67c8054',
 
   'src/third_party/yapf':
   Var('github_git') + '/google/yapf' + '@' + '212c5b5ad8e172d2d914ae454c121c89cccbcb35',
