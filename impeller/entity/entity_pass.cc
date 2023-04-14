@@ -732,7 +732,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   // When the pass depth is > 0, this EntityPass is being rendered to an
   // offscreen texture.
-  if (checkerboard_color_.has_value() && pass_depth > 0) {
+  if (checkerboard_color_.has_value() && !collapsed_parent_pass.has_value() &&
+      pass_depth > 0) {
     auto result = pass_context.GetRenderPass(pass_depth);
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
