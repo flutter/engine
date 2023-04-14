@@ -56,10 +56,10 @@ class SkiaGoldClient {
   String get _failuresPath => path.join(workDirectory.path, 'failures.json');
 
   Future<void>? _initResult;
-  Future<void> _initOnce(Future<void> Function() callback) async {
+  Future<void> _initOnce(Future<void> Function() callback) {
     // If a call has already been made, return the result of that call.
     _initResult ??= callback();
-    return _initResult;
+    return _initResult!;
   }
 
   /// Indicates whether the client has already been authorized to communicate
