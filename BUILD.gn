@@ -85,7 +85,6 @@ group("flutter") {
         # Impeller artifacts - compiler and libtessellator
         "//flutter/impeller/compiler:impellerc",
         "//flutter/impeller/tessellator:tessellator_shared",
-        "//flutter/impeller/tools:gpu_model",
 
         # path_ops
         "//flutter/tools/path_ops",
