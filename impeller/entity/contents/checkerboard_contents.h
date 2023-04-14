@@ -27,9 +27,12 @@ class CheckerboardContents final : public Contents {
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
+  void SetColor(Color color);
+
   void SetSquareSize(Scalar square_size);
 
  private:
+  Color color_ = Color::Red().WithAlpha(0.25);
   Scalar square_size_ = 12;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CheckerboardContents);

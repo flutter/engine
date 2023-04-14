@@ -92,7 +92,7 @@ class EntityPass {
 
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
-  void SetCheckerboardOffscreen(bool enabled);
+  void SetOffscreenCheckerboard(std::optional<Color> checkerboard_color);
 
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
@@ -211,7 +211,7 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
   Color clear_color_ = Color::BlackTransparent();
-  bool checkerboard_offscreen_ = false;
+  std::optional<Color> checkerboard_color_;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

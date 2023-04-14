@@ -45,8 +45,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
   FS::FragInfo frag_info;
-  frag_info.color =
-      Color::MakeRGBA8(rand() % 256, rand() % 256, rand() % 256, 64);
+  frag_info.color = color_;
   frag_info.square_size = square_size_;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
@@ -58,6 +57,10 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
 std::optional<Rect> CheckerboardContents::GetCoverage(
     const Entity& entity) const {
   return std::nullopt;
+}
+
+void CheckerboardContents::SetColor(Color color) {
+  color_ = color;
 }
 
 void CheckerboardContents::SetSquareSize(Scalar square_size) {

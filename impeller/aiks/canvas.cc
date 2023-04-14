@@ -39,7 +39,10 @@ static bool UseColorSourceContents(
   return !vertices->HasTextureCoordinates();
 }
 
-Canvas::Canvas() {
+Canvas::Canvas()
+    : checkerboard_color_proc_([]() {
+        return Color::MakeRGBA8(rand() % 256, rand() % 256, rand() % 256, 64);
+      }) {
   Initialize();
 }
 
@@ -54,8 +57,12 @@ void Canvas::Initialize() {
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
 
-void Canvas::SetOffscreenCheckerboard(bool enabled) {
-  checkerboard_offscreen_ = enabled;
+void Canvas::SetEnableOffscreenCheckerboard(bool enabled) {
+  enable_offscreen_checkerboard_ = enabled;
+}
+
+void Canvas::SetCheckerboardColorProc(CheckerboardColorProc color_proc) {
+  checkerboard_color_proc_ = std::move(color_proc);
 }
 
 void Canvas::Reset() {
@@ -79,7 +86,9 @@ void Canvas::Save(
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetCheckerboardOffscreen(checkerboard_offscreen_);
+    if (enable_offscreen_checkerboard_) {
+      subpass->SetOffscreenCheckerboard(checkerboard_color_proc_());
+    }
     subpass->SetBackdropFilter(std::move(backdrop_filter));
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));

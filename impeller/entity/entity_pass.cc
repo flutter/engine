@@ -732,14 +732,16 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   // When the pass depth is > 0, this EntityPass is being rendered to an
   // offscreen texture.
-  if (checkerboard_offscreen_ && pass_depth > 0) {
+  if (checkerboard_color_.has_value() && pass_depth > 0) {
     auto result = pass_context.GetRenderPass(pass_depth);
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
       // in `InlinePassContext::GetRenderPass()`.
       return false;
     }
-    CheckerboardContents().Render(renderer, {}, *result.pass);
+    auto checkerboard = CheckerboardContents();
+    checkerboard.SetColor(*checkerboard_color_);
+    checkerboard.Render(renderer, {}, *result.pass);
   }
 
   return true;
@@ -839,8 +841,9 @@ void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
   backdrop_filter_proc_ = std::move(proc);
 }
 
-void EntityPass::SetCheckerboardOffscreen(bool enabled) {
-  checkerboard_offscreen_ = enabled;
+void EntityPass::SetOffscreenCheckerboard(
+    std::optional<Color> checkerboard_color) {
+  checkerboard_color_ = checkerboard_color;
 }
 
 }  // namespace impeller

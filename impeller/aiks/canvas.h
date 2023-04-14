@@ -5,6 +5,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -33,7 +34,11 @@ class Canvas {
 
   ~Canvas();
 
-  void SetOffscreenCheckerboard(bool enabled);
+  using CheckerboardColorProc = std::function<Color()>;
+
+  void SetEnableOffscreenCheckerboard(bool enabled);
+
+  void SetCheckerboardColorProc(CheckerboardColorProc color_proc);
 
   void Save();
 
@@ -128,7 +133,9 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
-  bool checkerboard_offscreen_ = true;
+
+  bool enable_offscreen_checkerboard_ = false;
+  CheckerboardColorProc checkerboard_color_proc_;  // Default set in the ctor.
 
   void Initialize();
 
