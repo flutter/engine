@@ -96,6 +96,7 @@ source_set("flow") {
     "//flutter/common/graphics",
     "//flutter/fml",
     "//third_party/skia",
+    "//third_party/skia:png_encode",
   ]
 
   public_deps = [ "//flutter/display_list" ]

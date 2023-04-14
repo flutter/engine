@@ -180,6 +180,7 @@ source_set("ui") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/skia:png_encode",
     "//third_party/zlib:zlib",
   ]
 
