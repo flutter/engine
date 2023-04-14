@@ -20,7 +20,6 @@ namespace {
 // Types imported for the realm_builder library.
 using component_testing::ChildOptions;
 using component_testing::ChildRef;
-using component_testing::ConfigValue;
 using component_testing::ParentRef;
 using component_testing::Protocol;
 using component_testing::RealmRoot;
