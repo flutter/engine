@@ -260,18 +260,24 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_imageFilter == value) {
       return;
     }
+    final CkManagedSkImageFilterConvertible? filter;
     if (value is ui.ColorFilter) {
-      _imageFilter = createCkColorFilter(value as EngineColorFilter);
+      filter = createCkColorFilter(value as EngineColorFilter);
     }
     else {
-      _imageFilter = value as CkManagedSkImageFilterConvertible?;
+      filter = value as CkManagedSkImageFilterConvertible?;
     }
-    _managedImageFilter = _imageFilter?.imageFilter;
-    skiaObject.setImageFilter(_managedImageFilter?.skiaObject);
+
+    if (filter != null) {
+      filter.imageFilter((SkImageFilter skImageFilter) {
+        skiaObject.setImageFilter(skImageFilter);
+      });
+    }
+
+    _imageFilter = filter;
   }
 
   CkManagedSkImageFilterConvertible? _imageFilter;
-  ManagedSkiaObject<SkImageFilter>? _managedImageFilter;
 
   @override
   SkPaint createDefault() {
@@ -294,7 +300,6 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setShader(_shader?.getSkShader(_filterQuality));
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
     paint.setColorFilter(_effectiveColorFilter?.skiaObject);
-    paint.setImageFilter(_managedImageFilter?.skiaObject);
     paint.setStrokeCap(toSkStrokeCap(_strokeCap));
     paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
     paint.setStrokeMiter(_strokeMiterLimit);
