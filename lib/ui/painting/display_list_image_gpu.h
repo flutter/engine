@@ -14,6 +14,7 @@ namespace flutter {
 class DlImageGPU final : public DlImage {
  public:
   static sk_sp<DlImageGPU> Make(SkiaGPUObject<SkImage> image);
+  static sk_sp<DlImageGPU> Make(sk_sp<SkImage> image);
 
   // |DlImage|
   ~DlImageGPU() override;
@@ -29,6 +30,9 @@ class DlImageGPU final : public DlImage {
 
   // |DlImage|
   bool isTextureBacked() const override;
+
+  // |DlImage|
+  bool isUIThreadSafe() const override;
 
   // |DlImage|
   SkISize dimensions() const override;

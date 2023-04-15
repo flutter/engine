@@ -22,13 +22,10 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
  public:
   ~Picture() override;
-  static fml::RefPtr<Picture> Create(
-      Dart_Handle dart_handle,
-      flutter::SkiaGPUObject<DisplayList> display_list);
+  static fml::RefPtr<Picture> Create(Dart_Handle dart_handle,
+                                     sk_sp<DisplayList> display_list);
 
-  sk_sp<DisplayList> display_list() const {
-    return display_list_.skia_object();
-  }
+  sk_sp<DisplayList> display_list() const { return display_list_; }
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
@@ -68,9 +65,9 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       Dart_Handle raw_image_callback);
 
  private:
-  explicit Picture(flutter::SkiaGPUObject<DisplayList> display_list);
+  explicit Picture(sk_sp<DisplayList> display_list);
 
-  flutter::SkiaGPUObject<DisplayList> display_list_;
+  sk_sp<DisplayList> display_list_;
 };
 
 }  // namespace flutter

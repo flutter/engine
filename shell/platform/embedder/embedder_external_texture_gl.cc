@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 
 #include "flutter/fml/logging.h"
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
@@ -101,7 +102,7 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
     return nullptr;
   }
 
-  return DlImage::Make(std::move(image));
+  return DlImageGPU::Make(std::move(image));
 }
 
 // |flutter::Texture|

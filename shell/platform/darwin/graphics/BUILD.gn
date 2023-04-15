@@ -22,6 +22,7 @@ source_set("graphics") {
     "//flutter/common/graphics",
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/lib/ui:ui",
     "//flutter/shell/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
   ]

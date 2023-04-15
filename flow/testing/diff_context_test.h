@@ -47,7 +47,7 @@ class DiffContextTest : public ThreadTest {
   sk_sp<DisplayList> CreateDisplayList(const SkRect& bounds, uint32_t color);
 
   std::shared_ptr<DisplayListLayer> CreateDisplayListLayer(
-      sk_sp<DisplayList> display_list,
+      const sk_sp<DisplayList>& display_list,
       const SkPoint& offset = SkPoint::Make(0, 0));
 
   std::shared_ptr<ContainerLayer> CreateContainerLayer(

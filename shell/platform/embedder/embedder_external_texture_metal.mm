@@ -6,6 +6,7 @@
 
 #include "flow/layers/layer.h"
 #include "flutter/fml/logging.h"
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -100,7 +101,7 @@ sk_sp<DlImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
     FML_LOG(ERROR) << "Could not create external texture: " << texture_id;
   }
 
-  return DlImage::Make(std::move(image));
+  return DlImageGPU::Make(std::move(image));
 }
 
 // |flutter::Texture|
