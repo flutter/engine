@@ -99,7 +99,7 @@ class SkiaFontCollection implements FlutterFontCollection {
   /// Loads fonts from `FontManifest.json`.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final FontManifest manifest = await fetchFontManifest();
+    final FontManifest manifest = await fetchFontManifest(assetManager);
     final List<Future<UnregisteredFont?>> pendingFonts = <Future<UnregisteredFont?>>[];
 
     for (final FontFamily family in manifest.families) {

@@ -29,7 +29,7 @@ class FontManifest {
   List<FontFamily> families;
 }
 
-Future<FontManifest> fetchFontManifest() async {
+Future<FontManifest> fetchFontManifest(AssetManager assetManager) async {
   final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json');
   if (!response.hasPayload) {
     printWarning('Font manifest does not exist at `${response.url}` - ignoring.');

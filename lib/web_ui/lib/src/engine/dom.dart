@@ -1660,19 +1660,33 @@ class MockHttpFetchPayload implements HttpFetchPayload {
     ByteBuffer? byteBuffer,
     Object? json,
     String? text,
-    MockOnRead? onRead,
+    int? chunkSize,
   })  : _byteBuffer = byteBuffer,
         _json = json,
         _text = text,
-        _onRead = onRead;
+        _chunkSize = chunkSize ?? 64;
 
   final ByteBuffer? _byteBuffer;
   final Object? _json;
   final String? _text;
-  final MockOnRead? _onRead;
+  final int _chunkSize;
 
   @override
-  Future<void> read<T>(HttpFetchReader<T> callback) => _onRead!(callback);
+  Future<void> read<T>(HttpFetchReader<T> callback) async {
+    if (_byteBuffer == null) {
+      return;
+    }
+    final int totalLength = _byteBuffer!.lengthInBytes;
+    int currentIndex = 0;
+    while (currentIndex < totalLength) {
+      final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
+      final Uint8List chunk = Uint8List.sublistView(
+        _byteBuffer!.asByteData(), currentIndex, currentIndex + chunkSize
+      );
+      callback(chunk.toJS as T);
+      currentIndex += chunkSize;
+    }
+  }
 
   @override
   Future<ByteBuffer> asByteBuffer() async => _byteBuffer!;

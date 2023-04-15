@@ -9,8 +9,8 @@ wasm_lib("skwasm") {
     "canvas.cpp",
     "contour_measure.cpp",
     "data.cpp",
-    "fonts.cpp",
     "export.h",
+    "fonts.cpp",
     "helpers.h",
     "paint.cpp",
     "path.cpp",
@@ -49,7 +49,7 @@ wasm_lib("skwasm") {
     ]
   }
 
-  deps = [ 
+  deps = [
     "//third_party/skia",
     "//third_party/skia/modules/skparagraph",
   ]

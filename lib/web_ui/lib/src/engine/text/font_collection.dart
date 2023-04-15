@@ -27,7 +27,7 @@ class HtmlFontCollection implements FlutterFontCollection {
   /// fonts declared within.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final FontManifest manifest = await fetchFontManifest();
+    final FontManifest manifest = await fetchFontManifest(assetManager);
     final FontManager assetFontManager = FontManager();
     _assetFontManager = assetFontManager;
     for (final FontFamily family in manifest.families) {

@@ -10,35 +10,34 @@
 using namespace skia::textlayout;
 
 struct FlutterFontCollection {
-    sk_sp<FontCollection> collection;
-    sk_sp<TypefaceFontProvider> provider;
+  sk_sp<FontCollection> collection;
+  sk_sp<TypefaceFontProvider> provider;
 };
 
-SKWASM_EXPORT FlutterFontCollection *fontCollection_create() {
-    auto collection = sk_make_sp<FontCollection>();
-    auto provider = sk_make_sp<TypefaceFontProvider>();
-    collection->enableFontFallback();
-    collection->setDefaultFontManager(provider);
-    return new FlutterFontCollection{
-        std::move(collection),
-        std::move(provider),
-    };
+SKWASM_EXPORT FlutterFontCollection* fontCollection_create() {
+  auto collection = sk_make_sp<FontCollection>();
+  auto provider = sk_make_sp<TypefaceFontProvider>();
+  collection->enableFontFallback();
+  collection->setDefaultFontManager(provider);
+  return new FlutterFontCollection{
+      std::move(collection),
+      std::move(provider),
+  };
 }
 
-SKWASM_EXPORT void fontCollection_dispose(FlutterFontCollection *collection) {
-    delete collection;
+SKWASM_EXPORT void fontCollection_dispose(FlutterFontCollection* collection) {
+  delete collection;
 }
 
 SKWASM_EXPORT void fontCollection_registerFont(
-    FlutterFontCollection *collection,
-    SkData *fontData,
-    SkString *fontName
-) {
-    fontData->ref();
-    auto typeFace = collection->provider->makeFromData(sk_sp<SkData>(fontData));
-    if (fontName != nullptr) {
-        collection->provider->registerTypeface(std::move(typeFace), *fontName);
-    } else {
-        collection->provider->registerTypeface(std::move(typeFace));
-    }
+    FlutterFontCollection* collection,
+    SkData* fontData,
+    SkString* fontName) {
+  fontData->ref();
+  auto typeFace = collection->provider->makeFromData(sk_sp<SkData>(fontData));
+  if (fontName != nullptr) {
+    collection->provider->registerTypeface(std::move(typeFace), *fontName);
+  } else {
+    collection->provider->registerTypeface(std::move(typeFace));
+  }
 }
