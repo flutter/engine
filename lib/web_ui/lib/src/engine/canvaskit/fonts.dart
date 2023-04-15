@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:web_test_fonts/web_test_fonts.dart';
@@ -100,30 +99,12 @@ class SkiaFontCollection implements FlutterFontCollection {
   /// Loads fonts from `FontManifest.json`.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json');
-
-    if (!response.hasPayload) {
-      printWarning('Font manifest does not exist at `${response.url}` - ignoring.');
-      return;
-    }
-
-    final Uint8List data = await response.asUint8List();
-    final List<dynamic>? fontManifest = json.decode(utf8.decode(data)) as List<dynamic>?;
-    if (fontManifest == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
+    final FontManifest manifest = await fetchFontManifest();
     final List<Future<UnregisteredFont?>> pendingFonts = <Future<UnregisteredFont?>>[];
 
-    for (final Map<String, dynamic> fontFamily
-        in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily.readString('family');
-      final List<dynamic> fontAssets = fontFamily.readList('fonts');
-      for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
-        final String asset = fontAsset.readString('asset');
-        _downloadFont(pendingFonts, assetManager.getAssetUrl(asset), family);
+    for (final FontFamily family in manifest.families) {
+      for (final FontAsset fontAsset in family.fontAssets) {
+        _downloadFont(pendingFonts, assetManager.getAssetUrl(fontAsset.asset), family.name);
       }
     }
 

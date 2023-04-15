@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/fonts.dart';
@@ -28,40 +27,15 @@ class HtmlFontCollection implements FlutterFontCollection {
   /// fonts declared within.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json');
-
-    if (!response.hasPayload) {
-      printWarning('Font manifest does not exist at `${response.url}` - ignoring.');
-      return;
-    }
-
-    final Uint8List data = await response.asUint8List();
-    final List<dynamic>? fontManifest = json.decode(utf8.decode(data)) as List<dynamic>?;
-    if (fontManifest == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
-    _assetFontManager = FontManager();
-
-    for (final Map<String, dynamic> fontFamily
-        in fontManifest.cast<Map<String, dynamic>>()) {
-      final String? family = fontFamily.tryString('family');
-      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
-
-      for (final Map<String, dynamic> fontAsset in fontAssets) {
-        final String asset = fontAsset.readString('asset');
-        final Map<String, String> descriptors = <String, String>{};
-        for (final String descriptor in fontAsset.keys) {
-          if (descriptor != 'asset') {
-            descriptors[descriptor] = '${fontAsset[descriptor]}';
-          }
-        }
-        _assetFontManager!.downloadAsset(
-            family!, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
+    final FontManifest manifest = await fetchFontManifest();
+    final FontManager assetFontManager = FontManager();
+    _assetFontManager = assetFontManager;
+    for (final FontFamily family in manifest.families) {
+      for (final FontAsset fontAsset in family.fontAssets) {
+        assetFontManager.downloadAsset(family.name, fontAsset.asset, fontAsset.descriptors);
       }
     }
-    await _assetFontManager!.downloadAllFonts();
+    await assetFontManager.downloadAllFonts();
   }
 
   @override
