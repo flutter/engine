@@ -318,21 +318,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
-  // If there is pending opacity but it was not absorbed by this entity, we have
-  // to convert this back to a snapshot so it can be passed on. This generally
-  // implies that there is another filter about to run, so we'd perform this
-  // operation anyway.
-  auto potential_opacity = alpha.value_or(1.0) * dst_snapshot->opacity;
-  if (!absorb_opacity && potential_opacity < 1.0) {
-    auto result_snapshot = contents->RenderToSnapshot(renderer, entity);
-    if (!result_snapshot.has_value()) {
-      return std::nullopt;
-    }
-    result_snapshot->opacity = potential_opacity;
-    return Entity::FromSnapshot(result_snapshot.value(), entity.GetBlendMode(),
-                                entity.GetStencilDepth());
-  }
-
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
@@ -471,21 +456,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
-
-  // If there is pending opacity but it was not absorbed by this entity, we have
-  // to convert this back to a snapshot so it can be passed on. This generally
-  // implies that there is another filter about to run, so we'd perform this
-  // operation anyway.
-  auto potential_opacity = alpha.value_or(1.0) * dst_snapshot->opacity;
-  if (!absorb_opacity && potential_opacity < 1.0) {
-    auto result_snapshot = contents->RenderToSnapshot(renderer, entity);
-    if (!result_snapshot.has_value()) {
-      return std::nullopt;
-    }
-    result_snapshot->opacity = potential_opacity;
-    return Entity::FromSnapshot(result_snapshot.value(), entity.GetBlendMode(),
-                                entity.GetStencilDepth());
-  }
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
@@ -685,7 +655,8 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
   }
 
   if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
-    if (inputs.size() == 1 && foreground_color_.has_value()) {
+    if (inputs.size() == 1 && foreground_color_.has_value() &&
+        GetAbsorbOpacity()) {
       return CreateForegroundPorterDuffBlend(
           inputs[0], renderer, entity, coverage, foreground_color_.value(),
           blend_mode_, GetAlpha(), GetAbsorbOpacity());
@@ -695,7 +666,8 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
   }
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
-    if (inputs.size() == 1 && foreground_color_.has_value()) {
+    if (inputs.size() == 1 && foreground_color_.has_value() &&
+        GetAbsorbOpacity()) {
       return CreateForegroundAdvancedBlend(
           inputs[0], renderer, entity, coverage, foreground_color_.value(),
           blend_mode_, GetAlpha(), GetAbsorbOpacity());
