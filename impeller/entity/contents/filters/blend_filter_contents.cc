@@ -341,6 +341,24 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
   return sub_entity;
 }
 
+constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
+    {0, 0, 0, 0, 0},    // Clear
+    {1, 0, 0, 0, 0},    // Source
+    {0, 0, 1, 0, 0},    // Destination
+    {1, 0, 1, -1, 0},   // SourceOver
+    {1, -1, 1, 0, 0},   // DestinationOver
+    {0, 1, 0, 0, 0},    // SourceIn
+    {0, 0, 0, 1, 0},    // DestinationIn
+    {1, -1, 0, 0, 0},   // SourceOut
+    {0, 0, 1, -1, 0},   // DestinationOut
+    {0, 1, 1, -1, 0},   // SourceATop
+    {1, -1, 0, 1, 0},   // DestinationATop
+    {1, -1, 1, -1, 0},  // Xor
+    {1, 0, 1, 0, 0},    // Plus
+    {0, 0, 0, 0, 1},    // Modulate
+    {0, 0, 1, 0, -1},   // Screen
+}};
+
 std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     const std::shared_ptr<FilterInput>& input,
     const ContentContext& renderer,
@@ -429,8 +447,13 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     frag_info.input_alpha =
         absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
 
-    FML_DCHECK(blend_mode > BlendMode::kDestination);
-    frag_info.operation = static_cast<Scalar>(blend_mode);
+    auto blend_coefficients =
+        kPorterDuffCoefficients[static_cast<int>(blend_mode)];
+    frag_info.src_coeff = blend_coefficients[0];
+    frag_info.src_coeff_dst_alpha = blend_coefficients[1];
+    frag_info.dst_coeff = blend_coefficients[2];
+    frag_info.dst_coeff_src_alpha = blend_coefficients[3];
+    frag_info.dst_coeff_src_color = blend_coefficients[4];
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
