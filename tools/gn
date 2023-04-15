@@ -513,6 +513,9 @@ def to_gn_args(args):
 
   if args.asan:
     gn_args['is_asan'] = True
+  
+  if args.static:
+    gn_args['embedder_static'] = True
 
   if args.tsan:
     gn_args['is_tsan'] = True
@@ -1076,6 +1079,8 @@ def parse_args(args):
   parser.add_argument('--msan', default=False, action='store_true')
   parser.add_argument('--tsan', default=False, action='store_true')
   parser.add_argument('--ubsan', default=False, action='store_true')
+
+  parser.add_argument('--static', default=False, action='store_true')
 
   parser.add_argument(
       '--fstack-protector',
