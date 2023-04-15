@@ -22,10 +22,24 @@ import 'skia_object_cache.dart';
 ///
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
-class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
-  CkPaint();
+class CkPaint implements ui.Paint {
+  CkPaint() : skiaObject = SkPaint() {
+    skiaObject.setAntiAlias(_isAntiAlias);
+    skiaObject.setColorInt(_defaultPaintColor.toDouble());
+    _ref = UniqueRef<SkPaint>(this, skiaObject, 'Paint');
+  }
+
+  final SkPaint skiaObject;
+  late final UniqueRef<SkPaint> _ref;
+  CkManagedSkImageFilterConvertible? _imageFilter;
 
   static const int _defaultPaintColor = 0xFF000000;
+
+  /// Returns the native reference to the underlying [SkPaint] object.
+  ///
+  /// This should only be used in tests.
+  @visibleForTesting
+  UniqueRef<SkPaint> get debugRef => _ref;
 
   @override
   ui.BlendMode get blendMode => _blendMode;
@@ -277,38 +291,11 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     _imageFilter = filter;
   }
 
-  CkManagedSkImageFilterConvertible? _imageFilter;
-
-  @override
-  SkPaint createDefault() {
-    final SkPaint paint = SkPaint();
-    paint.setAntiAlias(_isAntiAlias);
-    paint.setColorInt(_color.toDouble());
-    return paint;
-  }
-
-  @override
-  SkPaint resurrect() {
-    final SkPaint paint = SkPaint();
-    // No need to do anything for `invertColors`. If it was set, then it
-    // updated `_managedColorFilter`.
-    paint.setBlendMode(toSkBlendMode(_blendMode));
-    paint.setStyle(toSkPaintStyle(_style));
-    paint.setStrokeWidth(_strokeWidth);
-    paint.setAntiAlias(_isAntiAlias);
-    paint.setColorInt(_color.toDouble());
-    paint.setShader(_shader?.getSkShader(_filterQuality));
-    paint.setMaskFilter(_ckMaskFilter?.skiaObject);
-    paint.setColorFilter(_effectiveColorFilter?.skiaObject);
-    paint.setStrokeCap(toSkStrokeCap(_strokeCap));
-    paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
-    paint.setStrokeMiter(_strokeMiterLimit);
-    return paint;
-  }
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
+  /// Disposes of this paint object.
+  ///
+  /// This object cannot be used again after calling this method.
+  void dispose() {
+    _ref.dispose();
   }
 }
 
