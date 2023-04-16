@@ -68,11 +68,11 @@ enum class BlendMode {
   kXor,
   kPlus,
   kModulate,
+  kScreen,
 
   // The following blend modes use equations that are not available for
   // pipelines on most graphics devices without extensions, and so they are
   // only able to be used via `BlendFilterContents`.
-  kScreen,
   kOverlay,
   kDarken,
   kLighten,

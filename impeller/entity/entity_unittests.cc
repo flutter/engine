@@ -793,7 +793,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
     static_assert(b == BlendMode::kClear);  // Ensure the first item in
                                             // the switch is the first
                                             // item in the enum.
-    static_assert(Entity::kLastPipelineBlendMode == BlendMode::kModulate);
+    static_assert(Entity::kLastPipelineBlendMode == BlendMode::kScreen);
     switch (b) {
       case BlendMode::kClear:
         blend_mode_names.push_back("Clear");
@@ -837,6 +837,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       case BlendMode::kModulate:
         blend_mode_names.push_back("Modulate");
         blend_mode_values.push_back(BlendMode::kModulate);
+      case BlendMode::kScreen:
+        blend_mode_names.push_back("Screen");
+        blend_mode_values.push_back(BlendMode::kScreen);
     };
   }
 

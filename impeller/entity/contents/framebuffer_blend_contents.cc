@@ -36,8 +36,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
     return false;
   }
 
-  using VS = FramebufferBlendScreenPipeline::VertexShader;
-  using FS = FramebufferBlendScreenPipeline::FragmentShader;
+  using VS = FramebufferBlendOverlayPipeline::VertexShader;
+  using FS = FramebufferBlendOverlayPipeline::FragmentShader;
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -76,10 +76,9 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   cmd.BindVertices(vtx_buffer);
   cmd.stencil_reference = entity.GetStencilDepth();
 
+  static_assert(Entity::kLastPipelineBlendMode == BlendMode::kScreen);
+  static_assert(Entity::kLastAdvancedBlendMode == BlendMode::kLuminosity);
   switch (blend_mode_) {
-    case BlendMode::kScreen:
-      cmd.pipeline = renderer.GetFramebufferBlendScreenPipeline(options);
-      break;
     case BlendMode::kOverlay:
       cmd.pipeline = renderer.GetFramebufferBlendOverlayPipeline(options);
       break;

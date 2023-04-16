@@ -124,6 +124,12 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
+    case BlendMode::kScreen:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceColor;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
     default:
       FML_UNREACHABLE();
   }
@@ -220,8 +226,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
     framebuffer_blend_saturation_pipelines_[{}] =
         CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
-    framebuffer_blend_screen_pipelines_[{}] =
-        CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
     framebuffer_blend_softlight_pipelines_[{}] =
         CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
   }
@@ -251,8 +255,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<BlendOverlayPipeline>(*context_);
   blend_saturation_pipelines_[{}] =
       CreateDefaultPipeline<BlendSaturationPipeline>(*context_);
-  blend_screen_pipelines_[{}] =
-      CreateDefaultPipeline<BlendScreenPipeline>(*context_);
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
   sweep_gradient_fill_pipelines_[{}] =

@@ -62,6 +62,7 @@ render.
 | Xor |
 | Plus |
 | Modulate |
+| Screen |
 
 ## Advanced blends
 
@@ -88,7 +89,6 @@ essentially free) for the following reasons:
 
 | Advanced blend |
 | --- |
-| kScreen |
 | Overlay |
 | Darken |
 | Lighten |

@@ -86,7 +86,6 @@
 #include "impeller/entity/advanced_blend_multiply.frag.h"
 #include "impeller/entity/advanced_blend_overlay.frag.h"
 #include "impeller/entity/advanced_blend_saturation.frag.h"
-#include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
 
 #include "impeller/entity/framebuffer_blend.vert.h"
@@ -103,7 +102,6 @@
 #include "impeller/entity/framebuffer_blend_multiply.frag.h"
 #include "impeller/entity/framebuffer_blend_overlay.frag.h"
 #include "impeller/entity/framebuffer_blend_saturation.frag.h"
-#include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
 namespace impeller {
@@ -224,8 +222,6 @@ using BlendOverlayPipeline =
 using BlendSaturationPipeline =
     RenderPipelineT<AdvancedBlendVertexShader,
                     AdvancedBlendSaturationFragmentShader>;
-using BlendScreenPipeline = RenderPipelineT<AdvancedBlendVertexShader,
-                                            AdvancedBlendScreenFragmentShader>;
 using BlendSoftLightPipeline =
     RenderPipelineT<AdvancedBlendVertexShader,
                     AdvancedBlendSoftlightFragmentShader>;
@@ -269,9 +265,6 @@ using FramebufferBlendOverlayPipeline =
 using FramebufferBlendSaturationPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSaturationFragmentShader>;
-using FramebufferBlendScreenPipeline =
-    RenderPipelineT<FramebufferBlendVertexShader,
-                    FramebufferBlendScreenFragmentShader>;
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
@@ -560,11 +553,6 @@ class ContentContext {
     return GetPipeline(blend_saturation_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendScreenPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(blend_screen_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendSoftLightPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
@@ -647,12 +635,6 @@ class ContentContext {
   GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
-    return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -749,7 +731,6 @@ class ContentContext {
   mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
   mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
   mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
-  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
   // Framebuffer Advanced blends.
   mutable Variants<FramebufferBlendColorPipeline>
@@ -778,8 +759,6 @@ class ContentContext {
       framebuffer_blend_overlay_pipelines_;
   mutable Variants<FramebufferBlendSaturationPipeline>
       framebuffer_blend_saturation_pipelines_;
-  mutable Variants<FramebufferBlendScreenPipeline>
-      framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
 

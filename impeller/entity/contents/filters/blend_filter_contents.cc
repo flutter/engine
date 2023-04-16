@@ -197,8 +197,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
                             blend_mode, alpha, absorb_opacity](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
-    using VS = BlendScreenPipeline::VertexShader;
-    using FS = BlendScreenPipeline::FragmentShader;
+    using VS = BlendOverlayPipeline::VertexShader;
+    using FS = BlendOverlayPipeline::FragmentShader;
 
     auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -229,10 +229,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
 
+    static_assert(Entity::kLastPipelineBlendMode == BlendMode::kScreen);
+    static_assert(Entity::kLastAdvancedBlendMode == BlendMode::kLuminosity);
     switch (blend_mode) {
-      case BlendMode::kScreen:
-        cmd.pipeline = renderer.GetBlendScreenPipeline(options);
-        break;
       case BlendMode::kOverlay:
         cmd.pipeline = renderer.GetBlendOverlayPipeline(options);
         break;
@@ -613,7 +612,6 @@ void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
 
   if (blend_mode > Entity::kLastPipelineBlendMode) {
     switch (blend_mode) {
-      BLEND_CASE(Screen)
       BLEND_CASE(Overlay)
       BLEND_CASE(Darken)
       BLEND_CASE(Lighten)

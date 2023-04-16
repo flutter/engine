@@ -19,7 +19,7 @@ class RenderPass;
 
 class Entity {
  public:
-  static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kModulate;
+  static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kScreen;
   static constexpr BlendMode kLastAdvancedBlendMode = BlendMode::kLuminosity;
 
   /// An enum to define how to repeat, fold, or omit colors outside of the

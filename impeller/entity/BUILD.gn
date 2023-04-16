@@ -28,7 +28,6 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/advanced_blend_multiply.frag",
     "shaders/blending/advanced_blend_overlay.frag",
     "shaders/blending/advanced_blend_saturation.frag",
-    "shaders/blending/advanced_blend_screen.frag",
     "shaders/blending/advanced_blend_softlight.frag",
     "shaders/blending/blend.frag",
     "shaders/blending/blend.vert",
@@ -133,7 +132,6 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
     "shaders/blending/ios/framebuffer_blend_multiply.frag",
     "shaders/blending/ios/framebuffer_blend_overlay.frag",
     "shaders/blending/ios/framebuffer_blend_saturation.frag",
-    "shaders/blending/ios/framebuffer_blend_screen.frag",
     "shaders/blending/ios/framebuffer_blend_softlight.frag",
   ]
 }
