@@ -55,39 +55,8 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-    // Safari does not support weak refs (FinalizationRegistry).
-    // This test should be revisited when Safari ships weak refs.
     // TODO(yjbanov): skip Firefox due to a crash: https://github.com/flutter/flutter/issues/86632
-    }, skip: isSafari || isFirefox);
-
-    test('renders using a recording canvas if weak refs are not supported',
-        () async {
-      browserSupportsFinalizationRegistry = false;
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
-      expect(canvas, isA<RecordingCkCanvas>());
-      drawTestPicture(canvas);
-
-      final CkPicture originalPicture = recorder.endRecording();
-      await matchPictureGolden('canvaskit_picture.png', originalPicture, region: kDefaultRegion);
-
-      final ByteData originalPixels =
-          (await (await originalPicture.toImage(50, 50)).toByteData())!;
-
-      // Test that a picture restored from a snapshot looks the same.
-      final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
-      expect(snapshot, isNotNull);
-      final SkPicture restoredSkPicture = snapshot!.toPicture();
-      expect(restoredSkPicture, isNotNull);
-      final CkPicture restoredPicture = CkPicture(
-          restoredSkPicture, const ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
-      final ByteData restoredPixels =
-        (await (await restoredPicture.toImage(50, 50)).toByteData())!;
-
-      await matchPictureGolden('canvaskit_picture.png', restoredPicture, region: kDefaultRegion);
-      expect(restoredPixels.buffer.asUint8List(),
-          originalPixels.buffer.asUint8List());
-    });
+    }, skip: isFirefox);
 
     // Regression test for https://github.com/flutter/flutter/issues/51237
     // Draws a grid of shadows at different offsets. Prior to directional

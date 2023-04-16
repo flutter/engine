@@ -99,8 +99,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('CkAnimatedImage remembers last animation position after resurrection', () async {
-      browserSupportsFinalizationRegistry = false;
-
       final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
       expect(image.frameCount, 3);
       expect(image.repetitionCount, -1);
