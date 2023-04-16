@@ -43,9 +43,6 @@ void testMain() {
 
     test('renders using non-recording canvas if weak refs are supported',
         () async {
-      expect(browserSupportsFinalizationRegistry, isTrue,
-          reason: 'This test specifically tests non-recording canvas, which '
-              'only works if FinalizationRegistry is available.');
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas.runtimeType, CkCanvas);

@@ -3424,12 +3424,6 @@ external JSAny? get _finalizationRegistryConstructor;
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
 
-/// Sets the value of [browserSupportsFinalizationRegistry] to its true value.
-void debugResetBrowserSupportsFinalizationRegistry() {
-  browserSupportsFinalizationRegistry =
-      _finalizationRegistryConstructor != null;
-}
-
 @JS()
 @staticInterop
 class SkData {}

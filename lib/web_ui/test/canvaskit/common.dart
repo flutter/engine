@@ -17,19 +17,13 @@ const MethodCodec codec = StandardMethodCodec();
 void setUpCanvasKitTest() {
   setUpAll(() async {
     expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
-    debugResetBrowserSupportsFinalizationRegistry();
     debugDisableFontFallbacks = false;
     await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
 
   tearDown(() {
-    debugResetBrowserSupportsFinalizationRegistry();
     HtmlViewEmbedder.instance.debugClear();
     SurfaceFactory.instance.debugClear();
-  });
-
-  tearDownAll(() {
-    debugResetBrowserSupportsFinalizationRegistry();
   });
 }
 
