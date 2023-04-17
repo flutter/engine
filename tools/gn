@@ -400,9 +400,9 @@ def to_gn_args(args):
   if runtime_mode == 'debug':
     gn_args['dart_runtime_mode'] = 'develop'
   elif runtime_mode == 'jit_release':
-    gn_args['dart_runtime_mode'] = 'release'
+    gn_args['dart_runtime_mode'] = 'profile'
   else:
-    gn_args['dart_runtime_mode'] = runtime_mode
+    gn_args['dart_runtime_mode'] = 'profile'
 
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
