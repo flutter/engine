@@ -26,6 +26,10 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   void AsyncWaitForVsync(const Callback& callback);
 
+  /// Indicates the callback_ passed by |AsyncWaitForVsync| has been invoked
+  /// and completed to process.
+  bool IsMajorCallbackComplete();
+
   /// Add a secondary callback for key |id| for the next vsync.
   ///
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
@@ -75,6 +79,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
+  bool major_callback_complete_ = false;
 
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);

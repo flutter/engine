@@ -19,6 +19,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
 #include "rapidjson/document.h"
+#include "shell/common/viewport_metrics_updater.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
 namespace flutter {
@@ -58,6 +59,8 @@ Engine::Engine(
       task_runners_(task_runners),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
+  viewport_metrics_updater_ = std::unique_ptr<ViewportMetricsUpdater>(
+      new ViewportMetricsUpdater(*this));
 }
 
 Engine::Engine(Delegate& delegate,
@@ -287,6 +290,18 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 }
 
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
+  viewport_metrics_updater_->UpdateViewportMetrics(metrics);
+}
+
+bool Engine::IsVsyncWaiterMajorCallbackComplete() {
+  return animator_->IsVsyncWaiterMajorCallbackComplete();
+}
+
+void Engine::PostTaskOnUITaskRunner(const fml::closure& callback) {
+  task_runners_.GetUITaskRunner()->PostTask(callback);
+}
+
+void Engine::DoUpdateViewportMetrics(const ViewportMetrics& metrics) {
   runtime_controller_->SetViewportMetrics(metrics);
   ScheduleFrame();
 }

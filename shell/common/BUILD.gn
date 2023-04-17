@@ -113,6 +113,8 @@ source_set("common") {
     "variable_refresh_rate_display.cc",
     "variable_refresh_rate_display.h",
     "variable_refresh_rate_reporter.h",
+    "viewport_metrics_updater.cc",
+    "viewport_metrics_updater.h",
     "vsync_waiter.cc",
     "vsync_waiter.h",
     "vsync_waiter_fallback.cc",

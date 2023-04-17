@@ -41,6 +41,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
       return;
     }
     callback_ = callback;
+    major_callback_complete_ = false;
     if (!secondary_callbacks_.empty()) {
       // Return directly as `AwaitVSync` is already called by
       // `ScheduleSecondaryCallback`.
@@ -48,6 +49,10 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
     }
   }
   AwaitVSync();
+}
+
+bool VsyncWaiter::IsMajorCallbackComplete() {
+  return major_callback_complete_;
 }
 
 void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
@@ -128,7 +133,8 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
     task_runners_.GetUITaskRunner()->PostTask(
         [ui_task_queue_id, callback, flow_identifier, frame_start_time,
-         frame_target_time, pause_secondary_tasks]() {
+         frame_target_time, pause_secondary_tasks,
+         &major_callback_complete_ = major_callback_complete_]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
                           frame_start_time, "TargetTime", frame_target_time);
           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
@@ -136,6 +142,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
           frame_timings_recorder->RecordVsync(frame_start_time,
                                               frame_target_time);
           callback(std::move(frame_timings_recorder));
+          major_callback_complete_ = true;
           TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
           if (pause_secondary_tasks) {
             ResumeDartMicroTasks(ui_task_queue_id);

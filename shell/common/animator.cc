@@ -57,6 +57,10 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
       });
 }
 
+bool Animator::IsVsyncWaiterMajorCallbackComplete() {
+  return waiter_->IsMajorCallbackComplete();
+}
+
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
