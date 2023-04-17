@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../color_filter.dart';
+import '../shader_data.dart';
 import '../vector_math.dart';
 import 'canvaskit_api.dart';
 import 'color_filter.dart';
 import 'image_filter.dart';
 import 'mask_filter.dart';
+import 'native_memory.dart';
 import 'shader.dart';
 import 'skia_object_cache.dart';
 
@@ -20,10 +22,24 @@ import 'skia_object_cache.dart';
 ///
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
-class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
-  CkPaint();
+class CkPaint implements ui.Paint {
+  CkPaint() : skiaObject = SkPaint() {
+    skiaObject.setAntiAlias(_isAntiAlias);
+    skiaObject.setColorInt(_defaultPaintColor.toDouble());
+    _ref = UniqueRef<SkPaint>(this, skiaObject, 'Paint');
+  }
+
+  final SkPaint skiaObject;
+  late final UniqueRef<SkPaint> _ref;
+  CkManagedSkImageFilterConvertible? _imageFilter;
 
   static const int _defaultPaintColor = 0xFF000000;
+
+  /// Returns the native reference to the underlying [SkPaint] object.
+  ///
+  /// This should only be used in tests.
+  @visibleForTesting
+  UniqueRef<SkPaint> get debugRef => _ref;
 
   @override
   ui.BlendMode get blendMode => _blendMode;
@@ -154,12 +170,8 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_shader == value) {
       return;
     }
-    if (value is CkFragmentShader) {
-      _shader = value.createShader();
-    } else {
-      _shader = value as CkShader?;
-    }
-    skiaObject.setShader(_shader?.withQuality(_filterQuality));
+    _shader = value as CkShader?;
+    skiaObject.setShader(_shader?.getSkShader(_filterQuality));
   }
 
   CkShader? _shader;
@@ -200,7 +212,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
     _filterQuality = value;
-    skiaObject.setShader(_shader?.withQuality(value));
+    skiaObject.setShader(_shader?.getSkShader(value));
   }
 
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
@@ -262,50 +274,28 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_imageFilter == value) {
       return;
     }
+    final CkManagedSkImageFilterConvertible? filter;
     if (value is ui.ColorFilter) {
-      _imageFilter = createCkColorFilter(value as EngineColorFilter);
+      filter = createCkColorFilter(value as EngineColorFilter);
     }
     else {
-      _imageFilter = value as CkManagedSkImageFilterConvertible?;
+      filter = value as CkManagedSkImageFilterConvertible?;
     }
-    _managedImageFilter = _imageFilter?.imageFilter;
-    skiaObject.setImageFilter(_managedImageFilter?.skiaObject);
+
+    if (filter != null) {
+      filter.imageFilter((SkImageFilter skImageFilter) {
+        skiaObject.setImageFilter(skImageFilter);
+      });
+    }
+
+    _imageFilter = filter;
   }
 
-  CkManagedSkImageFilterConvertible? _imageFilter;
-  ManagedSkiaObject<SkImageFilter>? _managedImageFilter;
-
-  @override
-  SkPaint createDefault() {
-    final SkPaint paint = SkPaint();
-    paint.setAntiAlias(_isAntiAlias);
-    paint.setColorInt(_color.toDouble());
-    return paint;
-  }
-
-  @override
-  SkPaint resurrect() {
-    final SkPaint paint = SkPaint();
-    // No need to do anything for `invertColors`. If it was set, then it
-    // updated `_managedColorFilter`.
-    paint.setBlendMode(toSkBlendMode(_blendMode));
-    paint.setStyle(toSkPaintStyle(_style));
-    paint.setStrokeWidth(_strokeWidth);
-    paint.setAntiAlias(_isAntiAlias);
-    paint.setColorInt(_color.toDouble());
-    paint.setShader(_shader?.withQuality(_filterQuality));
-    paint.setMaskFilter(_ckMaskFilter?.skiaObject);
-    paint.setColorFilter(_effectiveColorFilter?.skiaObject);
-    paint.setImageFilter(_managedImageFilter?.skiaObject);
-    paint.setStrokeCap(toSkStrokeCap(_strokeCap));
-    paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
-    paint.setStrokeMiter(_strokeMiterLimit);
-    return paint;
-  }
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
+  /// Disposes of this paint object.
+  ///
+  /// This object cannot be used again after calling this method.
+  void dispose() {
+    _ref.dispose();
   }
 }
 
@@ -318,130 +308,23 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
 
 final ManagedSkColorFilter _invertColorFilter = ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
 
-class UniformData {
-  const UniformData({
-    required this.name,
-    required this.location,
-    required this.type,
-  });
-
-  final String name;
-  final UniformType type;
-  final int location;
-
-  static const UniformData empty =
-      UniformData(name: '', location: -1, type: UniformType.Float);
-}
-
-enum UniformType {
-  Boolean,
-  SByte,
-  UByte,
-  Short,
-  UShort,
-  Int,
-  Uint,
-  Int64,
-  Uint64,
-  Half,
-  Float,
-  Double,
-  SampledImage,
-}
-
-UniformType? uniformTypeFromJson(int value) {
-  switch (value) {
-    case 0:
-      return UniformType.Boolean;
-    case 1:
-      return UniformType.SByte;
-    case 2:
-      return UniformType.UByte;
-    case 3:
-      return UniformType.Short;
-    case 4:
-      return UniformType.UShort;
-    case 5:
-      return UniformType.Int;
-    case 6:
-      return UniformType.Uint;
-    case 7:
-      return UniformType.Int64;
-    case 8:
-      return UniformType.Uint64;
-    case 9:
-      return UniformType.Half;
-    case 10:
-      return UniformType.Float;
-    case 11:
-      return UniformType.Double;
-    case 12:
-      return UniformType.SampledImage;
-  }
-  return null;
-}
-
 class CkFragmentProgram implements ui.FragmentProgram {
   CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
       this.textureCount);
 
-  static Future<CkFragmentProgram> fromBytes(String name, Uint8List data) async {
-    final String contents = utf8.decode(data);
-    final Object? rawShaderData = json.decode(contents);
-    if (rawShaderData is! Map<String, Object?>) {
-      throw const FormatException('Invalid Shader Data');
-    }
-    final Object? source = rawShaderData['sksl'];
-    final Object? rawUniforms = rawShaderData['uniforms'];
-    if (source is! String || rawUniforms is! List<Object?>) {
-      throw const FormatException('Invalid Shader Data');
-    }
-    final SkRuntimeEffect? effect = MakeRuntimeEffect(source);
+  factory CkFragmentProgram.fromBytes(String name, Uint8List data) {
+    final ShaderData shaderData = ShaderData.fromBytes(data);
+    final SkRuntimeEffect? effect = MakeRuntimeEffect(shaderData.source);
     if (effect == null) {
-      throw const FormatException('Invalid Shader Data');
+      throw const FormatException('Invalid Shader Source');
     }
 
-    final List<UniformData> uniforms = List<UniformData>.filled(rawUniforms.length, UniformData.empty);
-
-    int textureCount = 0;
-    int floatCount = 0;
-    for (int i = 0; i < rawUniforms.length; i += 1) {
-      final Object? rawUniformData = rawUniforms[i];
-      if (rawUniformData is! Map<String, Object?>) {
-        throw const FormatException('Invalid Shader Data');
-      }
-      final Object? name = rawUniformData['name'];
-      final Object? location = rawUniformData['location'];
-      final Object? rawType = rawUniformData['type'];
-      if (name is! String || location is! int || rawType is! int) {
-        throw const FormatException('Invalid Shader Data');
-      }
-      final UniformType? type = uniformTypeFromJson(rawType);
-      if (type == null) {
-        throw const FormatException('Invalid Shader Data');
-      }
-      if (type == UniformType.SampledImage) {
-        textureCount += 1;
-      } else {
-        final Object? rows = rawUniformData['rows'];
-        final Object? bitWidth = rawUniformData['bit_width'];
-        if (bitWidth is! int || rows is! int) {
-          throw const FormatException('Invalid Shader Data');
-        }
-        floatCount += (bitWidth ~/ 32) * rows;
-      }
-      uniforms[location] = UniformData(
-        name: name,
-        location: location,
-        type: type,
-      );
-    }
     return CkFragmentProgram(
       name,
       effect,
-      uniforms,
-      floatCount,
-      textureCount,
+      shaderData.uniforms,
+      shaderData.floatCount,
+      shaderData.textureCount,
     );
   }
 
@@ -457,7 +340,7 @@ class CkFragmentProgram implements ui.FragmentProgram {
   }
 }
 
-class CkFragmentShader implements ui.FragmentShader {
+class CkFragmentShader implements ui.FragmentShader, CkShader {
   CkFragmentShader(this.name, this.effect, int floatCount, int textureCount)
       : floats = List<double>.filled(floatCount + textureCount * 2, 0),
         samplers = List<SkShader?>.filled(textureCount, null),
@@ -469,69 +352,56 @@ class CkFragmentShader implements ui.FragmentShader {
   final List<double> floats;
   final List<SkShader?> samplers;
 
-  CkShader createShader() {
-    return CkFragmentInstance(name, effect, floats, samplers);
+  @visibleForTesting
+  UniqueRef<SkShader>? ref;
+
+  @override
+  SkShader getSkShader(ui.FilterQuality contextualQuality) {
+    assert(!_debugDisposed, 'FragmentShader has been disposed of.');
+    ref?.dispose();
+
+    final SkShader? result = samplers.isEmpty
+        ? effect.makeShader(floats)
+        : effect.makeShaderWithChildren(floats, samplers);
+    if (result == null) {
+      throw Exception('Invalid uniform data for shader $name:'
+          '  floatUniforms: $floats \n'
+          '  samplerUniforms: $samplers \n');
+    }
+
+    ref = UniqueRef<SkShader>(this, result, 'FragmentShader');
+    return result;
   }
 
   @override
   void setFloat(int index, double value) {
+    assert(!_debugDisposed, 'FragmentShader has been disposed of.');
     floats[index] = value;
   }
 
   @override
   void setImageSampler(int index, ui.Image image) {
+    assert(!_debugDisposed, 'FragmentShader has been disposed of.');
     final ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
         ui.TileMode.clamp, toMatrix64(Matrix4.identity().storage));
-    samplers[index] = (sampler as CkShader).skiaObject;
+    samplers[index] = (sampler as CkShader).getSkShader(ui.FilterQuality.none);
     setFloat(lastFloatIndex + 2 * index, (sampler as CkImageShader).imageWidth.toDouble());
     setFloat(lastFloatIndex + 2 * index + 1, sampler.imageHeight.toDouble());
   }
 
   @override
   void dispose() {
+    assert(!_debugDisposed, 'Cannot dispose FragmentShader more than once.');
     assert(() {
       _debugDisposed = true;
       return true;
     }());
+    ref?.dispose();
+    ref = null;
   }
 
   bool _debugDisposed = false;
 
   @override
   bool get debugDisposed => _debugDisposed;
-}
-
-class CkFragmentInstance extends CkShader {
-  CkFragmentInstance(this.name, this.effect, this.floats, this.shaders);
-
-  final String name;
-  final SkRuntimeEffect effect;
-  final List<double> floats;
-  final List<SkShader?> shaders;
-
-  @override
-  SkShader createDefault() {
-    final SkShader? result = shaders.isEmpty
-        ? effect.makeShader(floats)
-        : effect.makeShaderWithChildren(floats, shaders);
-    if (result == null) {
-      throw Exception('Invalid uniform data for shader $name:'
-          '  floatUniforms: $floats \n'
-          '  samplerUniforms: $shaders \n');
-    }
-    return result;
-  }
-
-  @override
-  SkShader resurrect() {
-    final SkShader? result = shaders.isEmpty
-        ? effect.makeShader(floats)
-        : effect.makeShaderWithChildren(floats, shaders);
-    if (result == null) {
-      throw Exception('Invalid uniform data for shader $name:'
-          '  floatUniforms: $floats \n'
-          '  samplerUniforms: $shaders \n');
-    }
-    return result;
-  }
 }
