@@ -272,7 +272,7 @@ def to_gn_args(args):
 
   gn_args = {}
 
-  gn_args['is_debug'] = args.unoptimized
+  gn_args['is_debug'] = True
 
   gn_args.update(setup_goma(args))
 
@@ -383,14 +383,11 @@ def to_gn_args(args):
   elif get_host_os() == 'mac':
     gn_args['use_ios_simulator'] = False
 
-  if args.dart_debug:
-    gn_args['dart_debug'] = True
+  gn_args['dart_debug'] = True
 
   if args.full_dart_debug:
-    gn_args['dart_debug'] = True
     gn_args['dart_debug_optimization_level'] = '0'
 
-  gn_args['dart_debug'] = True
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.
