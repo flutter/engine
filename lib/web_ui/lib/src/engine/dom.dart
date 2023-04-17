@@ -1809,9 +1809,7 @@ extension _DomStreamReaderExtension on _DomStreamReader {
 class _DomStreamChunk {}
 
 extension _DomStreamChunkExtension on _DomStreamChunk {
-  @JS('value')
-  external JSAny? get _value;
-  Object? get value => _value?.toObjectShallow;
+  external JSAny? get value;
 
   @JS('done')
   external JSBoolean get _done;
