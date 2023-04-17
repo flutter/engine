@@ -20,5 +20,8 @@ extension TypedArrayExtension on TypedArray {
 @JS()
 @staticInterop
 class Uint8Array extends TypedArray {
-  external factory Uint8Array(ArrayBuffer buffer);
+  external factory Uint8Array._(JSAny bufferOrLength);
 }
+
+Uint8Array createUint8ArrayFromBuffer(ArrayBuffer buffer) => Uint8Array._(buffer.toJS);
+Uint8Array createUint8ArrayFromLength(int length) => Uint8Array._(length.toJS);
