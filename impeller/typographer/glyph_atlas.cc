@@ -103,7 +103,7 @@ size_t GlyphAtlas::IterateGlyphs(
 FontGlyphPair::Vector GlyphAtlas::HasSamePairs(
     const FontGlyphPair::Vector& new_glyphs) {
   std::vector<FontGlyphPair> new_pairs;
-  for (auto pair : new_glyphs) {
+  for (const FontGlyphPair& pair : new_glyphs) {
     if (positions_.find(pair) == positions_.end()) {
       new_pairs.push_back(pair);
     }

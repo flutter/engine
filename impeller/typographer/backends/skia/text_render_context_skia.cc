@@ -65,7 +65,7 @@ static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
   FontGlyphPair::Set set = CollectUniqueFontGlyphPairsSet(type, frame_iterator);
   vector.reserve(set.size());
   for (const FontGlyphPair& item : set) {
-    vector.emplace_back(item);
+    vector.emplace_back(std::move(item));
   }
   return vector;
 }
