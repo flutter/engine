@@ -17,6 +17,7 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
@@ -648,6 +649,8 @@ class ContentContext {
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
 
+  std::shared_ptr<GlyphPathCache> GetGlyphPathCache() const;
+
   const Capabilities& GetDeviceCapabilities() const;
 
   void SetWireframe(bool wireframe);
@@ -802,6 +805,7 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+  std::shared_ptr<GlyphPathCache> glyph_path_cache_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 

@@ -24,6 +24,10 @@ class Typeface : public Comparable<Typeface> {
 
   virtual bool IsValid() const = 0;
 
+  virtual std::string GetPostscriptName() const = 0;
+
+  virtual void* GetCTFont() const = 0;
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Typeface);
 };

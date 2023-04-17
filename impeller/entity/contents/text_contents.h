@@ -11,6 +11,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -40,6 +41,8 @@ class TextContents final : public Contents {
 
   void SetOffset(Vector2 offset);
 
+  void SetGlyphPathCache(std::shared_ptr<GlyphPathCache> glyph_path_cache);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
@@ -53,11 +56,16 @@ class TextContents final : public Contents {
                  const Entity& entity,
                  RenderPass& pass) const;
 
+  bool RenderPath(const ContentContext& renderer,
+                  const Entity& entity,
+                  RenderPass& pass) const;
+
  private:
   TextFrame frame_;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   mutable std::shared_ptr<LazyGlyphAtlas> lazy_atlas_;
+  mutable std::shared_ptr<GlyphPathCache> glyph_path_cache_;
   Vector2 offset_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(

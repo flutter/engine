@@ -22,6 +22,7 @@
 #include "impeller/geometry/vector.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 
 namespace impeller {
 
@@ -126,6 +127,7 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  std::shared_ptr<GlyphPathCache> glyph_path_cache_;
 
   void Initialize();
 

@@ -50,6 +50,7 @@ void Canvas::Initialize() {
   current_pass_ = base_pass_.get();
   xformation_stack_.emplace_back(CanvasStackEntry{});
   lazy_glyph_atlas_ = std::make_shared<LazyGlyphAtlas>();
+  glyph_path_cache_ = std::make_shared<GlyphPathCache>();
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -425,6 +426,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            Point position,
                            const Paint& paint) {
   lazy_glyph_atlas_->AddTextFrame(text_frame);
+  glyph_path_cache_->AddTextFrame(text_frame);
 
   Entity entity;
   entity.SetStencilDepth(GetStencilDepth());
@@ -433,6 +435,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
   text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
+  text_contents->SetGlyphPathCache(glyph_path_cache_);
 
   if (paint.color_source.has_value()) {
     auto& source = paint.color_source.value();

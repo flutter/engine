@@ -63,6 +63,10 @@ class Font : public Comparable<Font> {
 
   const Metrics& GetMetrics() const;
 
+  std::string GetPostscriptName() const {
+    return typeface_->GetPostscriptName();
+  }
+
   // |Comparable<Font>|
   std::size_t GetHash() const override;
 

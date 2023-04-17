@@ -15,6 +15,16 @@ bool TypefaceSkia::IsValid() const {
   return !!typeface_;
 }
 
+std::string TypefaceSkia::GetPostscriptName() const {
+  SkString postscriptName;
+  typeface_->getPostScriptName(&postscriptName);
+  return std::string(postscriptName.c_str());
+}
+
+void* TypefaceSkia::GetCTFont() const {
+  return typeface_->internal_private_getCTFontRef();
+}
+
 std::size_t TypefaceSkia::GetHash() const {
   if (!IsValid()) {
     return 0u;

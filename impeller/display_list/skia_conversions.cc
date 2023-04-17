@@ -36,6 +36,13 @@ PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
   return radii;
 }
 
+std::optional<Path> ToPath(const SkPath* path) {
+  if (path == nullptr) {
+    return std::nullopt;
+  }
+  return ToPath(*path);
+}
+
 Path ToPath(const SkPath& path) {
   auto iterator = SkPath::Iter(path, false);
 

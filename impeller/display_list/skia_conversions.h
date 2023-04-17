@@ -28,6 +28,7 @@ Color ToColor(const SkColor& color);
 std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 Path ToPath(const SkPath& path);
+std::optional<Path> ToPath(const SkPath* path);
 Path ToPath(const SkRRect& rrect);
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);
 
