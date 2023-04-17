@@ -68,7 +68,7 @@ vars = {
   'dart_webdev_rev': '75462913fba9756e9ddae33bfd73fe96f5199c34',
   'dart_webkit_inspection_protocol_rev': '8401098ace995e4dcd9855a2741c2dacccaa780b',
   'dart_yaml_edit_rev': '5f392a1511ab97dde0e4a6bb7225f283f59ea840',
-  'dart_zlib_rev': '27c2f474b71d0d20764f86f60ef8b00da1a16cda',
+  'dart_zlib_rev': '14dd4c4455602c9b71a1a89b5cafd1f4030d2e3f',
 
   'ocmock_rev': 'c4ec0e3a7a9f56cfdbd0aa01f4f97bb4b75c5ef8', # v3.7.1
 
