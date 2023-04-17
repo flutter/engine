@@ -1609,15 +1609,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
             flutterViewController.get()
                 .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        [flutterViewController updateViewportMetrics];
+        [flutterViewController keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback];
       }
     } else {
-      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
+      fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
+      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() + frameInterval -
                                    flutterViewController.get().keyboardAnimationStartTime;
 
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      [flutterViewController updateViewportMetrics];
+      [flutterViewController keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback];
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
@@ -1628,6 +1629,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                      callback:callback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
+}
+
+- (void)keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback {
+  fml::closure platformTask = [weakSelf = [self getWeakPtr]] {
+    if (!weakSelf) {
+      return;
+    }
+    fml::scoped_nsobject<FlutterViewController> flutterViewController(
+        [(FlutterViewController*)weakSelf.get() retain]);
+    if (!flutterViewController) {
+      return;
+    }
+    [flutterViewController updateViewportMetrics];
+  };
+
+  flutter::Shell& shell = [_engine.get() shell];
+  fml::closure onFrameRasterizedCallback = [&shell, platformTask] {
+    shell.GetTaskRunners().GetPlatformTaskRunner()->PostTask(platformTask);
+  };
+  shell.AddOnFrameRasterizedCallback(onFrameRasterizedCallback);
 }
 
 - (void)invalidateKeyboardAnimationVSyncClient {

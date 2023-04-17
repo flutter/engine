@@ -1510,6 +1510,14 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
         },
         fml::TimeDelta::FromMilliseconds(kBatchTimeInMilliseconds));
   }
+
+  {
+    std::scoped_lock<std::mutex> lock(on_frame_rasterized_callbacks_mutex_);
+    for (auto callback : on_frame_rasterized_callbacks_) {
+      callback();
+    }
+    on_frame_rasterized_callbacks_.clear();
+  }
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
@@ -1747,6 +1755,11 @@ void Shell::RegisterImageDecoder(ImageGeneratorFactory factory,
           engine->GetImageGeneratorRegistry()->AddFactory(factory, priority);
         }
       });
+}
+
+void Shell::AddOnFrameRasterizedCallback(const fml::closure& callback) {
+  std::scoped_lock<std::mutex> lock(on_frame_rasterized_callbacks_mutex_);
+  on_frame_rasterized_callbacks_.push_back(callback);
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
