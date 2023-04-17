@@ -13,7 +13,7 @@ class ArrayBuffer {}
 class TypedArray {}
 
 extension TypedArrayExtension on TypedArray {
-  external void set(JSAny source, JSNumber start);
+  external void set(Uint8Array source, JSNumber start);
   external JSNumber get length;
 }
 
