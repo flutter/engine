@@ -173,8 +173,8 @@ bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
 }
 
 // |Surface|
-impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
-  return aiks_context_.get();
+std::shared_ptr<impeller::AiksContext> GPUSurfaceMetalImpeller::GetAiksContext() const {
+  return aiks_context_;
 }
 
 Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
