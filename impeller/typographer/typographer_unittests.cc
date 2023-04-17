@@ -51,11 +51,12 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
 
   std::optional<FontGlyphPair> first_pair;
   Rect first_rect;
-  atlas->IterateGlyphs([&](const FontGlyphPair& pair, const Rect& rect)->bool {
-    first_pair = pair;
-    first_rect = rect;
-    return false;
-  });
+  atlas->IterateGlyphs(
+      [&](const FontGlyphPair& pair, const Rect& rect) -> bool {
+        first_pair = pair;
+        first_rect = rect;
+        return false;
+      });
 
   ASSERT_TRUE(first_pair.has_value());
   ASSERT_TRUE(atlas->FindFontGlyphBounds(first_pair.value()).has_value());

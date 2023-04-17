@@ -42,13 +42,14 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
     GlyphAtlas::Type type,
     const TextRenderContext::FrameIterator& frame_iterator) {
   FontGlyphPair::Set set;
-  while (auto frame = frame_iterator()) {
-    for (const auto& run : frame->GetRuns()) {
-      auto font = run.GetFont();
+  while (const TextFrame* frame = frame_iterator()) {
+    for (const TextRun& run : frame->GetRuns()) {
+      const Font& font = run.GetFont();
       // TODO(dnfield): If we're doing SDF here, we should be using a consistent
       // point size.
       // https://github.com/flutter/flutter/issues/112016
-      for (const auto& glyph_position : run.GetGlyphPositions()) {
+      for (const TextRun::GlyphPosition& glyph_position :
+           run.GetGlyphPositions()) {
         set.insert({font, glyph_position.glyph});
       }
     }
@@ -61,9 +62,9 @@ static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
     const TextRenderContext::FrameIterator& frame_iterator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FontGlyphPair::Vector vector;
-  auto set = CollectUniqueFontGlyphPairsSet(type, frame_iterator);
+  FontGlyphPair::Set set = CollectUniqueFontGlyphPairsSet(type, frame_iterator);
   vector.reserve(set.size());
-  for (const auto& item : set) {
+  for (const FontGlyphPair& item : set) {
     vector.emplace_back(item);
   }
   return vector;
@@ -463,7 +464,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 1: Collect unique font-glyph pairs in the frame.
   // ---------------------------------------------------------------------------
 
-  auto font_glyph_pairs = CollectUniqueFontGlyphPairs(type, frame_iterator);
+  FontGlyphPair::Vector font_glyph_pairs =
+      CollectUniqueFontGlyphPairs(type, frame_iterator);
   if (font_glyph_pairs.empty()) {
     return last_atlas;
   }
@@ -472,7 +474,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 2: Determine if the atlas type and font glyph pairs are compatible
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  auto new_glyphs = last_atlas->HasSamePairs(font_glyph_pairs);
+  FontGlyphPair::Vector new_glyphs = last_atlas->HasSamePairs(font_glyph_pairs);
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;
   }
