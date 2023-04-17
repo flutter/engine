@@ -52,8 +52,7 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-    // TODO(yjbanov): skip Firefox due to a crash: https://github.com/flutter/flutter/issues/86632
-    }, skip: isFirefox);
+    });
 
     // Regression test for https://github.com/flutter/flutter/issues/51237
     // Draws a grid of shadows at different offsets. Prior to directional
@@ -851,9 +850,7 @@ void testMain() {
 
       await matchGoldenFile('cross_overlay_resources.png', region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });
-
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-  }, skip: isSafari || isFirefox);
+  });
 }
 
 Future<void> testSampleText(String language, String text,
