@@ -457,7 +457,6 @@ TEST_P(FlutterTapTest, FlutterTap) {
   ASSERT_EQ(touch_injection_request_count(), 1);
 }
 
-
 // TODO(fxbug.dev/125514): Embedded Child View needs to support Flatland.
 // Only test GFX Test UI stack for embedded test cases for now.
 INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
