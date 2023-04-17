@@ -4,7 +4,6 @@
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "flutter/display_list/image/dl_image.h"
-#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "impeller/base/validation.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
@@ -228,7 +227,8 @@ FLUTTER_ASSERT_ARC
     return nullptr;
   }
 
-  return flutter::DlImageGPU::Make(skImage);
+  // This image should not escape local use by this flutter::Texture implementation
+  return flutter::DlImage::Make(skImage);
 }
 
 - (sk_sp<flutter::DlImage>)wrapRGBAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
@@ -273,7 +273,9 @@ FLUTTER_ASSERT_ARC
   if (!skImage) {
     return nullptr;
   }
-  return flutter::DlImageGPU::Make(skImage);
+
+  // This image should not escape local use by this flutter::Texture implementation
+  return flutter::DlImage::Make(skImage);
 }
 
 @end

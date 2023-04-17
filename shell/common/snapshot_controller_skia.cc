@@ -7,7 +7,6 @@
 #include "display_list/image/dl_image.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -121,7 +120,9 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
             }));
   }
 
-  return DlImageGPU::Make(result);
+  // It is up to the caller to create a DlImageGPU version of this image
+  // if the result will interact with the UI thread.
+  return DlImage::Make(result);
 }
 
 sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(

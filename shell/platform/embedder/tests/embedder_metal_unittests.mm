@@ -70,8 +70,6 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
 }
 
 TEST_F(EmbedderTest, ExternalTextureMetal) {
-  GTEST_SKIP() << "This test needs to create an isolate";
-
   EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
       GetEmbedderContext(EmbedderTestContextType::kMetalContext));
 
@@ -493,8 +491,6 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreMetalTexture) {
 }
 
 TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
-  GTEST_SKIP() << "This test needs to create an isolate";
-
   EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
       GetEmbedderContext(EmbedderTestContextType::kMetalContext));
 

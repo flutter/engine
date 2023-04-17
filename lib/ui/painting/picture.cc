@@ -14,6 +14,7 @@
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -175,7 +176,9 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
           return;
         }
 
-        if (image->skia_image()) {
+        if (!image->isUIThreadSafe()) {
+          // All images with impeller textures should already be safe.
+          FML_DCHECK(image->impeller_texture() == nullptr);
           image =
               DlImageGPU::Make({image->skia_image(), std::move(unref_queue)});
         }

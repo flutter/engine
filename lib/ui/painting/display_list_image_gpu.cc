@@ -4,8 +4,6 @@
 
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 
-#include "flutter/lib/ui/ui_dart_state.h"
-
 namespace flutter {
 
 sk_sp<DlImageGPU> DlImageGPU::Make(SkiaGPUObject<SkImage> image) {
@@ -13,14 +11,6 @@ sk_sp<DlImageGPU> DlImageGPU::Make(SkiaGPUObject<SkImage> image) {
     return nullptr;
   }
   return sk_sp<DlImageGPU>(new DlImageGPU(std::move(image)));
-}
-
-sk_sp<DlImageGPU> DlImageGPU::Make(sk_sp<SkImage> image) {
-  if (!image) {
-    return nullptr;
-  }
-  return sk_sp<DlImageGPU>(
-      new DlImageGPU(UIDartState::CreateGPUObject(std::move(image))));
 }
 
 DlImageGPU::DlImageGPU(SkiaGPUObject<SkImage> image)

@@ -66,7 +66,7 @@ bool DlImageImpeller::isTextureBacked() const {
 
 // |DlImage|
 bool DlImageImpeller::isUIThreadSafe() const {
-  // Impeller textures are always ... thread-safe :/
+  // Impeller textures are always thread-safe
   return true;
 }
 

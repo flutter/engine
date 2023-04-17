@@ -2355,8 +2355,6 @@ TEST_F(ShellTest, RasterizerScreenshot) {
 }
 
 TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
-  GTEST_SKIP() << "This test needs to create an isolate";
-
   Settings settings = CreateSettingsForFixture();
   auto configuration = RunConfiguration::InferFromSettings(settings);
   auto task_runner = CreateNewThread();

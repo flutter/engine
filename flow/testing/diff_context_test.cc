@@ -10,10 +10,7 @@
 namespace flutter {
 namespace testing {
 
-DiffContextTest::DiffContextTest()
-    : unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
-          GetCurrentTaskRunner(),
-          fml::TimeDelta::FromSeconds(0))) {}
+DiffContextTest::DiffContextTest() {}
 
 Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,

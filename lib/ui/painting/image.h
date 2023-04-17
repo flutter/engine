@@ -6,9 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_H_
 
 #include "flutter/display_list/image/dl_image.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkImage.h"
 

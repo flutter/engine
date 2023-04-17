@@ -9,7 +9,6 @@
 #include <utility>
 
 #include "flutter/display_list/effects/dl_color_source.h"
-#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
@@ -74,7 +73,7 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
     context.canvas->Translate(bounds.x(), bounds.y() + bounds.height());
     context.canvas->Scale(bounds.width(), -bounds.height());
 
-    auto dl_image = DlImageGPU::Make(image);
+    auto dl_image = DlImage::Make(image);
     if (!transform.isIdentity()) {
       DlImageColorSource source(dl_image, DlTileMode::kRepeat,
                                 DlTileMode::kRepeat, sampling, &transform);

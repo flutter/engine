@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer_tree.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
