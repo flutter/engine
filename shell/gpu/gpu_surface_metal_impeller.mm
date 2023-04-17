@@ -66,10 +66,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 
   auto* mtl_layer = (CAMetalLayer*)layer;
 
-  auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
+  auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
       impeller_renderer_->GetContext(), mtl_layer);
   if (Settings::kSurfaceDataAccessible) {
-    last_drawable_.reset([surface->drawable() retain]);
+    last_drawable_.reset([drawable retain]);
   }
 
   id<CAMetalDrawable> metal_drawable = static_cast<id<CAMetalDrawable>>(last_drawable_);
@@ -77,7 +77,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
       fml::MakeCopyable([this,                           //
                          renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
-                         surface = std::move(surface),   //
                          metal_drawable                  //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
@@ -91,12 +90,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         }
 
         if (!disable_partial_repaint_) {
-          // this isn't correct.
-
           uintptr_t texture = reinterpret_cast<uintptr_t>(metal_drawable.texture);
-          auto damage_rect = damage_[texture];
-          surface->SetDamageRect(damage_rect.x(), damage_rect.y(), damage_rect.width(),
-                                 damage_rect.height());
 
           for (auto& entry : damage_) {
             if (entry.first != texture) {
@@ -109,6 +103,20 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           // Reset accumulated damage for current framebuffer
           damage_[texture] = SkIRect::MakeEmpty();
         }
+
+        std::optional<impeller::IRect> clip_rect;
+        auto damage_rect = surface_frame.submit_info().clip_rect;
+        if (damage_rect.has_value()) {
+          if (damage_rect->width() == 0 || damage_rect->height() == 0) {
+            return true;
+          }
+
+          clip_rect = impeller::IRect::MakeXYWH(damage_rect->x(), damage_rect->y(),
+                                                damage_rect->width(), damage_rect->height());
+        }
+
+        auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
+            impeller_renderer_->GetContext(), metal_drawable, clip_rect);
 
         impeller::DisplayListDispatcher impeller_dispatcher;
         display_list->Dispatch(impeller_dispatcher);

@@ -4,6 +4,7 @@
 
 #include "flutter/flow/compositor_context.h"
 
+#include <iostream>
 #include <optional>
 #include <utility>
 #include "flutter/flow/layers/layer_tree.h"
@@ -42,10 +43,11 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
     damage_ =
         context.ComputeDamage(additional_damage_, horizontal_clip_alignment_,
                               vertical_clip_alignment_);
-    return SkRect::Make(damage_->buffer_damage);
+    cached_clip_rect_ = SkRect::Make(damage_->buffer_damage);
   } else {
-    return std::nullopt;
+    cached_clip_rect_ = std::nullopt;
   }
+  return cached_clip_rect_;
 }
 
 CompositorContext::CompositorContext()
@@ -130,8 +132,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
           ? frame_damage->ComputeClipRect(layer_tree, !ignore_raster_cache)
           : std::nullopt;
 
-  layer_tree.Preroll(
-      *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
+  layer_tree.Preroll(*this, ignore_raster_cache,
+                     clip_rect ? *clip_rect : kGiantRect);
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
     post_preroll_result =
@@ -145,7 +147,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     return RasterStatus::kSkipAndRetry;
   }
 
-  //DlAutoCanvasRestore restore(canvas(), clip_rect.has_value());
+  // DlAutoCanvasRestore restore(canvas(), clip_rect.has_value());
 
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.

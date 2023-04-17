@@ -7,9 +7,9 @@
 #include <QuartzCore/CAMetalLayer.h>
 
 #include "flutter/fml/macros.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
-#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -33,9 +33,14 @@ class SurfaceMTL final : public Surface {
   ///
   /// @return     A pointer to the wrapped surface or null.
   ///
-  static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
+  static id<CAMetalDrawable> GetMetalDrawableAndValidate(
       std::shared_ptr<Context> context,
       CAMetalLayer* layer);
+
+  static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
+      std::shared_ptr<Context> context,
+      id<CAMetalDrawable> drawable,
+      std::optional<IRect> clip_rect);
 #pragma GCC diagnostic pop
 
   // |Surface|
@@ -43,20 +48,25 @@ class SurfaceMTL final : public Surface {
 
   id<MTLDrawable> drawable() const { return drawable_; }
 
-  void SetDamageRect(Scalar x, Scalar y, Scalar width, Scalar height) {
-    damage_rect_ = IRect::MakeXYWH(x,y, width, height);
-  }
-
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<Texture> resolve_texture_;
   id<CAMetalDrawable> drawable_ = nil;
-  std::optional<IRect> damage_rect_ = std::nullopt;
+  bool requires_blit_ = false;
+  std::optional<IRect> clip_rect_;
+
+  /// @brief  If the damage rect is larger than a fixed percentage of the
+  ///         screen. This is used to determine whether or not the additional
+  ///         blit pass required by partial repaint is worthwhile.
+  static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect,
+                                          ISize texture_size);
 
   SurfaceMTL(std::shared_ptr<Context> context,
              const RenderTarget& target,
              std::shared_ptr<Texture> resolve_texture,
-             id<CAMetalDrawable> drawable);
+             id<CAMetalDrawable> drawable,
+             bool requires_blit,
+             std::optional<IRect> clip_rect);
 
   // |Surface|
   bool Present() const override;

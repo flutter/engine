@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/surface_mtl.h"
+#include <iostream>
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
@@ -16,10 +17,10 @@ namespace impeller {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
-std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
+id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
     std::shared_ptr<Context> context,
     CAMetalLayer* layer) {
-  TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
+  TRACE_EVENT0("impeller", "SurfaceMTL::GetMetalDrawableAndValidate");
 
   if (context == nullptr || !context->IsValid() || layer == nil) {
     return nullptr;
@@ -35,9 +36,19 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
     VALIDATION_LOG << "Could not acquire current drawable.";
     return nullptr;
   }
+  return current_drawable;
+}
 
-  const auto color_format =
-      FromMTLPixelFormat(current_drawable.texture.pixelFormat);
+std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
+    std::shared_ptr<Context> context,
+    id<CAMetalDrawable> drawable,
+    std::optional<IRect> clip_rect) {
+  TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
+
+  ISize root_size = {static_cast<ISize::Type>(drawable.texture.width),
+                     static_cast<ISize::Type>(drawable.texture.height)};
+  bool requires_blit = ShouldPerformPartialRepaint(clip_rect, root_size);
+  const auto color_format = FromMTLPixelFormat(drawable.texture.pixelFormat);
 
   if (color_format == PixelFormat::kUnknown) {
     VALIDATION_LOG << "Unknown drawable color format.";
@@ -49,9 +60,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   msaa_tex_desc.type = TextureType::kTexture2DMultisample;
   msaa_tex_desc.sample_count = SampleCount::kCount4;
   msaa_tex_desc.format = color_format;
-  msaa_tex_desc.size = {
-      static_cast<ISize::Type>(current_drawable.texture.width),
-      static_cast<ISize::Type>(current_drawable.texture.height)};
+  msaa_tex_desc.size = root_size;
   msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
   auto msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
@@ -69,11 +78,15 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
   // Create color resolve texture.
-  std::shared_ptr<Texture> resolve_tex =
-      context->GetResourceAllocator()->CreateTexture(resolve_tex_desc);
-  // std::shared_ptr<Texture> resolve_tex =
-  //     std::make_shared<TextureMTL>(resolve_tex_desc,
-  //     current_drawable.texture);
+  std::shared_ptr<Texture> resolve_tex;
+  if (requires_blit) {
+    resolve_tex =
+        context->GetResourceAllocator()->CreateTexture(resolve_tex_desc);
+  } else {
+    resolve_tex =
+        std::make_shared<TextureMTL>(resolve_tex_desc, drawable.texture);
+  }
+
   if (!resolve_tex) {
     VALIDATION_LOG << "Could not wrap resolve texture.";
     return nullptr;
@@ -116,27 +129,53 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   render_target_desc.SetStencilAttachment(stencil0);
 
   // The constructor is private. So make_unique may not be used.
-  return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(
-      context, render_target_desc, resolve_tex, current_drawable));
+  return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(context, render_target_desc,
+                                                    resolve_tex, drawable,
+                                                    requires_blit, clip_rect));
 }
 
 SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
                        const RenderTarget& target,
                        std::shared_ptr<Texture> resolve_texture,
-                       id<CAMetalDrawable> drawable)
+                       id<CAMetalDrawable> drawable,
+                       bool requires_blit,
+                       std::optional<IRect> clip_rect)
     : Surface(target),
       context_(context),
       resolve_texture_(resolve_texture),
-      drawable_(drawable) {}
+      drawable_(drawable),
+      requires_blit_(requires_blit),
+      clip_rect_(clip_rect) {}
 
 // |Surface|
 SurfaceMTL::~SurfaceMTL() = default;
+
+// constexpr Scalar kPartiaRepaintThreshold = 1.0;
+
+bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect,
+                                             ISize texture_size) {
+  if (!damage_rect.has_value()) {
+    return false;
+  }
+  return true;
+  // return ((damage_rect->size.width / texture_size.width <
+  //          kPartiaRepaintThreshold) ||
+  //         (damage_rect->size.height / texture_size.height <
+  //          kPartiaRepaintThreshold));
+}
 
 // |Surface|
 bool SurfaceMTL::Present() const {
   if (drawable_ == nil) {
     return false;
   }
+  // If there is no partial repaint, then immediately present without a blit
+  // pass.
+  if (!requires_blit_) {
+    [drawable_ present];
+    return true;
+  }
+
   auto command_buffer = context_->CreateCommandBuffer();
   if (!command_buffer) {
     return false;
@@ -144,8 +183,8 @@ bool SurfaceMTL::Present() const {
 
   auto blit_pass = command_buffer->CreateBlitPass();
   auto current = TextureMTL::Wrapper({}, drawable_.texture);
-  blit_pass->AddCopy(resolve_texture_, current, damage_rect_.value(),
-                     damage_rect_->origin);
+  blit_pass->AddCopy(resolve_texture_, current, clip_rect_.value(),
+                     clip_rect_->origin);
   blit_pass->EncodeCommands(context_->GetResourceAllocator());
   if (!command_buffer->SubmitCommands()) {
     return false;

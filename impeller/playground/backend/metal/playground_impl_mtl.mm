@@ -115,7 +115,7 @@ std::unique_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
   data_->metal_layer.drawableSize =
       CGSizeMake(layer_size.width * scale.x, layer_size.height * scale.y);
 
-  return SurfaceMTL::WrapCurrentMetalLayerDrawable(context, data_->metal_layer);
+  return nullptr;
 }
 
 }  // namespace impeller

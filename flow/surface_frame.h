@@ -80,6 +80,8 @@ class SurfaceFrame {
     // Time at which this frame is scheduled to be presented. This is a hint
     // that can be passed to the platform to drop queued frames.
     std::optional<fml::TimePoint> presentation_time;
+
+    std::optional<SkRect> clip_rect;
   };
 
   bool Submit();
