@@ -91,11 +91,6 @@
                     "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "tests": [
                 {
                     "language": "python3",
@@ -202,11 +197,6 @@
                     "flutter/testing/scenario_app",
                     "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
-            },
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
             },
             "tests": [
                 {
