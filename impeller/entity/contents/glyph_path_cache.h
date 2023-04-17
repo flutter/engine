@@ -25,21 +25,6 @@ struct CacheData {
   bool used;
 };
 
-class GlyphCacheContext {
- public:
-  GlyphCacheContext() = default;
-
-  ~GlyphCacheContext() = default;
-
- private:
-  std::unordered_map<FontGlyphPair,
-                     CacheData,
-                     FontGlyphPair::Hash,
-                     FontGlyphPair::Equal>
-      paths_;
-  bool dirty_ = true;
-}
-
 class GlyphPathCache {
  public:
   GlyphPathCache() = default;
@@ -48,12 +33,26 @@ class GlyphPathCache {
 
   void AddTextFrame(const TextFrame& frame);
 
-  void AddFontGlyphPair(FontGlyphPair pair);
+  std::vector<TextFrame> GetTextFrames() const {
+    return frames_;
+  }
+
+ private:
+  std::vector<TextFrame> frames_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GlyphPathCache);
+};
+
+class GlyphCacheContext {
+ public:
+  GlyphCacheContext() = default;
+
+  ~GlyphCacheContext() = default;
 
   std::optional<const std::vector<Point>> FindFontGlyphVertices(
       const FontGlyphPair& pair) const;
 
-  bool Prepare(const ContentContext& renderer);
+  bool Prepare(const ContentContext& renderer, const std::shared_ptr<GlyphPathCache> path_cache);
 
   void Reset();
 
@@ -65,7 +64,8 @@ class GlyphPathCache {
       paths_;
   bool dirty_ = true;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GlyphPathCache);
+  FML_DISALLOW_COPY_AND_ASSIGN(GlyphCacheContext);
 };
+
 
 }  // namespace impeller

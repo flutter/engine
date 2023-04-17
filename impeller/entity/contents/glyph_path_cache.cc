@@ -14,47 +14,6 @@
 
 namespace impeller {
 
-void GlyphPathCache::AddTextFrame(const TextFrame& frame) {
-  dirty_ = true;
-  for (const auto run : frame.GetRuns()) {
-    auto font = run.GetFont();
-    for (const auto pos : run.GetGlyphPositions()) {
-      AddFontGlyphPair({
-          .font = font,
-          .glyph = pos.glyph,
-      });
-    }
-  }
-}
-
-void GlyphPathCache::Reset() {
-  for (auto& data : paths_) {
-    if (!data.second.used) {
-      paths_.erase(data.first);
-    } else {
-      data.second.used = false;
-    }
-  }
-}
-
-void GlyphPathCache::AddFontGlyphPair(FontGlyphPair pair) {
-  auto found = paths_.find(pair);
-  if (found == paths_.end()) {
-    paths_[pair] = {.used = true };
-  } else {
-    found->second.used = true;
-  }
-}
-
-std::optional<const std::vector<Point>> GlyphPathCache::FindFontGlyphVertices(
-    const FontGlyphPair& pair) const {
-  auto found = paths_.find(pair);
-  if (found == paths_.end()) {
-    return std::nullopt;
-  }
-  return found->second.vertices;
-}
-
 Path ToPath(CGPathRef path) {
   PathBuilder builder;
   PathBuilder* builder_ref = &builder;
@@ -99,14 +58,70 @@ Path ToPath(CGPathRef path) {
       }
     }
   });
-  return builder.TakePath();
+  return builder.TakePath(FillType::kOdd);
 }
 
-bool GlyphPathCache::Prepare(const ContentContext& renderer) {
+void GlyphCacheContext::Reset() {
+  dirty_ = true;
+  paths_.clear();
+  return;
+  // std::vector<FontGlyphPair> pairs_to_remove;
+  // for (auto& data : paths_) {
+  //   if (!data.second.used) {
+  //     pairs_to_remove.push_back(data.first);
+  //   } else {
+  //     data.second.used = false;
+  //   }
+  // }
+  // for (auto& key : pairs_to_remove) {
+  //   paths_.erase(key);
+  // }
+}
+
+std::optional<const std::vector<Point>>
+GlyphCacheContext::FindFontGlyphVertices(const FontGlyphPair& pair) const {
+  auto found = paths_.find(pair);
+  if (found == paths_.end()) {
+    return std::nullopt;
+  }
+  return found->second.vertices;
+}
+
+bool GlyphCacheContext::Prepare(
+    const ContentContext& renderer,
+    const std::shared_ptr<GlyphPathCache> path_cache) {
   if (!dirty_) {
     return true;
   }
   TRACE_EVENT0("impeller", __FUNCTION__);
+
+  std::unordered_map<Font, CTFontRef, Font::Hash, Font::Equal> fonts;
+
+  for (auto& frame : path_cache->GetTextFrames()) {
+    for (const auto& run : frame.GetRuns()) {
+      auto font = run.GetFont();
+      for (const auto& glyph_position : run.GetGlyphPositions()) {
+        FontGlyphPair pair = {font, glyph_position.glyph};
+        auto found = paths_.find(pair);
+        if (found == paths_.end()) {
+          paths_[pair] = {.used = true};
+        } else {
+          found->second.used = true;
+        }
+        fonts[font] = nullptr;
+      }
+    }
+  }
+
+  for (auto& font_data : fonts) {
+    CTFontRef font =
+        static_cast<CTFontRef>(font_data.first.GetTypeface()->GetCTFont());
+    CTFontRef sized_font = CTFontCreateWithFontDescriptor(
+        CTFontCopyFontDescriptor(font), font_data.first.GetMetrics().point_size,
+        nullptr);
+    font_data.second = sized_font;
+  }
+
   auto tessellator = renderer.GetTessellator();
 
   for (auto& data : paths_) {
@@ -114,39 +129,24 @@ bool GlyphPathCache::Prepare(const ContentContext& renderer) {
       continue;
     }
 
-    CTFontRef font =
-        static_cast<CTFontRef>(data.first.font.GetTypeface()->GetCTFont());
-    CTFontRef sized_font = CTFontCreateWithFontDescriptor(
-        CTFontCopyFontDescriptor(font), data.first.font.GetMetrics().point_size,
-        nullptr);
-    // if (font_name[0] == '.') {
-    //   // This must be a system font. CT will complain and return a times new
-    //   // roman font if we do not use this API.
-    //   font = CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, font_size,
-    //                                        nullptr);
-    // } else {
-    //   auto cf_font_name = CFStringCreateWithCString(
-    //       nullptr, data.first.font.GetPostscriptName().c_str(),
-    //       kCFStringEncodingUTF8);
-    //   font = CTFontCreateWithName(cf_font_name, font_size, nullptr);
-    // }
-    if (sized_font == nullptr) {
+    auto sized_font = fonts.find(data.first.font);
+    if (sized_font == fonts.end()) {
       continue;
     }
     CGAffineTransform transform = CGAffineTransformMakeScale(1, -1);
     CGPathRef cg_path = CTFontCreatePathForGlyph(
-        sized_font, data.first.glyph.index, &transform);
+        sized_font->second, data.first.glyph.index, &transform);
     if (cg_path == nullptr) {
       continue;
     }
     auto path = ToPath(cg_path);
-    CFRelease(font);
     CFRelease(cg_path);
 
     auto result = tessellator->Tessellate(
-        path.GetFillType(), path.CreatePolyline(3.0),
-        [buffer = &data.second.vertices](const float* vertices, size_t vertices_count,
-                                const uint16_t* indices, size_t indices_count) {
+        path.GetFillType(), path.CreatePolyline(1.0),
+        [buffer = &data.second.vertices](
+            const float* vertices, size_t vertices_count,
+            const uint16_t* indices, size_t indices_count) {
           std::vector<Point> points;
           for (auto i = 0u; i < vertices_count; i += 2) {
             points.emplace_back(vertices[i], vertices[i + 1]);
@@ -164,5 +164,21 @@ bool GlyphPathCache::Prepare(const ContentContext& renderer) {
   dirty_ = false;
   return true;
 }
+
+void GlyphPathCache::AddTextFrame(const TextFrame& frame) {
+  frames_.emplace_back(frame);
+}
+
+// if (font_name[0] == '.') {
+//   // This must be a system font. CT will complain and return a times new
+//   // roman font if we do not use this API.
+//   font = CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, font_size,
+//                                        nullptr);
+// } else {
+//   auto cf_font_name = CFStringCreateWithCString(
+//       nullptr, data.first.font.GetPostscriptName().c_str(),
+//       kCFStringEncodingUTF8);
+//   font = CTFontCreateWithName(cf_font_name, font_size, nullptr);
+// }
 
 }  // namespace impeller

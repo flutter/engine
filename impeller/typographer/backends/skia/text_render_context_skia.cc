@@ -473,9 +473,9 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
   auto new_glyphs = last_atlas->HasSamePairs(font_glyph_pairs);
-  if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
-    return last_atlas;
-  }
+  // if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
+  //   return last_atlas;
+  // }
 
   // ---------------------------------------------------------------------------
   // Step 3: Determine if the additional missing glyphs can be appended to the
@@ -483,7 +483,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   //         the type is identical.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
-  if (last_atlas->GetType() == type &&
+  if (false && last_atlas->GetType() == type &&
       CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {

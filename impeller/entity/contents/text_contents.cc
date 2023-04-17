@@ -258,7 +258,6 @@ bool TextContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  glyph_path_cache_->Prepare(renderer);
   return RenderPath(renderer, entity, pass);
 
   // This TextContents may be for a frame that doesn't have color, but the
@@ -293,6 +292,9 @@ bool TextContents::Render(const ContentContext& renderer,
 bool TextContents::RenderPath(const ContentContext& renderer,
                               const Entity& entity,
                               RenderPass& pass) const {
+  auto glyph_cache = renderer.GetGlyphCacheContext();
+  glyph_cache->Prepare(renderer, glyph_path_cache_);
+
   using VS = SolidFillPipeline::VertexShader;
   using FS = SolidFillPipeline::FragmentShader;
 
@@ -310,7 +312,7 @@ bool TextContents::RenderPath(const ContentContext& renderer,
       FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
 
       auto maybe_glyph_vertices =
-          glyph_path_cache_->FindFontGlyphVertices(font_glyph_pair);
+          glyph_cache->FindFontGlyphVertices(font_glyph_pair);
       if (!maybe_glyph_vertices.has_value()) {
         VALIDATION_LOG << "Could not find glyph position in the atlas.";
         continue;

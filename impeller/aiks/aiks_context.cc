@@ -5,6 +5,7 @@
 #include "impeller/aiks/aiks_context.h"
 
 #include "impeller/aiks/picture.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 
 namespace impeller {
 
@@ -42,7 +43,9 @@ bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
   }
 
   if (picture.pass) {
-    return picture.pass->Render(*content_context_, render_target);
+    auto result = picture.pass->Render(*content_context_, render_target);
+    content_context_->GetGlyphCacheContext()->Reset();
+    return result;
   }
 
   return true;

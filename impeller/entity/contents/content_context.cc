@@ -14,6 +14,7 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 
 namespace impeller {
 
@@ -165,7 +166,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
       glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
-      glyph_path_cache_(std::make_shared<GlyphPathCache>()),
+      glyph_cache_context_(std::make_shared<GlyphCacheContext>()),
       scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
@@ -381,8 +382,8 @@ std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
   return glyph_atlas_context_;
 }
 
-std::shared_ptr<GlyphPathCache> ContentContext::GetGlyphPathCache() const {
-  return glyph_path_cache_;
+std::shared_ptr<GlyphCacheContext> ContentContext::GetGlyphCacheContext() const {
+  return glyph_cache_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

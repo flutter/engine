@@ -578,10 +578,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     bool ignore_raster_cache = true;
-    if (surface_->EnableRasterCache() &&
-        !layer_tree.is_leaf_layer_tracing_enabled()) {
-      ignore_raster_cache = false;
-    }
+    // if (surface_->EnableRasterCache() &&
+    //     !layer_tree.is_leaf_layer_tracing_enabled()) {
+    //   ignore_raster_cache = false;
+    // }
 
     RasterStatus raster_status =
         compositor_frame->Raster(layer_tree,           // layer tree

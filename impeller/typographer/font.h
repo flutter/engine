@@ -73,6 +73,16 @@ class Font : public Comparable<Font> {
   // |Comparable<Font>|
   bool IsEqual(const Font& other) const override;
 
+  struct Hash {
+    std::size_t operator()(const Font& p) const { return p.GetHash(); }
+  };
+
+  struct Equal {
+    bool operator()(const Font& lhs, const Font& rhs) const {
+      return lhs.IsEqual(rhs);
+    }
+  };
+
  private:
   std::shared_ptr<Typeface> typeface_;
   Metrics metrics_ = {};

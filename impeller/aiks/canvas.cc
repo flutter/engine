@@ -60,6 +60,7 @@ void Canvas::Reset() {
   current_pass_ = nullptr;
   xformation_stack_ = {};
   lazy_glyph_atlas_ = nullptr;
+  glyph_path_cache_ = nullptr;
 }
 
 void Canvas::Save() {

@@ -17,7 +17,6 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
-#include "impeller/entity/contents/glyph_path_cache.h"
 
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
@@ -103,6 +102,8 @@
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
 namespace impeller {
+
+class GlyphCacheContext;
 
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
@@ -649,7 +650,7 @@ class ContentContext {
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
 
-  std::shared_ptr<GlyphPathCache> GetGlyphPathCache() const;
+  std::shared_ptr<GlyphCacheContext> GetGlyphCacheContext() const;
 
   const Capabilities& GetDeviceCapabilities() const;
 
@@ -805,7 +806,7 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
-  std::shared_ptr<GlyphPathCache> glyph_path_cache_;
+  std::shared_ptr<GlyphCacheContext> glyph_cache_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 
