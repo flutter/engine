@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:js_interop';
 
 import 'dart:typed_data';
 
@@ -28,6 +29,40 @@ class SkwasmFontCollection implements FlutterFontCollection {
 
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
+    final FontManifest manifest = await fetchFontManifest(assetManager);
+    final List<Future<void>> fontFutures = <Future<void>>[];
+    for (final FontFamily family in manifest.families) {
+      final List<int> rawUtf8Bytes = utf8.encode(family.name);
+      final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
+      final Pointer<Int8> stringDataPointer = skStringGetData(stringHandle);
+      for (int i = 0; i < rawUtf8Bytes.length; i++) {
+        stringDataPointer[i] = rawUtf8Bytes[i];
+      }
+      for (final FontAsset fontAsset in family.fontAssets) {
+        fontFutures.add(_downloadFontAsset(fontAsset.asset, stringHandle));
+      }
+      skStringFree(stringHandle);
+    }
+    await Future.wait(fontFutures);
+  }
+
+  Future<void> _downloadFontAsset(String assetName, SkStringHandle familyNameHandle) async {
+    final HttpFetchResponse response = await assetManager.loadAsset(assetName);
+    int length = 0;
+    final List<Uint8Array> chunks = <Uint8Array>[];
+    await response.read((Uint8Array chunk) {
+      length += chunk.length.toDart.toInt();
+      chunks.add(chunk);
+    });
+    final SkDataHandle fontData = skDataCreate(length);
+    int dataAddress = skDataGetPointer(fontData).cast<Int8>().address;
+    final Uint8Array wasmMemory = Uint8Array(skwasmInstance.wasmMemory.buffer);
+    for (final Uint8Array chunk in chunks) {
+      wasmMemory.set(chunk, dataAddress.toJS);
+      dataAddress += chunk.length.toDart.toInt();
+    }
+    fontCollectionRegisterFont(_handle, fontData, familyNameHandle);
+    skDataDispose(fontData);
   }
 
   @override
