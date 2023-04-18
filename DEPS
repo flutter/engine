@@ -769,7 +769,7 @@ deps = {
   },
 
   'src/buildtools/emsdk': {
-   'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + '4a48a752e6a8bef6f222622f2b4926d5eb3bdeb3',
+   'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + 'da9699832b5df4e123403490e499c87000c22654',
    'condition': 'download_emsdk',
   },
 
