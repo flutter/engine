@@ -157,10 +157,11 @@ static bool CommonRender(
   Vector2 screen_offset = (entity.GetTransformation() * offset).Round();
 
   for (const auto& run : frame.GetRuns()) {
-    auto font = run.GetFont();
+    const auto& font = run.GetFont();
 
     for (const auto& glyph_position : run.GetGlyphPositions()) {
-      FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
+      FontGlyphPair font_glyph_pair{std::shared_ptr<Font>(new Font(font)),
+                                    glyph_position.glyph};
       auto atlas_glyph_bounds = atlas->FindFontGlyphBounds(font_glyph_pair);
       if (!atlas_glyph_bounds.has_value()) {
         VALIDATION_LOG << "Could not find glyph position in the atlas.";

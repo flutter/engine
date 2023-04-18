@@ -252,7 +252,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
 }
 
 TEST_P(TypographerTest, FontGlyphPairTypeChangesHashAndEquals) {
-  Font font = Font(nullptr, {});
+  auto font = std::shared_ptr<Font>(new Font(nullptr, {}));
   FontGlyphPair pair_1 = {
       .font = font,
       .glyph = Glyph(0, Glyph::Type::kBitmap, Rect::MakeXYWH(0, 0, 1, 1))};
