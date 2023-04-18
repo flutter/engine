@@ -40,7 +40,7 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
 
   explicit AccessibilityBridgeWindowsSpy(FlutterWindowsEngine* engine,
                                          FlutterWindowsView* view)
-      : AccessibilityBridgeWindows(engine, view) {}
+      : AccessibilityBridgeWindows(view) {}
 
   void DispatchWinAccessibilityEvent(
       std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
@@ -245,7 +245,7 @@ TEST(AccessibilityBridgeWindows, DispatchAccessibilityAction) {
         return kSuccess;
       }));
 
-  AccessibilityBridgeWindows delegate(view.GetEngine(), &view);
+  AccessibilityBridgeWindows delegate(&view);
   delegate.DispatchAccessibilityAction(1, kFlutterSemanticsActionCopy, {});
   EXPECT_EQ(actual_action, kFlutterSemanticsActionCopy);
 }
