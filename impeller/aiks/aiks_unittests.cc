@@ -2035,6 +2035,26 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterAndDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, TranslucentSaveLayerWithColorImageFilterAndDrawsCorrectly) {
+  Canvas canvas;
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
   Canvas canvas;
 
@@ -2115,6 +2135,30 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   canvas.Restore();
 
   canvas.DrawPaint({.color = Color::Green()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+/// Tests that the debug checkerboard displays for offscreen textures when
+/// enabled. Most of the complexity here is just to future proof by making pass
+/// collapsing hard.
+TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
+  Canvas canvas;
+  canvas.debug_options.offscreen_texture_checkerboard = true;
+
+  canvas.DrawPaint({.color = Color::AntiqueWhite()});
+  canvas.DrawCircle({400, 300}, 200,
+                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
+
+  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
+  {
+    canvas.DrawCircle({500, 400}, 200,
+                      {.color = Color::DarkBlue().WithAlpha(0.75)});
+    canvas.DrawCircle({550, 450}, 200,
+                      {.color = Color::LightCoral().WithAlpha(0.75),
+                       .blend_mode = BlendMode::kLuminosity});
+  }
+  canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
