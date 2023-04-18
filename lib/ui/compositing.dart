@@ -93,6 +93,9 @@ abstract class _EngineLayerWrapper implements EngineLayer {
     }());
   }
 
+  @override
+  int get uniqueId => _nativeLayer?.uniqueId ?? 0;
+
   // Children of this layer.
   //
   // Null if this layer has no children. This field is populated only in debug
@@ -759,7 +762,10 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// are relatively aggressive about doing so, such that any image complicated
   /// enough to warrant caching is probably already being cached even without
   /// `isComplexHint` being set to true.
-  void addPicture(
+  ///
+  /// Returns the unique ID of the added engine layer, which can be useful in
+  /// investigating performance issues.
+  int addPicture(
     Offset offset,
     Picture picture, {
     bool isComplexHint = false,
@@ -767,11 +773,11 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   }) {
     assert(!picture.debugDisposed);
     final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
-    _addPicture(offset.dx, offset.dy, picture, hints);
+    return _addPicture(offset.dx, offset.dy, picture, hints);
   }
 
-  @Native<Void Function(Pointer<Void>, Double, Double, Pointer<Void>, Int32)>(symbol: 'SceneBuilder::addPicture')
-  external void _addPicture(double dx, double dy, Picture picture, int hints);
+  @Native<Int32 Function(Pointer<Void>, Double, Double, Pointer<Void>, Int32)>(symbol: 'SceneBuilder::addPicture')
+  external int _addPicture(double dx, double dy, Picture picture, int hints);
 
   /// Adds a backend texture to the scene.
   ///

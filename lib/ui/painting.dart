@@ -2540,6 +2540,10 @@ class EngineLayer extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   EngineLayer._();
 
+  /// Returns the unique ID assigned to this layer.
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'EngineLayer::getUniqueId', isLeaf: true)
+  external int get uniqueId;
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   ///

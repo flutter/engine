@@ -24,6 +24,8 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
     engine_layer->AssociateWithDartWrapper(dart_handle);
   }
 
+  int getUniqueId();
+
   void dispose();
 
   std::shared_ptr<flutter::ContainerLayer> Layer() const { return layer_; }

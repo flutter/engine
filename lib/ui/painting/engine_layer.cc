@@ -26,4 +26,8 @@ void EngineLayer::dispose() {
   ClearDartWrapper();
 }
 
+int EngineLayer::getUniqueId() {
+  return layer_->unique_id();
+}
+
 }  // namespace flutter

@@ -86,6 +86,28 @@ void main() {
     scene.dispose();
   });
 
+  test('addPicture returns a layer ID', () {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint());
+    final Picture picture = recorder.endRecording();
+    final SceneBuilder builder = SceneBuilder();
+    final int layerId = builder.addPicture(Offset.zero, picture);
+    expect(layerId, greaterThan(0));
+    final Scene scene = builder.build();
+    scene.dispose();
+    picture.dispose();
+  });
+
+  test('EngineLayer.uniqueId', () {
+    final SceneBuilder builder = SceneBuilder();
+    final OpacityEngineLayer opacity = builder.pushOpacity(100);
+    expect(opacity.uniqueId, greaterThan(0));
+    builder.pop();
+    final Scene scene = builder.build();
+    scene.dispose();
+  });
+
   test('pushTransform validates the matrix', () {
     final SceneBuilder builder = SceneBuilder();
     final Float64List matrix4 = Float64List.fromList(<double>[

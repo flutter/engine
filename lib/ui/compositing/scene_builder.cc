@@ -230,13 +230,13 @@ void SceneBuilder::pop() {
   PopLayer();
 }
 
-void SceneBuilder::addPicture(double dx,
-                              double dy,
-                              Picture* picture,
-                              int hints) {
+int SceneBuilder::addPicture(double dx,
+                             double dy,
+                             Picture* picture,
+                             int hints) {
   if (!picture) {
     // Picture::dispose was called and it has been collected.
-    return;
+    return 0;
   }
 
   // Explicitly check for display_list, since the picture object might have
@@ -246,8 +246,11 @@ void SceneBuilder::addPicture(double dx,
         SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)),
         UIDartState::CreateGPUObject(picture->display_list()), !!(hints & 1),
         !!(hints & 2));
+    int unique_id = layer->unique_id();
     AddLayer(std::move(layer));
+    return unique_id;
   }
+  return 0;
 }
 
 void SceneBuilder::addTexture(double dx,
