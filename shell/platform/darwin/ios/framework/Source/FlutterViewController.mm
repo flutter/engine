@@ -1706,7 +1706,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         if (!flutterViewController) {
           return;
         }
-        [flutterViewController updateViewportMetrics];
+        [flutterViewController updateViewportMetricsIfNeeded];
       },
       kKeyboardAnimationUpdateViewportMetricsDelay);
 }
