@@ -1512,11 +1512,22 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 
   {
-    std::scoped_lock<std::mutex> lock(on_frame_rasterized_callbacks_mutex_);
-    for (auto callback : on_frame_rasterized_callbacks_) {
-      callback();
+    FML_LOG(ERROR) << "FireOnFrameRasteized";
+    std::scoped_lock lock(on_frame_rasterized_listener_mutex_);
+    for (auto pair : on_frame_rasterized_map_) {
+      auto value_pair = pair.second;
+      fml::closure callback = value_pair.second;
+      fml::AutoResetWaitableEvent latch;
+      fml::TaskRunner::RunNowOrPostTask(value_pair.first, [callback, &latch] {
+        callback();
+        FML_LOG(ERROR) << "Single1";
+        latch.Signal();
+        FML_LOG(ERROR) << "Single2";
+      });
+      FML_LOG(ERROR) << "Wait1";
+      latch.Wait();
+      FML_LOG(ERROR) << "Wait2";
     }
-    on_frame_rasterized_callbacks_.clear();
   }
 }
 
@@ -1757,9 +1768,19 @@ void Shell::RegisterImageDecoder(ImageGeneratorFactory factory,
       });
 }
 
-void Shell::AddOnFrameRasterizedCallback(const fml::closure& callback) {
-  std::scoped_lock<std::mutex> lock(on_frame_rasterized_callbacks_mutex_);
-  on_frame_rasterized_callbacks_.push_back(callback);
+void Shell::RegisterOnFrameRasterizedCallback(
+    const std::string_view& key,
+    const fml::closure& callback,
+    const fml::RefPtr<fml::TaskRunner>& taskRunner) {
+  FML_LOG(ERROR) << "RegisterOnFrameRasterizedCallback";
+  std::scoped_lock lock(on_frame_rasterized_listener_mutex_);
+  on_frame_rasterized_map_[key] = {taskRunner, callback};
+}
+
+void Shell::UnregisterOnFrameRasterizedCallback(const std::string_view& key) {
+  FML_LOG(ERROR) << "UnregisterOnFrameRasterizedCallback";
+  std::scoped_lock lock(on_frame_rasterized_listener_mutex_);
+  on_frame_rasterized_map_.erase(key);
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(

@@ -397,7 +397,14 @@ class Shell final : public PlatformView::Delegate,
   /// @see        `CreateCompatibleGenerator`
   void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
-  void AddOnFrameRasterizedCallback(const fml::closure& callback);
+  /// TODO: Add comments.
+  void RegisterOnFrameRasterizedCallback(
+      const std::string_view& key,
+      const fml::closure& callback,
+      const fml::RefPtr<fml::TaskRunner>& taskRunner);
+
+  /// TODO: Add comments
+  void UnregisterOnFrameRasterizedCallback(const std::string_view& key);
 
   // |Engine::Delegate|
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
@@ -476,8 +483,14 @@ class Shell final : public PlatformView::Delegate,
   // Used to communicate the right frame bounds via service protocol.
   double device_pixel_ratio_ = 0.0;
 
-  std::mutex on_frame_rasterized_callbacks_mutex_;
-  std::vector<fml::closure> on_frame_rasterized_callbacks_;
+  // Manage the listeners that get notified when |OnFrameRasterized|
+  std::mutex on_frame_rasterized_listener_mutex_;
+  std::unordered_map<std::string_view,  // listener key
+                     std::pair<fml::RefPtr<fml::TaskRunner>,
+                               fml::closure>  // task-runner/function
+                                              // pair
+                     >
+      on_frame_rasterized_map_;
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;

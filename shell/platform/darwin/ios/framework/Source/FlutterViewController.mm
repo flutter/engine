@@ -1587,9 +1587,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                 toValue:self.targetViewInsetBottom]);
 }
 
+/// TODO rename to `registerOnFrameRasterizedCallback`
 - (void)setupKeyboardAnimationVsyncClient {
-  auto callback = [weakSelf =
-                       [self getWeakPtr]](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+  auto onFrameRasterizedCallback = [weakSelf = [self getWeakPtr]] {
     if (!weakSelf) {
       return;
     }
@@ -1600,7 +1600,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     if ([flutterViewController keyboardAnimationView].superview == nil) {
-      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+      // Ensure the keyboardAnimationView is in view hierarchy when
+      // animation running.
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
@@ -1609,52 +1610,25 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
             flutterViewController.get()
                 .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        [flutterViewController keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback];
+        [flutterViewController updateViewportMetrics];
       }
     } else {
-      fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
-      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() + frameInterval -
-                                   flutterViewController.get().keyboardAnimationStartTime;
-
+      fml::TimeDelta timeElapsed =
+          fml::TimePoint::Now() - flutterViewController.get().keyboardAnimationStartTime;
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      [flutterViewController keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback];
-    }
+      [flutterViewController updateViewportMetrics];
+    };
   };
   flutter::Shell& shell = [_engine.get() shell];
-  NSAssert(_keyboardAnimationVSyncClient == nil,
-           @"_keyboardAnimationVSyncClient must be nil when setup");
-  _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
-                                     callback:callback];
-  _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
-  [_keyboardAnimationVSyncClient await];
+  shell.RegisterOnFrameRasterizedCallback("flutterVCKeyboard", onFrameRasterizedCallback,
+                                          shell.GetTaskRunners().GetPlatformTaskRunner());
 }
 
-- (void)keyboardAnimationUpdateViewportMetricsInFrameRasterizedCallback {
-  fml::closure platformTask = [weakSelf = [self getWeakPtr]] {
-    if (!weakSelf) {
-      return;
-    }
-    fml::scoped_nsobject<FlutterViewController> flutterViewController(
-        [(FlutterViewController*)weakSelf.get() retain]);
-    if (!flutterViewController) {
-      return;
-    }
-    [flutterViewController updateViewportMetrics];
-  };
-
-  flutter::Shell& shell = [_engine.get() shell];
-  fml::closure onFrameRasterizedCallback = [&shell, platformTask] {
-    shell.GetTaskRunners().GetPlatformTaskRunner()->PostTask(platformTask);
-  };
-  shell.AddOnFrameRasterizedCallback(onFrameRasterizedCallback);
-}
-
+/// TODO rename to `unregisterOnFrameRasterizedCallback`
 - (void)invalidateKeyboardAnimationVSyncClient {
-  [_keyboardAnimationVSyncClient invalidate];
-  [_keyboardAnimationVSyncClient release];
-  _keyboardAnimationVSyncClient = nil;
+  flutter::Shell& shell = [_engine.get() shell];
+  shell.UnregisterOnFrameRasterizedCallback("flutterVCKeyboard");
 }
 
 - (void)removeKeyboardAnimationView {
