@@ -320,7 +320,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
     // responder, which might be FlutterTextInputPlugin. If that's the case, the
     // plugin must not handle the event, otherwise the emoji picker would not
     // work (due to first responder returning YES from performKeyEquivalent:)
-    // and there would be endless loop, because FlutterViewController will
+    // and there would be an infinite loop, because FlutterViewController will
     // send the event back to [keyboardManager handleEvent:].
     return NO;
   }
