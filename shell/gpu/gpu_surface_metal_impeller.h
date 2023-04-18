@@ -5,7 +5,10 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 
+#ifndef QUARTSCORE_CAMETALLAYER_H
+#define QUARTSCORE_CAMETALLAYER_H
 #include <QuartzCore/CAMetalLayer.h>
+#endif
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"

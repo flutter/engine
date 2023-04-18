@@ -5,7 +5,10 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_IMPELLER_H_
 #define FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_IMPELLER_H_
 
+#ifndef QUARTSCORE_CAMETALLAYER_H
+#define QUARTSCORE_CAMETALLAYER_H
 #include <QuartzCore/CAMetalLayer.h>
+#endif
 
 #include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
@@ -46,7 +49,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalImpeller : public Studio {
   bool EnableRasterCache() const override;
 
   // |Studio|
-  impeller::AiksContext* GetAiksContext() const override;
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUStudioMetalImpeller);
 };

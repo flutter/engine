@@ -26,7 +26,7 @@ bool Studio::EnableRasterCache() const {
   return true;
 }
 
-impeller::AiksContext* Studio::GetAiksContext() const {
+std::shared_ptr<impeller::AiksContext> Studio::GetAiksContext() const {
   return nullptr;
 }
 

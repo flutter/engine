@@ -814,13 +814,8 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -945,13 +940,8 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -991,13 +981,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1058,13 +1043,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1127,13 +1107,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1195,13 +1170,8 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1239,13 +1209,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1305,13 +1270,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1351,13 +1311,8 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -2099,13 +2054,8 @@ TEST_F(ShellTest, Screenshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -2457,13 +2407,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<DisplayList> display_list = MakeSizedDisplayList(10, 10);
-  fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-      GetCurrentTaskRunner(), fml::TimeDelta::Zero());
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(0, 0),
-      flutter::SkiaGPUObject<DisplayList>(
-          {MakeSizedDisplayList(100, 100), queue}),
-      false, false);
+      SkPoint::Make(0, 0), MakeSizedDisplayList(100, 100), false, false);
   display_list_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
 
   // 2. Rasterize the picture and the picture layer in the raster cache.
@@ -4010,6 +3955,53 @@ TEST_F(ShellTest, PictureToImageSync) {
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   PlatformViewNotifyCreated(shell.get());
+  configuration.SetEntrypoint("toImageSync");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
+#if !SHELL_ENABLE_METAL
+  // This test uses the Metal backend.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_METAL
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
+      );
+
+  AddNativeCallback("NativeOnBeforeToImageSync",
+                    CREATE_NATIVE_ENTRY([&](auto args) {
+                      // nop
+                    }));
+
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
+                    }));
+
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+
+  // Important: Do not create the platform view yet!
+  // This test is making sure that the rasterizer can create the texture
+  // as expected without a surface.
+
   configuration.SetEntrypoint("toImageSync");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());

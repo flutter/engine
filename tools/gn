@@ -383,15 +383,20 @@ def to_gn_args(args):
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
 
-  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
-  # it doesn't build properly with our gn configuration.
-  gn_args['dart_include_wasm_opt'] = False
-
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
   # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
+
+  # Determine whether backtace support should be compiled in.
+  if args.backtrace:
+    gn_args['enable_backtrace'] = (
+        args.target_os in ['linux', 'mac', 'win'] or
+        args.target_os == 'ios' and runtime_mode == 'debug'
+    )
+  else:
+    gn_args['enable_backtrace'] = False
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
   # on Android.
@@ -485,6 +490,10 @@ def to_gn_args(args):
           'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn'
       )
   elif is_host_build(args):
+    # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+    # it doesn't build properly with our gn configuration.
+    gn_args['dart_include_wasm_opt'] = False
+
     # dart_platform_sdk is only defined for host builds, linux arm host builds
     # specify target_os=linux.
     # dart_platform_sdk=True means exclude web-related files, e.g. dart2js,
@@ -571,8 +580,10 @@ def to_gn_args(args):
   # There is a special case for Android on Windows because there we _only_ build
   # gen_snapshot, but the build defines otherwise make it look like the build is
   # for a host Windows build and make GN think we will be building ANGLE.
-  if is_host_build(args) or (args.target_os == 'android' and
-                             get_host_os() == 'win'):
+  # Angle is not used on Mac hosts as there are no tests for the OpenGL backend.
+  if (is_host_build(args) and
+      gn_args['host_os'] != 'mac') or (args.target_os == 'android' and
+                                       get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False
@@ -610,6 +621,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['is_clang'] = True
   gn_args['target_os'] = 'wasm'
   gn_args['target_cpu'] = 'wasm'
+  gn_args['wasm_use_dwarf'] = args.wasm_use_dwarf
   gn_args['skia_use_angle'] = False
   gn_args['skia_use_dng_sdk'] = False
   gn_args['skia_use_expat'] = False
@@ -617,10 +629,12 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_webgpu'] = False
   gn_args['skia_use_libheif'] = False
   gn_args['skia_use_libjpeg_turbo_encode'] = False
+  gn_args['skia_use_no_jpeg_encode'] = True
   # TODO(yjbanov): https://github.com/flutter/flutter/issues/122759
   # Remove this and implement it through Canvas2d.
   gn_args['skia_use_libpng_encode'] = True
   gn_args['skia_use_libwebp_encode'] = False
+  gn_args['skia_use_no_webp_encode'] = True
   gn_args['skia_use_lua'] = False
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_zlib'] = True
@@ -656,9 +670,37 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_paragraph'] = True
   gn_args['skia_canvaskit_enable_webgl'] = True
   gn_args['skia_canvaskit_enable_webgpu'] = False
-  is_profile_build = args.runtime_mode == 'profile' or args.runtime_mode == 'debug'
-  gn_args['skia_canvaskit_profile_build'] = is_profile_build
+  gn_args['skia_canvaskit_profile_build'] = args.runtime_mode == 'profile'
   gn_args['flutter_prebuilt_dart_sdk'] = True
+
+
+def run_impeller_cmake(args):
+  impeller_cmake_dir = os.path.join('third_party', 'impeller-cmake-example')
+  if not os.path.isdir(os.path.join(SRC_ROOT, impeller_cmake_dir)):
+    print(
+        'The Impeller cmake example directory "{}" does not exist'
+        .format(impeller_cmake_dir)
+    )
+    return 1
+  goma_gn_args = setup_goma(args)
+  goma_dir = goma_gn_args['goma_dir']
+  cmake_cmd = [
+      'python3',
+      os.path.join(SRC_ROOT, 'flutter', 'ci', 'impeller_cmake_build_test.py'),
+      '--path',
+      impeller_cmake_dir,
+      '--cmake',
+  ]
+  if goma_dir is not None:
+    cmake_cmd = cmake_cmd + ['--goma-dir', goma_dir]
+  if args.xcode_symlinks:
+    cmake_cmd = cmake_cmd + ['--xcode-symlinks']
+  try:
+    cmake_call_result = subprocess.call(cmake_cmd, cwd=SRC_ROOT)
+  except subprocess.CalledProcessError as exc:
+    print('Failed to generate cmake files: ', exc.returncode, exc.output)
+    return 1
+  return cmake_call_result
 
 
 def parse_args(args):
@@ -752,6 +794,13 @@ def parse_args(args):
   parser.add_argument(
       '--wasm', dest='target_os', action='store_const', const='wasm'
   )
+  parser.add_argument(
+      '--wasm-use-dwarf',
+      action='store_true',
+      default=False,
+      help='Embed dwarf debugging info in the output module instead of using '
+      'sourcemap files.'
+  )
   parser.add_argument('--web', action='store_true', default=False)
   parser.add_argument(
       '--windows', dest='target_os', action='store_const', const='win'
@@ -772,6 +821,17 @@ def parse_args(args):
   parser.add_argument(
       '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
   )
+
+  # Whether to compile in backtrace support.
+  # Available for Windows and POSIX platforms whose libc includes execinfo.h.
+  # MUSL doesn't include execinfo.h should be build with --no-backtrace.
+  parser.add_argument(
+      '--backtrace',
+      default=True,
+      action='store_true',
+      help='Whether OS support exists for collecting backtraces.'
+  )
+  parser.add_argument('--no-backtrace', dest='backtrace', action='store_false')
 
   parser.add_argument(
       '--build-engine-artifacts',
@@ -1003,6 +1063,13 @@ def parse_args(args):
       '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
+  parser.add_argument(
+      '--impeller-cmake-example',
+      default=False,
+      action='store_true',
+      help='Do not run GN. Instead configure the Impeller cmake example build.',
+  )
+
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')
   parser.add_argument('--lsan', default=False, action='store_true')
@@ -1054,6 +1121,9 @@ def validate_args(args):
 def main(argv):
   args = parse_args(argv)
   validate_args(args)
+
+  if args.impeller_cmake_example:
+    return run_impeller_cmake(args)
 
   exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
 

@@ -75,6 +75,8 @@ void Canvas::Save(
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
+    subpass->SetEnableOffscreenCheckerboard(
+        debug_options.offscreen_texture_checkerboard);
     subpass->SetBackdropFilter(std::move(backdrop_filter));
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
@@ -167,15 +169,13 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
-  bool is_clear =
-      paint.blend_mode == BlendMode::kSource ||
-      (paint.blend_mode == BlendMode::kSourceOver && paint.color.alpha == 1);
   if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
-      GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
-      is_clear  // and the backdrop is being replaced
+      GetCurrentPass().GetElementCount() == 0  // and this is the first item,
   ) {
     // Then we can absorb this drawPaint as the clear color of the pass.
-    GetCurrentPass().SetClearColor(paint.color);
+    auto color = Color::BlendColor(
+        paint.color, GetCurrentPass().GetClearColor(), paint.blend_mode);
+    GetCurrentPass().SetClearColor(color);
     return;
   }
 

@@ -49,7 +49,7 @@ class GPUStudioGLImpeller final : public Studio {
   bool EnableRasterCache() const override;
 
   // |Studio|
-  impeller::AiksContext* GetAiksContext() const override;
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUStudioGLImpeller);
 };

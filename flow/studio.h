@@ -36,7 +36,7 @@ class Studio {
 
   virtual bool EnableRasterCache() const;
 
-  virtual impeller::AiksContext* GetAiksContext() const;
+  virtual std::shared_ptr<impeller::AiksContext> GetAiksContext() const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Studio);

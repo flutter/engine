@@ -33,14 +33,12 @@ sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
 sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
     const sk_sp<DisplayList>& display_list,
     SkISize size) {
+  TRACE_EVENT0("flutter", __FUNCTION__);
   impeller::DisplayListDispatcher dispatcher;
   display_list->Dispatch(dispatcher);
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
-  if (GetDelegate().GetStudio() &&
-      GetDelegate().GetStudio()->GetAiksContext()) {
-    impeller::AiksContext* context =
-        GetDelegate().GetStudio()->GetAiksContext();
-
+  auto context = GetDelegate().GetStudio()->GetAiksContext();
+  if (context) {
     auto max_size = context->GetContext()
                         ->GetResourceAllocator()
                         ->GetMaxTextureSizeSupported();

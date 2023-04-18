@@ -132,6 +132,7 @@ bool RuntimeController::AddView(int64_t view_id) {
 }
 
 bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
+  TRACE_EVENT0("flutter", "SetViewportMetrics");
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {

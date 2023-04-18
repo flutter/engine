@@ -14,10 +14,10 @@ import '../pipeline.dart';
 import '../utils.dart';
 
 class CopyArtifactsStep implements PipelineStep {
-  CopyArtifactsStep(this.artifactDeps, { required this.isProfile });
+  CopyArtifactsStep(this.artifactDeps, { required this.runtimeMode });
 
   final ArtifactDependencies artifactDeps;
-  final bool isProfile;
+  final RuntimeMode runtimeMode;
 
   @override
   String get description => 'copy_artifacts';
@@ -150,6 +150,7 @@ class CopyArtifactsStep implements PipelineStep {
     for (final String filename in <String>[
       'canvaskit.js',
       'canvaskit.wasm',
+      'canvaskit.wasm.map',
     ]) {
       final io.File sourceFile = io.File(pathlib.join(
         sourceDirectoryPath,
@@ -160,16 +161,20 @@ class CopyArtifactsStep implements PipelineStep {
         filename,
       ));
       if (!sourceFile.existsSync()) {
-        throw ToolExit('Built CanvasKit artifact not found at path "$sourceFile".');
+        if (filename.endsWith('.map')) {
+          // Sourcemaps are only generated under certain build conditions, so
+          // they are optional.
+          continue;
+        } {
+          throw ToolExit('Built CanvasKit artifact not found at path "$sourceFile".');
+        }
       }
       await targetFile.create(recursive: true);
       await sourceFile.copy(targetFile.path);
     }
   }
 
-  String get outBuildPath => isProfile
-    ? environment.wasmProfileOutDir.path
-    : environment.wasmReleaseOutDir.path;
+  String get outBuildPath => getBuildDirectoryForRuntimeMode(runtimeMode).path;
 
   Future<void> copySkwasm() async {
     final io.Directory targetDir = io.Directory(pathlib.join(
@@ -181,13 +186,25 @@ class CopyArtifactsStep implements PipelineStep {
 
     for (final String fileName in <String>[
       'skwasm.wasm',
+      'skwasm.wasm.map',
       'skwasm.js',
       'skwasm.worker.js',
     ]) {
       final io.File sourceFile = io.File(pathlib.join(
         outBuildPath,
+        'flutter_web_sdk',
+        'canvaskit',
         fileName,
       ));
+      if (!sourceFile.existsSync()) {
+        if (fileName.endsWith('.map')) {
+          // Sourcemaps are only generated under certain build conditions, so
+          // they are optional.
+          continue;
+        } {
+          throw ToolExit('Built Skwasm artifact not found at path "$sourceFile".');
+        }
+      }
       final io.File targetFile = io.File(pathlib.join(
         targetDir.path,
         fileName,

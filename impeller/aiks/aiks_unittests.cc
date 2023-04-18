@@ -1068,6 +1068,7 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
 
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
   ASSERT_TRUE(RenderTextInCanvas(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -1119,6 +1120,8 @@ TEST_P(AiksTest, TextFrameSubpixelAlignment) {
 
 TEST_P(AiksTest, CanRenderItalicizedText) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "HomemadeApple.ttf"));
@@ -1127,6 +1130,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
                                  "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
@@ -1139,6 +1144,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
                                  "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
@@ -1152,7 +1159,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
 
 TEST_P(AiksTest, CanRenderTextInSaveLayer) {
   Canvas canvas;
-  canvas.DrawPaint({.color = Color::White()});
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   canvas.Translate({100, 100});
   canvas.Scale(Vector2{0.5, 0.5});
 
@@ -1211,12 +1219,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
 TEST_P(AiksTest, TextRotated) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
-
-  Paint paint;
-  paint.color = Color(0.1, 0.1, 0.1, 1.0);
-  canvas.DrawRect(
-      Rect::MakeLTRB(0, 0, GetWindowSize().width, GetWindowSize().height),
-      paint);
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
   canvas.Transform(Matrix(0.25, -0.3, 0, -0.002,  //
                           0, 0.5, 0, 0,           //
@@ -1230,11 +1233,17 @@ TEST_P(AiksTest, TextRotated) {
 }
 
 TEST_P(AiksTest, CanDrawPaint) {
-  Paint paint;
-  paint.color = Color::MediumTurquoise();
   Canvas canvas;
   canvas.Scale(Vector2(0.2, 0.2));
-  canvas.DrawPaint(paint);
+  canvas.DrawPaint({.color = Color::MediumTurquoise()});
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
+  Canvas canvas;
+  canvas.Scale(Vector2(0.2, 0.2));
+  canvas.DrawPaint({.color = Color::MediumTurquoise()});
+  canvas.DrawPaint({.color = Color::Color::OrangeRed().WithAlpha(0.5)});
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1880,6 +1889,83 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
 }
 
+TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
+  Canvas canvas;
+
+  canvas.SaveLayer({
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kColorDodge, {std::move(input)}, Color::Red());
+          },
+  });
+
+  canvas.Translate({500, 300, 0});
+  canvas.Rotate(Radians(2 * kPi / 3));
+  canvas.DrawRect({100, 100, 200, 200}, {.color = Color::Blue()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, ColorMatrixFilterSubpassCollapseOptimization) {
+  Canvas canvas;
+
+  canvas.SaveLayer({
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeColorMatrix(
+                std::move(input), {.array = {
+                                       -1.0, 0,    0,    1.0, 0,  //
+                                       0,    -1.0, 0,    1.0, 0,  //
+                                       0,    0,    -1.0, 1.0, 0,  //
+                                       1.0,  1.0,  1.0,  1.0, 0   //
+                                   }});
+          },
+  });
+
+  canvas.Translate({500, 300, 0});
+  canvas.Rotate(Radians(2 * kPi / 3));
+  canvas.DrawRect({100, 100, 200, 200}, {.color = Color::Blue()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, LinearToSrgbFilterSubpassCollapseOptimization) {
+  Canvas canvas;
+
+  canvas.SaveLayer({
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeLinearToSrgbFilter(
+                std::move(input));
+          },
+  });
+
+  canvas.Translate({500, 300, 0});
+  canvas.Rotate(Radians(2 * kPi / 3));
+  canvas.DrawRect({100, 100, 200, 200}, {.color = Color::Blue()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SrgbToLinearFilterSubpassCollapseOptimization) {
+  Canvas canvas;
+
+  canvas.SaveLayer({
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeSrgbToLinearFilter(
+                std::move(input));
+          },
+  });
+
+  canvas.Translate({500, 300, 0});
+  canvas.Rotate(Radians(2 * kPi / 3));
+  canvas.DrawRect({100, 100, 200, 200}, {.color = Color::Blue()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 static Picture BlendModeSaveLayerTest(BlendMode blend_mode) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75)});
@@ -1896,6 +1982,186 @@ static Picture BlendModeSaveLayerTest(BlendMode blend_mode) {
     OpenPlaygroundHere(BlendModeSaveLayerTest(BlendMode::k##blend_mode)); \
   }
 IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
+
+TEST_P(AiksTest, TranslucentSaveLayerDrawsCorrectly) {
+  Canvas canvas;
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
+
+  canvas.SaveLayer({.color = Color::Black().WithAlpha(0.5)});
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerWithBlendColorFilterDrawsCorrectly) {
+  Canvas canvas;
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterAndDrawsCorrectly) {
+  Canvas canvas;
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .image_filter =
+          [](FilterInput::Ref input, const Matrix& effect_transform,
+             bool is_subpass) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerWithColorImageFilterAndDrawsCorrectly) {
+  Canvas canvas;
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
+          },
+  });
+
+  canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
+  Canvas canvas;
+
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {100, 100}, {});
+
+  canvas.SaveLayer({.color = Color::Black().WithAlpha(0.5)});
+  canvas.DrawImage(image, {100, 500}, {});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixColorFilterDrawsCorrectly) {
+  Canvas canvas;
+
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {100, 100}, {});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeColorMatrix({std::move(input)},
+                                                        {.array = {
+                                                             1, 0, 0, 0, 0,  //
+                                                             0, 1, 0, 0, 0,  //
+                                                             0, 0, 1, 0, 0,  //
+                                                             0, 0, 0, 2, 0   //
+                                                         }});
+          },
+  });
+  canvas.DrawImage(image, {100, 500}, {});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
+  Canvas canvas;
+
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {100, 100}, {});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .image_filter =
+          [](FilterInput::Ref input, const Matrix& effect_transform,
+             bool is_subpass) {
+            return ColorFilterContents::MakeColorMatrix({std::move(input)},
+                                                        {.array = {
+                                                             1, 0, 0, 0, 0,  //
+                                                             0, 1, 0, 0, 0,  //
+                                                             0, 0, 1, 0, 0,  //
+                                                             0, 0, 0, 2, 0   //
+                                                         }});
+          },
+  });
+  canvas.DrawImage(image, {100, 500}, {});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+/// This is a regression check for https://github.com/flutter/engine/pull/41129
+/// The entire screen is green if successful. If failing, no frames will render,
+/// or the entire screen will be transparent black.
+TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Red()});
+
+  // Draw two overlapping subpixel circles.
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+  canvas.SaveLayer({});
+  canvas.DrawCircle({100, 100}, 0.1, {.color = Color::Yellow()});
+  canvas.Restore();
+
+  canvas.DrawPaint({.color = Color::Green()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+/// Tests that the debug checkerboard displays for offscreen textures when
+/// enabled. Most of the complexity here is just to future proof by making pass
+/// collapsing hard.
+TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
+  Canvas canvas;
+  canvas.debug_options.offscreen_texture_checkerboard = true;
+
+  canvas.DrawPaint({.color = Color::AntiqueWhite()});
+  canvas.DrawCircle({400, 300}, 200,
+                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
+
+  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
+  {
+    canvas.DrawCircle({500, 400}, 200,
+                      {.color = Color::DarkBlue().WithAlpha(0.75)});
+    canvas.DrawCircle({550, 450}, 200,
+                      {.color = Color::LightCoral().WithAlpha(0.75),
+                       .blend_mode = BlendMode::kLuminosity});
+  }
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
 
 }  // namespace testing
 }  // namespace impeller

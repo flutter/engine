@@ -207,6 +207,7 @@
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/canvas_spy_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
+../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
 ../../../flutter/shell/common/fixtures
 ../../../flutter/shell/common/input_events_unittests.cc
@@ -223,6 +224,7 @@
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
 ../../../flutter/shell/platform/android/android_shell_holder_unittests.cc
+../../../flutter/shell/platform/android/android_surface_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
@@ -577,6 +579,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.ui.display.singleton/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
@@ -2593,6 +2596,7 @@
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
+../../../third_party/skia/gn/bazel_build.py
 ../../../third_party/skia/gn/call.py
 ../../../third_party/skia/gn/checkdir.py
 ../../../third_party/skia/gn/codesign_ios.py
@@ -2801,6 +2805,7 @@
 ../../../third_party/skia/src/pathops/BUILD.bazel
 ../../../third_party/skia/src/pdf/BUILD.bazel
 ../../../third_party/skia/src/ports/BUILD.bazel
+../../../third_party/skia/src/ports/fontations/BUILD.bazel
 ../../../third_party/skia/src/sfnt/BUILD.bazel
 ../../../third_party/skia/src/shaders/BUILD.bazel
 ../../../third_party/skia/src/shaders/gradients/BUILD.bazel

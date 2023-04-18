@@ -54,8 +54,8 @@ bool GPUStudioVulkanImpeller::EnableRasterCache() const {
 }
 
 // |Studio|
-impeller::AiksContext* GPUStudioVulkanImpeller::GetAiksContext() const {
-  return aiks_context_.get();
+std::shared_ptr<impeller::AiksContext> GPUStudioVulkanImpeller::GetAiksContext() const {
+  return aiks_context_;
 }
 
 }  // namespace flutter
