@@ -798,10 +798,10 @@ class Engine final : public RuntimeDelegate,
   void DoUpdateViewportMetrics(const ViewportMetrics& metrics) override;
 
   // |ViewportMetricsUpdater::Delegate|
-  const VsyncWaiterProcessStage& GetVsyncWaiterProcessStage() override;
+  VsyncWaiterProcessStage GetVsyncWaiterProcessStage() const override;
 
   // |ViewportMetricsUpdater::Delegate|
-  TaskRunners GetTaskRunner() override;
+  fml::TimePoint GetVsyncWaiterFrameTargetTime() const override;
 
   // |ViewportMetricsUpdater::Delegate|
   void PostTaskOnUITaskRunner(const fml::closure& callback) override;

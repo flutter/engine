@@ -6,11 +6,11 @@
 #define FLUTTER_VIEWPORT_METRICS_UPDATER_H
 
 #include <memory>
+#include "flutter/fml/closure.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "fml/closure.h"
-#include "fml/macros.h"
-#include "fml/memory/weak_ptr.h"
 
 namespace flutter {
 
@@ -25,12 +25,13 @@ class ViewportMetricsUpdater {
 
     /// Get current process stage of current vsync waiter. And updater will use
     /// different strategies to update the viewport metrics data to receiver.
-    virtual const VsyncWaiterProcessStage& GetVsyncWaiterProcessStage() = 0;
+    virtual VsyncWaiterProcessStage GetVsyncWaiterProcessStage() const = 0;
+
+    /// Get current vsync waiter's frame target time.
+    virtual fml::TimePoint GetVsyncWaiterFrameTargetTime() const = 0;
 
     /// Post a task to UI TaskRunner.
     virtual void PostTaskOnUITaskRunner(const fml::closure& callback) = 0;
-
-    virtual TaskRunners GetTaskRunner() = 0;
 
     /// Schedule secondary vsync callback to execute after the main vsync
     /// process callback.

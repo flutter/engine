@@ -4,7 +4,7 @@
 
 #include "viewport_metrics_updater.h"
 #include "flutter/fml/trace_event.h"
-#include "shell/common/vsync_waiter.h"
+#include "flutter/shell/common/vsync_waiter.h"
 
 namespace flutter {
 
@@ -15,16 +15,22 @@ ViewportMetricsUpdater::~ViewportMetricsUpdater() = default;
 void ViewportMetricsUpdater::UpdateViewportMetrics(
     const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "ViewportMetricsUpdater::UpdateViewportMetrics");
-  const VsyncWaiterProcessStage& stage = delegate_.GetVsyncWaiterProcessStage();
+  VsyncWaiterProcessStage stage = delegate_.GetVsyncWaiterProcessStage();
   switch (stage) {
     case VsyncWaiterProcessStage::kAwaiting: {
-      TRACE_EVENT0("flutter",
-                   "ViewportMetricsUpdaterScheduleSecondaryVsyncCallback");
-      delegate_.ScheduleSecondaryVsyncCallback(
-          reinterpret_cast<uintptr_t>(this),
-          [updater = weak_factory_.GetWeakPtr(), metrics] {
-            updater->delegate_.DoUpdateViewportMetrics(metrics);
-          });
+      fml::TimePoint frame_target_time =
+          delegate_.GetVsyncWaiterFrameTargetTime();
+      if (frame_target_time > fml::TimePoint::Now()) {
+        delegate_.DoUpdateViewportMetrics(metrics);
+      } else {
+        TRACE_EVENT0("flutter",
+                     "ViewportMetricsUpdaterScheduleSecondaryVsyncCallback");
+        delegate_.ScheduleSecondaryVsyncCallback(
+            reinterpret_cast<uintptr_t>(this),
+            [updater = weak_factory_.GetWeakPtr(), metrics] {
+              updater->delegate_.DoUpdateViewportMetrics(metrics);
+            });
+      }
       break;
     }
     case VsyncWaiterProcessStage::kProcessing: {

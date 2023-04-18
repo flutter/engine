@@ -76,9 +76,6 @@ class Animator final {
   void ScheduleSecondaryVsyncCallback(uintptr_t id,
                                       const fml::closure& callback);
 
-  /// Get the current process stage of vsync waiter.
-  const VsyncWaiterProcessStage& GetVsyncWaiterProcessStage();
-
   // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The flow event will be
   // ended at either the next frame, or the next vsync interval with no active
   // rendering.

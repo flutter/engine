@@ -86,14 +86,19 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
   stage_ = VsyncWaiterProcessStage::kAwaiting;
 }
 
-const VsyncWaiterProcessStage& VsyncWaiter::GetProcessStage() {
+VsyncWaiterProcessStage VsyncWaiter::GetProcessStage() const {
   return stage_;
+}
+
+fml::TimePoint VsyncWaiter::GetVsyncFrameTargetTime() const {
+  return frame_target_time_;
 }
 
 void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time,
                                bool pause_secondary_tasks) {
   stage_ = VsyncWaiterProcessStage::kProcessing;
+  frame_target_time_ = frame_target_time;
   FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
 
   Callback callback;

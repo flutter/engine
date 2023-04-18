@@ -293,12 +293,20 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   viewport_metrics_updater_->UpdateViewportMetrics(metrics);
 }
 
-const VsyncWaiterProcessStage& Engine::GetVsyncWaiterProcessStage() {
-  return animator_->GetVsyncWaiterProcessStage();
+VsyncWaiterProcessStage Engine::GetVsyncWaiterProcessStage() const {
+  std::shared_ptr<VsyncWaiter> waiter = animator_->GetVsyncWaiter().lock();
+  if (!waiter) {
+    return VsyncWaiterProcessStage::kProcessingComplete;
+  }
+  return waiter->GetProcessStage();
 }
 
-TaskRunners Engine::GetTaskRunner() {
-  return task_runners_;
+fml::TimePoint Engine::GetVsyncWaiterFrameTargetTime() const {
+  std::shared_ptr<VsyncWaiter> waiter = animator_->GetVsyncWaiter().lock();
+  if (!waiter) {
+    return fml::TimePoint::Now();
+  }
+  return waiter->GetVsyncFrameTargetTime();
 }
 
 void Engine::PostTaskOnUITaskRunner(const fml::closure& callback) {

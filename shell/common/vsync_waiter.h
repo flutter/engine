@@ -33,20 +33,19 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   void AsyncWaitForVsync(const Callback& callback);
 
-  /// Indicates the callback_ passed by |AsyncWaitForVsync| has been invoked
-  /// and completed to process.
-  bool IsMajorCallbackComplete();
-
   /// Add a secondary callback for key |id| for the next vsync.
   ///
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
   /// |Animator::ScheduleMaybeClearTraceFlowIds|.
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
 
+  /// Get current frame's target time.
+  fml::TimePoint GetVsyncFrameTargetTime() const;
+
   /// Get current stage.
   ///
   /// See also |VsyncWaiterProcessStage|
-  const VsyncWaiterProcessStage& GetProcessStage();
+  VsyncWaiterProcessStage GetProcessStage() const;
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
@@ -92,6 +91,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
   VsyncWaiterProcessStage stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+  fml::TimePoint frame_target_time_;
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
 
