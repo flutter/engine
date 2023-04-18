@@ -204,14 +204,17 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Called to re/set the accessibility bridge pointer.
   virtual void UpdateSemanticsEnabled(bool enabled);
 
-  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge() { return accessibility_bridge_; }
+  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
+    return accessibility_bridge_;
+  }
 
  protected:
   virtual void NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
                                      ax::mojom::Event event);
 
   // Create an AccessibilityBridgeWindows using this view.
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge();
+  virtual std::shared_ptr<AccessibilityBridgeWindows>
+  CreateAccessibilityBridge();
 
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep

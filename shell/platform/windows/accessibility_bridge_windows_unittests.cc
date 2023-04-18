@@ -79,7 +79,8 @@ class FlutterWindowsViewSpy : public FlutterWindowsView {
       : FlutterWindowsView(std::move(handler)) {}
 
  protected:
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge() override {
+  virtual std::shared_ptr<AccessibilityBridgeWindows>
+  CreateAccessibilityBridge() override {
     return std::make_shared<AccessibilityBridgeWindowsSpy>(GetEngine(), this);
   }
 
@@ -165,8 +166,7 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
 
 std::shared_ptr<AccessibilityBridgeWindowsSpy> GetAccessibilityBridgeSpy(
     FlutterWindowsEngine* engine) {
-  FlutterWindowsEngine* engine_spy =
-      static_cast<FlutterWindowsEngine*>(engine);
+  FlutterWindowsEngine* engine_spy = static_cast<FlutterWindowsEngine*>(engine);
   return std::static_pointer_cast<AccessibilityBridgeWindowsSpy>(
       engine_spy->accessibility_bridge().lock());
 }

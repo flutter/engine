@@ -644,7 +644,8 @@ ui::AXPlatformNodeWin* FlutterWindowsView::AlertNode() const {
   return binding_handler_->GetAlert();
 }
 
-std::shared_ptr<AccessibilityBridgeWindows> FlutterWindowsView::CreateAccessibilityBridge() {
+std::shared_ptr<AccessibilityBridgeWindows>
+FlutterWindowsView::CreateAccessibilityBridge() {
   return std::make_shared<AccessibilityBridgeWindows>(this);
 }
 

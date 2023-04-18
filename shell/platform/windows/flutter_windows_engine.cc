@@ -350,8 +350,9 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
     for (size_t i = 0; i < update->custom_action_count; i++) {
       const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
-      host->accessibility_bridge().lock()->AddFlutterSemanticsCustomActionUpdate(
-          *action);
+      host->accessibility_bridge()
+          .lock()
+          ->AddFlutterSemanticsCustomActionUpdate(*action);
     }
 
     host->accessibility_bridge().lock()->CommitUpdates();
@@ -766,7 +767,8 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
   lifecycle_manager_->Quit(hwnd, wparam, lparam, exit_code);
 }
 
-std::weak_ptr<AccessibilityBridgeWindows> FlutterWindowsEngine::accessibility_bridge() {
+std::weak_ptr<AccessibilityBridgeWindows>
+FlutterWindowsEngine::accessibility_bridge() {
   return view_->accessibility_bridge();
 }
 

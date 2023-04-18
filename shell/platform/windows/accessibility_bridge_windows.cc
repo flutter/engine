@@ -10,8 +10,7 @@
 
 namespace flutter {
 
-AccessibilityBridgeWindows::AccessibilityBridgeWindows(
-    FlutterWindowsView* view)
+AccessibilityBridgeWindows::AccessibilityBridgeWindows(FlutterWindowsView* view)
     : view_(view) {
   FML_DCHECK(view_);
 }
