@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/surface_mtl.h"
-#include <iostream>
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
@@ -53,6 +52,10 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   if (color_format == PixelFormat::kUnknown) {
     VALIDATION_LOG << "Unknown drawable color format.";
     return nullptr;
+  }
+  if (requires_blit) {
+    root_size = ISize(clip_rect->size.width + clip_rect->origin.x,
+                      clip_rect->size.height + clip_rect->origin.y);
   }
 
   TextureDescriptor msaa_tex_desc;
