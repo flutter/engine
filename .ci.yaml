@@ -55,6 +55,8 @@ platform_properties:
       cpu: x86
       os: Mac-12
       xcode: 14a5294e # xcode 14.0 beta 5
+    dimensions:
+      mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
       build_host: "false"
@@ -204,7 +206,6 @@ targets:
   - name: Linux Host clang-tidy
     recipe: engine/engine_lint
     properties:
-      add_recipes_cq: "true"
       cores: "32"
       lint_android: "false"
       lint_host: "true"
@@ -224,7 +225,6 @@ targets:
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
     properties:
-      add_recipes_cq: "true"
       cores: "32"
       lint_android: "true"
       lint_host: "false"
@@ -264,7 +264,6 @@ targets:
       config_name: linux_host_engine
 
   - name: Linux linux_host_desktop_engine
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
@@ -339,21 +338,21 @@ targets:
         {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
+      mac_model: "Macmini8,1"
     timeout: 75
 
-  - name: Mac mac_android_aot_engine
+  - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       config_name: mac_android_aot_engine
-      $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       release_build: "true"
+      cpu: arm64
       config_name: mac_host_engine
       dependencies: >-
         [
@@ -362,14 +361,15 @@ targets:
       $flutter/osx_sdk : >-
         { "sdk_version": "14a5294e" }
 
-  - name: Mac mac_unopt
-    bringup: true
+  - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
     properties:
       config_name: mac_unopt
       add_recipes_cq: "true"
+    timeout: 60
 
   - name: Mac Unopt
+    bringup: true
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
@@ -377,13 +377,13 @@ targets:
         [
           "ios-16-0_14a5294e"
         ]
+      mac_model: "Macmini8,1"
     timeout: 75
 
   - name: Mac Host clang-tidy
     recipe: engine/engine_lint
     properties:
-      add_recipes_cq: "true"
-      cores: "12"
+      cpu: arm64
       lint_host: "true"
       lint_ios: "false"
     timeout: 75
@@ -404,7 +404,7 @@ targets:
   - name: Mac iOS clang-tidy
     recipe: engine/engine_lint
     properties:
-      add_recipes_cq: "true"
+      cpu: arm64
       lint_host: "false"
       lint_ios: "true"
     timeout: 75
@@ -423,6 +423,7 @@ targets:
       - "**.mm"
 
   - name: Mac iOS Engine
+    bringup: true
     recipe: engine/engine
     properties:
       add_recipes_cq: "true"
@@ -442,6 +443,15 @@ targets:
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
+
+  - name: Mac impeller-cmake-example
+    bringup: true
+    recipe: engine_v2/engine_v2
+    timeout: 60
+    properties:
+      release_build: "true"
+      cpu: arm64
+      config_name: mac_impeller_cmake_example
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -491,6 +501,7 @@ targets:
     timeout: 75
 
   - name: Mac iOS Engine Profile
+    bringup: true
     recipe: engine/engine
     properties:
       build_ios: "true"
@@ -502,6 +513,7 @@ targets:
       - ci/**
 
   - name: Mac iOS Engine Release
+    bringup: true
     recipe: engine/engine
     properties:
       build_ios: "true"
