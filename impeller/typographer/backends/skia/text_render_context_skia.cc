@@ -38,9 +38,10 @@ TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
 
 TextRenderContextSkia::~TextRenderContextSkia() = default;
 
-static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
+static FontGlyphPair::Set CollectUniqueFontGlyphPairs(
     GlyphAtlas::Type type,
     const TextRenderContext::FrameIterator& frame_iterator) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
   FontGlyphPair::Set set;
   while (const TextFrame* frame = frame_iterator()) {
     for (const TextRun& run : frame->GetRuns()) {
@@ -57,21 +58,8 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
   return set;
 }
 
-static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
-    GlyphAtlas::Type type,
-    const TextRenderContext::FrameIterator& frame_iterator) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  FontGlyphPair::Vector vector;
-  FontGlyphPair::Set set = CollectUniqueFontGlyphPairsSet(type, frame_iterator);
-  vector.reserve(set.size());
-  for (const FontGlyphPair& item : set) {
-    vector.emplace_back(std::move(item));
-  }
-  return vector;
-}
-
 static size_t PairsFitInAtlasOfSize(
-    const FontGlyphPair::Vector& pairs,
+    const FontGlyphPair::Set& pairs,
     const ISize& atlas_size,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GrRectanizer>& rect_packer) {
@@ -82,8 +70,9 @@ static size_t PairsFitInAtlasOfSize(
   glyph_positions.clear();
   glyph_positions.reserve(pairs.size());
 
-  for (size_t i = 0; i < pairs.size(); i++) {
-    const auto& pair = pairs[i];
+  size_t i = 0;
+  for (auto it = pairs.begin(); it != pairs.end(); ++i, ++it) {
+    const auto& pair = *it;
 
     const auto glyph_size =
         ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
@@ -142,8 +131,9 @@ static bool CanAppendToExistingAtlas(
   return true;
 }
 
-static ISize OptimumAtlasSizeForFontGlyphPairs(
-    const FontGlyphPair::Vector& pairs,
+namespace {
+ISize OptimumAtlasSizeForFontGlyphPairs(
+    const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context) {
   static constexpr auto kMinAtlasSize = 8u;
@@ -176,6 +166,7 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
            current_size.height <= kMaxAtlasSize);
   return ISize{0, 0};
 }
+}  // namespace
 
 /// Compute signed-distance field for an 8-bpp grayscale image (values greater
 /// than 127 are considered "on") For details of this algorithm, see "The 'dead
@@ -464,7 +455,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 1: Collect unique font-glyph pairs in the frame.
   // ---------------------------------------------------------------------------
 
-  FontGlyphPair::Vector font_glyph_pairs =
+  FontGlyphPair::Set font_glyph_pairs =
       CollectUniqueFontGlyphPairs(type, frame_iterator);
   if (font_glyph_pairs.empty()) {
     return last_atlas;
@@ -474,8 +465,12 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 2: Determine if the atlas type and font glyph pairs are compatible
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  FontGlyphPair::Vector new_glyphs =
-      last_atlas->GrabNotPresentPairs(std::move(font_glyph_pairs));
+  FontGlyphPair::Vector new_glyphs;
+  for (const FontGlyphPair& pair : font_glyph_pairs) {
+    if (!last_atlas->FindFontGlyphBounds(pair).has_value()) {
+      new_glyphs.emplace_back(std::move(pair));
+    }
+  }
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;
   }
@@ -543,9 +538,12 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 6: Record the positions in the glyph atlas.
   // ---------------------------------------------------------------------------
-  for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
-    glyph_atlas->AddTypefaceGlyphPosition(font_glyph_pairs[i],
-                                          glyph_positions[i]);
+  {
+    size_t i = 0;
+    for (auto it = font_glyph_pairs.begin(); it != font_glyph_pairs.end();
+         ++i, ++it) {
+      glyph_atlas->AddTypefaceGlyphPosition(*it, glyph_positions[i]);
+    }
   }
 
   // ---------------------------------------------------------------------------

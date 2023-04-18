@@ -121,16 +121,6 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Grabs the font-glyph pairs that are not present in the atlas.
-  ///
-  /// @param[in]  new_glyphs  The full set of new glyphs
-  ///
-  /// @return     A vector containing the glyphs from new_glyphs that are not
-  ///             present in the existing atlas. May be empty of there are none.
-  ///
-  FontGlyphPair::Vector GrabNotPresentPairs(FontGlyphPair::Vector&& new_glyphs) const;
-
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;

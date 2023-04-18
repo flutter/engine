@@ -100,15 +100,4 @@ size_t GlyphAtlas::IterateGlyphs(
   return count;
 }
 
-FontGlyphPair::Vector GlyphAtlas::GrabNotPresentPairs(
-    FontGlyphPair::Vector&& new_glyphs) const {
-  std::vector<FontGlyphPair> new_pairs;
-  for (const FontGlyphPair& pair : new_glyphs) {
-    if (positions_.find(pair) == positions_.end()) {
-      new_pairs.emplace_back(std::move(pair));
-    }
-  }
-  return new_pairs;
-}
-
 }  // namespace impeller
