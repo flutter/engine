@@ -5,6 +5,7 @@
 #include "impeller/golden_tests/golden_digest.h"
 
 #include <fstream>
+#include <sstream>
 
 static const double kMaxDiffPixelsPercent = 0.01;
 static const int32_t kMaxColorDelta = 8;
@@ -23,13 +24,19 @@ GoldenDigest* GoldenDigest::Instance() {
 
 GoldenDigest::GoldenDigest() {}
 
+void GoldenDigest::AddDimension(const std::string& name,
+                                const std::string& value) {
+  std::stringstream ss;
+  ss << "\"" << value << "\"";
+  dimensions_[name] = ss.str();
+}
+
 void GoldenDigest::AddImage(const std::string& test_name,
                             const std::string& filename,
-                            const std::string& gpu_string,
                             int32_t width,
                             int32_t height) {
-  entries_.push_back({test_name, filename, gpu_string, width, height,
-                      kMaxDiffPixelsPercent, kMaxColorDelta});
+  entries_.push_back({test_name, filename, width, height, kMaxDiffPixelsPercent,
+                      kMaxColorDelta});
 }
 
 bool GoldenDigest::Write(WorkingDirectory* working_directory) {
@@ -39,18 +46,30 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
     return false;
   }
 
-  fout << "[" << std::endl;
+  fout << "{" << std::endl;
+  fout << "  \"dimensions\": {" << std::endl;
   bool is_first = true;
+  for (const auto& dimension : dimensions_) {
+    if (!is_first) {
+      fout << "," << std::endl;
+    }
+    is_first = false;
+    fout << "    \"" << dimension.first << "\": " << dimension.second;
+  }
+  fout << std::endl << "  }," << std::endl;
+  fout << "  \"entries\":" << std::endl;
+
+  fout << "  [" << std::endl;
+  is_first = true;
   for (const auto& entry : entries_) {
     if (!is_first) {
       fout << "," << std::endl;
     }
     is_first = false;
 
-    fout << "  { "
+    fout << "    { "
          << "\"testName\" : \"" << entry.test_name << "\", "
          << "\"filename\" : \"" << entry.filename << "\", "
-         << "\"gpu_string\" : \"" << entry.gpu_string << "\", "
          << "\"width\" : " << entry.width << ", "
          << "\"height\" : " << entry.height << ", ";
 
@@ -66,7 +85,9 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
     fout << "\"maxColorDelta\":" << entry.max_color_delta << " ";
     fout << "}";
   }
-  fout << std::endl << "]" << std::endl;
+  fout << std::endl << "  ]" << std::endl;
+
+  fout << "}" << std::endl;
 
   fout.close();
   return true;

@@ -32,16 +32,14 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(const std::string& gpu_string,
-                    std::unique_ptr<MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
-  GoldenDigest::Instance()->AddImage(test_name, filename, gpu_string,
-                                     screenshot->GetWidth(),
-                                     screenshot->GetHeight());
+  GoldenDigest::Instance()->AddImage(
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   return screenshot->WriteToPNG(
       WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
@@ -53,6 +51,12 @@ class GoldenTests : public ::testing::Test {
   GoldenTests() : screenshoter_(new MetalScreenshoter()) {}
 
   MetalScreenshoter& Screenshoter() { return *screenshoter_; }
+
+  void SetUp() override {
+    testing::GoldenDigest::Instance()->AddDimension(
+        "gpu_string",
+        Screenshoter().GetContext().GetContext()->DescribeGpuModel());
+  }
 
  private:
   std::unique_ptr<MetalScreenshoter> screenshoter_;
@@ -76,9 +80,7 @@ TEST_F(GoldenTests, ConicalGradient) {
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
   auto screenshot = Screenshoter().MakeScreenshot(picture);
-  ASSERT_TRUE(SaveScreenshot(
-      Screenshoter().GetContext().GetContext()->DescribeGpuModel(),
-      std::move(screenshot)));
+  ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
 }
 }  // namespace testing
 }  // namespace impeller

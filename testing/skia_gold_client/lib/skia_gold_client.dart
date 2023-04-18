@@ -194,7 +194,6 @@ class SkiaGoldClient {
   Future<void> addImg(
     String testName,
     File goldenFile, {
-    String gpuString = '<unknown>',
     double differentPixelsRate = 0.01,
     int pixelColorDelta = 0,
     required int screenshotSize,
@@ -202,10 +201,10 @@ class SkiaGoldClient {
     assert(_isPresubmit || _isPostsubmit);
 
     if (_isPresubmit) {
-      await _tryjobAdd(testName, goldenFile, gpuString, screenshotSize, pixelColorDelta, differentPixelsRate);
+      await _tryjobAdd(testName, goldenFile, screenshotSize, pixelColorDelta, differentPixelsRate);
     }
     if (_isPostsubmit) {
-      await _imgtestAdd(testName, goldenFile, gpuString, screenshotSize, pixelColorDelta, differentPixelsRate);
+      await _imgtestAdd(testName, goldenFile, screenshotSize, pixelColorDelta, differentPixelsRate);
     }
   }
 
@@ -221,7 +220,6 @@ class SkiaGoldClient {
   Future<void> _imgtestAdd(
     String testName,
     File goldenFile,
-    String gpuString,
     int screenshotSize,
     int pixelDeltaThreshold,
     double maxDifferentPixelsRate,
@@ -234,7 +232,6 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      '--add-test-key', 'gpu_string:$gpuString',
       ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, maxDifferentPixelsRate),
     ];
 
@@ -311,7 +308,6 @@ class SkiaGoldClient {
   Future<void> _tryjobAdd(
     String testName,
     File goldenFile,
-    String gpuString,
     int screenshotSize,
     int pixelDeltaThreshold,
     double differentPixelsRate,
@@ -324,7 +320,6 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      '--add-test-key', 'gpu_string:$gpuString',
       ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, differentPixelsRate),
     ];
 
