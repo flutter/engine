@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
+import '../../common/test_embedding.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -18,7 +19,7 @@ void main() {
 Future<void> testMain() async {
 
   setUpAll(() async {
-    debugEmulateFlutterTesterEnvironment = true;
+    setUpTestEnvironment();
     await webOnlyInitializePlatform();
     await renderer.fontCollection.debugDownloadTestFonts();
     renderer.fontCollection.registerDownloadedFonts();

@@ -11,6 +11,7 @@ import 'package:ui/src/engine.dart' hide window;
 import 'package:ui/ui.dart' as ui;
 
 import '../common/matchers.dart';
+import '../common/test_embedding.dart';
 import 'history_test.dart';
 
 const MethodCodec codec = JSONMethodCodec();

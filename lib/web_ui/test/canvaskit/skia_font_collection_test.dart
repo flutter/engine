@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
+import '../common/fake_asset_manager.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -42,8 +44,8 @@ void testMain() {
 
     test('logs no warnings with the default mock asset manager', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
+      final FakeAssetManager mockAssetManager = FakeAssetManager();
+      setUpStandardMocks(mockAssetManager);
       await fontCollection.downloadAssetFonts(mockAssetManager);
       fontCollection.registerDownloadedFonts();
 
@@ -61,9 +63,9 @@ void testMain() {
         );
       };
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      final FakeAssetManager mockAssetManager = FakeAssetManager();
+      setUpStandardMocks(mockAssetManager);
+      mockAssetManager.setMockAssetStringAsUtf8Data('FontManifest.json', '''
 [
    {
       "family":"Roboto",
@@ -74,7 +76,7 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/BrokenFont.ttf"}]
    }
   ]
-      ''';
+      ''');
       // It should complete without error, but emit a warning about BrokenFont.
       await fontCollection.downloadAssetFonts(mockAssetManager);
       fontCollection.registerDownloadedFonts();
@@ -91,9 +93,9 @@ void testMain() {
 
     test('logs an HTTP warning if one of the registered fonts is missing (404 file not found)', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      final FakeAssetManager mockAssetManager = FakeAssetManager();
+      setUpStandardMocks(mockAssetManager);
+      mockAssetManager.setMockAssetStringAsUtf8Data('FontManifest.json', '''
 [
    {
       "family":"Roboto",
@@ -104,7 +106,7 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/ThisFontDoesNotExist.ttf"}]
    }
   ]
-      ''';
+      ''');
 
       // It should complete without error, but emit a warning about ThisFontDoesNotExist.
       await fontCollection.downloadAssetFonts(mockAssetManager);
@@ -120,16 +122,16 @@ void testMain() {
 
     test('prioritizes Ahem loaded via FontManifest.json', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      final FakeAssetManager mockAssetManager = FakeAssetManager();
+      setUpStandardMocks(mockAssetManager);
+      mockAssetManager.setMockAssetStringAsUtf8Data('FontManifest.json', '''
         [
           {
             "family":"Ahem",
             "fonts":[{"asset":"/assets/fonts/Roboto-Regular.ttf"}]
           }
         ]
-      '''.trim();
+      '''.trim());
 
       final ByteBuffer robotoData = await httpFetchByteBuffer('/assets/fonts/Roboto-Regular.ttf');
 
@@ -149,9 +151,9 @@ void testMain() {
 
     test('falls back to default Ahem URL', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '[]';
+      final FakeAssetManager mockAssetManager = FakeAssetManager();
+      setUpStandardMocks(mockAssetManager);
+      mockAssetManager.setMockAssetStringAsUtf8Data('FontManifest.json', '[]');
 
       final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
 

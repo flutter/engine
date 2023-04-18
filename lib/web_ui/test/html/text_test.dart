@@ -12,6 +12,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import '../common/matchers.dart';
+import '../common/test_embedding.dart';
 import 'paragraph/helper.dart';
 
 void main() {

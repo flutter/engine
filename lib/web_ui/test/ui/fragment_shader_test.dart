@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/fake_asset_manager.dart';
 import 'utils.dart';
 
 void main() {
@@ -45,9 +43,9 @@ Future<void> testMain() async {
   const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
 
   test('fragment shader', () async {
-    fakeAssetManager.setAsset(
+    fakeAssetManager.setMockAssetStringAsUtf8Data(
       'voronoi_shader',
-      Uint8List.fromList(utf8.encode(kVoronoiShaderSksl)).buffer.asByteData()
+      kVoronoiShaderSksl
     );
     final ui.FragmentProgram program = await renderer.createFragmentProgram('voronoi_shader');
     final ui.FragmentShader shader = program.fragmentShader();
