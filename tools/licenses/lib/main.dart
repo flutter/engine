@@ -2091,6 +2091,7 @@ Future<void> main(List<String> arguments) async {
               .firstWhere((_RepositoryDirectory dir) => dir.name == component.name);
         }
         final String goldenFileName = 'licenses_${component.io.name}';
+        print('_collectLicensesForComponent $componentRoot');
         await _collectLicensesForComponent(
           componentRoot,
           inputGoldenPath: path.join(argResults['golden'] as String, goldenFileName),

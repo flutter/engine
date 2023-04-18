@@ -257,6 +257,7 @@ FileType identifyFile(String name, Reader reader) {
     case '.diff':
       // Don't try to read the copyright out of patch files, since there'll be fragments.
       return FileType.binary;
+    case '.3':
     case '.plist':
       // These commonly include the word "copyright" but in a way that isn't necessarily a copyright statement that applies to the file.
       // Since there's so few of them, and none have their own copyright statement, we just treat them as binary files.
