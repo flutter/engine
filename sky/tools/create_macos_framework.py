@@ -173,6 +173,7 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     ],
                           cwd=dst)
     # Double zip to make it consistent with legacy artifacts.
+    # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
     subprocess.check_call([
         'zip',
         '-y',
