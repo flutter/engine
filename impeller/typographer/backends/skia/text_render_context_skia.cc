@@ -22,7 +22,8 @@
 
 namespace impeller {
 
-using FontGlyphPairRefVector = std::vector<std::reference_wrapper<const FontGlyphPair>>;
+using FontGlyphPairRefVector =
+    std::vector<std::reference_wrapper<const FontGlyphPair>>;
 
 std::unique_ptr<TextRenderContext> TextRenderContext::Create(
     std::shared_ptr<Context> context) {
