@@ -71,7 +71,7 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeWindowsSpy);
 };
 
-// A FlutterWindowsEngine whose accessibility bridge is a
+// A FlutterWindowsView whose accessibility bridge is an
 // AccessibilityBridgeWindowsSpy.
 class FlutterWindowsViewSpy : public FlutterWindowsView {
  public:

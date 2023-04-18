@@ -201,6 +201,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
 
+  // Called to re/set the accessibility bridge pointer.
   virtual void UpdateSemanticsEnabled(bool enabled);
 
   std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge() { return accessibility_bridge_; }
@@ -209,6 +210,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   virtual void NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
                                      ax::mojom::Event event);
 
+  // Create an AccessibilityBridgeWindows using this view.
   virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge();
 
  private:
@@ -381,6 +383,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // True when flutter's semantics tree is enabled.
   bool semantics_enabled_ = false;
 
+  // The accessibility bridge associated with this view.
   std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsView);

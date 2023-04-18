@@ -145,6 +145,7 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
+  // Return the AccessibilityBridgeWindows for this engine's view.
   std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge();
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
