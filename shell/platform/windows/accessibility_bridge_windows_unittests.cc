@@ -73,32 +73,30 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
 
 // A FlutterWindowsEngine whose accessibility bridge is a
 // AccessibilityBridgeWindowsSpy.
-class FlutterWindowsEngineSpy : public FlutterWindowsEngine {
+class FlutterWindowsViewSpy : public FlutterWindowsView {
  public:
-  explicit FlutterWindowsEngineSpy(const FlutterProjectBundle& project)
-      : FlutterWindowsEngine(project) {}
+  explicit FlutterWindowsViewSpy(std::unique_ptr<WindowBindingHandler> handler)
+      : FlutterWindowsView(std::move(handler)) {}
 
  protected:
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
-      FlutterWindowsEngine* engine,
-      FlutterWindowsView* view) override {
-    return std::make_shared<AccessibilityBridgeWindowsSpy>(engine, view);
+  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge() override {
+    return std::make_shared<AccessibilityBridgeWindowsSpy>(GetEngine(), this);
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngineSpy);
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsViewSpy);
 };
 
 // Returns an engine instance configured with dummy project path values, and
 // overridden methods for sending platform messages, so that the engine can
 // respond as if the framework were connected.
-std::unique_ptr<FlutterWindowsEngineSpy> GetTestEngine() {
+std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   FlutterDesktopEngineProperties properties = {};
   properties.assets_path = L"C:\\foo\\flutter_assets";
   properties.icu_data_path = L"C:\\foo\\icudtl.dat";
   properties.aot_library_path = L"C:\\foo\\aot.so";
   FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngineSpy>(project);
+  auto engine = std::make_unique<FlutterWindowsEngine>(project);
 
   EngineModifier modifier(engine.get());
   modifier.embedder_api().UpdateSemanticsEnabled =
@@ -167,8 +165,8 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
 
 std::shared_ptr<AccessibilityBridgeWindowsSpy> GetAccessibilityBridgeSpy(
     FlutterWindowsEngine* engine) {
-  FlutterWindowsEngineSpy* engine_spy =
-      static_cast<FlutterWindowsEngineSpy*>(engine);
+  FlutterWindowsEngine* engine_spy =
+      static_cast<FlutterWindowsEngine*>(engine);
   return std::static_pointer_cast<AccessibilityBridgeWindowsSpy>(
       engine_spy->accessibility_bridge().lock());
 }
@@ -178,7 +176,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
                                ax::mojom::Event expected_event) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
@@ -197,7 +195,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
 TEST(AccessibilityBridgeWindows, GetParent) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
@@ -213,7 +211,7 @@ TEST(AccessibilityBridgeWindows, GetParent) {
 TEST(AccessibilityBridgeWindows, GetParentOnRootRetunsNullptr) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
@@ -227,7 +225,7 @@ TEST(AccessibilityBridgeWindows, GetParentOnRootRetunsNullptr) {
 TEST(AccessibilityBridgeWindows, DispatchAccessibilityAction) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
@@ -263,7 +261,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventChildrenChanged) {
 TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
