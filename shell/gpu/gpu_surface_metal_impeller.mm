@@ -7,6 +7,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
+#include <iostream>
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
@@ -105,18 +106,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         }
 
         std::optional<impeller::IRect> clip_rect;
-        auto damage_rect = surface_frame.submit_info().clip_rect;
-        if (damage_rect.has_value()) {
-          if (damage_rect->width() == 0 || damage_rect->height() == 0) {
-            return true;
-          }
-
-          clip_rect = impeller::IRect::MakeXYWH(damage_rect->x(), damage_rect->y(),
-                                                damage_rect->width(), damage_rect->height());
+        if (surface_frame.submit_info().clip_rect.has_value()) {
+          auto submit_info_rect = surface_frame.submit_info().clip_rect;
+          clip_rect =
+              impeller::IRect::MakeXYWH(submit_info_rect->x(), submit_info_rect->y(),
+                                        submit_info_rect->width(), submit_info_rect->height());
         }
 
         auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
             impeller_renderer_->GetContext(), metal_drawable, clip_rect);
+
+        if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
+          return surface->Present();
+        }
 
         impeller::DisplayListDispatcher impeller_dispatcher;
         display_list->Dispatch(impeller_dispatcher);

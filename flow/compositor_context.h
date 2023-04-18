@@ -96,6 +96,8 @@ class FrameDamage {
 
   std::optional<SkRect> GetClipRect() const { return cached_clip_rect_; }
 
+  void Reset() { cached_clip_rect_ = std::nullopt; }
+
  private:
   SkIRect additional_damage_ = SkIRect::MakeEmpty();
   std::optional<Damage> damage_;
@@ -207,6 +209,13 @@ class CompositorContext {
   void BeginFrame(ScopedFrame& frame, bool enable_instrumentation);
 
   void EndFrame(ScopedFrame& frame, bool enable_instrumentation);
+
+  /// @brief  If the damage rect is larger than a fixed percentage of the
+  ///         screen. This is used to determine whether or not the additional
+  ///         blit pass required by partial repaint is worthwhile.
+  ///         This is only used for impeller.
+  static bool ShouldPerformPartialRepaint(std::optional<SkRect> damage_rect,
+                                          SkISize layer_tree_size);
 
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };

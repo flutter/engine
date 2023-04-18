@@ -48,6 +48,9 @@ class SurfaceMTL final : public Surface {
 
   id<MTLDrawable> drawable() const { return drawable_; }
 
+  // |Surface|
+  bool Present() const override;
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<Texture> resolve_texture_;
@@ -55,11 +58,7 @@ class SurfaceMTL final : public Surface {
   bool requires_blit_ = false;
   std::optional<IRect> clip_rect_;
 
-  /// @brief  If the damage rect is larger than a fixed percentage of the
-  ///         screen. This is used to determine whether or not the additional
-  ///         blit pass required by partial repaint is worthwhile.
-  static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect,
-                                          ISize texture_size);
+  static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 
   SurfaceMTL(std::shared_ptr<Context> context,
              const RenderTarget& target,
@@ -67,9 +66,6 @@ class SurfaceMTL final : public Surface {
              id<CAMetalDrawable> drawable,
              bool requires_blit,
              std::optional<IRect> clip_rect);
-
-  // |Surface|
-  bool Present() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceMTL);
 };

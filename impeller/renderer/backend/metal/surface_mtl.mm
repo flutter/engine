@@ -44,18 +44,22 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
     std::optional<IRect> clip_rect) {
   TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
 
-  ISize root_size = {static_cast<ISize::Type>(drawable.texture.width),
-                     static_cast<ISize::Type>(drawable.texture.height)};
-  bool requires_blit = ShouldPerformPartialRepaint(clip_rect, root_size);
+  bool requires_blit = ShouldPerformPartialRepaint(clip_rect);
   const auto color_format = FromMTLPixelFormat(drawable.texture.pixelFormat);
 
   if (color_format == PixelFormat::kUnknown) {
     VALIDATION_LOG << "Unknown drawable color format.";
     return nullptr;
   }
+  // compositor_context.cc will offset the rendering by the clip origin. Here we
+  // shrink to the size of the clip. This has the same effect as clipping the
+  // rendering but also creates smaller intermediate passes.
+  ISize root_size;
   if (requires_blit) {
-    root_size = ISize(clip_rect->size.width + clip_rect->origin.x,
-                      clip_rect->size.height + clip_rect->origin.y);
+    root_size = ISize(clip_rect->size.width, clip_rect->size.height);
+  } else {
+    root_size = {static_cast<ISize::Type>(drawable.texture.width),
+                 static_cast<ISize::Type>(drawable.texture.height)};
   }
 
   TextureDescriptor msaa_tex_desc;
@@ -83,6 +87,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   // Create color resolve texture.
   std::shared_ptr<Texture> resolve_tex;
   if (requires_blit) {
+    resolve_tex_desc.compression_type = CompressionType::kLossy;
     resolve_tex =
         context->GetResourceAllocator()->CreateTexture(resolve_tex_desc);
   } else {
@@ -153,18 +158,19 @@ SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
 // |Surface|
 SurfaceMTL::~SurfaceMTL() = default;
 
-// constexpr Scalar kPartiaRepaintThreshold = 1.0;
-
-bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect,
-                                             ISize texture_size) {
+bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect) {
+  // compositor_context.cc will conditionally disable partial repaint if the
+  // damage region is large. If that happened, then a nullopt damage rect
+  // will be provided here.
   if (!damage_rect.has_value()) {
     return false;
   }
+  // If the damage rect is 0 in at least one dimension, partial repaint isn't
+  // performed as we skip right to present.
+  if (damage_rect->size.width <= 0 || damage_rect->size.height <= 0) {
+    return false;
+  }
   return true;
-  // return ((damage_rect->size.width / texture_size.width <
-  //          kPartiaRepaintThreshold) ||
-  //         (damage_rect->size.height / texture_size.height <
-  //          kPartiaRepaintThreshold));
 }
 
 // |Surface|
@@ -186,7 +192,7 @@ bool SurfaceMTL::Present() const {
 
   auto blit_pass = command_buffer->CreateBlitPass();
   auto current = TextureMTL::Wrapper({}, drawable_.texture);
-  blit_pass->AddCopy(resolve_texture_, current, clip_rect_.value(),
+  blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
                      clip_rect_->origin);
   blit_pass->EncodeCommands(context_->GetResourceAllocator());
   if (!command_buffer->SubmitCommands()) {
