@@ -22,6 +22,8 @@
 
 namespace impeller {
 
+using FontGlyphPairRefVector = std::vector<std::reference_wrapper<const FontGlyphPair>>;
+
 std::unique_ptr<TextRenderContext> TextRenderContext::Create(
     std::shared_ptr<Context> context) {
   // There is only one backend today.
@@ -95,7 +97,7 @@ static size_t PairsFitInAtlasOfSize(
 
 static bool CanAppendToExistingAtlas(
     const std::shared_ptr<GlyphAtlas>& atlas,
-    const FontGlyphPair::Vector& extra_pairs,
+    const FontGlyphPairRefVector& extra_pairs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
     const std::shared_ptr<GrRectanizer>& rect_packer) {
@@ -318,7 +320,7 @@ static void DrawGlyph(SkCanvas* canvas,
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<SkBitmap>& bitmap,
-                              const FontGlyphPair::Vector& new_pairs) {
+                              const FontGlyphPairRefVector& new_pairs) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FML_DCHECK(bitmap != nullptr);
 
@@ -333,7 +335,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
-  for (const auto& pair : new_pairs) {
+  for (const FontGlyphPair& pair : new_pairs) {
     auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
       continue;
@@ -449,7 +451,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   if (!IsValid()) {
     return nullptr;
   }
-  auto last_atlas = atlas_context->GetGlyphAtlas();
+  std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
 
   // ---------------------------------------------------------------------------
   // Step 1: Collect unique font-glyph pairs in the frame.
@@ -465,10 +467,10 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 2: Determine if the atlas type and font glyph pairs are compatible
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  FontGlyphPair::Vector new_glyphs;
+  FontGlyphPairRefVector new_glyphs;
   for (const FontGlyphPair& pair : font_glyph_pairs) {
     if (!last_atlas->FindFontGlyphBounds(pair).has_value()) {
-      new_glyphs.emplace_back(std::move(pair));
+      new_glyphs.push_back(pair);
     }
   }
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
