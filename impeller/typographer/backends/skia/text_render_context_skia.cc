@@ -121,7 +121,7 @@ static bool CanAppendToExistingAtlas(
   FML_DCHECK(glyph_positions.size() == 0);
   glyph_positions.reserve(extra_pairs.size());
   for (size_t i = 0; i < extra_pairs.size(); i++) {
-    const auto& pair = extra_pairs[i];
+    const FontGlyphPair& pair = extra_pairs[i];
 
     const auto glyph_size =
         ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
@@ -474,7 +474,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 2: Determine if the atlas type and font glyph pairs are compatible
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  FontGlyphPair::Vector new_glyphs = last_atlas->HasSamePairs(font_glyph_pairs);
+  FontGlyphPair::Vector new_glyphs =
+      last_atlas->GrabNotPresentPairs(std::move(font_glyph_pairs));
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;
   }
