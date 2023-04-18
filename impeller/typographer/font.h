@@ -50,7 +50,7 @@ class Font : public Comparable<Font> {
 
   Font(std::shared_ptr<Typeface> typeface, Metrics metrics);
 
-  virtual ~Font();
+  ~Font();
 
   bool IsValid() const;
 

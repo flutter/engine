@@ -44,7 +44,7 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
   FontGlyphPair::Set set;
   while (const TextFrame* frame = frame_iterator()) {
     for (const TextRun& run : frame->GetRuns()) {
-      auto font = std::shared_ptr<Font>(new Font(run.GetFont()));
+      const Font& font = run.GetFont();
       // TODO(dnfield): If we're doing SDF here, we should be using a consistent
       // point size.
       // https://github.com/flutter/flutter/issues/112016
@@ -86,7 +86,7 @@ static size_t PairsFitInAtlasOfSize(
     const auto& pair = pairs[i];
 
     const auto glyph_size =
-        ISize::Ceil((pair.glyph.bounds * pair.font->GetMetrics().scale).size);
+        ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
     SkIPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -124,7 +124,7 @@ static bool CanAppendToExistingAtlas(
     const FontGlyphPair& pair = extra_pairs[i];
 
     const auto glyph_size =
-        ISize::Ceil((pair.glyph.bounds * pair.font->GetMetrics().scale).size);
+        ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
     SkIPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -296,13 +296,13 @@ static void DrawGlyph(SkCanvas* canvas,
                       const FontGlyphPair& font_glyph,
                       const Rect& location,
                       bool has_color) {
-  const auto& metrics = font_glyph.font->GetMetrics();
+  const auto& metrics = font_glyph.font.GetMetrics();
   const auto position = SkPoint::Make(location.origin.x / metrics.scale,
                                       location.origin.y / metrics.scale);
   SkGlyphID glyph_id = font_glyph.glyph.index;
 
   SkFont sk_font(
-      TypefaceSkia::Cast(*font_glyph.font->GetTypeface()).GetSkiaTypeface(),
+      TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
       metrics.point_size, metrics.scaleX, metrics.skewX);
   sk_font.setEdging(SkFont::Edging::kAntiAlias);
   sk_font.setHinting(SkFontHinting::kSlight);

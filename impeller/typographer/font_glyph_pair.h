@@ -26,18 +26,17 @@ struct FontGlyphPair {
   using Set = std::unordered_set<FontGlyphPair, Hash, Equal>;
   using Vector = std::vector<FontGlyphPair>;
 
-  std::shared_ptr<Font> font;
+  Font font;
   Glyph glyph;
 
   struct Hash {
     std::size_t operator()(const FontGlyphPair& p) const {
-      return fml::HashCombine(p.font->GetHash(), p.glyph.index, p.glyph.type);
+      return fml::HashCombine(p.font.GetHash(), p.glyph.index, p.glyph.type);
     }
   };
   struct Equal {
     bool operator()(const FontGlyphPair& lhs, const FontGlyphPair& rhs) const {
-      return lhs.font->IsEqual(*rhs.font) &&
-             lhs.glyph.index == rhs.glyph.index &&
+      return lhs.font.IsEqual(rhs.font) && lhs.glyph.index == rhs.glyph.index &&
              lhs.glyph.type == rhs.glyph.type;
     }
   };
