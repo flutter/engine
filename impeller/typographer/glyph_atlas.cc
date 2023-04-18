@@ -101,7 +101,7 @@ size_t GlyphAtlas::IterateGlyphs(
 }
 
 FontGlyphPair::Vector GlyphAtlas::GrabNotPresentPairs(
-    FontGlyphPair::Vector&& new_glyphs) {
+    FontGlyphPair::Vector&& new_glyphs) const {
   std::vector<FontGlyphPair> new_pairs;
   for (const FontGlyphPair& pair : new_glyphs) {
     if (positions_.find(pair) == positions_.end()) {

@@ -129,7 +129,7 @@ class GlyphAtlas {
   /// @return     A vector containing the glyphs from new_glyphs that are not
   ///             present in the existing atlas. May be empty of there are none.
   ///
-  FontGlyphPair::Vector GrabNotPresentPairs(FontGlyphPair::Vector&& new_glyphs);
+  FontGlyphPair::Vector GrabNotPresentPairs(FontGlyphPair::Vector&& new_glyphs) const;
 
  private:
   const Type type_;
