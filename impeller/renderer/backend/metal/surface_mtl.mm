@@ -17,7 +17,7 @@ namespace impeller {
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
 id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
-    std::shared_ptr<Context> context,
+    const std::shared_ptr<Context>& context,
     CAMetalLayer* layer) {
   TRACE_EVENT0("impeller", "SurfaceMTL::GetMetalDrawableAndValidate");
 
@@ -39,7 +39,7 @@ id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
 }
 
 std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
-    std::shared_ptr<Context> context,
+    const std::shared_ptr<Context>& context,
     id<CAMetalDrawable> drawable,
     std::optional<IRect> clip_rect) {
   TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
@@ -142,7 +142,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
                                                     requires_blit, clip_rect));
 }
 
-SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
+SurfaceMTL::SurfaceMTL(const std::shared_ptr<Context>& context,
                        const RenderTarget& target,
                        std::shared_ptr<Texture> resolve_texture,
                        id<CAMetalDrawable> drawable,
@@ -150,7 +150,7 @@ SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
                        std::optional<IRect> clip_rect)
     : Surface(target),
       context_(context),
-      resolve_texture_(resolve_texture),
+      resolve_texture_(std::move(resolve_texture)),
       drawable_(drawable),
       requires_blit_(requires_blit),
       clip_rect_(clip_rect) {}
