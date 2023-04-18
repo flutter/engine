@@ -40,7 +40,7 @@ class SurfaceMTL final : public Surface {
   static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
       std::shared_ptr<Context> context,
       id<CAMetalDrawable> drawable,
-      std::optional<IRect> clip_rect);
+      std::optional<IRect> clip_rect = std::nullopt);
 #pragma GCC diagnostic pop
 
   // |Surface|

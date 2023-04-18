@@ -7,7 +7,6 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
-#include <iostream>
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
