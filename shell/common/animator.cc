@@ -57,8 +57,8 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
       });
 }
 
-bool Animator::IsVsyncWaiterMajorCallbackComplete() {
-  return waiter_->IsMajorCallbackComplete();
+const VsyncWaiterProcessStage& Animator::GetVsyncWaiterProcessStage() {
+  return waiter_->GetProcessStage();
 }
 
 void Animator::BeginFrame(

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/shell/common/vsync_waiter.h"
 #include "fml/closure.h"
 #include "fml/macros.h"
 #include "fml/memory/weak_ptr.h"
@@ -22,12 +23,20 @@ class ViewportMetricsUpdater {
     /// Actually update the metrics data using Engine's `runtime_controller_`.
     virtual void DoUpdateViewportMetrics(const ViewportMetrics& metrics) = 0;
 
-    /// Return the value that indicates whether major process callback added by
-    /// vsync is complete to process.
-    virtual bool IsVsyncWaiterMajorCallbackComplete() = 0;
+    /// Get current process stage of current vsync waiter. And updater will use
+    /// different strategies to update the viewport metrics data to receiver.
+    virtual const VsyncWaiterProcessStage& GetVsyncWaiterProcessStage() = 0;
 
     /// Post a task to UI TaskRunner.
     virtual void PostTaskOnUITaskRunner(const fml::closure& callback) = 0;
+
+    virtual TaskRunners GetTaskRunner() = 0;
+
+    /// Schedule secondary vsync callback to execute after the main vsync
+    /// process callback.
+    virtual void ScheduleSecondaryVsyncCallback(
+        uintptr_t id,
+        const fml::closure& callback) = 0;
   };
 
   explicit ViewportMetricsUpdater(Delegate& delegate);

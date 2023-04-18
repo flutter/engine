@@ -16,6 +16,13 @@
 
 namespace flutter {
 
+/// A Enum using for indicating the vsync waiter's current process stage.
+enum VsyncWaiterProcessStage {
+  kAwaiting,
+  kProcessing,
+  kProcessingComplete,
+};
+
 /// Abstract Base Class that represents a platform specific mechanism for
 /// getting callbacks when a vsync event happens.
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
@@ -35,6 +42,11 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
   /// |Animator::ScheduleMaybeClearTraceFlowIds|.
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
+
+  /// Get current stage.
+  ///
+  /// See also |VsyncWaiterProcessStage|
+  const VsyncWaiterProcessStage& GetProcessStage();
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
@@ -79,8 +91,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
-  bool major_callback_complete_ = false;
-
+  VsyncWaiterProcessStage stage_ = VsyncWaiterProcessStage::kProcessingComplete;
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
 

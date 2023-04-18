@@ -790,7 +790,7 @@ class Engine final : public RuntimeDelegate,
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
 
-  // |PointerDataDispatcher::Delegate|
+  // |PointerDataDispatcher::Delegate|, |ViewportMetricsUpdater::Delegate|
   void ScheduleSecondaryVsyncCallback(uintptr_t id,
                                       const fml::closure& callback) override;
 
@@ -798,7 +798,10 @@ class Engine final : public RuntimeDelegate,
   void DoUpdateViewportMetrics(const ViewportMetrics& metrics) override;
 
   // |ViewportMetricsUpdater::Delegate|
-  bool IsVsyncWaiterMajorCallbackComplete() override;
+  const VsyncWaiterProcessStage& GetVsyncWaiterProcessStage() override;
+
+  // |ViewportMetricsUpdater::Delegate|
+  TaskRunners GetTaskRunner() override;
 
   // |ViewportMetricsUpdater::Delegate|
   void PostTaskOnUITaskRunner(const fml::closure& callback) override;

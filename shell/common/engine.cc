@@ -293,8 +293,12 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   viewport_metrics_updater_->UpdateViewportMetrics(metrics);
 }
 
-bool Engine::IsVsyncWaiterMajorCallbackComplete() {
-  return animator_->IsVsyncWaiterMajorCallbackComplete();
+const VsyncWaiterProcessStage& Engine::GetVsyncWaiterProcessStage() {
+  return animator_->GetVsyncWaiterProcessStage();
+}
+
+TaskRunners Engine::GetTaskRunner() {
+  return task_runners_;
 }
 
 void Engine::PostTaskOnUITaskRunner(const fml::closure& callback) {
