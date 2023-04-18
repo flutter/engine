@@ -18,8 +18,8 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
-#include "rapidjson/document.h"
 #include "flutter/shell/common/viewport_metrics_updater.h"
+#include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
 namespace flutter {
