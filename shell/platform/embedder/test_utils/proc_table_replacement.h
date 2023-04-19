@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#pragma once
+
 #include "flutter/shell/platform/embedder/embedder.h"
 
 // Wraps capturing lambas with non-capturing version that can be assigned to
