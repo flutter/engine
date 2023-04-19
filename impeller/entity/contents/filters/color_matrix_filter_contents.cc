@@ -49,7 +49,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
   //----------------------------------------------------------------------------
   /// Create AnonymousContents for rendering.
   ///
-  RenderProc render_proc = [input_snapshot, color_matrix = matrix_, coverage,
+  RenderProc render_proc = [input_snapshot, color_matrix = matrix_,
                             absorb_opacity = GetAbsorbOpacity()](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
@@ -60,27 +60,24 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
 
+    auto size = input_snapshot->texture->GetSize();
+
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {coverage.origin, Point(0, 0)},
-        {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         Point(1, 0)},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
-        {coverage.origin, Point(0, 0)},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         Point(1, 1)},
-        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         Point(0, 1)},
+        {Point(0, 0)},
+        {Point(size.width, 0)},
+        {Point(size.width, size.height)},
+        {Point(0, 0)},
+        {Point(size.width, size.height)},
+        {Point(0, size.height)},
     });
     auto& host_buffer = pass.GetTransientsBuffer();
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
     cmd.BindVertices(vtx_buffer);
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation() * input_snapshot->transform;
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
@@ -107,7 +104,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage;
+    return coverage.TransformBounds(entity.GetTransformation());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
