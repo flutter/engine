@@ -190,6 +190,10 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   const auto& image = src.GetImage();
   const auto& cmd = encoder.GetCommandBuffer();
 
+  if (!encoder.Track(texture)) {
+    return false;
+  }
+
   // Transition the base mip level to transfer-src layout so we can read from
   // it and transition the rest to dst-optimal since they are going to be
   // written to.
