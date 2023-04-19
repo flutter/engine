@@ -442,7 +442,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -460,7 +461,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(entity.GetTransformation());
 
   return sub_entity;
 }
