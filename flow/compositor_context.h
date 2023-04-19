@@ -149,6 +149,15 @@ class CompositorContext {
                                 FrameDamage* frame_damage);
 
    private:
+    void PaintLayerTreeSkia(flutter::LayerTree& layer_tree,
+                            std::optional<SkRect> clip_rect,
+                            bool needs_save_layer,
+                            bool ignore_raster_cache);
+
+    void PaintLayerTreeImpeller(flutter::LayerTree& layer_tree,
+                                std::optional<SkRect> clip_rect,
+                                bool ignore_raster_cache);
+
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     DlCanvas* canvas_;
@@ -210,10 +219,9 @@ class CompositorContext {
 
   void EndFrame(ScopedFrame& frame, bool enable_instrumentation);
 
-  /// @brief  If the damage rect is larger than a fixed percentage of the
-  ///         screen. This is used to determine whether or not the additional
-  ///         blit pass required by partial repaint is worthwhile.
-  ///         This is only used for impeller.
+  /// @brief  Whether Impeller shouild attempt a partial repaint.
+  ///         The Impeller backend requires an additional blit pass, which may
+  ///         not be worthwhile if the damage region is large.
   static bool ShouldPerformPartialRepaint(std::optional<SkRect> damage_rect,
                                           SkISize layer_tree_size);
 

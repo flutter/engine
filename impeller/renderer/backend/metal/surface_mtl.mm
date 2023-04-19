@@ -189,7 +189,6 @@ bool SurfaceMTL::Present() const {
   if (!command_buffer) {
     return false;
   }
-
   auto blit_pass = command_buffer->CreateBlitPass();
   auto current = TextureMTL::Wrapper({}, drawable_.texture);
   blit_pass->AddCopy(resolve_texture_, current, std::nullopt,

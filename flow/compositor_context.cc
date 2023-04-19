@@ -153,31 +153,50 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     return RasterStatus::kSkipAndRetry;
   }
 
+  if (aiks_context_) {
+    PaintLayerTreeImpeller(layer_tree, clip_rect, ignore_raster_cache);
+  } else {
+    PaintLayerTreeSkia(layer_tree, clip_rect, needs_save_layer,
+                       ignore_raster_cache);
+  }
+  return RasterStatus::kSuccess;
+}
+
+void CompositorContext::ScopedFrame::PaintLayerTreeSkia(
+    flutter::LayerTree& layer_tree,
+    std::optional<SkRect> clip_rect,
+    bool needs_save_layer,
+    bool ignore_raster_cache) {
   DlAutoCanvasRestore restore(canvas(), clip_rect.has_value());
 
   if (canvas()) {
-    if (aiks_context_) {
-      if (clip_rect) {
-        canvas()->Translate(-clip_rect->x(), -clip_rect->y());
-      }
-    } else {
-      if (clip_rect) {
-        canvas()->ClipRect(*clip_rect);
-      }
-
-      if (needs_save_layer) {
-        TRACE_EVENT0("flutter", "Canvas::saveLayer");
-        SkRect bounds = SkRect::Make(layer_tree.frame_size());
-        DlPaint paint;
-        paint.setBlendMode(DlBlendMode::kSrc);
-        canvas()->SaveLayer(&bounds, &paint);
-      }
-      canvas()->Clear(DlColor::kTransparent());
+    if (clip_rect) {
+      canvas()->ClipRect(*clip_rect);
     }
+
+    if (needs_save_layer) {
+      TRACE_EVENT0("flutter", "Canvas::saveLayer");
+      SkRect bounds = SkRect::Make(layer_tree.frame_size());
+      DlPaint paint;
+      paint.setBlendMode(DlBlendMode::kSrc);
+      canvas()->SaveLayer(&bounds, &paint);
+    }
+    canvas()->Clear(DlColor::kTransparent());
   }
-  layer_tree.Paint(*this, ignore_raster_cache);
+
   // The canvas()->Restore() is taken care of by the DlAutoCanvasRestore
-  return RasterStatus::kSuccess;
+  layer_tree.Paint(*this, ignore_raster_cache);
+}
+
+void CompositorContext::ScopedFrame::PaintLayerTreeImpeller(
+    flutter::LayerTree& layer_tree,
+    std::optional<SkRect> clip_rect,
+    bool ignore_raster_cache) {
+  if (canvas() && clip_rect) {
+    canvas()->Translate(-clip_rect->x(), -clip_rect->y());
+  }
+
+  layer_tree.Paint(*this, ignore_raster_cache);
 }
 
 constexpr float kImpellerRepaintRatio = 0.7f;

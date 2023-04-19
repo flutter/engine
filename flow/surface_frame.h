@@ -81,6 +81,8 @@ class SurfaceFrame {
     // that can be passed to the platform to drop queued frames.
     std::optional<fml::TimePoint> presentation_time;
 
+    // The clip rect applied to the layer tree for partial repaint. This is
+    // used by the Impeller backend to determine the correct blit command.
     std::optional<SkRect> clip_rect;
   };
 
