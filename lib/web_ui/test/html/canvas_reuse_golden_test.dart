@@ -9,8 +9,6 @@ import 'package:ui/ui.dart' hide TextStyle;
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../common/test_embedding.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -25,7 +23,7 @@ Future<void> testMain() async {
     ..color = const Color(0xFFFF00FF);
 
   setUp(() async {
-    setUpTestEnvironment();
+    debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
     await renderer.fontCollection.debugDownloadTestFonts();
     renderer.fontCollection.registerDownloadedFonts();

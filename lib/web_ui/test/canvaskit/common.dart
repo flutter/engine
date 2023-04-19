@@ -11,8 +11,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../common/fake_asset_manager.dart';
-
 /// Used in tests instead of [ProductionCollector] to control Skia object
 /// collection explicitly, and to prevent leaks across tests.
 ///
@@ -27,8 +25,7 @@ void setUpCanvasKitTest() {
     expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
     debugDisableFontFallbacks = false;
-    setUpStandardMocks(fakeAssetManager);
-    await initializeEngine(assetManager: fakeAssetManager);
+    await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
 
   setUp(() async {

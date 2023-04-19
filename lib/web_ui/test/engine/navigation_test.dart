@@ -9,8 +9,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 
-import '../common/test_embedding.dart';
-
 const engine.MethodCodec codec = engine.JSONMethodCodec();
 
 void emptyCallback(ByteData date) {}
@@ -20,10 +18,10 @@ void main() {
 }
 
 void testMain() {
-  TestUrlStrategy? strategy;
+  engine.TestUrlStrategy? strategy;
 
   setUp(() async {
-    strategy = TestUrlStrategy();
+    strategy = engine.TestUrlStrategy();
     await engine.window.debugInitializeHistory(strategy, useSingle: true);
   });
 

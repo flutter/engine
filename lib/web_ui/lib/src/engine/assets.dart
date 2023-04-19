@@ -110,3 +110,79 @@ class AssetManager {
     return (await response.payload.asByteBuffer()).asByteData();
   }
 }
+
+/// An asset manager that gives fake empty responses for assets.
+class WebOnlyMockAssetManager extends AssetManager {
+  /// Mock asset directory relative to base url.
+  String defaultAssetsDir = '';
+
+  /// Mock empty asset manifest.
+  String defaultAssetManifest = '{}';
+
+  /// Mock font manifest overridable for unit testing.
+  String defaultFontManifest = '''
+  [
+   {
+      "family":"$robotoFontFamily",
+      "fonts":[{"asset":"$robotoTestFontUrl"}]
+   },
+   {
+      "family":"$ahemFontFamily",
+      "fonts":[{"asset":"$ahemFontUrl"}]
+   }
+  ]''';
+
+  @override
+  String get assetsDir => defaultAssetsDir;
+
+  @override
+  String getAssetUrl(String asset) => asset;
+
+  @override
+  Future<HttpFetchResponse> loadAsset(String asset) async {
+    if (asset == getAssetUrl('AssetManifest.json')) {
+      return MockHttpFetchResponse(
+        url: asset,
+        status: 200,
+        payload: MockHttpFetchPayload(
+          byteBuffer: _toByteData(utf8.encode(defaultAssetManifest)).buffer,
+        ),
+      );
+    }
+    if (asset == getAssetUrl('FontManifest.json')) {
+      return MockHttpFetchResponse(
+        url: asset,
+        status: 200,
+        payload: MockHttpFetchPayload(
+          byteBuffer: _toByteData(utf8.encode(defaultFontManifest)).buffer,
+        ),
+      );
+    }
+
+    return MockHttpFetchResponse(
+      url: asset,
+      status: 404,
+    );
+  }
+
+  @override
+  Future<ByteData> load(String asset) {
+    if (asset == getAssetUrl('AssetManifest.json')) {
+      return Future<ByteData>.value(
+          _toByteData(utf8.encode(defaultAssetManifest)));
+    }
+    if (asset == getAssetUrl('FontManifest.json')) {
+      return Future<ByteData>.value(
+          _toByteData(utf8.encode(defaultFontManifest)));
+    }
+    throw HttpFetchNoPayloadError(asset, status: 404);
+  }
+
+  ByteData _toByteData(List<int> bytes) {
+    final ByteData byteData = ByteData(bytes.length);
+    for (int i = 0; i < bytes.length; i++) {
+      byteData.setUint8(i, bytes[i]);
+    }
+    return byteData;
+  }
+}

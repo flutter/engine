@@ -8,7 +8,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import '../common/mock_engine_canvas.dart';
-import '../common/test_embedding.dart';
 import '../html/screenshot.dart';
 
 void main() {
@@ -16,7 +15,7 @@ void main() {
 }
 
 void testMain() {
-  setUpTestEnvironment();
+  debugEmulateFlutterTesterEnvironment = true;
   setUpStableTestFonts();
 
   late RecordingCanvas underTest;

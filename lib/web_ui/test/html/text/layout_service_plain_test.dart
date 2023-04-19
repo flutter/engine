@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../common/test_embedding.dart';
 import '../paragraph/helper.dart';
 import 'layout_service_helper.dart';
 

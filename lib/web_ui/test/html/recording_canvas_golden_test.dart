@@ -12,7 +12,6 @@ import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../common/matchers.dart';
-import '../common/test_embedding.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -21,7 +20,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpAll(() async {
-    setUpTestEnvironment();
+    debugEmulateFlutterTesterEnvironment = true;
   });
 
   setUpStableTestFonts();

@@ -20,6 +20,7 @@ import 'navigation/js_url_strategy.dart';
 import 'navigation/url_strategy.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
+import 'test_embedding.dart';
 import 'util.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
@@ -349,13 +350,10 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 @JS('_flutter_web_set_location_strategy')
 external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
-ui_web.UrlStrategy? debugDefaultUrlStrategy;
-
 ui_web.UrlStrategy? _createDefaultUrlStrategy() {
-  if (ui.debugEmulateFlutterTesterEnvironment && debugDefaultUrlStrategy != null) {
-    return debugDefaultUrlStrategy;
-  }
-  return const HashUrlStrategy();
+  return ui.debugEmulateFlutterTesterEnvironment
+      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
+      : const HashUrlStrategy();
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].

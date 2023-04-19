@@ -150,6 +150,7 @@ export 'engine/services/serialization.dart';
 export 'engine/shader_data.dart';
 export 'engine/shadow.dart';
 export 'engine/svg.dart';
+export 'engine/test_embedding.dart';
 export 'engine/text/canvas_paragraph.dart';
 export 'engine/text/font_collection.dart';
 export 'engine/text/fragmenter.dart';

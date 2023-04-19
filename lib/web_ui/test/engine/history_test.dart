@@ -15,9 +15,9 @@ import 'package:ui/src/engine.dart' show DomEventListener, window;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
+import 'package:ui/src/engine/test_embedding.dart';
 
 import '../common/spy.dart';
-import '../common/test_embedding.dart';
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
   return <String, dynamic>{'origin': true, 'state': state};

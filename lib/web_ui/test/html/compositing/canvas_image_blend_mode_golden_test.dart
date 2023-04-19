@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
-import '../../common/test_embedding.dart';
 import '../screenshot.dart';
 import '../testimage.dart';
 
@@ -19,7 +18,7 @@ SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
   setUpAll(() async {
-    setUpTestEnvironment();
+    debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
     await renderer.fontCollection.debugDownloadTestFonts();
     renderer.fontCollection.registerDownloadedFonts();

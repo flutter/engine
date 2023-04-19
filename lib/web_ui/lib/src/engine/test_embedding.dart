@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(yjbanov): this does not need to be in the production sources.
+//                https://github.com/flutter/flutter/issues/100394
+
 import 'dart:async';
 
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'fake_asset_manager.dart';
+import '../engine.dart';
 
 Future<void>? _platformInitializedFuture;
 
@@ -23,19 +25,14 @@ Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) 
   window.webOnlyDebugPhysicalSizeOverride =
       ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
   scheduleFrameCallback = () {};
-  setUpTestEnvironment();
+  ui.debugEmulateFlutterTesterEnvironment = true;
 
   // Initialize platform once and reuse across all tests.
   if (_platformInitializedFuture != null) {
     return _platformInitializedFuture!;
   }
-  setUpStandardMocks(fakeAssetManager);
-  return _platformInitializedFuture = initializeEngine(assetManager: fakeAssetManager);
-}
-
-void setUpTestEnvironment() {
-  ui.debugEmulateFlutterTesterEnvironment = true;
-  debugDefaultUrlStrategy = TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'));
+  return _platformInitializedFuture =
+      initializeEngine(assetManager: WebOnlyMockAssetManager());
 }
 
 const bool _debugLogHistoryActions = false;

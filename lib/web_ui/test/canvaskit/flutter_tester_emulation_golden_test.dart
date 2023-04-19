@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../common/test_embedding.dart';
 import 'common.dart';
 
 void main() {
@@ -17,7 +16,7 @@ void main() {
 const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 void testMain() {
-  setUpTestEnvironment();
+  ui.debugEmulateFlutterTesterEnvironment = true;
 
   group('flutter_tester emulation', () {
     setUpCanvasKitTest();
