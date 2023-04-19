@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/display_list/dl_image_impeller.h"
 
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -31,7 +31,8 @@ sk_sp<DlImageImpeller> DlImageImpeller::MakeFromYUVTextures(
   impeller::Entity entity;
   entity.SetBlendMode(impeller::BlendMode::kSource);
   auto snapshot = yuv_to_rgb_filter_contents->RenderToSnapshot(
-      aiks_context->GetContentContext(), entity);
+      aiks_context->GetContentContext(), entity, std::nullopt, true,
+      "MakeYUVToRGBFilter Snapshot");
   return impeller::DlImageImpeller::Make(snapshot->texture);
 }
 
