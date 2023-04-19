@@ -38,7 +38,7 @@ class SurfaceMTL final : public Surface {
       CAMetalLayer* layer);
 
   static std::unique_ptr<SurfaceMTL> WrapCurrentMetalLayerDrawable(
-      const std::shared_ptr<Context>& context,
+      const std::shared_ptr<Context> context,
       id<CAMetalDrawable> drawable,
       std::optional<IRect> clip_rect = std::nullopt);
 #pragma GCC diagnostic pop
@@ -52,7 +52,7 @@ class SurfaceMTL final : public Surface {
   bool Present() const override;
 
  private:
-  const std::shared_ptr<Context>& context_;
+  const std::shared_ptr<Context> context_;
   std::shared_ptr<Texture> resolve_texture_;
   id<CAMetalDrawable> drawable_ = nil;
   bool requires_blit_ = false;
@@ -60,7 +60,7 @@ class SurfaceMTL final : public Surface {
 
   static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 
-  SurfaceMTL(const std::shared_ptr<Context>& context,
+  SurfaceMTL(const std::shared_ptr<Context> context,
              const RenderTarget& target,
              std::shared_ptr<Texture> resolve_texture,
              id<CAMetalDrawable> drawable,

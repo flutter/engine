@@ -39,7 +39,7 @@ id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
 }
 
 std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
-    const std::shared_ptr<Context>& context,
+    const std::shared_ptr<Context> context,
     id<CAMetalDrawable> drawable,
     std::optional<IRect> clip_rect) {
   TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
@@ -137,19 +137,19 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   render_target_desc.SetStencilAttachment(stencil0);
 
   // The constructor is private. So make_unique may not be used.
-  return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(context, render_target_desc,
-                                                    resolve_tex, drawable,
-                                                    requires_blit, clip_rect));
+  return std::unique_ptr<SurfaceMTL>(
+      new SurfaceMTL(std::move(context), render_target_desc, resolve_tex,
+                     drawable, requires_blit, clip_rect));
 }
 
-SurfaceMTL::SurfaceMTL(const std::shared_ptr<Context>& context,
+SurfaceMTL::SurfaceMTL(const std::shared_ptr<Context> context,
                        const RenderTarget& target,
                        std::shared_ptr<Texture> resolve_texture,
                        id<CAMetalDrawable> drawable,
                        bool requires_blit,
                        std::optional<IRect> clip_rect)
     : Surface(target),
-      context_(context),
+      context_(std::move(context)),
       resolve_texture_(std::move(resolve_texture)),
       drawable_(drawable),
       requires_blit_(requires_blit),
