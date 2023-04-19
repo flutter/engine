@@ -2308,6 +2308,8 @@
 ../../../third_party/libpng/aclocal.m4
 ../../../third_party/libpng/contrib
 ../../../third_party/libpng/libpng-manual.txt
+../../../third_party/libpng/libpng.3
+../../../third_party/libpng/libpngpf.3
 ../../../third_party/libpng/mips
 ../../../third_party/libpng/png.5
 ../../../third_party/libpng/powerpc
