@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLOW_TESTING_MOCK_TEXTURE_H_
+#define FLOW_TESTING_MOCK_TEXTURE_H_
 
 #include <ostream>
 #include <vector>
@@ -59,3 +60,5 @@ extern std::ostream& operator<<(std::ostream& os,
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif  // FLOW_TESTING_MOCK_TEXTURE_H_

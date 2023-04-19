@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_SHELL_DIFF_CONTEXT_TEST_H_
+#define FLUTTER_SHELL_DIFF_CONTEXT_TEST_H_
 
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -68,3 +69,5 @@ class DiffContextTest : public LayerTest {
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif  // FLUTTER_SHELL_DIFF_CONTEXT_TEST_H_
