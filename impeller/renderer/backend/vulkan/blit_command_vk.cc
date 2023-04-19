@@ -29,6 +29,10 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
   const auto& src = TextureVK::Cast(*source);
   const auto& dst = TextureVK::Cast(*destination);
 
+  if (!encoder.Track(source) || !encoder.Track(destination)) {
+    return false;
+  }
+
   LayoutTransition src_tran;
   src_tran.cmd_buffer = cmd_buffer;
   src_tran.new_layout = vk::ImageLayout::eTransferSrcOptimal;
@@ -95,6 +99,10 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   // cast source and destination to TextureVK
   const auto& src = TextureVK::Cast(*source);
+
+  if (!encoder.Track(source)) {
+    return false;
+  }
 
   LayoutTransition transition;
   transition.cmd_buffer = cmd_buffer;
