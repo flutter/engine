@@ -2023,6 +2023,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/vertices.d
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text/font_collection.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text/fragmenter.dart + ../../../flutter/LICENSE
@@ -4624,6 +4625,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/vertices.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/font_collection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/fragmenter.dart
