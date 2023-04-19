@@ -975,6 +975,7 @@ class Engine final : public RuntimeDelegate,
   const std::unique_ptr<ImageDecoder> image_decoder_;
   ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
+  bool has_set_valid_viewport_metrics_ = false;
   fml::WeakPtrFactory<Engine> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };
