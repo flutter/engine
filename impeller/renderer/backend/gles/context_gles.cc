@@ -65,6 +65,7 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             .SetHasThreadingRestrictions(true)
             .SetSupportsOffscreenMSAA(false)
             .SetSupportsSSBO(false)
+            .SetSupportsBufferToTextureBlits(false)
             .SetSupportsTextureToTextureBlits(
                 reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
             .SetSupportsFramebufferFetch(false)
@@ -102,6 +103,11 @@ bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
 
 bool ContextGLES::IsValid() const {
   return is_valid_;
+}
+
+// |Context|
+std::string ContextGLES::DescribeGpuModel() const {
+  return reactor_->GetProcTable().GetDescription()->GetString();
 }
 
 // |Context|
