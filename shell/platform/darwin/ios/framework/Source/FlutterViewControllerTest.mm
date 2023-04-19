@@ -200,7 +200,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   // Expect the updateViewportMetrics will invoke after some time.
   XCTestExpectation* expectation = [self expectationWithDescription:@"delay update viewport"];
-  OCMStub([viewControllerMock updateViewportMetrics]).andDo(^(NSInvocation* invocation) {
+  OCMStub([viewControllerMock updateViewportMetricsIfNeeded]).andDo(^(NSInvocation* invocation) {
     [expectation fulfill];
   });
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
