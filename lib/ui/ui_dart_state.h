@@ -11,7 +11,6 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -153,24 +152,11 @@ class UIDartState : public tonic::DartState {
   // @param[in]  message  The message to be logged.
   void LogMessage(const std::string& tag, const std::string& message) const;
 
-  bool enable_skparagraph() const;
-
-  template <class T>
-  static flutter::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
-    if (!object) {
-      return {};
-    }
-    auto* state = UIDartState::Current();
-    FML_DCHECK(state);
-    auto queue = state->GetSkiaUnrefQueue();
-    return {std::move(object), std::move(queue)};
-  };
-
   UnhandledExceptionCallback unhandled_exception_callback() const {
     return unhandled_exception_callback_;
   }
 
-  /// Returns a enumeration that that uniquely represents this root isolate.
+  /// Returns a enumeration that uniquely represents this root isolate.
   /// Returns `0` if called from a non-root isolate.
   int64_t GetRootIsolateToken() const;
 
@@ -185,7 +171,6 @@ class UIDartState : public tonic::DartState {
               LogMessageCallback log_message_callback,
               std::shared_ptr<IsolateNameServer> isolate_name_server,
               bool is_root_isolate_,
-              bool enable_skparagraph,
               const UIDartState::Context& context);
 
   ~UIDartState() override;
@@ -210,7 +195,6 @@ class UIDartState : public tonic::DartState {
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
-  const bool enable_skparagraph_;
   UIDartState::Context context_;
 
   void AddOrRemoveTaskObserver(bool add);

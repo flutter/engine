@@ -9,6 +9,8 @@
 
 #include <chrono>
 
+#include "flutter/fml/macros.h"
+
 namespace flutter {
 
 // A test utility class providing the ability to access and alter various
@@ -60,8 +62,18 @@ class EngineModifier {
   // engine unless overwritten again.
   void ReleaseSurfaceManager() { engine_->surface_manager_.release(); }
 
+  // Run the FlutterWindowsEngine's handler that runs right before an engine
+  // restart. This resets the keyboard's state if it exists.
+  void Restart() { engine_->OnPreEngineRestart(); }
+
+  void SetLifecycleManager(std::unique_ptr<WindowsLifecycleManager>&& handler) {
+    engine_->lifecycle_manager_ = std::move(handler);
+  }
+
  private:
   FlutterWindowsEngine* engine_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(EngineModifier);
 };
 
 }  // namespace flutter

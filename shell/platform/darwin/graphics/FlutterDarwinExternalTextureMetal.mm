@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "impeller/base/validation.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkYUVAInfo.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -53,7 +55,7 @@ FLUTTER_ASSERT_ARC
 - (void)paintContext:(flutter::Texture::PaintContext&)context
               bounds:(const SkRect&)bounds
               freeze:(BOOL)freeze
-            sampling:(const SkSamplingOptions&)sampling {
+            sampling:(const flutter::DlImageSampling)sampling {
   const bool needsUpdatedTexture = (!freeze && _textureFrameAvailable) || !_externalImage;
 
   if (needsUpdatedTexture) {
@@ -61,25 +63,12 @@ FLUTTER_ASSERT_ARC
   }
 
   if (_externalImage) {
-    if (_enableImpeller) {
-      context.builder->drawImageRect(
-          _externalImage,                                       // image
-          SkRect::Make(_externalImage->bounds()),               // source rect
-          bounds,                                               // destination rect
-          flutter::ToDl(sampling),                              // sampling
-          context.dl_paint,                                     // paint
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
-      );
-      return;
-    }
-
-    context.canvas->drawImageRect(
-        _externalImage->skia_image(),                         // image
-        SkRect::Make(_externalImage->bounds()),               // source rect
-        bounds,                                               // destination rect
-        sampling,                                             // sampling
-        context.sk_paint,                                     // paint
-        SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
+    context.canvas->DrawImageRect(_externalImage,                                // image
+                                  SkRect::Make(_externalImage->bounds()),        // source rect
+                                  bounds,                                        // destination rect
+                                  sampling,                                      // sampling
+                                  context.paint,                                 // paint
+                                  flutter::DlCanvas::SrcRectConstraint::kStrict  // enforce edges
     );
   }
 }
@@ -238,6 +227,7 @@ FLUTTER_ASSERT_ARC
     return nullptr;
   }
 
+  // This image should not escape local use by this flutter::Texture implementation
   return flutter::DlImage::Make(skImage);
 }
 
@@ -283,6 +273,8 @@ FLUTTER_ASSERT_ARC
   if (!skImage) {
     return nullptr;
   }
+
+  // This image should not escape local use by this flutter::Texture implementation
   return flutter::DlImage::Make(skImage);
 }
 
@@ -317,8 +309,9 @@ FLUTTER_ASSERT_ARC
   GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
                                             kTopLeft_GrSurfaceOrigin);
 
-  return SkImage::MakeFromYUVATextures(grContext, yuvaBackendTextures, /*imageColorSpace=*/nullptr,
-                                       /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
+  return SkImages::TextureFromYUVATextures(grContext, yuvaBackendTextures,
+                                           /*imageColorSpace=*/nullptr,
+                                           /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
 }
 
 + (sk_sp<SkImage>)wrapRGBATexture:(id<MTLTexture>)rgbaTex
@@ -333,9 +326,9 @@ FLUTTER_ASSERT_ARC
                                       /*mipMapped=*/GrMipMapped ::kNo,
                                       /*textureInfo=*/skiaTextureInfo);
 
-  return SkImage::MakeFromTexture(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
-                                  kBGRA_8888_SkColorType, kPremul_SkAlphaType,
-                                  /*imageColorSpace=*/nullptr, /*releaseProc*/ nullptr,
-                                  /*releaseContext*/ nullptr);
+  return SkImages::BorrowTextureFrom(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
+                                     kBGRA_8888_SkColorType, kPremul_SkAlphaType,
+                                     /*imageColorSpace=*/nullptr, /*releaseProc*/ nullptr,
+                                     /*releaseContext*/ nullptr);
 }
 @end

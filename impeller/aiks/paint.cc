@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/paint.h"
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/geometry.h"
 
@@ -27,36 +28,35 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
 
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
     std::unique_ptr<Geometry> geometry) const {
-  if (color_source.has_value()) {
-    auto& source = color_source.value();
-    auto contents = source();
-    contents->SetGeometry(std::move(geometry));
-    contents->SetAlpha(color.alpha);
-    return contents;
-  }
-  auto solid_color = std::make_shared<SolidColorContents>();
-  solid_color->SetGeometry(std::move(geometry));
-  solid_color->SetColor(color);
-  return solid_color;
+  auto contents = color_source.GetContents(*this);
+  contents->SetGeometry(std::move(geometry));
+  return contents;
+}
+
+std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
+    const std::shared_ptr<Geometry>& geometry) const {
+  auto contents = color_source.GetContents(*this);
+  contents->SetGeometry(geometry);
+  return contents;
 }
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input,
-    std::optional<bool> is_solid_color,
-    const Matrix& effect_transform) const {
-  bool is_solid_color_val = is_solid_color.value_or(!color_source);
-  input = WithColorFilter(input);
-  input = WithMaskBlur(input, is_solid_color_val, effect_transform);
-  input = WithImageFilter(input, effect_transform);
+    std::optional<bool> is_solid_color) const {
+  bool is_solid_color_val = is_solid_color.value_or(color_source.GetType() ==
+                                                    ColorSource::Type::kColor);
+  input = WithColorFilter(input, /*absorb_opacity=*/true);
+  input = WithInvertFilter(input);
+  input = WithMaskBlur(input, is_solid_color_val, Matrix());
+  input = WithImageFilter(input, Matrix(), /*is_subpass=*/false);
   return input;
 }
 
 std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
-  input = WithMaskBlur(input, false, effect_transform);
-  input = WithImageFilter(input, effect_transform);
-  input = WithColorFilter(input, /**absorb_opacity=*/true);
+  input = WithImageFilter(input, effect_transform, /*is_subpass=*/true);
+  input = WithColorFilter(input, /*absorb_opacity=*/true);
   return input;
 }
 
@@ -73,10 +73,11 @@ std::shared_ptr<Contents> Paint::WithMaskBlur(
 
 std::shared_ptr<Contents> Paint::WithImageFilter(
     std::shared_ptr<Contents> input,
-    const Matrix& effect_transform) const {
+    const Matrix& effect_transform,
+    bool is_subpass) const {
   if (image_filter.has_value()) {
     const ImageFilterProc& filter = image_filter.value();
-    input = filter(FilterInput::Make(input), effect_transform);
+    input = filter(FilterInput::Make(input), effect_transform, is_subpass);
   }
   return input;
 }
@@ -84,6 +85,11 @@ std::shared_ptr<Contents> Paint::WithImageFilter(
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
     bool absorb_opacity) const {
+  // Image input types will directly set their color filter,
+  // if any. See `TiledTextureContents.SetColorFilter`.
+  if (color_source.GetType() == ColorSource::Type::kImage) {
+    return input;
+  }
   if (color_filter.has_value()) {
     const ColorFilterProc& filter = color_filter.value();
     auto color_filter_contents = filter(FilterInput::Make(input));
@@ -93,6 +99,28 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     input = color_filter_contents;
   }
   return input;
+}
+
+/// A color matrix which inverts colors.
+// clang-format off
+constexpr ColorFilterContents::ColorMatrix kColorInversion = {
+  .array = {
+    -1.0,    0,    0, 1.0, 0, //
+       0, -1.0,    0, 1.0, 0, //
+       0,    0, -1.0, 1.0, 0, //
+     1.0,  1.0,  1.0, 1.0, 0  //
+  }
+};
+// clang-format on
+
+std::shared_ptr<Contents> Paint::WithInvertFilter(
+    std::shared_ptr<Contents> input) const {
+  if (!invert_colors) {
+    return input;
+  }
+
+  return ColorFilterContents::MakeColorMatrix(
+      {FilterInput::Make(std::move(input))}, kColorInversion);
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
@@ -105,6 +133,10 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   }
   return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style,
                                             effect_transform);
+}
+
+bool Paint::HasColorFilter() const {
+  return color_filter.has_value();
 }
 
 }  // namespace impeller

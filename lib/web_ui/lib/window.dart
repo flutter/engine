@@ -6,16 +6,16 @@ part of ui;
 
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
-  ViewConfiguration get viewConfiguration;
   Object get viewId;
-  double get devicePixelRatio => viewConfiguration.devicePixelRatio;
-  Rect get physicalGeometry => viewConfiguration.geometry;
-  Size get physicalSize => viewConfiguration.geometry.size;
-  WindowPadding get viewInsets => viewConfiguration.viewInsets;
-  WindowPadding get viewPadding => viewConfiguration.viewPadding;
-  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
-  WindowPadding get padding => viewConfiguration.padding;
-  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
+  double get devicePixelRatio;
+  Rect get physicalGeometry;
+  Size get physicalSize;
+  ViewPadding get viewInsets;
+  ViewPadding get viewPadding;
+  ViewPadding get systemGestureInsets;
+  ViewPadding get padding;
+  GestureSettings get gestureSettings;
+  List<DisplayFeature> get displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
@@ -158,8 +158,7 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null.");
+  CallbackHandle.fromRawHandle(this._handle);
 
   final int _handle;
 
@@ -174,11 +173,7 @@ class CallbackHandle {
 }
 
 // TODO(dit): see https://github.com/flutter/flutter/issues/33615.
-class PluginUtilities {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory PluginUtilities._() => throw UnsupportedError('Namespace');
-
+abstract final class PluginUtilities {
   static CallbackHandle? getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
@@ -188,11 +183,7 @@ class PluginUtilities {
   }
 }
 
-class IsolateNameServer {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory IsolateNameServer._() => throw UnsupportedError('Namespace');
-
+abstract final class IsolateNameServer {
   static dynamic lookupPortByName(String name) {
     throw UnimplementedError();
   }

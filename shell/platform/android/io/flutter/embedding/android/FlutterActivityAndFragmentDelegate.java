@@ -235,9 +235,16 @@ import java.util.List;
     DartExecutor.DartEntrypoint dartEntrypoint =
         new DartExecutor.DartEntrypoint(
             appBundlePathOverride, host.getDartEntrypointFunctionName());
+    String initialRoute = host.getInitialRoute();
+    if (initialRoute == null) {
+      initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+      if (initialRoute == null) {
+        initialRoute = DEFAULT_INITIAL_ROUTE;
+      }
+    }
     return options
         .setDartEntrypoint(dartEntrypoint)
-        .setInitialRoute(host.getInitialRoute())
+        .setInitialRoute(initialRoute)
         .setDartEntrypointArgs(host.getDartEntrypointArgs());
   }
 
@@ -671,8 +678,13 @@ import java.util.List;
       flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
       activePreDrawListener = null;
     }
-    flutterView.detachFromFlutterEngine();
-    flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+
+    // flutterView can be null in instances where a delegate.onDestroyView is called without
+    // onCreateView being called. See https://github.com/flutter/engine/pull/41082 for more detail.
+    if (flutterView != null) {
+      flutterView.detachFromFlutterEngine();
+      flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+    }
   }
 
   void onSaveInstanceState(@Nullable Bundle bundle) {
@@ -829,11 +841,13 @@ import java.util.List;
   void onNewIntent(@NonNull Intent intent) {
     ensureAlive();
     if (flutterEngine != null) {
-      Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine and sending pushRoute message.");
+      Log.v(
+          TAG,
+          "Forwarding onNewIntent() to FlutterEngine and sending pushRouteInformation message.");
       flutterEngine.getActivityControlSurface().onNewIntent(intent);
       String initialRoute = maybeGetInitialRouteFromIntent(intent);
       if (initialRoute != null && !initialRoute.isEmpty()) {
-        flutterEngine.getNavigationChannel().pushRoute(initialRoute);
+        flutterEngine.getNavigationChannel().pushRouteInformation(initialRoute);
       }
     } else {
       Log.w(TAG, "onNewIntent() invoked before FlutterFragment was attached to an Activity.");

@@ -87,7 +87,7 @@ class HtmlCodec implements ui.Codec {
     // on the main thread, and may cause dropped framed.
     late DomEventListener errorListener;
     DomEventListener? loadListener;
-    errorListener = allowInterop((DomEvent event) {
+    errorListener = createDomEventListener((DomEvent event) {
       if (loadListener != null) {
         imgElement.removeEventListener('load', loadListener);
       }
@@ -95,7 +95,7 @@ class HtmlCodec implements ui.Codec {
       completer.completeError(event);
     });
     imgElement.addEventListener('error', errorListener);
-    loadListener = allowInterop((DomEvent event) {
+    loadListener = createDomEventListener((DomEvent event) {
       if (chunkCallback != null) {
         chunkCallback!(100, 100);
       }
@@ -203,6 +203,9 @@ class HtmlImage implements ui.Image {
         }
     }
   }
+
+  @override
+  ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
   DomHTMLImageElement cloneImageElement() {
     if (!_didClone) {

@@ -65,6 +65,12 @@ bool DlImageImpeller::isTextureBacked() const {
 }
 
 // |DlImage|
+bool DlImageImpeller::isUIThreadSafe() const {
+  // Impeller textures are always thread-safe
+  return true;
+}
+
+// |DlImage|
 SkISize DlImageImpeller::dimensions() const {
   const auto size = texture_ ? texture_->GetSize() : ISize{};
   return SkISize::Make(size.width, size.height);
@@ -72,7 +78,7 @@ SkISize DlImageImpeller::dimensions() const {
 
 // |DlImage|
 size_t DlImageImpeller::GetApproximateByteSize() const {
-  auto size = sizeof(this);
+  auto size = sizeof(*this);
   if (texture_) {
     size += texture_->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   }

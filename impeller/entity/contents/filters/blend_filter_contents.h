@@ -11,13 +11,14 @@ namespace impeller {
 
 class BlendFilterContents : public ColorFilterContents {
  public:
-  using AdvancedBlendProc = std::function<std::optional<Snapshot>(
-      const FilterInput::Vector& inputs,
-      const ContentContext& renderer,
-      const Entity& entity,
-      const Rect& coverage,
-      std::optional<Color> foreground_color,
-      bool absorb_opacity)>;
+  using AdvancedBlendProc =
+      std::function<std::optional<Entity>(const FilterInput::Vector& inputs,
+                                          const ContentContext& renderer,
+                                          const Entity& entity,
+                                          const Rect& coverage,
+                                          std::optional<Color> foreground_color,
+                                          bool absorb_opacity,
+                                          std::optional<Scalar> alpha)>;
 
   BlendFilterContents();
 
@@ -31,11 +32,39 @@ class BlendFilterContents : public ColorFilterContents {
 
  private:
   // |FilterContents|
-  std::optional<Snapshot> RenderFilter(const FilterInput::Vector& inputs,
-                                       const ContentContext& renderer,
-                                       const Entity& entity,
-                                       const Matrix& effect_transform,
-                                       const Rect& coverage) const override;
+  std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     const Matrix& effect_transform,
+                                     const Rect& coverage) const override;
+
+  /// @brief Optimized advanced blend that avoids a second subpass when there is
+  ///        only a single input and a foreground color.
+  ///
+  /// These contents cannot absorb opacity.
+  std::optional<Entity> CreateForegroundAdvancedBlend(
+      const std::shared_ptr<FilterInput>& input,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      Color foreground_color,
+      BlendMode blend_mode,
+      std::optional<Scalar> alpha,
+      bool absorb_opacity) const;
+
+  /// @brief Optimized porter-duff blend that avoids a second subpass when there
+  ///        is only a single input and a foreground color.
+  ///
+  /// These contents cannot absorb opacity.
+  std::optional<Entity> CreateForegroundPorterDuffBlend(
+      const std::shared_ptr<FilterInput>& input,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      Color foreground_color,
+      BlendMode blend_mode,
+      std::optional<Scalar> alpha,
+      bool absorb_opacity) const;
 
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;

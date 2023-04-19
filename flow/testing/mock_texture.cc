@@ -4,7 +4,7 @@
 
 #include "flutter/flow/testing/mock_texture.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/testing/skia_gpu_object_layer_test.h"
+#include "flutter/testing/display_list_testing.h"
 
 namespace flutter {
 namespace testing {
@@ -14,10 +14,10 @@ MockTexture::MockTexture(int64_t textureId) : Texture(textureId) {}
 void MockTexture::Paint(PaintContext& context,
                         const SkRect& bounds,
                         bool freeze,
-                        const SkSamplingOptions& sampling) {
+                        const DlImageSampling sampling) {
   paint_calls_.emplace_back(PaintCall{*(context.canvas), bounds, freeze,
                                       context.gr_context, sampling,
-                                      context.sk_paint});
+                                      context.paint});
 }
 
 bool operator==(const MockTexture::PaintCall& a,

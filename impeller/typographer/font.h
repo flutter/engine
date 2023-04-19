@@ -38,9 +38,13 @@ class Font : public Comparable<Font> {
     /// The point size of the font.
     ///
     Scalar point_size = 12.0f;
+    bool embolden = false;
+    Scalar skewX = 0.0f;
+    Scalar scaleX = 1.0f;
 
     constexpr bool operator==(const Metrics& o) const {
-      return scale == o.scale && point_size == o.point_size;
+      return scale == o.scale && point_size == o.point_size &&
+             embolden == o.embolden && skewX == o.skewX && scaleX == o.scaleX;
     }
   };
 

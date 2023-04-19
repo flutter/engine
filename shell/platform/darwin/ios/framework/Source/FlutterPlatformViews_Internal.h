@@ -224,15 +224,17 @@ class FlutterPlatformViewsController {
   // Also reverts the composition_order_ to its original state at the beginning of the frame.
   void CancelFrame();
 
-  void PrerollCompositeEmbeddedView(int view_id,
+  void PrerollCompositeEmbeddedView(int64_t view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
+
+  size_t EmbeddedViewCount();
 
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
   // a `FlutterPlatformView` object asscociated with the view_id cannot be found, the method
   // returns nil.
-  UIView* GetPlatformViewByID(int view_id);
+  UIView* GetPlatformViewByID(int64_t view_id);
 
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
@@ -240,15 +242,11 @@ class FlutterPlatformViewsController {
   void EndFrame(bool should_resubmit_frame,
                 const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
-  std::vector<SkCanvas*> GetCurrentCanvases();
-
-  std::vector<DisplayListBuilder*> GetCurrentBuilders();
-
-  EmbedderPaintContext CompositeEmbeddedView(int view_id);
+  DlCanvas* CompositeEmbeddedView(int64_t view_id);
 
   // The rect of the platform view at index view_id. This rect has been translated into the
   // host view coordinate system. Units are device screen pixels.
-  SkRect GetPlatformViewRect(int view_id);
+  SkRect GetPlatformViewRect(int64_t view_id);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -314,7 +312,7 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
                      const SkRect& bounding_rect);
-  void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+  void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.

@@ -13,7 +13,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
   setUpUiTest();
 
   const MethodCodec codec = JSONMethodCodec();

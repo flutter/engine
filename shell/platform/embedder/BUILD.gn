@@ -198,6 +198,7 @@ test_fixtures("fixtures") {
     "fixtures/compositor_software.png",
     "fixtures/compositor_with_platform_layer_on_bottom.png",
     "fixtures/compositor_with_root_layer_only.png",
+    "fixtures/compositor_platform_layer_with_no_overlay.png",
     "fixtures/dpr_noxform.png",
     "fixtures/dpr_xform.png",
     "fixtures/gradient.png",
@@ -229,6 +230,7 @@ if (enable_unittests) {
       "platform_view_embedder_unittests.cc",
       "tests/embedder_config_builder.cc",
       "tests/embedder_config_builder.h",
+      "tests/embedder_frozen.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
       "tests/embedder_test_backingstore_producer.cc",
@@ -312,7 +314,10 @@ if (enable_unittests) {
 
     include_dirs = [ "." ]
 
-    sources = [ "tests/embedder_unittests.cc" ]
+    sources = [
+      "tests/embedder_frozen_unittests.cc",
+      "tests/embedder_unittests.cc",
+    ]
 
     deps = [ ":embedder_unittests_library" ]
 

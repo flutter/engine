@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/dl_vertices.h"
 
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
@@ -23,18 +23,18 @@ class DLVerticesGeometry : public VerticesGeometry {
 
   ~DLVerticesGeometry();
 
-  static std::unique_ptr<VerticesGeometry> MakeVertices(
+  static std::shared_ptr<VerticesGeometry> MakeVertices(
       const flutter::DlVertices* vertices);
 
   // |VerticesGeometry|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
+                                        RenderPass& pass) override;
 
   // |VerticesGeometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) override;
 
@@ -48,6 +48,15 @@ class DLVerticesGeometry : public VerticesGeometry {
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
+
+  // |VerticesGeometry|
+  bool HasVertexColors() const override;
+
+  // |VerticesGeometry|
+  bool HasTextureCoordinates() const override;
+
+  // |VerticesGeometry|
+  std::optional<Rect> GetTextureCoordinateCoverge() const override;
 
  private:
   void NormalizeIndices();

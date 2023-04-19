@@ -5,7 +5,7 @@
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 
 #include "impeller/base/validation.h"
-#include "impeller/renderer/texture_descriptor.h"
+#include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
 
@@ -62,10 +62,6 @@ bool TextureMTL::OnSetContents(const uint8_t* contents,
     return false;
   }
 
-  // TODO(csg): Perhaps the storage mode should be added to the texture
-  // descriptor so that invalid region replacements on potentially non-host
-  // visible textures are disallowed. The annoying bit about the API below is
-  // that there seems to be no error handling guidance.
   const auto region =
       MTLRegionMake2D(0u, 0u, desc.size.width, desc.size.height);
   [texture_ replaceRegion:region                            //
@@ -94,6 +90,17 @@ bool TextureMTL::IsValid() const {
 
 bool TextureMTL::IsWrapped() const {
   return is_wrapped_;
+}
+
+bool TextureMTL::GenerateMipmap(id<MTLBlitCommandEncoder> encoder) {
+  if (!texture_) {
+    return false;
+  }
+
+  [encoder generateMipmapsForTexture:texture_];
+  mipmap_generated_ = true;
+
+  return true;
 }
 
 }  // namespace impeller

@@ -8,6 +8,7 @@
 
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
 
@@ -29,7 +30,7 @@ sk_sp<SkImage> ImageGenerator::GetImage() {
     return nullptr;
   }
   bitmap.setImmutable();
-  return SkImage::MakeFromBitmap(bitmap);
+  return SkImages::RasterFromBitmap(bitmap);
 }
 
 BuiltinSkiaImageGenerator::~BuiltinSkiaImageGenerator() = default;
@@ -51,7 +52,7 @@ unsigned int BuiltinSkiaImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
@@ -105,7 +106,7 @@ unsigned int BuiltinSkiaCodecImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   SkCodec::FrameInfo info = {};
   codec_generator_->getFrameInfo(frame_index, &info);
   return {

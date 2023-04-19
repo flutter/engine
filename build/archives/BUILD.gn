@@ -16,6 +16,7 @@ generated_file("artifacts_entitlement_config") {
       "//flutter/impeller/compiler:impellerc",
       "//flutter/impeller/tessellator:tessellator_shared",
       "//flutter/shell/testing:testing",
+      "//flutter/tools/path_ops:path_ops",
     ]
   }
 }
@@ -37,12 +38,15 @@ if (build_engine_artifacts && !is_android) {
       # TODO(godofredoc): Remove after paths are standardized flutter/flutter#105351.
       # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
       # names will require changes in the list of artifacts the tool is downloading.
-      prefix = "darwin-$target_cpu/"
+      if (flutter_runtime_mode == "debug") {
+        prefix = "darwin-$target_cpu/"
+      } else {
+        prefix = "darwin-$target_cpu-$flutter_runtime_mode/"
+      }
+    } else if (flutter_runtime_mode != "debug") {
+      prefix = "$full_target_platform_name-$flutter_runtime_mode/"
     } else {
       prefix = "$full_target_platform_name/"
-    }
-    if (flutter_runtime_mode != "debug") {
-      prefix = "$full_platform_name-$flutter_runtime_mode/"
     }
     output = "$prefix/artifacts.zip"
 
@@ -169,6 +173,7 @@ generated_file("dart_sdk_entitlement_config") {
     "dart-sdk/bin/dart",
     "dart-sdk/bin/dartaotruntime",
     "dart-sdk/bin/utils/gen_snapshot",
+    "dart-sdk/bin/utils/wasm-opt",
   ]
 
   deps = []
@@ -229,6 +234,7 @@ if (host_os == "win") {
   zip_bundle("windows_flutter") {
     output = "$full_target_platform_name-$flutter_runtime_mode/$full_target_platform_name-flutter.zip"
     deps = [
+      "//flutter:gen_snapshot",
       "//flutter/shell/platform/common:publish_headers",
       "//flutter/shell/platform/windows:flutter_windows",
       "//flutter/shell/platform/windows:publish_headers_windows",
@@ -258,25 +264,30 @@ if (host_os == "win") {
         source = "$root_out_dir/flutter_windows.dll"
         destination = "flutter_windows.dll"
       },
+      {
+        source = "$root_out_dir/flutter_windows.dll.exp"
+        destination = "flutter_windows.dll.exp"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.dll.lib"
+        destination = "flutter_windows.dll.lib"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.dll.pdb"
+        destination = "flutter_windows.dll.pdb"
+      },
+      {
+        source = "$root_out_dir/gen_snapshot/gen_snapshot.exe"
+        destination = "gen_snapshot.exe"
+      },
     ]
   }
 }
 
 # Archives Flutter Mac Artifacts
 if (is_mac) {
-  generated_file("snapshot_entitlement_config") {
-    outputs = [ "$target_gen_dir/snapshot_entitlements.txt" ]
-
-    data_keys = [ "snapshot_entitlement_file_path" ]
-
-    deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
-  }
-
   zip_bundle("archive_gen_snapshot") {
-    deps = [
-      ":snapshot_entitlement_config",
-      "//flutter/lib/snapshot:create_macos_gen_snapshots",
-    ]
+    deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
     suffix = "-$flutter_runtime_mode"
     if (flutter_runtime_mode == "debug") {
       suffix = ""
@@ -286,10 +297,6 @@ if (is_mac) {
       {
         source = "$root_out_dir/gen_snapshot_$target_cpu"
         destination = "gen_snapshot_$target_cpu"
-      },
-      {
-        source = "$target_gen_dir/snapshot_entitlements.txt"
-        destination = "entitlements.txt"
       },
     ]
   }

@@ -20,23 +20,21 @@ void SolidColorContents::SetColor(Color color) {
   color_ = color;
 }
 
-const Color& SolidColorContents::GetColor() const {
-  return color_;
-}
-
-void SolidColorContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+Color SolidColorContents::GetColor() const {
+  return color_.WithAlpha(color_.alpha * GetOpacity());
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
-  if (color_.IsTransparent()) {
+  if (GetColor().IsTransparent()) {
     return std::nullopt;
   }
-  if (geometry_ == nullptr) {
+
+  auto geometry = GetGeometry();
+  if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransformation());
 };
 
 bool SolidColorContents::ShouldRender(
@@ -58,7 +56,8 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.label = "Solid Fill";
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -70,12 +69,12 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetSolidFillPipeline(options);
   cmd.BindVertices(geometry_result.vertex_buffer);
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = geometry_result.transform;
-  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
+  VS::FrameInfo frame_info;
+  frame_info.mvp = geometry_result.transform;
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.color = color_.Premultiply();
+  frag_info.color = GetColor().Premultiply();
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
@@ -83,7 +82,9 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   }
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }

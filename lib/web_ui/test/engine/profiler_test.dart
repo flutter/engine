@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
-import '../spy.dart';
+import '../common/spy.dart';
 
 @JS('window._flutter_internal_on_benchmark')
-external set onBenchmark (Object? object);
+external set _onBenchmark (JSAny? object);
+set onBenchmark (Object? object) => _onBenchmark = object?.toJSAnyShallow;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -73,7 +75,7 @@ void _profilerTests() {
       () => Profiler.instance.benchmark('foo', 123),
 
       // dart2js throws a NoSuchMethodError, dart2wasm throws a TypeError here.
-      // Just make make sure it throws an error in this case.
+      // Just make sure it throws an error in this case.
       throwsA(isA<Error>()),
     );
     expect(data, isEmpty);

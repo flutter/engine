@@ -4,11 +4,11 @@
 
 #include "impeller/entity/contents/scene_contents.h"
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/scene/camera.h"
 #include "impeller/scene/scene.h"
 
@@ -45,16 +45,20 @@ bool SceneContents::Render(const ContentContext& renderer,
   }
 
   RenderTarget subpass_target = RenderTarget::CreateOffscreenMSAA(
-      *renderer.GetContext(),            // context
-      ISize(coverage.value().size),      // size
-      "SceneContents",                   // label
-      StorageMode::kDeviceTransient,     // color_storage_mode
-      StorageMode::kDevicePrivate,       // color_resolve_storage_mode
-      LoadAction::kClear,                // color_load_action
-      StoreAction::kMultisampleResolve,  // color_store_action
-      StorageMode::kDeviceTransient,     // stencil_storage_mode
-      LoadAction::kDontCare,             // stencil_load_action
-      StoreAction::kDontCare             // stencil_store_action
+      *renderer.GetContext(),        // context
+      ISize(coverage.value().size),  // size
+      "SceneContents",               // label
+      RenderTarget::AttachmentConfigMSAA{
+          .storage_mode = StorageMode::kDeviceTransient,
+          .resolve_storage_mode = StorageMode::kDevicePrivate,
+          .load_action = LoadAction::kClear,
+          .store_action = StoreAction::kMultisampleResolve,
+      },  // color_attachment_config
+      RenderTarget::AttachmentConfig{
+          .storage_mode = StorageMode::kDeviceTransient,
+          .load_action = LoadAction::kDontCare,
+          .store_action = StoreAction::kDontCare,
+      }  // stencil_attachment_config
   );
   if (!subpass_target.IsValid()) {
     return false;

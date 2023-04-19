@@ -12,31 +12,60 @@ const String ahemFontFamily = 'Ahem';
 const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
 const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
-const String robotoVariableFontFamily = 'RobotoVariable';
-const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
+
+/// The list of test fonts, in the form of font family name - font file url pairs.
+/// This list does not include embedded test fonts, which need to be loaded and
+/// registered separately in [FontCollection.debugDownloadTestFonts].
+const Map<String, String> testFontUrls = <String, String>{
+  ahemFontFamily: ahemFontUrl,
+  robotoFontFamily: robotoTestFontUrl,
+  'RobotoVariable': '/assets/fonts/RobotoSlab-VariableFont_wght.ttf',
+};
 
 /// This class downloads assets over the network.
 ///
-/// The assets are resolved relative to [assetsDir] inside the directory
-/// containing the currently executing JS script.
+/// Assets are resolved relative to [assetsDir] inside the absolute base
+/// specified by [assetBase] (optional).
+///
+/// By default, URLs are relative to the `<base>` of the current website.
 class AssetManager {
-  /// Initializes [AssetManager] with path to assets relative to baseUrl.
-  const AssetManager({this.assetsDir = _defaultAssetsDir});
+  /// Initializes [AssetManager] with paths.
+  AssetManager({
+    this.assetsDir = _defaultAssetsDir,
+    String? assetBase,
+  })  : assert(
+          assetBase == null || assetBase.endsWith('/'),
+          '`assetBase` must end with a `/` character.',
+        ),
+        _assetBase = assetBase;
 
   static const String _defaultAssetsDir = 'assets';
 
   /// The directory containing the assets.
   final String assetsDir;
 
-  String? get _baseUrl {
-    return domWindow.document
-        .querySelectorAll('meta')
-        .where((DomElement domNode) => domInstanceOfString(domNode,
-                'HTMLMetaElement'))
-        .map((DomElement domNode) => domNode as DomHTMLMetaElement)
-        .firstWhereOrNull(
-            (DomHTMLMetaElement element) => element.name == 'assetBase')
-        ?.content;
+  /// The absolute base URL for assets.
+  String? _assetBase;
+
+  // Cache a value for `_assetBase` so we don't hit the DOM multiple times.
+  String get _baseUrl => _assetBase ??= _deprecatedAssetBase ?? '';
+
+  // Retrieves the `assetBase` value from the DOM.
+  //
+  // This warns the user and points them to the new initializeEngine style.
+  String? get _deprecatedAssetBase {
+    final DomHTMLMetaElement? meta = domWindow.document
+        .querySelector('meta[name=assetBase]') as DomHTMLMetaElement?;
+
+    final String? fallbackBaseUrl = meta?.content;
+
+    if (fallbackBaseUrl != null) {
+      // Warn users that they're using a deprecated configuration style...
+      domWindow.console.warn('The `assetBase` meta tag is now deprecated.\n'
+          'Use engineInitializer.initializeEngine(config) instead.\n'
+          'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+    }
+    return fallbackBaseUrl;
   }
 
   /// Returns the URL to load the asset from, given the asset key.
@@ -60,59 +89,30 @@ class AssetManager {
     if (Uri.parse(asset).hasScheme) {
       return Uri.encodeFull(asset);
     }
-    return Uri.encodeFull('${_baseUrl ?? ''}$assetsDir/$asset');
+    return Uri.encodeFull('$_baseUrl$assetsDir/$asset');
+  }
+
+  /// Loads an asset and returns the server response.
+  Future<HttpFetchResponse> loadAsset(String asset) {
+    return httpFetch(getAssetUrl(asset));
   }
 
   /// Loads an asset using an [DomXMLHttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
     final String url = getAssetUrl(asset);
-    try {
-      final DomXMLHttpRequest request =
-          await domHttpRequest(url, responseType: 'arraybuffer');
+    final HttpFetchResponse response = await httpFetch(url);
 
-      final ByteBuffer response = request.response as ByteBuffer;
-      return response.asByteData();
-    } catch (e) {
-      if (!domInstanceOfString(e, 'ProgressEvent')){
-        rethrow;
-      }
-      final DomProgressEvent p = e as DomProgressEvent;
-      final DomEventTarget? target = p.target;
-      if (domInstanceOfString(target,'XMLHttpRequest')) {
-        final DomXMLHttpRequest request = target! as DomXMLHttpRequest;
-        if (request.status == 404 && asset == 'AssetManifest.json') {
-          printWarning('Asset manifest does not exist at `$url` – ignoring.');
-          return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
-        }
-        throw AssetManagerException(url, request.status!.toInt());
-      }
-
-      final String? constructorName = target == null ? 'null' :
-          domGetConstructorName(target);
-      printWarning('Caught ProgressEvent with unknown target: '
-          '$constructorName');
-      rethrow;
+    if (response.status == 404 && asset == 'AssetManifest.json') {
+      printWarning('Asset manifest does not exist at `$url` - ignoring.');
+      return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
     }
+
+    return (await response.payload.asByteBuffer()).asByteData();
   }
 }
 
-/// Thrown to indicate http failure during asset loading.
-class AssetManagerException implements Exception {
-  /// Initializes exception with request url and http status.
-  AssetManagerException(this.url, this.httpStatus);
-
-  /// Http request url for asset.
-  final String url;
-
-  /// Http status of response.
-  final int httpStatus;
-
-  @override
-  String toString() => 'Failed to load asset at "$url" ($httpStatus)';
-}
-
 /// An asset manager that gives fake empty responses for assets.
-class WebOnlyMockAssetManager implements AssetManager {
+class WebOnlyMockAssetManager extends AssetManager {
   /// Mock asset directory relative to base url.
   String defaultAssetsDir = '';
 
@@ -136,10 +136,34 @@ class WebOnlyMockAssetManager implements AssetManager {
   String get assetsDir => defaultAssetsDir;
 
   @override
-  String get _baseUrl => '';
+  String getAssetUrl(String asset) => asset;
 
   @override
-  String getAssetUrl(String asset) => asset;
+  Future<HttpFetchResponse> loadAsset(String asset) async {
+    if (asset == getAssetUrl('AssetManifest.json')) {
+      return MockHttpFetchResponse(
+        url: asset,
+        status: 200,
+        payload: MockHttpFetchPayload(
+          byteBuffer: _toByteData(utf8.encode(defaultAssetManifest)).buffer,
+        ),
+      );
+    }
+    if (asset == getAssetUrl('FontManifest.json')) {
+      return MockHttpFetchResponse(
+        url: asset,
+        status: 200,
+        payload: MockHttpFetchPayload(
+          byteBuffer: _toByteData(utf8.encode(defaultFontManifest)).buffer,
+        ),
+      );
+    }
+
+    return MockHttpFetchResponse(
+      url: asset,
+      status: 404,
+    );
+  }
 
   @override
   Future<ByteData> load(String asset) {
@@ -151,7 +175,7 @@ class WebOnlyMockAssetManager implements AssetManager {
       return Future<ByteData>.value(
           _toByteData(utf8.encode(defaultFontManifest)));
     }
-    throw AssetManagerException(asset, 404);
+    throw HttpFetchNoPayloadError(asset, status: 404);
   }
 
   ByteData _toByteData(List<int> bytes) {

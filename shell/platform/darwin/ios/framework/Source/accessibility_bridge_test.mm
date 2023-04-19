@@ -374,7 +374,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   auto bridge = std::make_unique<flutter::AccessibilityBridge>(
@@ -399,6 +401,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
 
     flutter::SemanticsNode child;
     child.id = 2;
@@ -407,6 +410,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     child.value = "value";
     child.hint = "hint";
     node.childrenInTraversalOrder.push_back(2);
+    node.childrenInHitTestOrder.push_back(2);
 
     nodes[0] = parent;
     nodes[1] = node;
@@ -427,6 +431,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     new_node.scrollExtentMax = 100.0;
     new_node.scrollPosition = 0.0;
     new_node.childrenInTraversalOrder.push_back(2);
+    new_node.childrenInHitTestOrder.push_back(2);
 
     new_nodes[1] = new_node;
     bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
@@ -461,7 +466,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -489,6 +496,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
     nodes[0] = parent;
     nodes[1] = node;
     flutter::CustomAccessibilityActionUpdates actions;
@@ -528,7 +536,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -556,6 +566,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
     nodes[0] = parent;
     nodes[1] = node;
     flutter::CustomAccessibilityActionUpdates actions;
@@ -644,6 +655,51 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertEqualObjects(accessibility_notifications[0][@"argument"], @"node3");
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityScreenChangedNotification);
+}
+
+- (void)testRadioButtonIsNotSwitchButton {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners);
+  id engine = OCMClassMock([FlutterEngine class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
+  OCMStub([mockFlutterViewController view]).andReturn(flutterView);
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates nodes;
+
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kIsEnabled) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kHasCheckedState) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kHasEnabledState);
+  nodes[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+
+  SemanticsObjectContainer* rootContainer = flutterView.accessibilityElements[0];
+  FlutterSemanticsObject* rootNode = [rootContainer accessibilityElementAtIndex:0];
+
+  XCTAssertTrue((rootNode.accessibilityTraits & UIAccessibilityTraitButton) > 0);
+  XCTAssertNil(rootNode.accessibilityValue);
 }
 
 - (void)testLayoutChangeWithNonAccessibilityElement {

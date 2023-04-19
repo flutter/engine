@@ -15,10 +15,10 @@ import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image_wasm_codecs.dart';
 import 'image_web_codecs.dart';
+import 'native_memory.dart';
 import 'painting.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
-import 'skia_object_cache.dart';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
@@ -137,12 +137,14 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
 
+    final CkPaint paint = CkPaint();
     canvas.drawImageRect(
       CkImage(image),
       ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
       ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
-      CkPaint()
+      paint,
     );
+    paint.dispose();
 
     final CkPicture picture = recorder.endRecording();
     final ui.Image finalImage = picture.toImageSync(
@@ -167,12 +169,6 @@ class ImageCodecException implements Exception {
 
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
-typedef HttpRequestFactory = DomXMLHttpRequest Function();
-HttpRequestFactory httpRequestFactory = () => createDomXMLHttpRequest();
-void debugRestoreHttpRequestFactory() {
-  httpRequestFactory = () => createDomXMLHttpRequest();
-}
-
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
@@ -186,100 +182,55 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 }
 
 /// Sends a request to fetch image data.
-Future<Uint8List> fetchImage(
-    String url, WebOnlyImageCodecChunkCallback? chunkCallback) {
-  final Completer<Uint8List> completer = Completer<Uint8List>();
+Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
+  try {
+    final HttpFetchResponse response = await httpFetch(url);
+    final int? contentLength = response.contentLength;
 
-  final DomXMLHttpRequest request = httpRequestFactory();
-  request.open('GET', url, true);
-  request.responseType = 'arraybuffer';
-  if (chunkCallback != null) {
-    request.addEventListener('progress', allowInterop((DomEvent event)  {
-      event = event as DomProgressEvent;
-      chunkCallback.call(event.loaded!.toInt(), event.total!.toInt());
-    }));
-  }
-
-  request.addEventListener('error', allowInterop((DomEvent event) {
-    completer.completeError(ImageCodecException('$_kNetworkImageMessage\n'
+    if (!response.hasPayload) {
+      throw ImageCodecException(
+        '$_kNetworkImageMessage\n'
         'Image URL: $url\n'
-        'Trying to load an image from another domain? Find answers at:\n'
-        'https://flutter.dev/docs/development/platform-integration/web-images'));
-  }));
-
-  request.addEventListener('load', allowInterop((DomEvent event) {
-    final int status = request.status!.toInt();
-    final bool accepted = status >= 200 && status < 300;
-    final bool fileUri = status == 0; // file:// URIs have status of 0.
-    final bool notModified = status == 304;
-    final bool unknownRedirect = status > 307 && status < 400;
-    final bool success = accepted || fileUri || notModified || unknownRedirect;
-
-    if (!success) {
-      completer.completeError(
-        ImageCodecException('$_kNetworkImageMessage\n'
-            'Image URL: $url\n'
-            'Server response code: $status'),
+        'Server response code: ${response.status}',
       );
-      return;
     }
 
-    completer.complete(Uint8List.view(request.response as ByteBuffer));
-  }));
+    if (chunkCallback != null && contentLength != null) {
+      return readChunked(response.payload, contentLength, chunkCallback);
+    } else {
+      return await response.asUint8List();
+    }
+  } on HttpFetchError catch (_) {
+    throw ImageCodecException(
+      '$_kNetworkImageMessage\n'
+      'Image URL: $url\n'
+      'Trying to load an image from another domain? Find answers at:\n'
+      'https://flutter.dev/docs/development/platform-integration/web-images',
+    );
+  }
+}
 
-  request.send();
-  return completer.future;
+/// Reads the [payload] in chunks using the browser's Streams API
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
+Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
+  final Uint8List result = Uint8List(contentLength);
+  int position = 0;
+  int cumulativeBytesLoaded = 0;
+  await payload.read<Uint8List>((Uint8List chunk) {
+    cumulativeBytesLoaded += chunk.lengthInBytes;
+    chunkCallback(cumulativeBytesLoaded, contentLength);
+    result.setAll(position, chunk);
+    position += chunk.lengthInBytes;
+  });
+  return result;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, { this.videoFrame }) {
+    box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
-    if (browserSupportsFinalizationRegistry) {
-      box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
-    } else {
-      // If finalizers are not supported we need to be able to resurrect the
-      // image if it was temporarily deleted. To do that, we keep the original
-      // pixels and ask the SkiaObjectBox to make an image from them when
-      // resurrecting.
-      //
-      // IMPORTANT: the alphaType, colorType, and colorSpace passed to
-      // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
-      // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData? originalBytes = _encodeImage(
-        skImage: skImage,
-        format: ui.ImageByteFormat.rawRgba,
-        alphaType: canvasKit.AlphaType.Premul,
-        colorType: canvasKit.ColorType.RGBA_8888,
-        colorSpace: SkColorSpaceSRGB,
-      );
-      if (originalBytes == null) {
-        printWarning('Unable to encode image to bytes. We will not '
-            'be able to resurrect it once it has been garbage collected.');
-        return;
-      }
-      final int originalWidth = skImage.width().toInt();
-      final int originalHeight = skImage.height().toInt();
-      box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
-        final SkImage? skImage = canvasKit.MakeImage(
-          SkImageInfo(
-            alphaType: canvasKit.AlphaType.Premul,
-            colorType: canvasKit.ColorType.RGBA_8888,
-            colorSpace: SkColorSpaceSRGB,
-            width: originalWidth.toDouble(),
-            height: originalHeight.toDouble(),
-          ),
-          originalBytes.buffer.asUint8List(),
-          (4 * originalWidth).toDouble(),
-        );
-        if (skImage == null) {
-          throw ImageCodecException(
-            'Failed to resurrect image from pixels.'
-          );
-        }
-        return skImage;
-      });
-    }
   }
 
   CkImage.cloneOf(this.box, {this.videoFrame}) {
@@ -298,9 +249,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
   StackTrace get debugStackTrace => _debugStackTrace;
   late StackTrace _debugStackTrace;
 
-  // Use a box because `SkImage` may be deleted either due to this object
+  // Use ref counting because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final SkiaObjectBox<CkImage, SkImage> box;
+  late final CountedRef<CkImage, SkImage> box;
 
   /// For browsers that support `ImageDecoder` this field holds the video frame
   /// from which this image was created.
@@ -312,9 +263,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   /// The underlying Skia image object.
   ///
-  /// Do not store the returned value. It is memory-managed by [SkiaObjectBox].
+  /// Do not store the returned value. It is memory-managed by [CountedRef].
   /// Storing it may result in use-after-free bugs.
-  SkImage get skImage => box.skiaObject;
+  SkImage get skImage => box.nativeObject;
 
   bool _disposed = false;
 
@@ -384,6 +335,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
       return _readPixelsFromSkImage(format);
     }
   }
+
+  @override
+  ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
   Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
     final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba ? canvasKit.AlphaType.Unpremul : canvasKit.AlphaType.Premul;

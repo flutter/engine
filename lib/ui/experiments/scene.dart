@@ -80,9 +80,7 @@ class SceneNode extends NativeFieldWrapperClass1 {
       <String, WeakReference<SceneNodeValue>>{};
 
   static Future<void> _reinitializeScene(String assetKey) async {
-    final WeakReference<SceneNodeValue>? sceneRef = _ipsceneRegistry == null
-      ? null
-      : _ipsceneRegistry[assetKey];
+    final WeakReference<SceneNodeValue>? sceneRef = _ipsceneRegistry[assetKey];
 
     // If a scene for the asset isn't already registered, then there's no
     // need to reinitialize it.
@@ -105,25 +103,25 @@ class SceneNode extends NativeFieldWrapperClass1 {
     });
   }
 
-  @FfiNative<Void Function(Handle)>('SceneNode::Create')
+  @Native<Void Function(Handle)>(symbol: 'SceneNode::Create')
   external void _constructor();
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle)>('SceneNode::initFromAsset')
+  @Native<Handle Function(Pointer<Void>, Handle, Handle)>(symbol: 'SceneNode::initFromAsset')
   external String _initFromAsset(String assetKey, _Callback<void> completionCallback);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::initFromTransform')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SceneNode::initFromTransform')
   external void _initFromTransform(Float64List matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::AddChild')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SceneNode::AddChild')
   external void _addChild(SceneNode sceneNode);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::SetTransform')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SceneNode::SetTransform')
   external void _setTransform(Float64List matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Bool, Bool, Double, Double)>('SceneNode::SetAnimationState')
+  @Native<Void Function(Pointer<Void>, Handle, Bool, Bool, Double, Double)>(symbol: 'SceneNode::SetAnimationState')
   external void _setAnimationState(String animationName, bool playing, bool loop, double weight, double timeScale);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Double)>('SceneNode::SeekAnimation')
+  @Native<Void Function(Pointer<Void>, Handle, Double)>(symbol: 'SceneNode::SeekAnimation')
   external void _seekAnimation(String animationName, double time);
 
   /// Returns a fresh instance of [SceneShader].
@@ -203,12 +201,12 @@ class SceneShader extends Shader {
     _dispose();
   }
 
-  @FfiNative<Void Function(Handle, Handle)>('SceneShader::Create')
+  @Native<Void Function(Handle, Handle)>(symbol: 'SceneShader::Create')
   external void _constructor(SceneNode node);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneShader::SetCameraTransform')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SceneShader::SetCameraTransform')
   external void _setCameraTransform(Float64List matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>)>('SceneShader::Dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'SceneShader::Dispose')
   external void _dispose();
 }

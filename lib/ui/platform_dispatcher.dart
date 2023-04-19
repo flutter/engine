@@ -48,9 +48,6 @@ typedef PlatformMessageCallback = void Function(String name, ByteData? data, Pla
 // Signature for _setNeedsReportTimings.
 typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
-/// Signature for [PlatformDispatcher.onConfigurationChanged].
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-
 /// Signature for [PlatformDispatcher.onError].
 ///
 /// If this method returns false, the engine may use some fallback method to
@@ -87,7 +84,7 @@ class RootIsolateToken {
     return token == 0 ? null : RootIsolateToken._(token);
   }();
 
-  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateToken')
+  @Native<Int64 Function()>(symbol: 'PlatformConfigurationNativeApi::GetRootIsolateToken')
   external static int __getRootIsolateToken();
 }
 
@@ -101,9 +98,8 @@ class RootIsolateToken {
 /// It exposes the core scheduler API, the input event callback, the graphics
 /// drawing API, and other such core services.
 ///
-/// It manages the list of the application's [views] and the [screens] attached
-/// to the device, as well as the [configuration] of various platform
-/// attributes.
+/// It manages the list of the application's [views] as well as the
+/// [configuration] of various platform attributes.
 ///
 /// Consider avoiding static references to this singleton through
 /// [PlatformDispatcher.instance] and instead prefer using a binding for
@@ -139,12 +135,7 @@ class PlatformDispatcher {
   static PlatformDispatcher get instance => _instance;
   static final PlatformDispatcher _instance = PlatformDispatcher._();
 
-  /// The current platform configuration.
-  ///
-  /// If values in this configuration change, [onPlatformConfigurationChanged]
-  /// will be called.
-  PlatformConfiguration get configuration => _configuration;
-  PlatformConfiguration _configuration = const PlatformConfiguration();
+  _PlatformConfiguration _configuration = const _PlatformConfiguration();
 
   /// Called when the platform configuration changes.
   ///
@@ -166,7 +157,37 @@ class PlatformDispatcher {
   final Map<Object, FlutterView> _views = <Object, FlutterView>{};
 
   // A map of opaque platform view identifiers to view configurations.
-  final Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
+  final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
+
+  /// The [FlutterView] provided by the engine if the platform is unable to
+  /// create windows, or, for backwards compatibility.
+  ///
+  /// If the platform provides an implicit view, it can be used to bootstrap
+  /// the framework. This is common for platforms designed for single-view
+  /// applications like mobile devices with a single display.
+  ///
+  /// Applications and libraries must not rely on this property being set
+  /// as it may be null depending on the engine's configuration. Instead,
+  /// consider using [View.of] to lookup the [FlutterView] the current
+  /// [BuildContext] is drawing into.
+  ///
+  /// While the properties on the referenced [FlutterView] may change,
+  /// the reference itself is guaranteed to never change over the lifetime
+  /// of the application: if this property is null at startup, it will remain
+  /// so throughout the entire lifetime of the application. If it points to a
+  /// specific [FlutterView], it will continue to point to the same view until
+  /// the application is shut down (although the engine may replace or remove
+  /// the underlying backing surface of the view at its discretion).
+  ///
+  /// See also:
+  ///
+  /// * [View.of], for accessing the current view.
+  /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
+  ///   by the platform.
+  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
+  external static bool _implicitViewEnabled();
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -219,8 +240,8 @@ class PlatformDispatcher {
     List<int> displayFeaturesType,
     List<int> displayFeaturesState,
   ) {
-    final ViewConfiguration previousConfiguration =
-        _viewConfigurations[id] ?? const ViewConfiguration();
+    final _ViewConfiguration previousConfiguration =
+        _viewConfigurations[id] ?? const _ViewConfiguration();
     if (!_views.containsKey(id)) {
       _views[id] = FlutterView._(id, this);
     }
@@ -228,25 +249,25 @@ class PlatformDispatcher {
       view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: WindowPadding._(
+      viewPadding: ViewPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,
         bottom: viewPaddingBottom,
         left: viewPaddingLeft,
       ),
-      viewInsets: WindowPadding._(
+      viewInsets: ViewPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
         left: viewInsetLeft,
       ),
-      padding: WindowPadding._(
+      padding: ViewPadding._(
         top: math.max(0.0, viewPaddingTop - viewInsetTop),
         right: math.max(0.0, viewPaddingRight - viewInsetRight),
         bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
         left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
       ),
-      systemGestureInsets: WindowPadding._(
+      systemGestureInsets: ViewPadding._(
         top: math.max(0.0, systemGestureInsetTop),
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
@@ -520,7 +541,7 @@ class PlatformDispatcher {
 
   void _nativeSetNeedsReportTimings(bool value) => __nativeSetNeedsReportTimings(value);
 
-  @FfiNative<Void Function(Bool)>('PlatformConfigurationNativeApi::SetNeedsReportTimings')
+  @Native<Void Function(Bool)>(symbol: 'PlatformConfigurationNativeApi::SetNeedsReportTimings')
   external static void __nativeSetNeedsReportTimings(bool value);
 
   // Called from the engine, via hooks.dart
@@ -553,7 +574,7 @@ class PlatformDispatcher {
   String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
+  @Native<Handle Function(Handle, Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
 
   /// Sends a message to a platform-specific plugin via a [SendPort].
@@ -579,7 +600,7 @@ class PlatformDispatcher {
   String? _sendPortPlatformMessage(String name, int identifier, int port, ByteData? data) =>
       __sendPortPlatformMessage(name, identifier, port, data);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
+  @Native<Handle Function(Handle, Handle, Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::SendPortPlatformMessage')
   external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
 
   /// Registers the current isolate with the isolate identified with by the
@@ -589,7 +610,7 @@ class PlatformDispatcher {
     DartPluginRegistrant.ensureInitialized();
     __registerBackgroundIsolate(token._token);
   }
-  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
+  @Native<Void Function(Int64)>(symbol: 'PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
 
   /// Called whenever this platform dispatcher receives a message from a
@@ -618,7 +639,7 @@ class PlatformDispatcher {
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData? data) => __respondToPlatformMessage(responseId, data);
 
-  @FfiNative<Void Function(IntPtr, Handle)>('PlatformConfigurationNativeApi::RespondToPlatformMessage')
+  @Native<Void Function(IntPtr, Handle)>(symbol: 'PlatformConfigurationNativeApi::RespondToPlatformMessage')
   external static void __respondToPlatformMessage(int responseId, ByteData? data);
 
   /// Wraps the given [callback] in another callback that ensures that the
@@ -678,7 +699,7 @@ class PlatformDispatcher {
   /// Note that this does not rename any child isolates of the root.
   void setIsolateDebugName(String name) => _setIsolateDebugName(name);
 
-  @FfiNative<Void Function(Handle)>('PlatformConfigurationNativeApi::SetIsolateDebugName')
+  @Native<Void Function(Handle)>(symbol: 'PlatformConfigurationNativeApi::SetIsolateDebugName')
   external static void _setIsolateDebugName(String name);
 
   /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
@@ -691,7 +712,7 @@ class PlatformDispatcher {
     _requestDartPerformanceMode(mode.index);
   }
 
-  @FfiNative<Int Function(Int)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
+  @Native<Int Function(Int)>(symbol: 'PlatformConfigurationNativeApi::RequestDartPerformanceMode')
   external static int _requestDartPerformanceMode(int mode);
 
   /// The embedder can specify data that the isolate can request synchronously
@@ -705,7 +726,7 @@ class PlatformDispatcher {
   /// platform channel may be used.
   ByteData? getPersistentIsolateData() => _getPersistentIsolateData();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::GetPersistentIsolateData')
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::GetPersistentIsolateData')
   external static ByteData? _getPersistentIsolateData();
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
@@ -717,11 +738,11 @@ class PlatformDispatcher {
   ///    scheduling of frames.
   void scheduleFrame() => _scheduleFrame();
 
-  @FfiNative<Void Function()>('PlatformConfigurationNativeApi::ScheduleFrame')
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
-  AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
+  AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures]
   /// changes.
@@ -739,7 +760,7 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   void _updateAccessibilityFeatures(int values) {
     final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
-    final PlatformConfiguration previousConfiguration = configuration;
+    final _PlatformConfiguration previousConfiguration = _configuration;
     if (newFeatures == previousConfiguration.accessibilityFeatures) {
       return;
     }
@@ -768,7 +789,7 @@ class PlatformDispatcher {
   ''')
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(SemanticsUpdate update);
 
   /// The system-reported default locale of the device.
@@ -799,7 +820,7 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => configuration.locales;
+  List<Locale> get locales => _configuration.locales;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -830,7 +851,7 @@ class PlatformDispatcher {
 
   List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) => __computePlatformResolvedLocale(supportedLocalesData);
 
-  @FfiNative<Handle Function(Handle)>('PlatformConfigurationNativeApi::ComputePlatformResolvedLocale')
+  @Native<Handle Function(Handle)>(symbol: 'PlatformConfigurationNativeApi::ComputePlatformResolvedLocale')
   external static List<String> __computePlatformResolvedLocale(List<String?> supportedLocalesData);
 
   /// A callback that is invoked whenever [locale] changes value.
@@ -854,7 +875,7 @@ class PlatformDispatcher {
   void _updateLocales(List<String> locales) {
     const int stringsPerLocale = 4;
     final int numLocales = locales.length ~/ stringsPerLocale;
-    final PlatformConfiguration previousConfiguration = configuration;
+    final _PlatformConfiguration previousConfiguration = _configuration;
     final List<Locale> newLocales = <Locale>[];
     bool localesDiffer = numLocales != previousConfiguration.locales.length;
     for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
@@ -900,7 +921,7 @@ class PlatformDispatcher {
   bool _initialLifecycleStateAccessed = false;
 
   // Called from the engine, via hooks.dart
-  void _updateLifecycleState(String state) {
+  void _updateInitialLifecycleState(String state) {
     // We do not update the state if the state has already been used to initialize
     // the lifecycleState.
     if (!_initialLifecycleStateAccessed) {
@@ -912,7 +933,7 @@ class PlatformDispatcher {
   /// format.
   ///
   /// This option is used by [showTimePicker].
-  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool get alwaysUse24HourFormat => _configuration.alwaysUse24HourFormat;
 
   /// The system-reported text scale.
   ///
@@ -926,7 +947,7 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get textScaleFactor => configuration.textScaleFactor;
+  double get textScaleFactor => _configuration.textScaleFactor;
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
@@ -966,7 +987,7 @@ class PlatformDispatcher {
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
-  Brightness get platformBrightness => configuration.platformBrightness;
+  Brightness get platformBrightness => _configuration.platformBrightness;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -986,7 +1007,7 @@ class PlatformDispatcher {
   }
 
   /// The setting indicating the current system font of the host platform.
-  String? get systemFontFamily => configuration.systemFontFamily;
+  String? get systemFontFamily => _configuration.systemFontFamily;
 
   /// A callback that is invoked whenever [systemFontFamily] changes value.
   ///
@@ -1028,7 +1049,7 @@ class PlatformDispatcher {
     final Brightness platformBrightness =
     data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
     final String? systemFontFamily = data['systemFontFamily'] as String?;
-    final PlatformConfiguration previousConfiguration = configuration;
+    final _PlatformConfiguration previousConfiguration = _configuration;
     final bool platformBrightnessChanged = previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
     final bool alwaysUse24HourFormatChanged =
@@ -1061,7 +1082,7 @@ class PlatformDispatcher {
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
-  bool get semanticsEnabled => configuration.semanticsEnabled;
+  bool get semanticsEnabled => _configuration.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
@@ -1077,7 +1098,7 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _updateSemanticsEnabled(bool enabled) {
-    final PlatformConfiguration previousConfiguration = configuration;
+    final _PlatformConfiguration previousConfiguration = _configuration;
     if (previousConfiguration.semanticsEnabled == enabled) {
       return;
     }
@@ -1133,7 +1154,7 @@ class PlatformDispatcher {
       onSemanticsAction,
       _onSemanticsActionZone,
       nodeId,
-      SemanticsAction.values[action]!,
+      SemanticsAction.fromIndex(action)!,
       args,
     );
   }
@@ -1213,16 +1234,15 @@ class PlatformDispatcher {
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::DefaultRouteName')
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
 }
 
 /// Configuration of the platform.
 ///
 /// Immutable class (but can't use @immutable in dart:ui)
-class PlatformConfiguration {
-  /// Const constructor for [PlatformConfiguration].
-  const PlatformConfiguration({
+class _PlatformConfiguration {
+  const _PlatformConfiguration({
     this.accessibilityFeatures = const AccessibilityFeatures._(0),
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
@@ -1233,8 +1253,7 @@ class PlatformConfiguration {
     this.systemFontFamily,
   });
 
-  /// Copy a [PlatformConfiguration] with some fields replaced.
-  PlatformConfiguration copyWith({
+  _PlatformConfiguration copyWith({
     AccessibilityFeatures? accessibilityFeatures,
     bool? alwaysUse24HourFormat,
     bool? semanticsEnabled,
@@ -1244,7 +1263,7 @@ class PlatformConfiguration {
     String? defaultRouteName,
     String? systemFontFamily,
   }) {
-    return PlatformConfiguration(
+    return _PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
       alwaysUse24HourFormat: alwaysUse24HourFormat ?? this.alwaysUse24HourFormat,
       semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
@@ -1287,54 +1306,35 @@ class PlatformConfiguration {
 }
 
 /// An immutable view configuration.
-class ViewConfiguration {
-  /// A const constructor for an immutable [ViewConfiguration].
-  ///
-  /// When constructing a view configuration, supply either the [view] or the
-  /// [window] property, but not both since the [view] and [window] property
-  /// are backed by the same instance variable.
-  const ViewConfiguration({
-    FlutterView? view,
-    @Deprecated('''
-      Use the `view` property instead.
-      This change is related to adding multi-view support in Flutter.
-      This feature was deprecated after 3.7.0-1.2.pre.
-    ''')
-    FlutterView? window,
+class _ViewConfiguration {
+  const _ViewConfiguration({
+    this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
-    this.viewInsets = WindowPadding.zero,
-    this.viewPadding = WindowPadding.zero,
-    this.systemGestureInsets = WindowPadding.zero,
-    this.padding = WindowPadding.zero,
+    this.viewInsets = ViewPadding.zero,
+    this.viewPadding = ViewPadding.zero,
+    this.systemGestureInsets = ViewPadding.zero,
+    this.padding = ViewPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  }) : assert(window == null || view == null),
-    _view = view ?? window;
+  });
 
   /// Copy this configuration with some fields replaced.
-  ViewConfiguration copyWith({
+  _ViewConfiguration copyWith({
     FlutterView? view,
-    @Deprecated('''
-      Use the `view` property instead.
-      This change is related to adding multi-view support in Flutter.
-      This feature was deprecated after 3.7.0-1.2.pre.
-    ''')
-    FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
-    WindowPadding? viewInsets,
-    WindowPadding? viewPadding,
-    WindowPadding? systemGestureInsets,
-    WindowPadding? padding,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
-    assert(view == null || window == null);
-    return ViewConfiguration(
-      view: view ?? window ?? _view,
+    return _ViewConfiguration(
+      view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1347,22 +1347,7 @@ class ViewConfiguration {
     );
   }
 
-  /// The top level view for which this [ViewConfiguration]'s properties apply to.
-  ///
-  /// If this property is null, this [ViewConfiguration] is a top level view.
-  @Deprecated('''
-    Use the `view` property instead.
-    This change is related to adding multi-view support in Flutter.
-    This feature was deprecated after 3.7.0-1.2.pre.
-  ''')
-  FlutterView? get window => _view;
-
-  /// The top level view for which this [ViewConfiguration]'s properties apply to.
-  ///
-  /// If this property is null, this [ViewConfiguration] is a top level view.
-  FlutterView? get view => _view;
-
-  final FlutterView?  _view;
+  final FlutterView?  view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
@@ -1374,58 +1359,46 @@ class ViewConfiguration {
   /// Whether or not the view is currently visible on the screen.
   final bool visible;
 
-  /// The view insets, as it intersects with [Screen.viewInsets] for the screen
-  /// it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but over which the operating system will likely
+  /// place system UI, such as the keyboard, that fully obscures any content.
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.viewInsets] area, [viewInsets] will be
-  /// [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this view rectangle into
-  /// which the application can draw, but over which the operating system will
-  /// likely place system UI, such as the keyboard or system menus, that fully
-  /// obscures any content.
-  final WindowPadding viewInsets;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding viewInsets;
 
-  /// The view insets, as it intersects with [ScreenConfiguration.viewPadding]
-  /// for the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.viewPadding] area, [viewPadding] will be
-  /// [WindowPadding.zero].
+  /// Unlike [padding], this value does not change relative to [viewInsets].
+  /// For example, on an iPhone X, it will not change in response to the soft
+  /// keyboard being visible or hidden, whereas [padding] will.
   ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but which may be partially
-  /// obscured by system UI (such as the system notification area), or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
-  final WindowPadding viewPadding;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding viewPadding;
 
-  /// The view insets, as it intersects with
-  /// [ScreenConfiguration.systemGestureInsets] for the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but where the operating system will consume
+  /// input gestures for the sake of system navigation.
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.systemGestureInsets] area, [systemGestureInsets] will
-  /// be [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but where the operating system
-  /// will consume input gestures for the sake of system navigation.
-  final WindowPadding systemGestureInsets;
+  /// For example, an operating system might use the vertical edges of the
+  /// screen, where swiping inwards from the edges takes users backward
+  /// through the history of screens they previously visited.
+  final ViewPadding systemGestureInsets;
 
-  /// The view insets, as it intersects with [ScreenConfiguration.padding] for
-  /// the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.padding] area, [padding] will be
-  /// [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but which may be partially
-  /// obscured by system UI (such as the system notification area), or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
-  final WindowPadding padding;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding padding;
 
   /// Additional configuration for touch gestures performed on this view.
   ///
@@ -1434,7 +1407,6 @@ class ViewConfiguration {
   /// touch slop constant.
   final GestureSettings gestureSettings;
 
-  /// {@template dart.ui.ViewConfiguration.displayFeatures}
   /// Areas of the display that are obstructed by hardware features.
   ///
   /// This list is populated only on Android. If the device has no display
@@ -1451,7 +1423,6 @@ class ViewConfiguration {
   /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
   /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
   /// used to determine the posture the device is in.
-  /// {@endtemplate}
   final List<DisplayFeature> displayFeatures;
 
   @override
@@ -1718,6 +1689,43 @@ enum AppLifecycleState {
   detached,
 }
 
+/// The possible responses to a request to exit the application.
+///
+/// The request is typically responded to by a [WidgetsBindingObserver].
+// TODO(gspencergoog): Insert doc references here to AppLifecycleListener and to
+// the actual function called on WidgetsBindingObserver once those have landed
+// in the framework. https://github.com/flutter/flutter/issues/121721
+enum AppExitResponse {
+  /// Exiting the application can proceed.
+  exit,
+  /// Cancel the exit: do not exit the application.
+  cancel,
+}
+
+/// The type of application exit to perform when calling
+/// `ServicesBinding.exitApplication`.
+// TODO(gspencergoog): Insert doc references here to
+// ServicesBinding.exitApplication that has landed in the framework.
+// https://github.com/flutter/flutter/issues/121721
+enum AppExitType {
+  /// Requests that the application start an orderly exit, sending a request
+  /// back to the framework through the [WidgetsBinding]. If that responds
+  /// with [AppExitResponse.exit], then proceed with the same steps as a
+  /// [required] exit. If that responds with [AppExitResponse.cancel], then the
+  /// exit request is canceled and the application continues executing normally.
+  cancelable,
+
+  /// A non-cancelable orderly exit request. The engine will shut down the
+  /// engine and call the native UI toolkit's exit API.
+  ///
+  /// If you need an even faster and more dangerous exit, then call `dart:io`'s
+  /// `exit()` directly, and even the native toolkit's exit API won't be called.
+  /// This is quite dangerous, though, since it's possible that the engine will
+  /// crash because it hasn't been properly shut down, causing the app to crash
+  /// on exit.
+  required,
+}
+
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
 /// around their user interface, as exposed by [FlutterView.viewInsets] and
@@ -1734,8 +1742,8 @@ enum AppLifecycleState {
 ///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
-class WindowPadding {
-  const WindowPadding._({ required this.left, required this.top, required this.right, required this.bottom });
+class ViewPadding {
+  const ViewPadding._({ required this.left, required this.top, required this.right, required this.bottom });
 
   /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
@@ -1749,21 +1757,30 @@ class WindowPadding {
   /// The distance from the bottom edge to the first unpadded pixel, in physical pixels.
   final double bottom;
 
-  /// A window padding that has zeros for each edge.
-  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  /// A view padding that has zeros for each edge.
+  static const ViewPadding zero = ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
-    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
 }
+
+/// Deprecated. Will be removed in a future version of Flutter.
+///
+/// Use [ViewPadding] instead.
+@Deprecated(
+  'Use ViewPadding instead. '
+  'This feature was deprecated after v3.8.0-14.0.pre.',
+)
+typedef WindowPadding = ViewPadding;
 
 /// Area of the display that may be obstructed by a hardware feature.
 ///
 /// This is populated only on Android.
 ///
 /// The [bounds] are measured in logical pixels. On devices with two screens the
-/// coordinate system starts with [0,0] in the top-left corner of the left or top screen
+/// coordinate system starts with (0,0) in the top-left corner of the left or top screen
 /// and expands to include both screens and the visual space between them.
 ///
 /// The [type] describes the behaviour and if [DisplayFeature] obstructs the display.
@@ -1797,8 +1814,8 @@ class DisplayFeature {
   ///
   /// For example, on a dual screen device in portrait mode:
   ///
-  /// * [bounds.left] gives you the size of left screen, in logical pixels.
-  /// * [bounds.right] gives you the size of the left screen + the hinge width.
+  /// * [Rect.left] gives you the size of left screen, in logical pixels.
+  /// * [Rect.right] gives you the size of the left screen + the hinge width.
   final Rect bounds;
 
   /// Type of display feature, e.g. hinge, fold, cutout.
@@ -1843,8 +1860,7 @@ class DisplayFeature {
 /// The shape formed by the screens for types [DisplayFeatureType.fold] and
 /// [DisplayFeatureType.hinge] is called the posture and is exposed in
 /// [DisplayFeature.state]. For example, the [DisplayFeatureState.postureFlat] posture
-/// means the screens form a flat surface, while [DisplayFeatureState.postureFlipped]
-/// posture means the screens are facing opposite directions.
+/// means the screens form a flat surface.
 ///
 /// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
 ///
@@ -1928,7 +1944,7 @@ class Locale {
   /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
   /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml). The
   /// primary language subtag must be at least two and at most eight lowercase
-  /// letters, but not four letters. The region region subtag must be two
+  /// letters, but not four letters. The region subtag must be two
   /// uppercase letters or three digits. See the [Unicode Language
   /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
   /// specification.
@@ -1943,8 +1959,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ]) : assert(_languageCode != null),
-       assert(_languageCode != ''),
+  ]) : assert(_languageCode != ''),
        scriptCode = null;
 
   /// Creates a new Locale object.
@@ -1971,8 +1986,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  }) : assert(languageCode != null),
-       assert(languageCode != ''),
+  }) : assert(languageCode != ''),
        _languageCode = languageCode,
        assert(scriptCode != ''),
        assert(countryCode != ''),

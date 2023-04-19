@@ -42,7 +42,10 @@ abstract class BrowserEnvironment {
   /// browser in debug mode by pausing test execution after the code is loaded
   /// but before calling the `main()` function of the test, giving the
   /// developer a chance to set breakpoints.
-  Future<Browser> launchBrowserInstance(Uri url, {bool debug = false});
+  Future<Browser> launchBrowserInstance(
+    Uri url, {
+    bool debug = false,
+  });
 }
 
 /// An interface for running browser instances.
@@ -54,11 +57,11 @@ abstract class BrowserEnvironment {
 /// Any errors starting or running the browser process are reported through
 /// [onExit].
 abstract class Browser {
-  /// The Observatory URL for this browser.
+  /// The Dart VM Service URL for this browser.
   ///
   /// Returns `null` for browsers that aren't running the Dart VM, or
-  /// if the Observatory URL can't be found.
-  Future<Uri>? get observatoryUrl => null;
+  /// if the Dart VM Service URL can't be found.
+  Future<Uri>? get vmServiceUrl => null;
 
   /// The remote debugger URL for this browser.
   ///

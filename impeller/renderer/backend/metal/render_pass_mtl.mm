@@ -8,14 +8,14 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/host_buffer.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -382,6 +382,13 @@ static bool Bind(PassBindingsCache& pass,
     return false;
   }
 
+  if (texture.NeedsMipmapGeneration()) {
+    VALIDATION_LOG
+        << "Texture at binding index " << bind_index
+        << " has a mip count > 1, but the mipmap has not been generated.";
+    return false;
+  }
+
   return pass.SetTexture(stage, bind_index,
                          TextureMTL::Cast(texture).GetMTLTexture());
 }
@@ -468,6 +475,8 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
     [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
+    [encoder setTriangleFillMode:ToMTLTriangleFillMode(
+                                     pipeline_desc.GetPolygonMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
 
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {

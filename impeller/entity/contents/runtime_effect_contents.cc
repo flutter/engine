@@ -10,15 +10,15 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/runtime_effect.vert.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/shader_function.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -35,6 +35,10 @@ void RuntimeEffectContents::SetUniformData(
 void RuntimeEffectContents::SetTextureInputs(
     std::vector<TextureInput> texture_inputs) {
   texture_inputs_ = std::move(texture_inputs);
+}
+
+bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
+  return false;
 }
 
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
@@ -102,6 +106,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
+  const auto& caps = context->GetCapabilities();
+  const auto color_attachment_format = caps->GetDefaultColorFormat();
+  const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
+
   using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
@@ -115,9 +123,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
-      0u, {.format = PixelFormat::kDefaultColor, .blending_enabled = true});
+      0u, {.format = color_attachment_format, .blending_enabled = true});
   desc.SetStencilAttachmentDescriptors({});
-  desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
+  desc.SetStencilPixelFormat(stencil_attachment_format);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -143,38 +151,35 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Vertex stage uniforms.
   ///
 
-  VS::VertInfo frame_info;
+  VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
   /// Fragment stage uniforms.
   ///
 
+  size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
-  size_t sampler_index = 0;
   for (auto uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
-    ShaderMetadata metadata;
+    std::shared_ptr<ShaderMetadata> metadata =
+        std::make_shared<ShaderMetadata>();
 
     switch (uniform.type) {
       case kSampledImage: {
-        FML_DCHECK(sampler_index < texture_inputs_.size());
-        auto& input = texture_inputs_[sampler_index];
-
-        auto sampler =
-            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
-
-        SampledImageSlot image_slot;
-        image_slot.name = uniform.name.c_str();
-        image_slot.texture_index = sampler_index;
-        image_slot.sampler_index = sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
-                         input.texture, sampler);
-
-        sampler_index++;
+        // Sampler uniforms are ordered in the IPLR according to their
+        // declaration and the uniform location reflects the correct offset to
+        // be mapped to - except that it may include all proceeding float
+        // uniforms. For example, a float sampler that comes after 4 float
+        // uniforms may have a location of 4. To convert to the actual offset we
+        // need to find the largest location assigned to a float uniform and
+        // then subtract this from all uniform locations. This is more or less
+        // the same operation we previously performed in the shader compiler.
+        minimum_sampler_index =
+            std::min(minimum_sampler_index, uniform.location);
         break;
       }
       case kFloat: {
@@ -186,7 +191,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
-        uniform_slot.ext_res_0 = buffer_index;
+        uniform_slot.ext_res_0 = uniform.location;
         cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
                          buffer_view);
         buffer_index++;
@@ -210,10 +215,41 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     }
   }
 
+  size_t sampler_index = 0;
+  for (auto uniform : runtime_stage_->GetUniforms()) {
+    // TODO(113715): Populate this metadata once GLES is able to handle
+    //               non-struct uniform names.
+    ShaderMetadata metadata;
+
+    switch (uniform.type) {
+      case kSampledImage: {
+        FML_DCHECK(sampler_index < texture_inputs_.size());
+        auto& input = texture_inputs_[sampler_index];
+
+        auto sampler =
+            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
+
+        SampledImageSlot image_slot;
+        image_slot.name = uniform.name.c_str();
+        image_slot.texture_index = uniform.location - minimum_sampler_index;
+        image_slot.sampler_index = uniform.location - minimum_sampler_index;
+        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
+                         input.texture, sampler);
+
+        sampler_index++;
+        break;
+      }
+      default:
+        continue;
+    }
+  }
+
   pass.AddCommand(std::move(cmd));
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }

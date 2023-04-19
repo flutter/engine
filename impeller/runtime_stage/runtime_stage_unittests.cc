@@ -9,11 +9,11 @@
 #include "flutter/testing/testing.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/playground/playground.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/shader_library.h"
-#include "impeller/renderer/shader_types.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/runtime_stage/runtime_stage_playground.h"
 
@@ -242,12 +242,14 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   ASSERT_TRUE(vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs));
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;
-  color0.format = PixelFormat::kDefaultColor;
+  color0.format = GetContext()->GetCapabilities()->GetDefaultColorFormat();
   StencilAttachmentDescriptor stencil0;
   stencil0.stencil_compare = CompareFunction::kEqual;
   desc.SetColorAttachmentDescriptor(0u, color0);
   desc.SetStencilAttachmentDescriptors(stencil0);
-  desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
+  const auto stencil_fmt =
+      GetContext()->GetCapabilities()->GetDefaultStencilFormat();
+  desc.SetStencilPixelFormat(stencil_fmt);
   auto pipeline = GetContext()->GetPipelineLibrary()->GetPipeline(desc).Get();
   ASSERT_NE(pipeline, nullptr);
 }

@@ -18,9 +18,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "profile",
@@ -58,9 +55,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "release",
@@ -90,6 +84,7 @@
                         "out/android_release_arm64/zip_archives/android-arm64-release/artifacts.zip",
                         "out/android_release_arm64/zip_archives/android-arm64-release/linux-x64.zip",
                         "out/android_release_arm64/zip_archives/android-arm64-release/symbols.zip",
+                        "out/android_release_arm64/zip_archives/android-arm64-release/analyze-snapshot-linux-x64.zip",
                         "out/android_release_arm64/zip_archives/download.flutter.io"
                     ]
                 }
@@ -98,9 +93,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "release",
@@ -114,7 +106,8 @@
                 "targets": [
                     "default",
                     "clang_x64/gen_snapshot",
-                    "flutter/shell/platform/android:abi_jars"
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:analyze_snapshot"
                 ]
             },
             "tests": []
@@ -128,6 +121,7 @@
                     "include_paths": [
                         "out/android_profile_arm64/zip_archives/android-arm64-profile/artifacts.zip",
                         "out/android_profile_arm64/zip_archives/android-arm64-profile/linux-x64.zip",
+                        "out/android_profile_arm64/zip_archives/android-arm64-profile/analyze-snapshot-linux-x64.zip",
                         "out/android_profile_arm64/zip_archives/download.flutter.io"
                     ]
                 }
@@ -136,9 +130,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--android",
                 "--runtime-mode",
@@ -152,7 +143,8 @@
                 "targets": [
                     "default",
                     "clang_x64/gen_snapshot",
-                    "flutter/shell/platform/android:abi_jars"
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:analyze_snapshot"
                 ]
             },
             "tests": []
@@ -167,6 +159,7 @@
                         "out/android_profile_x64/zip_archives/android-x64-profile/artifacts.zip",
                         "out/android_profile_x64/zip_archives/android-x64-profile/linux-x64.zip",
                         "out/android_profile_x64/zip_archives/android-x64-profile/symbols.zip",
+                        "out/android_profile_x64/zip_archives/android-x64-profile/analyze-snapshot-linux-x64.zip",
                         "out/android_profile_x64/zip_archives/download.flutter.io"
                     ]
                 }
@@ -175,9 +168,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "profile",
@@ -191,7 +181,8 @@
                 "targets": [
                     "default",
                     "clang_x64/gen_snapshot",
-                    "flutter/shell/platform/android:abi_jars"
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:analyze_snapshot"
                 ]
             },
             "tests": []
@@ -206,6 +197,7 @@
                         "out/android_release_x64/zip_archives/android-x64-release/artifacts.zip",
                         "out/android_release_x64/zip_archives/android-x64-release/linux-x64.zip",
                         "out/android_release_x64/zip_archives/android-x64-release/symbols.zip",
+                        "out/android_release_x64/zip_archives/android-x64-release/analyze-snapshot-linux-x64.zip",
                         "out/android_release_x64/zip_archives/download.flutter.io"
                     ]
                 }
@@ -214,9 +206,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "release",
@@ -230,7 +219,8 @@
                 "targets": [
                     "default",
                     "clang_x64/gen_snapshot",
-                    "flutter/shell/platform/android:abi_jars"
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:analyze_snapshot"
                 ]
             },
             "tests": []

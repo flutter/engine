@@ -4,24 +4,50 @@
 
 #pragma once
 
+#include <memory>
+#include <set>
+#include <thread>
+
 #include "flutter/fml/macros.h"
+#include "impeller/base/thread.h"
+#include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
+class ContextVK;
+
 class CommandPoolVK {
  public:
-  static std::unique_ptr<CommandPoolVK> Create(vk::Device device,
-                                               uint32_t queue_index);
+  static std::shared_ptr<CommandPoolVK> GetThreadLocal(
+      const ContextVK* context);
 
-  explicit CommandPoolVK(vk::UniqueCommandPool command_pool);
+  static void ClearAllPools(const ContextVK* context);
 
   ~CommandPoolVK();
 
-  vk::CommandPool Get() const;
+  bool IsValid() const;
+
+  void Reset();
+
+  vk::CommandPool GetGraphicsCommandPool() const;
+
+  vk::UniqueCommandBuffer CreateGraphicsCommandBuffer();
+
+  void CollectGraphicsCommandBuffer(vk::UniqueCommandBuffer buffer);
 
  private:
-  vk::UniqueCommandPool command_pool_;
+  const std::thread::id owner_id_;
+  vk::Device device_ = {};
+  vk::UniqueCommandPool graphics_pool_;
+  Mutex buffers_to_collect_mutex_;
+  std::set<SharedHandleVK<vk::CommandBuffer>> buffers_to_collect_
+      IPLR_GUARDED_BY(buffers_to_collect_mutex_);
+  bool is_valid_ = false;
+
+  explicit CommandPoolVK(const ContextVK* context);
+
+  void GarbageCollectBuffersIfAble() IPLR_REQUIRES(buffers_to_collect_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
 };

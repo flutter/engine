@@ -174,6 +174,9 @@ class CanvasParagraph implements ui.Paragraph {
         }
 
         final DomElement spanElement = domDocument.createElement('flt-span');
+        if (fragment.textDirection == ui.TextDirection.rtl) {
+          spanElement.setAttribute('dir', 'rtl');
+        }
         applyTextStyleToElement(element: spanElement, style: fragment.style);
         _positionSpanElement(spanElement, line, fragment);
 
@@ -211,10 +214,8 @@ class CanvasParagraph implements ui.Paragraph {
     switch (position.affinity) {
       case ui.TextAffinity.upstream:
         characterPosition = position.offset - 1;
-        break;
       case ui.TextAffinity.downstream:
         characterPosition = position.offset;
-        break;
     }
     final int start = WordBreaker.prevBreakIndex(plainText, characterPosition + 1);
     final int end = WordBreaker.nextBreakIndex(plainText, characterPosition);
@@ -234,7 +235,7 @@ class CanvasParagraph implements ui.Paragraph {
     }
 
     final ParagraphLine line = lines[i];
-    return ui.TextRange(start: line.startIndex, end: line.endIndex);
+    return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
   }
 
   @override

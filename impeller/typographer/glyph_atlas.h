@@ -10,10 +10,15 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
+
+class SkBitmap;
+namespace skgpu {
+class Rectanizer;
+}
 
 namespace impeller {
 
@@ -114,17 +119,7 @@ class GlyphAtlas {
   /// @return     The location of the font-glyph pair in the atlas.
   ///             `std::nullopt` of the pair in not in the atlas.
   ///
-  std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      whether this atlas contains all of the same font-glyph pairs
-  ///             as the vector.
-  ///
-  /// @param[in]  new_glyphs  The full set of new glyphs
-  ///
-  /// @return     Whether this atlas contains all passed pairs.
-  ///
-  bool HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
+  std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
  private:
   const Type type_;
@@ -153,11 +148,30 @@ class GlyphAtlasContext {
   std::shared_ptr<GlyphAtlas> GetGlyphAtlas() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Retrieve the size of the current glyph atlas.
+  const ISize& GetAtlasSize() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the previous (if any) SkBitmap instance.
+  std::shared_ptr<SkBitmap> GetBitmap() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the previous (if any) rect packer.
+  std::shared_ptr<skgpu::Rectanizer> GetRectPacker() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
-  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas);
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
+
+  void UpdateBitmap(std::shared_ptr<SkBitmap> bitmap);
+
+  void UpdateRectPacker(std::shared_ptr<skgpu::Rectanizer> rect_packer);
 
  private:
   std::shared_ptr<GlyphAtlas> atlas_;
+  ISize atlas_size_;
+  std::shared_ptr<SkBitmap> bitmap_;
+  std::shared_ptr<skgpu::Rectanizer> rect_packer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
 };

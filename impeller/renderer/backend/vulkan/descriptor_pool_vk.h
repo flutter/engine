@@ -4,26 +4,43 @@
 
 #pragma once
 
-#include <memory>
+#include <optional>
+#include <queue>
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
+//------------------------------------------------------------------------------
+/// @brief      A short-lived dynamically-sized descriptor pool. Descriptors
+///             from this pool don't need to be freed individually. Instead, the
+///             pool must be collected after all the descriptors allocated from
+///             it are done being used.
+///
+///             The pool or it's descriptors may not be accessed from multiple
+///             threads.
+///
+///             Encoders create pools as necessary as they have the same
+///             threading and lifecycle restrictions.
+///
 class DescriptorPoolVK {
  public:
   explicit DescriptorPoolVK(vk::Device device);
 
   ~DescriptorPoolVK();
 
-  vk::DescriptorPool GetPool();
+  std::optional<vk::DescriptorSet> AllocateDescriptorSet(
+      const vk::DescriptorSetLayout& layout);
 
  private:
-  vk::DescriptorPool pool_;
-  bool is_valid_ = false;
+  const vk::Device device_;
+  uint32_t pool_size_ = 31u;
+  std::queue<vk::UniqueDescriptorPool> pools_;
+
+  std::optional<vk::DescriptorPool> GetDescriptorPool();
+
+  bool GrowPool();
 
   FML_DISALLOW_COPY_AND_ASSIGN(DescriptorPoolVK);
 };

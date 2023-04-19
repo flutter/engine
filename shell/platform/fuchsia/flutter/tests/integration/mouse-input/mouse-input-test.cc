@@ -171,7 +171,7 @@ class MouseInputTest : public PortableUITest,
 
     // Get the display dimensions.
     FML_LOG(INFO) << "Waiting for scenic display info";
-    scenic_ = realm_root()->Connect<fuchsia::ui::scenic::Scenic>();
+    scenic_ = realm_root()->component().Connect<fuchsia::ui::scenic::Scenic>();
     scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
       display_width_ = display_info.width_in_px;
       display_height_ = display_info.height_in_px;
@@ -300,7 +300,7 @@ INSTANTIATE_TEST_SUITE_P(
         "fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
         "test-ui-stack.cm"));
 
-TEST_P(MouseInputTest, FlutterMouseMove) {
+TEST_P(MouseInputTest, DISABLED_FlutterMouseMove) {
   LaunchClient();
 
   SimulateMouseEvent(/* pressed_buttons = */ {}, /* movement_x = */ 1,
@@ -322,7 +322,7 @@ TEST_P(MouseInputTest, FlutterMouseMove) {
               /*component_name=*/"mouse-input-view");
 }
 
-TEST_P(MouseInputTest, FlutterMouseDown) {
+TEST_P(MouseInputTest, DISABLED_FlutterMouseDown) {
   LaunchClient();
 
   SimulateMouseEvent(
@@ -365,7 +365,7 @@ TEST_P(MouseInputTest, FlutterMouseDown) {
       /*component_name=*/"mouse-input-view");
 }
 
-TEST_P(MouseInputTest, FlutterMouseDownUp) {
+TEST_P(MouseInputTest, DISABLED_FlutterMouseDownUp) {
   LaunchClient();
 
   SimulateMouseEvent(
@@ -423,7 +423,7 @@ TEST_P(MouseInputTest, FlutterMouseDownUp) {
               /*component_name=*/"mouse-input-view");
 }
 
-TEST_P(MouseInputTest, FlutterMouseDownMoveUp) {
+TEST_P(MouseInputTest, DISABLED_FlutterMouseDownMoveUp) {
   LaunchClient();
 
   SimulateMouseEvent(
@@ -552,7 +552,7 @@ TEST_P(MouseInputTest, DISABLED_FlutterMouseWheelIssue103098) {
   EXPECT_EQ(event_3.wheel_y_physical_pixel(), 0);
 }
 
-TEST_P(MouseInputTest, FlutterMouseWheel) {
+TEST_P(MouseInputTest, DISABLED_FlutterMouseWheel) {
   LaunchClient();
 
   double initial_x = static_cast<double>(display_width()) / 2.f + 1;

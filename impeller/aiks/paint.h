@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/aiks/color_source.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -22,7 +23,8 @@ namespace impeller {
 struct Paint {
   using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
-      const Matrix& effect_transform)>;
+      const Matrix& effect_transform,
+      bool is_subpass)>;
   using ColorFilterProc =
       std::function<std::shared_ptr<ColorFilterContents>(FilterInput::Ref)>;
   using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
@@ -36,17 +38,6 @@ struct Paint {
     kStroke,
   };
 
-  enum class ColorSourceType {
-    kColor,
-    kImage,
-    kLinearGradient,
-    kRadialGradient,
-    kConicalGradient,
-    kSweepGradient,
-    kRuntimeEffect,
-    kScene,
-  };
-
   struct MaskBlurDescriptor {
     FilterContents::BlurStyle style;
     Sigma sigma;
@@ -58,8 +49,7 @@ struct Paint {
   };
 
   Color color = Color::Black();
-  std::optional<ColorSourceProc> color_source;
-  ColorSourceType color_source_type = ColorSourceType::kColor;
+  ColorSource color_source;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
@@ -67,6 +57,7 @@ struct Paint {
   Scalar stroke_miter = 4.0;
   Style style = Style::kFill;
   BlendMode blend_mode = BlendMode::kSourceOver;
+  bool invert_colors = false;
 
   std::optional<ImageFilterProc> image_filter;
   std::optional<ColorFilterProc> color_filter;
@@ -85,8 +76,7 @@ struct Paint {
   ///             original contents is returned.
   std::shared_ptr<Contents> WithFilters(
       std::shared_ptr<Contents> input,
-      std::optional<bool> is_solid_color = std::nullopt,
-      const Matrix& effect_transform = Matrix()) const;
+      std::optional<bool> is_solid_color = std::nullopt) const;
 
   /// @brief      Wrap this paint's configured filters to the given contents of
   ///             subpass target.
@@ -106,17 +96,26 @@ struct Paint {
   std::shared_ptr<Contents> CreateContentsForGeometry(
       std::unique_ptr<Geometry> geometry) const;
 
+  std::shared_ptr<Contents> CreateContentsForGeometry(
+      const std::shared_ptr<Geometry>& geometry) const;
+
+  /// @brief   Whether this paint has a color filter that can apply opacity
+  bool HasColorFilter() const;
+
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
                                          bool is_solid_color,
                                          const Matrix& effect_transform) const;
 
-  std::shared_ptr<Contents> WithImageFilter(
-      std::shared_ptr<Contents> input,
-      const Matrix& effect_transform) const;
+  std::shared_ptr<Contents> WithImageFilter(std::shared_ptr<Contents> input,
+                                            const Matrix& effect_transform,
+                                            bool is_subpass) const;
 
   std::shared_ptr<Contents> WithColorFilter(std::shared_ptr<Contents> input,
                                             bool absorb_opacity = false) const;
+
+  std::shared_ptr<Contents> WithInvertFilter(
+      std::shared_ptr<Contents> input) const;
 };
 
 }  // namespace impeller

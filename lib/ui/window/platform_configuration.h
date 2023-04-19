@@ -30,7 +30,7 @@ class Scene;
 /// @brief An enum for defining the different kinds of accessibility features
 ///        that can be enabled by the platform.
 ///
-///         Must match the `AccessibilityFeatureFlag` enum in framework.
+///         Must match the `AccessibilityFeatures` class in framework.
 enum class AccessibilityFeatureFlag : int32_t {
   kAccessibleNavigation = 1 << 0,
   kInvertColors = 1 << 1,
@@ -49,6 +49,16 @@ enum class AccessibilityFeatureFlag : int32_t {
 ///
 class PlatformConfigurationClient {
  public:
+  //--------------------------------------------------------------------------
+  /// @brief      Whether the platform provides an implicit view. If true,
+  ///             the Framework may assume that it can always render into
+  ///             the view with ID 0.
+  ///
+  ///             This value must not change for the lifetime of the
+  ///             application.
+  ///
+  virtual bool ImplicitViewEnabled() = 0;
+
   //--------------------------------------------------------------------------
   /// @brief      The route or path that the embedder requested when the
   ///             application was launched.
@@ -71,7 +81,7 @@ class PlatformConfigurationClient {
   virtual void Render(Scene* scene) = 0;
 
   //--------------------------------------------------------------------------
-  /// @brief      Receives a updated semantics tree from the Framework.
+  /// @brief      Receives an updated semantics tree from the Framework.
   ///
   /// @param[in] update The updated semantic tree to apply.
   ///
@@ -286,7 +296,7 @@ class PlatformConfiguration final {
   ///
   /// @param[in]  data  The lifecycle state data.
   ///
-  void UpdateLifecycleState(const std::string& data);
+  void UpdateInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the embedder has
@@ -426,7 +436,7 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
-  tonic::DartPersistentValue update_lifecycle_state_;
+  tonic::DartPersistentValue update_initial_lifecycle_state_;
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
@@ -469,6 +479,8 @@ class PlatformMessageHandlerStorage {
 //----------------------------------------------------------------------------
 class PlatformConfigurationNativeApi {
  public:
+  static Dart_Handle ImplicitViewEnabled();
+
   static std::string DefaultRouteName();
 
   static void ScheduleFrame();
@@ -526,7 +538,7 @@ class PlatformConfigurationNativeApi {
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 
  private:
-  static Dart_PerformanceMode current_performace_mode_;
+  static Dart_PerformanceMode current_performance_mode_;
 };
 
 }  // namespace flutter

@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -12,7 +14,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -1431,16 +1433,11 @@ void _canvasTests() {
     builder.addText('Hello');
     final CkParagraph paragraph = builder.build();
 
-    paragraph.delete();
     paragraph.dispose();
     expect(paragraph.debugDisposed, true);
   });
 
   test('toImage.toByteData', () async {
-    // Pretend that FinalizationRegistry is supported, so we can run this
-    // test in older browsers (the test will use a TestCollector instead of
-    // ProductionCollector)
-    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
@@ -1449,7 +1446,7 @@ void _canvasTests() {
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData();
@@ -1590,9 +1587,9 @@ void _paragraphTests() {
       ..forceStrutHeight = false;
 
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
 
     builder.addText('Hello');
@@ -1624,6 +1621,9 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1671,7 +1671,7 @@ void _paragraphTests() {
         1,
         3,
         canvasKit.RectHeightStyle.Tight,
-        canvasKit.RectWidthStyle.Max).single! as SkRectWithDirection;
+        canvasKit.RectWidthStyle.Max).single;
     expect(
       rectWithDirection.rect,
       hasLength(4),
@@ -1680,7 +1680,7 @@ void _paragraphTests() {
     expect(paragraph.getLineMetrics(), hasLength(1));
 
     final SkLineMetrics lineMetrics =
-        paragraph.getLineMetrics().cast<SkLineMetrics>().single;
+        paragraph.getLineMetrics().single;
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
@@ -1733,11 +1733,15 @@ void _paragraphTests() {
       ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder =
-        canvasKit.ParagraphBuilder.MakeFromFontProvider(
+        canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
     builder.addText('hello');
+
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
 
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
@@ -1747,7 +1751,7 @@ void _paragraphTests() {
       1,
       canvasKit.RectHeightStyle.Strut,
       canvasKit.RectWidthStyle.Tight,
-    ).cast<SkRectWithDirection>();
+    );
     expect(rects.length, 1);
     final SkRectWithDirection rect = rects.first;
     expect(rect.rect, <double>[0, 0, 13.770000457763672, 75]);
@@ -1807,4 +1811,99 @@ void _paragraphTests() {
 
     expect(skSurface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+
+  test('MakeRenderTarget test', () {
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: 100,
+      height: 100,
+    );
+
+    final int glContext = canvasKit.GetWebGLContext(
+      canvas,
+      SkWebGLContextOptions(
+        antialias: 0,
+        majorVersion: webGLVersion.toDouble(),
+      ),
+    ).toInt();
+    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
+    final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
+
+    expect(surface, isNotNull);
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+
+  group('getCanvasKitJsFileNames', () {
+    late dynamic oldV8BreakIterator = v8BreakIterator;
+    setUp(() {
+      oldV8BreakIterator = v8BreakIterator;
+    });
+    tearDown(() {
+      v8BreakIterator = oldV8BreakIterator;
+      debugResetBrowserSupportsImageDecoder();
+    });
+
+    test('in Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>[
+        'chromium/canvaskit.js',
+        'canvaskit.js',
+      ]);
+    });
+
+    test('in other browsers', () {
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = true;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+
+      v8BreakIterator = Object();
+      browserSupportsImageDecoder = false;
+      // TODO(mdebbar): we don't check image codecs for now.
+      // https://github.com/flutter/flutter/issues/122331
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
+
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = false;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+  });
+
+  test('respects actual location of canvaskit files', () {
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'https://example.com/'),
+      'https://example.com/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/'),
+      'http://localhost:1234/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/foo/'),
+      'http://localhost:1234/foo/canvaskit.wasm',
+    );
+  });
+
+  test('SkObjectFinalizationRegistry', () {
+    // There's no reliable way to test the actual functionality of
+    // FinalizationRegistry because it depends on GC, which cannot be controlled,
+    // So the test simply tests that a FinalizationRegistry can be constructed
+    // and its `register` method can be called.
+    final SkObjectFinalizationRegistry registry = createSkObjectFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object(), Object());
+  });
 }
+
+
+@JS('window.Intl.v8BreakIterator')
+external dynamic get v8BreakIterator;
+
+@JS('window.Intl.v8BreakIterator')
+external set v8BreakIterator(dynamic x);

@@ -326,10 +326,10 @@ void onBeginFrameWithNotifyNativeMain() {
 }
 
 @pragma('vm:entry-point')
-void frameCallback(_Image, int) {
-  // It is used as the frame callback of 'MultiFrameCodec' in the test
-  // 'ItDoesNotCrashThatSkiaUnrefQueueDrainAfterIOManagerReset'.
-  // The test is a regression test and doesn't care about images, so it is empty.
+void frameCallback(Object? image, int durationMilliseconds) {
+  if (image == null) {
+    throw Exception('Expeccted image in frame callback to be non-null');
+  }
 }
 
 Picture CreateRedBox(Size size) {
@@ -354,6 +354,9 @@ void scene_with_red_box() {
   PlatformDispatcher.instance.scheduleFrame();
 }
 
+@pragma('vm:external-name', 'NativeOnBeforeToImageSync')
+external void onBeforeToImageSync();
+
 
 @pragma('vm:entry-point')
 Future<void> toImageSync() async {
@@ -362,6 +365,7 @@ Future<void> toImageSync() async {
   canvas.drawPaint(Paint()..color = const Color(0xFFAAAAAA));
   final Picture picture = recorder.endRecording();
 
+  onBeforeToImageSync();
   final Image image = picture.toImageSync(20, 25);
   void expect(Object? a, Object? b) {
     if (a != b) {
@@ -469,4 +473,12 @@ Future<void> testPluginUtilitiesCallbackHandle() async {
     port.close();
   }
   notifyNativeBool(true);
+}
+
+@pragma('vm:entry-point')
+Future<void> testThatAssetLoadingHappensOnWorkerThread() async {
+  try {
+    await ImmutableBuffer.fromAsset('DoesNotExist');
+  } catch (err) { /* Do nothing */ }
+  notifyNative();
 }

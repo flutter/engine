@@ -4,6 +4,10 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
@@ -26,13 +30,9 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/device_buffer_descriptor.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/sampler.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
@@ -54,9 +54,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
-  auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
-  ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -79,9 +76,19 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
   SinglePassCallback callback = [&](RenderPass& pass) {
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    static bool wireframe;
+    ImGui::Checkbox("Wireframe", &wireframe);
+    ImGui::End();
+
+    desc->SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
+    auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+
+    assert(pipeline && pipeline->IsValid());
+
     Command cmd;
     cmd.label = "Box";
-    cmd.pipeline = box_pipeline;
+    cmd.pipeline = pipeline;
 
     cmd.BindVertices(vertex_buffer);
 
@@ -302,9 +309,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(bridge && boston);
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
-
   std::shared_ptr<RenderPass> r2t_pass;
-
+  auto cmd_buffer = context->CreateCommandBuffer();
+  ASSERT_TRUE(cmd_buffer);
   {
     ColorAttachment color0;
     color0.load_action = LoadAction::kClear;
@@ -342,7 +349,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
     RenderTarget r2t_desc;
     r2t_desc.SetColorAttachment(color0, 0u);
     r2t_desc.SetStencilAttachment(stencil0);
-    auto cmd_buffer = context->CreateCommandBuffer();
     r2t_pass = cmd_buffer->CreateRenderPass(r2t_desc);
     ASSERT_TRUE(r2t_pass && r2t_pass->IsValid());
   }
@@ -373,10 +379,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(r2t_pass->EncodeCommands());
 }
 
-#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("Instancing is only supported on Metal.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Instancing is not supported on OpenGL.");
   }
   using VS = InstancedDrawVertexShader;
   using FS = InstancedDrawFragmentShader;
@@ -389,7 +394,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
                     .TakePath()
-                    .CreatePolyline(),
+                    .CreatePolyline(1.0f),
                 [&builder](const float* vertices, size_t vertices_size,
                            const uint16_t* indices, size_t indices_size) {
                   for (auto i = 0u; i < vertices_size; i += 2) {
@@ -438,7 +443,6 @@ TEST_P(RendererTest, CanRenderInstanced) {
     return true;
   }));
 }
-#endif  // IMPELLER_ENABLE_METAL
 
 TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto context = GetContext();
@@ -507,7 +511,9 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       // Blit `bridge` to the top left corner of the texture.
       pass->AddCopy(bridge, texture);
 
-      pass->EncodeCommands(context->GetResourceAllocator());
+      if (!pass->EncodeCommands(context->GetResourceAllocator())) {
+        return false;
+      }
     }
 
     {
@@ -523,11 +529,11 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
 
         cmd.BindVertices(vertex_buffer);
 
-        VS::VertInfo vert_info;
-        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
-                        Matrix::MakeScale(GetContentScale());
-        VS::BindVertInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+        VS::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                         Matrix::MakeScale(GetContentScale());
+        VS::BindFrameInfo(
+            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = 0;
@@ -647,11 +653,11 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
 
         cmd.BindVertices(vertex_buffer);
 
-        VS::VertInfo vert_info;
-        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
-                        Matrix::MakeScale(GetContentScale());
-        VS::BindVertInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+        VS::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                         Matrix::MakeScale(GetContentScale());
+        VS::BindFrameInfo(
+            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = 0;
@@ -715,15 +721,14 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
-    const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
-                                     MipFilter::kLinear};
+    const char* mip_filter_names[] = {"Nearest", "Linear"};
+    const MipFilter mip_filters[] = {MipFilter::kNearest, MipFilter::kLinear};
     const char* min_filter_names[] = {"Nearest", "Linear"};
     const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
                                         MinMagFilter::kLinear};
 
     // UI state.
-    static int selected_mip_filter = 2;
+    static int selected_mip_filter = 1;
     static int selected_min_filter = 0;
     static float lod = 4.5;
 
@@ -768,11 +773,11 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
         cmd.BindVertices(vertex_buffer);
 
-        VS::VertInfo vert_info;
-        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
-                        Matrix::MakeScale(GetContentScale());
-        VS::BindVertInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+        VS::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                         Matrix::MakeScale(GetContentScale());
+        VS::BindFrameInfo(
+            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = lod;
@@ -839,10 +844,10 @@ TEST_P(RendererTest, TheImpeller) {
                          {Point(size.width, size.height)}});
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-    VS::FrameInfo vs_uniform;
-    vs_uniform.mvp = Matrix::MakeOrthographic(size);
+    VS::FrameInfo frame_info;
+    frame_info.mvp = Matrix::MakeOrthographic(size);
     VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
@@ -886,11 +891,11 @@ TEST_P(RendererTest, ArrayUniforms) {
                          {Point(size.width, size.height)}});
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-    VS::VertInfo vs_uniform;
-    vs_uniform.mvp =
+    VS::FrameInfo frame_info;
+    frame_info.mvp =
         Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
-    VS::BindVertInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+    VS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     auto time = GetSecondsElapsed();
     auto y_pos = [&time](float x) {
@@ -942,11 +947,11 @@ TEST_P(RendererTest, InactiveUniforms) {
                          {Point(size.width, size.height)}});
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-    VS::VertInfo vs_uniform;
-    vs_uniform.mvp =
+    VS::FrameInfo frame_info;
+    frame_info.mvp =
         Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
-    VS::BindVertInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+    VS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
                                .color = Color::Green()};
@@ -960,8 +965,8 @@ TEST_P(RendererTest, InactiveUniforms) {
 }
 
 TEST_P(RendererTest, CanCreateCPUBackedTexture) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
   }
 
   auto context = GetContext();

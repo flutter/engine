@@ -8,17 +8,17 @@ import("//flutter/impeller/tools/malioc.gni")
 import("//flutter/testing/testing.gni")
 
 declare_args() {
-  # Whether playgrounds are enabled for unit tests.
-  impeller_enable_playground = false
+  impeller_debug =
+      flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile"
 
   # Whether the Metal backend is enabled.
   impeller_enable_metal = is_mac || is_ios
 
   # Whether the OpenGLES backend is enabled.
-  impeller_enable_opengles = is_mac || is_linux || is_win || is_android
+  impeller_enable_opengles = is_linux || is_win || is_android
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan = is_linux || is_android
+  impeller_enable_vulkan = is_linux || is_win || is_android
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
@@ -46,6 +46,8 @@ declare_args() {
   impeller_supports_rendering =
       impeller_enable_metal || impeller_enable_opengles ||
       impeller_enable_vulkan
+
+  impeller_enable_compute = impeller_enable_vulkan || impeller_enable_metal
 }
 
 # ------------------------------------------------------------------------------
@@ -109,10 +111,14 @@ template("impeller_component") {
 # @param[required] sources  The GLSL (4.60) sources to compiled into the Metal
 #                           library.
 #
+# @param[required] metal_version  The Metal language version to compile for.
+#
 template("metal_library") {
   assert(is_ios || is_mac)
   assert(defined(invoker.name), "Metal library name must be specified.")
   assert(defined(invoker.sources), "Metal source files must be specified.")
+  assert(defined(invoker.metal_version),
+         "Metal language version must be specified.")
 
   metal_library_name = invoker.name
 
@@ -130,8 +136,13 @@ template("metal_library") {
     inputs = invoker.sources
 
     metal_library_path = "$root_out_dir/shaders/$metal_library_name.metallib"
+    metal_library_symbols_path =
+        "$root_out_dir/shaders/$metal_library_name.metallibsym"
 
-    outputs = [ metal_library_path ]
+    outputs = [
+      metal_library_path,
+      metal_library_symbols_path,
+    ]
 
     script = "//flutter/impeller/tools/build_metal_library.py"
 
@@ -142,6 +153,7 @@ template("metal_library") {
       rebase_path(metal_library_path, root_out_dir),
       "--depfile",
       rebase_path(depfile),
+      "--metal-version=$metal_version",
     ]
 
     if (is_ios) {
@@ -242,12 +254,8 @@ template("impellerc") {
     iplr = invoker.iplr
   }
   json = false
-  remap_samplers = false
   if (defined(invoker.json) && invoker.json) {
     json = invoker.json
-  }
-  if (defined(invoker.remap_samplers) && invoker.remap_samplers) {
-    remap_samplers = invoker.remap_samplers
   }
 
   # Not needed on every path.
@@ -261,8 +269,6 @@ template("impellerc") {
   # Optional: invoker.intermediates_subdir specifies the subdirectory in which
   #           to put intermediates.
   # Optional: invoker.json Causes output format to be JSON instead of flatbuffer.
-  # Optional: invoker.remap_samplers Output metal samplers according to
-  #           declaration order instead of usage order.
 
   _impellerc(target_name) {
     sources = invoker.shaders
@@ -296,11 +302,18 @@ template("impellerc") {
       args += [ "--gles-language-version=$gles_language_version" ]
     }
 
+    if (defined(invoker.metal_version)) {
+      assert(is_mac || is_ios)
+      metal_version = invoker.metal_version
+      args += [ "--metal-version=$metal_version" ]
+    }
+
+    if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+      args += [ "--use-half-textures" ]
+    }
+
     if (json) {
       args += [ "--json" ]
-    }
-    if (remap_samplers) {
-      args += [ "--remap-samplers" ]
     }
 
     if (sksl) {
@@ -382,15 +395,25 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/renderer",
+      "//flutter/impeller/core",
       impellerc_invocation,
     ]
   }
 }
 
-template("impeller_shaders_metal") {
+template("_impeller_shaders_metal") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.name), "Name of the shader library must be specified.")
+
+  metal_version = "1.2"
+  if (defined(invoker.metal_version)) {
+    metal_version = invoker.metal_version
+  }
+
+  use_half_textures = false
+  if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+    use_half_textures = invoker.use_half_textures
+  }
 
   shaders_base_name = string_join("",
                                   [
@@ -400,7 +423,9 @@ template("impeller_shaders_metal") {
   impellerc_mtl = "impellerc_$target_name"
   impellerc(impellerc_mtl) {
     shaders = invoker.shaders
+    metal_version = metal_version
     sl_file_extension = "metal"
+    use_half_textures = use_half_textures
     shader_target_flag = ""
     defines = [ "IMPELLER_TARGET_METAL" ]
     if (is_ios) {
@@ -417,6 +442,7 @@ template("impeller_shaders_metal") {
   mtl_lib = "genlib_$target_name"
   metal_library(mtl_lib) {
     name = invoker.name
+    metal_version = metal_version
     sources =
         filter_include(get_target_outputs(":$impellerc_mtl"), [ "*.metal" ])
     deps = [ ":$impellerc_mtl" ]
@@ -465,7 +491,7 @@ template("blobcat_library") {
   }
 }
 
-template("impeller_shaders_gles") {
+template("_impeller_shaders_gles") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.name), "Name of the shader library must be specified.")
   assert(defined(invoker.analyze), "Whether to analyze must be specified.")
@@ -544,9 +570,10 @@ template("impeller_shaders_gles") {
   }
 }
 
-template("impeller_shaders_vk") {
+template("_impeller_shaders_vk") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.name), "Name of the shader library must be specified.")
+  assert(defined(invoker.analyze), "Whether to analyze must be specified.")
 
   shaders_base_name = string_join("",
                                   [
@@ -560,6 +587,10 @@ template("impeller_shaders_vk") {
 
     # Metal reflectors generate a superset of information.
     if (impeller_enable_metal) {
+      if (defined(invoker.metal_version)) {
+        metal_version = invoker.metal_version
+      }
+
       intermediates_subdir = "vk"
     }
     shader_target_flag = "--vulkan"
@@ -567,10 +598,23 @@ template("impeller_shaders_vk") {
     defines = [ "IMPELLER_TARGET_VULKAN" ]
   }
 
+  vk_shaders =
+      filter_include(get_target_outputs(":$impellerc_vk"), [ "*.vkspv" ])
+
+  if (invoker.analyze) {
+    analyze_lib = "analyze_$target_name"
+    malioc_analyze_shaders(analyze_lib) {
+      shaders = vk_shaders
+      if (defined(invoker.vulkan_language_version)) {
+        vulkan_language_version = invoker.vulkan_language_version
+      }
+      deps = [ ":$impellerc_vk" ]
+    }
+  }
+
   vk_lib = "genlib_$target_name"
   blobcat_library(vk_lib) {
-    shaders =
-        filter_include(get_target_outputs(":$impellerc_vk"), [ "*.vkspv" ])
+    shaders = vk_shaders
     deps = [ ":$impellerc_vk" ]
   }
 
@@ -592,28 +636,96 @@ template("impeller_shaders_vk") {
   group(target_name) {
     public_deps = [ ":$embed_vk_lib" ]
 
+    if (invoker.analyze) {
+      public_deps += [ ":$analyze_lib" ]
+    }
+
     if (!impeller_enable_metal) {
       public_deps += [ ":$reflect_vk" ]
     }
   }
 }
 
+# ------------------------------------------------------------------------------
+# @brief           A target for precompiled shaders and the associated
+#                  generated reflection library.
+#
+# @param[required] name
+#
+#    The base name for the reflected C++ library.
+#
+# @param[required] shaders
+#
+#    A list of GLSL shader files.
+#
+# @param[optional] analyze
+#
+#    Whether to analyze shaders with malioc. Defaults to false. Shaders will
+#    only be analyzed if the GN argument "impeller_malioc_path" is defined.
+#
+# @param[optional] enable_opengles
+#
+#    Whether to compile the shaders for the OpenGL ES backend. Defaults to the
+#    value of the GN argument "impeller_enable_opengles".
+#
+# @param[optional] gles_language_version
+#
+#    The GLES version required by the shaders.
+#
+# @param[optional] metal_version
+#
+#    The version of the Metal API required by the shaders.
+#
+# @param[optional] vulkan_language_version
+#
+#    The SPIR-V version required by the shaders.
+#
+# @param[options] use_half_textures
+#
+#    Whether the metal shader is using half-precision textures and requires
+#    openGL semantics when compilig SPIR-V.
+#
 template("impeller_shaders") {
+  if (defined(invoker.metal_version)) {
+    metal_version = invoker.metal_version
+  }
+
+  use_half_textures = false
+  if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
+    use_half_textures = true
+  }
+
+  not_needed([
+               "metal_version",
+               "use_half_textures",
+             ])
+
+  enable_opengles = impeller_enable_opengles
+  if (defined(invoker.enable_opengles)) {
+    enable_opengles = invoker.enable_opengles
+  }
+
   if (impeller_enable_metal) {
+    if (!defined(metal_version)) {
+      metal_version = "1.2"
+    }
+    not_needed(invoker, [ "analyze" ])
     mtl_shaders = "mtl_$target_name"
-    impeller_shaders_metal(mtl_shaders) {
+    _impeller_shaders_metal(mtl_shaders) {
       name = invoker.name
       shaders = invoker.shaders
+      metal_version = metal_version
+      use_half_textures = use_half_textures
     }
   }
 
-  if (impeller_enable_opengles) {
+  if (enable_opengles) {
     analyze = true
     if (defined(invoker.analyze) && !invoker.analyze) {
       analyze = false
     }
     gles_shaders = "gles_$target_name"
-    impeller_shaders_gles(gles_shaders) {
+    _impeller_shaders_gles(gles_shaders) {
       name = invoker.name
       if (defined(invoker.gles_language_version)) {
         gles_language_version = invoker.gles_language_version
@@ -628,10 +740,18 @@ template("impeller_shaders") {
   }
 
   if (impeller_enable_vulkan) {
+    analyze = true
+    if (defined(invoker.analyze) && !invoker.analyze) {
+      analyze = false
+    }
     vk_shaders = "vk_$target_name"
-    impeller_shaders_vk(vk_shaders) {
+    _impeller_shaders_vk(vk_shaders) {
       name = invoker.name
+      if (defined(invoker.vulkan_language_version)) {
+        vulkan_language_version = invoker.vulkan_language_version
+      }
       shaders = invoker.shaders
+      analyze = analyze
     }
   }
 
@@ -645,7 +765,7 @@ template("impeller_shaders") {
       public_deps += [ ":$mtl_shaders" ]
     }
 
-    if (impeller_enable_opengles) {
+    if (enable_opengles) {
       public_deps += [ ":$gles_shaders" ]
     }
 

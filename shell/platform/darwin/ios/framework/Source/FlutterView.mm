@@ -16,8 +16,22 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
+static BOOL IsWideGamutSupported() {
+#if TARGET_OS_SIMULATOR
+  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
+  // the simulator.
+  return NO;
+#else
+  // This predicates the decision on the capabilities of the iOS device's
+  // display.  This means external displays will not support wide gamut if the
+  // device's display doesn't support it.  It practice that should be never.
+  return UIScreen.mainScreen.traitCollection.displayGamut != UIDisplayGamutSRGB;
+#endif
+}
+
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
+  BOOL _isWideGamutEnabled;
 }
 
 - (instancetype)init {
@@ -35,7 +49,9 @@
   return nil;
 }
 
-- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
+- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
+                          opaque:(BOOL)opaque
+                 enableWideGamut:(BOOL)isWideGamutEnabled {
   if (delegate == nil) {
     NSLog(@"FlutterView delegate was nil.");
     [self release];
@@ -46,7 +62,18 @@
 
   if (self) {
     _delegate = delegate;
+    _isWideGamutEnabled = isWideGamutEnabled;
+    if (_isWideGamutEnabled && !IsWideGamutSupported()) {
+      FML_DLOG(WARNING) << "Rendering wide gamut colors is turned on but isn't "
+                           "supported, downgrading the color gamut to sRGB.";
+    }
     self.layer.opaque = opaque;
+
+    // This line is necessary. CoreAnimation(or UIKit) may take this to do
+    // something to compute the final frame presented on screen, if we don't set this,
+    // it will make it take long time for us to take next CAMetalDrawable and will
+    // cause constant junk during rendering.
+    self.backgroundColor = UIColor.clearColor;
   }
 
   return self;
@@ -54,10 +81,27 @@
 
 - (void)layoutSubviews {
   if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+// It is a known Apple bug that CAMetalLayer incorrectly reports its supported
+// SDKs. It is, in fact, available since iOS 8.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
+#pragma clang diagnostic pop
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    self.layer.allowsGroupOpacity = YES;
-    self.layer.contentsScale = screenScale;
-    self.layer.rasterizationScale = screenScale;
+    layer.allowsGroupOpacity = YES;
+    layer.contentsScale = screenScale;
+    layer.rasterizationScale = screenScale;
+    layer.framebufferOnly = flutter::Settings::kSurfaceDataAccessible ? NO : YES;
+    if (_isWideGamutEnabled && IsWideGamutSupported()) {
+      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      layer.colorspace = srgb;
+      CFRelease(srgb);
+      if (self.opaque) {
+        layer.pixelFormat = MTLPixelFormatBGR10_XR;
+      } else {
+        layer.pixelFormat = MTLPixelFormatBGRA10_XR;
+      }
+    }
   }
 
   [super layoutSubviews];

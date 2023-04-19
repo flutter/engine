@@ -267,8 +267,7 @@ ComponentV2::ComponentV2(
 
   // Clone and check if client is servicing the directory.
   directory_ptr_->Clone(fuchsia::io::OpenFlags::DESCRIBE |
-                            fuchsia::io::OpenFlags::RIGHT_READABLE |
-                            fuchsia::io::OpenFlags::RIGHT_WRITABLE,
+                            fuchsia::io::OpenFlags::CLONE_SAME_RIGHTS,
                         cloned_directory_ptr_.NewRequest());
 
   // Collect our standard set of directories along with directories that are
@@ -291,8 +290,11 @@ ComponentV2::ComponentV2(
     for (auto& dir_str : other_dirs) {
       fuchsia::io::DirectoryHandle dir;
       auto request = dir.NewRequest().TakeChannel();
-      auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
-                                            dir_str.c_str(), request.release());
+      auto status = fdio_open_at(
+          directory_ptr_.channel().get(), dir_str.c_str(),
+          static_cast<uint32_t>(fuchsia::io::OpenFlags::DIRECTORY |
+                                fuchsia::io::OpenFlags::RIGHT_READABLE),
+          request.release());
       if (status == ZX_OK) {
         outgoing_dir_->AddEntry(
             dir_str.c_str(),
@@ -426,12 +428,12 @@ ComponentV2::ComponentV2(
   }
 
 #if defined(DART_PRODUCT)
-  settings_.enable_observatory = false;
+  settings_.enable_vm_service = false;
 #else
-  settings_.enable_observatory = true;
+  settings_.enable_vm_service = true;
 
   // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
-  settings_.observatory_host = "127.0.0.1";
+  settings_.vm_service_host = "127.0.0.1";
 #endif
 
   // Controls whether category "skia" trace events are enabled.
@@ -624,16 +626,6 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.
   }
-}
-
-void ComponentV2::CreateView(
-    zx::eventpair token,
-    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> /*incoming_services*/,
-    fidl::InterfaceHandle<
-        fuchsia::sys::ServiceProvider> /*outgoing_services*/) {
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  CreateViewWithViewRef(std::move(token), std::move(view_ref_pair.control_ref),
-                        std::move(view_ref_pair.view_ref));
 }
 
 void ComponentV2::CreateViewWithViewRef(

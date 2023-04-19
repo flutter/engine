@@ -10,9 +10,8 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/layers/layer_tree.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/io_manager.h"
@@ -54,6 +53,9 @@ class DlDeferredImageGPUSkia final : public DlImage {
 
   // |DlImage|
   bool isTextureBacked() const override;
+
+  // |DlImage|
+  bool isUIThreadSafe() const override;
 
   // |DlImage|
   SkISize dimensions() const override;

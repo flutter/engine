@@ -77,6 +77,8 @@ source_set("common") {
     "display.h",
     "display_manager.cc",
     "display_manager.h",
+    "dl_op_spy.cc",
+    "dl_op_spy.h",
     "engine.cc",
     "engine.h",
     "pipeline.cc",
@@ -287,6 +289,7 @@ if (enable_unittests) {
       "animator_unittests.cc",
       "canvas_spy_unittests.cc",
       "context_options_unittests.cc",
+      "dl_op_spy_unittests.cc",
       "engine_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
@@ -319,14 +322,19 @@ if (enable_unittests) {
         "$fuchsia_sdk_root/pkg:fidl_cpp",
         "$fuchsia_sdk_root/pkg:sys_cpp",
       ]
-    } else {
-      # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
+    } else if (shell_enable_gl) {
+      # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot
+      # run on fuchsia or when GL is not enabled.
       sources += [ "shell_io_manager_unittests.cc" ]
+      deps += [ "//third_party/swiftshader" ]
+    }
 
-      # Swiftshader only needed on non-Fuchsia platforms.
-      if (shell_enable_vulkan) {
-        deps += [ "//third_party/swiftshader" ]
-      }
+    if (shell_enable_gl) {
+      deps += [
+        "//third_party/angle:libEGL_static",
+        "//third_party/angle:libGLESv2_static",
+        "//third_party/swiftshader",
+      ]
     }
   }
 }

@@ -42,10 +42,10 @@ class TypefaceFontStyleSet : public SkFontStyleSet {
   void getStyle(int index, SkFontStyle* style, SkString* name) override;
 
   // |SkFontStyleSet|
-  SkTypeface* createTypeface(int index) override;
+  sk_sp<SkTypeface> createTypeface(int index) override;
 
   // |SkFontStyleSet|
-  SkTypeface* matchStyle(const SkFontStyle& pattern) override;
+  sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override;
 
  private:
   std::vector<sk_sp<SkTypeface>> typefaces_;
@@ -70,7 +70,7 @@ class TypefaceFontAssetProvider : public FontAssetProvider {
   std::string GetFamilyName(int index) const override;
 
   // |FontAssetProvider|
-  SkFontStyleSet* MatchFamily(const std::string& family_name) override;
+  sk_sp<SkFontStyleSet> MatchFamily(const std::string& family_name) override;
 
  private:
   std::unordered_map<std::string, sk_sp<TypefaceFontStyleSet>>

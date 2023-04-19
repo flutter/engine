@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
 import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
@@ -26,9 +27,7 @@ typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
   SurfaceFrame(this.skiaSurface, this.submitCallback)
-      : _submitted = false,
-        assert(skiaSurface != null),
-        assert(submitCallback != null);
+      : _submitted = false;
 
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
@@ -69,7 +68,7 @@ class Surface {
   /// We must cache this function because each time we access the tear-off it
   /// creates a new object, meaning we won't be able to remove this listener
   /// later.
-  void Function(DomEvent)? _cachedContextLostListener;
+  DomEventListener? _cachedContextLostListener;
 
   /// A cached copy of the most recently created `webglcontextrestored`
   /// listener.
@@ -77,7 +76,7 @@ class Surface {
   /// We must cache this function because each time we access the tear-off it
   /// creates a new object, meaning we won't be able to remove this listener
   /// later.
-  void Function(DomEvent)? _cachedContextRestoredListener;
+  DomEventListener? _cachedContextRestoredListener;
 
   SkGrContext? _grContext;
   int? _glContext;
@@ -140,6 +139,41 @@ class Surface {
   ui.Size? _currentCanvasPhysicalSize;
   ui.Size? _currentSurfaceSize;
   double _currentDevicePixelRatio = -1;
+
+  /// This is only valid after the first frame or if [ensureSurface] has been
+  /// called
+  bool get usingSoftwareBackend => _glContext == null ||
+      _grContext == null || webGLVersion == -1 || configuration.canvasKitForceCpuOnly;
+
+  /// Ensure that the initial surface exists and has a size of at least [size].
+  ///
+  /// If not provided, [size] defaults to 1x1.
+  ///
+  /// This also ensures that the gl/grcontext have been populated so
+  /// that software rendering can be detected.
+  void ensureSurface([ui.Size size = const ui.Size(1, 1)]) {
+    // If the GrContext hasn't been setup yet then we need to force initialization
+    // of the canvas and initial surface.
+    if (_surface != null) {
+      return;
+    }
+    // TODO(jonahwilliams): this is somewhat wasteful. We should probably
+    // eagerly setup this surface instead of delaying until the first frame?
+    // Or at least cache the estimated window size.
+    createOrUpdateSurface(size);
+  }
+
+  /// This method is not supported if software rendering is used.
+  CkSurface createRenderTargetSurface(ui.Size size) {
+    assert(!usingSoftwareBackend);
+
+    final SkSurface skSurface = canvasKit.MakeRenderTarget(
+      _grContext!,
+      size.width.ceil(),
+      size.height.ceil(),
+    )!;
+    return CkSurface(skSurface, _glContext);
+  }
 
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
@@ -235,7 +269,7 @@ class Surface {
     htmlCanvas!.style.transform = 'translate(0, -${offset}px)';
   }
 
-  void _contextRestoredListener(DomEvent event) {
+  JSVoid _contextRestoredListener(DomEvent event) {
     assert(
         _contextLost,
         'Received "webglcontextrestored" event but never received '
@@ -247,7 +281,7 @@ class Surface {
     event.preventDefault();
   }
 
-  void _contextLostListener(DomEvent event) {
+  JSVoid _contextLostListener(DomEvent event) {
     assert(event.target == htmlCanvas,
         'Received a context lost event for a disposed canvas');
     final SurfaceFactory factory = SurfaceFactory.instance;
@@ -311,8 +345,8 @@ class Surface {
     // notification. When we receive this notification we force a new context.
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
-    _cachedContextRestoredListener = allowInterop(_contextRestoredListener);
-    _cachedContextLostListener = allowInterop(_contextLostListener);
+    _cachedContextRestoredListener = createDomEventListener(_contextRestoredListener);
+    _cachedContextLostListener = createDomEventListener(_contextLostListener);
     htmlCanvas.addEventListener(
       'webglcontextlost',
       _cachedContextLostListener,

@@ -117,7 +117,7 @@ TEST_F(EmbedderTest, CanInvokeCustomEntrypointMacro) {
   auto native_entry1 = CREATE_NATIVE_ENTRY(entry1);
   context.AddNativeCallback("SayHiFromCustomEntrypoint1", native_entry1);
 
-  // Can be wrapped in in the args.
+  // Can be wrapped in the args.
   auto entry2 = [&latch2](Dart_NativeArguments args) {
     FML_LOG(INFO) << "In Callback 2";
     latch2.Signal();
@@ -172,6 +172,30 @@ TEST_F(EmbedderTest, ExecutableNameNotNull) {
   builder.SetExecutableName("/path/to/binary");
   auto engine = builder.LaunchEngine();
   latch.Wait();
+}
+
+TEST_F(EmbedderTest, ImplicitViewNotNull) {
+  // TODO(loicsharma): Update this test when embedders can opt-out
+  // of the implicit view.
+  // See: https://github.com/flutter/flutter/issues/120306
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  bool implicitViewNotNull = false;
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "NotifyBoolValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        implicitViewNotNull = tonic::DartConverter<bool>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        latch.Signal();
+      }));
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("implicitViewNotNull");
+  auto engine = builder.LaunchEngine();
+  latch.Wait();
+
+  EXPECT_TRUE(implicitViewNotNull);
 }
 
 std::atomic_size_t EmbedderTestTaskRunner::sEmbedderTaskRunnerIdentifiers = {};
@@ -788,6 +812,250 @@ TEST_F(EmbedderTest,
   latch.Wait();
 
   ASSERT_TRUE(ImageMatchesFixture("compositor_software.png", scene_image));
+
+  // There should no present calls on the root surface.
+  ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
+}
+
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom software
+/// compositor, with a transparent overlay
+///
+TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("can_composite_platform_views_transparent_overlay");
+
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
+
+  fml::CountDownLatch latch(4);
+
+  auto scene_image = context.GetNextSceneImage();
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 2u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
+          backing_store.software.height = 600;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        // Layer 1
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 1;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(20.0, 20.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetPlatformViewRendererCallback(
+      [&](const FlutterLayer& layer, GrDirectContext*
+          /* don't use because software compositor */) -> sk_sp<SkImage> {
+        auto surface = CreateRenderSurface(
+            layer, nullptr /* null because software compositor */);
+        auto canvas = surface->getCanvas();
+        FML_CHECK(canvas != nullptr);
+
+        switch (layer.platform_view->identifier) {
+          case 1: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorGREEN);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          default:
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
+        }
+
+        return surface->makeImageSnapshot();
+      });
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
+  // platforms.
+#if !defined(FML_OS_LINUX)
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // FML_OS_LINUX
+  ASSERT_TRUE(ImageMatchesFixture(
+      "compositor_platform_layer_with_no_overlay.png", scene_image));
+
+  // There should no present calls on the root surface.
+  ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
+}
+
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom software
+/// compositor, with a no overlay
+///
+TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("can_composite_platform_views_no_overlay");
+
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
+
+  fml::CountDownLatch latch(4);
+
+  auto scene_image = context.GetNextSceneImage();
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 2u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
+          backing_store.software.height = 600;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        // Layer 1
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 1;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(20.0, 20.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetPlatformViewRendererCallback(
+      [&](const FlutterLayer& layer, GrDirectContext*
+          /* don't use because software compositor */) -> sk_sp<SkImage> {
+        auto surface = CreateRenderSurface(
+            layer, nullptr /* null because software compositor */);
+        auto canvas = surface->getCanvas();
+        FML_CHECK(canvas != nullptr);
+
+        switch (layer.platform_view->identifier) {
+          case 1: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorGREEN);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          default:
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
+        }
+
+        return surface->makeImageSnapshot();
+      });
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
+  // platforms.
+#if !defined(FML_OS_LINUX)
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // FML_OS_LINUX
+  ASSERT_TRUE(ImageMatchesFixture(
+      "compositor_platform_layer_with_no_overlay.png", scene_image));
 
   // There should no present calls on the root surface.
   ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
@@ -1635,49 +1903,71 @@ static void expectSoftwareRenderingOutputMatches(
                                          matcher);                        \
   }
 
-// Don't test the pixel formats that contain padding (so an X) and the kNative32
-// pixel format here, so we don't add any flakiness.
-SW_PIXFMT_TEST_F(RedRGBA565xF800, draw_solid_red, kRGB565, (uint16_t)0xF800);
-SW_PIXFMT_TEST_F(RedRGBA4444xF00F, draw_solid_red, kRGBA4444, (uint16_t)0xF00F);
+// Don't test the pixel formats that contain padding (so an X) and the
+// kFlutterSoftwarePixelFormatNative32 pixel format here, so we don't add any
+// flakiness.
+SW_PIXFMT_TEST_F(RedRGBA565xF800,
+                 draw_solid_red,
+                 kFlutterSoftwarePixelFormatRGB565,
+                 (uint16_t)0xF800);
+SW_PIXFMT_TEST_F(RedRGBA4444xF00F,
+                 draw_solid_red,
+                 kFlutterSoftwarePixelFormatRGBA4444,
+                 (uint16_t)0xF00F);
 SW_PIXFMT_TEST_F(RedRGBA8888xFFx00x00xFF,
                  draw_solid_red,
-                 kRGBA8888,
+                 kFlutterSoftwarePixelFormatRGBA8888,
                  (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
 SW_PIXFMT_TEST_F(RedBGRA8888x00x00xFFxFF,
                  draw_solid_red,
-                 kBGRA8888,
+                 kFlutterSoftwarePixelFormatBGRA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
-SW_PIXFMT_TEST_F(RedGray8x36, draw_solid_red, kGray8, (uint8_t)0x36);
+SW_PIXFMT_TEST_F(RedGray8x36,
+                 draw_solid_red,
+                 kFlutterSoftwarePixelFormatGray8,
+                 (uint8_t)0x36);
 
-SW_PIXFMT_TEST_F(GreenRGB565x07E0, draw_solid_green, kRGB565, (uint16_t)0x07E0);
+SW_PIXFMT_TEST_F(GreenRGB565x07E0,
+                 draw_solid_green,
+                 kFlutterSoftwarePixelFormatRGB565,
+                 (uint16_t)0x07E0);
 SW_PIXFMT_TEST_F(GreenRGBA4444x0F0F,
                  draw_solid_green,
-                 kRGBA4444,
+                 kFlutterSoftwarePixelFormatRGBA4444,
                  (uint16_t)0x0F0F);
 SW_PIXFMT_TEST_F(GreenRGBA8888x00xFFx00xFF,
                  draw_solid_green,
-                 kRGBA8888,
+                 kFlutterSoftwarePixelFormatRGBA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
 SW_PIXFMT_TEST_F(GreenBGRA8888x00xFFx00xFF,
                  draw_solid_green,
-                 kBGRA8888,
+                 kFlutterSoftwarePixelFormatBGRA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(GreenGray8xB6, draw_solid_green, kGray8, (uint8_t)0xB6);
+SW_PIXFMT_TEST_F(GreenGray8xB6,
+                 draw_solid_green,
+                 kFlutterSoftwarePixelFormatGray8,
+                 (uint8_t)0xB6);
 
-SW_PIXFMT_TEST_F(BlueRGB565x001F, draw_solid_blue, kRGB565, (uint16_t)0x001F);
+SW_PIXFMT_TEST_F(BlueRGB565x001F,
+                 draw_solid_blue,
+                 kFlutterSoftwarePixelFormatRGB565,
+                 (uint16_t)0x001F);
 SW_PIXFMT_TEST_F(BlueRGBA4444x00FF,
                  draw_solid_blue,
-                 kRGBA4444,
+                 kFlutterSoftwarePixelFormatRGBA4444,
                  (uint16_t)0x00FF);
 SW_PIXFMT_TEST_F(BlueRGBA8888x00x00xFFxFF,
                  draw_solid_blue,
-                 kRGBA8888,
+                 kFlutterSoftwarePixelFormatRGBA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
 SW_PIXFMT_TEST_F(BlueBGRA8888xFFx00x00xFF,
                  draw_solid_blue,
-                 kBGRA8888,
+                 kFlutterSoftwarePixelFormatBGRA8888,
                  (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(BlueGray8x12, draw_solid_blue, kGray8, (uint8_t)0x12);
+SW_PIXFMT_TEST_F(BlueGray8x12,
+                 draw_solid_blue,
+                 kFlutterSoftwarePixelFormatGray8,
+                 (uint8_t)0x12);
 
 //------------------------------------------------------------------------------
 // Key Data

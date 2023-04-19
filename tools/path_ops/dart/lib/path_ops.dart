@@ -171,16 +171,12 @@ class Path implements PathProxy {
       switch (verb) {
         case PathVerb.moveTo:
           proxy.moveTo(points[index++], points[index++]);
-          break;
         case PathVerb.lineTo:
           proxy.lineTo(points[index++], points[index++]);
-          break;
         case PathVerb._quadTo:
           assert(false);
-          break;
         case PathVerb._conicTo:
           assert(false);
-          break;
         case PathVerb.cubicTo:
           proxy.cubicTo(
             points[index++],
@@ -190,10 +186,8 @@ class Path implements PathProxy {
             points[index++],
             points[index++],
           );
-          break;
         case PathVerb.close:
           proxy.close();
-          break;
       }
     }
     assert(index == points.length);
@@ -309,9 +303,9 @@ final ffi.DynamicLibrary _dylib = () {
   throw UnsupportedError('Unknown platform: ${Platform.operatingSystem}');
 }();
 
-class _SkPath extends ffi.Opaque {}
+final class _SkPath extends ffi.Opaque {}
 
-class _PathData extends ffi.Struct {
+final class _PathData extends ffi.Struct {
   external ffi.Pointer<ffi.Uint8> verbs;
 
   @ffi.Size()

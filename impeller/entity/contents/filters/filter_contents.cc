@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
@@ -25,7 +26,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -113,11 +113,15 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
 std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
     FilterInput::Ref input,
     const Matrix& matrix,
-    const SamplerDescriptor& desc) {
+    const SamplerDescriptor& desc,
+    const Matrix& effect_transform,
+    bool is_subpass) {
   auto filter = std::make_shared<MatrixFilterContents>();
   filter->SetInputs({std::move(input)});
   filter->SetMatrix(matrix);
   filter->SetSamplerDescriptor(desc);
+  filter->SetEffectTransform(effect_transform);
+  filter->SetIsSubpass(is_subpass);
   return filter;
 }
 
@@ -154,7 +158,7 @@ void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
 }
 
 void FilterContents::SetEffectTransform(Matrix effect_transform) {
-  effect_transform_ = effect_transform.Basis();
+  effect_transform_ = effect_transform;
 }
 
 bool FilterContents::Render(const ContentContext& renderer,
@@ -167,26 +171,11 @@ bool FilterContents::Render(const ContentContext& renderer,
 
   // Run the filter.
 
-  auto maybe_snapshot = RenderToSnapshot(renderer, entity);
-  if (!maybe_snapshot.has_value()) {
-    return false;
+  auto maybe_entity = GetEntity(renderer, entity);
+  if (!maybe_entity.has_value()) {
+    return true;
   }
-  auto& snapshot = maybe_snapshot.value();
-
-  // Draw the result texture, respecting the transform and clip stack.
-
-  auto texture_rect = Rect::MakeSize(snapshot.texture->GetSize());
-  auto contents = TextureContents::MakeRect(texture_rect);
-  contents->SetTexture(snapshot.texture);
-  contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
-  contents->SetSourceRect(texture_rect);
-  contents->SetOpacity(snapshot.opacity);
-
-  Entity e;
-  e.SetBlendMode(entity.GetBlendMode());
-  e.SetStencilDepth(entity.GetStencilDepth());
-  e.SetTransformation(snapshot.transform);
-  return contents->Render(renderer, e, pass);
+  return maybe_entity->Render(renderer, pass);
 }
 
 std::optional<Rect> FilterContents::GetLocalCoverage(
@@ -234,9 +223,8 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
   return result;
 }
 
-std::optional<Snapshot> FilterContents::RenderToSnapshot(
-    const ContentContext& renderer,
-    const Entity& entity) const {
+std::optional<Entity> FilterContents::GetEntity(const ContentContext& renderer,
+                                                const Entity& entity) const {
   Entity entity_with_local_transform = entity;
   entity_with_local_transform.SetTransformation(
       GetTransform(entity.GetTransformation()));
@@ -248,6 +236,21 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
 
   return RenderFilter(inputs_, renderer, entity_with_local_transform,
                       effect_transform_, coverage.value());
+}
+
+std::optional<Snapshot> FilterContents::RenderToSnapshot(
+    const ContentContext& renderer,
+    const Entity& entity,
+    const std::optional<SamplerDescriptor>& sampler_descriptor,
+    bool msaa_enabled) const {
+  // Resolve the render instruction (entity) from the filter and render it to a
+  // snapshot.
+  if (std::optional<Entity> result = GetEntity(renderer, entity);
+      result.has_value()) {
+    return result->GetContents()->RenderToSnapshot(renderer, result.value());
+  }
+
+  return std::nullopt;
 }
 
 Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {

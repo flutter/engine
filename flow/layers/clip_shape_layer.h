@@ -33,8 +33,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
       }
     }
     if (UsesSaveLayer() && context->has_raster_cache()) {
-      context->SetTransform(
-          RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+      context->WillPaintWithIntegralTransform();
     }
     if (context->PushCullRect(clip_shape_bounds())) {
       DiffChildren(context, prev);
@@ -89,7 +88,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
       auto restore_apply = context.state_stack.applyState(
           paint_bounds(), LayerStateStack::kCallerCanApplyOpacity);
 
-      SkPaint paint;
+      DlPaint paint;
       if (layer_raster_cache_item_->Draw(context,
                                          context.state_stack.fill(paint))) {
         return;

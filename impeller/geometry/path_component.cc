@@ -67,6 +67,20 @@ std::vector<Point> LinearPathComponent::Extrema() const {
   return {p1, p2};
 }
 
+std::optional<Vector2> LinearPathComponent::GetStartDirection() const {
+  if (p1 == p2) {
+    return std::nullopt;
+  }
+  return (p1 - p2).Normalize();
+}
+
+std::optional<Vector2> LinearPathComponent::GetEndDirection() const {
+  if (p1 == p2) {
+    return std::nullopt;
+  }
+  return (p2 - p1).Normalize();
+}
+
 Point QuadraticPathComponent::Solve(Scalar time) const {
   return {
       QuadraticSolve(time, p1.x, cp.x, p2.x),  // x
@@ -86,15 +100,15 @@ static Scalar ApproximateParabolaIntegral(Scalar x) {
   return x / (1.0 - d + sqrt(sqrt(pow(d, 4) + 0.25 * x * x)));
 }
 
-std::vector<Point> QuadraticPathComponent::CreatePolyline(
-    Scalar tolerance) const {
+std::vector<Point> QuadraticPathComponent::CreatePolyline(Scalar scale) const {
   std::vector<Point> points;
-  FillPointsForPolyline(points, tolerance);
+  FillPointsForPolyline(points, scale);
   return points;
 }
 
 void QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
-                                                   Scalar tolerance) const {
+                                                   Scalar scale_factor) const {
+  auto tolerance = kDefaultCurveTolerance / scale_factor;
   auto sqrt_tolerance = sqrt(tolerance);
 
   auto d01 = cp - p1;
@@ -103,13 +117,13 @@ void QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
   auto cross = (p2 - p1).Cross(dd);
   auto x0 = d01.Dot(dd) * 1 / cross;
   auto x2 = d12.Dot(dd) * 1 / cross;
-  auto scale = abs(cross / (hypot(dd.x, dd.y) * (x2 - x0)));
+  auto scale = std::abs(cross / (hypot(dd.x, dd.y) * (x2 - x0)));
 
   auto a0 = ApproximateParabolaIntegral(x0);
   auto a2 = ApproximateParabolaIntegral(x2);
   Scalar val = 0.f;
   if (std::isfinite(scale)) {
-    auto da = abs(a2 - a0);
+    auto da = std::abs(a2 - a0);
     auto sqrt_scale = sqrt(scale);
     if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
       val = da * sqrt_scale;
@@ -139,6 +153,26 @@ std::vector<Point> QuadraticPathComponent::Extrema() const {
   return elevated.Extrema();
 }
 
+std::optional<Vector2> QuadraticPathComponent::GetStartDirection() const {
+  if (p1 != cp) {
+    return (p1 - cp).Normalize();
+  }
+  if (p1 != p2) {
+    return (p1 - p2).Normalize();
+  }
+  return std::nullopt;
+}
+
+std::optional<Vector2> QuadraticPathComponent::GetEndDirection() const {
+  if (p2 != cp) {
+    return (p2 - cp).Normalize();
+  }
+  if (p2 != p1) {
+    return (p2 - p1).Normalize();
+  }
+  return std::nullopt;
+}
+
 Point CubicPathComponent::Solve(Scalar time) const {
   return {
       CubicSolve(time, p1.x, cp1.x, cp2.x, p2.x),  // x
@@ -153,11 +187,11 @@ Point CubicPathComponent::SolveDerivative(Scalar time) const {
   };
 }
 
-std::vector<Point> CubicPathComponent::CreatePolyline(Scalar tolerance) const {
+std::vector<Point> CubicPathComponent::CreatePolyline(Scalar scale) const {
   auto quads = ToQuadraticPathComponents(.1);
   std::vector<Point> points;
   for (const auto& quad : quads) {
-    quad.FillPointsForPolyline(points, tolerance);
+    quad.FillPointsForPolyline(points, scale);
   }
   return points;
 }
@@ -281,6 +315,80 @@ std::vector<Point> CubicPathComponent::Extrema() const {
   }
 
   return points;
+}
+
+std::optional<Vector2> CubicPathComponent::GetStartDirection() const {
+  if (p1 != cp1) {
+    return (p1 - cp1).Normalize();
+  }
+  if (p1 != cp2) {
+    return (p1 - cp2).Normalize();
+  }
+  if (p1 != p2) {
+    return (p1 - p2).Normalize();
+  }
+  return std::nullopt;
+}
+
+std::optional<Vector2> CubicPathComponent::GetEndDirection() const {
+  if (p2 != cp2) {
+    return (p2 - cp2).Normalize();
+  }
+  if (p2 != cp1) {
+    return (p2 - cp1).Normalize();
+  }
+  if (p2 != p1) {
+    return (p2 - p1).Normalize();
+  }
+  return std::nullopt;
+}
+
+std::optional<Vector2> PathComponentStartDirectionVisitor::operator()(
+    const LinearPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetStartDirection();
+}
+
+std::optional<Vector2> PathComponentStartDirectionVisitor::operator()(
+    const QuadraticPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetStartDirection();
+}
+
+std::optional<Vector2> PathComponentStartDirectionVisitor::operator()(
+    const CubicPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetStartDirection();
+}
+
+std::optional<Vector2> PathComponentEndDirectionVisitor::operator()(
+    const LinearPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetEndDirection();
+}
+
+std::optional<Vector2> PathComponentEndDirectionVisitor::operator()(
+    const QuadraticPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetEndDirection();
+}
+
+std::optional<Vector2> PathComponentEndDirectionVisitor::operator()(
+    const CubicPathComponent* component) {
+  if (!component) {
+    return std::nullopt;
+  }
+  return component->GetEndDirection();
 }
 
 }  // namespace impeller

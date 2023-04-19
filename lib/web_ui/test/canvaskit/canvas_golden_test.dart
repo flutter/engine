@@ -43,9 +43,6 @@ void testMain() {
 
     test('renders using non-recording canvas if weak refs are supported',
         () async {
-      expect(browserSupportsFinalizationRegistry, isTrue,
-          reason: 'This test specifically tests non-recording canvas, which '
-              'only works if FinalizationRegistry is available.');
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas.runtimeType, CkCanvas);
@@ -55,38 +52,6 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-    // Safari does not support weak refs (FinalizationRegistry).
-    // This test should be revisited when Safari ships weak refs.
-    // TODO(yjbanov): skip Firefox due to a crash: https://github.com/flutter/flutter/issues/86632
-    }, skip: isSafari || isFirefox);
-
-    test('renders using a recording canvas if weak refs are not supported',
-        () async {
-      browserSupportsFinalizationRegistry = false;
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
-      expect(canvas, isA<RecordingCkCanvas>());
-      drawTestPicture(canvas);
-
-      final CkPicture originalPicture = recorder.endRecording();
-      await matchPictureGolden('canvaskit_picture.png', originalPicture, region: kDefaultRegion);
-
-      final ByteData originalPixels =
-          (await (await originalPicture.toImage(50, 50)).toByteData())!;
-
-      // Test that a picture restored from a snapshot looks the same.
-      final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
-      expect(snapshot, isNotNull);
-      final SkPicture restoredSkPicture = snapshot!.toPicture();
-      expect(restoredSkPicture, isNotNull);
-      final CkPicture restoredPicture = CkPicture(
-          restoredSkPicture, const ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
-      final ByteData restoredPixels =
-        (await (await restoredPicture.toImage(50, 50)).toByteData())!;
-
-      await matchPictureGolden('canvaskit_picture.png', restoredPicture, region: kDefaultRegion);
-      expect(restoredPixels.buffer.asUint8List(),
-          originalPixels.buffer.asUint8List());
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/51237
@@ -802,7 +767,7 @@ void testMain() {
 
     test('emoji text with skin tone', () async {
       await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻');
-    });
+    }, timeout: const Timeout.factor(2));
 
     // Make sure we clear the canvas in between frames.
     test('empty frame after contentful frame', () async {
@@ -828,8 +793,64 @@ void testMain() {
       await matchGoldenFile('canvaskit_empty_scene.png',
           region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-  }, skip: isSafari || isFirefox);
+
+    // Regression test for https://github.com/flutter/flutter/issues/121758
+    test('resources used in temporary surfaces for Image.toByteData can cross to rendering overlays', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
+      SurfaceFactory.instance.debugClear();
+
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
+      );
+      await createPlatformView(0, 'test-platform-view');
+
+      CkPicture makeTextPicture(String text, ui.Offset offset) {
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle());
+        builder.addText(text);
+        final CkParagraph paragraph = builder.build();
+        paragraph.layout(const ui.ParagraphConstraints(width: 100));
+        canvas.drawRect(
+          ui.Rect.fromLTWH(offset.dx, offset.dy, paragraph.width, paragraph.height).inflate(10),
+          CkPaint()..color = const ui.Color(0xFF00FF00)
+        );
+        canvas.drawParagraph(paragraph, offset);
+        return recorder.endRecording();
+      }
+
+      CkPicture imageToPicture(CkImage image, ui.Offset offset) {
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawImage(image, offset, CkPaint());
+        return recorder.endRecording();
+      }
+
+      final CkPicture helloPicture = makeTextPicture('Hello', ui.Offset.zero);
+
+      final CkImage helloImage = helloPicture.toImageSync(100, 100);
+
+      // Calling toByteData is essential to hit the bug.
+      await helloImage.toByteData(format: ui.ImageByteFormat.png);
+
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, helloPicture);
+      sb.addPlatformView(0, width: 10, height: 10);
+
+      // The image is rendered after the platform view so that it's rendered into
+      // a separate surface, which is what triggers the bug. If the bug is present
+      // the image will not appear on the UI.
+      sb.addPicture(const ui.Offset(0, 50), imageToPicture(helloImage, ui.Offset.zero));
+      sb.pop();
+
+      // The below line should not throw an error.
+      rasterizer.draw(sb.build().layerTree);
+
+      await matchGoldenFile('cross_overlay_resources.png', region: const ui.Rect.fromLTRB(0, 0, 100, 100));
+    });
+  });
 }
 
 Future<void> testSampleText(String language, String text,

@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <sstream>
 #include <vector>
 
 #include "impeller/base/config.h"
@@ -70,18 +69,21 @@ static std::string NormalizeUniformKey(const std::string& key) {
   return result;
 }
 
-static std::string CreateUnifiormMemberKey(const std::string& struct_name,
-                                           const std::string& member,
-                                           bool is_array) {
-  std::stringstream stream;
-  stream << struct_name << "." << member;
+static std::string CreateUniformMemberKey(const std::string& struct_name,
+                                          const std::string& member,
+                                          bool is_array) {
+  std::string result;
+  result.reserve(struct_name.length() + member.length() + (is_array ? 4 : 1));
+  result += struct_name;
+  result += '.';
+  result += member;
   if (is_array) {
-    stream << "[0]";
+    result += "[0]";
   }
-  return NormalizeUniformKey(stream.str());
+  return NormalizeUniformKey(result);
 }
 
-static std::string CreateUnifiormMemberKey(
+static std::string CreateUniformMemberKey(
     const std::string& non_struct_member) {
   return NormalizeUniformKey(non_struct_member);
 }
@@ -182,7 +184,7 @@ bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) const {
-  const auto* metadata = buffer.isa;
+  const auto* metadata = buffer.GetMetadata();
   if (metadata == nullptr) {
     // Vertex buffer bindings don't have metadata as those definitions are
     // already handled by vertex attrib pointers. Keep going.
@@ -216,7 +218,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     size_t element_count = member.array_elements.value_or(1);
 
     const auto member_key =
-        CreateUnifiormMemberKey(metadata->name, member.name, element_count > 1);
+        CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
       // The list of uniform locations only contains "active" uniforms that are
@@ -313,12 +315,13 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
   size_t active_index = 0;
   for (const auto& texture : bindings.textures) {
     const auto& texture_gles = TextureGLES::Cast(*texture.second.resource);
-    if (texture.second.isa == nullptr) {
+    if (texture.second.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";
       return false;
     }
 
-    const auto uniform_key = CreateUnifiormMemberKey(texture.second.isa->name);
+    const auto uniform_key =
+        CreateUniformMemberKey(texture.second.GetMetadata()->name);
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;

@@ -225,7 +225,7 @@ class FontFallbackData {
     registeredFallbackFonts.add(RegisteredFont(bytes, family, typeface));
     // Insert emoji font before all other fallback fonts so we use the emoji
     // whenever it's available.
-    if (family == 'Noto Emoji') {
+    if (family == 'Noto Color Emoji' || family == 'Noto Emoji') {
       if (globalFontFallbacks.first == 'Roboto') {
         globalFontFallbacks.insert(1, family);
       } else {
@@ -488,37 +488,33 @@ class NotoDownloader {
   /// Downloads the [url] and returns it as a [ByteBuffer].
   ///
   /// Override this for testing.
-  Future<ByteBuffer> downloadAsBytes(String url, {String? debugDescription}) {
+  Future<ByteBuffer> downloadAsBytes(String url, {String? debugDescription}) async {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<ByteBuffer> result = httpFetch(url).then(
-        (DomResponse fetchResult) => fetchResult
-            .arrayBuffer()
-            .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+    final Future<ByteBuffer> data = httpFetchByteBuffer(url);
     if (assertionsEnabled) {
-      result.whenComplete(() {
+      unawaited(data.whenComplete(() {
         _debugActiveDownloadCount -= 1;
-      });
+      }));
     }
-    return result;
+    return data;
   }
 
   /// Downloads the [url] and returns is as a [String].
   ///
   /// Override this for testing.
-  Future<String> downloadAsString(String url, {String? debugDescription}) {
+  Future<String> downloadAsString(String url, {String? debugDescription}) async {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<String> result = httpFetch(url).then((DomResponse response) =>
-        response.text().then<String>((dynamic x) => x as String));
+    final Future<String> data = httpFetchText(url);
     if (assertionsEnabled) {
-      result.whenComplete(() {
+      unawaited(data.whenComplete(() {
         _debugActiveDownloadCount -= 1;
-      });
+      }));
     }
-    return result;
+    return data;
   }
 }
 

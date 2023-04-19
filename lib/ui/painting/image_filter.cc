@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -52,39 +53,35 @@ ImageFilter::~ImageFilter() {}
 
 void ImageFilter::initBlur(double sigma_x,
                            double sigma_y,
-                           SkTileMode tile_mode) {
-  filter_ =
-      std::make_shared<DlBlurImageFilter>(sigma_x, sigma_y, ToDl(tile_mode));
+                           DlTileMode tile_mode) {
+  filter_ = DlBlurImageFilter::Make(SafeNarrow(sigma_x), SafeNarrow(sigma_y),
+                                    tile_mode);
 }
 
 void ImageFilter::initDilate(double radius_x, double radius_y) {
-  filter_ = std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
+  filter_ =
+      DlDilateImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initErode(double radius_x, double radius_y) {
-  filter_ = std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
+  filter_ =
+      DlErodeImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  filter_ =
-      std::make_shared<DlMatrixImageFilter>(ToSkMatrix(matrix4), sampling);
+  filter_ = DlMatrixImageFilter::Make(ToSkMatrix(matrix4), sampling);
 }
 
 void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
   FML_DCHECK(colorFilter);
-  auto dl_filter = colorFilter->dl_filter();
-  // Skia may return nullptr if the colorfilter is a no-op.
-  if (dl_filter) {
-    filter_ = std::make_shared<DlColorFilterImageFilter>(dl_filter);
-  }
+  filter_ = DlColorFilterImageFilter::Make(colorFilter->filter());
 }
 
 void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
   FML_DCHECK(outer && inner);
-  filter_ = std::make_shared<DlComposeImageFilter>(outer->dl_filter(),
-                                                   inner->dl_filter());
+  filter_ = DlComposeImageFilter::Make(outer->filter(), inner->filter());
 }
 
 }  // namespace flutter

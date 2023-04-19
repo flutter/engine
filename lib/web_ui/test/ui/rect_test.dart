@@ -12,7 +12,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
   setUpUiTest();
   test('rect accessors', () {
     const Rect r = Rect.fromLTRB(1.0, 3.0, 5.0, 7.0);

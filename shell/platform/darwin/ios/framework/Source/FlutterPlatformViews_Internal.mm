@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
-#include "flutter/display_list/display_list_image_filter.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
@@ -273,6 +273,7 @@ static BOOL _preparedOnce = NO;
 
 - (void)reset {
   paths_.clear();
+  [self setNeedsDisplay];
 }
 
 // In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added

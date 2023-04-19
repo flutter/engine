@@ -248,9 +248,12 @@ void createPath() {
 external void _validatePath(Path path);
 
 @pragma('vm:entry-point')
-void frameCallback(_Image, int) {
-  print('called back');
+void frameCallback(Object? image, int durationMilliseconds) {
+  validateFrameCallback(image, durationMilliseconds);
 }
+
+@pragma('vm:external-name', 'ValidateFrameCallback')
+external void validateFrameCallback(Object? image, int durationMilliseconds);
 
 @pragma('vm:entry-point')
 void platformMessagePortResponseTest() async {
@@ -534,7 +537,7 @@ void hooksTests() async {
     expectEquals(x.countryCode, y.countryCode);
   });
 
-  await test('Window padding/insets/viewPadding/systemGestureInsets', () {
+  await test('View padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
       20,
@@ -622,7 +625,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 11.0));
 
     _callHook(
@@ -650,7 +653,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: null));
 
     _callHook(
@@ -678,7 +681,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 22.0));
   });
 

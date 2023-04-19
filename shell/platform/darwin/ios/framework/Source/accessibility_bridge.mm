@@ -107,7 +107,14 @@ void AccessibilityBridge::UpdateSemantics(
       SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
       [newChildren addObject:child];
     }
+    NSMutableArray* newChildrenInHitTestOrder =
+        [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
+    for (NSUInteger i = 0; i < newChildCount; ++i) {
+      SemanticsObject* child = GetOrCreateObject(node.childrenInHitTestOrder[i], nodes);
+      [newChildrenInHitTestOrder addObject:child];
+    }
     object.children = newChildren;
+    object.childrenInHitTestOrder = newChildrenInHitTestOrder;
     if (!node.customAccessibilityActions.empty()) {
       NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions =
           [[[NSMutableArray alloc] init] autorelease];
@@ -260,8 +267,9 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
       !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
     // Text fields are backed by objects that implement UITextInput.
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-  } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
-             node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+  } else if (!node.HasFlag(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) &&
+             (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
+              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState))) {
     return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
     return [[[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr

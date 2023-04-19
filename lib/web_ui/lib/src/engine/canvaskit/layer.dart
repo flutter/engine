@@ -4,7 +4,6 @@
 
 import 'package:ui/ui.dart' as ui;
 
-import '../util.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views.dart';
@@ -64,13 +63,10 @@ class PrerollContext {
       switch (m.type) {
         case MutatorType.clipRect:
           clipRect = m.rect!;
-          break;
         case MutatorType.clipRRect:
           clipRect = m.rrect!.outerRect;
-          break;
         case MutatorType.clipPath:
           clipRect = m.path!.getBounds();
-          break;
         default:
           continue;
       }
@@ -183,6 +179,7 @@ class BackdropFilterEngineLayer extends ContainerLayer
     final CkPaint paint = CkPaint()..blendMode = _blendMode;
     paintContext.internalNodesCanvas
         .saveLayerWithFilter(paintBounds, _filter, paint);
+    paint.dispose();
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
   }
@@ -344,6 +341,7 @@ class OpacityEngineLayer extends ContainerLayer
     final ui.Rect saveLayerBounds = paintBounds.shift(-_offset);
 
     paintContext.internalNodesCanvas.saveLayer(saveLayerBounds, paint);
+    paint.dispose();
     paintChildren(paintContext);
     // Restore twice: once for the translate and once for the saveLayer.
     paintContext.internalNodesCanvas.restore();
@@ -365,7 +363,7 @@ class TransformEngineLayer extends ContainerLayer
     prerollContext.mutatorsStack.pushTransform(_transform);
     final ui.Rect childPaintBounds =
         prerollChildren(prerollContext, childMatrix);
-    paintBounds = transformRect(_transform, childPaintBounds);
+    paintBounds = _transform.transformRect(childPaintBounds);
     prerollContext.mutatorsStack.pop();
   }
 
@@ -407,6 +405,7 @@ class ImageFilterEngineLayer extends ContainerLayer
     final CkPaint paint = CkPaint();
     paint.imageFilter = _filter;
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
+    paint.dispose();
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
     paintContext.internalNodesCanvas.restore();
@@ -443,6 +442,7 @@ class ShaderMaskEngineLayer extends ContainerLayer
 
     paintContext.leafNodesCanvas!.drawRect(
         ui.Rect.fromLTWH(0, 0, maskRect.width, maskRect.height), paint);
+    paint.dispose();
     paintContext.leafNodesCanvas!.restore();
 
     paintContext.internalNodesCanvas.restore();
@@ -472,7 +472,6 @@ class PictureLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
-    assert(picture != null);
     assert(needsPainting);
 
     paintContext.leafNodesCanvas!.save();
@@ -528,14 +527,11 @@ class PhysicalShapeEngineLayer extends ContainerLayer
     switch (_clipBehavior) {
       case ui.Clip.hardEdge:
         paintContext.internalNodesCanvas.clipPath(_path, false);
-        break;
       case ui.Clip.antiAlias:
         paintContext.internalNodesCanvas.clipPath(_path, true);
-        break;
       case ui.Clip.antiAliasWithSaveLayer:
         paintContext.internalNodesCanvas.clipPath(_path, true);
         paintContext.internalNodesCanvas.saveLayer(paintBounds, null);
-        break;
       case ui.Clip.none:
         break;
     }
@@ -547,6 +543,7 @@ class PhysicalShapeEngineLayer extends ContainerLayer
       // anti-aliased drawPath will always have such artifacts.
       paintContext.leafNodesCanvas!.drawPaint(paint);
     }
+    paint.dispose();
 
     paintChildren(paintContext);
 
@@ -578,6 +575,7 @@ class ColorFilterEngineLayer extends ContainerLayer
     paint.colorFilter = filter;
 
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
+    paint.dispose();
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
   }

@@ -10,15 +10,15 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
@@ -81,14 +81,14 @@ void DirectionalGaussianBlurFilterContents::SetSourceOverride(
   source_override_ = std::move(source_override);
 }
 
-std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
+std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  using VS = GaussianBlurPipeline::VertexShader;
-  using FS = GaussianBlurPipeline::FragmentShader;
+  using VS = GaussianBlurAlphaDecalPipeline::VertexShader;
+  using FS = GaussianBlurAlphaDecalPipeline::FragmentShader;
 
   //----------------------------------------------------------------------------
   /// Handle inputs.
@@ -106,12 +106,14 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   }
 
   if (blur_sigma_.sigma < kEhCloseEnough) {
-    return input_snapshot.value();  // No blur to render.
+    return Entity::FromSnapshot(
+        input_snapshot.value(), entity.GetBlendMode(),
+        entity.GetStencilDepth());  // No blur to render.
   }
 
   auto radius = Radius{blur_sigma_}.radius;
 
-  auto transform = entity.GetTransformation() * effect_transform;
+  auto transform = entity.GetTransformation() * effect_transform.Basis();
   auto transformed_blur_radius =
       transform.TransformDirection(blur_direction_ * radius);
 
@@ -120,7 +122,9 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   // If the radius length is < .5, the shader will take at most 1 sample,
   // resulting in no blur.
   if (transformed_blur_radius_length < .5) {
-    return input_snapshot.value();  // No blur to render.
+    return Entity::FromSnapshot(
+        input_snapshot.value(), entity.GetBlendMode(),
+        entity.GetStencilDepth());  // No blur to render.
   }
 
   // A matrix that rotates the snapshot space such that the blur direction is
@@ -183,45 +187,96 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-
-    FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
+    frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
-    frag_info.alpha_mask_sampler_y_coord_scale =
+    frame_info.alpha_mask_sampler_y_coord_scale =
         source_snapshot->texture->GetYCoordScale();
 
+    FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+    frag_info.blur_radius = std::round(r.radius);
 
     // The blur direction is in input UV space.
-    frag_info.blur_direction =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
-
-    frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-    frag_info.src_factor = src_color_factor_;
-    frag_info.inner_blur_factor = inner_blur_factor_;
-    frag_info.outer_blur_factor = outer_blur_factor_;
-    frag_info.texture_size = Point(input_snapshot->GetCoverage().value().size);
+    frag_info.blur_uv_offset =
+        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
+        Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
     cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
                         transformed_blur_radius_length);
+    cmd.BindVertices(vtx_buffer);
+
     auto options = OptionsFromPass(pass);
     options.blend_mode = BlendMode::kSource;
-    cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-    cmd.BindVertices(vtx_buffer);
+    auto input_descriptor = input_snapshot->sampler_descriptor;
+    auto source_descriptor = source_snapshot->sampler_descriptor;
+    switch (tile_mode_) {
+      case Entity::TileMode::kDecal:
+        if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+          input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+        }
+        break;
+      case Entity::TileMode::kClamp:
+        input_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
+        input_descriptor.height_address_mode = SamplerAddressMode::kClampToEdge;
+        source_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
+        source_descriptor.height_address_mode =
+            SamplerAddressMode::kClampToEdge;
+        break;
+      case Entity::TileMode::kMirror:
+        input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+        input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+        source_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+        source_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+        break;
+      case Entity::TileMode::kRepeat:
+        input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+        input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+        source_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+        source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+        break;
+    }
+    input_descriptor.mag_filter = MinMagFilter::kLinear;
+    input_descriptor.min_filter = MinMagFilter::kLinear;
+
+    bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
+    bool has_decal_specialization =
+        tile_mode_ == Entity::TileMode::kDecal &&
+        !renderer.GetDeviceCapabilities().SupportsDecalTileMode();
+
+    if (has_alpha_mask && has_decal_specialization) {
+      cmd.pipeline = renderer.GetGaussianBlurAlphaDecalPipeline(options);
+    } else if (has_alpha_mask) {
+      cmd.pipeline = renderer.GetGaussianBlurAlphaPipeline(options);
+    } else if (has_decal_specialization) {
+      cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+    } else {
+      cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+    }
 
     FS::BindTextureSampler(
         cmd, input_snapshot->texture,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            input_snapshot->sampler_descriptor));
-    FS::BindAlphaMaskSampler(
-        cmd, source_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            source_snapshot->sampler_descriptor));
+            input_descriptor));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+    if (has_alpha_mask) {
+      FS::MaskInfo mask_info;
+      mask_info.src_factor = src_color_factor_;
+      mask_info.inner_blur_factor = inner_blur_factor_;
+      mask_info.outer_blur_factor = outer_blur_factor_;
+
+      FS::BindAlphaMaskSampler(
+          cmd, source_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              source_descriptor));
+      FS::BindMaskInfo(cmd, host_buffer.EmplaceUniform(mask_info));
+    }
 
     return pass.AddCommand(cmd);
   };
@@ -245,25 +300,26 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   Vector2 scaled_size = pass_texture_rect.size * scale;
   ISize floored_size = ISize(scaled_size.x, scaled_size.y);
 
-  auto out_texture = renderer.MakeSubpass(floored_size, callback);
+  auto out_texture = renderer.MakeSubpass("Directional Gaussian Blur Filter",
+                                          floored_size, callback);
 
   if (!out_texture) {
     return std::nullopt;
   }
-  out_texture->SetLabel("DirectionalGaussianBlurFilter Texture");
 
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-  return Snapshot{
-      .texture = out_texture,
-      .transform =
-          texture_rotate.Invert() *
-          Matrix::MakeTranslation(pass_texture_rect.origin) *
-          Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
-      .sampler_descriptor = sampler_desc,
-      .opacity = input_snapshot->opacity};
+  return Entity::FromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = texture_rotate.Invert() *
+                            Matrix::MakeTranslation(pass_texture_rect.origin) *
+                            Matrix::MakeScale((1 / scale) *
+                                              (scaled_size / floored_size)),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
@@ -279,9 +335,9 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
     return std::nullopt;
   }
 
-  auto transform = inputs[0]->GetTransform(entity) * effect_transform;
+  auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
-      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
+      transform.TransformDirection(blur_direction_* Radius{blur_sigma_}.radius)
           .Abs();
   auto extent = coverage->size + transformed_blur_vector * 2;
   return Rect(coverage->origin - transformed_blur_vector,

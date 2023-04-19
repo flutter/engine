@@ -7,18 +7,19 @@
 #include <optional>
 #include <utility>
 
+#include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
-#include "flutter/flow/skia_gpu_object.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
 static bool IsDisplayListWorthRasterizing(
-    DisplayList* display_list,
+    const DisplayList* display_list,
     bool will_change,
     bool is_complex,
     DisplayListComplexityCalculator* complexity_calculator) {
@@ -46,7 +47,7 @@ static bool IsDisplayListWorthRasterizing(
 }
 
 DisplayListRasterCacheItem::DisplayListRasterCacheItem(
-    DisplayList* display_list,
+    const sk_sp<DisplayList>& display_list,
     const SkPoint& offset,
     bool is_complex,
     bool will_change)
@@ -59,7 +60,7 @@ DisplayListRasterCacheItem::DisplayListRasterCacheItem(
       will_change_(will_change) {}
 
 std::unique_ptr<DisplayListRasterCacheItem> DisplayListRasterCacheItem::Make(
-    DisplayList* display_list,
+    const sk_sp<DisplayList>& display_list,
     const SkPoint& offset,
     bool is_complex,
     bool will_change) {
@@ -75,7 +76,7 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
                                 context->gr_context->backend())
                           : DisplayListComplexityCalculator::GetForSoftware();
 
-  if (!IsDisplayListWorthRasterizing(display_list_, will_change_, is_complex_,
+  if (!IsDisplayListWorthRasterizing(display_list(), will_change_, is_complex_,
                                      complexity_calculator)) {
     // We only deal with display lists that are worthy of rasterization.
     return;
@@ -105,24 +106,29 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
   bool visible = !context->state_stack.content_culled(bounds);
-  int accesses = raster_cache->MarkSeen(key_id_, matrix, visible);
-  if (!visible || accesses <= raster_cache->access_threshold()) {
+  RasterCache::CacheInfo cache_info =
+      raster_cache->MarkSeen(key_id_, matrix, visible);
+  if (!visible ||
+      cache_info.accesses_since_visible <= raster_cache->access_threshold()) {
     cache_state_ = kNone;
   } else {
-    context->renderable_state_flags |= LayerStateStack::kCallerCanApplyOpacity;
+    if (cache_info.has_image) {
+      context->renderable_state_flags |=
+          LayerStateStack::kCallerCanApplyOpacity;
+    }
     cache_state_ = kCurrent;
   }
   return;
 }
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
-                                      const SkPaint* paint) const {
+                                      const DlPaint* paint) const {
   return Draw(context, context.canvas, paint);
 }
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
-                                      SkCanvas* canvas,
-                                      const SkPaint* paint) const {
+                                      DlCanvas* canvas,
+                                      const DlPaint* paint) const {
   if (!context.raster_cache || !canvas) {
     return false;
   }
@@ -159,8 +165,8 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   };
   return context.raster_cache->UpdateCacheEntry(
       GetId().value(), r_context,
-      [display_list = display_list_](SkCanvas* canvas) {
-        display_list->RenderTo(canvas);
+      [display_list = display_list_](DlCanvas* canvas) {
+        canvas->DrawDisplayList(display_list);
       });
 }
 }  // namespace flutter

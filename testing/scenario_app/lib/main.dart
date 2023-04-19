@@ -12,8 +12,11 @@ import 'dart:ui';
 import 'src/scenarios.dart';
 
 void main() {
-  assert(window.locale != null);
-  window
+  // TODO(goderbauer): Create a window if embedder doesn't provide an implicit
+  //   view to draw into once we have a windowing API and set the window's
+  //   FlutterView to the _view property.
+  assert(PlatformDispatcher.instance.implicitView != null);
+  PlatformDispatcher.instance
     ..onPlatformMessage = _handlePlatformMessage
     ..onBeginFrame = _onBeginFrame
     ..onDrawFrame = _onDrawFrame
@@ -23,16 +26,18 @@ void main() {
 
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
-  window.sendPlatformMessage('waiting_for_status', data, null);
+  PlatformDispatcher.instance.sendPlatformMessage('waiting_for_status', data, null);
 }
+
+/// The FlutterView into which the [Scenario]s will be rendered.
+FlutterView get _view => PlatformDispatcher.instance.implicitView!;
 
 void _handleDriverMessage(Map<String, dynamic> call) {
   final String? methodName = call['method'] as String?;
   switch (methodName) {
     case 'set_scenario':
       assert(call['args'] != null);
-      loadScenario(call['args'] as Map<String, dynamic>);
-    break;
+      loadScenario(call['args'] as Map<String, dynamic>, _view);
     default:
       throw 'Unimplemented method: $methodName.';
   }
@@ -49,11 +54,9 @@ Future<void> _handlePlatformMessage(
   switch (name) {
     case 'driver':
       _handleDriverMessage(json.decode(utf8.decode(data!.buffer.asUint8List())) as Map<String, dynamic>);
-    break;
     case 'write_timeline':
       final String timelineData = await _getTimelineData();
       callback!(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
-    break;
     default:
       currentScenario?.onPlatformMessage(name, data, callback);
   }
@@ -87,7 +90,7 @@ void _onBeginFrame(Duration duration) {
   if (currentScenario == null) {
     final SceneBuilder builder = SceneBuilder();
     final Scene scene = builder.build();
-    window.render(scene);
+    _view.render(scene);
     scene.dispose();
     return;
   }

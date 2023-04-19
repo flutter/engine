@@ -235,33 +235,55 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     settings.executable_name = command_line.argv0();
   }
 
-  // Enable Observatory
-  settings.enable_observatory =
+  // Enable the VM Service
+  settings.enable_vm_service =
+      !command_line.HasOption(FlagForSwitch(Switch::DisableVMService)) &&
+      // TODO(bkonyi): remove once flutter_tools no longer uses this option.
+      // See https://github.com/dart-lang/sdk/issues/50233
       !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
 
-  // Enable mDNS Observatory Publication
-  settings.enable_observatory_publication = !command_line.HasOption(
-      FlagForSwitch(Switch::DisableObservatoryPublication));
+  // Enable mDNS VM Service Publication
+  settings.enable_vm_service_publication =
+      !command_line.HasOption(
+          FlagForSwitch(Switch::DisableVMServicePublication)) &&
+      !command_line.HasOption(
+          FlagForSwitch(Switch::DisableObservatoryPublication));
 
-  // Set Observatory Host
-  if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryHost))) {
+  // Set VM Service Host
+  if (command_line.HasOption(FlagForSwitch(Switch::DeviceVMServiceHost))) {
+    command_line.GetOptionValue(FlagForSwitch(Switch::DeviceVMServiceHost),
+                                &settings.vm_service_host);
+  } else if (command_line.HasOption(
+                 FlagForSwitch(Switch::DeviceObservatoryHost))) {
+    // TODO(bkonyi): remove once flutter_tools no longer uses this option.
+    // See https://github.com/dart-lang/sdk/issues/50233
     command_line.GetOptionValue(FlagForSwitch(Switch::DeviceObservatoryHost),
-                                &settings.observatory_host);
+                                &settings.vm_service_host);
   }
-  // Default the observatory port based on --ipv6 if not set.
-  if (settings.observatory_host.empty()) {
-    settings.observatory_host =
+  // Default the VM Service port based on --ipv6 if not set.
+  if (settings.vm_service_host.empty()) {
+    settings.vm_service_host =
         command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::1"
                                                             : "127.0.0.1";
   }
 
-  // Set Observatory Port
-  if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {
-    if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
-                        &settings.observatory_port)) {
+  // Set VM Service Port
+  if (command_line.HasOption(FlagForSwitch(Switch::DeviceVMServicePort))) {
+    if (!GetSwitchValue(command_line, Switch::DeviceVMServicePort,
+                        &settings.vm_service_port)) {
       FML_LOG(INFO)
-          << "Observatory port specified was malformed. Will default to "
-          << settings.observatory_port;
+          << "VM Service port specified was malformed. Will default to "
+          << settings.vm_service_port;
+    }
+  } else if (command_line.HasOption(
+                 FlagForSwitch(Switch::DeviceObservatoryPort))) {
+    // TODO(bkonyi): remove once flutter_tools no longer uses this option.
+    // See https://github.com/dart-lang/sdk/issues/50233
+    if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
+                        &settings.vm_service_port)) {
+      FML_LOG(INFO)
+          << "VM Service port specified was malformed. Will default to "
+          << settings.vm_service_port;
     }
   }
 
@@ -421,12 +443,18 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_asset_fonts =
       !command_line.HasOption(FlagForSwitch(Switch::DisableAssetFonts));
 
-  std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
-      FlagForSwitch(Switch::EnableSkParagraph), "");
-  settings.enable_skparagraph = enable_skparagraph != "false";
+  std::string enable_impeller_value;
+  if (command_line.GetOptionValue(FlagForSwitch(Switch::EnableImpeller),
+                                  &enable_impeller_value)) {
+    settings.enable_impeller =
+        enable_impeller_value.empty() || "true" == enable_impeller_value;
+  }
 
-  settings.enable_impeller =
-      command_line.HasOption(FlagForSwitch(Switch::EnableImpeller));
+  settings.enable_vulkan_validation =
+      command_line.HasOption(FlagForSwitch(Switch::EnableVulkanValidation));
+
+  settings.enable_embedder_api =
+      command_line.HasOption(FlagForSwitch(Switch::EnableEmbedderAPI));
 
   settings.prefetched_default_font_manager = command_line.HasOption(
       FlagForSwitch(Switch::PrefetchedDefaultFontManager));
@@ -495,6 +523,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                       << "' (expected 0, 1, 2, 4, 8, or 16).";
     }
   }
+
   return settings;
 }
 
