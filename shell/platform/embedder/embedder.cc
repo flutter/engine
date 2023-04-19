@@ -563,11 +563,9 @@ InferVulkanPlatformViewCreationCallback(
   auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
   auto proc_addr =
       vulkan_get_instance_proc_address(vk_instance, "vkGetInstanceProcAddr");
-  // Previously we would query "GetInstanceProcAddr" (note the lack of "vk"
-  // prefix) which is incorrect, but we want to avoid breaking code in the
-  // wild, so try the old name also.
-  //
-  // See https://github.com/flutter/flutter/issues/118956 for details
+  // Past version would only query "GetInstanceProcAddr" (without the "vk"
+  // prefix). This is incorrect. To avoid breaking code, we continue to support this
+  // incorrect name if the new name is not available.
   if (!proc_addr) {
     proc_addr =
         vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
