@@ -55,11 +55,11 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
         {Point(0, 0)},
-        {Point(size.width, 0)},
-        {Point(size.width, size.height)},
+        {Point(1, 0)},
+        {Point(1, 1)},
         {Point(0, 0)},
-        {Point(size.width, size.height)},
-        {Point(0, size.height)},
+        {Point(1, 1)},
+        {Point(0, 1)},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
@@ -68,7 +68,8 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation() * input_snapshot->transform;
+                     entity.GetTransformation() * input_snapshot->transform *
+                     Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 

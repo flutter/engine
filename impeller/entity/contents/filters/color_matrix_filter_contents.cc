@@ -65,11 +65,11 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
         {Point(0, 0)},
-        {Point(size.width, 0)},
-        {Point(size.width, size.height)},
+        {Point(1, 0)},
+        {Point(1, 1)},
         {Point(0, 0)},
-        {Point(size.width, size.height)},
-        {Point(0, size.height)},
+        {Point(1, 1)},
+        {Point(0, 1)},
     });
     auto& host_buffer = pass.GetTransientsBuffer();
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
@@ -77,7 +77,8 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation() * input_snapshot->transform;
+                     entity.GetTransformation() * input_snapshot->transform *
+                     Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
@@ -112,8 +113,6 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(Matrix::MakeTranslation(coverage.origin) *
-                               entity.GetTransformation());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }
