@@ -39,7 +39,7 @@ id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
 }
 
 std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
-    const std::shared_ptr<Context> context,
+    std::shared_ptr<Context> context,
     id<CAMetalDrawable> drawable,
     std::optional<IRect> clip_rect) {
   TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
@@ -142,7 +142,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
                      drawable, requires_blit, clip_rect));
 }
 
-SurfaceMTL::SurfaceMTL(const std::shared_ptr<Context> context,
+SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
                        const RenderTarget& target,
                        std::shared_ptr<Texture> resolve_texture,
                        id<CAMetalDrawable> drawable,
