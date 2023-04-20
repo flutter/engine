@@ -876,7 +876,17 @@ void FlutterPlatformViewsController::DisposeViews() {
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
+    slices_.erase(viewId);
   }
+
+  composition_order_.erase(
+      std::remove_if(composition_order_.begin(), composition_order_.end(),
+                     [views_to_dispose = views_to_dispose_](const int64_t viewId) {
+                       FML_DCHECK(views_to_dispose.count(viewId) < 2);
+                       return views_to_dispose.count(viewId) > 0;
+                     }),
+      composition_order_.end());
+
   views_to_dispose_.clear();
 }
 
