@@ -434,7 +434,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   }
 
   auto texture = device_buffer->AsTexture(allocator, texture_descriptor,
-                                          pixmap.rowBytes());
+                                          texture_descriptor.GetBytesPerRow());
   if (!texture || !texture->IsValid()) {
     return nullptr;
   }
