@@ -26,7 +26,8 @@ VsyncWaiter::VsyncWaiter(const TaskRunners& task_runners)
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable([this, &latch]() mutable {
-        weak_factory_ui_ =
+        weak_factory_on_ui_ = nullptr;
+        weak_factory_on_ui_ =
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
         latch.Signal();
       }));
@@ -37,11 +38,11 @@ VsyncWaiter::~VsyncWaiter() {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable(
-          [weak_factory_ui = std::move(weak_factory_ui_), &latch]() mutable {
-            weak_factory_ui.reset();
-            latch.Signal();
-          }));
+      fml::MakeCopyable([weak_factory_on_ui_ = std::move(weak_factory_on_ui_),
+                         &latch]() mutable {
+        weak_factory_on_ui_.reset();
+        latch.Signal();
+      }));
   latch.Wait();
 };
 
@@ -184,7 +185,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   }
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [waiter = weak_factory_ui_->GetWeakPtr()] {
+      [waiter = weak_factory_on_ui_->GetWeakPtr()] {
         waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
       });
 }
