@@ -9,7 +9,8 @@
 #include "impeller/base/validation.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkImageGenerator.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 
 namespace impeller {
@@ -46,12 +47,12 @@ DecompressedImage CompressedImageSkia::Decode() const {
       },
       src);
 
-  auto generator = SkImageGenerator::MakeFromEncoded(sk_data);
-  if (!generator) {
+  auto img = SkImages::DeferredFromEncodedData(sk_data);
+  if (!img) {
     return {};
   }
 
-  const auto dims = generator->getInfo().dimensions();
+  const auto dims = img->imageInfo().dimensions();
   auto info = SkImageInfo::Make(dims.width(), dims.height(),
                                 kRGBA_8888_SkColorType, kPremul_SkAlphaType);
 
@@ -61,7 +62,7 @@ DecompressedImage CompressedImageSkia::Decode() const {
     return {};
   }
 
-  if (!generator->getPixels(bitmap->pixmap())) {
+  if (!img->readPixels(nullptr, bitmap->pixmap(), 0, 0)) {
     VALIDATION_LOG << "Could not decompress image into arena.";
     return {};
   }
