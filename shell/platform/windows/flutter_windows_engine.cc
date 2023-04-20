@@ -354,8 +354,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
     for (size_t i = 0; i < update->custom_action_count; i++) {
       const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
-      accessibility_bridge
-          ->AddFlutterSemanticsCustomActionUpdate(*action);
+      accessibility_bridge->AddFlutterSemanticsCustomActionUpdate(*action);
     }
 
     accessibility_bridge->CommitUpdates();
