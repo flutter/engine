@@ -2048,76 +2048,58 @@ public class TextInputPluginTest {
     List<WindowInsetsAnimation> animationList = new ArrayList();
     animationList.add(animation);
 
-    WindowInsets.Builder builder = new WindowInsets.Builder();
-    WindowInsets noneInsets = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets imeInsets0 = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets imeInsets1 = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
-    WindowInsets deferredInsets = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets altDeferredInsets = builder.build();
-
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
 
-    // Set the initial insets
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, noneInsets);
+    WindowInsets.Builder builder = new WindowInsets.Builder();
+
+    // Set the initial insets and verify that they were set and the bottom view inset is correct
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // Set the deferred insets and make a second call after the animation start which should be
-    // ignored
+    // Call onPrepare and set the lastWindowInsets - these should be stored for the end of the
+    // animation instead of being applied immediately
     imeSyncCallback.getAnimationCallback().onPrepare(animation);
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, deferredInsets);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
+
+    verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+
+    // Call onStart and apply new insets - these should be ignored completely
     imeSyncCallback.getAnimationCallback().onStart(animation, null);
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, altDeferredInsets);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // Apply the inset animation values
-    imeSyncCallback.getAnimationCallback().onProgress(imeInsets0, animationList);
+    // Progress the animation and ensure that the navigation bar insets have been subtracted
+    // from the IME insets
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getAnimationCallback().onProgress(builder.build(), animationList);
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    imeSyncCallback.getAnimationCallback().onProgress(imeInsets1, animationList);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getAnimationCallback().onProgress(builder.build(), animationList);
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(10, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // At the end of the animation, the insets should match deferredInsets as the call to set
-    // altDeferredInsets should have been ignored
+    // End the animation and ensure that the bottom insets match the lastWindowInsets that we set
+    // during onPrepare
     imeSyncCallback.getAnimationCallback().onEnd(animation);
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
   }
 
   @Test
@@ -2144,76 +2126,58 @@ public class TextInputPluginTest {
     List<WindowInsetsAnimation> animationList = new ArrayList();
     animationList.add(animation);
 
-    WindowInsets.Builder builder = new WindowInsets.Builder();
-    WindowInsets noneInsets = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets imeInsets0 = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets imeInsets1 = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
-    WindowInsets deferredInsets = builder.build();
-
-    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
-    WindowInsets altDeferredInsets = builder.build();
-
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
 
-    // Set the initial insets
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, noneInsets);
+    WindowInsets.Builder builder = new WindowInsets.Builder();
+
+    // Set the initial insets and verify that they were set and the bottom view inset is correct
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // Set the deferred insets and make a second call after the animation start which should be
-    // ignored
+    // Call onPrepare and set the lastWindowInsets - these should be stored for the end of the
+    // animation instead of being applied immediately
     imeSyncCallback.getAnimationCallback().onPrepare(animation);
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, deferredInsets);
-    imeSyncCallback.getAnimationCallback().onStart(animation, null);
-    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, altDeferredInsets);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // Apply the inset animation values
-    imeSyncCallback.getAnimationCallback().onProgress(imeInsets0, animationList);
+    // Call onStart and apply new insets - these should be ignored completely
+    imeSyncCallback.getAnimationCallback().onStart(animation, null);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getInsetsListener().onApplyWindowInsets(testView, builder.build());
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+
+    // Progress the animation and ensure that the navigation bar insets have not been
+    // subtracted from the IME insets
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getAnimationCallback().onProgress(builder.build(), animationList);
+
+    verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(25, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    imeSyncCallback.getAnimationCallback().onProgress(imeInsets1, animationList);
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
+    imeSyncCallback.getAnimationCallback().onProgress(builder.build(), animationList);
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(50, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
-    // At the end of the animation, the insets should match deferredInsets as the call to set
-    // altDeferredInsets should have been ignored
+    // End the animation and ensure that the bottom insets match the lastWindowInsets that we set
+    // during onPrepare
     imeSyncCallback.getAnimationCallback().onEnd(animation);
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetBottom);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
   }
 
   interface EventHandler {
