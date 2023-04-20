@@ -15,6 +15,14 @@ ViewportMetricsUpdater::~ViewportMetricsUpdater() = default;
 void ViewportMetricsUpdater::UpdateViewportMetrics(
     const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "ViewportMetricsUpdater::UpdateViewportMetrics");
+  if (!has_set_valid_viewport_metrics_) {
+    if (metrics.physical_width > 0 && metrics.physical_height > 0) {
+      has_set_valid_viewport_metrics_ = true;
+      delegate_.DoUpdateViewportMetrics(metrics);
+    }
+    return;
+  }
+
   VsyncWaiterProcessStage stage = delegate_.GetVsyncWaiterProcessStage();
   switch (stage) {
     case VsyncWaiterProcessStage::kAwaiting: {

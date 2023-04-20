@@ -290,16 +290,7 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 }
 
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
-  /// Don't use viewport metrics updater until the metrics data is valid.
-  if (has_set_valid_viewport_metrics_) {
-    viewport_metrics_updater_->UpdateViewportMetrics(metrics);
-  } else {
-    if (metrics.physical_width > 0 && metrics.physical_height > 0) {
-      has_set_valid_viewport_metrics_ = true;
-      runtime_controller_->SetViewportMetrics(metrics);
-      ScheduleFrame();
-    }
-  }
+  viewport_metrics_updater_->UpdateViewportMetrics(metrics);
 }
 
 VsyncWaiterProcessStage Engine::GetVsyncWaiterProcessStage() const {

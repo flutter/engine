@@ -95,6 +95,8 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
 
+  /// The weak factory using on ui task runner.
+  std::unique_ptr<fml::WeakPtrFactory<VsyncWaiter>> weak_factory_ui_;
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
 

@@ -49,6 +49,8 @@ class ViewportMetricsUpdater {
  private:
   Delegate& delegate_;
 
+  bool has_set_valid_viewport_metrics_ = false;
+
   // WeakPtrFactory must be the last member.
   fml::WeakPtrFactory<ViewportMetricsUpdater> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(ViewportMetricsUpdater);

@@ -2171,8 +2171,8 @@ ORIGIN: ../../../flutter/shell/common/thread_host.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/variable_refresh_rate_display.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/variable_refresh_rate_display.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/variable_refresh_rate_reporter.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/viewport_metrics_updater.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/viewport_metrics_updater.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/viewport_metrics_updater.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiter_fallback.cc + ../../../flutter/LICENSE
@@ -4770,9 +4770,9 @@ FILE: ../../../flutter/shell/common/thread_host.h
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display.cc
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display.h
 FILE: ../../../flutter/shell/common/variable_refresh_rate_reporter.h
-FILE: ../../../flutter/shell/common/vsync_waiter.cc
-FILE: ../../../flutter/shell/common/viewport_metrics_updater.h
 FILE: ../../../flutter/shell/common/viewport_metrics_updater.cc
+FILE: ../../../flutter/shell/common/viewport_metrics_updater.h
+FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
