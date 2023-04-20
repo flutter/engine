@@ -84,13 +84,13 @@ BuiltinSkiaCodecImageGenerator::~BuiltinSkiaCodecImageGenerator() = default;
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
     std::unique_ptr<SkCodec> codec)
     : codec_(std::move(codec)) {
-    image_info_ = codec_->getInfo();
+  image_info_ = codec_->getInfo();
 }
 
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
     sk_sp<SkData> buffer)
     : codec_(SkCodec::MakeFromData(std::move(buffer)).release()) {
-    image_info_ = codec_->getInfo();
+  image_info_ = codec_->getInfo();
 }
 
 const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() {
