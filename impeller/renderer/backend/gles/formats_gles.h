@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#pragma once
+
 #include <optional>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/gles.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 

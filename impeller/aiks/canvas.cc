@@ -12,6 +12,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -20,23 +21,6 @@
 #include "impeller/geometry/path_builder.h"
 
 namespace impeller {
-
-static bool UseColorSourceContents(
-    const std::shared_ptr<VerticesGeometry>& vertices,
-    const Paint::ColorSourceType& type) {
-  // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image or
-  // a solid color.
-  if (vertices->HasVertexColors()) {
-    return false;
-  }
-  if (vertices->HasTextureCoordinates() &&
-      (type == Paint::ColorSourceType::kImage ||
-       type == Paint::ColorSourceType::kColor)) {
-    return true;
-  }
-  return !vertices->HasTextureCoordinates();
-}
 
 Canvas::Canvas() {
   Initialize();
@@ -74,6 +58,8 @@ void Canvas::Save(
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
+    subpass->SetEnableOffscreenCheckerboard(
+        debug_options.offscreen_texture_checkerboard);
     subpass->SetBackdropFilter(std::move(backdrop_filter));
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
@@ -166,6 +152,16 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
+  if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
+      GetCurrentPass().GetElementCount() == 0  // and this is the first item,
+  ) {
+    // Then we can absorb this drawPaint as the clear color of the pass.
+    auto color = Color::BlendColor(
+        paint.color, GetCurrentPass().GetClearColor(), paint.blend_mode);
+    GetCurrentPass().SetClearColor(color);
+    return;
+  }
+
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
@@ -178,8 +174,7 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Scalar corner_radius,
                                      const Paint& paint) {
-  if (paint.color_source == nullptr ||
-      paint.color_source_type != Paint::ColorSourceType::kColor ||
+  if (paint.color_source.GetType() != ColorSource::Type::kColor ||
       paint.style != Paint::Style::kFill) {
     return false;
   }
@@ -236,7 +231,20 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(), paint);
+  if (paint.style == Paint::Style::kFill) {
+    Entity entity;
+    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetBlendMode(paint.blend_mode);
+    entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+        Geometry::MakeRRect(rect, corner_radius))));
+
+    GetCurrentPass().AddEntity(entity);
+    return;
+  } else {
+    DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
+             paint);
+  }
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
@@ -249,8 +257,23 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
+}
+
+void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeRect(rect), clip_op);
+}
+
+void Canvas::ClipRRect(const Rect& rect,
+                       Scalar corner_radius,
+                       Entity::ClipOperation clip_op) {
+  ClipGeometry(Geometry::MakeRRect(rect, corner_radius), clip_op);
+}
+
+void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
+                          Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(std::move(geometry));
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -362,8 +385,15 @@ void Canvas::SaveLayer(
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
-  new_layer_pass.SetDelegate(
-      std::make_unique<PaintPassDelegate>(paint, bounds));
+
+  // Only apply opacity peephole on default blending.
+  if (paint.blend_mode == BlendMode::kSourceOver) {
+    new_layer_pass.SetDelegate(
+        std::make_unique<OpacityPeepholePassDelegate>(paint, bounds));
+  } else {
+    new_layer_pass.SetDelegate(
+        std::make_unique<PaintPassDelegate>(paint, bounds));
+  }
 
   if (bounds.has_value() && !backdrop_filter.has_value()) {
     // Render target switches due to a save layer can be elided. In such cases
@@ -371,7 +401,7 @@ void Canvas::SaveLayer(
     // the size of the render target that would have been allocated will be
     // absent. Explicitly add back a clip to reproduce that behavior. Since
     // clips never require a render target switch, this is a cheap operation.
-    ClipPath(PathBuilder{}.AddRect(bounds.value()).TakePath());
+    ClipRect(bounds.value());
   }
 }
 
@@ -380,24 +410,71 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            const Paint& paint) {
   lazy_glyph_atlas_->AddTextFrame(text_frame);
 
+  Entity entity;
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
   text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
+
+  if (paint.color_source.GetType() != ColorSource::Type::kColor) {
+    auto color_text_contents = std::make_shared<ColorSourceTextContents>();
+    entity.SetTransformation(GetCurrentTransformation());
+
+    Entity test;
+    auto cvg = text_contents->GetCoverage(test).value();
+    color_text_contents->SetTextPosition(cvg.origin + position);
+
+    text_contents->SetOffset(-cvg.origin);
+    color_text_contents->SetTextContents(std::move(text_contents));
+    color_text_contents->SetColorSourceContents(
+        paint.color_source.GetContents(paint));
+
+    entity.SetContents(
+        paint.WithFilters(std::move(color_text_contents), false));
+
+    GetCurrentPass().AddEntity(entity);
+    return;
+  }
+
   text_contents->SetColor(paint.color);
 
-  Entity entity;
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
-  entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(paint.blend_mode);
+
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
   GetCurrentPass().AddEntity(entity);
 }
 
+static bool UseColorSourceContents(
+    const std::shared_ptr<VerticesGeometry>& vertices,
+    const Paint& paint) {
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates then only if the contents are an image or
+  // a solid color.
+  if (vertices->HasVertexColors()) {
+    return false;
+  }
+  if (vertices->HasTextureCoordinates() &&
+      (paint.color_source.GetType() == ColorSource::Type::kImage ||
+       paint.color_source.GetType() == ColorSource::Type::kColor)) {
+    return true;
+  }
+  return !vertices->HasTextureCoordinates();
+}
+
 void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                           BlendMode blend_mode,
                           const Paint& paint) {
+  // Override the blend mode with kDestination in order to match the behavior
+  // of Skia's SK_LEGACY_IGNORE_DRAW_VERTICES_BLEND_WITH_NO_SHADER flag, which
+  // is enabled when the Flutter engine builds Skia.
+  if (paint.color_source.GetType() == ColorSource::Type::kColor) {
+    blend_mode = BlendMode::kDestination;
+  }
+
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
@@ -405,7 +482,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there are no vertex color or texture coordinates. Or if there
   // are vertex coordinates then only if the contents are an image.
-  if (UseColorSourceContents(vertices, paint.color_source_type)) {
+  if (UseColorSourceContents(vertices, paint)) {
     auto contents = paint.CreateContentsForGeometry(vertices);
     entity.SetContents(paint.WithFilters(std::move(contents)));
     GetCurrentPass().AddEntity(entity);
@@ -418,14 +495,14 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
   if (vertices->HasTextureCoordinates() &&
-      paint.color_source_type != Paint::ColorSourceType::kImage) {
+      paint.color_source.GetType() != ColorSource::Type::kImage) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large
     // the src contents should be. If neither has a value we fall back
     // to using the geometry coverage data.
     Rect src_coverage;
-    auto size = src_contents->ColorSourceSize();
+    auto size = src_contents->GetColorSourceSize();
     if (size.has_value()) {
       src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
     } else {

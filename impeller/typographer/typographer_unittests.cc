@@ -45,7 +45,21 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
       context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
                                 TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
-  OpenPlaygroundHere([](RenderTarget&) { return true; });
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+  ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kAlphaBitmap);
+  ASSERT_EQ(atlas->GetGlyphCount(), 4llu);
+
+  std::optional<FontGlyphPair> first_pair;
+  Rect first_rect;
+  atlas->IterateGlyphs(
+      [&](const FontGlyphPair& pair, const Rect& rect) -> bool {
+        first_pair = pair;
+        first_rect = rect;
+        return false;
+      });
+
+  ASSERT_TRUE(first_pair.has_value());
+  ASSERT_TRUE(atlas->FindFontGlyphBounds(first_pair.value()).has_value());
 }
 
 static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
@@ -168,7 +182,9 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
             atlas->GetTexture()->GetSize().height);
 }
 
-TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
+// TODO(jonahwilliams): Re-enable
+// https://github.com/flutter/flutter/issues/122839
+TEST_P(TypographerTest, DISABLED_GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
@@ -186,7 +202,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 
   auto* first_texture = atlas->GetTexture().get();
 
-  // now create a new glyph atlas with a nearly identical blob.
+  // Now create a new glyph atlas with a nearly identical blob.
 
   auto blob2 = SkTextBlob::MakeFromString("spooky 2", sk_font);
   auto next_atlas =
@@ -251,6 +267,19 @@ TEST_P(TypographerTest, FontGlyphPairTypeChangesHashAndEquals) {
 
   ASSERT_TRUE(FontGlyphPair::Equal{}(pair_1, pair_2));
   ASSERT_FALSE(FontGlyphPair::Equal{}(pair_1, pair_3));
+}
+
+TEST_P(TypographerTest, MaybeHasOverlapping) {
+  SkFont sk_font;
+  auto frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("1", sk_font));
+  // Single character has no overlapping
+  ASSERT_FALSE(frame.MaybeHasOverlapping());
+
+  auto frame_2 =
+      TextFrameFromTextBlob(SkTextBlob::MakeFromString("123456789", sk_font));
+  // Characters probably have overlap due to low fidelity text metrics, but this
+  // could be fixed.
+  ASSERT_TRUE(frame_2.MaybeHasOverlapping());
 }
 
 }  // namespace testing

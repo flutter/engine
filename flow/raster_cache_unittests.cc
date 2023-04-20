@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_complexity.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -13,8 +13,8 @@
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
-#include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "flutter/testing/assertions_skia.h"
 #include "gtest/gtest.h"
 #include "include/core/SkMatrix.h"
@@ -449,8 +449,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
 
   SkRect logical_rect = SkRect::MakeLTRB(28, 0, 354.56731, 310.288);
   DisplayListBuilder builder(logical_rect);
-  builder.setColor(SK_ColorRED);
-  builder.drawRect(logical_rect);
+  builder.DrawRect(logical_rect, DlPaint(DlColor::kRed()));
   sk_sp<DisplayList> display_list = builder.Build();
 
   SkMatrix ctm = SkMatrix::MakeAll(1.3312, 0, 233, 0, 1.3312, 206, 0, 0, 1);
@@ -859,7 +858,7 @@ TEST(RasterCache, RasterCacheKeyIDHashCode) {
   ASSERT_EQ(fourth_hash, fourth.GetHash());
 }
 
-using RasterCacheTest = SkiaGPUObjectLayerTest;
+using RasterCacheTest = LayerTest;
 
 TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
   auto layer = std::make_shared<ContainerLayer>();
@@ -870,8 +869,7 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
 
   auto display_list = GetSampleDisplayList();
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(0.0f, 0.0f),
-      SkiaGPUObject<DisplayList>(display_list, unref_queue()), false, false);
+      SkPoint::Make(0.0f, 0.0f), display_list, false, false);
   layer->Add(display_list_layer);
 
   auto ids = RasterCacheKeyID::LayerChildrenIds(layer.get()).value();

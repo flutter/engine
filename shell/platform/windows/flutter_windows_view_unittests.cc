@@ -27,6 +27,9 @@
 namespace flutter {
 namespace testing {
 
+using ::testing::InSequence;
+using ::testing::NiceMock;
+
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kVirtualKeyA = 0x41;
 
@@ -55,16 +58,22 @@ std::unique_ptr<std::vector<uint8_t>> keyHandlingResponse(bool handled) {
   return flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
 }
 
-// Returns an engine instance configured with dummy project path values, and
-// overridden methods for sending platform messages, so that the engine can
-// respond as if the framework were connected.
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
+// Returns a Flutter project with the required path values to create
+// a test engine.
+FlutterProjectBundle GetTestProject() {
   FlutterDesktopEngineProperties properties = {};
   properties.assets_path = L"C:\\foo\\flutter_assets";
   properties.icu_data_path = L"C:\\foo\\icudtl.dat";
   properties.aot_library_path = L"C:\\foo\\aot.so";
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
+
+  return FlutterProjectBundle{properties};
+}
+
+// Returns an engine instance configured with test project path values, and
+// overridden methods for sending platform messages, so that the engine can
+// respond as if the framework were connected.
+std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
+  auto engine = std::make_unique<FlutterWindowsEngine>(GetTestProject());
 
   EngineModifier modifier(engine.get());
 
@@ -94,7 +103,49 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   return engine;
 }
 
+class MockFlutterWindowsEngine : public FlutterWindowsEngine {
+ public:
+  MockFlutterWindowsEngine() : FlutterWindowsEngine(GetTestProject()) {}
+
+  MOCK_METHOD0(Stop, bool());
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsEngine);
+};
+
+class MockAngleSurfaceManager : public AngleSurfaceManager {
+ public:
+  MockAngleSurfaceManager() {}
+
+  MOCK_METHOD0(DestroySurface, void());
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockAngleSurfaceManager);
+};
+
 }  // namespace
+
+// The view's surface must be destroyed after the engine is shutdown.
+// See: https://github.com/flutter/flutter/issues/124463
+TEST(FlutterWindowsViewTest, Shutdown) {
+  std::unique_ptr<MockFlutterWindowsEngine> engine =
+      std::make_unique<MockFlutterWindowsEngine>();
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
+      std::make_unique<MockAngleSurfaceManager>();
+
+  EngineModifier modifier(engine.get());
+  FlutterWindowsView view(std::move(window_binding_handler));
+
+  // The engine must be stopped before the surface can be destroyed.
+  InSequence s;
+  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+
+  modifier.SetSurfaceManager(surface_manager.release());
+  view.SetEngine(std::move(engine));
+}
 
 TEST(FlutterWindowsViewTest, KeySequence) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
@@ -102,7 +153,7 @@ TEST(FlutterWindowsViewTest, KeySequence) {
   test_response = false;
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -130,7 +181,7 @@ TEST(FlutterWindowsViewTest, EnableSemantics) {
       });
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -138,7 +189,7 @@ TEST(FlutterWindowsViewTest, EnableSemantics) {
   EXPECT_TRUE(semantics_enabled);
 }
 
-TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
+TEST(FlutterWindowsViewTest, AddSemanticsNodeUpdate) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
   modifier.embedder_api().UpdateSemanticsEnabled =
@@ -147,7 +198,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -158,11 +209,11 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node{sizeof(FlutterSemanticsNode2), 0};
   node.label = "name";
   node.value = "value";
   node.platform_view_id = -1;
-  bridge->AddFlutterSemanticsNodeUpdate(&node);
+  bridge->AddFlutterSemanticsNodeUpdate(node);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -237,7 +288,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
 //             node3
 //
 // node0 and node2 are grouping nodes. node1 and node2 are static text nodes.
-TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
+TEST(FlutterWindowsViewTest, AddSemanticsNodeUpdateWithChildren) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
   modifier.embedder_api().UpdateSemanticsEnabled =
@@ -246,7 +297,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -257,28 +308,28 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node0{sizeof(FlutterSemanticsNode2), 0};
   std::vector<int32_t> node0_children{1, 2};
   node0.child_count = node0_children.size();
   node0.children_in_traversal_order = node0_children.data();
   node0.children_in_hit_test_order = node0_children.data();
 
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   node1.label = "prefecture";
   node1.value = "Kyoto";
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   std::vector<int32_t> node2_children{3};
   node2.child_count = node2_children.size();
   node2.children_in_traversal_order = node2_children.data();
   node2.children_in_hit_test_order = node2_children.data();
-  FlutterSemanticsNode node3{sizeof(FlutterSemanticsNode), 3};
+  FlutterSemanticsNode2 node3{sizeof(FlutterSemanticsNode2), 3};
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -435,7 +486,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
 //        node2
 //
 // node1 is a grouping node, node0 is a static text node.
-TEST(FlutterWindowsView, NonZeroSemanticsRoot) {
+TEST(FlutterWindowsViewTest, NonZeroSemanticsRoot) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
   modifier.embedder_api().UpdateSemanticsEnabled =
@@ -444,7 +495,7 @@ TEST(FlutterWindowsView, NonZeroSemanticsRoot) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -455,18 +506,18 @@ TEST(FlutterWindowsView, NonZeroSemanticsRoot) {
   ASSERT_TRUE(bridge);
 
   // Add root node.
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   std::vector<int32_t> node1_children{2};
   node1.child_count = node1_children.size();
   node1.children_in_traversal_order = node1_children.data();
   node1.children_in_hit_test_order = node1_children.data();
 
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   node2.label = "prefecture";
   node2.value = "Kyoto";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -576,7 +627,7 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -587,7 +638,7 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   ASSERT_TRUE(bridge);
 
   // Add root node at origin. Size 500x500.
-  FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 node0{sizeof(FlutterSemanticsNode2), 0};
   std::vector<int32_t> node0_children{1, 2};
   node0.rect = {0, 0, 500, 500};
   node0.transform = kIdentityTransform;
@@ -596,14 +647,14 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   node0.children_in_hit_test_order = node0_children.data();
 
   // Add node 1 located at 0,0 relative to node 0. Size 250x500.
-  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  FlutterSemanticsNode2 node1{sizeof(FlutterSemanticsNode2), 1};
   node1.rect = {0, 0, 250, 500};
   node1.transform = kIdentityTransform;
   node1.label = "prefecture";
   node1.value = "Kyoto";
 
   // Add node 2 located at 250,0 relative to node 0. Size 250x500.
-  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  FlutterSemanticsNode2 node2{sizeof(FlutterSemanticsNode2), 2};
   std::vector<int32_t> node2_children{3};
   node2.rect = {0, 0, 250, 500};
   node2.transform = {1, 0, 250, 0, 1, 0, 0, 0, 1};
@@ -612,16 +663,16 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   node2.children_in_hit_test_order = node2_children.data();
 
   // Add node 3 located at 0,250 relative to node 2. Size 250, 250.
-  FlutterSemanticsNode node3{sizeof(FlutterSemanticsNode), 3};
+  FlutterSemanticsNode2 node3{sizeof(FlutterSemanticsNode2), 3};
   node3.rect = {0, 0, 250, 250};
   node3.transform = {1, 0, 0, 0, 1, 250, 0, 0, 1};
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -662,7 +713,7 @@ TEST(FlutterWindowsViewTest, WindowResizeTests) {
   EngineModifier modifier(engine.get());
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
 
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
@@ -721,7 +772,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -731,7 +782,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -743,7 +794,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -782,7 +833,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   // Test unchecked too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -821,7 +872,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -867,7 +918,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -877,7 +928,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -889,7 +940,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsToggled);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -938,7 +989,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   // Test unpressed too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -984,7 +1035,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
       };
 
   auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::move(engine));
 
@@ -994,7 +1045,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
   root.id = 0;
   root.label = "root";
   root.hint = "";
@@ -1006,7 +1057,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   root.custom_accessibility_actions_count = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -1030,33 +1081,6 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   ASSERT_EQ(uia_node->GetPropertyValue(UIA_HelpTextPropertyId, &varname), S_OK);
   std::string uia_tooltip = _com_util::ConvertBSTRToString(varname.bstrVal);
   EXPECT_EQ(uia_tooltip, "tooltip");
-}
-
-TEST(FlutterWindowsViewTest, DestructorTest) {
-  bool destroyed = false;
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  // Use this pointer to reference the view in the Destruct callback, which must
-  // be defined before the view is.
-  FlutterWindowsView* view_ptr = nullptr;
-
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  ON_CALL(*window_binding_handler, Destruct)
-      .WillByDefault([&destroyed, &view_ptr]() {
-        EXPECT_FALSE(destroyed);
-        destroyed = true;
-        ASSERT_NE(view_ptr, nullptr);
-        EXPECT_EQ(view_ptr->GetEngine()->view(), nullptr);
-      });
-
-  {
-    FlutterWindowsView view(std::move(window_binding_handler));
-    view_ptr = &view;
-    view.SetEngine(std::move(engine));
-    // Destruct view before continuing.
-  }
-
-  EXPECT_TRUE(destroyed);
 }
 
 }  // namespace testing

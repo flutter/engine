@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
@@ -25,7 +26,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -113,11 +113,15 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
 std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
     FilterInput::Ref input,
     const Matrix& matrix,
-    const SamplerDescriptor& desc) {
+    const SamplerDescriptor& desc,
+    const Matrix& effect_transform,
+    bool is_subpass) {
   auto filter = std::make_shared<MatrixFilterContents>();
   filter->SetInputs({std::move(input)});
   filter->SetMatrix(matrix);
   filter->SetSamplerDescriptor(desc);
+  filter->SetEffectTransform(effect_transform);
+  filter->SetIsSubpass(is_subpass);
   return filter;
 }
 
@@ -154,7 +158,7 @@ void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
 }
 
 void FilterContents::SetEffectTransform(Matrix effect_transform) {
-  effect_transform_ = effect_transform.Basis();
+  effect_transform_ = effect_transform;
 }
 
 bool FilterContents::Render(const ContentContext& renderer,
@@ -238,12 +242,14 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    const std::string& label) const {
   // Resolve the render instruction (entity) from the filter and render it to a
   // snapshot.
   if (std::optional<Entity> result = GetEntity(renderer, entity);
       result.has_value()) {
-    return result->GetContents()->RenderToSnapshot(renderer, result.value());
+    return result->GetContents()->RenderToSnapshot(renderer, result.value(),
+                                                   std::nullopt, true, label);
   }
 
   return std::nullopt;

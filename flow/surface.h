@@ -12,6 +12,8 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/macros.h"
 
+class GrDirectContext;
+
 namespace impeller {
 class AiksContext;
 }  // namespace impeller
@@ -47,7 +49,7 @@ class Surface {
 
   virtual bool EnableRasterCache() const;
 
-  virtual impeller::AiksContext* GetAiksContext() const;
+  virtual std::shared_ptr<impeller::AiksContext> GetAiksContext() const;
 
   /// Capture the `SurfaceData` currently present in the surface.
   ///

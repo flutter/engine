@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../util.dart';
 import '../validators.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
@@ -145,7 +144,7 @@ class CanvasKitCanvas implements ui.Canvas {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
     }
-    return transformRect(transform, _canvas.getDeviceClipBounds());
+    return transform.transformRect(_canvas.getDeviceClipBounds());
   }
 
   @override
@@ -389,8 +388,13 @@ class CanvasKitCanvas implements ui.Canvas {
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
     }
 
+    Uint32List? unsignedColors;
+    if (colors != null) {
+      unsignedColors = colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
+    }
+
     _drawAtlas(paint, atlas, rstTransforms, rects,
-        colors?.buffer.asUint32List(), blendMode ?? ui.BlendMode.src);
+        unsignedColors, blendMode ?? ui.BlendMode.src);
   }
 
   // TODO(hterkelsen): Pass a cull_rect once CanvasKit supports that.

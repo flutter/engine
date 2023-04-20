@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("flow") {
@@ -85,10 +86,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    "//flutter/vulkan:vulkan_config",
-  ]
+  public_configs = [ "//flutter:config" ]
+  if (shell_enable_vulkan) {
+    public_configs += [ "//flutter/vulkan:vulkan_config" ]
+  }
 
   deps = [
     "//flutter/common",
@@ -122,8 +123,6 @@ if (enable_unittests) {
       "testing/mock_raster_cache.h",
       "testing/mock_texture.cc",
       "testing/mock_texture.h",
-      "testing/skia_gpu_object_layer_test.cc",
-      "testing/skia_gpu_object_layer_test.h",
     ]
 
     public_deps = [

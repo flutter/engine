@@ -10,15 +10,15 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/runtime_effect.vert.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/shader_function.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -35,6 +35,10 @@ void RuntimeEffectContents::SetUniformData(
 void RuntimeEffectContents::SetTextureInputs(
     std::vector<TextureInput> texture_inputs) {
   texture_inputs_ = std::move(texture_inputs);
+}
+
+bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
+  return false;
 }
 
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
@@ -102,10 +106,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
-  const auto& device_capabilities = context->GetDeviceCapabilities();
-  const auto color_attachment_format = context->GetColorAttachmentPixelFormat();
-  const auto stencil_attachment_format =
-      device_capabilities.GetDefaultStencilFormat();
+  const auto& caps = context->GetCapabilities();
+  const auto color_attachment_format = caps->GetDefaultColorFormat();
+  const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
@@ -162,7 +165,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   for (auto uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
-    ShaderMetadata metadata;
+    std::shared_ptr<ShaderMetadata> metadata =
+        std::make_shared<ShaderMetadata>();
 
     switch (uniform.type) {
       case kSampledImage: {

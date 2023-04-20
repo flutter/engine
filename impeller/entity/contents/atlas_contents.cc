@@ -8,23 +8,20 @@
 
 #include "flutter/fml/macros.h"
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-
-#ifdef FML_OS_PHYSICAL_IOS
-#include "impeller/entity/contents/framebuffer_blend_contents.h"
-#endif
 
 namespace impeller {
 
@@ -224,38 +221,40 @@ bool AtlasContents::Render(const ContentContext& renderer,
   dst_contents->SetSubAtlas(sub_atlas);
   dst_contents->SetCoverage(sub_coverage);
 
-#ifdef FML_OS_PHYSICAL_IOS
-  auto new_texture = renderer.MakeSubpass(
-      "Atlas Blend", sub_atlas->size,
-      [&](const ContentContext& context, RenderPass& pass) {
-        Entity entity;
-        entity.SetContents(dst_contents);
-        entity.SetBlendMode(BlendMode::kSource);
-        if (!entity.Render(context, pass)) {
-          return false;
-        }
-        if (blend_mode_ >= Entity::kLastPipelineBlendMode) {
-          auto contents = std::make_shared<FramebufferBlendContents>();
-          contents->SetBlendMode(blend_mode_);
-          contents->SetChildContents(src_contents);
-          entity.SetContents(std::move(contents));
+  std::shared_ptr<Texture> new_texture;
+  if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    new_texture = renderer.MakeSubpass(
+        "Atlas Blend", sub_atlas->size,
+        [&](const ContentContext& context, RenderPass& pass) {
+          Entity entity;
+          entity.SetContents(dst_contents);
           entity.SetBlendMode(BlendMode::kSource);
+          if (!entity.Render(context, pass)) {
+            return false;
+          }
+          if (blend_mode_ >= Entity::kLastPipelineBlendMode) {
+            auto contents = std::make_shared<FramebufferBlendContents>();
+            contents->SetBlendMode(blend_mode_);
+            contents->SetChildContents(src_contents);
+            entity.SetContents(std::move(contents));
+            entity.SetBlendMode(BlendMode::kSource);
+            return entity.Render(context, pass);
+          }
+          entity.SetContents(src_contents);
+          entity.SetBlendMode(blend_mode_);
           return entity.Render(context, pass);
-        }
-        entity.SetContents(src_contents);
-        entity.SetBlendMode(blend_mode_);
-        return entity.Render(context, pass);
-      });
-#else
-  auto contents = ColorFilterContents::MakeBlend(
-      blend_mode_,
-      {FilterInput::Make(dst_contents), FilterInput::Make(src_contents)});
-  auto snapshot = contents->RenderToSnapshot(renderer, entity);
-  if (!snapshot.has_value()) {
-    return false;
+        });
+  } else {
+    auto contents = ColorFilterContents::MakeBlend(
+        blend_mode_,
+        {FilterInput::Make(dst_contents), FilterInput::Make(src_contents)});
+    auto snapshot = contents->RenderToSnapshot(renderer, entity, std::nullopt,
+                                               true, "AtlasContents Snapshot");
+    if (!snapshot.has_value()) {
+      return false;
+    }
+    new_texture = snapshot.value().texture;
   }
-  auto new_texture = snapshot.value().texture;
-#endif
 
   auto child_contents = AtlasTextureContents(*this);
   child_contents.SetAlpha(alpha_);
@@ -306,15 +305,18 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
 
-  auto texture = texture_.value_or(parent_.GetTexture());
+  auto texture = texture_ ? texture_ : parent_.GetTexture();
+  if (texture == nullptr) {
+    return true;
+  }
+
   std::vector<Rect> texture_coords;
   std::vector<Matrix> transforms;
-  if (subatlas_.has_value()) {
-    auto subatlas = subatlas_.value();
-    texture_coords = use_destination_ ? subatlas->result_texture_coords
-                                      : subatlas->sub_texture_coords;
-    transforms = use_destination_ ? subatlas->result_transforms
-                                  : subatlas->sub_transforms;
+  if (subatlas_) {
+    texture_coords = use_destination_ ? subatlas_->result_texture_coords
+                                      : subatlas_->sub_texture_coords;
+    transforms = use_destination_ ? subatlas_->result_transforms
+                                  : subatlas_->sub_transforms;
   } else {
     texture_coords = parent_.GetTextureCoordinates();
     transforms = parent_.GetTransforms();

@@ -47,7 +47,7 @@ abstract class Renderer {
   }
 
   String get rendererTag;
-  FontCollection get fontCollection;
+  FlutterFontCollection get fontCollection;
 
   FutureOr<void> initialize();
   void reset(FlutterViewEmbedder embedder);
@@ -213,5 +213,5 @@ abstract class Renderer {
 
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style);
 
-  void renderScene(ui.Scene scene);
+  FutureOr<void> renderScene(ui.Scene scene);
 }

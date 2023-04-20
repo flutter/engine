@@ -12,7 +12,7 @@
 // The code that performs the transformations lives in:
 //
 //  - https://github.com/flutter/engine/blob/main/web_sdk/sdk_rewriter.dart
-
+// ignore: unnecessary_library_directive
 library engine;
 
 export 'engine/alarm_clock.dart';
@@ -39,6 +39,7 @@ export 'engine/canvaskit/layer_scene_builder.dart';
 export 'engine/canvaskit/layer_tree.dart';
 export 'engine/canvaskit/mask_filter.dart';
 export 'engine/canvaskit/n_way_canvas.dart';
+export 'engine/canvaskit/native_memory.dart';
 export 'engine/canvaskit/noto_font.dart';
 export 'engine/canvaskit/painting.dart';
 export 'engine/canvaskit/path.dart';
@@ -49,7 +50,6 @@ export 'engine/canvaskit/raster_cache.dart';
 export 'engine/canvaskit/rasterizer.dart';
 export 'engine/canvaskit/renderer.dart';
 export 'engine/canvaskit/shader.dart';
-export 'engine/canvaskit/skia_object_cache.dart';
 export 'engine/canvaskit/surface.dart';
 export 'engine/canvaskit/surface_factory.dart';
 export 'engine/canvaskit/text.dart';
@@ -65,7 +65,7 @@ export 'engine/engine_canvas.dart';
 export 'engine/font_change_util.dart';
 export 'engine/fonts.dart';
 export 'engine/frame_reference.dart';
-export 'engine/host_node.dart';
+export 'engine/global_styles.dart';
 export 'engine/html/backdrop_filter.dart';
 export 'engine/html/bitmap_canvas.dart';
 export 'engine/html/canvas.dart';
@@ -145,6 +145,7 @@ export 'engine/services/buffers.dart';
 export 'engine/services/message_codec.dart';
 export 'engine/services/message_codecs.dart';
 export 'engine/services/serialization.dart';
+export 'engine/shader_data.dart';
 export 'engine/shadow.dart';
 export 'engine/svg.dart';
 export 'engine/test_embedding.dart';

@@ -16,7 +16,7 @@ class NotAColor extends Color {
   const NotAColor(super.value);
 }
 
-void testMain() {
+Future<void> testMain() async {
   setUpUiTest();
 
   test('color accessors should work', () {

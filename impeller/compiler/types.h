@@ -34,6 +34,7 @@ enum class TargetPlatform {
   kVulkan,
   kRuntimeStageMetal,
   kRuntimeStageGLES,
+  kRuntimeStageVulkan,
   kSkSL,
 };
 
@@ -46,6 +47,8 @@ enum class SourceLanguage {
 bool TargetPlatformIsMetal(TargetPlatform platform);
 
 bool TargetPlatformIsOpenGL(TargetPlatform platform);
+
+bool TargetPlatformIsVulkan(TargetPlatform platform);
 
 SourceType SourceTypeFromFileName(const std::string& file_name);
 
@@ -62,8 +65,6 @@ std::string EntryPointFunctionNameFromSourceName(
     SourceType type,
     SourceLanguage source_language,
     const std::string& entry_point_name);
-
-bool TargetPlatformNeedsSL(TargetPlatform platform);
 
 bool TargetPlatformNeedsReflection(TargetPlatform platform);
 

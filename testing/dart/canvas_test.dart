@@ -331,6 +331,7 @@ void main() {
       builder.pushStyle(TextStyle(
         decoration: TextDecoration.underline,
         decorationColor: const Color(0xFF0000FF),
+        fontFamily: 'Ahem',
         fontSize: 10,
         color: const Color(0xFF000000),
         decorationStyle: style,
@@ -440,7 +441,10 @@ void main() {
         canvas.drawImage(image, Offset.zero, Paint());
       } on PictureRasterizationException catch (e) {
         caughtException = true;
-        expect(e.message, contains('unable to create render target at specified size'));
+        expect(
+          e.message,
+          contains('unable to create bitmap render target at specified size ${image.width}x${image.height}'),
+        );
         break;
       }
       // Let the event loop turn.

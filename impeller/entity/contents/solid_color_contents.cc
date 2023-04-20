@@ -20,23 +20,21 @@ void SolidColorContents::SetColor(Color color) {
   color_ = color;
 }
 
-const Color& SolidColorContents::GetColor() const {
-  return color_;
-}
-
-void SolidColorContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+Color SolidColorContents::GetColor() const {
+  return color_.WithAlpha(color_.alpha * GetOpacity());
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
-  if (color_.IsTransparent()) {
+  if (GetColor().IsTransparent()) {
     return std::nullopt;
   }
-  if (geometry_ == nullptr) {
+
+  auto geometry = GetGeometry();
+  if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransformation());
 };
 
 bool SolidColorContents::ShouldRender(
@@ -46,6 +44,11 @@ bool SolidColorContents::ShouldRender(
     return false;
   }
   return Contents::ShouldRender(entity, stencil_coverage);
+}
+
+bool SolidColorContents::ConvertToSrc(const Entity& entity) const {
+  return entity.GetBlendMode() == BlendMode::kSourceOver &&
+         GetColor().alpha >= 1.0;
 }
 
 bool SolidColorContents::Render(const ContentContext& renderer,
@@ -58,9 +61,13 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.label = "Solid Fill";
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
+  if (ConvertToSrc(entity)) {
+    options.blend_mode = BlendMode::kSource;
+  }
   if (geometry_result.prevent_overdraw) {
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
@@ -75,7 +82,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.color = color_.Premultiply();
+  frag_info.color = GetColor().Premultiply();
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {

@@ -111,6 +111,7 @@ static bool LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
 }
 
 static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
+#ifndef FLUTTER_RELEASE
   if (@available(iOS 14.0, macOS 11.0, *)) {
     auto desc = [[MTLCommandBufferDescriptor alloc] init];
     // Degrades CPU performance slightly but is well worth the cost for typical
@@ -118,6 +119,7 @@ static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
     desc.errorOptions = MTLCommandBufferErrorOptionEncoderExecutionStatus;
     return [queue commandBufferWithDescriptor:desc];
   }
+#endif  // FLUTTER_RELEASE
   return [queue commandBuffer];
 }
 
@@ -164,7 +166,28 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   }
 
   [buffer_ commit];
+
+#if (FML_OS_MACOSX || FML_OS_IOS_SIMULATOR)
+  // We're using waitUntilScheduled on macOS and iOS simulator to force a hard
+  // barrier between the execution of different command buffers. This forces all
+  // renderable texture access to be synchronous (i.e. a write from a previous
+  // command buffer will not get scheduled to happen at the same time as a read
+  // in a future command buffer).
+  //
+  // Metal hazard tracks shared memory resources by default, and we don't need
+  // to do any additional work to synchronize access to MTLTextures and
+  // MTLBuffers on iOS devices with UMA. However, shared textures are disallowed
+  // on macOS according to the documentation:
+  // https://developer.apple.com/documentation/metal/mtlstoragemode/shared
+  // And so this is a stopgap solution that has been present in Impeller since
+  // multi-pass rendering/SaveLayer support was first set up.
+  //
+  // TODO(bdero): Remove this for all targets once a solution for resource
+  //              tracking that works everywhere is established:
+  //              https://github.com/flutter/flutter/issues/120406
   [buffer_ waitUntilScheduled];
+#endif
+
   buffer_ = nil;
   return true;
 }

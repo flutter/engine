@@ -5,6 +5,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -13,13 +14,13 @@
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
@@ -29,6 +30,14 @@ class Entity;
 
 class Canvas {
  public:
+  struct DebugOptions {
+    /// When enabled, layers that are rendered to an offscreen texture
+    /// internally get a translucent checkerboard pattern painted over them.
+    ///
+    /// Requires the `IMPELLER_DEBUG` preprocessor flag.
+    bool offscreen_texture_checkerboard = false;
+  } debug_options;
+
   Canvas();
 
   ~Canvas();
@@ -91,6 +100,15 @@ class Canvas {
       const Path& path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
+  void ClipRect(
+      const Rect& rect,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
+  void ClipRRect(
+      const Rect& rect,
+      Scalar corner_radius,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
   void DrawPicture(Picture picture);
 
   void DrawTextFrame(const TextFrame& text_frame,
@@ -125,6 +143,9 @@ class Canvas {
   EntityPass& GetCurrentPass();
 
   size_t GetStencilDepth() const;
+
+  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+                    Entity::ClipOperation clip_op);
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,

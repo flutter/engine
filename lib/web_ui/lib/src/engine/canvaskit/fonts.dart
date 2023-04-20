@@ -24,7 +24,7 @@ const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
-class SkiaFontCollection implements FontCollection {
+class SkiaFontCollection implements FlutterFontCollection {
   final Set<String> _downloadedFontFamilies = <String>{};
 
   /// Fonts that started the download process, but are not yet registered.
@@ -48,15 +48,20 @@ class SkiaFontCollection implements FontCollection {
   final Map<String, List<SkFont>> familyToFontMap = <String, List<SkFont>>{};
 
   void _registerWithFontProvider() {
-    if (fontProvider != null) {
-      fontProvider!.delete();
-      fontProvider = null;
+    if (_fontProvider != null) {
+      _fontProvider!.delete();
+      _fontProvider = null;
+      skFontCollection?.delete();
+      skFontCollection = null;
     }
-    fontProvider = canvasKit.TypefaceFontProvider.Make();
+    _fontProvider = canvasKit.TypefaceFontProvider.Make();
+    skFontCollection = canvasKit.FontCollection.Make();
+    skFontCollection!.enableFontFallback();
+    skFontCollection!.setDefaultFontManager(_fontProvider);
     familyToFontMap.clear();
 
     for (final RegisteredFont font in _registeredFonts) {
-      fontProvider!.registerFont(font.bytes, font.family);
+      _fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
           .putIfAbsent(font.family, () => <SkFont>[])
           .add(SkFont(font.typeface));
@@ -64,7 +69,7 @@ class SkiaFontCollection implements FontCollection {
 
     for (final RegisteredFont font
         in FontFallbackData.instance.registeredFallbackFonts) {
-      fontProvider!.registerFont(font.bytes, font.family);
+      _fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
           .putIfAbsent(font.family, () => <SkFont>[])
           .add(SkFont(font.typeface));
@@ -184,12 +189,15 @@ class SkiaFontCollection implements FontCollection {
       }
     }
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
-    completedPendingFonts.add(UnregisteredFont(
+    final List<UnregisteredFont> fonts = <UnregisteredFont>[
+      UnregisteredFont(
         EmbeddedTestFont.flutterTest.data.buffer,
         '<embedded>',
         EmbeddedTestFont.flutterTest.fontFamily,
-    ));
-    _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
+      ),
+      ...completedPendingFonts.whereType<UnregisteredFont>(),
+    ];
+    _unregisteredFonts.addAll(fonts);
 
     // Ahem must be added to font fallbacks list regardless of where it was
     // downloaded from.
@@ -227,7 +235,8 @@ class SkiaFontCollection implements FontCollection {
     return actualFamily;
   }
 
-  TypefaceFontProvider? fontProvider;
+  TypefaceFontProvider? _fontProvider;
+  SkFontCollection? skFontCollection;
 
   @override
   void clear() {}

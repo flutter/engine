@@ -14,6 +14,10 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
   matrix_ = matrix;
 }
 
+void MatrixFilterContents::SetIsSubpass(bool is_subpass) {
+  is_subpass_ = is_subpass;
+}
+
 void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
@@ -24,18 +28,19 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  auto snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  auto snapshot = inputs[0]->GetSnapshot("Matrix", renderer, entity);
   if (!snapshot.has_value()) {
     return std::nullopt;
   }
 
-  snapshot->transform = entity.GetTransformation() *           //
-                        matrix_ *                              //
-                        entity.GetTransformation().Invert() *  //
+  auto& transform = is_subpass_ ? effect_transform : entity.GetTransformation();
+  snapshot->transform = transform *           //
+                        matrix_ *             //
+                        transform.Invert() *  //
                         snapshot->transform;
   snapshot->sampler_descriptor = sampler_descriptor_;
-  return Contents::EntityFromSnapshot(snapshot, entity.GetBlendMode(),
-                                      entity.GetStencilDepth());
+  return Entity::FromSnapshot(snapshot, entity.GetBlendMode(),
+                              entity.GetStencilDepth());
 }
 
 std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
@@ -50,10 +55,10 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
   if (!coverage.has_value()) {
     return std::nullopt;
   }
-
-  auto transform = inputs[0]->GetTransform(entity) *  //
-                   matrix_ *                          //
-                   inputs[0]->GetTransform(entity).Invert();
+  auto& m = is_subpass_ ? effect_transform : inputs[0]->GetTransform(entity);
+  auto transform = m *          //
+                   matrix_ *    //
+                   m.Invert();  //
   return coverage->TransformBounds(transform);
 }
 

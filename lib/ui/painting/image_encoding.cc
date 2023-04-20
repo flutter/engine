@@ -17,8 +17,9 @@
 #include "flutter/lib/ui/painting/image_encoding_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_encoding_skia.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/typed_list.h"
@@ -38,6 +39,7 @@ enum ImageByteFormat {
   kRawRGBA,
   kRawStraightRGBA,
   kRawUnmodified,
+  kRawExtendedRgba128,
   kPNG,
 };
 
@@ -115,27 +117,28 @@ sk_sp<SkData> EncodeImage(const sk_sp<SkImage>& raster_image,
 
   switch (format) {
     case kPNG: {
-      auto png_image =
-          raster_image->encodeToData(SkEncodedImageFormat::kPNG, 0);
+      auto png_image = SkPngEncoder::Encode(nullptr, raster_image.get(), {});
 
       if (png_image == nullptr) {
         FML_LOG(ERROR) << "Could not convert raster image to PNG.";
         return nullptr;
       };
       return png_image;
-    } break;
-    case kRawRGBA: {
+    }
+    case kRawRGBA:
       return CopyImageByteData(raster_image, kRGBA_8888_SkColorType,
                                kPremul_SkAlphaType);
-    } break;
-    case kRawStraightRGBA: {
+
+    case kRawStraightRGBA:
       return CopyImageByteData(raster_image, kRGBA_8888_SkColorType,
                                kUnpremul_SkAlphaType);
-    } break;
-    case kRawUnmodified: {
+
+    case kRawUnmodified:
       return CopyImageByteData(raster_image, raster_image->colorType(),
                                raster_image->alphaType());
-    } break;
+    case kRawExtendedRgba128:
+      return CopyImageByteData(raster_image, kRGBA_F32_SkColorType,
+                               kUnpremul_SkAlphaType);
   }
 
   FML_LOG(ERROR) << "Unknown error encoding image.";

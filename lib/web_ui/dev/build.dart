@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io' show Directory;
 
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
+import 'exceptions.dart';
 import 'pipeline.dart';
 import 'utils.dart';
 
@@ -18,7 +18,8 @@ const Map<String, String> targetAliases = <String, String>{
   'web_sdk': 'flutter/web_sdk',
   'canvaskit': 'flutter/third_party/canvaskit:canvaskit_group',
   'canvaskit_chromium': 'flutter/third_party/canvaskit:canvaskit_chromium_group',
-  'skwasm': 'flutter/lib/web_ui/skwasm',
+  'skwasm': 'flutter/third_party/canvaskit:skwasm_group',
+  'archive': 'flutter/web_sdk:flutter_web_sdk_archive',
 };
 
 class BuildCommand extends Command<bool> with ArgUtils<bool> {
@@ -34,6 +35,23 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Build the host build instead of the wasm build, which is '
           'currently needed for `flutter run --local-engine` to work.'
     );
+    argParser.addFlag(
+      'profile',
+      help: 'Build in profile mode instead of release mode. In this mode, the '
+          'output will be located at "out/wasm_profile".\nThis only applies to '
+          'the wasm build. The host build is always built in release mode.',
+    );
+    argParser.addFlag(
+      'debug',
+      help: 'Build in debug mode instead of release mode. In this mode, the '
+          'output will be located at "out/wasm_debug".\nThis only applies to '
+          'the wasm build. The host build is always built in release mode.',
+    );
+    argParser.addFlag(
+      'dwarf',
+      help: 'Embed DWARF debugging info into the output wasm modules. This is '
+          'only valid in debug mode.',
+    );
   }
 
   @override
@@ -47,14 +65,23 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   bool get host => boolArg('host');
 
   List<String> get targets => argResults?.rest ?? <String>[];
+  bool get embedDwarf => boolArg('dwarf');
 
   @override
   FutureOr<bool> run() async {
+    if (embedDwarf && runtimeMode != RuntimeMode.debug) {
+      throw ToolExit('Embedding DWARF data requires debug runtime mode.');
+    }
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(host: host),
+      GnPipelineStep(
+        host: host,
+        runtimeMode: runtimeMode,
+        embedDwarf: embedDwarf,
+      ),
       NinjaPipelineStep(
-        buildDirectory: host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir,
+        host: host,
+        runtimeMode: runtimeMode,
         targets: targets.map((String target) => targetAliases[target] ?? target),
       ),
     ];
@@ -82,9 +109,13 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 class GnPipelineStep extends ProcessStep {
   GnPipelineStep({
     required this.host,
+    required this.runtimeMode,
+    required this.embedDwarf,
   });
 
   final bool host;
+  final RuntimeMode runtimeMode;
+  final bool embedDwarf;
 
   @override
   String get description => 'gn';
@@ -101,7 +132,11 @@ class GnPipelineStep extends ProcessStep {
     } else {
       return <String>[
         '--web',
-        '--runtime-mode=release',
+        '--runtime-mode=${runtimeMode.name}',
+        if (runtimeMode == RuntimeMode.debug)
+          '--unoptimized',
+        if (embedDwarf)
+          '--wasm-use-dwarf',
       ];
     }
   }
@@ -120,7 +155,11 @@ class GnPipelineStep extends ProcessStep {
 ///
 /// Can be safely interrupted.
 class NinjaPipelineStep extends ProcessStep {
-  NinjaPipelineStep({required this.buildDirectory, required this.targets});
+  NinjaPipelineStep({
+    required this.host,
+    required this.runtimeMode,
+    required this.targets,
+  });
 
   @override
   String get description => 'ninja';
@@ -128,10 +167,16 @@ class NinjaPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => true;
 
-  /// The directory to build.
-  final Directory buildDirectory;
-
+  final bool host;
   final Iterable<String> targets;
+  final RuntimeMode runtimeMode;
+
+  String get buildDirectory {
+    if (host) {
+      return environment.hostDebugUnoptDir.path;
+    }
+    return getBuildDirectoryForRuntimeMode(runtimeMode).path;
+  }
 
   @override
   Future<ProcessManager> createProcess() {
@@ -140,7 +185,7 @@ class NinjaPipelineStep extends ProcessStep {
       'autoninja',
       <String>[
         '-C',
-        buildDirectory.path,
+        buildDirectory,
         ...targets,
       ],
     );

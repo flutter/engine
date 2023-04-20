@@ -6,6 +6,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 #include <Carbon/Carbon.h>
+#import <objc/message.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
@@ -163,6 +164,8 @@ NSData* currentKeyboardLayoutData() {
 
 - (void)setBackgroundColor:(NSColor*)color;
 
+- (BOOL)performKeyEquivalent:(NSEvent*)event;
+
 @end
 
 /**
@@ -239,6 +242,37 @@ NSData* currentKeyboardLayoutData() {
 
 @end
 
+#pragma mark - NSEvent (KeyEquivalentMarker) protocol
+
+@interface NSEvent (KeyEquivalentMarker)
+
+// Internally marks that the event was received through performKeyEquivalent:.
+// When text editing is active, keyboard events that have modifier keys pressed
+// are received through performKeyEquivalent: instead of keyDown:. If such event
+// is passed to TextInputContext but doesn't result in a text editing action it
+// needs to be forwarded by FlutterKeyboardManager to the next responder.
+- (void)markAsKeyEquivalent;
+
+// Returns YES if the event is marked as a key equivalent.
+- (BOOL)isKeyEquivalent;
+
+@end
+
+@implementation NSEvent (KeyEquivalentMarker)
+
+// This field doesn't need a value because only its address is used as a unique identifier.
+static char markerKey;
+
+- (void)markAsKeyEquivalent {
+  objc_setAssociatedObject(self, &markerKey, @true, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (BOOL)isKeyEquivalent {
+  return [objc_getAssociatedObject(self, &markerKey) boolValue] == YES;
+}
+
+@end
+
 #pragma mark - Private dependant functions
 
 namespace {
@@ -258,12 +292,15 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
 @implementation FlutterViewWrapper {
   FlutterView* _flutterView;
+  FlutterViewController* _controller;
 }
 
-- (instancetype)initWithFlutterView:(FlutterView*)view {
+- (instancetype)initWithFlutterView:(FlutterView*)view
+                         controller:(FlutterViewController*)controller {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     _flutterView = view;
+    _controller = controller;
     view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [self addSubview:view];
   }
@@ -274,8 +311,54 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   [_flutterView setBackgroundColor:color];
 }
 
+- (BOOL)performKeyEquivalent:(NSEvent*)event {
+  if ([_controller isDispatchingKeyEvent:event]) {
+    // When NSWindow is nextResponder, keyboard manager will send to it
+    // unhandled events (through [NSWindow keyDown:]). If event has both
+    // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)
+    // NSWindow will then send this event as performKeyEquivalent: to first
+    // responder, which might be FlutterTextInputPlugin. If that's the case, the
+    // plugin must not handle the event, otherwise the emoji picker would not
+    // work (due to first responder returning YES from performKeyEquivalent:)
+    // and there would be an infinite loop, because FlutterViewController will
+    // send the event back to [keyboardManager handleEvent:].
+    return NO;
+  }
+  [event markAsKeyEquivalent];
+  [_flutterView keyDown:event];
+  return YES;
+}
+
 - (NSArray*)accessibilityChildren {
   return @[ _flutterView ];
+}
+
+- (void)mouseDown:(NSEvent*)event {
+  // Work around an AppKit bug where mouseDown/mouseUp are not called on the view controller if the
+  // view is the content view of an NSPopover AND macOS's Reduced Transparency accessibility setting
+  // is enabled.
+  //
+  // This simply calls mouseDown on the next responder in the responder chain as the default
+  // implementation on NSResponder is documented to do.
+  //
+  // See: https://github.com/flutter/flutter/issues/115015
+  // See: http://www.openradar.me/FB12050037
+  // See: https://developer.apple.com/documentation/appkit/nsresponder/1524634-mousedown
+  [self.nextResponder mouseDown:event];
+}
+
+- (void)mouseUp:(NSEvent*)event {
+  // Work around an AppKit bug where mouseDown/mouseUp are not called on the view controller if the
+  // view is the content view of an NSPopover AND macOS's Reduced Transparency accessibility setting
+  // is enabled.
+  //
+  // This simply calls mouseUp on the next responder in the responder chain as the default
+  // implementation on NSResponder is documented to do.
+  //
+  // See: https://github.com/flutter/flutter/issues/115015
+  // See: http://www.openradar.me/FB12050037
+  // See: https://developer.apple.com/documentation/appkit/nsresponder/1535349-mouseup
+  [self.nextResponder mouseUp:event];
 }
 
 @end
@@ -287,12 +370,9 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
-
-  uint64_t _id;
 }
 
-@dynamic id;
-@dynamic view;
+@synthesize viewId = _viewId;
 @dynamic accessibilityBridge;
 
 /**
@@ -313,7 +393,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             @"The FlutterViewController unexpectedly stays unattached after initialization. "
             @"In unit tests, this is likely because either the FlutterViewController or "
             @"the FlutterEngine is mocked. Please subclass these classes instead.",
-            controller.engine, controller.id);
+            controller.engine, controller.viewId);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
   [controller initializeKeyboard];
@@ -380,7 +460,8 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   if (_backgroundColor != nil) {
     [flutterView setBackgroundColor:_backgroundColor];
   }
-  FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView];
+  FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView
+                                                                         controller:self];
   self.view = wrapperView;
   _flutterView = flutterView;
 }
@@ -429,9 +510,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)id {
+- (uint64_t)viewId {
   NSAssert([self attached], @"This view controller is not attched.");
-  return _id;
+  return _viewId;
 }
 
 - (void)onPreEngineRestart {
@@ -461,7 +542,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 - (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
-  _id = viewId;
+  _viewId = viewId;
 }
 
 - (void)detachFromEngine {
@@ -473,19 +554,19 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _engine != nil;
 }
 
-- (void)updateSemantics:(const FlutterSemanticsUpdate*)update {
+- (void)updateSemantics:(const FlutterSemanticsUpdate2*)update {
   NSAssert(_engine.semanticsEnabled, @"Semantics must be enabled.");
   if (!_engine.semanticsEnabled) {
     return;
   }
-  for (size_t i = 0; i < update->nodes_count; i++) {
-    const FlutterSemanticsNode* node = &update->nodes[i];
-    _bridge->AddFlutterSemanticsNodeUpdate(node);
+  for (size_t i = 0; i < update->node_count; i++) {
+    const FlutterSemanticsNode2* node = update->nodes[i];
+    _bridge->AddFlutterSemanticsNodeUpdate(*node);
   }
 
-  for (size_t i = 0; i < update->custom_actions_count; i++) {
-    const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
-    _bridge->AddFlutterSemanticsCustomActionUpdate(action);
+  for (size_t i = 0; i < update->custom_action_count; i++) {
+    const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
+    _bridge->AddFlutterSemanticsCustomActionUpdate(*action);
   }
 
   _bridge->CommitUpdates();

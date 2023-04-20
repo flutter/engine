@@ -4,11 +4,13 @@
 
 #include "impeller/renderer/render_target.h"
 
+#include <sstream>
+
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/allocator.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -59,12 +61,20 @@ bool RenderTarget::IsValid() const {
 
       if (texture_type != attachment.texture->GetTextureDescriptor().type) {
         passes_type_validation = false;
+        VALIDATION_LOG << "Render target has incompatible texture types: "
+                       << TextureTypeToString(texture_type.value()) << " != "
+                       << TextureTypeToString(
+                              attachment.texture->GetTextureDescriptor().type)
+                       << " on target " << ToString();
         return false;
       }
 
       if (sample_count !=
           attachment.texture->GetTextureDescriptor().sample_count) {
         passes_type_validation = false;
+        VALIDATION_LOG << "Render target (" << ToString()
+                       << ") has incompatible sample counts.";
+
         return false;
       }
 
@@ -72,8 +82,6 @@ bool RenderTarget::IsValid() const {
     };
     IterateAllAttachments(iterator);
     if (!passes_type_validation) {
-      VALIDATION_LOG << "Render target texture types are not of the same type "
-                        "and sample count.";
       return false;
     }
   }
@@ -210,7 +218,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   }
 
   RenderTarget target;
-  PixelFormat pixel_format = context.GetColorAttachmentPixelFormat();
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
   TextureDescriptor color_tex0;
   color_tex0.storage_mode = color_attachment_config.storage_mode;
   color_tex0.format = pixel_format;
@@ -233,8 +241,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   if (stencil_attachment_config.has_value()) {
     TextureDescriptor stencil_tex0;
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
-    stencil_tex0.format =
-        context.GetDeviceCapabilities().GetDefaultStencilFormat();
+    stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
@@ -269,7 +276,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   }
 
   RenderTarget target;
-  PixelFormat pixel_format = context.GetColorAttachmentPixelFormat();
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
 
   // Create MSAA color texture.
 
@@ -297,6 +304,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
       color_attachment_config.resolve_storage_mode;
   color0_resolve_tex_desc.format = pixel_format;
   color0_resolve_tex_desc.size = size;
+  color0_resolve_tex_desc.compression_type = CompressionType::kLossy;
   color0_resolve_tex_desc.usage =
       static_cast<uint64_t>(TextureUsage::kRenderTarget) |
       static_cast<uint64_t>(TextureUsage::kShaderRead);
@@ -327,8 +335,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
     stencil_tex0.type = TextureType::kTexture2DMultisample;
     stencil_tex0.sample_count = SampleCount::kCount4;
-    stencil_tex0.format =
-        context.GetDeviceCapabilities().GetDefaultStencilFormat();
+    stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
@@ -369,6 +376,26 @@ size_t RenderTarget::GetTotalAttachmentCount() const {
     count++;
   }
   return count;
+}
+
+std::string RenderTarget::ToString() const {
+  std::stringstream stream;
+
+  for (const auto& [index, color] : colors_) {
+    stream << SPrintF("Color[%zu]=(%s)", index,
+                      ColorAttachmentToString(color).c_str());
+  }
+  if (depth_) {
+    stream << ",";
+    stream << SPrintF("Depth=(%s)",
+                      DepthAttachmentToString(depth_.value()).c_str());
+  }
+  if (stencil_) {
+    stream << ",";
+    stream << SPrintF("Stencil=(%s)",
+                      StencilAttachmentToString(stencil_.value()).c_str());
+  }
+  return stream.str();
 }
 
 }  // namespace impeller

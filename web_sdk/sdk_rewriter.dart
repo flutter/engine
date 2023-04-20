@@ -11,6 +11,7 @@ final ArgParser argParser = ArgParser()
   ..addOption('output-dir')
   ..addOption('input-dir')
   ..addFlag('ui')
+  ..addFlag('public')
   ..addOption('library-name')
   ..addOption('api-file')
   ..addMultiOption('source-file')
@@ -34,11 +35,12 @@ export 'dart:_engine'
   ),
 ];
 
-List<Replacer> generateApiFilePatterns(String libraryName, List<String> extraImports) {
+List<Replacer> generateApiFilePatterns(String libraryName, bool isPublic, List<String> extraImports) {
+  final String libraryPrefix = isPublic ? '' : '_';
   return <Replacer>[
     AllReplacer(RegExp('library\\s+$libraryName;'), '''
 @JS()
-library dart._$libraryName;
+library dart.$libraryPrefix$libraryName;
 
 import 'dart:async';
 import 'dart:collection';
@@ -46,6 +48,7 @@ import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
+import 'dart:js_interop' hide JS;
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -62,9 +65,10 @@ part '$libraryName/${match.group(1)}';
   ];
 }
 
-List<Replacer> generatePartsPatterns(String libraryName) {
+List<Replacer> generatePartsPatterns(String libraryName, bool isPublic) {
+  final String libraryPrefix = isPublic ? '' : '_';
   return <Replacer>[
-    AllReplacer(RegExp('part\\s+of\\s+$libraryName;'), 'part of dart._$libraryName;'),
+    AllReplacer(RegExp('part\\s+of\\s+$libraryName;'), 'part of dart.$libraryPrefix$libraryName;'),
     // Remove library-level JS annotations.
     AllReplacer(RegExp(r'\n@JS(.*)\nlibrary .+;'), ''),
     // Remove library directives.
@@ -72,6 +76,7 @@ List<Replacer> generatePartsPatterns(String libraryName) {
     // Remove imports/exports from all part files.
     AllReplacer(RegExp(r'\nimport\s*.*'), ''),
     AllReplacer(RegExp(r'\nexport\s*.*'), ''),
+    AllReplacer(RegExp(r'\n@DefaultAsset(.*)'), ''),
   ];
 }
 
@@ -85,6 +90,7 @@ final List<Replacer> stripMetaPatterns = <Replacer>[
 ];
 
 const Set<String> rootLibraryNames = <String>{
+  'ui_web',
   'engine',
   'skwasm_stub',
   'skwasm_impl',
@@ -92,6 +98,7 @@ const Set<String> rootLibraryNames = <String>{
 
 final Map<Pattern, String> extraImportsMap = <Pattern, String>{
   RegExp('skwasm_(stub|impl)'): "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
+  'ui_web': "import 'dart:ui_web' as ui_web;",
   'engine': "import 'dart:_engine';",
   'web_unicode': "import 'dart:_web_unicode';",
   'web_test_fonts': "import 'dart:_web_test_fonts';",
@@ -109,6 +116,8 @@ void main(List<String> arguments) {
   List<Replacer> replacementPatterns;
   String? libraryName;
 
+  final bool isPublic = results['public'] as bool;
+
   if (results['ui'] as bool) {
     replacementPatterns = uiPatterns;
   } else {
@@ -117,7 +126,7 @@ void main(List<String> arguments) {
       throw Exception('library-name must be specified if not rewriting ui');
     }
     preprocessor = (String source) => preprocessPartFile(source, libraryName!);
-    replacementPatterns = generatePartsPatterns(libraryName);
+    replacementPatterns = generatePartsPatterns(libraryName, isPublic);
   }
   for (final String inputFilePath in results['source-file'] as Iterable<String>) {
     String pathSuffix = inputFilePath.substring(inputDirectoryPath.length);
@@ -138,7 +147,7 @@ void main(List<String> arguments) {
         directory.path, path.basename(inputFilePath));
 
     final List<String> extraImports = getExtraImportsForLibrary(libraryName);
-    replacementPatterns = generateApiFilePatterns(libraryName, extraImports);
+    replacementPatterns = generateApiFilePatterns(libraryName, isPublic, extraImports);
 
     processFile(
       inputFilePath,
@@ -166,10 +175,6 @@ List<String> getExtraImportsForLibrary(String libraryName) {
     if (entry.key.matchAsPrefix(libraryName) == null) {
       extraImports.add(entry.value);
     }
-  }
-
-  if (libraryName == 'skwasm_impl') {
-    extraImports.add("import 'dart:ffi';");
   }
   return extraImports;
 }
@@ -229,6 +234,17 @@ String validateApiFile(String apiFilePath, String apiFileCode, String libraryNam
 
     if (line.startsWith('export')) {
       // Exports are OK
+      continue;
+    }
+
+    if (line.startsWith('@DefaultAsset')) {
+      // Default asset annotations are OK
+      continue;
+    }
+
+    if (line.startsWith("import 'dart:ffi';")) {
+      // dart:ffi import is an exception to the import rule, since the
+      // @DefaultAsset annotation comes from dart:ffi.
       continue;
     }
 

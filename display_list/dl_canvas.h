@@ -5,10 +5,18 @@
 #ifndef FLUTTER_DISPLAY_LIST_DL_CANVAS_H_
 #define FLUTTER_DISPLAY_LIST_DL_CANVAS_H_
 
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_image.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/dl_vertices.h"
+#include "flutter/display_list/image/dl_image.h"
+
+#include "third_party/skia/include/core/SkM44.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkPath.h"
+#include "third_party/skia/include/core/SkRRect.h"
+#include "third_party/skia/include/core/SkRSXform.h"
+#include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace flutter {
 
@@ -33,6 +41,11 @@ class DlCanvas {
     kPoints,   //!< draw each point separately
     kLines,    //!< draw each separate pair of points as a line segment
     kPolygon,  //!< draw each pair of overlapping points as a line segment
+  };
+
+  enum class SrcRectConstraint {
+    kStrict,
+    kFast,
   };
 
   virtual ~DlCanvas() = default;
@@ -146,28 +159,29 @@ class DlCanvas {
                          const SkPoint point,
                          DlImageSampling sampling,
                          const DlPaint* paint = nullptr) = 0;
-  virtual void DrawImageRect(const sk_sp<DlImage>& image,
-                             const SkRect& src,
-                             const SkRect& dst,
-                             DlImageSampling sampling,
-                             const DlPaint* paint = nullptr,
-                             bool enforce_src_edges = false) = 0;
-  virtual void DrawImageRect(const sk_sp<DlImage>& image,
-                             const SkIRect& src,
-                             const SkRect& dst,
-                             DlImageSampling sampling,
-                             const DlPaint* paint = nullptr,
-                             bool enforce_src_edges = false) {
-    DrawImageRect(image, SkRect::Make(src), dst, sampling, paint,
-                  enforce_src_edges);
+  virtual void DrawImageRect(
+      const sk_sp<DlImage>& image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      const DlPaint* paint = nullptr,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) = 0;
+  virtual void DrawImageRect(
+      const sk_sp<DlImage>& image,
+      const SkIRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      const DlPaint* paint = nullptr,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) {
+    DrawImageRect(image, SkRect::Make(src), dst, sampling, paint, constraint);
   }
-  virtual void DrawImageRect(const sk_sp<DlImage>& image,
-                             const SkRect& dst,
-                             DlImageSampling sampling,
-                             const DlPaint* paint = nullptr,
-                             bool enforce_src_edges = false) {
-    DrawImageRect(image, image->bounds(), dst, sampling, paint,
-                  enforce_src_edges);
+  virtual void DrawImageRect(
+      const sk_sp<DlImage>& image,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      const DlPaint* paint = nullptr,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) {
+    DrawImageRect(image, image->bounds(), dst, sampling, paint, constraint);
   }
   virtual void DrawImageNine(const sk_sp<DlImage>& image,
                              const SkIRect& center,
@@ -196,6 +210,14 @@ class DlCanvas {
                           SkScalar dpr) = 0;
 
   virtual void Flush() = 0;
+
+  static constexpr SkScalar kShadowLightHeight = 600;
+  static constexpr SkScalar kShadowLightRadius = 800;
+
+  static SkRect ComputeShadowBounds(const SkPath& path,
+                                    float elevation,
+                                    SkScalar dpr,
+                                    const SkMatrix& ctm);
 };
 
 class DlAutoCanvasRestore {

@@ -7,13 +7,16 @@
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
@@ -85,7 +88,7 @@ static bool CopyToBitmap(SkBitmap* dst,
 sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     fml::WeakPtr<GrDirectContext> resourceContext,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-    std::shared_ptr<impeller::Context> impeller_context_,
+    const std::shared_ptr<impeller::Context>& impeller_context,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue) {
   SkBitmap bitmap = SkBitmap();
   SkImageInfo info = generator_->GetInfo().makeColorType(kN32_SkColorType);
@@ -115,9 +118,6 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
           << " and no required frames are cached. Using blank slate instead.";
-    } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
-      FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
-                     << " is not cached. Using blank slate instead.";
     } else {
       // Copy the previous frame's output buffer into the current frame as the
       // starting point.
@@ -138,22 +138,19 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   }
 
   // Hold onto this if we need it to decode future frames.
-  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep) {
+  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
+      lastRequiredFrame_) {
     lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
-    sk_sp<DlImage> result;
-    // impeller, transfer to DlImageImpeller
-    gpu_disable_sync_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
-        [&result, &bitmap, &impeller_context_] {
-          result = ImageDecoderImpeller::UploadTexture(
-              impeller_context_, std::make_shared<SkBitmap>(bitmap));
-        }));
-
-    return result;
+    // This is safe regardless of whether the GPU is available or not because
+    // without mipmap creation there is no command buffer encoding done.
+    return ImageDecoderImpeller::UploadTextureToShared(
+        impeller_context, std::make_shared<SkBitmap>(bitmap),
+        /*create_mips=*/false);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
@@ -161,22 +158,22 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   gpu_disable_sync_switch->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&skImage, &bitmap] {
-            // Defer decoding until time of draw later on the raster thread. Can
-            // happen when GL operations are currently forbidden such as in the
-            // background on iOS.
-            skImage = SkImage::MakeFromBitmap(bitmap);
+            // Defer decoding until time of draw later on the raster thread.
+            // Can happen when GL operations are currently forbidden such as
+            // in the background on iOS.
+            skImage = SkImages::RasterFromBitmap(bitmap);
           })
           .SetIfFalse([&skImage, &resourceContext, &bitmap] {
             if (resourceContext) {
               SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
                               bitmap.pixelRef()->rowBytes());
-              skImage = SkImage::MakeCrossContextFromPixmap(
+              skImage = SkImages::CrossContextTextureFromPixmap(
                   resourceContext.get(), pixmap, true);
             } else {
               // Defer decoding until time of draw later on the raster thread.
               // Can happen when GL operations are currently forbidden such as
               // in the background on iOS.
-              skImage = SkImage::MakeFromBitmap(bitmap);
+              skImage = SkImages::RasterFromBitmap(bitmap);
             }
           }));
 
@@ -190,12 +187,12 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
     size_t trace_id,
-    std::shared_ptr<impeller::Context> impeller_context) {
+    const std::shared_ptr<impeller::Context>& impeller_context) {
   fml::RefPtr<CanvasImage> image = nullptr;
   int duration = 0;
   sk_sp<DlImage> dlImage =
       GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch,
-                        std::move(impeller_context), std::move(unref_queue));
+                        impeller_context, std::move(unref_queue));
   if (dlImage) {
     image = CanvasImage::Create();
     image->set_image(dlImage);
@@ -257,8 +254,8 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
       }));
 
   return Dart_Null();
-  // The static leak checker gets confused by the control flow, unique pointers
-  // and closures in this function.
+  // The static leak checker gets confused by the control flow, unique
+  // pointers and closures in this function.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 

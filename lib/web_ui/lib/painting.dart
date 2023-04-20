@@ -272,7 +272,7 @@ abstract class Shader {
   bool get debugDisposed;
 }
 
-abstract class Gradient extends Shader {
+abstract class Gradient implements Shader {
   factory Gradient.linear(
     Offset from,
     Offset to,
@@ -350,6 +350,8 @@ abstract class Image {
   bool isCloneOf(Image other) => other == this;
 
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+
+  ColorSpace get colorSpace => ColorSpace.sRGB;
 
   @override
   String toString() => '[$width\u00D7$height]';
@@ -429,6 +431,11 @@ class ImageFilter {
 
   factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
     engine.renderer.composeImageFilters(outer: outer, inner: inner);
+}
+
+enum ColorSpace {
+  sRGB,
+  extendedSRGB,
 }
 
 enum ImageByteFormat {
@@ -552,10 +559,8 @@ Future<Codec> createBmp(
   switch (format) {
     case PixelFormat.bgra8888:
       swapRedBlue = true;
-      break;
     case PixelFormat.rgba8888:
       swapRedBlue = false;
-      break;
   }
 
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
@@ -731,7 +736,7 @@ class Shadow {
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
 }
 
-abstract class ImageShader extends Shader {
+abstract class ImageShader implements Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
   }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
