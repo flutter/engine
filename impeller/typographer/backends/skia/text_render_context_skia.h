@@ -15,15 +15,15 @@ class Allocator;
 
 class FontImpellerAllocator : public SkBitmap::Allocator {
  public:
-  explicit FontImpellerAllocator(std::shared_ptr<impeller::Allocator> allocator);
+  explicit FontImpellerAllocator(
+      std::shared_ptr<impeller::Allocator> allocator);
 
   ~FontImpellerAllocator() = default;
 
   // |Allocator|
   bool allocPixelRef(SkBitmap* bitmap) override;
 
-  std::optional<std::shared_ptr<DeviceBuffer>> GetDeviceBuffer()
-      const;
+  std::optional<std::shared_ptr<DeviceBuffer>> GetDeviceBuffer() const;
 
  private:
   std::shared_ptr<impeller::Allocator> allocator_;

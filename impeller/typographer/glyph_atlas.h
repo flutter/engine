@@ -10,8 +10,8 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
-#include "impeller/core/texture.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/typographer/font_glyph_pair.h"
@@ -154,7 +154,8 @@ class GlyphAtlasContext {
 
   //----------------------------------------------------------------------------
   /// @brief      Retrieve the previous (if any) SkBitmap instance.
-  std::pair<std::shared_ptr<SkBitmap>, std::shared_ptr<DeviceBuffer>> GetBitmap() const;
+  std::pair<std::shared_ptr<SkBitmap>, std::shared_ptr<DeviceBuffer>>
+  GetBitmap() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Retrieve the previous (if any) rect packer.
