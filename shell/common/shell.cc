@@ -1165,7 +1165,7 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_setup_);
 
-  auto discard_callback = [this](flutter::LayerTree& tree) {
+  auto discard_callback = [this](const flutter::LayerTree& tree) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     return !expected_frame_size_.isEmpty() &&
            tree.frame_size() != expected_frame_size_;

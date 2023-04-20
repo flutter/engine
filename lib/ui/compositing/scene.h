@@ -26,7 +26,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      bool checkerboardRasterCacheImages,
                      bool checkerboardOffscreenLayers);
 
-  std::shared_ptr<flutter::LayerTree> takeLayerTree();
+  std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
   Dart_Handle toImageSync(uint32_t width,
                           uint32_t height,
@@ -53,7 +53,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
   // required to render TextureLayers.
   //
   // No longer valid after calling `takeLayerTree`.
-  std::shared_ptr<flutter::LayerTree> layer_tree_;
+  std::unique_ptr<flutter::LayerTree> layer_tree_;
 };
 
 }  // namespace flutter

@@ -46,7 +46,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
                               ->get_window(0)
                               ->viewport_metrics();
 
-  layer_tree_ = std::make_shared<LayerTree>(
+  layer_tree_ = std::make_unique<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,
                     viewport_metrics.physical_height),
       static_cast<float>(viewport_metrics.device_pixel_ratio));
@@ -92,7 +92,7 @@ Dart_Handle Scene::toImage(uint32_t width,
 
 static sk_sp<DlImage> CreateDeferredImage(
     bool impeller,
-    std::shared_ptr<LayerTree> layer_tree,
+    std::unique_ptr<LayerTree> layer_tree,
     uint32_t width,
     uint32_t height,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
@@ -126,14 +126,14 @@ void Scene::RasterizeToImage(uint32_t width,
 
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
-      dart_state->IsImpellerEnabled(), layer_tree_, width, height,
+      dart_state->IsImpellerEnabled(), std::move(layer_tree_), width, height,
       std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 
-std::shared_ptr<flutter::LayerTree> Scene::takeLayerTree() {
+std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
   return std::move(layer_tree_);
 }
 
