@@ -36,7 +36,9 @@ void ViewportMetricsUpdater::UpdateViewportMetrics(
         delegate_.ScheduleSecondaryVsyncCallback(
             reinterpret_cast<uintptr_t>(this),
             [updater = weak_factory_.GetWeakPtr(), metrics] {
-              updater->delegate_.DoUpdateViewportMetrics(metrics);
+              if (updater) {
+                updater->delegate_.DoUpdateViewportMetrics(metrics);
+              }
             });
       }
       break;
