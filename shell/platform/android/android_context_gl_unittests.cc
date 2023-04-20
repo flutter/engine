@@ -16,49 +16,75 @@ namespace android {
 namespace {
 class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
  public:
-  MOCK_METHOD2(FlutterViewHandlePlatformMessage,
-               void(std::unique_ptr<flutter::PlatformMessage> message,
-                    int responseId));
-  MOCK_METHOD2(FlutterViewHandlePlatformMessageResponse,
-               void(int responseId, std::unique_ptr<fml::Mapping> data));
-  MOCK_METHOD3(FlutterViewUpdateSemantics,
-               void(std::vector<uint8_t> buffer,
-                    std::vector<std::string> strings,
-                    std::vector<std::vector<uint8_t>> string_attribute_args));
-  MOCK_METHOD2(FlutterViewUpdateCustomAccessibilityActions,
-               void(std::vector<uint8_t> actions_buffer,
-                    std::vector<std::string> strings));
-  MOCK_METHOD0(FlutterViewOnFirstFrame, void());
-  MOCK_METHOD0(FlutterViewOnPreEngineRestart, void());
-  MOCK_METHOD2(SurfaceTextureAttachToGLContext,
-               void(JavaLocalRef surface_texture, int textureId));
-  MOCK_METHOD1(SurfaceTextureUpdateTexImage,
-               void(JavaLocalRef surface_texture));
-  MOCK_METHOD2(SurfaceTextureGetTransformMatrix,
-               void(JavaLocalRef surface_texture, SkMatrix& transform));
-  MOCK_METHOD1(SurfaceTextureDetachFromGLContext,
-               void(JavaLocalRef surface_texture));
-  MOCK_METHOD8(FlutterViewOnDisplayPlatformView,
-               void(int view_id,
-                    int x,
-                    int y,
-                    int width,
-                    int height,
-                    int viewWidth,
-                    int viewHeight,
-                    MutatorsStack mutators_stack));
-  MOCK_METHOD5(FlutterViewDisplayOverlaySurface,
-               void(int surface_id, int x, int y, int width, int height));
-  MOCK_METHOD0(FlutterViewBeginFrame, void());
-  MOCK_METHOD0(FlutterViewEndFrame, void());
-  MOCK_METHOD0(FlutterViewCreateOverlaySurface,
-               std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>());
-  MOCK_METHOD0(FlutterViewDestroyOverlaySurfaces, void());
-  MOCK_METHOD1(FlutterViewComputePlatformResolvedLocale,
-               std::unique_ptr<std::vector<std::string>>(
-                   std::vector<std::string> supported_locales_data));
-  MOCK_METHOD0(GetDisplayRefreshRate, double());
-  MOCK_METHOD1(RequestDartDeferredLibrary, bool(int loading_unit_id));
+  MOCK_METHOD(void,
+              FlutterViewHandlePlatformMessage,
+              (std::unique_ptr<flutter::PlatformMessage> message,
+               int responseId),
+              (override));
+  MOCK_METHOD(void,
+              FlutterViewHandlePlatformMessageResponse,
+              (int responseId, std::unique_ptr<fml::Mapping> data),
+              (override));
+  MOCK_METHOD(void,
+              FlutterViewUpdateSemantics,
+              (std::vector<uint8_t> buffer,
+               std::vector<std::string> strings,
+               std::vector<std::vector<uint8_t>> string_attribute_args),
+              (override));
+  MOCK_METHOD(void,
+              FlutterViewUpdateCustomAccessibilityActions,
+              (std::vector<uint8_t> actions_buffer,
+               std::vector<std::string> strings),
+              (override));
+  MOCK_METHOD(void, FlutterViewOnFirstFrame, (), (override));
+  MOCK_METHOD(void, FlutterViewOnPreEngineRestart, (), (override));
+  MOCK_METHOD(void,
+              SurfaceTextureAttachToGLContext,
+              (JavaLocalRef surface_texture, int textureId),
+              (override));
+  MOCK_METHOD(void,
+              SurfaceTextureUpdateTexImage,
+              (JavaLocalRef surface_texture),
+              (override));
+  MOCK_METHOD(void,
+              SurfaceTextureGetTransformMatrix,
+              (JavaLocalRef surface_texture, SkMatrix& transform),
+              (override));
+  MOCK_METHOD(void,
+              SurfaceTextureDetachFromGLContext,
+              (JavaLocalRef surface_texture),
+              (override));
+  MOCK_METHOD(void,
+              FlutterViewOnDisplayPlatformView,
+              (int view_id,
+               int x,
+               int y,
+               int width,
+               int height,
+               int viewWidth,
+               int viewHeight,
+               MutatorsStack mutators_stack),
+              (override));
+  MOCK_METHOD(void,
+              FlutterViewDisplayOverlaySurface,
+              (int surface_id, int x, int y, int width, int height),
+              (override));
+  MOCK_METHOD(void, FlutterViewBeginFrame, (), (override));
+  MOCK_METHOD(void, FlutterViewEndFrame, (), (override));
+  MOCK_METHOD(std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>,
+              FlutterViewCreateOverlaySurface,
+              (),
+              (override));
+  MOCK_METHOD(void, FlutterViewDestroyOverlaySurfaces, (), (override));
+  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
+              FlutterViewComputePlatformResolvedLocale,
+              (std::vector<std::string> supported_locales_data),
+              (override));
+  MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
+  MOCK_METHOD(bool,
+              RequestDartDeferredLibrary,
+              (int loading_unit_id),
+              (override));
 };
 
 TaskRunners MakeTaskRunners(const std::string& thread_label,

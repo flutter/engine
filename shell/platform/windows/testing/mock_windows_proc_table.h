@@ -18,8 +18,10 @@ class MockWindowsProcTable : public WindowsProcTable {
   MockWindowsProcTable() = default;
   virtual ~MockWindowsProcTable() = default;
 
-  MOCK_METHOD2(GetPointerType,
-               BOOL(UINT32 pointer_id, POINTER_INPUT_TYPE* pointer_type));
+  MOCK_METHOD(BOOL,
+              GetPointerType,
+              (UINT32 pointer_id, POINTER_INPUT_TYPE* pointer_type),
+              (override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockWindowsProcTable);

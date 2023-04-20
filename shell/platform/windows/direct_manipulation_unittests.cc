@@ -17,86 +17,112 @@ class MockIDirectManipulationViewport : public IDirectManipulationViewport {
  public:
   MockIDirectManipulationViewport() {}
 
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, AddRef, ULONG());
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Release, ULONG());
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             QueryInterface,
-                             HRESULT(REFIID, void**));
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Abandon, HRESULT());
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             ActivateConfiguration,
-                             HRESULT(DIRECTMANIPULATION_CONFIGURATION));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             AddConfiguration,
-                             HRESULT(DIRECTMANIPULATION_CONFIGURATION));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             AddContent,
-                             HRESULT(IDirectManipulationContent*));
-  MOCK_METHOD3_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             AddEventHandler,
-                             HRESULT(HWND,
-                                     IDirectManipulationViewportEventHandler*,
-                                     DWORD*));
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Disable, HRESULT());
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Enable, HRESULT());
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetPrimaryContent,
-                             HRESULT(REFIID, void**));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetStatus,
-                             HRESULT(DIRECTMANIPULATION_STATUS*));
-  MOCK_METHOD3_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetTag,
-                             HRESULT(REFIID, void**, UINT32*));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetViewportRect,
-                             HRESULT(RECT*));
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, ReleaseAllContacts, HRESULT());
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             ReleaseContact,
-                             HRESULT(UINT32));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             RemoveConfiguration,
-                             HRESULT(DIRECTMANIPULATION_CONFIGURATION));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             RemoveContent,
-                             HRESULT(IDirectManipulationContent*));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             RemoveEventHandler,
-                             HRESULT(DWORD));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetChaining,
-                             HRESULT(DIRECTMANIPULATION_MOTION_TYPES));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE, SetContact, HRESULT(UINT32));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetInputMode,
-                             HRESULT(DIRECTMANIPULATION_INPUT_MODE));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetManualGesture,
-                             HRESULT(DIRECTMANIPULATION_GESTURE_CONFIGURATION));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetTag,
-                             HRESULT(IUnknown*, UINT32));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetUpdateMode,
-                             HRESULT(DIRECTMANIPULATION_INPUT_MODE));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetViewportOptions,
-                             HRESULT(DIRECTMANIPULATION_VIEWPORT_OPTIONS));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetViewportRect,
-                             HRESULT(const RECT*));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetViewportTransform,
-                             HRESULT(const float*, DWORD));
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Stop, HRESULT());
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SyncDisplayTransform,
-                             HRESULT(const float*, DWORD));
-  MOCK_METHOD5_WITH_CALLTYPE(
-      STDMETHODCALLTYPE,
-      ZoomToRect,
-      HRESULT(const float, const float, const float, const float, BOOL));
+  MOCK_METHOD(ULONG, AddRef, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(ULONG, Release, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              QueryInterface,
+              (REFIID, void**),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT, Abandon, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              ActivateConfiguration,
+              (DIRECTMANIPULATION_CONFIGURATION),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              AddConfiguration,
+              (DIRECTMANIPULATION_CONFIGURATION),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              AddContent,
+              (IDirectManipulationContent*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              AddEventHandler,
+              (HWND, IDirectManipulationViewportEventHandler*, DWORD*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT, Disable, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT, Enable, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetPrimaryContent,
+              (REFIID, void**),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetStatus,
+              (DIRECTMANIPULATION_STATUS*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetTag,
+              (REFIID, void**, UINT32*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetViewportRect,
+              (RECT*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              ReleaseAllContacts,
+              (),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              ReleaseContact,
+              (UINT32),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              RemoveConfiguration,
+              (DIRECTMANIPULATION_CONFIGURATION),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              RemoveContent,
+              (IDirectManipulationContent*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              RemoveEventHandler,
+              (DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetChaining,
+              (DIRECTMANIPULATION_MOTION_TYPES),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetContact,
+              (UINT32),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetInputMode,
+              (DIRECTMANIPULATION_INPUT_MODE),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetManualGesture,
+              (DIRECTMANIPULATION_GESTURE_CONFIGURATION),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetTag,
+              (IUnknown*, UINT32),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetUpdateMode,
+              (DIRECTMANIPULATION_INPUT_MODE),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetViewportOptions,
+              (DIRECTMANIPULATION_VIEWPORT_OPTIONS),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetViewportRect,
+              (const RECT*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetViewportTransform,
+              (const float*, DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT, Stop, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SyncDisplayTransform,
+              (const float*, DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              ZoomToRect,
+              (const float, const float, const float, const float, BOOL),
+              (override, Calltype(STDMETHODCALLTYPE)));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockIDirectManipulationViewport);
@@ -106,33 +132,44 @@ class MockIDirectManipulationContent : public IDirectManipulationContent {
  public:
   MockIDirectManipulationContent() {}
 
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, AddRef, ULONG());
-  MOCK_METHOD0_WITH_CALLTYPE(STDMETHODCALLTYPE, Release, ULONG());
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             QueryInterface,
-                             HRESULT(REFIID, void**));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE, GetContentRect, HRESULT(RECT*));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetContentTransform,
-                             HRESULT(float*, DWORD));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetOutputTransform,
-                             HRESULT(float*, DWORD));
-  MOCK_METHOD3_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetTag,
-                             HRESULT(REFIID, void**, UINT32*));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             GetViewport,
-                             HRESULT(REFIID, void**));
-  MOCK_METHOD1_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetContentRect,
-                             HRESULT(const RECT*));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SetTag,
-                             HRESULT(IUnknown*, UINT32));
-  MOCK_METHOD2_WITH_CALLTYPE(STDMETHODCALLTYPE,
-                             SyncContentTransform,
-                             HRESULT(const float*, DWORD));
+  MOCK_METHOD(ULONG, AddRef, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(ULONG, Release, (), (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              QueryInterface,
+              (REFIID, void**),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetContentRect,
+              (RECT*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetContentTransform,
+              (float*, DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetOutputTransform,
+              (float*, DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetTag,
+              (REFIID, void**, UINT32*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              GetViewport,
+              (REFIID, void**),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetContentRect,
+              (const RECT*),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SetTag,
+              (IUnknown*, UINT32),
+              (override, Calltype(STDMETHODCALLTYPE)));
+  MOCK_METHOD(HRESULT,
+              SyncContentTransform,
+              (const float*, DWORD),
+              (override, Calltype(STDMETHODCALLTYPE)));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockIDirectManipulationContent);
