@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "viewport_metrics_updater.h"
+#include "flutter/shell/common/viewport_metrics_updater.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/vsync_waiter.h"
 
