@@ -18,6 +18,7 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/viewport_metrics_updater.h"
 #include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
@@ -58,6 +59,8 @@ Engine::Engine(
       task_runners_(task_runners),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
+  viewport_metrics_updater_ = std::unique_ptr<ViewportMetricsUpdater>(
+      new ViewportMetricsUpdater(*this));
 }
 
 Engine::Engine(Delegate& delegate,
@@ -287,6 +290,30 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 }
 
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
+  viewport_metrics_updater_->UpdateViewportMetrics(metrics);
+}
+
+VsyncWaiterProcessStage Engine::GetVsyncWaiterProcessStage() const {
+  std::shared_ptr<VsyncWaiter> waiter = animator_->GetVsyncWaiter().lock();
+  if (!waiter) {
+    return VsyncWaiterProcessStage::kProcessingComplete;
+  }
+  return waiter->GetProcessStage();
+}
+
+fml::TimePoint Engine::GetVsyncWaiterFrameTargetTime() const {
+  std::shared_ptr<VsyncWaiter> waiter = animator_->GetVsyncWaiter().lock();
+  if (!waiter) {
+    return fml::TimePoint::Now();
+  }
+  return waiter->GetVsyncFrameTargetTime();
+}
+
+void Engine::PostTaskOnUITaskRunner(const fml::closure& callback) {
+  task_runners_.GetUITaskRunner()->PostTask(callback);
+}
+
+void Engine::DoUpdateViewportMetrics(const ViewportMetrics& metrics) {
   runtime_controller_->SetViewportMetrics(metrics);
   ScheduleFrame();
 }

@@ -32,6 +32,7 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/shell/common/viewport_metrics_updater.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
@@ -72,7 +73,9 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate,
+                     PointerDataDispatcher::Delegate,
+                     ViewportMetricsUpdater::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -787,9 +790,21 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
 
-  // |PointerDataDispatcher::Delegate|
+  // |PointerDataDispatcher::Delegate|, |ViewportMetricsUpdater::Delegate|
   void ScheduleSecondaryVsyncCallback(uintptr_t id,
                                       const fml::closure& callback) override;
+
+  // |ViewportMetricsUpdater::Delegate|
+  void DoUpdateViewportMetrics(const ViewportMetrics& metrics) override;
+
+  // |ViewportMetricsUpdater::Delegate|
+  VsyncWaiterProcessStage GetVsyncWaiterProcessStage() const override;
+
+  // |ViewportMetricsUpdater::Delegate|
+  fml::TimePoint GetVsyncWaiterFrameTargetTime() const override;
+
+  // |ViewportMetricsUpdater::Delegate|
+  void PostTaskOnUITaskRunner(const fml::closure& callback) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Get the last Entrypoint that was used in the RunConfiguration
@@ -948,6 +963,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // So it should be defined after them to ensure that pointer_data_dispatcher_
   // is destructed first.
   std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
+  std::unique_ptr<ViewportMetricsUpdater> viewport_metrics_updater_;
 
   std::string last_entry_point_;
   std::string last_entry_point_library_;

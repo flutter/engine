@@ -4,13 +4,15 @@
 
 #include "flutter/shell/common/vsync_waiter.h"
 
-#include "flow/frame_timings.h"
+#include "flutter/flow/frame_timings.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
+#include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/task_queue_id.h"
 #include "flutter/fml/task_runner.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
-#include "fml/logging.h"
-#include "fml/message_loop_task_queues.h"
-#include "fml/task_queue_id.h"
-#include "fml/time/time_point.h"
 
 namespace flutter {
 
@@ -19,9 +21,30 @@ static constexpr const char* kVsyncFlowName = "VsyncFlow";
 static constexpr const char* kVsyncTraceName = "VsyncProcessCallback";
 
 VsyncWaiter::VsyncWaiter(const TaskRunners& task_runners)
-    : task_runners_(task_runners) {}
+    : task_runners_(task_runners) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([this, &latch]() mutable {
+        weak_factory_on_ui_ = nullptr;
+        weak_factory_on_ui_ =
+            std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
+        latch.Signal();
+      }));
+  latch.Wait();
+}
 
-VsyncWaiter::~VsyncWaiter() = default;
+VsyncWaiter::~VsyncWaiter() {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([weak_factory_on_ui_ = std::move(weak_factory_on_ui_),
+                         &latch]() mutable {
+        weak_factory_on_ui_.reset();
+        latch.Signal();
+      }));
+  latch.Wait();
+};
 
 // Public method invoked by the animator.
 void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
@@ -48,6 +71,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
     }
   }
   AwaitVSync();
+  stage_ = VsyncWaiterProcessStage::kAwaiting;
 }
 
 void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
@@ -82,6 +106,15 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
     }
   }
   AwaitVSyncForSecondaryCallback();
+  stage_ = VsyncWaiterProcessStage::kAwaiting;
+}
+
+VsyncWaiterProcessStage VsyncWaiter::GetProcessStage() const {
+  return stage_;
+}
+
+fml::TimePoint VsyncWaiter::GetVsyncFrameTargetTime() const {
+  return frame_target_time_;
 }
 
 void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
@@ -101,11 +134,15 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     secondary_callbacks_.clear();
   }
 
+  stage_ = VsyncWaiterProcessStage::kProcessing;
+  frame_target_time_ = frame_target_time;
+
   if (!callback && secondary_callbacks.empty()) {
     // This means that the vsync waiter implementation fired a callback for a
     // request we did not make. This is a paranoid check but we still want to
     // make sure we catch misbehaving vsync implementations.
     TRACE_EVENT_INSTANT0("flutter", "MismatchedFrameCallback");
+    stage_ = VsyncWaiterProcessStage::kProcessingComplete;
     return;
   }
 
@@ -146,6 +183,13 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   for (auto& secondary_callback : secondary_callbacks) {
     task_runners_.GetUITaskRunner()->PostTask(secondary_callback);
   }
+
+  task_runners_.GetUITaskRunner()->PostTask(
+      [waiter = weak_factory_on_ui_->GetWeakPtr()] {
+        if (waiter) {
+          waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+        }
+      });
 }
 
 void VsyncWaiter::PauseDartMicroTasks() {

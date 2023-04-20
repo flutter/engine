@@ -1664,7 +1664,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [flutterViewController updateViewportMetricsIfNeeded];
       }
     } else {
-      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
+      // Because updateViewportMetrics will work in next frame and the frame will
+      // present in next next frame, so here should add a time of one frame interval
+      // to get correct animation target time.
+      fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
+      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() + frameInterval -
                                    flutterViewController.get().keyboardAnimationStartTime;
 
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =

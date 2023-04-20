@@ -16,6 +16,13 @@
 
 namespace flutter {
 
+/// A Enum using for indicating the vsync waiter's current process stage.
+enum VsyncWaiterProcessStage {
+  kAwaiting,
+  kProcessing,
+  kProcessingComplete,
+};
+
 /// Abstract Base Class that represents a platform specific mechanism for
 /// getting callbacks when a vsync event happens.
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
@@ -31,6 +38,14 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
   /// |Animator::ScheduleMaybeClearTraceFlowIds|.
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
+
+  /// Get current frame's target time.
+  fml::TimePoint GetVsyncFrameTargetTime() const;
+
+  /// Get current stage.
+  ///
+  /// See also |VsyncWaiterProcessStage|
+  VsyncWaiterProcessStage GetProcessStage() const;
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
@@ -75,10 +90,13 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
-
+  VsyncWaiterProcessStage stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+  fml::TimePoint frame_target_time_;
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
 
+  /// The weak factory using on ui task runner.
+  std::unique_ptr<fml::WeakPtrFactory<VsyncWaiter>> weak_factory_on_ui_;
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
 
