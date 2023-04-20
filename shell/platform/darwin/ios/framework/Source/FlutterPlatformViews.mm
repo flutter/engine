@@ -867,7 +867,14 @@ void FlutterPlatformViewsController::DisposeViews() {
 
   FML_DCHECK([[NSThread currentThread] isMainThread]);
 
+  std::unordered_set<int64_t> views_to_composite(composition_order_.begin(),
+                                                 composition_order_.end());
+  std::unordered_set<int64_t> views_to_dispose_next_frame;
   for (int64_t viewId : views_to_dispose_) {
+    if (views_to_composite.count(viewId)) {
+      views_to_dispose_next_frame.insert(viewId);
+      continue;
+    }
     UIView* root_view = root_views_[viewId].get();
     [root_view removeFromSuperview];
     views_.erase(viewId);
@@ -876,8 +883,10 @@ void FlutterPlatformViewsController::DisposeViews() {
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
+    slices_.erase(viewId);
   }
-  views_to_dispose_.clear();
+
+  views_to_dispose_ = views_to_dispose_next_frame;
 }
 
 void FlutterPlatformViewsController::BeginCATransaction() {
