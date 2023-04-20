@@ -21,7 +21,7 @@ static constexpr const char* kVsyncFlowName = "VsyncFlow";
 static constexpr const char* kVsyncTraceName = "VsyncProcessCallback";
 
 VsyncWaiter::VsyncWaiter(const TaskRunners& task_runners)
-    : task_runners_(task_runners), weak_factory_ui_(nullptr) {
+    : task_runners_(task_runners) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
