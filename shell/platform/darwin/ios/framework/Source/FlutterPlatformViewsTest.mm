@@ -2827,7 +2827,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                          arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
       result);
 
-  // First frame, |EmbeddedViewCount| is not empty after composite.
   flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
