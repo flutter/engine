@@ -134,7 +134,15 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   if (prior_frame.has_value()) {
     options.fPriorFrame = prior_frame.value();
   }
-  return codec_->getPixels(info, pixels, row_bytes, &options);
+  SkCodec::Result result = codec_->getPixels(info, pixels, row_bytes, &options);
+  switch (result) {
+    case SkCodec::kSuccess:
+    case SkCodec::kIncompleteInput:
+    case SkCodec::kErrorInInput:
+      return true;
+    default:
+      return false;
+  }
 }
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(
