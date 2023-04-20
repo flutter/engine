@@ -186,7 +186,9 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
   task_runners_.GetUITaskRunner()->PostTask(
       [waiter = weak_factory_on_ui_->GetWeakPtr()] {
-        waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+        if (waiter) {
+          waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+        }
       });
 }
 
