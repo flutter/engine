@@ -166,9 +166,8 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
 
 std::shared_ptr<AccessibilityBridgeWindowsSpy> GetAccessibilityBridgeSpy(
     FlutterWindowsEngine* engine) {
-  FlutterWindowsEngine* engine_spy = static_cast<FlutterWindowsEngine*>(engine);
   return std::static_pointer_cast<AccessibilityBridgeWindowsSpy>(
-      engine_spy->accessibility_bridge().lock());
+      engine->accessibility_bridge().lock());
 }
 
 void ExpectWinEventFromAXEvent(int32_t node_id,

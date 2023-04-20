@@ -342,20 +342,23 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                        void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    auto accessibility_bridge = host->accessibility_bridge().lock();
+    if (!accessibility_bridge) {
+      return;
+    }
 
     for (size_t i = 0; i < update->node_count; i++) {
       const FlutterSemanticsNode2* node = update->nodes[i];
-      host->accessibility_bridge().lock()->AddFlutterSemanticsNodeUpdate(*node);
+      accessibility_bridge->AddFlutterSemanticsNodeUpdate(*node);
     }
 
     for (size_t i = 0; i < update->custom_action_count; i++) {
       const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
-      host->accessibility_bridge()
-          .lock()
+      accessibility_bridge
           ->AddFlutterSemanticsCustomActionUpdate(*action);
     }
 
-    host->accessibility_bridge().lock()->CommitUpdates();
+    accessibility_bridge->CommitUpdates();
   };
   args.root_isolate_create_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);

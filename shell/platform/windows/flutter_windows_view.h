@@ -204,7 +204,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Called to re/set the accessibility bridge pointer.
   virtual void UpdateSemanticsEnabled(bool enabled);
 
-  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
+  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
     return accessibility_bridge_;
   }
 
