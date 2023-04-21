@@ -43,12 +43,8 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input,
     std::optional<bool> is_solid_color) const {
-<<<<<<< HEAD
-  bool is_solid_color_val = is_solid_color.value_or(!color_source);
-=======
   bool is_solid_color_val = is_solid_color.value_or(color_source.GetType() ==
                                                     ColorSource::Type::kColor);
->>>>>>> 609e71543cb4bc996348ae316ff00a0ed252518c
   input = WithColorFilter(input, /*absorb_opacity=*/true);
   input = WithInvertFilter(input);
   input = WithMaskBlur(input, is_solid_color_val, Matrix());
