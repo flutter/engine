@@ -58,6 +58,13 @@ class TrackedObjectsVK {
     tracked_buffers_.insert(std::move(buffer));
   }
 
+  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& buffer) const {
+    if (!buffer) {
+      return false;
+    }
+    return tracked_buffers_.find(buffer) != tracked_buffers_.end();
+  }
+
   void Track(std::shared_ptr<const TextureSourceVK> texture) {
     if (!texture) {
       return;
@@ -177,6 +184,14 @@ bool CommandEncoderVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
   }
   tracked_objects_->Track(std::move(buffer));
   return true;
+}
+
+bool CommandEncoderVK::IsTracking(
+    const std::shared_ptr<const DeviceBuffer>& buffer) const {
+  if (!IsValid()) {
+    return false;
+  }
+  return tracked_objects_->IsTracking(buffer);
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<const TextureSourceVK> texture) {

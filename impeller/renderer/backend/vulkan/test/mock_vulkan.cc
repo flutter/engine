@@ -192,6 +192,29 @@ VkResult vkCreateImageView(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateBuffer(VkDevice device,
+                        const VkBufferCreateInfo* pCreateInfo,
+                        const VkAllocationCallbacks* pAllocator,
+                        VkBuffer* pBuffer) {
+  *pBuffer = reinterpret_cast<VkBuffer>(0xDEADDEAD);
+  return VK_SUCCESS;
+}
+
+void vkGetBufferMemoryRequirements2KHR(
+    VkDevice device,
+    const VkBufferMemoryRequirementsInfo2* pInfo,
+    VkMemoryRequirements2* pMemoryRequirements) {
+  pMemoryRequirements->memoryRequirements.size = 1024;
+  pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
+}
+
+VkResult vkBindBufferMemory(VkDevice device,
+                            VkBuffer buffer,
+                            VkDeviceMemory memory,
+                            VkDeviceSize memoryOffset) {
+  return VK_SUCCESS;
+}
+
 }  // namespace
 
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
@@ -239,6 +262,13 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkBindImageMemory;
   } else if (strcmp("vkCreateImageView", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateImageView;
+  } else if (strcmp("vkCreateBuffer", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateBuffer;
+  } else if (strcmp("vkGetBufferMemoryRequirements2KHR", pName) == 0 ||
+             strcmp("vkGetBufferMemoryRequirements2", pName) == 0) {
+    return (PFN_vkVoidFunction)vkGetBufferMemoryRequirements2KHR;
+  } else if (strcmp("vkBindBufferMemory", pName) == 0) {
+    return (PFN_vkVoidFunction)vkBindBufferMemory;
   }
   return noop;
 }

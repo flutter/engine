@@ -41,7 +41,11 @@ class CommandEncoderVK {
 
   bool Track(std::shared_ptr<const DeviceBuffer> buffer);
 
+  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
+
   bool Track(const std::shared_ptr<const Texture>& texture);
+
+  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
 
   bool Track(std::shared_ptr<const TextureSourceVK> texture);
 
@@ -55,8 +59,6 @@ class CommandEncoderVK {
 
   std::optional<vk::DescriptorSet> AllocateDescriptorSet(
       const vk::DescriptorSetLayout& layout);
-
-  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
 
  private:
   friend class ContextVK;

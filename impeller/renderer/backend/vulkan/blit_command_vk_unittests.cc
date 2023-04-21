@@ -33,28 +33,28 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
   EXPECT_TRUE(encoder.IsTracking(cmd.destination));
 }
 
-// TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
-//   ContextVK::Settings settings;
-//   auto message_loop = fml::ConcurrentMessageLoop::Create();
-//   settings.worker_task_runner =
-//       std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
-//   settings.proc_address_callback = GetMockVulkanProcAddress;
-//   auto context = ContextVK::Create(std::move(settings));
-//   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-//   CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
-//                            pool, context->GetFenceWaiter());
-//   BlitCopyTextureToBufferCommandVK cmd;
-//   cmd.source = context->GetResourceAllocator()->CreateTexture({
-//       .size = ISize(100, 100),
-//   });
-//   cmd.destination = context->GetResourceAllocator()->CreateTexture({
-//       .size = ISize(100, 100),
-//   });
-//   bool result = cmd.Encode(encoder);
-//   EXPECT_TRUE(result);
-//   EXPECT_TRUE(encoder.IsTracking(cmd.source));
-//   EXPECT_TRUE(encoder.IsTracking(cmd.destination));
-// }
+TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
+  ContextVK::Settings settings;
+  auto message_loop = fml::ConcurrentMessageLoop::Create();
+  settings.worker_task_runner =
+      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
+  settings.proc_address_callback = GetMockVulkanProcAddress;
+  auto context = ContextVK::Create(std::move(settings));
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
+                           pool, context->GetFenceWaiter());
+  BlitCopyTextureToBufferCommandVK cmd;
+  cmd.source = context->GetResourceAllocator()->CreateTexture({
+      .size = ISize(100, 100),
+  });
+  cmd.destination = context->GetResourceAllocator()->CreateBuffer({
+      .size = 1,
+  });
+  bool result = cmd.Encode(encoder);
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(encoder.IsTracking(cmd.source));
+  EXPECT_TRUE(encoder.IsTracking(cmd.destination));
+}
 
 TEST(BlitCommandVkTest, BlitGenerateMipmapCommandVK) {
   ContextVK::Settings settings;
