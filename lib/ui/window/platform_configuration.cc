@@ -50,7 +50,7 @@ void PlatformConfiguration::DidCreateIsolate() {
   add_view_.Set(tonic::DartState::Current(),
                 Dart_GetField(library, tonic::ToDart("_addView")));
   remove_view_.Set(tonic::DartState::Current(),
-                Dart_GetField(library, tonic::ToDart("_removeView")));
+                   Dart_GetField(library, tonic::ToDart("_removeView")));
   update_locales_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_updateLocales")));
   update_user_settings_data_.Set(
@@ -112,21 +112,22 @@ void PlatformConfiguration::AddView(int64_t view_id) {
   tonic::DartState::Scope scope(dart_state);
   tonic::CheckAndHandleError(
       tonic::DartInvoke(add_view_.Get(), {
-                                              tonic::ToDart(view_id),
-                                          }));
+                                             tonic::ToDart(view_id),
+                                         }));
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {
   windows_.erase(view_id);
-  std::shared_ptr<tonic::DartState> dart_state = remove_view_.dart_state().lock();
+  std::shared_ptr<tonic::DartState> dart_state =
+      remove_view_.dart_state().lock();
   if (!dart_state) {
     return;
   }
   tonic::DartState::Scope scope(dart_state);
   tonic::CheckAndHandleError(
       tonic::DartInvoke(remove_view_.Get(), {
-                                              tonic::ToDart(view_id),
-                                          }));
+                                                tonic::ToDart(view_id),
+                                            }));
 }
 
 void PlatformConfiguration::UpdateLocales(

@@ -54,7 +54,8 @@ bool GPUStudioVulkanImpeller::EnableRasterCache() const {
 }
 
 // |Studio|
-std::shared_ptr<impeller::AiksContext> GPUStudioVulkanImpeller::GetAiksContext() const {
+std::shared_ptr<impeller::AiksContext> GPUStudioVulkanImpeller::GetAiksContext()
+    const {
   return aiks_context_;
 }
 

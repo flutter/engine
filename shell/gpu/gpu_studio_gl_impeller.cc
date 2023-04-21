@@ -73,7 +73,8 @@ bool GPUStudioGLImpeller::EnableRasterCache() const {
 }
 
 // |Studio|
-std::shared_ptr<impeller::AiksContext> GPUStudioGLImpeller::GetAiksContext() const {
+std::shared_ptr<impeller::AiksContext> GPUStudioGLImpeller::GetAiksContext()
+    const {
   return aiks_context_;
 }
 

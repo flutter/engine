@@ -111,7 +111,7 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
 std::unique_ptr<Studio> ShellTestPlatformViewMetal::CreateRenderingStudio() {
   if (GetSettings().enable_impeller) {
     return std::make_unique<GPUStudioMetalImpeller>(this,
-                                                     [metal_context_->impeller_context() context]);
+                                                    [metal_context_->impeller_context() context]);
   }
   return std::make_unique<GPUStudioMetalSkia>(this, [metal_context_->context() mainContext],
                                               sksl_precompiler_);
