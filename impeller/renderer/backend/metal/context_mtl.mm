@@ -59,7 +59,8 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-      .SetSupportsCompute(true, DeviceSupportsComputeSubgroups(device))
+      .SetSupportsCompute(true)
+      .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
       .Build();
