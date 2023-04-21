@@ -184,9 +184,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
             atlas->GetTexture()->GetSize().height);
 }
 
-// TODO(jonahwilliams): Re-enable
-// https://github.com/flutter/flutter/issues/122839
-TEST_P(TypographerTest, DISABLED_GlyphAtlasTextureIsRecycledIfUnchanged) {
+TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
@@ -251,6 +249,30 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
 
   ASSERT_NE(second_texture, first_texture);
   ASSERT_NE(old_packer, new_packer);
+}
+
+TEST_P(TypographerTest, GlyphAtlasUsesLinearTexture) {
+  if (!GetContext()
+           ->GetCapabilities()
+           ->SupportsSharedDeviceBufferTextureMemory()) {
+    GTEST_SKIP()
+        << "Skipping test that requires "
+           "SupportsSharedDeviceBufferTextureMemory on non metal platform";
+  }
+
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("s", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas = context->CreateGlyphAtlas(
+      GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+      GetContext()->GetCapabilities(), TextFrameFromTextBlob(blob));
+
+  auto* first_texture = atlas->GetTexture().get();
+
+  ASSERT_TRUE(first_texture->IsValid());
 }
 
 TEST_P(TypographerTest, FontGlyphPairTypeChangesHashAndEquals) {
