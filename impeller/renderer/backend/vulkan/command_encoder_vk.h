@@ -18,7 +18,9 @@ namespace impeller {
 
 namespace testing {
 class BlitCommandVkTest_BlitCopyTextureToTextureCommandVK_Test;
-}
+class BlitCommandVkTest_BlitCopyTextureToBufferCommandVK_Test;
+class BlitCommandVkTest_BlitGenerateMipmapCommandVK_Test;
+}  // namespace testing
 
 class ContextVK;
 class DeviceBuffer;
@@ -60,6 +62,10 @@ class CommandEncoderVK {
   friend class ContextVK;
   friend class ::impeller::testing::
       BlitCommandVkTest_BlitCopyTextureToTextureCommandVK_Test;
+  friend class ::impeller::testing::
+      BlitCommandVkTest_BlitCopyTextureToBufferCommandVK_Test;
+  friend class ::impeller::testing::
+      BlitCommandVkTest_BlitGenerateMipmapCommandVK_Test;
 
   vk::Device device_ = {};
   std::shared_ptr<QueueVK> queue_;

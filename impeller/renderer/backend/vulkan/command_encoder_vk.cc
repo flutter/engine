@@ -202,7 +202,8 @@ bool CommandEncoderVK::IsTracking(
   if (!IsValid()) {
     return false;
   }
-  std::shared_ptr<const TextureSourceVK> source = TextureVK::Cast(*texture).GetTextureSource();
+  std::shared_ptr<const TextureSourceVK> source =
+      TextureVK::Cast(*texture).GetTextureSource();
   return tracked_objects_->IsTracking(source);
 }
 
