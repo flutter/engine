@@ -24,10 +24,10 @@
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
@@ -112,6 +112,8 @@ class TestImpellerAllocator : public impeller::Allocator {
 class TestImpellerContext : public impeller::Context {
  public:
   TestImpellerContext() = default;
+
+  std::string DescribeGpuModel() const override { return "TestGpu"; }
 
   bool IsValid() const override { return true; }
 
@@ -892,7 +894,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
 
   auto assert_image = [&](auto decoded_image) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
+    ASSERT_TRUE(SkPngEncoder::Encode(nullptr, decoded_image.get(), {})
                     ->equals(expected_data.get()));
   };
 

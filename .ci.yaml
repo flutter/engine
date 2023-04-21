@@ -54,7 +54,7 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 14a5294e # xcode 14.0 beta 5
+      xcode: 14c18
     dimensions:
       mac_model: "Macmini8,1|Macmini9,1"
   windows:
@@ -324,6 +324,7 @@ targets:
       - flutter_frontend_server/**
 
   - name: Mac Android AOT Engine
+    bringup: true
     recipe: engine/engine
     properties:
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
@@ -359,17 +360,9 @@ targets:
           {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
       $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
-
-  - name: Mac mac_unopt
-    recipe: engine_v2/engine_v2
-    properties:
-      config_name: mac_unopt
-      add_recipes_cq: "true"
-    timeout: 60
+        { "sdk_version": "14c18" }
 
   - name: Linux mac_unopt
-    bringup: true
     recipe: engine_v2/engine_v2
     properties:
       config_name: mac_unopt
@@ -446,7 +439,7 @@ targets:
       release_build: "true"
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
+        { "sdk_version": "14c18" }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -460,12 +453,6 @@ targets:
       release_build: "true"
       cpu: arm64
       config_name: mac_impeller_cmake_example
-      $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
-      dependencies: >-
-        [
-          {"dependency": "jazzy", "version": "0.14.1"}
-        ]
 
   - name: Windows Android AOT Engine
     recipe: engine/engine

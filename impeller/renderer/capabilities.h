@@ -21,6 +21,8 @@ class Capabilities {
 
   virtual bool SupportsSSBO() const = 0;
 
+  virtual bool SupportsBufferToTextureBlits() const = 0;
+
   virtual bool SupportsTextureToTextureBlits() const = 0;
 
   virtual bool SupportsFramebufferFetch() const = 0;
@@ -57,16 +59,19 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsSSBO(bool value);
 
+  CapabilitiesBuilder& SetSupportsBufferToTextureBlits(bool value);
+
   CapabilitiesBuilder& SetSupportsTextureToTextureBlits(bool value);
 
   CapabilitiesBuilder& SetSupportsFramebufferFetch(bool value);
 
-  CapabilitiesBuilder& SetSupportsCompute(bool compute, bool subgroups);
+  CapabilitiesBuilder& SetSupportsCompute(bool value);
 
-  CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(
-      bool read_from_onscreen_texture);
+  CapabilitiesBuilder& SetSupportsComputeSubgroups(bool value);
 
-  CapabilitiesBuilder& SetSupportsReadFromResolve(bool read_from_resolve);
+  CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(bool value);
+
+  CapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
 
   CapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
 
@@ -80,6 +85,7 @@ class CapabilitiesBuilder {
   bool has_threading_restrictions_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
+  bool supports_buffer_to_texture_blits_ = false;
   bool supports_texture_to_texture_blits_ = false;
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
