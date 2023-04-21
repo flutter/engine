@@ -11,12 +11,7 @@ namespace impeller {
 namespace testing {
 
 TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
-  ContextVK::Settings settings;
-  auto message_loop = fml::ConcurrentMessageLoop::Create();
-  settings.worker_task_runner =
-      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
-  settings.proc_address_callback = GetMockVulkanProcAddress;
-  auto context = ContextVK::Create(std::move(settings));
+  auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
   CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
                            pool, context->GetFenceWaiter());
@@ -34,12 +29,7 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
 }
 
 TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
-  ContextVK::Settings settings;
-  auto message_loop = fml::ConcurrentMessageLoop::Create();
-  settings.worker_task_runner =
-      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
-  settings.proc_address_callback = GetMockVulkanProcAddress;
-  auto context = ContextVK::Create(std::move(settings));
+  auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
   CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
                            pool, context->GetFenceWaiter());
@@ -57,12 +47,7 @@ TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
 }
 
 TEST(BlitCommandVkTest, BlitGenerateMipmapCommandVK) {
-  ContextVK::Settings settings;
-  auto message_loop = fml::ConcurrentMessageLoop::Create();
-  settings.worker_task_runner =
-      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
-  settings.proc_address_callback = GetMockVulkanProcAddress;
-  auto context = ContextVK::Create(std::move(settings));
+  auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
   CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
                            pool, context->GetFenceWaiter());

@@ -7,9 +7,6 @@
 namespace impeller {
 namespace testing {
 
-PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
-                                            const char* pName);
-
 namespace {
 void noop() {}
 
@@ -215,8 +212,6 @@ VkResult vkBindBufferMemory(VkDevice device,
   return VK_SUCCESS;
 }
 
-}  // namespace
-
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -271,6 +266,17 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkBindBufferMemory;
   }
   return noop;
+}
+
+}  // namespace
+
+std::shared_ptr<ContextVK> CreateMockVulkanContext(void) {
+  ContextVK::Settings settings;
+  auto message_loop = fml::ConcurrentMessageLoop::Create();
+  settings.worker_task_runner =
+      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
+  settings.proc_address_callback = GetMockVulkanProcAddress;
+  return ContextVK::Create(std::move(settings));
 }
 
 }  // namespace testing

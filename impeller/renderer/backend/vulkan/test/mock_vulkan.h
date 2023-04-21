@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 
 namespace impeller {
 namespace testing {
 
-PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
-                                            const char* pName);
+std::shared_ptr<ContextVK> CreateMockVulkanContext(void);
 
 }
 }  // namespace impeller
