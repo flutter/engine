@@ -52,6 +52,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetHasThreadingRestrictions(false)
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
+      .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
       .SetSupportsDecalTileMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
@@ -224,6 +225,11 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 }
 
 ContextMTL::~ContextMTL() = default;
+
+// |Context|
+std::string ContextMTL::DescribeGpuModel() const {
+  return std::string([[device_ name] UTF8String]);
+}
 
 // |Context|
 bool ContextMTL::IsValid() const {

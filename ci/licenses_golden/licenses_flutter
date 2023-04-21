@@ -1015,6 +1015,8 @@ ORIGIN: ../../../flutter/impeller/aiks/aiks_playground.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/impeller/aiks/aiks_playground.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/color_source.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/color_source.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/paint.cc + ../../../flutter/LICENSE
@@ -1144,14 +1146,14 @@ ORIGIN: ../../../flutter/impeller/core/texture_descriptor.cc + ../../../flutter/
 ORIGIN: ../../../flutter/impeller/core/texture_descriptor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/vertex_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/vertex_buffer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_image_impeller.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_image_impeller.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_playground.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_playground.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_vertices_geometry.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/display_list/display_list_vertices_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_dispatcher.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_dispatcher.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_image_impeller.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_image_impeller.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_playground.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_playground.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_vertices_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_vertices_geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/nine_patch_converter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/nine_patch_converter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/skia_conversions.cc + ../../../flutter/LICENSE
@@ -1893,7 +1895,6 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/raster_cache.dart +
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/renderer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart + ../../../flutter/LICENSE
@@ -1909,7 +1910,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart + ../../..
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/host_node.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/global_styles.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/bitmap_canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart + ../../../flutter/LICENSE
@@ -3636,6 +3637,8 @@ FILE: ../../../flutter/impeller/aiks/aiks_playground.cc
 FILE: ../../../flutter/impeller/aiks/aiks_playground.h
 FILE: ../../../flutter/impeller/aiks/canvas.cc
 FILE: ../../../flutter/impeller/aiks/canvas.h
+FILE: ../../../flutter/impeller/aiks/color_source.cc
+FILE: ../../../flutter/impeller/aiks/color_source.h
 FILE: ../../../flutter/impeller/aiks/image.cc
 FILE: ../../../flutter/impeller/aiks/image.h
 FILE: ../../../flutter/impeller/aiks/paint.cc
@@ -3765,14 +3768,14 @@ FILE: ../../../flutter/impeller/core/texture_descriptor.cc
 FILE: ../../../flutter/impeller/core/texture_descriptor.h
 FILE: ../../../flutter/impeller/core/vertex_buffer.cc
 FILE: ../../../flutter/impeller/core/vertex_buffer.h
-FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
-FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
-FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.cc
-FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.h
-FILE: ../../../flutter/impeller/display_list/display_list_playground.cc
-FILE: ../../../flutter/impeller/display_list/display_list_playground.h
-FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.cc
-FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.h
+FILE: ../../../flutter/impeller/display_list/dl_dispatcher.cc
+FILE: ../../../flutter/impeller/display_list/dl_dispatcher.h
+FILE: ../../../flutter/impeller/display_list/dl_image_impeller.cc
+FILE: ../../../flutter/impeller/display_list/dl_image_impeller.h
+FILE: ../../../flutter/impeller/display_list/dl_playground.cc
+FILE: ../../../flutter/impeller/display_list/dl_playground.h
+FILE: ../../../flutter/impeller/display_list/dl_vertices_geometry.cc
+FILE: ../../../flutter/impeller/display_list/dl_vertices_geometry.h
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.h
 FILE: ../../../flutter/impeller/display_list/skia_conversions.cc
@@ -4516,7 +4519,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
@@ -4532,7 +4534,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/host_node.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/global_styles.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/bitmap_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart
