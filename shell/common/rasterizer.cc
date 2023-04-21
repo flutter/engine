@@ -605,7 +605,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();
-      submit_info.clip_rect = damage->GetClipRect();
     }
 
     frame->set_submit_info(submit_info);

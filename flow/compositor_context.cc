@@ -42,11 +42,9 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
     damage_ =
         context.ComputeDamage(additional_damage_, horizontal_clip_alignment_,
                               vertical_clip_alignment_);
-    cached_clip_rect_ = SkRect::Make(damage_->buffer_damage);
-  } else {
-    cached_clip_rect_ = std::nullopt;
+    return SkRect::Make(damage_->buffer_damage);
   }
-  return cached_clip_rect_;
+  return std::nullopt;
 }
 
 CompositorContext::CompositorContext()

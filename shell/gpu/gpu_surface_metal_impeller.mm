@@ -105,11 +105,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         }
 
         std::optional<impeller::IRect> clip_rect;
-        if (surface_frame.submit_info().clip_rect.has_value()) {
-          auto submit_info_rect = surface_frame.submit_info().clip_rect;
-          clip_rect =
-              impeller::IRect::MakeXYWH(submit_info_rect->x(), submit_info_rect->y(),
-                                        submit_info_rect->width(), submit_info_rect->height());
+        if (surface_frame.submit_info().buffer_damage.has_value()) {
+          auto buffer_damage = surface_frame.submit_info().buffer_damage;
+          clip_rect = impeller::IRect::MakeXYWH(buffer_damage->x(), buffer_damage->y(),
+                                                buffer_damage->width(), buffer_damage->height());
         }
 
         auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
