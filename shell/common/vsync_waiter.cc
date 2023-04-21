@@ -4,15 +4,13 @@
 
 #include "flutter/shell/common/vsync_waiter.h"
 
-#include "flutter/flow/frame_timings.h"
-#include "flutter/fml/logging.h"
+#include "flow/frame_timings.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/task_queue_id.h"
-#include "flutter/fml/task_runner.h"
-#include "flutter/fml/time/time_point.h"
-#include "flutter/fml/trace_event.h"
+#include "fml/logging.h"
+#include "fml/message_loop_task_queues.h"
+#include "fml/task_queue_id.h"
+#include "fml/time/time_point.h"
 
 namespace flutter {
 
