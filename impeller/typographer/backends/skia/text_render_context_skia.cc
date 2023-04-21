@@ -141,7 +141,9 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context) {
-  static constexpr auto kMinAtlasSize = 8u;
+  // This size needs to be above the minimum required aligment for linear
+  // textures. This is 256 for older intel macs and decreases on iOS devices.
+  static constexpr auto kMinAtlasSize = 256u;
   static constexpr auto kMaxAtlasSize = 4096u;
 
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -428,6 +430,9 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   texture_descriptor.format = format;
   texture_descriptor.size = atlas_size;
 
+  // If the alignment isn't a multiple of the pixel format, we cannot use
+  // a linear texture and instead must blit to a new texture.
+  FML_DCHECK(allocator.MinimumBytesPerRow(format) >= pixmap.rowBytes());
   if (pixmap.rowBytes() * pixmap.height() !=
       texture_descriptor.GetByteSizeOfBaseMipLevel()) {
     return nullptr;
