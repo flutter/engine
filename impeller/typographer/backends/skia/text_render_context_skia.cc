@@ -432,12 +432,12 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 
   // If the alignment isn't a multiple of the pixel format, we cannot use
   // a linear texture and instead must blit to a new texture.
-  FML_DCHECK(allocator.MinimumBytesPerRow(format) >= pixmap.rowBytes());
   if (pixmap.rowBytes() * pixmap.height() !=
       texture_descriptor.GetByteSizeOfBaseMipLevel()) {
     return nullptr;
   }
 
+  FML_DCHECK(allocator.MinimumBytesPerRow(format) <= pixmap.rowBytes());
   auto texture = device_buffer->AsTexture(allocator, texture_descriptor,
                                           texture_descriptor.GetBytesPerRow());
   if (!texture || !texture->IsValid()) {
