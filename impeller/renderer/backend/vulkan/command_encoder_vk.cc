@@ -65,6 +65,13 @@ class TrackedObjectsVK {
     tracked_textures_.insert(std::move(texture));
   }
 
+  bool IsTracking(const std::shared_ptr<const TextureSourceVK>& texture) const {
+    if (!texture) {
+      return false;
+    }
+    return tracked_textures_.find(texture) != tracked_textures_.end();
+  }
+
   vk::CommandBuffer GetCommandBuffer() const { return *buffer_; }
 
   DescriptorPoolVK& GetDescriptorPool() { return desc_pool_; }
@@ -188,6 +195,15 @@ bool CommandEncoderVK::Track(const std::shared_ptr<const Texture>& texture) {
     return true;
   }
   return Track(TextureVK::Cast(*texture).GetTextureSource());
+}
+
+bool CommandEncoderVK::IsTracking(
+    const std::shared_ptr<const Texture>& texture) const {
+  if (!IsValid()) {
+    return false;
+  }
+  std::shared_ptr<const TextureSourceVK> source = TextureVK::Cast(*texture).GetTextureSource();
+  return tracked_objects_->IsTracking(source);
 }
 
 std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(

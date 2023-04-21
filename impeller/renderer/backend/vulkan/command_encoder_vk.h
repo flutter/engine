@@ -54,6 +54,8 @@ class CommandEncoderVK {
   std::optional<vk::DescriptorSet> AllocateDescriptorSet(
       const vk::DescriptorSetLayout& layout);
 
+  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
+
  private:
   friend class ContextVK;
   friend class ::impeller::testing::
