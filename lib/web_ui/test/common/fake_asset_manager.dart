@@ -5,7 +5,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 class FakeAssetManager implements AssetManager {
@@ -136,16 +135,4 @@ FakeAssetScope configureDebugFontsAssetScope(FakeAssetManager manager) {
   scope.setAssetPassthrough(ahemFontUrl);
   scope.setAssetPassthrough(robotoVariableFontUrl);
   return scope;
-}
-
-void setUpTestFonts() {
-  late final FakeAssetScope debugFontsScope;
-  setUpAll(() async {
-    debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
-    await initializeEngine(assetManager: fakeAssetManager);
-  });
-
-  tearDownAll(() async {
-    fakeAssetManager.popAssetScope(debugFontsScope);
-  });
 }

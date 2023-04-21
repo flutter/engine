@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
-import '../screenshot.dart';
+import '../../common/test_initialization.dart';
 import 'helper.dart';
 
 const String _rtlWord1 = 'واحد';
@@ -18,7 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpStableTestFonts();
+  setUpUnitTests();
 
   void paintBasicBidiStartingWithLtr(
     EngineCanvas canvas,

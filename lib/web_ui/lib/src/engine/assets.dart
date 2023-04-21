@@ -8,20 +8,6 @@ import 'dart:typed_data';
 import 'dom.dart';
 import 'util.dart';
 
-const String ahemFontFamily = 'Ahem';
-const String ahemFontUrl = '/assets/fonts/ahem.ttf';
-const String robotoFontFamily = 'Roboto';
-const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
-
-/// The list of test fonts, in the form of font family name - font file url pairs.
-/// This list does not include embedded test fonts, which need to be loaded and
-/// registered separately in [FontCollection.debugDownloadTestFonts].
-const Map<String, String> testFontUrls = <String, String>{
-  ahemFontFamily: ahemFontUrl,
-  robotoFontFamily: robotoTestFontUrl,
-  'RobotoVariable': '/assets/fonts/RobotoSlab-VariableFont_wght.ttf',
-};
-
 /// This class downloads assets over the network.
 ///
 /// Assets are resolved relative to [assetsDir] inside the absolute base

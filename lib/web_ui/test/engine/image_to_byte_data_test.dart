@@ -9,18 +9,14 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../common/fake_asset_manager.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  setUpTestFonts();
-
-  setUpAll(() async {
-    await initializeEngine(assetManager: fakeAssetManager);
-  });
+  setUpUnitTests();
 
   Future<Image> createTestImageByColor(Color color) async {
     final EnginePictureRecorder recorder = EnginePictureRecorder();

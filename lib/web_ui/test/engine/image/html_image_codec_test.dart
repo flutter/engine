@@ -10,14 +10,14 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine/html_image_codec.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../common/initialize_view_embedder.dart';
+import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await initializeTestFlutterViewEmbedder();
+  setUpUnitTests();
   group('HtmCodec', () {
     test('supports raw images - RGBA8888', () async {
       final Completer<ui.Image> completer = Completer<ui.Image>();

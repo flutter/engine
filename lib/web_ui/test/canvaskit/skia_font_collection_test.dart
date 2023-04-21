@@ -110,8 +110,7 @@ void testMain() {
       expect(
         warnings,
         containsAllInOrder(<String>[
-          'Failed to load font ThisFontDoesNotExist at packages/bogus/ThisFontDoesNotExist.ttf',
-          'Flutter Web engine failed to fetch "packages/bogus/ThisFontDoesNotExist.ttf". HTTP request succeeded, but the server responded with HTTP status 404.',
+          'Font family ThisFontDoesNotExist not found (404) at packages/bogus/ThisFontDoesNotExist.ttf'
         ]),
       );
     });
@@ -142,13 +141,9 @@ void testMain() {
     });
 
     test('falls back to default Ahem URL', () async {
-      final SkiaFontCollection fontCollection = SkiaFontCollection();
-      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('[]'));
+      final SkiaFontCollection fontCollection = renderer.fontCollection as SkiaFontCollection;
 
       final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
-
-      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
-      expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.
       final RegisteredFont ahem = fontCollection.debugRegisteredFonts!
@@ -157,6 +152,13 @@ void testMain() {
       // Check that the contents of 'Ahem' is actually Roboto, because that's
       // what's specified in the manifest, and the manifest takes precedence.
       expect(ahem.bytes.length, ahemData.lengthInBytes);
+    });
+
+    test('FlutterTest is the default test font', () async {
+      final SkiaFontCollection fontCollection = renderer.fontCollection as SkiaFontCollection;
+
+      expect(fontCollection.debugRegisteredFonts, isNotEmpty);
+      expect(fontCollection.debugRegisteredFonts!.first.family, 'FlutterTest');
     });
   });
 }

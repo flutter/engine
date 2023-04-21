@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/ui.dart';
 
+import '../common/test_initialization.dart';
 import 'utils.dart';
 
 void main() {
@@ -14,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests();
 
   test('Gradient.radial with no focal point', () {
     expect(

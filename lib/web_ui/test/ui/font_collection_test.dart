@@ -9,6 +9,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../common/test_initialization.dart';
 import 'utils.dart';
 
 void main() {
@@ -16,32 +17,32 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests();
 
   test('Loading valid font from data succeeds without family name', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
-    await expectLater(
-      collection.loadFontFromList(ahemData.asUint8List()),
-      returnsNormally
+    expect(
+      await collection.loadFontFromList(ahemData.asUint8List()),
+      true
     );
   }, skip: isHtml); // HtmlFontCollection requires family name
 
   test('Loading valid font from data succeeds with family name', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
-    await expectLater(
-      collection.loadFontFromList(ahemData.asUint8List(), fontFamily: 'FamilyName'),
-      returnsNormally
+    expect(
+      await collection.loadFontFromList(ahemData.asUint8List(), fontFamily: 'FamilyName'),
+      true
     );
   });
 
   test('Loading invalid font from data throws', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final List<int> invalidFontData = utf8.encode('This is not valid font data');
-    await expectLater(
-      collection.loadFontFromList(Uint8List.fromList(invalidFontData), fontFamily: 'FamilyName'),
-      throwsException
+    expect(
+      await collection.loadFontFromList(Uint8List.fromList(invalidFontData), fontFamily: 'FamilyName'),
+      false
     );
   });
 }

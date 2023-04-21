@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../common/initialize_view_embedder.dart';
+import '../../common/test_initialization.dart';
 import '../paragraph/helper.dart';
 import 'layout_service_helper.dart';
 
@@ -18,7 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await initializeTestFlutterViewEmbedder();
+  setUpUnitTests();
 
   test('no text', () {
     final CanvasParagraph paragraph = CanvasParagraphBuilder(ahemStyle).build();

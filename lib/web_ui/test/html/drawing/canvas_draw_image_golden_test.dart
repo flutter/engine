@@ -14,6 +14,7 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -21,12 +22,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-
-  setUp(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-  });
-
-  setUpStableTestFonts();
+  setUpUnitTests();
 
   test('Paints image', () async {
     final RecordingCanvas rc =

@@ -78,6 +78,9 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
+    // Make sure CanvasKit is actually loaded
+    await renderer.initialize();
+
     final SkTypeface? typeface =
         canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
     if (typeface != null) {
@@ -185,6 +188,7 @@ class SkiaFontCollection implements FlutterFontCollection {
     try {
       final HttpFetchResponse response = await httpFetch(url);
       if (!response.hasPayload) {
+        printWarning('Font family $fontFamily not found (404) at $url');
         return FontDownloadResult.fromError(assetName, FontNotFoundError(url));
       }
 

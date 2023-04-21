@@ -5,20 +5,9 @@
 import 'dart:async';
 import 'dart:js_interop';
 
-import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart';
-
-import '../common/fake_asset_manager.dart';
-
-/// Initializes the renderer for this test.
-void setUpUiTest() {
-  setUpTestFonts();
-  setUpAll(() {
-    debugEmulateFlutterTesterEnvironment = true;
-  });
-}
 
 Picture drawPicture(void Function(Canvas) drawCommands) {
   final PictureRecorder recorder = PictureRecorder();

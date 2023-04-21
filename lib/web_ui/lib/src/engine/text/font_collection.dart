@@ -5,11 +5,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine/fonts.dart';
-
-import '../dom.dart';
-import '../util.dart';
-import 'layout_service.dart';
+import 'package:ui/src/engine.dart';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -108,6 +104,7 @@ class HtmlFontCollection implements FlutterFontCollection {
     Map<String, String> descriptors,
   ) async {
     final List<DomFontFace> fontFaces = <DomFontFace>[];
+    final List<FontLoadError> errors = <FontLoadError>[];
     try {
       if (startWithDigit.hasMatch(family) ||
           notPunctuation.stringMatch(family) != family) {
@@ -115,11 +112,20 @@ class HtmlFontCollection implements FlutterFontCollection {
         // quotes.
         fontFaces.add(await _loadFontFace("'$family'", asset, descriptors));
       }
-      // Load all fonts, without quoted family names.
+    } on FontLoadError catch (error) {
+      errors.add(error);
+    }
+    try {
+          // Load all fonts, without quoted family names.
       fontFaces.add(await _loadFontFace(family, asset, descriptors));
     } on FontLoadError catch (error) {
-      return error;
+      errors.add(error);
     }
+    if (fontFaces.isEmpty) {
+      // We failed to load either font face. Return the first error.
+      return errors.first;
+    }
+
     try {
       fontFaces.forEach(domDocument.fonts!.add);
     } catch (e) {
@@ -135,7 +141,7 @@ class HtmlFontCollection implements FlutterFontCollection {
   ) async {
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
-      final DomFontFace fontFace = createDomFontFace(family, asset, descriptors);
+      final DomFontFace fontFace = createDomFontFace(family, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
       return await fontFace.load();
     } catch (e) {
       printWarning('Error while loading font family "$family":\n$e');

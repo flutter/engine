@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 const Rect region = Rect.fromLTWH(0, 0, 500, 100);
@@ -18,11 +19,10 @@ void main() {
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
+  setUpUnitTests();
+  
   setUpAll(() async {
     debugShowClipLayers = true;
-    await webOnlyInitializePlatform();
-    await renderer.fontCollection.debugDownloadTestFonts();
-    renderer.fontCollection.registerDownloadedFonts();
   });
 
   setUp(() async {

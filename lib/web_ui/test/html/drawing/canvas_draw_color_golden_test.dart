@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -14,12 +15,11 @@ void main() {
 }
 
 Future<void> testMain() async {
+  setUpUnitTests();
+  
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
-    await webOnlyInitializePlatform();
-    await renderer.fontCollection.debugDownloadTestFonts();
-    renderer.fontCollection.registerDownloadedFonts();
   });
 
   tearDown(() {

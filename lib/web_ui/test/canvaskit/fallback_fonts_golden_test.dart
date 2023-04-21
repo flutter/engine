@@ -24,6 +24,10 @@ void testMain() {
   group('Font fallbacks', () {
     setUpCanvasKitTest();
 
+    setUpAll(() {
+      debugDisableFontFallbacks = false;
+    });
+
     /// Used to save and restore [ui.window.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
