@@ -355,7 +355,7 @@ CreateAtlasBitmap(const GlyphAtlas& atlas,
                   std::shared_ptr<Allocator> allocator,
                   const ISize& atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  auto font_allocator = FontImpellerAllocator(allocator);
+  auto font_allocator = FontImpellerAllocator(std::move(allocator));
   auto bitmap = std::make_shared<SkBitmap>();
   SkImageInfo image_info;
 
@@ -416,8 +416,8 @@ static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     Allocator& allocator,
-    std::shared_ptr<DeviceBuffer> device_buffer,
-    std::shared_ptr<SkBitmap> bitmap,
+    const std::shared_ptr<DeviceBuffer>& device_buffer,
+    const std::shared_ptr<SkBitmap>& bitmap,
     const ISize& atlas_size,
     PixelFormat format) {
   TRACE_EVENT0("impeller", __FUNCTION__);
