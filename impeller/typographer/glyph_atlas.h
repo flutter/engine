@@ -11,8 +11,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
-#include "impeller/geometry/rect.h"
 #include "impeller/geometry/path.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/typographer/font_glyph_pair.h"
 

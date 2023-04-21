@@ -33,9 +33,7 @@ class GlyphPathCache {
 
   void AddTextFrame(const TextFrame& frame);
 
-  std::vector<TextFrame> GetTextFrames() const {
-    return frames_;
-  }
+  std::vector<TextFrame> GetTextFrames() const { return frames_; }
 
  private:
   std::vector<TextFrame> frames_;
@@ -52,7 +50,8 @@ class GlyphCacheContext {
   std::optional<const std::vector<Point>> FindFontGlyphVertices(
       const FontGlyphPair& pair) const;
 
-  bool Prepare(const ContentContext& renderer, const std::shared_ptr<GlyphPathCache> path_cache);
+  bool Prepare(const ContentContext& renderer,
+               const std::shared_ptr<GlyphPathCache> path_cache);
 
   void Reset();
 
@@ -66,6 +65,5 @@ class GlyphCacheContext {
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphCacheContext);
 };
-
 
 }  // namespace impeller

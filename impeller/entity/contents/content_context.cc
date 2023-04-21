@@ -9,12 +9,12 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
-#include "impeller/entity/contents/glyph_path_cache.h"
 
 namespace impeller {
 
@@ -387,7 +387,8 @@ std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
   return glyph_atlas_context_;
 }
 
-std::shared_ptr<GlyphCacheContext> ContentContext::GetGlyphCacheContext() const {
+std::shared_ptr<GlyphCacheContext> ContentContext::GetGlyphCacheContext()
+    const {
   return glyph_cache_context_;
 }
 

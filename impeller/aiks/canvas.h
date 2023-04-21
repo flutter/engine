@@ -15,6 +15,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
+#include "impeller/entity/contents/glyph_path_cache.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/matrix.h"
@@ -23,7 +24,6 @@
 #include "impeller/geometry/vector.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
-#include "impeller/entity/contents/glyph_path_cache.h"
 
 namespace impeller {
 
