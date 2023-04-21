@@ -269,6 +269,8 @@ class PlatformConfiguration final {
 
   void AddView(int64_t view_id);
 
+  void RemoveView(int64_t view_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Update the specified locale data in the framework.
   ///
@@ -409,7 +411,14 @@ class PlatformConfiguration final {
   ///
   /// @return     a pointer to the Window.
   ///
-  Window* get_window(int window_id) { return windows_[window_id].get(); }
+  Window* get_window(int window_id) {
+    auto found = windows_.find(window_id);
+    if (found != windows_.end()) {
+      return found->second.get();
+    } else {
+      return nullptr;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -437,6 +446,7 @@ class PlatformConfiguration final {
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue add_view_;
+  tonic::DartPersistentValue remove_view_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_initial_lifecycle_state_;
@@ -448,12 +458,20 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue draw_frame_;
   tonic::DartPersistentValue report_timings_;
 
+  tonic::DartPersistentValue library_;
+
+  // All *actual* views that the app has.
+  //
+  // This means that, if implicit view is enabled but the implicit view is
+  // currently closed, `windows_` will not have an entry for ID 0.
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
   // ID starts at 1 because an ID of 0 indicates that no response is expected.
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+
+  void SendViewConfigurations();
 };
 
 //----------------------------------------------------------------------------

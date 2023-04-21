@@ -110,7 +110,8 @@ class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override;
+                   std::unique_ptr<flutter::SurfaceFrame> frame,
+                   int64_t window_view_id) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }

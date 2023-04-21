@@ -112,8 +112,12 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
   );
 }
 
+constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  return SetViewportMetrics(platform_data_.viewport_metrics) &&
+  // TODO(dkwingsmt)
+  return SetViewportMetrics(kFlutterDefaultViewId,
+                            platform_data_.viewport_metrics) &&
          SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -131,13 +135,26 @@ bool RuntimeController::AddView(int64_t view_id) {
   return false;
 }
 
-bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
+bool RuntimeController::RemoveView(int64_t view_id) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::SetViewportMetrics(int64_t view_id,
+                                           const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "SetViewportMetrics");
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->get_window(0)->UpdateWindowMetrics(metrics);
-    return true;
+    Window* window = platform_configuration->get_window(view_id);
+    if (window) {
+      window->UpdateWindowMetrics(metrics);
+      return true;
+    }
   }
 
   return false;

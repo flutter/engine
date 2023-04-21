@@ -24,6 +24,8 @@
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
+constexpr int64_t kDefaultViewId = 0ll;
+
 @interface FlutterEngine (Test)
 /**
  * The FlutterCompositor object currently in use by the FlutterEngine.
@@ -626,9 +628,10 @@ TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown
   [threadSynchronizer shutdown];
 
   std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommit:CGSizeMake(100, 100)
-                               notify:^{
-                               }];
+    [threadSynchronizer performCommitForView:kDefaultViewId
+                                        size:CGSizeMake(100, 100)
+                                      notify:^{
+                                      }];
   });
 
   rasterThread.join();

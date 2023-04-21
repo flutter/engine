@@ -290,8 +290,13 @@ void Engine::AddView(int64_t view_id) {
   runtime_controller_->AddView(view_id);
 }
 
-void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
-  runtime_controller_->SetViewportMetrics(metrics);
+void Engine::RemoveView(int64_t view_id) {
+  runtime_controller_->RemoveView(view_id);
+}
+
+void Engine::SetViewportMetrics(int64_t view_id,
+                                const ViewportMetrics& metrics) {
+  runtime_controller_->SetViewportMetrics(view_id, metrics);
   ScheduleFrame();
 }
 

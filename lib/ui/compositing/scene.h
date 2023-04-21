@@ -21,6 +21,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
  public:
   ~Scene() override;
   static void create(Dart_Handle scene_handle,
+                     int64_t view_id,
                      std::shared_ptr<flutter::Layer> rootLayer,
                      uint32_t rasterizerTracingThreshold,
                      bool checkerboardRasterCacheImages,
@@ -39,7 +40,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
   void dispose();
 
  private:
-  Scene(std::shared_ptr<flutter::Layer> rootLayer,
+  Scene(int64_t view_id,
+        std::shared_ptr<flutter::Layer> rootLayer,
         uint32_t rasterizerTracingThreshold,
         bool checkerboardRasterCacheImages,
         bool checkerboardOffscreenLayers);

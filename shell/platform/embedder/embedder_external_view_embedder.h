@@ -33,7 +33,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
           GrDirectContext* context,
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
-      std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
+      std::function<bool(const std::vector<const FlutterLayer*>& layers,
+                         int64_t window_view_id)>;
   using SurfaceTransformationCallback = std::function<SkMatrix(void)>;
 
   //----------------------------------------------------------------------------
@@ -95,7 +96,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+                   std::unique_ptr<SurfaceFrame> frame,
+                   int64_t window_view_id) override;
 
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override;

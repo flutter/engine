@@ -12,6 +12,18 @@ void _addView(
 }
 
 @pragma('vm:entry-point')
+void _removeView(
+  Object id,
+) {
+  PlatformDispatcher.instance._removeView(id);
+}
+
+@pragma('vm:entry-point')
+void _sendViewConfigurations(List<int> viewIds) {
+  PlatformDispatcher.instance._onSentViewConfigurations(viewIds);
+}
+
+@pragma('vm:entry-point')
 void _updateWindowMetrics(
   Object id,
   double devicePixelRatio,

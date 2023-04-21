@@ -108,6 +108,7 @@ class PlatformView {
     /// @param[in]  metrics  The updated viewport metrics.
     ///
     virtual void OnPlatformViewSetViewportMetrics(
+        int64_t view_id,
         const ViewportMetrics& metrics) = 0;
 
     //--------------------------------------------------------------------------
@@ -470,7 +471,7 @@ class PlatformView {
   ///
   /// @param[in]  metrics  The updated viewport metrics.
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to notify the shell that a platform view

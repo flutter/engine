@@ -675,8 +675,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(studio_->GetContext(),
-                                           std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          studio_->GetContext(), std::move(frame), surface_record->view_id);
     } else {
       frame->Submit();
     }

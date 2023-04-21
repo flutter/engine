@@ -81,7 +81,7 @@ typedef CanvasPath Path;
   V(PathMeasure::Create, 3)                                           \
   V(Path::Create, 1)                                                  \
   V(PictureRecorder::Create, 1)                                       \
-  V(SceneBuilder::Create, 1)                                          \
+  V(SceneBuilder::Create, 2)                                          \
   V(SemanticsUpdateBuilder::Create, 1)                                \
   /* Other */                                                         \
   V(FontCollection::LoadFontFromList, 3)                              \

@@ -61,6 +61,8 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
+const int _kImplicitViewId = 0;
+
 // A message channel to receive KeyData from the platform.
 //
 // See embedder.cc::kFlutterKeyDataChannel for more information.
@@ -111,6 +113,12 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+    // TODO(dkwingsmt): Can not call _implicitViewEnabled here because
+    // the Dart state has not finished initialization.
+    // if (_implicitViewEnabled()) {
+    //   print('PlatformDispatcher ctor 2');
+    //   _implicitView = FlutterView._(_kImplicitViewId, this);
+    // }
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -153,6 +161,10 @@ class PlatformDispatcher {
   /// the application.
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
+  ///
+  /// If implicit view is enabled but the implicit view is currently closed,
+  /// this list will not include the implicit view, but [implicitView] will
+  /// still be a non-null value.
   Iterable<FlutterView> get views => _views.values;
   final Map<Object, FlutterView> _views = <Object, FlutterView>{};
 
@@ -179,12 +191,23 @@ class PlatformDispatcher {
   /// the application is shut down (although the engine may replace or remove
   /// the underlying backing surface of the view at its discretion).
   ///
+  /// If the implicit view is currently closed, [views] will not include this
+  /// value, but this property is still non-null, and single-view apps that
+  /// render into this property will still be able to do so, resulting in a
+  /// no-op.
+  ///
   /// See also:
   ///
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+  FlutterView? get implicitView {
+    if (_implicitView == null && _implicitViewEnabled()) {
+      _implicitView = FlutterView._(_kImplicitViewId, this);
+    }
+    return _implicitView;
+  }
+  FlutterView? _implicitView;
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
   external static bool _implicitViewEnabled();
@@ -215,10 +238,29 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
+  FlutterView _createView(Object id) {
+    if (id == _kImplicitViewId) {
+      assert(_implicitViewEnabled());
+      return implicitView!;
+    }
+    return FlutterView._(id, this);
+  }
+
   void _addView(Object id) {
     assert(!_views.containsKey(id));
-    _views[id] = FlutterView._(id, this);
+    _views[id] = _createView(id);
     _viewConfigurations[id] = const _ViewConfiguration();
+  }
+
+  void _removeView(Object id) {
+    assert(!_views.containsKey(id));
+    // TODO(dkwingsmt): Reset _implicitView?
+    _views.remove(id);
+    _viewConfigurations.remove(id);
+  }
+
+  void _onSentViewConfigurations(List<int> viewIds) {
+    viewIds.forEach(_addView);
   }
 
   // Called from the engine, via hooks.dart
@@ -248,9 +290,7 @@ class PlatformDispatcher {
   ) {
     final _ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const _ViewConfiguration();
-    if (!_views.containsKey(id)) {
-      _views[id] = FlutterView._(id, this);
-    }
+    _views.putIfAbsent(id, () => _createView(id));
     _viewConfigurations[id] = previousConfiguration.copyWith(
       view: _views[id],
       devicePixelRatio: devicePixelRatio,
