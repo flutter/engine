@@ -34,12 +34,6 @@ VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
   return VK_SUCCESS;
 }
 
-VkResult vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
-                          const VkAllocationCallbacks* pAllocator,
-                          VkInstance* pInstance) {
-  return VK_SUCCESS;
-}
-
 VkResult vkEnumeratePhysicalDevices(VkInstance instance,
                                     uint32_t* pPhysicalDeviceCount,
                                     VkPhysicalDevice* pPhysicalDevices) {
@@ -107,18 +101,46 @@ VkResult vkCreateDevice(VkPhysicalDevice physicalDevice,
   *pDevice = reinterpret_cast<VkDevice>(0xcafebabe);
   return VK_SUCCESS;
 }
+
+VkResult vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
+                          const VkAllocationCallbacks* pAllocator,
+                          VkInstance* pInstance) {
+  *pInstance = reinterpret_cast<VkInstance>(0xbaadf00d);
+  return VK_SUCCESS;
+}
+
+void vkGetPhysicalDeviceMemoryProperties(
+    VkPhysicalDevice physicalDevice,
+    VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
+  pMemoryProperties->memoryTypeCount = 1;
+  pMemoryProperties->memoryTypes[0].heapIndex = 0;
+  pMemoryProperties->memoryTypes[0].propertyFlags = 0;
+  pMemoryProperties->memoryHeapCount = 1;
+  pMemoryProperties->memoryHeaps[0].size = 1024 * 1024 * 1024;
+  pMemoryProperties->memoryHeaps[0].flags = 0;
+}
+
+VkResult vkCreatePipelineCache(VkDevice device,
+                               const VkPipelineCacheCreateInfo* pCreateInfo,
+                               const VkAllocationCallbacks* pAllocator,
+                               VkPipelineCache* pPipelineCache) {
+  *pPipelineCache = reinterpret_cast<VkPipelineCache>(0xb000dead);
+  return VK_SUCCESS;
+}
+
 }  // namespace
 
 TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
   ContextVK::Settings settings;
+  auto message_loop = fml::ConcurrentMessageLoop::Create();
+  settings.worker_task_runner =
+      std::make_shared<fml::ConcurrentTaskRunner>(message_loop);
   settings.proc_address_callback = [](VkInstance instance,
                                       const char* pName) -> PFN_vkVoidFunction {
     if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
       return (PFN_vkVoidFunction)vkEnumerateInstanceExtensionProperties;
     } else if (strcmp("vkEnumerateInstanceLayerProperties", pName) == 0) {
       return (PFN_vkVoidFunction)vkEnumerateInstanceLayerProperties;
-    } else if (strcmp("vkCreateInstance", pName) == 0) {
-      return (PFN_vkVoidFunction)vkCreateInstance;
     } else if (strcmp("vkEnumeratePhysicalDevices", pName) == 0) {
       return (PFN_vkVoidFunction)vkEnumeratePhysicalDevices;
     } else if (strcmp("vkGetPhysicalDeviceFormatProperties", pName) == 0) {
@@ -131,6 +153,12 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
       return (PFN_vkVoidFunction)vkEnumerateDeviceExtensionProperties;
     } else if (strcmp("vkCreateDevice", pName) == 0) {
       return (PFN_vkVoidFunction)vkCreateDevice;
+    } else if (strcmp("vkCreateInstance", pName) == 0) {
+      return (PFN_vkVoidFunction)vkCreateInstance;
+    } else if (strcmp("vkGetPhysicalDeviceMemoryProperties", pName) == 0) {
+      return (PFN_vkVoidFunction)vkGetPhysicalDeviceMemoryProperties;
+    } else if (strcmp("vkCreatePipelineCache", pName) == 0) {
+      return (PFN_vkVoidFunction)vkCreatePipelineCache;
     }
     return noop;
   };
