@@ -19,9 +19,30 @@ static constexpr const char* kVsyncFlowName = "VsyncFlow";
 static constexpr const char* kVsyncTraceName = "VsyncProcessCallback";
 
 VsyncWaiter::VsyncWaiter(const TaskRunners& task_runners)
-    : task_runners_(task_runners) {}
+    : task_runners_(task_runners) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([this, &latch]() mutable {
+        weak_factory_on_ui_ = nullptr;
+        weak_factory_on_ui_ =
+            std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
+        latch.Signal();
+      }));
+  latch.Wait();
+}
 
-VsyncWaiter::~VsyncWaiter() = default;
+VsyncWaiter::~VsyncWaiter() {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([weak_factory_on_ui_ = std::move(weak_factory_on_ui_),
+                         &latch]() mutable {
+        weak_factory_on_ui_.reset();
+        latch.Signal();
+      }));
+  latch.Wait();
+};
 
 // Public method invoked by the animator.
 void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
@@ -161,9 +182,12 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     task_runners_.GetUITaskRunner()->PostTask(secondary_callback);
   }
 
-  task_runners_.GetUITaskRunner()->PostTask([&stage = stage_] {
-    stage = VsyncWaiterProcessStage::kProcessingComplete;
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      [waiter = weak_factory_on_ui_->GetWeakPtr()] {
+        if (waiter) {
+          waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+        }
+      });
 }
 
 void VsyncWaiter::PauseDartMicroTasks() {
