@@ -163,8 +163,8 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
     return noop;
   };
   auto context = ContextVK::Create(std::move(settings));
-  CommandEncoderVK encoder(context->GetDevice(), {}, {},
-                           context->GetFenceWaiter());
+  CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
+                           {}, context->GetFenceWaiter());
   BlitCopyTextureToTextureCommandVK cmd;
   bool result = cmd.Encode(encoder);
   ASSERT_TRUE(result);
