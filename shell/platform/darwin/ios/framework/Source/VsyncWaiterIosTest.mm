@@ -136,11 +136,16 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [vsyncClient release];
 }
 
-- (void)testRefreshRateUpdatedTo80WhenThraedsMerge {
-  auto platform_thread_task_runner = CreateNewThread("Platform");
-  auto raster_thread_task_runner = CreateNewThread("Raster");
-  auto ui_thread_task_runner = CreateNewThread("UI");
-  auto io_thread_task_runner = CreateNewThread("IO");
+- (void)testRefreshRateUpdatedTo80WhenThreadsMerge {
+  auto platform_thread = std::make_unique<fml::Thread>("Platform");
+  auto raster_thread = std::make_unique<fml::Thread>("Raster");
+  auto ui_thread = std::make_unique<fml::Thread>("UI");
+  auto io_thread = std::make_unique<fml::Thread>("IO");
+
+  auto platform_thread_task_runner = platform_thread->GetTaskRunner();
+  auto raster_thread_task_runner = raster_thread->GetTaskRunner();
+  auto ui_thread_task_runner = ui_thread->GetTaskRunner();
+  auto io_thread_task_runner = io_thread->GetTaskRunner();
   auto task_runners =
       flutter::TaskRunners("test", platform_thread_task_runner, raster_thread_task_runner,
                            ui_thread_task_runner, io_thread_task_runner);
