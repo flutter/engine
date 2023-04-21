@@ -9,6 +9,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../common/initialize_view_embedder.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }

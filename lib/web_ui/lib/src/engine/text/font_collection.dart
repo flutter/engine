@@ -6,9 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/fonts.dart';
-import 'package:web_test_fonts/web_test_fonts.dart';
 
-import '../assets.dart';
 import '../dom.dart';
 import '../util.dart';
 import 'layout_service.dart';
@@ -20,70 +18,48 @@ import 'layout_service.dart';
 /// font manifest. If test fonts are enabled, then call
 /// [debugDownloadTestFonts] as well.
 class HtmlFontCollection implements FlutterFontCollection {
-  FontManager? _assetFontManager;
-  FontManager? _testFontManager;
-
   /// Reads the font manifest using the [assetManager] and downloads all of the
   /// fonts declared within.
   @override
-  Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final FontManifest manifest = await fetchFontManifest(assetManager);
-    final FontManager assetFontManager = FontManager();
-    _assetFontManager = assetFontManager;
+  Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
+    final List<Future<(String, FontLoadError?)>> pendingFonts = <Future<(String, FontLoadError?)>>[];
     for (final FontFamily family in manifest.families) {
       for (final FontAsset fontAsset in family.fontAssets) {
-        assetFontManager.downloadAsset(family.name, fontAsset.asset, fontAsset.descriptors);
+        pendingFonts.add(() async {
+          return (
+            fontAsset.asset,
+            await _loadFontAsset(family.name, fontAsset.asset, fontAsset.descriptors)
+          );
+        }());
       }
     }
-    await assetFontManager.downloadAllFonts();
+
+    final List<String> loadedFonts = <String>[];
+    final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
+    for (final (String asset, FontLoadError? error) in await Future.wait(pendingFonts)) {
+      if (error == null) {
+        loadedFonts.add(asset);
+      } else {
+        fontFailures[asset] = error;
+      }
+    }
+    return AssetFontsResult(loadedFonts, fontFailures);
   }
 
   @override
-  Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
+  Future<bool> loadFontFromList(Uint8List list, {String? fontFamily}) async {
     if (fontFamily == null) {
-      throw AssertionError('Font family must be provided to HtmlFontCollection.');
+      printWarning('Font family must be provided to HtmlFontCollection.');
+      return false;
     }
-    return _assetFontManager!._loadFontFaceBytes(fontFamily, list);
-  }
-
-  /// Downloads fonts that are used by tests.
-  @override
-  Future<void> debugDownloadTestFonts() async {
-    final FontManager fontManager = _testFontManager = FontManager();
-    fontManager._downloadedFonts.add(createDomFontFace(
-      EmbeddedTestFont.flutterTest.fontFamily,
-      EmbeddedTestFont.flutterTest.data,
-    ));
-    for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
-      fontManager.downloadAsset(fontEntry.key, 'url(${fontEntry.value})', const <String, String>{});
-    }
-    await fontManager.downloadAllFonts();
-  }
-
-  @override
-  void registerDownloadedFonts() {
-    _assetFontManager?.registerDownloadedFonts();
-    _testFontManager?.registerDownloadedFonts();
+    return _loadFontFaceBytes(fontFamily, list);
   }
 
   /// Unregister all fonts that have been registered.
   @override
   void clear() {
-    _assetFontManager = null;
-    _testFontManager = null;
     domDocument.fonts!.clear();
   }
-}
-
-/// Manages a collection of fonts and ensures they are loaded.
-class FontManager {
-
-  /// Fonts that started the downloading process. Once the fonts have downloaded
-  /// without error, they are moved to [_downloadedFonts]. Those fonts
-  /// are subsequently registered by [registerDownloadedFonts].
-  final List<Future<DomFontFace?>> _fontLoadingFutures = <Future<DomFontFace?>>[];
-
-  final List<DomFontFace> _downloadedFonts = <DomFontFace>[];
 
   // Regular expression to detect a string with no punctuations.
   // For example font family 'Ahem!' does not fall into this category
@@ -126,74 +102,62 @@ class FontManager {
   ///
   /// * https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Valid_family_names
   /// * https://drafts.csswg.org/css-fonts-3/#font-family-prop
-  void downloadAsset(
+  Future<FontLoadError?> _loadFontAsset(
     String family,
     String asset,
     Map<String, String> descriptors,
-  ) {
-    if (startWithDigit.hasMatch(family) ||
-        notPunctuation.stringMatch(family) != family) {
-      // Load a font family name with special characters once here wrapped in
-      // quotes.
-      _loadFontFace("'$family'", asset, descriptors);
+  ) async {
+    final List<DomFontFace> fontFaces = <DomFontFace>[];
+    try {
+      if (startWithDigit.hasMatch(family) ||
+          notPunctuation.stringMatch(family) != family) {
+        // Load a font family name with special characters once here wrapped in
+        // quotes.
+        fontFaces.add(await _loadFontFace("'$family'", asset, descriptors));
+      }
+      // Load all fonts, without quoted family names.
+      fontFaces.add(await _loadFontFace(family, asset, descriptors));
+    } on FontLoadError catch (error) {
+      return error;
     }
-    // Load all fonts, without quoted family names.
-    _loadFontFace(family, asset, descriptors);
+    try {
+      fontFaces.forEach(domDocument.fonts!.add);
+    } catch (e) {
+      return FontInvalidDataError(asset);
+    }
+    return null;
   }
 
-  void _loadFontFace(
+  Future<DomFontFace> _loadFontFace(
     String family,
     String asset,
     Map<String, String> descriptors,
-  ) {
-    Future<DomFontFace?> fontFaceLoad(DomFontFace fontFace) async {
-      try {
-        final DomFontFace loadedFontFace = await fontFace.load();
-        return loadedFontFace;
-      } catch (e) {
-        printWarning('Error while trying to load font family "$family":\n$e');
-        return null;
-      }
-    }
+  ) async {
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
       final DomFontFace fontFace = createDomFontFace(family, asset, descriptors);
-      _fontLoadingFutures.add(fontFaceLoad(fontFace));
+      return await fontFace.load();
     } catch (e) {
       printWarning('Error while loading font family "$family":\n$e');
+      throw FontDownloadError(asset, e);
     }
-  }
-
-  void registerDownloadedFonts() {
-    if (_downloadedFonts.isEmpty) {
-      return;
-    }
-    _downloadedFonts.forEach(domDocument.fonts!.add);
-  }
-
-
-  Future<void> downloadAllFonts() async {
-    final List<DomFontFace?> loadedFonts = await Future.wait(_fontLoadingFutures);
-    _downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
 
   // Loads a font from bytes, surfacing errors through the future.
-  Future<void> _loadFontFaceBytes(String family, Uint8List list) {
+  Future<bool> _loadFontFaceBytes(String family, Uint8List list) async {
     // Since these fonts are loaded by user code, surface the error
     // through the returned future.
     final DomFontFace fontFace = createDomFontFace(family, list);
-    return fontFace.load().then((_) {
+    try {
       domDocument.fonts!.add(fontFace);
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
       Spanometer.clearRulersCache();
-    }, onError: (dynamic exception) {
-      // Failures here will throw an DomException which confusingly
-      // does not implement Exception or Error. Rethrow an Exception so it can
-      // be caught in user code without depending on dart:html or requiring a
-      // catch block without "on".
-      throw Exception(exception.toString());
-    });
+    } catch (exception) {
+      // Failures here will throw an DomException. Return false.
+      return false;
+    }
+    return true;
   }
 }

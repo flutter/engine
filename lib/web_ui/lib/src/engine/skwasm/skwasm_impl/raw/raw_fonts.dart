@@ -18,12 +18,12 @@ external FontCollectionHandle fontCollectionCreate();
 @Native<Void Function(FontCollectionHandle)>(symbol: 'fontCollection_dispose', isLeaf: true)
 external void fontCollectionDispose(FontCollectionHandle handle);
 
-@Native<Void Function(
+@Native<Bool Function(
   FontCollectionHandle,
   SkDataHandle,
   SkStringHandle,
 )>(symbol: 'fontCollection_registerFont', isLeaf: true)
-external void fontCollectionRegisterFont(
+external bool fontCollectionRegisterFont(
   FontCollectionHandle handle,
   SkDataHandle fontData,
   SkStringHandle fontName,

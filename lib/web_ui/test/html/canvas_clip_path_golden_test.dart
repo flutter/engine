@@ -7,8 +7,10 @@ import 'dart:js_util' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
+import '../common/fake_asset_manager.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -18,9 +20,7 @@ void main() {
 Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
-    await webOnlyInitializePlatform();
-    await engine.renderer.fontCollection.debugDownloadTestFonts();
-    engine.renderer.fontCollection.registerDownloadedFonts();
+    await initializeEngine(assetManager: fakeAssetManager);
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/48683

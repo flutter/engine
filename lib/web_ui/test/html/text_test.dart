@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../common/initialize_view_embedder.dart';
 import '../common/matchers.dart';
 import 'paragraph/helper.dart';
 

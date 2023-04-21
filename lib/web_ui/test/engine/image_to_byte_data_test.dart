@@ -9,15 +9,17 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../common/fake_asset_manager.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
+  setUpTestFonts();
+
   setUpAll(() async {
-    await webOnlyInitializePlatform();
-    await renderer.fontCollection.debugDownloadTestFonts();
-    renderer.fontCollection.registerDownloadedFonts();
+    await initializeEngine(assetManager: fakeAssetManager);
   });
 
   Future<Image> createTestImageByColor(Color color) async {

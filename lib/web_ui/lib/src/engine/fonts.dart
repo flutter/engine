@@ -76,28 +76,53 @@ Future<FontManifest> fetchFontManifest(AssetManager assetManager) async {
   return FontManifest(families);
 }
 
+abstract class FontLoadError extends Error {
+  FontLoadError(this.url);
+
+  String url;
+  String get message;
+}
+
+class FontNotFoundError extends FontLoadError {
+  FontNotFoundError(super.url);
+
+  @override
+  String get message => 'Font asset not found at url $url.';
+}
+
+class FontDownloadError extends FontLoadError {
+  FontDownloadError(super.url, this.error);
+
+  dynamic error;
+
+  @override
+  String get message => 'Failed to download font asset at url $url with error: $error.';
+}
+
+class FontInvalidDataError extends FontLoadError {
+  FontInvalidDataError(super.url);
+  
+  @override
+  String get message => 'Invalid data for font asset at url $url.';
+}
+
+class AssetFontsResult {
+  AssetFontsResult(this.loadedFonts, this.fontFailures);
+
+  /// A list of asset keys for fonts that were successfully loaded.
+  final List<String> loadedFonts;
+
+  /// A map of the asset keys to failures for fonts that failed to load. 
+  final Map<String, FontLoadError> fontFailures;
+}
+
 abstract class FlutterFontCollection {
+  /// Loads a font directly from font data.
+  Future<bool> loadFontFromList(Uint8List list, {String? fontFamily});
 
-  /// Fonts loaded with [loadFontFromList] do not need to be registered
-  /// with [registerDownloadedFonts]. Fonts are both downloaded and registered
-  /// with [loadFontFromList] calls.
-  Future<void> loadFontFromList(Uint8List list, {String? fontFamily});
+  /// Completes when fonts from FontManifest.json have been loaded.
+  Future<AssetFontsResult> loadAssetFonts(FontManifest manifest);
 
-  /// Completes when fonts from FontManifest.json have been downloaded.
-  Future<void> downloadAssetFonts(AssetManager assetManager);
-
-  /// Registers both downloaded fonts and fallback fonts with the TypefaceFontProvider.
-  ///
-  /// Downloading of fonts happens separately from registering of fonts so that
-  /// the download step can happen concurrently with the initalization of the renderer.
-  ///
-  /// The correct order of calls to register downloaded fonts:
-  /// 1) [downloadAssetFonts]
-  /// 2) [registerDownloadedFonts]
-  ///
-  /// For fallbackFonts, call registerFallbackFont (see font_fallbacks.dart)
-  /// for each fallback font before calling [registerDownloadedFonts]
-  void registerDownloadedFonts();
-  FutureOr<void> debugDownloadTestFonts();
+  // Unregisters all fonts.
   void clear();
 }

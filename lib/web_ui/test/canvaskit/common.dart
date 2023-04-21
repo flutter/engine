@@ -11,14 +11,17 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/fake_asset_manager.dart';
+
 const MethodCodec codec = StandardMethodCodec();
 
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
+  setUpTestFonts();
   setUpAll(() async {
     expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
     debugDisableFontFallbacks = false;
-    await initializeEngine(assetManager: WebOnlyMockAssetManager());
+    await initializeEngine(assetManager: fakeAssetManager);
   });
 
   tearDown(() {

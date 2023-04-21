@@ -15,22 +15,19 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 class SkwasmFontCollection implements FlutterFontCollection {
   SkwasmFontCollection() : _handle = fontCollectionCreate();
 
-  final FontCollectionHandle _handle;
+  FontCollectionHandle _handle;
 
   @override
   void clear() {
-    // TODO(jacksongardner): implement clear
+    fontCollectionDispose(_handle);
+    _handle = fontCollectionCreate();
   }
 
   @override
-  FutureOr<void> debugDownloadTestFonts() {
-    // TODO(jacksongardner): implement debugDownloadTestFonts
-  }
-
-  @override
-  Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    final FontManifest manifest = await fetchFontManifest(assetManager);
+  Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
     final List<Future<void>> fontFutures = <Future<void>>[];
+    final List<String> loadedFonts = <String>[];
+    final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
     for (final FontFamily family in manifest.families) {
       final List<int> rawUtf8Bytes = utf8.encode(family.name);
       final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
@@ -39,18 +36,30 @@ class SkwasmFontCollection implements FlutterFontCollection {
         stringDataPointer[i] = rawUtf8Bytes[i];
       }
       for (final FontAsset fontAsset in family.fontAssets) {
-        fontFutures.add(_downloadFontAsset(fontAsset.asset, stringHandle));
+        fontFutures.add(() async {
+          final FontLoadError? error = await _downloadFontAsset(fontAsset, stringHandle);
+          if (error == null) {
+            loadedFonts.add(fontAsset.asset);
+          } else {
+            fontFailures[fontAsset.asset] = error;
+          }
+        }());
       }
       skStringFree(stringHandle);
     }
     await Future.wait(fontFutures);
+    return AssetFontsResult(loadedFonts, fontFailures);
   }
 
-  Future<void> _downloadFontAsset(String assetName, SkStringHandle familyNameHandle) async {
-    final HttpFetchResponse response = await assetManager.loadAsset(assetName);
+  Future<FontLoadError?> _downloadFontAsset(FontAsset asset, SkStringHandle familyNameHandle) async {
+    final HttpFetchResponse response; 
+    try {
+      response = await assetManager.loadAsset(asset.asset);
+    } catch (error) {
+      return FontDownloadError(assetManager.getAssetUrl(asset.asset), error);
+    }
     if (!response.hasPayload) {
-      printWarning('Failed to load font "$assetName", font file not found.');
-      return;
+      return FontNotFoundError(assetManager.getAssetUrl(asset.asset));
     }
     int length = 0;
     final List<Uint8Array> chunks = <Uint8Array>[];
@@ -65,17 +74,22 @@ class SkwasmFontCollection implements FlutterFontCollection {
       wasmMemory.set(chunk, dataAddress.toJS);
       dataAddress += chunk.length.toDart.toInt();
     }
-    fontCollectionRegisterFont(_handle, fontData, familyNameHandle);
+    final bool result = fontCollectionRegisterFont(_handle, fontData, familyNameHandle);
     skDataDispose(fontData);
+    if (!result) {
+      return FontInvalidDataError(assetManager.getAssetUrl(asset.asset));
+    }
+    return null;
   }
 
   @override
-  Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) async {
+  Future<bool> loadFontFromList(Uint8List list, {String? fontFamily}) async {
     final SkDataHandle dataHandle = skDataCreate(list.length);
     final Pointer<Int8> dataPointer = skDataGetPointer(dataHandle).cast<Int8>();
     for (int i = 0; i < list.length; i++) {
       dataPointer[i] = list[i];
     }
+    bool success;
     if (fontFamily != null) {
       final List<int> rawUtf8Bytes = utf8.encode(fontFamily);
       final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
@@ -83,16 +97,12 @@ class SkwasmFontCollection implements FlutterFontCollection {
       for (int i = 0; i < rawUtf8Bytes.length; i++) {
         stringDataPointer[i] = rawUtf8Bytes[i];
       }
-      fontCollectionRegisterFont(_handle, dataHandle, stringHandle);
+      success = fontCollectionRegisterFont(_handle, dataHandle, stringHandle);
       skStringFree(stringHandle);
     } else {
-      fontCollectionRegisterFont(_handle, dataHandle, nullptr);
+      success = fontCollectionRegisterFont(_handle, dataHandle, nullptr);
     }
     skDataDispose(dataHandle);
-  }
-
-  @override
-  void registerDownloadedFonts() {
-    // TODO(jacksongardner): implement registerDownloadedFonts
+    return success;
   }
 }

@@ -9,18 +9,23 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
+import '../common/fake_asset_manager.dart';
+import 'common.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
   group('$SkiaFontCollection', () {
+    setUpCanvasKitTest();
+
     final List<String> warnings = <String>[];
     late void Function(String) oldPrintWarning;
+    late FakeAssetScope testAssetScope;
 
     setUpAll(() async {
       ensureFlutterViewEmbedderInitialized();
-      await renderer.initialize();
       oldPrintWarning = printWarning;
       printWarning = (String warning) {
         warnings.add(warning);
@@ -32,20 +37,19 @@ void testMain() {
     });
 
     setUp(() {
+      testAssetScope = fakeAssetManager.pushAssetScope();
       mockHttpFetchResponseFactory = null;
       warnings.clear();
     });
 
     tearDown(() {
+      fakeAssetManager.popAssetScope(testAssetScope);
       mockHttpFetchResponseFactory = null;
     });
 
     test('logs no warnings with the default mock asset manager', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      await fontCollection.downloadAssetFonts(mockAssetManager);
-      fontCollection.registerDownloadedFonts();
+      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
 
       expect(warnings, isEmpty);
     });
@@ -61,9 +65,7 @@ void testMain() {
         );
       };
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('''
 [
    {
       "family":"Roboto",
@@ -74,10 +76,9 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/BrokenFont.ttf"}]
    }
   ]
-      ''';
+      '''));
       // It should complete without error, but emit a warning about BrokenFont.
-      await fontCollection.downloadAssetFonts(mockAssetManager);
-      fontCollection.registerDownloadedFonts();
+      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
       expect(
         warnings,
         containsAllInOrder(
@@ -91,9 +92,7 @@ void testMain() {
 
     test('logs an HTTP warning if one of the registered fonts is missing (404 file not found)', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('''
 [
    {
       "family":"Roboto",
@@ -104,11 +103,10 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/ThisFontDoesNotExist.ttf"}]
    }
   ]
-      ''';
+      '''));
 
       // It should complete without error, but emit a warning about ThisFontDoesNotExist.
-      await fontCollection.downloadAssetFonts(mockAssetManager);
-      fontCollection.registerDownloadedFonts();
+      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
       expect(
         warnings,
         containsAllInOrder(<String>[
@@ -120,22 +118,18 @@ void testMain() {
 
     test('prioritizes Ahem loaded via FontManifest.json', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '''
+      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('''
         [
           {
             "family":"Ahem",
             "fonts":[{"asset":"/assets/fonts/Roboto-Regular.ttf"}]
           }
         ]
-      '''.trim();
+      '''.trim()));
 
       final ByteBuffer robotoData = await httpFetchByteBuffer('/assets/fonts/Roboto-Regular.ttf');
 
-      await fontCollection.downloadAssetFonts(mockAssetManager);
-      await fontCollection.debugDownloadTestFonts();
-      fontCollection.registerDownloadedFonts();
+      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
       expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.
@@ -149,15 +143,11 @@ void testMain() {
 
     test('falls back to default Ahem URL', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      final WebOnlyMockAssetManager mockAssetManager =
-          WebOnlyMockAssetManager();
-      mockAssetManager.defaultFontManifest = '[]';
+      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('[]'));
 
       final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
 
-      await fontCollection.downloadAssetFonts(mockAssetManager);
-      await fontCollection.debugDownloadTestFonts();
-      fontCollection.registerDownloadedFonts();
+      await fontCollection.loadAssetFonts(await fetchFontManifest(fakeAssetManager));
       expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.
@@ -167,28 +157,6 @@ void testMain() {
       // Check that the contents of 'Ahem' is actually Roboto, because that's
       // what's specified in the manifest, and the manifest takes precedence.
       expect(ahem.bytes.length, ahemData.lengthInBytes);
-    });
-
-    test('download fonts separately from registering', () async {
-      final SkiaFontCollection fontCollection = SkiaFontCollection();
-
-      await fontCollection.debugDownloadTestFonts();
-      /// Fonts should have been downloaded, but not yet registered
-      expect(fontCollection.debugRegisteredFonts, isEmpty);
-
-      fontCollection.registerDownloadedFonts();
-      /// Fonts should now be registered and _registeredFonts should be filled
-      expect(fontCollection.debugRegisteredFonts, isNotEmpty);
-      expect(warnings, isEmpty);
-    });
-
-    test('FlutterTest is the default test font', () async {
-      final SkiaFontCollection fontCollection = SkiaFontCollection();
-
-      await fontCollection.debugDownloadTestFonts();
-      fontCollection.registerDownloadedFonts();
-      expect(fontCollection.debugRegisteredFonts, isNotEmpty);
-      expect(fontCollection.debugRegisteredFonts!.first.family, 'FlutterTest');
     });
   });
 }

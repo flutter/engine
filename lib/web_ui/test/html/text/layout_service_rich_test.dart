@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/initialize_view_embedder.dart';
 import '../paragraph/helper.dart';
 import 'layout_service_helper.dart';
 

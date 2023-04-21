@@ -29,15 +29,19 @@ SKWASM_EXPORT void fontCollection_dispose(FlutterFontCollection* collection) {
   delete collection;
 }
 
-SKWASM_EXPORT void fontCollection_registerFont(
+SKWASM_EXPORT bool fontCollection_registerFont(
     FlutterFontCollection* collection,
     SkData* fontData,
     SkString* fontName) {
   fontData->ref();
   auto typeFace = collection->provider->makeFromData(sk_sp<SkData>(fontData));
+  if (!typeFace) {
+    return false;
+  }
   if (fontName != nullptr) {
     collection->provider->registerTypeface(std::move(typeFace), *fontName);
   } else {
     collection->provider->registerTypeface(std::move(typeFace));
   }
+  return true;
 }
