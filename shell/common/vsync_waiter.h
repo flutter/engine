@@ -40,12 +40,12 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
 
   /// Get current frame's target time.
-  fml::TimePoint GetVsyncFrameTargetTime() const;
+  fml::TimePoint GetVsyncFrameTargetTime();
 
   /// Get current stage.
   ///
   /// See also |VsyncWaiterProcessStage|
-  VsyncWaiterProcessStage GetProcessStage() const;
+  VsyncWaiterProcessStage GetProcessStage();
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
@@ -90,8 +90,13 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
+  std::mutex stage_mutex_;
   VsyncWaiterProcessStage stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+  std::mutex frame_target_time_mutex_;
   fml::TimePoint frame_target_time_;
+
+  void SetProcessStage(VsyncWaiterProcessStage stage);
+  void SetFrameTargetTime(fml::TimePoint frame_target_time);
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
 

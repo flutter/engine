@@ -25,10 +25,10 @@ class ViewportMetricsUpdater {
 
     /// Get current process stage of current vsync waiter. And updater will use
     /// different strategies to update the viewport metrics data to receiver.
-    virtual VsyncWaiterProcessStage GetVsyncWaiterProcessStage() const = 0;
+    virtual VsyncWaiterProcessStage GetVsyncWaiterProcessStage() = 0;
 
     /// Get current vsync waiter's frame target time.
-    virtual fml::TimePoint GetVsyncWaiterFrameTargetTime() const = 0;
+    virtual fml::TimePoint GetVsyncWaiterFrameTargetTime() = 0;
 
     /// Post a task to UI TaskRunner.
     virtual void PostTaskOnUITaskRunner(const fml::closure& callback) = 0;

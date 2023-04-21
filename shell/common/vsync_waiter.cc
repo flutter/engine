@@ -69,7 +69,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
     }
   }
   AwaitVSync();
-  stage_ = VsyncWaiterProcessStage::kAwaiting;
+  SetProcessStage(VsyncWaiterProcessStage::kAwaiting);
 }
 
 void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
@@ -104,14 +104,16 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
     }
   }
   AwaitVSyncForSecondaryCallback();
-  stage_ = VsyncWaiterProcessStage::kAwaiting;
+  SetProcessStage(VsyncWaiterProcessStage::kAwaiting);
 }
 
-VsyncWaiterProcessStage VsyncWaiter::GetProcessStage() const {
+VsyncWaiterProcessStage VsyncWaiter::GetProcessStage() {
+  std::scoped_lock lock(stage_mutex_);
   return stage_;
 }
 
-fml::TimePoint VsyncWaiter::GetVsyncFrameTargetTime() const {
+fml::TimePoint VsyncWaiter::GetVsyncFrameTargetTime() {
+  std::scoped_lock lock(frame_target_time_mutex_);
   return frame_target_time_;
 }
 
@@ -132,15 +134,15 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     secondary_callbacks_.clear();
   }
 
-  stage_ = VsyncWaiterProcessStage::kProcessing;
-  frame_target_time_ = frame_target_time;
+  SetProcessStage(VsyncWaiterProcessStage::kProcessing);
+  SetFrameTargetTime(frame_target_time);
 
   if (!callback && secondary_callbacks.empty()) {
     // This means that the vsync waiter implementation fired a callback for a
     // request we did not make. This is a paranoid check but we still want to
     // make sure we catch misbehaving vsync implementations.
     TRACE_EVENT_INSTANT0("flutter", "MismatchedFrameCallback");
-    stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+    SetProcessStage(VsyncWaiterProcessStage::kProcessingComplete);
     return;
   }
 
@@ -185,9 +187,19 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   task_runners_.GetUITaskRunner()->PostTask(
       [waiter = weak_factory_on_ui_->GetWeakPtr()] {
         if (waiter) {
-          waiter->stage_ = VsyncWaiterProcessStage::kProcessingComplete;
+          waiter->SetProcessStage(VsyncWaiterProcessStage::kProcessingComplete);
         }
       });
+}
+
+void VsyncWaiter::SetProcessStage(VsyncWaiterProcessStage stage) {
+  std::scoped_lock lock(stage_mutex_);
+  stage_ = stage;
+}
+
+void VsyncWaiter::SetFrameTargetTime(fml::TimePoint frame_target_time) {
+  std::scoped_lock lock(frame_target_time_mutex_);
+  frame_target_time_ = frame_target_time;
 }
 
 void VsyncWaiter::PauseDartMicroTasks() {
