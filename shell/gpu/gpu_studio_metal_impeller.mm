@@ -11,7 +11,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/impeller/display_list/display_list_dispatcher.h"
+#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/backend/metal/surface_mtl.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
