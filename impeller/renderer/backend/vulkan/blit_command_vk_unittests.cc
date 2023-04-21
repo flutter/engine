@@ -183,6 +183,14 @@ VkResult vkBindImageMemory(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateImageView(VkDevice device,
+                           const VkImageViewCreateInfo* pCreateInfo,
+                           const VkAllocationCallbacks* pAllocator,
+                           VkImageView* pView) {
+  *pView = reinterpret_cast<VkImageView>(0xFEE1DEAD);
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetProcAddress(VkInstance instance, const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
     return (PFN_vkVoidFunction)vkEnumerateInstanceExtensionProperties;
@@ -225,6 +233,8 @@ PFN_vkVoidFunction GetProcAddress(VkInstance instance, const char* pName) {
     return (PFN_vkVoidFunction)vkAllocateMemory;
   } else if (strcmp("vkBindImageMemory", pName) == 0) {
     return (PFN_vkVoidFunction)vkBindImageMemory;
+  } else if (strcmp("vkCreateImageView", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateImageView;
   }
   return noop;
 }
@@ -239,7 +249,7 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
   auto context = ContextVK::Create(std::move(settings));
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
   CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
-                           {}, context->GetFenceWaiter());
+                           pool, context->GetFenceWaiter());
   BlitCopyTextureToTextureCommandVK cmd;
   cmd.source = context->GetResourceAllocator()->CreateTexture({
       .size = ISize(100, 100),
