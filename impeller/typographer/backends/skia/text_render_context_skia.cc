@@ -484,7 +484,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   //         the type is identical.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
-  if (false && last_atlas->GetType() == type &&
+  if (last_atlas->GetType() == type &&
       CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {

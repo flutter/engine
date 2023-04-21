@@ -22,9 +22,6 @@ class TypefaceSkia final : public Typeface,
   // |Typeface|
   bool IsValid() const override;
 
-  // |Typeface|
-  std::string GetPostscriptName() const override;
-
   // |Comparable<Typeface>|
   std::size_t GetHash() const override;
 
