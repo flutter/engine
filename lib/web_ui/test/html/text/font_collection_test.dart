@@ -41,7 +41,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -60,7 +60,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -81,7 +81,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -99,7 +99,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{
+            FontAsset(testFontUrl, <String, String>{
               'weight': 'bold'
             })
           ])
@@ -125,7 +125,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -152,7 +152,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -179,7 +179,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!
@@ -207,7 +207,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset('url($testFontUrl)', <String, String>{})
+            FontAsset(testFontUrl, <String, String>{})
           ])
         ]));
         domDocument.fonts!

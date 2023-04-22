@@ -28,7 +28,7 @@ Future<void> testMain() async {
 
     test('returns normally from invalid font buffer', () async {
       await expectLater(
-        ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
+        () async => ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
         returnsNormally
       );
     },
