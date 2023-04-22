@@ -2467,6 +2467,70 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(EntityTest, ColorFilterWithForegroundColorClearBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kClear, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorSrcBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kSource, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorDstBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kDestination, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorSrcInBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceIn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
   auto arrow_head = PathBuilder{}
                         .MoveTo({50, 120})
@@ -2481,6 +2545,26 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
   EXPECT_LT(transform.e[0][0], 0.f);
   auto coverage = geometry->GetCoverage(transform);
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
+}
+
+TEST_P(EntityTest, ConvertToSrcBlend) {
+  Entity entity;
+  entity.SetBlendMode(BlendMode::kSourceOver);
+
+  auto contents = SolidColorContents::Make(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size(100, 100))).TakePath(),
+      Color::Red());
+
+  ASSERT_TRUE(contents->ConvertToSrc(entity));
+
+  // Color with alpha, should return false.
+  contents->SetInheritedOpacity(0.5);
+  ASSERT_FALSE(contents->ConvertToSrc(entity));
+
+  // Non source over blend mode, should return false.
+  contents->SetInheritedOpacity(1.0);
+  entity.SetBlendMode(BlendMode::kDestination);
+  ASSERT_FALSE(contents->ConvertToSrc(entity));
 }
 
 }  // namespace testing
