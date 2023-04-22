@@ -20,7 +20,7 @@ SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
   setUpUnitTests();
-  
+
   setUpAll(() async {
     debugShowClipLayers = true;
   });

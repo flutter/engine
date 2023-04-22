@@ -34,7 +34,8 @@ SKWASM_EXPORT bool fontCollection_registerFont(
     SkData* fontData,
     SkString* fontName) {
   fontData->ref();
-  auto typeFace = SkFontMgr::RefDefault()->makeFromData(sk_sp<SkData>(fontData));
+  auto typeFace =
+      SkFontMgr::RefDefault()->makeFromData(sk_sp<SkData>(fontData));
   if (!typeFace) {
     return false;
   }

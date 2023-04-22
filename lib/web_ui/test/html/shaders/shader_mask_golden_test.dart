@@ -32,7 +32,7 @@ Future<void> main() async {
 
 Future<void> testMain() async {
   setUpUnitTests();
-  
+
   setUpAll(() async {
     debugShowClipLayers = true;
   });

@@ -62,7 +62,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
   }
 
   Future<FontLoadError?> _downloadFontAsset(FontAsset asset, SkStringHandle familyNameHandle) async {
-    final HttpFetchResponse response; 
+    final HttpFetchResponse response;
     try {
       response = await assetManager.loadAsset(asset.asset);
     } catch (error) {

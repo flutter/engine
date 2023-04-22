@@ -9,7 +9,7 @@ import 'package:ui/ui.dart' as ui;
 import 'fake_asset_manager.dart';
 
 void setUpUnitTests({
-  bool emulateTesterEnvironment = true, 
+  bool emulateTesterEnvironment = true,
   bool setUpTestViewDimensions = true,
 }) {
   late final FakeAssetScope debugFontsScope;

@@ -101,7 +101,7 @@ class FontDownloadError extends FontLoadError {
 
 class FontInvalidDataError extends FontLoadError {
   FontInvalidDataError(super.url);
-  
+
   @override
   String get message => 'Invalid data for font asset at url $url.';
 }
@@ -112,7 +112,7 @@ class AssetFontsResult {
   /// A list of asset keys for fonts that were successfully loaded.
   final List<String> loadedFonts;
 
-  /// A map of the asset keys to failures for fonts that failed to load. 
+  /// A map of the asset keys to failures for fonts that failed to load.
   final Map<String, FontLoadError> fontFailures;
 }
 
