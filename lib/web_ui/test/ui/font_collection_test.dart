@@ -19,14 +19,14 @@ void main() {
 Future<void> testMain() async {
   setUpUnitTests();
 
-  test('Loading valid font from data succeeds without family name', () async {
+  test('Loading valid font from data succeeds without family name (except in HTML renderer)', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
     expect(
       await collection.loadFontFromList(ahemData.asUint8List()),
-      true
+      !isHtml, // HtmlFontCollection requires family name
     );
-  }, skip: isHtml); // HtmlFontCollection requires family name
+  });
 
   test('Loading valid font from data succeeds with family name', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
@@ -37,7 +37,7 @@ Future<void> testMain() async {
     );
   });
 
-  test('Loading invalid font from data throws', () async {
+  test('Loading invalid font from data returns false', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final List<int> invalidFontData = utf8.encode('This is not valid font data');
     expect(

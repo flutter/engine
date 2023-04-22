@@ -28,6 +28,10 @@ class SkwasmFontCollection implements FlutterFontCollection {
     final List<Future<void>> fontFutures = <Future<void>>[];
     final List<String> loadedFonts = <String>[];
     final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
+
+    // We can't restore the pointers directly due to a bug in dart2wasm
+    // https://github.com/dart-lang/sdk/issues/52142
+    final List<int> familyHandles = <int>[];
     for (final FontFamily family in manifest.families) {
       final List<int> rawUtf8Bytes = utf8.encode(family.name);
       final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
@@ -35,6 +39,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
       for (int i = 0; i < rawUtf8Bytes.length; i++) {
         stringDataPointer[i] = rawUtf8Bytes[i];
       }
+      familyHandles.add(stringHandle.address);
       for (final FontAsset fontAsset in family.fontAssets) {
         fontFutures.add(() async {
           final FontLoadError? error = await _downloadFontAsset(fontAsset, stringHandle);
@@ -45,9 +50,14 @@ class SkwasmFontCollection implements FlutterFontCollection {
           }
         }());
       }
-      skStringFree(stringHandle);
     }
     await Future.wait(fontFutures);
+
+    // Wait until all the downloading and registering is complete before
+    // freeing the handles to the family name strings.
+    familyHandles
+      .map((int address) => SkStringHandle.fromAddress(address))
+      .forEach(skStringFree);
     return AssetFontsResult(loadedFonts, fontFailures);
   }
 

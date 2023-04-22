@@ -11,6 +11,11 @@ import 'fake_asset_manager.dart';
 void setUpUnitTests() {
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
+    ui.debugEmulateFlutterTesterEnvironment = true;
+
+    debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
+    await engine.initializeEngine(assetManager: fakeAssetManager);
+
     // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
     engine.ensureFlutterViewEmbedderInitialized();
 
@@ -22,10 +27,6 @@ void setUpUnitTests() {
     engine.window.webOnlyDebugPhysicalSizeOverride =
         const ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
     engine.scheduleFrameCallback = () {};
-    ui.debugEmulateFlutterTesterEnvironment = true;
-
-    debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
-    await engine.initializeEngine(assetManager: fakeAssetManager);
   });
 
   tearDownAll(() async {

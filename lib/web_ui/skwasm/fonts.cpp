@@ -34,12 +34,13 @@ SKWASM_EXPORT bool fontCollection_registerFont(
     SkData* fontData,
     SkString* fontName) {
   fontData->ref();
-  auto typeFace = collection->provider->makeFromData(sk_sp<SkData>(fontData));
+  auto typeFace = SkFontMgr::RefDefault()->makeFromData(sk_sp<SkData>(fontData));
   if (!typeFace) {
     return false;
   }
-  if (fontName != nullptr) {
-    collection->provider->registerTypeface(std::move(typeFace), *fontName);
+  if (fontName) {
+    SkString alias = *fontName;
+    collection->provider->registerTypeface(std::move(typeFace), alias);
   } else {
     collection->provider->registerTypeface(std::move(typeFace));
   }

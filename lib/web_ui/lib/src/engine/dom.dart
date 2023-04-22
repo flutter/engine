@@ -1922,6 +1922,10 @@ extension DomFontFaceExtension on DomFontFace {
   @JS('weight')
   external JSString? get _weight;
   String? get weight => _weight?.toDart;
+
+  @JS('status')
+  external JSString? get _status;
+  String? get status => _status?.toDart;
 }
 
 @JS()

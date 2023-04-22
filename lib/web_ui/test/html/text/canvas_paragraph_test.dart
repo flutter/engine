@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests()
+  setUpUnitTests();
 
   group('$CanvasParagraph.getBoxesForRange', () {
     test('return empty list for invalid ranges', () {

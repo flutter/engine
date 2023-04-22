@@ -28,8 +28,9 @@ Future<void> testMain() async {
 
     test('returns normally from invalid font buffer', () async {
       await expectLater(
-          ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
-          returnsNormally);
+        ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
+        returnsNormally
+      );
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
         skip: browserEngine == BrowserEngine.webkit);

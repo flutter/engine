@@ -153,9 +153,14 @@ class HtmlFontCollection implements FlutterFontCollection {
   Future<bool> _loadFontFaceBytes(String family, Uint8List list) async {
     // Since these fonts are loaded by user code, surface the error
     // through the returned future.
-    final DomFontFace fontFace = createDomFontFace(family, list);
     try {
+      final DomFontFace fontFace = createDomFontFace(family, list);
+      if (fontFace.status == 'error') {
+        // Font failed to load.
+        return false;
+      }
       domDocument.fonts!.add(fontFace);
+
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
