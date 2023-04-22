@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 import '../common/fake_asset_manager.dart';
+import '../common/test_initialization.dart';
 import 'common.dart';
 
 void main() {
@@ -18,14 +19,13 @@ void main() {
 
 void testMain() {
   group('$SkiaFontCollection', () {
-    setUpCanvasKitTest();
+    setUpUnitTests();
 
     final List<String> warnings = <String>[];
     late void Function(String) oldPrintWarning;
     late FakeAssetScope testAssetScope;
 
     setUpAll(() async {
-      ensureFlutterViewEmbedderInitialized();
       oldPrintWarning = printWarning;
       printWarning = (String warning) {
         warnings.add(warning);

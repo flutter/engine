@@ -17,7 +17,10 @@ const MethodCodec codec = StandardMethodCodec();
 
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUpAll(() {
     // Ahem must be added to font fallbacks list regardless of where it was
