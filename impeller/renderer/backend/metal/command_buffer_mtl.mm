@@ -167,7 +167,7 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
 
   [buffer_ commit];
 
-#if (FML_OS_MACOSX || FML_OS_IOS_SIMULATOR)
+#if (FML_OS_IOS_SIMULATOR || !FML_OS_IOS)
   // We're using waitUntilScheduled on macOS and iOS simulator to force a hard
   // barrier between the execution of different command buffers. This forces all
   // renderable texture access to be synchronous (i.e. a write from a previous
