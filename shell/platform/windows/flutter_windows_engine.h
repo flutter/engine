@@ -145,9 +145,8 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
-  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
-    return accessibility_bridge_;
-  }
+  // Return the AccessibilityBridgeWindows for this engine's view.
+  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge();
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -267,6 +266,9 @@ class FlutterWindowsEngine {
                               LPARAM lparam,
                               AppExitType exit_type);
 
+  // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
+  void OnDwmCompositionChanged();
+
  protected:
   // Creates the keyboard key handler.
   //
@@ -283,14 +285,6 @@ class FlutterWindowsEngine {
   // capture information.
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
-
-  // Creates an accessibility bridge with the provided parameters.
-  //
-  // By default this method calls AccessibilityBridge's constructor. Exposing
-  // this method allows unit tests to override in order to capture information.
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
-      FlutterWindowsEngine* engine,
-      FlutterWindowsView* view);
 
   // Invoked by the engine right before the engine is restarted.
   //
@@ -393,8 +387,6 @@ class FlutterWindowsEngine {
   bool semantics_enabled_ = false;
 
   bool high_contrast_enabled_ = false;
-
-  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;

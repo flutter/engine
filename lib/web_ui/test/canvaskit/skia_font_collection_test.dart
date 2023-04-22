@@ -11,7 +11,6 @@ import 'package:ui/src/engine.dart';
 
 import '../common/fake_asset_manager.dart';
 import '../common/test_initialization.dart';
-import 'common.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
