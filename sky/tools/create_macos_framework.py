@@ -137,10 +137,22 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
+      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
+      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'],
+                            cwd=dsym_dst)
+      # Double zip to make it consistent with legacy artifacts.
+      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
       subprocess.check_call([
-          'zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', 'FlutterMacOS.dSYM'
+          'zip',
+          '-y',
+          'FlutterMacOS.dSYM_.zip',
+          'FlutterMacOS.dSYM.zip',
       ],
-                            cwd=dst)
+                            cwd=dsym_dst)
+      # Use doubled zipped file.
+      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
+      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
+      shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
   if args.strip:
     # copy unstripped
