@@ -1398,7 +1398,7 @@ class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 Future<_DomResponse> _rawHttpGet(String url) =>
     js_util.promiseToFuture<_DomResponse>(domWindow._fetch1(url.toJS));
 
-typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse> Function(
+typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse?> Function(
     String url);
 
 MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
@@ -1418,7 +1418,10 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    return mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    if (response != null) {
+      return response;
+    }
   }
   try {
     final _DomResponse domResponse = await _rawHttpGet(url);
