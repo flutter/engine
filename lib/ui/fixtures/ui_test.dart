@@ -226,7 +226,8 @@ void sendSemanticsUpdate() {
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
-    additionalActions: additionalActions);
+    additionalActions: additionalActions,
+    headingLevel: -1);
   _semanticsUpdate(builder.build());
 }
 

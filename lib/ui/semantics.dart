@@ -798,6 +798,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    required int headingLevel,
   }) {
     assert(_matrix4IsValid(transform));
     _updateNode(
@@ -836,6 +837,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
+      headingLevel,
     );
   }
   @Native<
@@ -875,7 +877,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
           Handle,
           Handle,
           Handle,
-          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Handle,
+          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
@@ -911,7 +914,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalActions);
+      Int32List additionalAction,
+      int headingLevel);
 
   /// Update the custom semantics action associated with the given `id`.
   ///

@@ -224,6 +224,7 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
+    required this.headingLevel,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -321,6 +322,9 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final double thickness;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final int headingLevel;
 }
 
 /// Identifies one of the roles a [SemanticsObject] plays.
@@ -758,6 +762,15 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  int get headingLevel => _headingLevel;
+  int _headingLevel = -1;
+
+  static const int _headingLevelIndex = 1 << 24;
+  void _markHeadingLevelDirty() {
+    _dirtyFields |= _headingLevelIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -976,6 +989,11 @@ class SemanticsObject {
     if (_tooltip != update.tooltip) {
       _tooltip = update.tooltip;
       _markTooltipDirty();
+    }
+
+    if (_headingLevel != update.headingLevel) {
+      _headingLevel = update.headingLevel;
+      _markHeadingLevelDirty();
     }
 
     if (_textDirection != update.textDirection) {
@@ -1222,6 +1240,15 @@ class SemanticsObject {
   /// Removes the `role` HTML attribue, if any.
   void clearAriaRole() {
     element.removeAttribute('role');
+  }
+
+  void setAriaLevel(int ariaLevel) {
+    element.setAttribute('aria-level', ariaLevel);
+  }
+
+  /// Removes the `aria-level` HTML attribue, if any.
+  void clearAriaLevel() {
+    element.removeAttribute('aria-level');
   }
 
   /// Role managers.
