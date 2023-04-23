@@ -877,7 +877,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
           Handle,
           Handle,
           Handle,
-          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Handle,
+          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
