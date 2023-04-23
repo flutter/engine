@@ -90,6 +90,9 @@ class LabelAndValue extends RoleManager {
       semanticsObject.setAriaRole('group', true);
     } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
       semanticsObject.setAriaRole('heading', true);
+      if (semanticsObject.headingLevel != -1) {
+        semanticsObject.setAriaLevel(semanticsObject.headingLevel);
+      }
     } else {
       semanticsObject.setAriaRole('text', true);
     }
@@ -98,6 +101,7 @@ class LabelAndValue extends RoleManager {
   void _cleanUpDom() {
     semanticsObject.element.removeAttribute('aria-label');
     semanticsObject.clearAriaRole();
+    semanticsObject.clearAriaLevel();
   }
 
   @override

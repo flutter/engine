@@ -64,7 +64,8 @@ class SemanticsUpdateBuilder
       const tonic::Float64List& transform,
       const tonic::Int32List& childrenInTraversalOrder,
       const tonic::Int32List& childrenInHitTestOrder,
-      const tonic::Int32List& customAccessibilityActions);
+      const tonic::Int32List& customAccessibilityActions,
+      int headingLevel);
 
   void updateCustomAction(int id,
                           std::string label,
