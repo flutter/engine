@@ -16,19 +16,6 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-static BOOL IsWideGamutSupported() {
-#if TARGET_OS_SIMULATOR
-  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
-  // the simulator.
-  return NO;
-#else
-  // This predicates the decision on the capabilities of the iOS device's
-  // display.  This means external displays will not support wide gamut if the
-  // device's display doesn't support it.  It practice that should be never.
-  return UIScreen.mainScreen.traitCollection.displayGamut != UIDisplayGamutSRGB;
-#endif
-}
-
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
   BOOL _isWideGamutEnabled;
@@ -49,6 +36,23 @@ static BOOL IsWideGamutSupported() {
   return nil;
 }
 
+- (BOOL)isWideGamutSupported {
+#if TARGET_OS_SIMULATOR
+  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
+  // the simulator.
+  return NO;
+#endif
+
+  if (![_delegate isUsingImpeller]) {
+    return NO;
+  }
+
+  // This predicates the decision on the capabilities of the iOS device's
+  // display.  This means external displays will not support wide gamut if the
+  // device's display doesn't support it.  It practice that should be never.
+  return UIScreen.mainScreen.traitCollection.displayGamut != UIDisplayGamutSRGB;
+}
+
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque
                  enableWideGamut:(BOOL)isWideGamutEnabled {
@@ -63,7 +67,7 @@ static BOOL IsWideGamutSupported() {
   if (self) {
     _delegate = delegate;
     _isWideGamutEnabled = isWideGamutEnabled;
-    if (_isWideGamutEnabled && !IsWideGamutSupported()) {
+    if (_isWideGamutEnabled && self.isWideGamutSupported) {
       FML_DLOG(WARNING) << "Rendering wide gamut colors is turned on but isn't "
                            "supported, downgrading the color gamut to sRGB.";
     }
@@ -92,7 +96,7 @@ static BOOL IsWideGamutSupported() {
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
     layer.framebufferOnly = flutter::Settings::kSurfaceDataAccessible ? NO : YES;
-    if (_isWideGamutEnabled && IsWideGamutSupported()) {
+    if (_isWideGamutEnabled && self.isWideGamutSupported) {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
       CFRelease(srgb);
