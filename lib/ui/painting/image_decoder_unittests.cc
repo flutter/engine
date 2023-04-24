@@ -892,10 +892,11 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_TRUE(expected_data != nullptr);
   ASSERT_FALSE(expected_data->isEmpty());
 
-  auto assert_image = [&](auto decoded_image) {
+  auto assert_image = [&](sk_sp<SkImage> decoded_image) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    ASSERT_TRUE(SkPngEncoder::Encode(nullptr, decoded_image.get(), {})
-                    ->equals(expected_data.get()));
+    sk_sp<SkData> encoded = SkPngEncoder::Encode(nullptr, decoded_image.get(),
+                                                 {});
+    ASSERT_TRUE(encoded->equals(expected_data.get()));
   };
 
   assert_image(decode(300, 100));

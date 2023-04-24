@@ -146,9 +146,14 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   } else {
     // We need to decode into a different buffer so we can re-orient
     // the pixels later.
-    if (!tmpBitmap.tryAllocPixels(info)) {
+    SkImageInfo tmpInfo = dst.info();
+    // if (SkEncodedOriginSwapsWidthHeight(origin)) {
+    //     // We'll be decoding into a buffer that has height and width swapped.
+    //     tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
+    // }
+    if (!tmpBitmap.tryAllocPixels(tmpInfo)) {
       FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
-                      << info.computeMinByteSize() << "B";
+                      << tmpInfo.computeMinByteSize() << "B";
       return false;
     }
     tmp = tmpBitmap.pixmap();
@@ -156,12 +161,15 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
 
   SkCodec::Result result = codec_->getPixels(tmp, &options);
   if (result != SkCodec::kSuccess) {
+    FML_DLOG(WARNING) << "codec could not get pixels. status " << result;
     return false;
   }
   if (origin == kTopLeft_SkEncodedOrigin) {
     return true;
   }
-  return SkPixmapUtils::Orient(dst, tmp, origin);
+  FML_DLOG(WARNING) << "Origin " << origin;
+  return true;
+  //return SkPixmapUtils::Orient(dst, tmp, origin);
 }
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(
