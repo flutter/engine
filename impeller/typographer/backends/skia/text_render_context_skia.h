@@ -13,6 +13,13 @@ namespace impeller {
 class DeviceBuffer;
 class Allocator;
 
+/// @brief An implementation of an SkBitmap allocator that deferrs allocation to
+///        an impeller allocator. This allows usage of Skia software rendering
+///        to write to a host buffer or linear texture without an extra copy.
+///
+///        This class is an exact copy of the implementation in
+///        image_decode_impeller.cc due to the lack of a reasonable library
+///        that could be shared.
 class FontImpellerAllocator : public SkBitmap::Allocator {
  public:
   explicit FontImpellerAllocator(
