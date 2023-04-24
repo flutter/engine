@@ -83,16 +83,24 @@ std::unique_ptr<ImageGenerator> BuiltinSkiaImageGenerator::MakeFromGenerator(
 
 BuiltinSkiaCodecImageGenerator::~BuiltinSkiaCodecImageGenerator() = default;
 
+static SkImageInfo getInfoIncludingExif(SkCodec* codec) {
+    SkImageInfo info = codec->getInfo();
+    if (SkEncodedOriginSwapsWidthHeight(codec->getOrigin())) {
+        info = SkPixmapUtils::SwapWidthHeight(info);
+    }
+    return info;
+}
+
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
     std::unique_ptr<SkCodec> codec)
     : codec_(std::move(codec)) {
-  image_info_ = codec_->getInfo();
+  image_info_ = getInfoIncludingExif(codec_.get());
 }
 
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
     sk_sp<SkData> buffer)
     : codec_(SkCodec::MakeFromData(std::move(buffer)).release()) {
-  image_info_ = codec_->getInfo();
+  image_info_ = getInfoIncludingExif(codec_.get());
 }
 
 const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() {
@@ -147,10 +155,10 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
     // We need to decode into a different buffer so we can re-orient
     // the pixels later.
     SkImageInfo tmpInfo = dst.info();
-    // if (SkEncodedOriginSwapsWidthHeight(origin)) {
-    //     // We'll be decoding into a buffer that has height and width swapped.
-    //     tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
-    // }
+    if (SkEncodedOriginSwapsWidthHeight(origin)) {
+        // We'll be decoding into a buffer that has height and width swapped.
+        tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
+    }
     if (!tmpBitmap.tryAllocPixels(tmpInfo)) {
       FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
                       << tmpInfo.computeMinByteSize() << "B";
@@ -167,9 +175,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   if (origin == kTopLeft_SkEncodedOrigin) {
     return true;
   }
-  FML_DLOG(WARNING) << "Origin " << origin;
-  return true;
-  //return SkPixmapUtils::Orient(dst, tmp, origin);
+  return SkPixmapUtils::Orient(dst, tmp, origin);
 }
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(

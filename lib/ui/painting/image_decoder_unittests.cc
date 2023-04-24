@@ -838,7 +838,8 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+  ASSERT_EQ(600, image->width());
+  ASSERT_EQ(200, image->height());
 
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -848,10 +849,10 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
 
-  ASSERT_EQ(ImageDecoderSkia::ImageFromCompressedData(
-                descriptor.get(), 6, 2, fml::tracing::TraceFlow(""))
-                ->dimensions(),
-            SkISize::Make(6, 2));
+  auto compressed_img = ImageDecoderSkia::ImageFromCompressedData(
+                descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
+  ASSERT_EQ(compressed_img->width(), 6);
+  ASSERT_EQ(compressed_img->height(), 2);
 
 #if IMPELLER_SUPPORTS_RENDERING
   std::shared_ptr<impeller::Allocator> allocator =
@@ -859,12 +860,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {100, 100},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_1->sk_bitmap->dimensions(), SkISize::Make(6, 2));
+  ASSERT_EQ(result_1->sk_bitmap->width(), 6);
+  ASSERT_EQ(result_1->sk_bitmap->height(), 2);
 
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_2->sk_bitmap->dimensions(), SkISize::Make(10, 10));
+  ASSERT_EQ(result_2->sk_bitmap->width(), 10);
+  ASSERT_EQ(result_2->sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
@@ -878,6 +881,8 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto descriptor =
       fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
 
+  // If Exif metadata is ignored, the height and width will be swapped because
+  // "Rotate 90 CW" is what is encoded there.
   ASSERT_EQ(600, descriptor->width());
   ASSERT_EQ(200, descriptor->height());
 
