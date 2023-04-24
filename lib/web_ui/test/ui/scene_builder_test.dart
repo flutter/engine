@@ -18,7 +18,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   group('${ui.SceneBuilder}', () {
     const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);

@@ -19,7 +19,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should draw linear gradient using rectangle.', () async {
     final RecordingCanvas rc =

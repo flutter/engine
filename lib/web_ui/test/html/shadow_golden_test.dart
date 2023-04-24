@@ -22,7 +22,10 @@ Future<void> testMain() async {
 
   late SurfaceSceneBuilder builder;
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUp(() {
     builder = SurfaceSceneBuilder();

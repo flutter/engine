@@ -14,7 +14,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should blur rectangles based on sigma.', () async {
     final RecordingCanvas rc =

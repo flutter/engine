@@ -17,7 +17,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Blend circles with difference and color', () async {
     final RecordingCanvas rc =

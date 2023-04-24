@@ -18,7 +18,9 @@ void main() {
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const Color red = Color(0xFFFF0000);
   const Color green = Color(0xFF00FF00);

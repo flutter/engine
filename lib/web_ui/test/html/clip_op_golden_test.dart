@@ -16,7 +16,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   /// Regression test for https://github.com/flutter/flutter/issues/64734.
   test('Clips using difference', () async {

@@ -42,7 +42,9 @@ const String kVoronoiShaderSksl = r'''
 ''';
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
 

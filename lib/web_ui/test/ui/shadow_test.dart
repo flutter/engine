@@ -17,7 +17,10 @@ void main() {
 Future<void> testMain() async {
   const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   test('Test drawing a shadow of an opaque object', () async {
     final ui.Picture picture = drawPicture((ui.Canvas canvas) {

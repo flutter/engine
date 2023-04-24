@@ -19,7 +19,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;

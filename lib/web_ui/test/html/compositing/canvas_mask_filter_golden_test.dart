@@ -18,7 +18,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   tearDown(() {
     ContextStateHandle.debugEmulateWebKitMaskFilter = false;

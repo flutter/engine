@@ -21,7 +21,9 @@ Future<void> testMain() async {
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should draw transformed line.', () async {
     final RecordingCanvas rc =

@@ -31,7 +31,10 @@ Future<void> main() async {
 // https://github.com/flutter/flutter/issues/86623
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUpAll(() async {
     debugShowClipLayers = true;

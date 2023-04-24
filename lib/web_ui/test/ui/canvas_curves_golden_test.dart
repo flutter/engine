@@ -17,7 +17,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const Rect region = Rect.fromLTWH(0, 0, 300, 300);
 

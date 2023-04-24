@@ -11,6 +11,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
 import '../common/fake_asset_manager.dart';
+import '../common/test_initialization.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -18,10 +19,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-    await initializeEngine(assetManager: fakeAssetManager);
-  });
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
   // Should clip image with oval.

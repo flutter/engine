@@ -23,7 +23,9 @@ Future<void> testMain() async {
   const Color redAccentColor = Color(0xFFFF1744);
   const double kDashLength = 5.0;
 
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should calculate tangent on line', () async {
     final Path path = Path();

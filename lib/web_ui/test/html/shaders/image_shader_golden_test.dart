@@ -25,7 +25,9 @@ Future<void> testMain() async {
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
   final HtmlImage testImage = createTestImage();
 
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   void drawShapes(RecordingCanvas rc, SurfacePaint paint, Rect shaderRect) {
     /// Rect.

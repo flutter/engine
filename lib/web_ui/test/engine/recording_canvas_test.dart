@@ -15,7 +15,9 @@ void main() {
 }
 
 void testMain() {
-  setUpUnitTests();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
