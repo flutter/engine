@@ -1,4 +1,4 @@
-Signature: a2d634eaab108bc9cb468aea39477c7f
+Signature: cec0d76c97a60e363168a81603e1cb02
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8206,9 +8206,6 @@ ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLInterfaceBlock.cpp + ../../../
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLLayout.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/utils/SkBlitterTrace.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/utils/SkBlitterTraceCommon.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/utils/SkCycles.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
 FILE: ../../../third_party/skia/gm/mirrortile.cpp
@@ -8236,9 +8233,6 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLInterfaceBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLLayout.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
-FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
-FILE: ../../../third_party/skia/src/utils/SkBlitterTraceCommon.h
-FILE: ../../../third_party/skia/src/utils/SkCycles.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google Inc.
 
