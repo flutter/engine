@@ -34,7 +34,7 @@ void DlOpSpy::saveLayer(const SkRect* bounds,
                         const DlImageFilter* backdrop) {}
 void DlOpSpy::restore() {}
 void DlOpSpy::drawColor(DlColor color, DlBlendMode mode) {
-  did_draw_ |= !color.isTransparent();
+  did_draw_ |= !(color.isTransparent() && mode == DlBlendMode::kSrcOver);
 }
 void DlOpSpy::drawPaint() {
   did_draw_ |= will_draw_;

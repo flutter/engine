@@ -34,18 +34,18 @@ struct DlColor {
 
   uint32_t argb;
 
-  bool isOpaque() const { return getAlpha() == 0xFF; }
-  bool isTransparent() const { return getAlpha() == 0; }
+  constexpr bool isOpaque() const { return getAlpha() == 0xFF; }
+  constexpr bool isTransparent() const { return getAlpha() == 0; }
 
-  int getAlpha() const { return argb >> 24; }
-  int getRed() const { return (argb >> 16) & 0xFF; }
-  int getGreen() const { return (argb >> 8) & 0xFF; }
-  int getBlue() const { return argb & 0xFF; }
+  constexpr int getAlpha() const { return argb >> 24; }
+  constexpr int getRed() const { return (argb >> 16) & 0xFF; }
+  constexpr int getGreen() const { return (argb >> 8) & 0xFF; }
+  constexpr int getBlue() const { return argb & 0xFF; }
 
-  float getAlphaF() const { return toF(getAlpha()); }
-  float getRedF() const { return toF(getRed()); }
-  float getGreenF() const { return toF(getGreen()); }
-  float getBlueF() const { return toF(getBlue()); }
+  constexpr float getAlphaF() const { return toF(getAlpha()); }
+  constexpr float getRedF() const { return toF(getRed()); }
+  constexpr float getGreenF() const { return toF(getGreen()); }
+  constexpr float getBlueF() const { return toF(getBlue()); }
 
   uint32_t premultipliedArgb() const {
     if (isOpaque()) {
