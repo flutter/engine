@@ -41,8 +41,7 @@
                     "flutter/shell/platform/windows/client_wrapper:client_wrapper_archive",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -77,8 +76,7 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -114,8 +112,7 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         }
     ]
 }
