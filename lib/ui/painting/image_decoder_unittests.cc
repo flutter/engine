@@ -878,9 +878,13 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto descriptor =
       fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
 
+  ASSERT_EQ(600, descriptor->width());
+  ASSERT_EQ(200, descriptor->height());
+
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+  ASSERT_EQ(600, image->width());
+  ASSERT_EQ(200, image->height());
 
   auto decode = [descriptor](uint32_t target_width, uint32_t target_height) {
     return ImageDecoderSkia::ImageFromCompressedData(
