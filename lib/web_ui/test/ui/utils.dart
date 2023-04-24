@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_interop';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart';
+
+import '../common/utils.dart';
 
 Picture drawPicture(void Function(Canvas) drawCommands) {
   final PictureRecorder recorder = PictureRecorder();
@@ -23,12 +24,6 @@ Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
   sb.addPicture(Offset.zero, picture);
   await renderer.renderScene(sb.build());
   await awaitNextFrame();
-}
-
-Future<void> awaitNextFrame() {
-  final Completer<void> completer = Completer<void>();
-  domWindow.requestAnimationFrame((JSNumber time) => completer.complete());
-  return completer.future;
 }
 
 /// Returns [true] if this test is running in the CanvasKit renderer.
