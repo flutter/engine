@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' hide TextStyle;
 
-import '../common/fake_asset_manager.dart';
 import '../common/test_initialization.dart';
 import 'screenshot.dart';
 
