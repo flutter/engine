@@ -1,0 +1,88 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "export.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
+
+using namespace skia::textlayout;
+
+SKWASM_EXPORT TextStyle *textStyle_create() {
+    return new TextStyle();
+}
+
+SKWASM_EXPORT void textStyle_setColor(TextStyle *style, SkColor color) {
+    style->setColor(color);
+}
+
+SKWASM_EXPORT void textStyle_setDecoration(TextStyle *style, TextDecoration decoration) {
+    style->setDecoration(decoration);
+}
+
+SKWASM_EXPORT void textStyle_setDecorationColor(TextStyle *style, SkColor color) {
+    style->setDecorationColor(color);
+}
+
+SKWASM_EXPORT void textStyle_setDecorationStyle(
+    TextStyle *style, 
+    TextDecorationStyle decorationStyle
+) {
+    style->setDecorationStyle(decorationStyle);
+}
+
+SKWASM_EXPORT void textStyle_setDecorationThickness(TextStyle *style, SkScalar thickness) {
+    style->setDecorationThicknessMultiplier(thickness);
+}
+
+SKWASM_EXPORT void textStyle_setFontStyle(TextStyle *style, SkFontStyle fontStyle) {
+    style->setFontStyle(fontStyle);
+}
+
+SKWASM_EXPORT void textStyle_setTextBaseline(TextStyle *style, TextBaseline baseline) {
+    style->setTextBaseline(baseline);
+}
+
+SKWASM_EXPORT void textStyle_setFontFamilies(
+    TextStyle *style,
+    SkString* fontFamilies,
+    int count
+) {
+    std::vector<SkString> families;
+    families.reserve(count);
+    for (int i = 0; i < count; i++) {
+        families.push_back(fontFamilies[i]);
+    }
+    style->setFontFamilies(std::move(families));
+}
+
+SKWASM_EXPORT void textStyle_setFontSize(TextStyle *style, SkScalar size) {
+    style->setFontSize(size);
+}
+
+SKWASM_EXPORT void textStyle_setLetterSpacing(TextStyle *style, SkScalar letterSpacing) {
+    style->setLetterSpacing(letterSpacing);
+}
+
+SKWASM_EXPORT void textStyle_setWordSpacing(TextStyle *style, SkScalar wordSpacing) {
+    style->setWordSpacing(wordSpacing);
+}
+
+SKWASM_EXPORT void textStyle_setHeight(TextStyle *style, SkScalar height) {
+    style->setHeight(height);
+}
+
+SKWASM_EXPORT void textStyle_setLocale(TextStyle *style, SkString *locale) {
+    style->setLocale(*locale);
+}
+
+SKWASM_EXPORT void textStyle_setBackground(TextStyle *style, SkPaint *paint) {
+    style->setBackgroundColor(*paint);
+}
+
+SKWASM_EXPORT void textStyle_setForeground(TextStyle *style, SkPaint *paint) {
+    style->setForegroundColor(*paint);
+}
+
+SKWASM_EXPORT ParagraphStyle *paragraphStyle_create() {
+    return new ParagraphStyle();
+}
