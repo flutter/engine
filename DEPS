@@ -112,10 +112,10 @@ vars = {
   # The vulnerabiity database being used in this scan can be browsed
   # using this UI https://osv.dev/list
   # If a new dependency needs to be added, the upstream (non-mirrored)
-  # git URL for that dependency should be added to this list 
+  # git URL for that dependency should be added to this list
   # with the key-value pair being:
   # 'upstream_[dep name from last slash and before .git in URL]':'[git URL]'
-  # example: 
+  # example:
   "upstream_abseil-cpp": "https://github.com/abseil/abseil-cpp.git",
   "upstream_angle": "https://github.com/google/angle.git",
   "upstream_archive": "https://github.com/brendan-duncan/archive.git",
@@ -271,7 +271,7 @@ deps = {
    Var('github_git') + '/google/shaderc.git' + '@' + '7ea834ecc59258a5c13c3d3e6fa0582bdde7c543',
 
   'src/third_party/vulkan-deps':
-   Var('chromium_git') + '/vulkan-deps' + '@' + 'a56166d59ebdb0208a7301d267460773df1a1adc',
+   Var('chromium_git') + '/vulkan-deps' + '@' + '40b75117a60b11c42a1fb87bf14c0f49bcdb8b3d',
 
   'src/third_party/flatbuffers':
    Var('github_git') + '/google/flatbuffers.git' + '@' + '0a80646371179f8a7a5c1f42c31ee1d44dcf6709',
@@ -616,7 +616,7 @@ deps = {
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '5f9ed9b16931c7155171d31f75004f73f0a3abc8',
 
    'src/third_party/angle':
-   Var('chromium_git') + '/angle/angle.git' + '@' + '32175d8a6dc185dd850e5c9988f208085c9c0d80',
+   Var('chromium_git') + '/angle/angle.git' + '@' + 'd6d7e551cb185c310a2a200ed9b3bcfd27653051',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
