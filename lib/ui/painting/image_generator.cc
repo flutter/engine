@@ -84,11 +84,11 @@ std::unique_ptr<ImageGenerator> BuiltinSkiaImageGenerator::MakeFromGenerator(
 BuiltinSkiaCodecImageGenerator::~BuiltinSkiaCodecImageGenerator() = default;
 
 static SkImageInfo getInfoIncludingExif(SkCodec* codec) {
-    SkImageInfo info = codec->getInfo();
-    if (SkEncodedOriginSwapsWidthHeight(codec->getOrigin())) {
-        info = SkPixmapUtils::SwapWidthHeight(info);
-    }
-    return info;
+  SkImageInfo info = codec->getInfo();
+  if (SkEncodedOriginSwapsWidthHeight(codec->getOrigin())) {
+    info = SkPixmapUtils::SwapWidthHeight(info);
+  }
+  return info;
 }
 
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
@@ -130,11 +130,11 @@ const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
 
 SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
     float desired_scale) {
-    SkISize size = codec_->getScaledDimensions(desired_scale);
-    if (SkEncodedOriginSwapsWidthHeight(codec_->getOrigin())) {
-        std::swap(size.fWidth, size.fHeight);
-    }
-    return size;
+  SkISize size = codec_->getScaledDimensions(desired_scale);
+  if (SkEncodedOriginSwapsWidthHeight(codec_->getOrigin())) {
+    std::swap(size.fWidth, size.fHeight);
+  }
+  return size;
 }
 
 bool BuiltinSkiaCodecImageGenerator::GetPixels(
@@ -160,8 +160,8 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
     // the pixels later.
     SkImageInfo tmpInfo = dst.info();
     if (SkEncodedOriginSwapsWidthHeight(origin)) {
-        // We'll be decoding into a buffer that has height and width swapped.
-        tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
+      // We'll be decoding into a buffer that has height and width swapped.
+      tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
     }
     if (!tmpBitmap.tryAllocPixels(tmpInfo)) {
       FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
@@ -173,7 +173,8 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
 
   SkCodec::Result result = codec_->getPixels(tmp, &options);
   if (result != SkCodec::kSuccess) {
-    FML_DLOG(WARNING) << "codec could not get pixels. " << SkCodec::ResultToString(result);
+    FML_DLOG(WARNING) << "codec could not get pixels. "
+                      << SkCodec::ResultToString(result);
     return false;
   }
   if (origin == kTopLeft_SkEncodedOrigin) {

@@ -849,7 +849,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
   auto compressed_img = ImageDecoderSkia::ImageFromCompressedData(
-                descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
+      descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
   ASSERT_EQ(compressed_img->width(), 6);
   ASSERT_EQ(compressed_img->height(), 2);
 
@@ -902,8 +902,8 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
 
   auto assert_image = [&](sk_sp<SkImage> decoded_image) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    sk_sp<SkData> encoded = SkPngEncoder::Encode(nullptr, decoded_image.get(),
-                                                 {});
+    sk_sp<SkData> encoded =
+        SkPngEncoder::Encode(nullptr, decoded_image.get(), {});
     ASSERT_TRUE(encoded->equals(expected_data.get()));
   };
 
