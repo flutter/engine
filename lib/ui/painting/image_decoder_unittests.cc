@@ -848,7 +848,6 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
-
   auto compressed_img = ImageDecoderSkia::ImageFromCompressedData(
                 descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
   ASSERT_EQ(compressed_img->width(), 6);

@@ -130,7 +130,11 @@ const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
 
 SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
     float desired_scale) {
-  return codec_->getScaledDimensions(desired_scale);
+    SkISize size = codec_->getScaledDimensions(desired_scale);
+    if (SkEncodedOriginSwapsWidthHeight(codec_->getOrigin())) {
+        std::swap(size.fWidth, size.fHeight);
+    }
+    return size;
 }
 
 bool BuiltinSkiaCodecImageGenerator::GetPixels(
@@ -169,7 +173,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
 
   SkCodec::Result result = codec_->getPixels(tmp, &options);
   if (result != SkCodec::kSuccess) {
-    FML_DLOG(WARNING) << "codec could not get pixels. status " << result;
+    FML_DLOG(WARNING) << "codec could not get pixels. " << SkCodec::ResultToString(result);
     return false;
   }
   if (origin == kTopLeft_SkEncodedOrigin) {
