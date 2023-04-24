@@ -19,7 +19,10 @@ Future<void> testMain() async {
     viewportSize: const Size(600, 600),
   );
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   testEachCanvas('draws paragraphs with placeholders', (EngineCanvas canvas) {
     const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);

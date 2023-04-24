@@ -25,7 +25,10 @@ Future<void> testMain() async {
     viewportSize: const Size(800, 800),
   );
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   testEachCanvas('maxLines clipping', (EngineCanvas canvas) {
     Offset offset = Offset.zero;

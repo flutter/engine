@@ -18,7 +18,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   void paintBasicBidiStartingWithLtr(
     EngineCanvas canvas,

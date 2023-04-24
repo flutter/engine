@@ -23,7 +23,10 @@ Future<void> testMain() async {
     viewportSize: const Size(600, 600),
   );
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   void paintTest(EngineCanvas canvas, PaintTest painter) {
     const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);

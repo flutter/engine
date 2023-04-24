@@ -35,7 +35,10 @@ Future<void> testMain() async {
     flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene-host')!.append(testScene);
   }
 
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   tearDown(() {
     flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene')?.remove();

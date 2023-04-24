@@ -19,7 +19,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   test('draws paragraphs with placeholders', () {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());

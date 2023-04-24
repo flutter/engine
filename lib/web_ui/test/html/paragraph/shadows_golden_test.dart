@@ -17,7 +17,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   test('paints multiple shadows', () {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());

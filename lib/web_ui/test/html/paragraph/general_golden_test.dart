@@ -20,7 +20,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   test('paints spans and lines correctly', () {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
