@@ -8,9 +8,9 @@
 
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/codec/SkEncodedOrigin.h"
+#include "third_party/skia/include/codec/SkPixmapUtils.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPixmapUtils.h"
 
 namespace flutter {
 
@@ -142,7 +142,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   SkPixmap tmp;
   SkBitmap tmpBitmap;
   if (origin == kTopLeft_SkEncodedOrigin) {
-    tmp = dst; // we can decode directly into the output buffer
+    tmp = dst;  // we can decode directly into the output buffer
   } else {
     // We need to decode into a different buffer so we can re-orient
     // the pixels later.
@@ -156,7 +156,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
 
   SkCodec::Result result = codec_->getPixels(tmp, &options);
   if (result != SkCodec::kSuccess) {
-      return false;
+    return false;
   }
   if (origin == kTopLeft_SkEncodedOrigin) {
     return true;
