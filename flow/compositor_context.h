@@ -96,6 +96,10 @@ class FrameDamage {
                : std::nullopt;
   }
 
+  // Remove reported buffer_damage to inform clients that a partial repaint
+  // should not be performed on this frame.
+  // frame_damage is required to correctly track accumulated damage for
+  // subsequent frames.
   void Reset() { ignore_damage_ = true; }
 
  private:
