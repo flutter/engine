@@ -5,6 +5,7 @@
 @DefaultAsset('skwasm')
 library skwasm_impl;
 
+import 'dart:convert';
 import 'dart:ffi';
 
 final class RawSkString extends Opaque {}
@@ -18,3 +19,13 @@ external Pointer<Int8> skStringGetData(SkStringHandle handle);
 
 @Native<Void Function(SkStringHandle)>(symbol: 'skString_free', isLeaf: true)
 external void skStringFree(SkStringHandle handle);
+
+SkStringHandle skStringFromDartString(String string) {
+  final List<int> rawUtf8Bytes = utf8.encode(string);
+  final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
+  final Pointer<Int8> stringDataPointer = skStringGetData(stringHandle);
+  for (int i = 0; i < rawUtf8Bytes.length; i++) {
+    stringDataPointer[i] = rawUtf8Bytes[i];
+  }
+  return stringHandle;
+}

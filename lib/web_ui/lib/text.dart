@@ -229,6 +229,9 @@ class TextDecoration {
   }
 
   final int _mask;
+
+  int get maskValue => _mask;
+
   bool contains(TextDecoration other) {
     return (_mask | other._mask) == _mask;
   }

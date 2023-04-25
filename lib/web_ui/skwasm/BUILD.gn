@@ -19,6 +19,7 @@ wasm_lib("skwasm") {
     "shaders.cpp",
     "string.cpp",
     "surface.cpp",
+    "text/text_style.cpp",
     "wrappers.h",
   ]
 
@@ -35,6 +36,7 @@ wasm_lib("skwasm") {
     "-lexports.js",
     "-sEXPORTED_FUNCTIONS=[stackAlloc]",
     "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
+    "-Wno-pthreads-mem-growth",
   ]
 
   if (is_debug) {

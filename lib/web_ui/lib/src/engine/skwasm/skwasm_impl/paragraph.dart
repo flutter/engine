@@ -4,6 +4,10 @@
 
 // ignore_for_file: avoid_unused_constructor_parameters
 
+import 'dart:ffi';
+
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl/raw/text/raw_text_style.dart';
 import 'package:ui/ui.dart' as ui;
 
 // TODO(jacksongardner): implement everything in this file
@@ -157,6 +161,136 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
 }
 
 class SkwasmTextStyle implements ui.TextStyle {
+  factory SkwasmTextStyle({
+    ui.Color? color,
+    ui.TextDecoration? decoration,
+    ui.Color? decorationColor,
+    ui.TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    ui.Locale? locale,
+    ui.Paint? background,
+    ui.Paint? foreground,
+    List<ui.Shadow>? shadows,
+    List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations,
+  }) {
+    final TextStyleHandle handle = textStyleCreate();
+    if (color != null) {
+      textStyleSetColor(handle, color.value);
+    }
+    if (decoration != null) {
+      textStyleSetDecoration(handle, decoration.maskValue);
+    }
+    if (decorationColor != null) {
+      textStyleSetDecorationColor(handle, decorationColor.value);
+    }
+    if (decorationStyle != null) {
+      textStyleSetDecorationStyle(handle, decorationStyle.index);
+    }
+    if (decorationThickness != null) {
+      textStyleSetDecorationThickness(handle, decorationThickness);
+    }
+    if (fontWeight != null || fontStyle != null) {
+      fontWeight ??= ui.FontWeight.normal;
+      fontStyle ??= ui.FontStyle.normal;
+      textStyleSetFontStyle(handle, fontWeight.value, fontStyle.index);
+    }
+    if (textBaseline != null) {
+      textStyleSetTextBaseline(handle, textBaseline.index);
+    }
+    if (fontFamily != null || 
+      (fontFamilyFallback != null  && fontFamilyFallback.isNotEmpty)) {
+      int count = fontFamily != null ? 1 : 0;
+      if (fontFamilyFallback != null) {
+        count += fontFamilyFallback.length;
+      }
+      withStackScope((StackScope scope) {
+        final Pointer<SkStringHandle> familiesPtr = 
+          scope.allocPointerArray(count).cast<SkStringHandle>();
+        int nativeIndex = 0;
+        if (fontFamily != null) {
+          familiesPtr[nativeIndex] = skStringFromDartString(fontFamily);
+          nativeIndex++;
+        }
+        if (fontFamilyFallback != null) {
+          for (final String family in fontFamilyFallback) {
+            familiesPtr[nativeIndex] = skStringFromDartString(family);   
+            nativeIndex++;
+          }
+        }
+        textStyleSetFontFamilies(handle, familiesPtr, count);
+        for (int i = 0; i < count; i++) {
+          skStringFree(familiesPtr[i]);
+        }
+      });
+    }
+    if (fontSize != null) {
+      textStyleSetFontSize(handle, fontSize);
+    }
+    if (letterSpacing != null) {
+      textStyleSetLetterSpacing(handle, letterSpacing);
+    }
+    if (wordSpacing != null) {
+      textStyleSetWordSpacing(handle, wordSpacing);
+    }
+    if (height != null) {
+      textStyleSetHeight(handle, height);
+    }
+    if (leadingDistribution != null) {
+      textStyleSetHalfLeading(
+        handle,
+        leadingDistribution == ui.TextLeadingDistribution.even
+      );
+    }
+    if (locale != null) {
+      final SkStringHandle localeHandle = 
+        skStringFromDartString(locale.toLanguageTag());
+      textStyleSetLocale(handle, localeHandle);
+      skStringFree(localeHandle);
+    }
+    if (background != null) {
+      background as SkwasmPaint;
+      textStyleSetBackground(handle, background.handle);
+    }
+    if (foreground != null) {
+      foreground as SkwasmPaint;
+      textStyleSetForeground(handle, foreground.handle);
+    }
+    if (shadows != null) {
+      for (final ui.Shadow shadow in shadows) {
+        textStyleAddShadow(
+          handle,
+          shadow.color.value,
+          shadow.offset.dx,
+          shadow.offset.dy,
+          shadow.blurSigma,
+        );
+      }
+    }
+    if (fontFeatures != null) {
+      for (final ui.FontFeature feature in fontFeatures) {
+        final SkStringHandle featureName = skStringFromDartString(feature.feature);
+        textStyleAddFontFeature(handle, featureName, feature.value);
+        skStringFree(featureName);
+      }
+    }
+    // TODO(jacksongardner): Set font variations
+    return SkwasmTextStyle._(handle);
+  }
+
+  SkwasmTextStyle._(this.handle);
+
+  final TextStyleHandle handle;
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {

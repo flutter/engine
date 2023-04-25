@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ffi';
 import 'dart:js_interop';
 
@@ -33,16 +32,11 @@ class SkwasmFontCollection implements FlutterFontCollection {
     // https://github.com/dart-lang/sdk/issues/52142
     final List<int> familyHandles = <int>[];
     for (final FontFamily family in manifest.families) {
-      final List<int> rawUtf8Bytes = utf8.encode(family.name);
-      final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
-      final Pointer<Int8> stringDataPointer = skStringGetData(stringHandle);
-      for (int i = 0; i < rawUtf8Bytes.length; i++) {
-        stringDataPointer[i] = rawUtf8Bytes[i];
-      }
-      familyHandles.add(stringHandle.address);
+      final SkStringHandle familyNameHandle = skStringFromDartString(family.name);
+      familyHandles.add(familyNameHandle.address);
       for (final FontAsset fontAsset in family.fontAssets) {
         fontFutures.add(() async {
-          final FontLoadError? error = await _downloadFontAsset(fontAsset, stringHandle);
+          final FontLoadError? error = await _downloadFontAsset(fontAsset, familyNameHandle);
           if (error == null) {
             loadedFonts.add(fontAsset.asset);
           } else {
@@ -101,14 +95,9 @@ class SkwasmFontCollection implements FlutterFontCollection {
     }
     bool success;
     if (fontFamily != null) {
-      final List<int> rawUtf8Bytes = utf8.encode(fontFamily);
-      final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
-      final Pointer<Int8> stringDataPointer = skStringGetData(stringHandle);
-      for (int i = 0; i < rawUtf8Bytes.length; i++) {
-        stringDataPointer[i] = rawUtf8Bytes[i];
-      }
-      success = fontCollectionRegisterFont(_handle, dataHandle, stringHandle);
-      skStringFree(stringHandle);
+      final SkStringHandle familyHandle = skStringFromDartString(fontFamily);
+      success = fontCollectionRegisterFont(_handle, dataHandle, familyHandle);
+      skStringFree(familyHandle);
     } else {
       success = fontCollectionRegisterFont(_handle, dataHandle, nullptr);
     }
