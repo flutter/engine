@@ -36,6 +36,13 @@
   return nil;
 }
 
+- (UIScreen*)screen {
+  if (@available(iOS 13.0, *)) {
+    return self.window.windowScene.screen;
+  }
+  return UIScreen.mainScreen;
+}
+
 - (BOOL)isWideGamutSupported {
 #if TARGET_OS_SIMULATOR
   // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
@@ -50,7 +57,7 @@
   // This predicates the decision on the capabilities of the iOS device's
   // display.  This means external displays will not support wide gamut if the
   // device's display doesn't support it.  It practice that should be never.
-  return UIScreen.mainScreen.traitCollection.displayGamut != UIDisplayGamutSRGB;
+  return self.screen.traitCollection.displayGamut != UIDisplayGamutSRGB;
 }
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
