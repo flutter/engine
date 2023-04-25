@@ -46,7 +46,8 @@ Dart_Handle Picture::toImage(uint32_t width,
   if (!display_list_) {
     return tonic::ToDart("Picture is null");
   }
-  return RasterizeToImage(display_list_, width, height, raw_image_callback);
+  return RasterizeToImage(display_list_, SkISize::Make(width, height),
+                          raw_image_callback);
 }
 
 void Picture::toImageSync(uint32_t width,
@@ -115,32 +116,32 @@ size_t Picture::GetAllocationSize() const {
 }
 
 Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
-                                      uint32_t width,
-                                      uint32_t height,
+                                      const SkISize& picture_bounds,
                                       Dart_Handle raw_image_callback) {
-  return RasterizeToImage(display_list, nullptr, width, height,
-                          raw_image_callback);
+  return DoRasterizeToImage(display_list, nullptr, picture_bounds,
+                            raw_image_callback);
 }
 
 Dart_Handle Picture::RasterizeLayerTreeToImage(
-    std::shared_ptr<LayerTree> layer_tree,
-    uint32_t width,
-    uint32_t height,
+    std::unique_ptr<LayerTree> layer_tree,
     Dart_Handle raw_image_callback) {
-  return RasterizeToImage(nullptr, std::move(layer_tree), width, height,
-                          raw_image_callback);
+  FML_DCHECK(layer_tree != nullptr);
+  return DoRasterizeToImage(nullptr, std::move(layer_tree),
+                            layer_tree->frame_size(), raw_image_callback);
 }
 
-Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
-                                      std::shared_ptr<LayerTree> layer_tree,
-                                      uint32_t width,
-                                      uint32_t height,
-                                      Dart_Handle raw_image_callback) {
+Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
+                                        std::unique_ptr<LayerTree> layer_tree,
+                                        const SkISize& picture_bounds,
+                                        Dart_Handle raw_image_callback) {
+  // Either display_list or layer_tree should be provided.
+  FML_DCHECK((display_list == nullptr) != (layer_tree == nullptr));
+
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
     return tonic::ToDart("Image callback was invalid");
   }
 
-  if (width == 0 || height == 0) {
+  if (picture_bounds.width() == 0 || picture_bounds.height() == 0) {
     return tonic::ToDart("Image dimensions for scene were invalid.");
   }
 
@@ -156,8 +157,6 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
   // graphics context. Even if we did, it would be slow anyway. Also, this
   // thread owns the sole reference to the layer tree. So we do it in the
   // raster thread.
-
-  auto picture_bounds = SkISize::Make(width, height);
 
   auto ui_task =
       // The static leak checker gets confused by the use of fml::MakeCopyable.
@@ -198,10 +197,12 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [ui_task_runner, snapshot_delegate, display_list, picture_bounds, ui_task,
-       layer_tree = std::move(layer_tree)] {
+      fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list,
+                         ui_task, &picture_bounds,
+                         layer_tree = std::move(layer_tree)]() mutable {
         sk_sp<DlImage> image;
         if (layer_tree) {
+          FML_DCHECK(picture_bounds == layer_tree->frame_size());
           auto display_list = layer_tree->Flatten(
               SkRect::MakeWH(picture_bounds.width(), picture_bounds.height()),
               snapshot_delegate->GetTextureRegistry(),
@@ -216,7 +217,7 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
 
         fml::TaskRunner::RunNowOrPostTask(
             ui_task_runner, [ui_task, image]() { ui_task(image); });
-      });
+      }));
 
   return Dart_Null();
 }

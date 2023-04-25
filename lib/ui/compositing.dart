@@ -27,15 +27,16 @@ class Scene extends NativeFieldWrapperClass1 {
     }
 
     final _Image image = _Image._();
-    final String? result =  _toImageSync(width, height, image);
+    const double pixelRatio = 1.0; /*TODO(dkwingsmt)*/
+    final String? result =  _toImageSync(width, height, pixelRatio, image);
     if (result != null) {
       throw PictureRasterizationException._(result);
     }
     return Image._(image, image.width, image.height);
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImageSync')
-  external String? _toImageSync(int width, int height, _Image outImage);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Scene::toImageSync')
+  external String? _toImageSync(int width, int height, double pixelRatio, _Image outImage);
 
   /// Creates a raster image representation of the current state of the scene.
   ///
@@ -48,7 +49,8 @@ class Scene extends NativeFieldWrapperClass1 {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    return _futurize((_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+    const double pixelRatio = 1.0; /*TODO(dkwingsmt)*/
+    return _futurize((_Callback<Image?> callback) => _toImage(width, height, pixelRatio, (_Image? image) {
         if (image == null) {
           callback(null);
         } else {
@@ -58,8 +60,8 @@ class Scene extends NativeFieldWrapperClass1 {
     );
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImage')
-  external String? _toImage(int width, int height, _Callback<_Image?> callback);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Scene::toImage')
+  external String? _toImage(int width, int height, double pixelRatio, _Callback<_Image?> callback);
 
   /// Releases the resources used by this scene.
   ///

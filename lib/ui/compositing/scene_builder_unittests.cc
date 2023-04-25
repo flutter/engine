@@ -19,6 +19,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kDeafultViewId = 0ll;
+
 TEST_F(ShellTest, SceneBuilderBuildAndSceneDisposeReleasesLayerStack) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
@@ -59,7 +61,7 @@ TEST_F(ShellTest, SceneBuilderBuildAndSceneDisposeReleasesLayerStack) {
 
   auto validate_scene_has_no_layers =
       [message_latch, &retained_scene](Dart_NativeArguments args) {
-        EXPECT_FALSE(retained_scene->takeLayerTree());
+        EXPECT_FALSE(retained_scene->takeLayerTree(kDeafultViewId));
         retained_scene->Release();
         retained_scene = nullptr;
         message_latch->Signal();

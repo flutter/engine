@@ -316,7 +316,11 @@ void RuntimeController::ScheduleFrame() {
 
 // |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene) {
-  client_.Render(scene->takeLayerTree());
+  int64_t view_id = 0ll;  // TODO(dkwingsmt)
+  auto layer_tree = scene->takeLayerTree(view_id);
+  if (layer_tree != nullptr) {
+    client_.Render(std::move(layer_tree));
+  }
 }
 
 // |PlatformConfigurationClient|
