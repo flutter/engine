@@ -120,7 +120,20 @@ class SkwasmRenderer implements Renderer {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale
-  }) => SkwasmParagraphStyle();
+  }) => SkwasmParagraphStyle(
+    textAlign: textAlign,
+    textDirection: textDirection,
+    maxLines: maxLines,
+    fontFamily: fontFamily,
+    fontSize: fontSize,
+    height: height,
+    textHeightBehavior: textHeightBehavior,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    strutStyle: strutStyle,
+    ellipsis: ellipsis,
+    locale: locale,
+  );
 
   @override
   ui.Path createPath() => SkwasmPath();

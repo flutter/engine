@@ -347,6 +347,90 @@ class SkwasmStrutStyle implements ui.StrutStyle {
 }
 
 class SkwasmParagraphStyle implements ui.ParagraphStyle {
+  factory SkwasmParagraphStyle({
+    ui.TextAlign? textAlign,
+    ui.TextDirection? textDirection,
+    int? maxLines,
+    String? fontFamily,
+    double? fontSize,
+    double? height,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
+    String? ellipsis,
+    ui.Locale? locale,
+  }) {
+    final ParagraphStyleHandle handle = paragraphStyleCreate();
+    if (textAlign != null) {
+      paragraphStyleSetTextAlign(handle, textAlign.index);
+    }
+    if (textDirection != null) {
+      paragraphStyleSetTextDirection(handle, textDirection.index);
+    }
+    if (maxLines != null) {
+      paragraphStyleSetMaxLines(handle, maxLines);
+    }
+    if (height != null) {
+      paragraphStyleSetHeight(handle, height);
+    }
+    if (textHeightBehavior != null) {
+      paragraphStyleSetTextHeightBehavior(
+        handle,
+        textHeightBehavior.applyHeightToFirstAscent,
+        textHeightBehavior.applyHeightToLastDescent,
+      );
+    }
+    if (ellipsis != null) {
+      final SkStringHandle ellipsisHandle = skStringFromDartString(ellipsis);
+      paragraphStyleSetEllipsis(handle, ellipsisHandle);
+      skStringFree(ellipsisHandle);
+    }
+    if (strutStyle != null) {
+      strutStyle as SkwasmStrutStyle;
+      paragraphStyleSetStrutStyle(handle, strutStyle.handle);
+    }
+    if (fontFamily != null ||
+      fontSize != null ||
+      fontWeight != null ||
+      fontStyle != null ||
+      textHeightBehavior != null ||
+      locale != null) {
+      final TextStyleHandle textStyleHandle = textStyleCreate();
+      if (fontFamily != null) {
+        withScopedFontList(<String>[fontFamily], 
+          (Pointer<SkStringHandle> families, int count) =>
+            textStyleSetFontFamilies(textStyleHandle, families, count));
+      }
+      if (fontSize != null) {
+        textStyleSetFontSize(textStyleHandle, fontSize);
+      }
+      if (fontWeight != null || fontStyle != null) {
+        fontWeight ??= ui.FontWeight.normal;
+        fontStyle ??= ui.FontStyle.normal;
+        textStyleSetFontStyle(textStyleHandle, fontWeight.value, fontStyle.index);
+      }
+      if (textHeightBehavior != null) {
+        textStyleSetHalfLeading(
+          textStyleHandle,
+          textHeightBehavior.leadingDistribution == ui.TextLeadingDistribution.even,
+        );
+      }
+      if (locale != null) {
+        final SkStringHandle localeHandle =
+        skStringFromDartString(locale.toLanguageTag());
+        textStyleSetLocale(textStyleHandle, localeHandle);
+        skStringFree(localeHandle);
+      }
+      paragraphStyleSetTextStyle(handle, textStyleHandle);
+      textStyleDispose(textStyleHandle);
+    }
+    return SkwasmParagraphStyle._(handle);
+  }
+
+  SkwasmParagraphStyle._(this.handle);
+
+  final ParagraphStyleHandle handle;
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {

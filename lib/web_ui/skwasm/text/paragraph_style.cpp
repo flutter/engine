@@ -8,5 +8,59 @@
 using namespace skia::textlayout;
 
 SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
-  return new ParagraphStyle();
+  auto style = new ParagraphStyle();
+
+  // This is the default behavior in Flutter
+  style->setReplaceTabCharacters(true);
+  return style;
+}
+
+SKWASM_EXPORT void paragraphStyle_dispose(ParagraphStyle *style) {
+  delete style;
+}
+
+SKWASM_EXPORT void paragraphStyle_setTextAlign(ParagraphStyle *style, TextAlign align) {
+    style->setTextAlign(align);
+}
+
+SKWASM_EXPORT void paragraphStyle_setTextDirection(ParagraphStyle *style, TextDirection direction) {
+    style->setTextDirection(direction);
+}
+
+SKWASM_EXPORT void paragraphStyle_setMaxLines(ParagraphStyle *style, size_t maxLines) {
+    style->setMaxLines(maxLines);
+}
+
+SKWASM_EXPORT void paragraphStyle_setHeight(ParagraphStyle *style, SkScalar height) {
+    style->setHeight(height);
+}
+
+SKWASM_EXPORT void paragraphStyle_setTextHeightBehavior(
+    ParagraphStyle *style,
+    bool applyHeightToFirstAscent,
+    bool applyHeightToLastDescent
+) {
+    TextHeightBehavior behavior;
+    if (!applyHeightToFirstAscent && !applyHeightToLastDescent) {
+        behavior = kDisableAll;
+    } else if (!applyHeightToLastDescent) {
+        behavior = kDisableLastDescent;
+    } else if (!applyHeightToFirstAscent) {
+        behavior = kDisableFirstAscent;
+    } else {
+        behavior = kAll;
+    }
+    style->setTextHeightBehavior(behavior);
+}
+
+SKWASM_EXPORT void paragraphStyle_setEllipsis(ParagraphStyle *style, SkString *ellipsis) {
+    style->setEllipsis(*ellipsis);
+}
+
+SKWASM_EXPORT void paragraphStyle_setStrutStyle(ParagraphStyle *style, StrutStyle* strutStyle) {
+    style->setStrutStyle(*strutStyle);
+}
+
+SKWASM_EXPORT void paragraphStyle_setTextStyle(ParagraphStyle *style, TextStyle *textStyle) {
+    style->setTextStyle(*textStyle);
 }
