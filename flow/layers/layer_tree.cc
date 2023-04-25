@@ -20,7 +20,7 @@
 
 namespace flutter {
 
-LayerTree::LayerTree(Config config,
+LayerTree::LayerTree(const Config& config,
                      const SkISize& frame_size,
                      float device_pixel_ratio)
     : root_layer_(config.root_layer),

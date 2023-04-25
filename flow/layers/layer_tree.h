@@ -30,7 +30,7 @@ class LayerTree {
     bool checkerboard_offscreen_layers = false;
   };
 
-  LayerTree(Config config, const SkISize& frame_size, float device_pixel_ratio);
+  LayerTree(const Config& config, const SkISize& frame_size, float device_pixel_ratio);
 
   // Perform a preroll pass on the tree and return information about
   // the tree that affects rendering this frame.
