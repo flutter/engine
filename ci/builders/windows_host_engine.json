@@ -51,8 +51,7 @@
                         "--type",
                         "engine"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -87,8 +86,7 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -122,8 +120,7 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         }
     ]
 }
