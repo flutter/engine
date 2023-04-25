@@ -13,6 +13,7 @@ NativeLibrary::NativeLibrary(const char* path) {
   ::dlerror();
   handle_ = ::dlopen(path, RTLD_NOW);
   if (handle_ == nullptr) {
+    // TODO(jiahaog): Use FML_DLOG: https://github.com/flutter/flutter/issues/125523
     FML_LOG(ERROR) << "Could not open library '" << path << "' due to error '"
                    << ::dlerror() << "'.";
   }
