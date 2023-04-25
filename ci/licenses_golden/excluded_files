@@ -987,7 +987,6 @@
 ../../../third_party/angle/src/common/BinaryStream_unittest.cpp
 ../../../third_party/angle/src/common/CircularBuffer_unittest.cpp
 ../../../third_party/angle/src/common/FastVector_unittest.cpp
-../../../third_party/angle/src/common/FixedQueue_unittest.cpp
 ../../../third_party/angle/src/common/FixedVector_unittest.cpp
 ../../../third_party/angle/src/common/Float16ToFloat32.py
 ../../../third_party/angle/src/common/Optional_unittest.cpp
