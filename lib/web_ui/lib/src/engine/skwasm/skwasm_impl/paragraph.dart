@@ -7,7 +7,6 @@
 import 'dart:ffi';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl/raw/text/raw_text_style.dart';
 import 'package:ui/ui.dart' as ui;
 
 // TODO(jacksongardner): implement everything in this file
@@ -157,7 +156,22 @@ class SkwasmParagraph implements ui.Paragraph {
   }
 }
 
-class SkwasmParagraphStyle implements ui.ParagraphStyle {
+void withScopedFontList(
+    List<String> fontFamilies,
+  void Function(Pointer<SkStringHandle>, int) callback) {
+  withStackScope((StackScope scope) {
+    final Pointer<SkStringHandle> familiesPtr =
+      scope.allocPointerArray(fontFamilies.length).cast<SkStringHandle>();
+    int nativeIndex = 0;
+    for (int i = 0; i < fontFamilies.length; i++) {
+      familiesPtr[nativeIndex] = skStringFromDartString(fontFamilies[i]);
+      nativeIndex++;
+    }
+    callback(familiesPtr, fontFamilies.length);
+    for (int i = 0; i < fontFamilies.length; i++) {
+      skStringFree(familiesPtr[i]);
+    }
+  });
 }
 
 class SkwasmTextStyle implements ui.TextStyle {
@@ -208,31 +222,16 @@ class SkwasmTextStyle implements ui.TextStyle {
     if (textBaseline != null) {
       textStyleSetTextBaseline(handle, textBaseline.index);
     }
-    if (fontFamily != null || 
-      (fontFamilyFallback != null  && fontFamilyFallback.isNotEmpty)) {
-      int count = fontFamily != null ? 1 : 0;
-      if (fontFamilyFallback != null) {
-        count += fontFamilyFallback.length;
+    if (fontFamily != null || fontFamilyFallback != null) {
+      final List<String> fontFamilies = <String>[
+        if (fontFamily != null) fontFamily,
+        if (fontFamilyFallback != null) ...fontFamilyFallback,
+      ];
+      if (fontFamilies.isNotEmpty) {
+        withScopedFontList(fontFamilies,
+          (Pointer<SkStringHandle> families, int count) =>
+            textStyleSetFontFamilies(handle, families, count));
       }
-      withStackScope((StackScope scope) {
-        final Pointer<SkStringHandle> familiesPtr = 
-          scope.allocPointerArray(count).cast<SkStringHandle>();
-        int nativeIndex = 0;
-        if (fontFamily != null) {
-          familiesPtr[nativeIndex] = skStringFromDartString(fontFamily);
-          nativeIndex++;
-        }
-        if (fontFamilyFallback != null) {
-          for (final String family in fontFamilyFallback) {
-            familiesPtr[nativeIndex] = skStringFromDartString(family);   
-            nativeIndex++;
-          }
-        }
-        textStyleSetFontFamilies(handle, familiesPtr, count);
-        for (int i = 0; i < count; i++) {
-          skStringFree(familiesPtr[i]);
-        }
-      });
     }
     if (fontSize != null) {
       textStyleSetFontSize(handle, fontSize);
@@ -253,7 +252,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       );
     }
     if (locale != null) {
-      final SkStringHandle localeHandle = 
+      final SkStringHandle localeHandle =
         skStringFromDartString(locale.toLanguageTag());
       textStyleSetLocale(handle, localeHandle);
       skStringFree(localeHandle);
@@ -291,6 +290,63 @@ class SkwasmTextStyle implements ui.TextStyle {
   SkwasmTextStyle._(this.handle);
 
   final TextStyleHandle handle;
+}
+
+class SkwasmStrutStyle implements ui.StrutStyle {
+  factory SkwasmStrutStyle({
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    double? leading,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    bool? forceStrutHeight,
+  }) {
+    final StrutStyleHandle handle = strutStyleCreate();
+    if (fontFamily != null || fontFamilyFallback != null) {
+      final List<String> fontFamilies = <String>[
+        if (fontFamily != null) fontFamily,
+        if (fontFamilyFallback != null) ...fontFamilyFallback,
+      ];
+      if (fontFamilies.isNotEmpty) {
+        withScopedFontList(fontFamilies,
+          (Pointer<SkStringHandle> families, int count) =>
+            strutStyleSetFontFamilies(handle, families, count));
+      }
+    }
+    if (fontSize != null) {
+      strutStyleSetFontSize(handle, fontSize);
+    }
+    if (height != null) {
+      strutStyleSetHeight(handle, height);
+    }
+    if (leadingDistribution != null) {
+      strutStyleSetHalfLeading(
+        handle,
+        leadingDistribution == ui.TextLeadingDistribution.even);
+    }
+    if (leading != null) {
+      strutStyleSetLeading(handle, leading);
+    }
+    if (fontWeight != null || fontStyle != null) {
+      fontWeight ??= ui.FontWeight.normal;
+      fontStyle ??= ui.FontStyle.normal;
+      strutStyleSetFontStyle(handle, fontWeight.value, fontStyle.index);
+    }
+    if (forceStrutHeight != null) {
+      strutStyleSetForceStrutHeight(handle, forceStrutHeight);
+    }
+    return SkwasmStrutStyle._(handle);
+  }
+
+  SkwasmStrutStyle._(this.handle);
+
+  final StrutStyleHandle handle;
+}
+
+class SkwasmParagraphStyle implements ui.ParagraphStyle {
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {

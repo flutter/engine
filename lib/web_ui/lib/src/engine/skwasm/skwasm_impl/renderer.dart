@@ -159,9 +159,17 @@ class SkwasmRenderer implements Renderer {
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight
-  }) {
-    throw UnimplementedError('createStrutStyle not yet implemented');
-  }
+  }) => SkwasmStrutStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    leading: leading,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    forceStrutHeight: forceStrutHeight,
+  );
 
   @override
   ui.Gradient createSweepGradient(
@@ -205,7 +213,29 @@ class SkwasmRenderer implements Renderer {
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
     List<ui.FontVariation>? fontVariations
-  }) => SkwasmTextStyle();
+  }) => SkwasmTextStyle(
+    color: color,
+    decoration: decoration,
+    decorationColor: decorationColor,
+    decorationStyle: decorationStyle,
+    decorationThickness: decorationThickness,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    textBaseline: textBaseline,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    letterSpacing: letterSpacing,
+    wordSpacing: wordSpacing,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    locale: locale,
+    background: background,
+    foreground: foreground,
+    shadows: shadows,
+    fontFeatures: fontFeatures,
+    fontVariations: fontVariations,
+  );
 
   @override
   ui.Vertices createVertices(
