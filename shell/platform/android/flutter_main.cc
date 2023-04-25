@@ -120,34 +120,35 @@ void ConfigureShorebird(std::string android_cache_path,
     app_parameters.original_libapp_paths = c_paths.data();
     app_parameters.original_libapp_paths_size = c_paths.size();
 
-    app_parameters.vm_path = "libflutter.so";  // Unused.
-
     // shorebird_init copies from app_parameters and shorebirdYaml.
     shorebird_init(&app_parameters, shorebirdYaml.c_str());
   }
 
-  FML_LOG(INFO) << "Starting Shorebird update";
-  shorebird_update();
-
-  char* c_active_path = shorebird_active_path();
+  char* c_active_path = shorebird_next_boot_patch_path();
   if (c_active_path != NULL) {
     std::string active_path = c_active_path;
     shorebird_free_string(c_active_path);
     FML_LOG(INFO) << "Shorebird updater: active path: " << active_path;
-
-    settings.application_library_path.clear();
-    settings.application_library_path.emplace_back(active_path);
-
-    char* c_patch_number = shorebird_active_patch_number();
+    char* c_patch_number = shorebird_next_boot_patch_number();
     if (c_patch_number != NULL) {
       std::string patch_number = c_patch_number;
       shorebird_free_string(c_patch_number);
       FML_LOG(INFO) << "Shorebird updater: active patch number: "
                     << patch_number;
     }
+
+    settings.application_library_path.clear();
+    settings.application_library_path.emplace_back(active_path);
+    // Once start_update_thread is called, the next_boot_patch* functions may
+    // change their return values if the shorebird_report_launch_failed
+    // function is called.
+    shorebird_report_launch_start();
   } else {
     FML_LOG(INFO) << "Shorebird updater: no active patch.";
   }
+
+  FML_LOG(INFO) << "Starting Shorebird update";
+  shorebird_start_update_thread();
 }
 
 void FlutterMain::Init(JNIEnv* env,
