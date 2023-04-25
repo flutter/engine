@@ -145,7 +145,7 @@ std::unique_ptr<Shell> Shell::Create(
 // non-android targets (e.g. flutter_tester) will fail to link.
 #if FML_OS_ANDROID
   if (!vm) {
-    shorebird_report_failed_launch();
+    shorebird_report_launch_failure();
   }
 #endif
   FML_CHECK(vm) << "Must be able to initialize the VM.";
