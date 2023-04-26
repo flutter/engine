@@ -14,7 +14,7 @@ class DeviceBuffer;
 class Allocator;
 
 /// @brief An implementation of an SkBitmap allocator that deferrs allocation to
-///        an impeller allocator. This allows usage of Skia software rendering
+///        an Impeller allocator. This allows usage of Skia software rendering
 ///        to write to a host buffer or linear texture without an extra copy.
 ///
 ///        This class is an exact copy of the implementation in
