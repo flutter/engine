@@ -201,16 +201,16 @@ bool SurfaceMTL::Present() const {
     return true;
   }
 
-  auto command_buffer = context_->CreateCommandBuffer();
-  if (!command_buffer) {
+  auto blit_command_buffer = context->CreateCommandBuffer();
+  if (!blit_command_buffer) {
     return false;
   }
-  auto blit_pass = command_buffer->CreateBlitPass();
+  auto blit_pass = blit_command_buffer->CreateBlitPass();
   auto current = TextureMTL::Wrapper({}, drawable_.texture);
   blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
                      clip_rect_->origin);
-  blit_pass->EncodeCommands(context_->GetResourceAllocator());
-  if (!command_buffer->SubmitCommands()) {
+  blit_pass->EncodeCommands(context->GetResourceAllocator());
+  if (!blit_command_buffer->SubmitCommands()) {
     return false;
   }
 
