@@ -11,19 +11,9 @@ import 'package:ui/ui.dart' as ui;
 
 // TODO(jacksongardner): implement everything in this file
 class SkwasmLineMetrics implements ui.LineMetrics {
-  factory SkwasmLineMetrics({
-    required bool hardBreak,
-    required double ascent,
-    required double descent,
-    required double unscaledAscent,
-    required double height,
-    required double width,
-    required double left,
-    required double baseline,
-    required int lineNumber,
-  }) {
-    throw UnimplementedError();
-  }
+  SkwasmLineMetrics._(this.handle);
+
+  final LineMetricsHandle handle;
 
   @override
   bool get hardBreak {
@@ -72,87 +62,129 @@ class SkwasmLineMetrics implements ui.LineMetrics {
 }
 
 class SkwasmParagraph implements ui.Paragraph {
+  SkwasmParagraph(this.handle);
+
+  ParagraphHandle handle;
+  bool _isDisposed = true;
+
   @override
-  double get width {
-    return 0.0;
+  double get width => paragraphGetWidth(handle);
+
+  @override
+  double get height => paragraphGetHeight(handle);
+
+  @override
+  double get longestLine => paragraphGetLongestLine(handle);
+
+  @override
+  double get minIntrinsicWidth => paragraphGetMinIntrinsicWidth(handle);
+
+  @override
+  double get maxIntrinsicWidth => paragraphGetMaxIntrinsicWidth(handle);
+
+  @override
+  double get alphabeticBaseline => paragraphGetAlphabeticBaseline(handle);
+
+  @override
+  double get ideographicBaseline => paragraphGetIdeographicBaseline(handle);
+
+  @override
+  bool get didExceedMaxLines => paragraphGetDidExceedMaxLines(handle);
+
+  @override
+  void layout(ui.ParagraphConstraints constraints) => 
+    paragraphLayout(handle, constraints.width);
+
+  List<ui.TextBox> _convertTextBoxList(TextBoxListHandle listHandle) {
+    final int length = textBoxListGetLength(listHandle);
+    return withStackScope((StackScope scope) {
+      final RawRect tempRect = scope.allocFloatArray(4);
+      return List<ui.TextBox>.generate(length, (int index) {
+        final int textDirectionIndex = 
+          textBoxListGetBoxAtIndex(listHandle, index, tempRect);
+        return ui.TextBox.fromLTRBD(
+          tempRect[0],
+          tempRect[1],
+          tempRect[2],
+          tempRect[3],
+          ui.TextDirection.values[textDirectionIndex],
+        );
+      });
+    });
   }
 
   @override
-  double get height {
-    return 0.0;
+  List<ui.TextBox> getBoxesForRange(
+    int start,
+    int end, {
+    ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
+    ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight
+  }) {
+    final TextBoxListHandle listHandle = paragraphGetBoxesForRange(
+      handle,
+      start,
+      end,
+      boxHeightStyle.index,
+      boxWidthStyle.index
+    );
+    final List<ui.TextBox> boxes = _convertTextBoxList(listHandle);
+    textBoxListDispose(listHandle);
+    return boxes;
   }
 
   @override
-  double get longestLine {
-    return 0.0;
-  }
+  ui.TextPosition getPositionForOffset(ui.Offset offset) => withStackScope((StackScope scope) {
+    final Pointer<Int> outAffinity = scope.allocIntArray(1);
+    final int position = paragraphGetPositionForOffset(
+      handle,
+      offset.dx,
+      offset.dy,
+      outAffinity
+    );
+    return ui.TextPosition(
+      offset: position,
+      affinity: ui.TextAffinity.values[outAffinity[0]],
+    );
+  });
 
   @override
-  double get minIntrinsicWidth {
-    return 0.0;
-  }
-
-  @override
-  double get maxIntrinsicWidth {
-    return 0.0;
-  }
-
-  @override
-  double get alphabeticBaseline {
-    return 0.0;
-  }
-
-  @override
-  double get ideographicBaseline {
-    return 0.0;
-  }
-
-  @override
-  bool get didExceedMaxLines {
-    return false;
-  }
-
-  @override
-  void layout(ui.ParagraphConstraints constraints) {
-  }
-
-  @override
-  List<ui.TextBox> getBoxesForRange(int start, int end,
-      {ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
-      ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight}) {
-    return <ui.TextBox>[];
-  }
-
-  @override
-  ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    return const ui.TextPosition(offset: 0);
-  }
-
-  @override
-  ui.TextRange getWordBoundary(ui.TextPosition position) {
-    return const ui.TextRange(start: 0, end: 0);
-  }
+  ui.TextRange getWordBoundary(ui.TextPosition position) => withStackScope((StackScope scope) {
+    final Pointer<Size> outRange = scope.allocSizeArray(2);
+    paragraphGetWordBoundary(handle, position.offset, outRange);
+    return ui.TextRange(start: outRange[0], end: outRange[1]);
+  });
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
+    // TODO(jacksongardner): Implement this one line metrics are usable.
     return const ui.TextRange(start: 0, end: 0);
   }
 
   @override
   List<ui.TextBox> getBoxesForPlaceholders() {
-    return <ui.TextBox>[];
+    final TextBoxListHandle listHandle = paragraphGetBoxesForPlaceholders(handle);
+    final List<ui.TextBox> boxes = _convertTextBoxList(listHandle);
+    textBoxListDispose(listHandle);
+    return boxes;
   }
 
   @override
   List<SkwasmLineMetrics> computeLineMetrics() {
-    return <SkwasmLineMetrics>[];
+    final int lineCount = paragraphGetLineCount(handle);
+    return List<SkwasmLineMetrics>.generate(lineCount, 
+      (int index) => SkwasmLineMetrics._(paragraphGetLineMetricsAtIndex(handle, index))
+    );
   }
 
   @override
-  bool get debugDisposed => false;
+  bool get debugDisposed => _isDisposed;
 
   @override
   void dispose() {
+    if (!_isDisposed) {
+      paragraphDispose(handle);
+      _isDisposed = true;
+    }
   }
 }
 
@@ -451,7 +483,8 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   ui.Paragraph build() {
-    return SkwasmParagraph();
+    // TODO(jacksongardner): implement this.
+    return SkwasmParagraph(nullptr);
   }
 
   @override

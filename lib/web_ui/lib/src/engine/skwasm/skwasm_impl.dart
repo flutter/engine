@@ -31,6 +31,7 @@ export 'skwasm_impl/raw/raw_skdata.dart';
 export 'skwasm_impl/raw/raw_skstring.dart';
 export 'skwasm_impl/raw/raw_surface.dart';
 export 'skwasm_impl/raw/skwasm_module.dart';
+export 'skwasm_impl/raw/text/raw_paragraph.dart';
 export 'skwasm_impl/raw/text/raw_paragraph_style.dart';
 export 'skwasm_impl/raw/text/raw_strut_style.dart';
 export 'skwasm_impl/raw/text/raw_text_style.dart';

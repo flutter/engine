@@ -627,17 +627,6 @@ enum BoxWidthStyle {
 }
 
 abstract class LineMetrics {
-  factory LineMetrics({
-    required bool hardBreak,
-    required double ascent,
-    required double descent,
-    required double unscaledAscent,
-    required double height,
-    required double width,
-    required double left,
-    required double baseline,
-    required int lineNumber,
-  }) = engine.EngineLineMetrics;
   bool get hardBreak;
   double get ascent;
   double get descent;
