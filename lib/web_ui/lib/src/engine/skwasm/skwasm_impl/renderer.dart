@@ -105,7 +105,8 @@ class SkwasmRenderer implements Renderer {
   ui.Paint createPaint() => SkwasmPaint();
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => SkwasmParagraphBuilder();
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => 
+    SkwasmParagraphBuilder(style as SkwasmParagraphStyle, fontCollection);
 
   @override
   ui.ParagraphStyle createParagraphStyle({

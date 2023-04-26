@@ -3,16 +3,13 @@
 // found in the LICENSE file.
 
 #include "export.h"
+#include "wrappers.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/modules/skparagraph/include/FontCollection.h"
 #include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
 
 using namespace skia::textlayout;
-
-struct FlutterFontCollection {
-  sk_sp<FontCollection> collection;
-  sk_sp<TypefaceFontProvider> provider;
-};
+using namespace Skwasm;
 
 SKWASM_EXPORT FlutterFontCollection* fontCollection_create() {
   auto collection = sk_make_sp<FontCollection>();

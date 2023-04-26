@@ -463,6 +463,20 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
+  factory SkwasmParagraphBuilder(
+    SkwasmParagraphStyle style,
+    SkwasmFontCollection collection,
+  ) => SkwasmParagraphBuilder._(paragraphBuilderCreate(
+      style.handle,
+      collection.handle,
+    ));
+
+  SkwasmParagraphBuilder._(this.handle);
+  final ParagraphBuilderHandle handle;
+
+  @override
+  List<double> placeholderScales = <double>[];
+
   @override
   void addPlaceholder(
     double width,
@@ -472,29 +486,40 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
     double? baselineOffset,
     ui.TextBaseline? baseline
   }) {
+    paragraphBuilderAddPlaceholder(
+      handle,
+      width * scale,
+      height * scale,
+      alignment.index,
+      (baselineOffset ?? height) * scale,
+      (baseline ?? ui.TextBaseline.alphabetic).index,
+    );
+    placeholderScales.add(scale);
   }
 
   @override
   void addText(String text) {
+    final SkString16Handle stringHandle = skString16FromDartString(text);
+    paragraphBuilderAddText(handle, stringHandle);
+    skString16Free(stringHandle);
   }
 
   @override
   ui.Paragraph build() {
-    // TODO(jacksongardner): implement this.
-    return SkwasmParagraph(nullptr);
+    return SkwasmParagraph(paragraphBuilderBuild(handle));
   }
 
   @override
-  int get placeholderCount => 0;
-
-  @override
-  List<double> get placeholderScales => <double>[];
+  int get placeholderCount => placeholderScales.length;
 
   @override
   void pop() {
+    paragraphBuilderPop(handle);
   }
 
   @override
   void pushStyle(ui.TextStyle style) {
+    style as SkwasmTextStyle;
+    paragraphBuilderPushStyle(handle, style.handle);
   }
 }

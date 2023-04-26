@@ -12,14 +12,14 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 class SkwasmFontCollection implements FlutterFontCollection {
-  SkwasmFontCollection() : _handle = fontCollectionCreate();
+  SkwasmFontCollection() : handle = fontCollectionCreate();
 
-  FontCollectionHandle _handle;
+  FontCollectionHandle handle;
 
   @override
   void clear() {
-    fontCollectionDispose(_handle);
-    _handle = fontCollectionCreate();
+    fontCollectionDispose(handle);
+    handle = fontCollectionCreate();
   }
 
   @override
@@ -78,7 +78,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
       wasmMemory.set(chunk, dataAddress.toJS);
       dataAddress += chunk.length.toDart.toInt();
     }
-    final bool result = fontCollectionRegisterFont(_handle, fontData, familyNameHandle);
+    final bool result = fontCollectionRegisterFont(handle, fontData, familyNameHandle);
     skDataDispose(fontData);
     if (!result) {
       return FontInvalidDataError(assetManager.getAssetUrl(asset.asset));
@@ -96,10 +96,10 @@ class SkwasmFontCollection implements FlutterFontCollection {
     bool success;
     if (fontFamily != null) {
       final SkStringHandle familyHandle = skStringFromDartString(fontFamily);
-      success = fontCollectionRegisterFont(_handle, dataHandle, familyHandle);
+      success = fontCollectionRegisterFont(handle, dataHandle, familyHandle);
       skStringFree(familyHandle);
     } else {
-      success = fontCollectionRegisterFont(_handle, dataHandle, nullptr);
+      success = fontCollectionRegisterFont(handle, dataHandle, nullptr);
     }
     skDataDispose(dataHandle);
     return success;
