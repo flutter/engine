@@ -18,6 +18,7 @@ wasm_lib("skwasm") {
     "shaders.cpp",
     "string.cpp",
     "surface.cpp",
+    "text/line_metrics.cpp",
     "text/paragraph.cpp",
     "text/paragraph_style.cpp",
     "text/strut_style.cpp",

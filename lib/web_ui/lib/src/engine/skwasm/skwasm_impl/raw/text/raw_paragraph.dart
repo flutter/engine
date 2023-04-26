@@ -12,9 +12,6 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 final class RawParagraph extends Opaque {}
 typedef ParagraphHandle = Pointer<RawParagraph>;
 
-final class RawLineMetrics extends Opaque {}
-typedef LineMetricsHandle = Pointer<RawLineMetrics>;
-
 final class RawTextBoxList extends Opaque {}
 typedef TextBoxListHandle = Pointer<RawTextBoxList>;
 
@@ -74,6 +71,9 @@ external void paragraphGetWordBoundary(
 
 @Native<Size Function(ParagraphHandle)>(symbol: 'paragraph_getLineCount', isLeaf: true)
 external int paragraphGetLineCount(ParagraphHandle handle);
+
+@Native<Int Function(ParagraphHandle, Size)>(symbol: 'paragraph_getLineNumberAt', isLeaf: true)
+external int paragraphGetLineNumberAt(ParagraphHandle handle, int characterIndex);
 
 @Native<LineMetricsHandle Function(
   ParagraphHandle,

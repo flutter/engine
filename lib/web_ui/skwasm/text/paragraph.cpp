@@ -74,6 +74,10 @@ SKWASM_EXPORT size_t paragraph_getLineCount(Paragraph *paragraph) {
     return paragraph->lineNumber();
 }
 
+SKWASM_EXPORT int paragraph_getLineNumberAt(Paragraph *paragraph, size_t characterIndex) {
+    return paragraph->getLineNumberAt(characterIndex);
+}
+
 SKWASM_EXPORT LineMetrics *paragraph_getLineMetricsAtIndex(
     Paragraph *paragraph,
     size_t index

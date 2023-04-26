@@ -14,50 +14,40 @@ class SkwasmLineMetrics implements ui.LineMetrics {
   SkwasmLineMetrics._(this.handle);
 
   final LineMetricsHandle handle;
+  bool _isDisposed = false;
 
   @override
-  bool get hardBreak {
-    throw UnimplementedError();
-  }
+  bool get hardBreak => lineMetricsGetHardBreak(handle);
 
   @override
-  double get ascent {
-    throw UnimplementedError();
-  }
+  double get ascent => lineMetricsGetAscent(handle);
 
   @override
-  double get descent {
-    throw UnimplementedError();
-  }
+  double get descent => lineMetricsGetDescent(handle);
 
   @override
-  double get unscaledAscent {
-    throw UnimplementedError();
-  }
+  double get unscaledAscent => lineMetricsGetUnscaledAscent(handle);
 
   @override
-  double get height {
-    throw UnimplementedError();
-  }
+  double get height => lineMetricsGetHeight(handle);
 
   @override
-  double get width {
-    throw UnimplementedError();
-  }
+  double get width => lineMetricsGetWidth(handle);
 
   @override
-  double get left {
-    throw UnimplementedError();
-  }
+  double get left => lineMetricsGetLeft(handle);
 
   @override
-  double get baseline {
-    throw UnimplementedError();
-  }
+  double get baseline => lineMetricsGetBaseline(handle);
 
   @override
-  int get lineNumber {
-    throw UnimplementedError();
+  int get lineNumber => lineMetricsGetLineNumber(handle);
+
+  void dispose() {
+    if (_isDisposed) {
+      lineMetricsDispose(handle);
+      _isDisposed = true;
+    }
   }
 }
 
@@ -65,7 +55,7 @@ class SkwasmParagraph implements ui.Paragraph {
   SkwasmParagraph(this.handle);
 
   ParagraphHandle handle;
-  bool _isDisposed = true;
+  bool _isDisposed = false;
 
   @override
   double get width => paragraphGetWidth(handle);
@@ -156,8 +146,15 @@ class SkwasmParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    // TODO(jacksongardner): Implement this one line metrics are usable.
-    return const ui.TextRange(start: 0, end: 0);
+    final int lineNumber = paragraphGetLineNumberAt(handle, position.offset);
+    final LineMetricsHandle metricsHandle = 
+      paragraphGetLineMetricsAtIndex(handle, lineNumber);
+    final ui.TextRange range = ui.TextRange(
+      start: lineMetricsGetStartIndex(metricsHandle),
+      end: lineMetricsGetEndIndex(metricsHandle),
+    );
+    lineMetricsDispose(metricsHandle);
+    return range;
   }
 
   @override
