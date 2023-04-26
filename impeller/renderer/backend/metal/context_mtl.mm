@@ -45,6 +45,14 @@ static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
   return supports_subgroups;
 }
 
+static constexpr bool SupportsLinearTexture() {
+#ifndef FML_OS_IOS_SIMULATOR
+  return true;
+#else
+  return false;
+#endif  // FML_OS_IOS_SIMULATOR
+}
+
 static std::unique_ptr<Capabilities> InferMetalCapabilities(
     id<MTLDevice> device,
     PixelFormat color_format) {
@@ -55,7 +63,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
       .SetSupportsDecalTileMode(true)
-      .SetSupportsSharedDeviceBufferTextureMemory(true)
+      .SetSupportsSharedDeviceBufferTextureMemory(SupportsLinearTexture())
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
