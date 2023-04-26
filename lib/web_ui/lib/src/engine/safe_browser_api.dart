@@ -17,7 +17,6 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -25,7 +24,7 @@ import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
-export 'package:js/js.dart' show allowInterop;
+export 'package:js/js_util.dart' show allowInterop;
 
 
 /// Returns true if [object] has property [name], false otherwise.
@@ -1056,5 +1055,8 @@ class OffScreenCanvas {
 
   /// Feature detects OffscreenCanvas.
   static bool get supported => _supported ??=
-      js_util.hasProperty(domWindow, 'OffscreenCanvas');
+      // Safari 16.4 implements OffscreenCanvas, but without WebGL support. So
+      // it's not really supported in a way that is useful to us.
+      !isSafari
+      && js_util.hasProperty(domWindow, 'OffscreenCanvas');
 }

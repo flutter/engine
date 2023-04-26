@@ -18,6 +18,11 @@
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
+#ifdef IMPELLER_DEBUG
+#include "impeller/entity/checkerboard.frag.h"
+#include "impeller/entity/checkerboard.vert.h"
+#endif  // IMPELLER_DEBUG
+
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -35,6 +40,7 @@
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -102,6 +108,11 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
+using CheckerboardPipeline =
+    RenderPipelineT<CheckerboardVertexShader, CheckerboardFragmentShader>;
+#endif  // IMPELLER_DEBUG
+
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
 using SolidFillPipeline =
@@ -125,7 +136,6 @@ using RadialGradientSSBOFillPipeline =
 using SweepGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     SweepGradientSsboFillFragmentShader>;
-using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
@@ -165,6 +175,8 @@ using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasSdfPipeline =
     RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
+using PorterDuffBlendPipeline =
+    RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
@@ -325,6 +337,13 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
+#ifdef IMPELLER_DEBUG
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(checkerboard_pipelines_, opts);
+  }
+#endif  // IMPELLER_DEBUG
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
@@ -467,6 +486,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPorterDuffBlendPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(porter_duff_blend_pipelines_, opts);
   }
 
   // Advanced blends.
@@ -667,6 +691,11 @@ class ContentContext {
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
   // map.
+
+#ifdef IMPELLER_DEBUG
+  mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
+#endif  // IMPELLER_DEBUG
+
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
@@ -705,6 +734,7 @@ class ContentContext {
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
+  mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
@@ -774,7 +804,12 @@ class ContentContext {
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());
 
-    auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
+    auto pipeline = prototype->second->WaitAndGet();
+    if (!pipeline) {
+      return nullptr;
+    }
+
+    auto variant_future = pipeline->CreateVariant(
         [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(

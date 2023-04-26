@@ -6,7 +6,6 @@ import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -1438,10 +1437,6 @@ void _canvasTests() {
   });
 
   test('toImage.toByteData', () async {
-    // Pretend that FinalizationRegistry is supported, so we can run this
-    // test in older browsers (the test will use a TestCollector instead of
-    // ProductionCollector)
-    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
@@ -1450,7 +1445,7 @@ void _canvasTests() {
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData();

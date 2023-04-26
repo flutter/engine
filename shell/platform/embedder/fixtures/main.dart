@@ -124,23 +124,23 @@ Future<SemanticsActionData> get semanticsAction {
 
 @pragma('vm:entry-point')
 void a11y_main() async {
-  // Return initial state (semantics disabled).
+  // 1: Return initial state (semantics disabled).
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
-  // Await semantics enabled from embedder.
+  // 2: Await semantics enabled from embedder.
   await semanticsChanged;
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
-  // Return initial state of accessibility features.
+  // 3: Return initial state of accessibility features.
   notifyAccessibilityFeatures(
       PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
 
-  // Await accessibility features changed from embedder.
+  // 4: Await accessibility features changed from embedder.
   await accessibilityFeaturesChanged;
   notifyAccessibilityFeatures(
       PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
 
-  // Fire semantics update.
+  // 5: Fire semantics update.
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
     ..updateNode(
       id: 42,
@@ -284,7 +284,7 @@ void a11y_main() async {
 
   signalNativeTest();
 
-  // Await semantics action from embedder.
+  // 6: Await semantics action from embedder.
   final SemanticsActionData data = await semanticsAction;
   final List<int> actionArgs = <int>[
     data.args!.getInt8(0),
@@ -292,7 +292,7 @@ void a11y_main() async {
   ];
   notifySemanticsAction(data.id, data.action.index, actionArgs);
 
-  // Await semantics disabled from embedder.
+  // 7: Await semantics disabled from embedder.
   await semanticsChanged;
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 }
@@ -454,6 +454,73 @@ void can_composite_platform_views_with_known_scene() {
   signalNativeTest(); // Signal 1
   PlatformDispatcher.instance.scheduleFrame();
 }
+
+@pragma('vm:entry-point')
+void can_composite_platform_views_transparent_overlay() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Color red = Color.fromARGB(127, 255, 0, 0);
+    Color blue = Color.fromARGB(127, 0, 0, 255);
+    Color transparent = Color(0xFFFFFF);
+
+    Size size = Size(50.0, 150.0);
+
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+
+    // 10 (Index 0)
+    builder.addPicture(
+        Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
+
+    builder.pushOffset(20.0, 20.0);
+    // 20 (Index 1)
+    builder.addPlatformView(1,
+        width: size.width, height: size.height); // green - platform
+    builder.pop();
+
+    // 30 (Index 2)
+    builder.addPicture(
+        Offset(30.0, 30.0), CreateColoredBox(transparent, size)); // transparent picture, no layer should be created.
+
+    builder.pop();
+
+    PlatformDispatcher.instance.views.first.render(builder.build());
+
+    signalNativeTest(); // Signal 2
+  };
+  signalNativeTest(); // Signal 1
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_composite_platform_views_no_overlay() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Color red = Color.fromARGB(127, 255, 0, 0);
+    Color blue = Color.fromARGB(127, 0, 0, 255);
+
+    Size size = Size(50.0, 150.0);
+
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+
+    // 10 (Index 0)
+    builder.addPicture(
+        Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
+
+    builder.pushOffset(20.0, 20.0);
+    // 20 (Index 1)
+    builder.addPlatformView(1,
+        width: size.width, height: size.height); // green - platform
+    builder.pop();
+    builder.pop();
+
+    PlatformDispatcher.instance.views.first.render(builder.build());
+
+    signalNativeTest(); // Signal 2
+  };
+  signalNativeTest(); // Signal 1
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
 
 @pragma('vm:entry-point')
 void can_composite_platform_views_with_root_layer_only() {

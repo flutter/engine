@@ -18,11 +18,12 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
-class GPUTracer;
 
 class Context : public std::enable_shared_from_this<Context> {
  public:
   virtual ~Context();
+
+  virtual std::string DescribeGpuModel() const = 0;
 
   virtual bool IsValid() const = 0;
 
@@ -40,8 +41,6 @@ class Context : public std::enable_shared_from_this<Context> {
   virtual std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const = 0;
 
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
-
-  virtual std::shared_ptr<GPUTracer> GetGPUTracer() const;
 
  protected:
   Context();

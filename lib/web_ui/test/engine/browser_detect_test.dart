@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:js/js.dart';
+import 'dart:js_interop';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -196,8 +196,15 @@ void testMain() {
       expect(browserSupportsCanvaskitChromium, isFalse);
     });
   });
-}
 
+  group('OffscreenCanvas', () {
+    test('OffscreenCanvas is detected as unsupported in Safari', () {
+      debugBrowserEngineOverride = BrowserEngine.webkit;
+      expect(OffScreenCanvas.supported, isFalse);
+      debugBrowserEngineOverride = null;
+    });
+  });
+}
 
 @JS('window.Intl.v8BreakIterator')
 external dynamic get v8BreakIterator;

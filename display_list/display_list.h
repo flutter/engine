@@ -257,13 +257,12 @@ class DisplayList : public SkRefCnt {
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
-  bool Equals(sk_sp<const DisplayList> other) const {
+  bool Equals(const sk_sp<const DisplayList>& other) const {
     return Equals(other.get());
   }
 
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
-
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  bool isUIThreadSafe() const { return is_ui_thread_safe_; }
 
  private:
   DisplayList(DisplayListStorage&& ptr,
@@ -273,9 +272,12 @@ class DisplayList : public SkRefCnt {
               unsigned int nested_op_count,
               const SkRect& bounds,
               bool can_apply_group_opacity,
+              bool is_ui_thread_safe,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
+
+  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
   const DisplayListStorage storage_;
   const size_t byte_count_;
@@ -288,6 +290,7 @@ class DisplayList : public SkRefCnt {
   const SkRect bounds_;
 
   const bool can_apply_group_opacity_;
+  const bool is_ui_thread_safe_;
   const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,

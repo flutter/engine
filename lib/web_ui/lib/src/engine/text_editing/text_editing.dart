@@ -12,7 +12,6 @@ import 'package:ui/ui.dart' as ui;
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
-import '../host_node.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
 import '../semantics.dart';
@@ -51,7 +50,8 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow;
+DomElement get defaultTextEditingRoot =>
+    flutterViewEmbedder.textEditingHostNode;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.

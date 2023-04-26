@@ -15,7 +15,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -32,8 +32,7 @@
                 "targets": [
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -53,7 +52,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -72,8 +71,7 @@
                     "flutter/tools/font-subset",
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -90,7 +88,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -106,9 +104,7 @@
                 "targets": [
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
-            },
-            "tests": []
+            }
         }
-    ],
-    "tests": []
+    ]
 }
