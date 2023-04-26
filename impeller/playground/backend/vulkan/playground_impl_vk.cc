@@ -115,7 +115,11 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
   context_ = std::move(context);
 }
 
-PlaygroundImplVK::~PlaygroundImplVK() = default;
+PlaygroundImplVK::~PlaygroundImplVK() {
+  // Make sure to kill the concurrent loop before the context so that we don't
+  // have threads talking to a dead context.
+  concurrent_loop_.reset();
+};
 
 // |PlaygroundImpl|
 std::shared_ptr<Context> PlaygroundImplVK::GetContext() const {

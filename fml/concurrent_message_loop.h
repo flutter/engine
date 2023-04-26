@@ -21,7 +21,7 @@ class ConcurrentTaskRunner;
 class ConcurrentMessageLoop
     : public std::enable_shared_from_this<ConcurrentMessageLoop> {
  public:
-  static std::shared_ptr<ConcurrentMessageLoop> Create(
+  static std::unique_ptr<ConcurrentMessageLoop> Create(
       size_t worker_count = std::thread::hardware_concurrency());
 
   ~ConcurrentMessageLoop();

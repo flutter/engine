@@ -18,7 +18,7 @@ class PlaygroundImplVK final : public PlaygroundImpl {
   ~PlaygroundImplVK();
 
  private:
-  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
+  std::unique_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
   std::shared_ptr<Context> context_;
 
   // Windows management.

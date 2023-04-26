@@ -11,9 +11,9 @@
 
 namespace fml {
 
-std::shared_ptr<ConcurrentMessageLoop> ConcurrentMessageLoop::Create(
+std::unique_ptr<ConcurrentMessageLoop> ConcurrentMessageLoop::Create(
     size_t worker_count) {
-  return std::shared_ptr<ConcurrentMessageLoop>{
+  return std::unique_ptr<ConcurrentMessageLoop>{
       new ConcurrentMessageLoop(worker_count)};
 }
 
