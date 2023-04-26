@@ -53,7 +53,7 @@ std::shared_ptr<Texture> DeviceBufferMTL::AsTexture(
   }
   return std::make_shared<TextureMTL>(descriptor, texture);
 }
-#endif // FML_OS_IOS_SIMULATOR
+#endif  // FML_OS_IOS_SIMULATOR
 
 [[nodiscard]] bool DeviceBufferMTL::OnCopyHostBuffer(const uint8_t* source,
                                                      Range source_range,

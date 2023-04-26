@@ -46,10 +46,10 @@ static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
 }
 
 static constexpr bool SupportsLinearTexture() {
-#ifndef FML_OS_IOS_SIMULATOR
-  return true;
-#else
+#ifdef FML_OS_IOS_SIMULATOR
   return false;
+#else
+  return true;
 #endif  // FML_OS_IOS_SIMULATOR
 }
 
