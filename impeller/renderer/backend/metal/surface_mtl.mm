@@ -20,7 +20,7 @@ namespace impeller {
 id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
     const std::shared_ptr<Context>& context,
     CAMetalLayer* layer) {
-  TRACE_EVENT0("impeller", "SurfaceMTL::GetMetalDrawableAndValidate");
+  TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
 
   if (context == nullptr || !context->IsValid() || layer == nil) {
     return nullptr;
@@ -43,8 +43,6 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
     const std::shared_ptr<Context>& context,
     id<CAMetalDrawable> drawable,
     std::optional<IRect> clip_rect) {
-  TRACE_EVENT0("impeller", "SurfaceMTL::WrapCurrentMetalLayerDrawable");
-
   bool requires_blit = ShouldPerformPartialRepaint(clip_rect);
   const auto color_format = FromMTLPixelFormat(drawable.texture.pixelFormat);
 

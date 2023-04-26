@@ -197,6 +197,17 @@ void CompositorContext::ScopedFrame::PaintLayerTreeImpeller(
   layer_tree.Paint(*this, ignore_raster_cache);
 }
 
+/// @brief The max ratio of pixel width or height to size that is dirty which
+///        results in a partial repaint.
+///
+///        Performing a partial repaint has a small overhead - Impeller needs to
+///        allocate a fairly large resolve texture for the root pass instead of
+///        using the drawable texture, and a final blit must be performed. At a
+///        minimum, if the damage rect is the entire buffer, we must not perform
+///        a partial repaint. Beyond that, we could only experimentally
+///        determine what this value should be. From looking at the Flutter
+///        Gallery, we noticed that there are occassionally small partial
+///        repaints which shave off trivial numbers of pixels.
 constexpr float kImpellerRepaintRatio = 0.7f;
 
 bool CompositorContext::ShouldPerformPartialRepaint(
