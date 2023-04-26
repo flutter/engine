@@ -18,8 +18,7 @@ namespace fml {
 
 class ConcurrentTaskRunner;
 
-class ConcurrentMessageLoop
-    : public std::enable_shared_from_this<ConcurrentMessageLoop> {
+class ConcurrentMessageLoop {
  public:
   static std::unique_ptr<ConcurrentMessageLoop> Create(
       size_t worker_count = std::thread::hardware_concurrency());
@@ -28,7 +27,7 @@ class ConcurrentMessageLoop
 
   size_t GetWorkerCount() const;
 
-  std::shared_ptr<ConcurrentTaskRunner> GetTaskRunner();
+  std::shared_ptr<ConcurrentTaskRunner> GetTaskRunner() { return task_runner_; }
 
   void Terminate();
 
@@ -47,6 +46,7 @@ class ConcurrentMessageLoop
   std::vector<std::thread::id> worker_thread_ids_;
   std::map<std::thread::id, std::vector<fml::closure>> thread_tasks_;
   bool shutdown_ = false;
+  std::shared_ptr<ConcurrentTaskRunner> task_runner_;
 
   explicit ConcurrentMessageLoop(size_t worker_count);
 
@@ -63,7 +63,7 @@ class ConcurrentMessageLoop
 
 class ConcurrentTaskRunner : public BasicTaskRunner {
  public:
-  explicit ConcurrentTaskRunner(std::weak_ptr<ConcurrentMessageLoop> weak_loop);
+  explicit ConcurrentTaskRunner(ConcurrentMessageLoop* weak_loop);
 
   virtual ~ConcurrentTaskRunner();
 
@@ -72,7 +72,9 @@ class ConcurrentTaskRunner : public BasicTaskRunner {
  private:
   friend ConcurrentMessageLoop;
 
-  std::weak_ptr<ConcurrentMessageLoop> weak_loop_;
+  // Raw pointer that is cleared out in ~ConcurrentMessageLoop.
+  ConcurrentMessageLoop* weak_loop_;
+  std::mutex weak_loop_mutex_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ConcurrentTaskRunner);
 };

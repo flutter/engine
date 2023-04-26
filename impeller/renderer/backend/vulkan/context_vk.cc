@@ -111,6 +111,9 @@ ContextVK::~ContextVK() {
     [[maybe_unused]] auto result = device_->waitIdle();
   }
   CommandPoolVK::ClearAllPools(this);
+  // Shut down the worker message loop before the context starts getting torn
+  // down.
+  worker_message_loop_.reset();
 }
 
 void ContextVK::Setup(Settings settings) {
@@ -305,11 +308,12 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Setup the pipeline library.
   ///
+  worker_message_loop_ = std::move(settings.worker_concurrent_loop);
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
-      new PipelineLibraryVK(device.value.get(),                   //
-                            caps,                                 //
-                            std::move(settings.cache_directory),  //
-                            settings.worker_task_runner           //
+      new PipelineLibraryVK(device.value.get(),                    //
+                            caps,                                  //
+                            std::move(settings.cache_directory),   //
+                            worker_message_loop_->GetTaskRunner()  //
                             ));
 
   if (!pipeline_library->IsValid()) {

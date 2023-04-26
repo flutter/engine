@@ -272,8 +272,7 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
 
 std::shared_ptr<ContextVK> CreateMockVulkanContext(void) {
   ContextVK::Settings settings;
-  auto message_loop = fml::ConcurrentMessageLoop::Create();
-  settings.worker_task_runner = message_loop->GetTaskRunner();
+  settings.worker_concurrent_loop = fml::ConcurrentMessageLoop::Create();
   settings.proc_address_callback = GetMockVulkanProcAddress;
   return ContextVK::Create(std::move(settings));
 }

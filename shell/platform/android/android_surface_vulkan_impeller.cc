@@ -22,7 +22,7 @@ namespace flutter {
 
 static std::shared_ptr<impeller::Context> CreateImpellerContext(
     const fml::RefPtr<vulkan::VulkanProcTable>& proc_table,
-    const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop,
+    std::unique_ptr<fml::ConcurrentMessageLoop> concurrent_loop,
     bool enable_vulkan_validation) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
@@ -40,7 +40,7 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
   settings.proc_address_callback = instance_proc_addr;
   settings.shader_libraries_data = std::move(shader_mappings);
   settings.cache_directory = fml::paths::GetCachesDirectory();
-  settings.worker_task_runner = concurrent_loop->GetTaskRunner();
+  settings.worker_concurrent_loop = std::move(concurrent_loop);
   settings.enable_validation = enable_vulkan_validation;
   return impeller::ContextVK::Create(std::move(settings));
 }
@@ -50,10 +50,10 @@ AndroidSurfaceVulkanImpeller::AndroidSurfaceVulkanImpeller(
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool enable_vulkan_validation)
     : AndroidSurface(android_context),
-      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
-      workers_(fml::ConcurrentMessageLoop::Create()) {
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
   impeller_context_ =
-      CreateImpellerContext(proc_table_, workers_, enable_vulkan_validation);
+      CreateImpellerContext(proc_table_, fml::ConcurrentMessageLoop::Create(),
+                            enable_vulkan_validation);
   is_valid_ =
       proc_table_->HasAcquiredMandatoryProcAddresses() && impeller_context_;
 }

@@ -50,7 +50,6 @@ class AndroidSurfaceVulkanImpeller : public AndroidSurface {
  private:
   fml::RefPtr<vulkan::VulkanProcTable> proc_table_;
   fml::RefPtr<AndroidNativeWindow> native_window_;
-  std::shared_ptr<fml::ConcurrentMessageLoop> workers_;
   std::shared_ptr<impeller::Context> impeller_context_;
   bool is_valid_ = false;
 

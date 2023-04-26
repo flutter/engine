@@ -18,7 +18,8 @@ std::unique_ptr<ConcurrentMessageLoop> ConcurrentMessageLoop::Create(
 }
 
 ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
-    : worker_count_(std::max<size_t>(worker_count, 1ul)) {
+    : worker_count_(std::max<size_t>(worker_count, 1ul)),
+      task_runner_(new ConcurrentTaskRunner(this)) {
   for (size_t i = 0; i < worker_count_; ++i) {
     workers_.emplace_back([i, this]() {
       fml::Thread::SetCurrentThreadName(fml::Thread::ThreadConfig(
@@ -33,6 +34,10 @@ ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
 }
 
 ConcurrentMessageLoop::~ConcurrentMessageLoop() {
+  {
+    std::scoped_lock lock(task_runner_->weak_loop_mutex_);
+    task_runner_->weak_loop_ = nullptr;
+  }
   Terminate();
   for (auto& worker : workers_) {
     worker.join();
@@ -43,33 +48,18 @@ size_t ConcurrentMessageLoop::GetWorkerCount() const {
   return worker_count_;
 }
 
-std::shared_ptr<ConcurrentTaskRunner> ConcurrentMessageLoop::GetTaskRunner() {
-  return std::make_shared<ConcurrentTaskRunner>(weak_from_this());
-}
-
 void ConcurrentMessageLoop::PostTask(const fml::closure& task) {
   if (!task) {
     return;
   }
 
-  std::unique_lock lock(tasks_mutex_);
-
-  // Don't just drop tasks on the floor in case of shutdown.
-  if (shutdown_) {
-    FML_DLOG(WARNING)
-        << "Tried to post a task to shutdown concurrent message "
-           "loop. The task will be executed on the callers thread.";
-    lock.unlock();
-    task();
-    return;
-  }
-
-  tasks_.push(task);
-
   // Unlock the mutex before notifying the condition variable because that mutex
   // has to be acquired on the other thread anyway. Waiting in this scope till
   // it is acquired there is a pessimization.
-  lock.unlock();
+  {
+    std::unique_lock lock(tasks_mutex_);
+    tasks_.push(task);
+  }
 
   tasks_condition_.notify_one();
 }
@@ -148,9 +138,8 @@ std::vector<fml::closure> ConcurrentMessageLoop::GetThreadTasksLocked() {
   return pending_tasks;
 }
 
-ConcurrentTaskRunner::ConcurrentTaskRunner(
-    std::weak_ptr<ConcurrentMessageLoop> weak_loop)
-    : weak_loop_(std::move(weak_loop)) {}
+ConcurrentTaskRunner::ConcurrentTaskRunner(ConcurrentMessageLoop* weak_loop)
+    : weak_loop_(weak_loop) {}
 
 ConcurrentTaskRunner::~ConcurrentTaskRunner() = default;
 
@@ -159,15 +148,12 @@ void ConcurrentTaskRunner::PostTask(const fml::closure& task) {
     return;
   }
 
-  if (auto loop = weak_loop_.lock()) {
-    loop->PostTask(task);
-    return;
+  {
+    std::scoped_lock lock(weak_loop_mutex_);
+    if (weak_loop_) {
+      weak_loop_->PostTask(task);
+    }
   }
-
-  FML_DLOG(WARNING)
-      << "Tried to post to a concurrent message loop that has already died. "
-         "Executing the task on the callers thread.";
-  task();
 }
 
 bool ConcurrentMessageLoop::RunsTasksOnCurrentThread() {

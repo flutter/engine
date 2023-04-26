@@ -36,7 +36,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner;
+    std::unique_ptr<fml::ConcurrentMessageLoop> worker_concurrent_loop;
     bool enable_validation = false;
 
     Settings() = default;
@@ -137,6 +137,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
   const uint64_t hash_;
+  std::unique_ptr<fml::ConcurrentMessageLoop> worker_message_loop_;
 
   bool is_valid_ = false;
 
