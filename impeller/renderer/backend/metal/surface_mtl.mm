@@ -185,6 +185,21 @@ bool SurfaceMTL::Present() const {
     return false;
   }
 
+  if (requires_blit_) {
+    auto blit_command_buffer = context->CreateCommandBuffer();
+    if (!blit_command_buffer) {
+      return false;
+    }
+    auto blit_pass = blit_command_buffer->CreateBlitPass();
+    auto current = TextureMTL::Wrapper({}, drawable_.texture);
+    blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
+                       clip_rect_->origin);
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+    if (!blit_command_buffer->SubmitCommands()) {
+      return false;
+    }
+  }
+
   // If a transaction is present, `presentDrawable` will present too early. And
   // so we wait on an empty command buffer to get scheduled instead, which
   // forces us to also wait for all of the previous command buffers in the queue
@@ -193,27 +208,6 @@ bool SurfaceMTL::Present() const {
       ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
   [command_buffer commit];
   [command_buffer waitUntilScheduled];
-
-  // If there is no partial repaint, then immediately present without a blit
-  // pass.
-  if (!requires_blit_) {
-    [drawable_ present];
-    return true;
-  }
-
-  auto blit_command_buffer = context->CreateCommandBuffer();
-  if (!blit_command_buffer) {
-    return false;
-  }
-  auto blit_pass = blit_command_buffer->CreateBlitPass();
-  auto current = TextureMTL::Wrapper({}, drawable_.texture);
-  blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
-                     clip_rect_->origin);
-  blit_pass->EncodeCommands(context->GetResourceAllocator());
-  if (!blit_command_buffer->SubmitCommands()) {
-    return false;
-  }
-
   [drawable_ present];
 
   return true;
