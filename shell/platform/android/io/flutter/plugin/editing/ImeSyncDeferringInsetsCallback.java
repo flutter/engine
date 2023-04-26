@@ -43,6 +43,8 @@ import java.util.List;
 // a no-op. When onEnd indicates the end of the animation, the deferred call is
 // dispatched again, this time avoiding any flicker since the animation is now
 // complete.
+
+// This class should have "package private" visibility cause it's called from TextInputPlugin.
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 @TargetApi(30)
 @RequiresApi(30)
