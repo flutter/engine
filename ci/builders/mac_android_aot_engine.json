@@ -32,6 +32,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            },
             "tests": []
         },
         {
@@ -66,6 +71,11 @@
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
+            },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
             },
             "tests": []
         },
@@ -102,6 +112,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            },
             "tests": []
         },
         {
@@ -135,6 +150,11 @@
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
+            },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
             },
             "tests": []
         },
@@ -171,6 +191,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            },
             "tests": []
         },
         {
@@ -205,6 +230,11 @@
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
+            },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
             },
             "tests": []
         }
