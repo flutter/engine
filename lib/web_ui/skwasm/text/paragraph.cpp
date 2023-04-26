@@ -63,7 +63,7 @@ SKWASM_EXPORT int32_t paragraph_getPositionForOffset(
 SKWASM_EXPORT void paragraph_getWordBoundary(
     Paragraph *paragraph,
     unsigned int position,
-    size_t *outRange // Two `size_t`s, start and end
+    int32_t *outRange // Two `int32_t`s, start and end
 ) {
     auto range = paragraph->getWordBoundary(position);
     outRange[0] = range.start;

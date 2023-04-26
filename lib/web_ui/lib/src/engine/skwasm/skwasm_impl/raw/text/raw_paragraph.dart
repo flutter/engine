@@ -49,24 +49,24 @@ external void paragraphLayout(ParagraphHandle handle, double width);
   ParagraphHandle,
   Float,
   Float,
-  Pointer<Int>
+  Pointer<Int32>
 )>(symbol: 'paragraph_getPositionForOffset', isLeaf: true)
 external int paragraphGetPositionForOffset(
   ParagraphHandle handle,
   double offsetX,
   double offsetY,
-  Pointer<Int> outAffinity,
+  Pointer<Int32> outAffinity,
 );
 
 @Native<Void Function(
   ParagraphHandle,
   UnsignedInt,
-  Pointer<Size>,
+  Pointer<Int32>,
 )>(symbol: 'paragraph_getWordBoundary', isLeaf: true)
 external void paragraphGetWordBoundary(
   ParagraphHandle handle,
   int position,
-  Pointer<Size> outRange, // Two `size_t`s, start and end
+  Pointer<Int32> outRange, // Two `size_t`s, start and end
 );
 
 @Native<Size Function(ParagraphHandle)>(symbol: 'paragraph_getLineCount', isLeaf: true)

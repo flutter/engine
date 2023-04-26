@@ -157,11 +157,6 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Int> allocIntArray(int count) {
-    final int length = count * sizeOf<Int>();
-    return stackAlloc(length).cast<Int>();
-  }
-
   Pointer<Int8> allocInt8Array(int count) {
     final int length = count * sizeOf<Int8>();
     return stackAlloc(length).cast<Int8>();
@@ -180,11 +175,6 @@ class StackScope {
   Pointer<Float> allocFloatArray(int count) {
     final int length = count * sizeOf<Float>();
     return stackAlloc(length).cast<Float>();
-  }
-
-  Pointer<Size> allocSizeArray(int count) {
-    final int length = count * sizeOf<Size>();
-    return stackAlloc(length).cast<Size>();
   }
 
   Pointer<Pointer<Void>> allocPointerArray(int count) {

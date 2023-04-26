@@ -124,7 +124,7 @@ class SkwasmParagraph implements ui.Paragraph {
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) => withStackScope((StackScope scope) {
-    final Pointer<Int> outAffinity = scope.allocIntArray(1);
+    final Pointer<Int32> outAffinity = scope.allocInt32Array(1);
     final int position = paragraphGetPositionForOffset(
       handle,
       offset.dx,
@@ -139,7 +139,7 @@ class SkwasmParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) => withStackScope((StackScope scope) {
-    final Pointer<Size> outRange = scope.allocSizeArray(2);
+    final Pointer<Int32> outRange = scope.allocInt32Array(2);
     paragraphGetWordBoundary(handle, position.offset, outRange);
     return ui.TextRange(start: outRange[0], end: outRange[1]);
   });
