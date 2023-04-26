@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '3fea88565a83a24bbcdc3513e143bac2634357b0',
+  'skia_revision': '20a1c61c55977f0b6c291584d8b1108e180883bf',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,13 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:20d06c833d833ef6b2d0f519cc4a7998d49a2803',
+  'clang_version': 'git_revision:5344d8e10bb7d8672d4bfae8adb010465470d51b',
+
+  # The goma version and the clang version can be tightly coupled. If goma
+  # stops working on a clang roll, this may need to be updated using the value
+  # from the 'integration' tag of
+  # https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/goma/client
+  'goma_version': ' git_revision:41b3bcb64014144a844153fd5588c36411fffb56',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -98,7 +104,12 @@ vars = {
   "checkout_llvm": False,
 
   # Setup Git hooks by default.
-  "setup_githooks": True,
+  'setup_githooks': True,
+
+  # When this is true, the goma client will be downloaded from cipd, and
+  # the engine build will prefer to use this client over a client that is
+  # specified by GOMA_DIR, or installed in the default goma install location.
+  'use_cipd_goma': False,
 
   # This is not downloaded be default because it increases the
   # `gclient sync` time by between 1 and 3 minutes. This option is enabled
@@ -830,6 +841,40 @@ deps = {
     'dep_type': 'cipd',
   },
 
+  # GOMA
+  'src/buildtools/mac-x64/goma': {
+    'packages': [
+      {
+        'package': 'fuchsia/third_party/goma/client/mac-amd64',
+        'version': Var('goma_version'),
+      }
+    ],
+    'condition': 'use_cipd_goma and host_os == "mac"',
+    'dep_type': 'cipd',
+  },
+
+  'src/buildtools/linux-x64/goma': {
+    'packages': [
+      {
+        'package': 'fuchsia/third_party/goma/client/linux-amd64',
+        'version': Var('goma_version'),
+      }
+    ],
+    'condition': 'use_cipd_goma and host_os == "linux"',
+    'dep_type': 'cipd',
+  },
+
+  'src/buildtools/windows-x64/goma': {
+    'packages': [
+      {
+        'package': 'fuchsia/third_party/goma/client/windows-amd64',
+        'version': Var('goma_version'),
+      }
+    ],
+    'condition': 'use_cipd_goma and download_windows_deps',
+    'dep_type': 'cipd',
+  },
+
   # Get the SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core at the 'latest' tag
   # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/clang at the 'goma' tag
    'src/fuchsia/sdk/mac': {
@@ -963,6 +1008,36 @@ hooks = [
     'action': [
       'python3',
       'src/flutter/tools/activate_emsdk.py',
+    ]
+  },
+  {
+    'name': 'Start compiler proxy',
+    'pattern': '.',
+    'condition': 'use_cipd_goma and host_os == "mac"',
+    'action': [
+      'python3',
+      'src/buildtools/mac-x64/goma/goma_ctl.py',
+      'ensure_start'
+    ]
+  },
+  {
+    'name': 'Start compiler proxy',
+    'pattern': '.',
+    'condition': 'use_cipd_goma and host_os == "linux"',
+    'action': [
+      'python3',
+      'src/buildtools/linux-x64/goma/goma_ctl.py',
+      'ensure_start'
+    ]
+  },
+  {
+    'name': 'Start compiler proxy',
+    'pattern': '.',
+    'condition': 'use_cipd_goma and download_windows_deps',
+    'action': [
+      'python3',
+      'src/buildtools/windows-x64/goma/goma_ctl.py',
+      'ensure_start'
     ]
   },
   {
