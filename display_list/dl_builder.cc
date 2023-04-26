@@ -74,11 +74,12 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
-  bool compatible = layer_stack_.back().is_group_opacity_compatible();
+  bool compatible = current_layer_->is_group_opacity_compatible();
   bool is_safe = is_ui_thread_safe_;
-  return sk_sp<DisplayList>(
-      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
-                      nested_count, bounds(), compatible, is_safe, rtree()));
+  bool affects_transparency = current_layer_->affects_transparent_layer();
+  return sk_sp<DisplayList>(new DisplayList(
+      std::move(storage_), bytes, count, nested_bytes, nested_count, bounds(),
+      compatible, is_safe, affects_transparency, rtree()));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
@@ -475,9 +476,11 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
                                    const SaveLayerOptions in_options,
                                    const DlImageFilter* backdrop) {
   SaveLayerOptions options = in_options.without_optimizations();
-  if (current_layer_->is_nop_ ||
-      (options.renders_with_attributes() &&
-       !paint_affects_dest(current_, kSaveLayerWithPaintFlags))) {
+  DisplayListAttributeFlags flags = options.renders_with_attributes()
+                                        ? kSaveLayerWithPaintFlags
+                                        : kSaveLayerFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result == OpResult::kNoEffect) {
     save();
     current_layer_->is_nop_ = true;
     return;
@@ -493,8 +496,12 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // with its full bounds and the right op_index so that it doesn't
     // get culled during rendering.
     if (!paint_nops_on_transparency()) {
-      // We will fill the clip of the outer layer when we restore
-      AccumulateUnbounded();
+      // We will fill the clip of the outer layer when we restore.
+      // Accumulate should always return true here because if the
+      // clip was empty then that would have been caught up above
+      // when we tested the PaintResult.
+      bool unclipped = AccumulateUnbounded();
+      FML_DCHECK(unclipped);
     }
     CheckLayerOpacityCompatibility(true);
     layer_stack_.emplace_back(save_layer_offset, true,
@@ -503,11 +510,18 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     CheckLayerOpacityCompatibility(false);
     layer_stack_.emplace_back(save_layer_offset, true, nullptr);
   }
-  tracker_.save();
-  accumulator()->save();
   current_layer_ = &layer_stack_.back();
 
+  tracker_.save();
+  accumulator()->save();
+
   if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    // Accumulate should always return true here because if the
+    // clip was empty then that would have been caught up above
+    // when we tested the PaintResult.
+    bool unclipped = AccumulateUnbounded();
+    FML_DCHECK(unclipped);
     bounds  //
         ? Push<SaveLayerBackdropBoundsOp>(0, 1, options, *bounds, backdrop)
         : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
@@ -527,16 +541,13 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
       UpdateLayerOpacityCompatibility(false);
     }
   }
+  UpdateLayerResult(result);
 
   // Even though Skia claims that the bounds are only a hint, they actually
   // use them as the temporary layer bounds during rendering the layer, so
   // we set them as if a clip operation were performed.
   if (bounds) {
     tracker_.clipRect(*bounds, ClipOp::kIntersect, false);
-  }
-  if (backdrop) {
-    // A backdrop will affect up to the entire surface, bounded by the clip
-    AccumulateUnbounded();
   }
 }
 void DisplayListBuilder::SaveLayer(const SkRect* bounds,
@@ -738,10 +749,11 @@ bool DisplayListBuilder::QuickReject(const SkRect& bounds) const {
 }
 
 void DisplayListBuilder::drawPaint() {
-  if (paint_affects_dest(current_, kDrawPaintFlags) &&  //
-      AccumulateUnbounded()) {
+  OpResult result = PaintResult(current_, kDrawPaintFlags);
+  if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
     Push<DrawPaintOp>(0, 1);
     CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawPaint(const DlPaint& paint) {
@@ -749,10 +761,11 @@ void DisplayListBuilder::DrawPaint(const DlPaint& paint) {
   drawPaint();
 }
 void DisplayListBuilder::DrawColor(DlColor color, DlBlendMode mode) {
-  if (paint_affects_dest(DlPaint(color).setBlendMode(mode)) &&
-      AccumulateUnbounded()) {
+  OpResult result = PaintResult(DlPaint(color).setBlendMode(mode));
+  if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
     Push<DrawColorOp>(0, 1, color, mode);
     CheckLayerOpacityCompatibility(mode);
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
@@ -760,10 +773,11 @@ void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
   DisplayListAttributeFlags flags =
       (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
                                                         : kDrawHVLineFlags;
-  if (paint_affects_dest(current_, flags) &&
-      AccumulateOpBounds(bounds, flags)) {
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
     Push<DrawLineOp>(0, 1, p0, p1);
     CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawLine(const SkPoint& p0,
@@ -773,10 +787,12 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
   drawLine(p0, p1);
 }
 void DisplayListBuilder::drawRect(const SkRect& rect) {
-  if (paint_affects_dest(current_, kDrawRectFlags) &&
-      AccumulateOpBounds(rect, kDrawRectFlags)) {
+  DisplayListAttributeFlags flags = kDrawRectFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(rect, flags)) {
     Push<DrawRectOp>(0, 1, rect);
     CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
@@ -784,10 +800,12 @@ void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
   drawRect(rect);
 }
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
-  if (paint_affects_dest(current_, kDrawOvalFlags) &&
-      AccumulateOpBounds(bounds, kDrawOvalFlags)) {
+  DisplayListAttributeFlags flags = kDrawOvalFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
     Push<DrawOvalOp>(0, 1, bounds);
     CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawOval(const SkRect& bounds, const DlPaint& paint) {
@@ -795,12 +813,15 @@ void DisplayListBuilder::DrawOval(const SkRect& bounds, const DlPaint& paint) {
   drawOval(bounds);
 }
 void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
-  if (paint_affects_dest(current_, kDrawCircleFlags)) {
+  DisplayListAttributeFlags flags = kDrawCircleFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect) {
     SkRect bounds = SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
                                      center.fX + radius, center.fY + radius);
-    if (AccumulateOpBounds(bounds, kDrawCircleFlags)) {
+    if (AccumulateOpBounds(bounds, flags)) {
       Push<DrawCircleOp>(0, 1, center, radius);
       CheckLayerOpacityCompatibility();
+      UpdateLayerResult(result);
     }
   }
 }
@@ -816,10 +837,13 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   } else if (rrect.isOval()) {
     drawOval(rrect.rect());
   } else {
-    if (paint_affects_dest(current_, kDrawRRectFlags) &&
-        AccumulateOpBounds(rrect.getBounds(), kDrawRRectFlags)) {
+    DisplayListAttributeFlags flags = kDrawRRectFlags;
+    OpResult result = PaintResult(current_, flags);
+    if (result != OpResult::kNoEffect &&
+        AccumulateOpBounds(rrect.getBounds(), flags)) {
       Push<DrawRRectOp>(0, 1, rrect);
       CheckLayerOpacityCompatibility();
+      UpdateLayerResult(result);
     }
   }
 }
@@ -829,10 +853,13 @@ void DisplayListBuilder::DrawRRect(const SkRRect& rrect, const DlPaint& paint) {
 }
 void DisplayListBuilder::drawDRRect(const SkRRect& outer,
                                     const SkRRect& inner) {
-  if (paint_affects_dest(current_, kDrawDRRectFlags) &&
-      AccumulateOpBounds(outer.getBounds(), kDrawDRRectFlags)) {
+  DisplayListAttributeFlags flags = kDrawDRRectFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(outer.getBounds(), flags)) {
     Push<DrawDRRectOp>(0, 1, outer, inner);
     CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
@@ -842,14 +869,16 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   drawDRRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
-  if (paint_affects_dest(current_, kDrawPathFlags)) {
-    bool is_visible =
-        path.isInverseFillType()
-            ? AccumulateUnbounded()
-            : AccumulateOpBounds(path.getBounds(), kDrawPathFlags);
+  DisplayListAttributeFlags flags = kDrawPathFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect) {
+    bool is_visible = path.isInverseFillType()
+                          ? AccumulateUnbounded()
+                          : AccumulateOpBounds(path.getBounds(), flags);
     if (is_visible) {
       Push<DrawPathOp>(0, 1, path);
       CheckLayerOpacityHairlineCompatibility();
+      UpdateLayerResult(result);
     }
   }
 }
@@ -866,17 +895,18 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
       useCenter                      //
           ? kDrawArcWithCenterFlags
           : kDrawArcNoCenterFlags;
+  OpResult result = PaintResult(current_, flags);
   // This could be tighter if we compute where the start and end
   // angles are and then also consider the quadrants swept and
   // the center if specified.
-  if (paint_affects_dest(current_, flags) &&
-      AccumulateOpBounds(bounds, flags)) {
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
     Push<DrawArcOp>(0, 1, bounds, start, sweep, useCenter);
     if (useCenter) {
       CheckLayerOpacityHairlineCompatibility();
     } else {
       CheckLayerOpacityCompatibility();
     }
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawArc(const SkRect& bounds,
@@ -888,6 +918,7 @@ void DisplayListBuilder::DrawArc(const SkRect& bounds,
       paint, useCenter ? kDrawArcWithCenterFlags : kDrawArcNoCenterFlags);
   drawArc(bounds, start, sweep, useCenter);
 }
+
 DisplayListAttributeFlags DisplayListBuilder::FlagsForPointMode(
     PointMode mode) {
   switch (mode) {
@@ -900,7 +931,6 @@ DisplayListAttributeFlags DisplayListBuilder::FlagsForPointMode(
   }
   FML_DCHECK(false);
 }
-
 void DisplayListBuilder::drawPoints(PointMode mode,
                                     uint32_t count,
                                     const SkPoint pts[]) {
@@ -908,7 +938,8 @@ void DisplayListBuilder::drawPoints(PointMode mode,
     return;
   }
   DisplayListAttributeFlags flags = FlagsForPointMode(mode);
-  if (!paint_affects_dest(current_, flags)) {
+  OpResult result = PaintResult(current_, flags);
+  if (result == OpResult::kNoEffect) {
     return;
   }
 
@@ -945,33 +976,21 @@ void DisplayListBuilder::drawPoints(PointMode mode,
   // bounds of every sub-primitive.
   // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
   UpdateLayerOpacityCompatibility(false);
+  UpdateLayerResult(result);
 }
 void DisplayListBuilder::DrawPoints(PointMode mode,
                                     uint32_t count,
                                     const SkPoint pts[],
                                     const DlPaint& paint) {
-  const DisplayListAttributeFlags* flags;
-  switch (mode) {
-    case PointMode::kPoints:
-      flags = &DisplayListOpFlags::kDrawPointsAsPointsFlags;
-      break;
-    case PointMode::kLines:
-      flags = &DisplayListOpFlags::kDrawPointsAsLinesFlags;
-      break;
-    case PointMode::kPolygon:
-      flags = &DisplayListOpFlags::kDrawPointsAsPolygonFlags;
-      break;
-    default:
-      FML_DCHECK(false);
-      return;
-  }
-  SetAttributesFromPaint(paint, *flags);
+  SetAttributesFromPaint(paint, FlagsForPointMode(mode));
   drawPoints(mode, count, pts);
 }
 void DisplayListBuilder::drawVertices(const DlVertices* vertices,
                                       DlBlendMode mode) {
-  if (paint_affects_dest(current_, kDrawVerticesFlags) &&
-      AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags)) {
+  DisplayListAttributeFlags flags = kDrawVerticesFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(vertices->bounds(), flags)) {
     void* pod = Push<DrawVerticesOp>(vertices->size(), 1, mode);
     new (pod) DlVertices(vertices);
     // DrawVertices applies its colors to the paint so we have no way
@@ -979,6 +998,7 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
     // Although, examination of the |mode| might find some predictable
     // cases.
     UpdateLayerOpacityCompatibility(false);
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawVertices(const DlVertices* vertices,
@@ -995,12 +1015,8 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
   DisplayListAttributeFlags flags = render_with_attributes  //
                                         ? kDrawImageWithPaintFlags
                                         : kDrawImageFlags;
-  if (render_with_attributes) {
-    // paint_affects_dest checks layer->is_nop
-    if (!paint_affects_dest(current_, flags)) {
-      return;
-    }
-  } else if (current_layer_->is_nop_) {
+  OpResult result = PaintResult(current_, flags);
+  if (result == OpResult::kNoEffect) {
     return;
   }
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
@@ -1010,6 +1026,7 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
         ? Push<DrawImageWithAttrOp>(0, 1, image, point, sampling)
         : Push<DrawImageOp>(0, 1, image, point, sampling);
     CheckLayerOpacityCompatibility(render_with_attributes);
+    UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
@@ -1034,18 +1051,12 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageRectWithPaintFlags
                                         : kDrawImageRectFlags;
-  if (render_with_attributes) {
-    // paint_affects_dest checks layer->is_nop
-    if (!paint_affects_dest(current_, flags)) {
-      return;
-    }
-  } else if (current_layer_->is_nop_) {
-    return;
-  }
-  if (AccumulateOpBounds(dst, flags)) {
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
     Push<DrawImageRectOp>(0, 1, image, src, dst, sampling,
                           render_with_attributes, constraint);
     CheckLayerOpacityCompatibility(render_with_attributes);
+    UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
@@ -1071,19 +1082,13 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
                                         : kDrawImageNineFlags;
-  if (render_with_attributes) {
-    // paint_affects_dest checks layer->is_nop
-    if (!paint_affects_dest(current_, flags)) {
-      return;
-    }
-  } else if (current_layer_->is_nop_) {
-    return;
-  }
-  if (AccumulateOpBounds(dst, flags)) {
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
     render_with_attributes
         ? Push<DrawImageNineWithAttrOp>(0, 1, image, center, dst, filter)
         : Push<DrawImageNineOp>(0, 1, image, center, dst, filter);
     CheckLayerOpacityCompatibility(render_with_attributes);
+    UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
@@ -1112,12 +1117,8 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   DisplayListAttributeFlags flags = render_with_attributes  //
                                         ? kDrawAtlasWithPaintFlags
                                         : kDrawAtlasFlags;
-  if (render_with_attributes) {
-    // paint_affects_dest checks layer->is_nop
-    if (!paint_affects_dest(current_, flags)) {
-      return;
-    }
-  } else if (current_layer_->is_nop_) {
+  OpResult result = PaintResult(current_, flags);
+  if (result == OpResult::kNoEffect) {
     return;
   }
   SkPoint quad[4];
@@ -1162,6 +1163,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // on it to distribute the opacity without overlap without checking all
   // of the transforms and texture rectangles.
   UpdateLayerOpacityCompatibility(false);
+  UpdateLayerResult(result);
   is_ui_thread_safe_ = is_ui_thread_safe_ && atlas->isUIThreadSafe();
 }
 void DisplayListBuilder::DrawAtlas(const sk_sp<DlImage>& atlas,
@@ -1237,12 +1239,17 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   nested_op_count_ += display_list->op_count(true) - 1;
   nested_bytes_ += display_list->bytes(true);
   UpdateLayerOpacityCompatibility(display_list->can_apply_group_opacity());
+  UpdateLayerResult(display_list->affects_transparent_surface()
+                        ? OpResult::kDrawsPixels
+                        : OpResult::kClearsPixels);
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
                                       SkScalar y) {
-  if (paint_affects_dest(current_, kDrawTextBlobFlags) &&
-      AccumulateOpBounds(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags)) {
+  DisplayListAttributeFlags flags = kDrawTextBlobFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(blob->bounds().makeOffset(x, y), flags)) {
     Push<DrawTextBlobOp>(0, 1, blob, x, y);
     // There is no way to query if the glyphs of a text blob overlap and
     // there are no current guarantees from either Skia or Impeller that
@@ -1250,6 +1257,7 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
     // so we must make the conservative assessment that this DL layer is
     // not compatible with group opacity inheritance.
     UpdateLayerOpacityCompatibility(false);
+    UpdateLayerResult(result);
   }
 }
 void DisplayListBuilder::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
@@ -1264,7 +1272,8 @@ void DisplayListBuilder::DrawShadow(const SkPath& path,
                                     const SkScalar elevation,
                                     bool transparent_occluder,
                                     SkScalar dpr) {
-  if (paint_affects_dest(DlPaint(color))) {
+  OpResult result = PaintResult(DlPaint(color));
+  if (result != OpResult::kNoEffect) {
     SkRect shadow_bounds =
         DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
     if (AccumulateOpBounds(shadow_bounds, kDrawShadowFlags)) {
@@ -1273,6 +1282,7 @@ void DisplayListBuilder::DrawShadow(const SkPath& path,
                                                   dpr)
           : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
       UpdateLayerOpacityCompatibility(false);
+      UpdateLayerResult(result);
     }
   }
 }
@@ -1448,57 +1458,90 @@ bool DisplayListBuilder::paint_nops_on_transparency() {
 
 DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
                                               DisplayListAttributeFlags flags) {
-  if (flags.applies_image_filter() && paint.getImageFilterPtr()) {
-    return kAnyColor;
-  }
-  if (flags.applies_color_filter() && paint.getColorFilterPtr()) {
-    return kAnyColor;
-  }
+  DlColor color;
   if (flags.applies_alpha_or_color()) {
     const DlColorSource* source = paint.getColorSourcePtr();
     if (source) {
       if (source->asColor()) {
-        return source->asColor()->color();
+        color = source->asColor()->color();
+      } else {
+        color = source->is_opaque() ? DlColor::kBlack() : kAnyColor;
       }
-      return source->is_opaque() ? DlColor::kBlack() : kAnyColor;
+    } else {
+      color = paint.getColor();
     }
-    return paint.getColor();
   }
-  return kAnyColor;
+  if (flags.applies_image_filter()) {
+    auto filter = paint.getImageFilterPtr();
+    if (filter) {
+      if (!color.isTransparent() || filter->modifies_transparent_black()) {
+        color = kAnyColor;
+      }
+    }
+  }
+  if (flags.applies_color_filter()) {
+    auto filter = paint.getColorFilterPtr();
+    if (filter) {
+      if (!color.isTransparent() || filter->modifies_transparent_black()) {
+        color = kAnyColor;
+      }
+    }
+  }
+  return color;
 }
 
-bool DisplayListBuilder::paint_affects_dest(const DlPaint& paint,
-                                            DisplayListAttributeFlags flags) {
+DisplayListBuilder::OpResult DisplayListBuilder::PaintResult(
+    const DlPaint& paint,
+    DisplayListAttributeFlags flags) {
   if (current_layer_->is_nop_) {
-    return false;
+    return OpResult::kNoEffect;
   }
   if (flags.applies_blend()) {
     switch (paint.getBlendMode()) {
       // Nop blend mode (singular, there is only one)
       case DlBlendMode::kDst:
-        return false;
+        return OpResult::kNoEffect;
+
+      // Always clears pixels blend mode (singular, there is only one)
+      case DlBlendMode::kClear:
+        return OpResult::kClearsPixels;
 
       // Always destructive blend modes
-      // (Some answers might differ if dest is opaque, but that is unknown)
-      case DlBlendMode::kSrc:
-      case DlBlendMode::kClear:
-      case DlBlendMode::kSrcIn:
-      case DlBlendMode::kSrcOut:
-      case DlBlendMode::kDstATop:
-      case DlBlendMode::kModulate:
+      // These modes ignore source alpha entirely
       case DlBlendMode::kHue:
       case DlBlendMode::kSaturation:
       case DlBlendMode::kColor:
       case DlBlendMode::kLuminosity:
-        return true;
+        return OpResult::kDrawsPixels;
+
+      // Always destructive blend modes
+      // The ops will clear the destination if the source is transparent
+      // (Some answers might differ if dest is opaque, but that is unknown)
+      case DlBlendMode::kSrc:
+      case DlBlendMode::kSrcIn:
+      case DlBlendMode::kSrcOut:
+      case DlBlendMode::kDstATop:
+      case DlBlendMode::kModulate:
+        return GetEffectiveColor(paint, flags).isTransparent()
+                   ? OpResult::kClearsPixels
+                   : OpResult::kDrawsPixels;
+
+      // The kDstIn blend mode modifies the destination unless the
+      // source color is opaque. Additionally, it will deterministically
+      // clear the destination if the source is transparent.
+      case DlBlendMode::kDstIn: {
+        DlColor color = GetEffectiveColor(paint, flags);
+        if (color.isOpaque()) {
+          return OpResult::kNoEffect;
+        } else if (color.isTransparent()) {
+          return OpResult::kClearsPixels;
+        } else {
+          return OpResult::kDrawsPixels;
+        }
+      }
 
       // The next group of blend modes modifies the destination unless the
-      // source color is opaque (or there is a color or image filter).
-      case DlBlendMode::kDstIn:
-        return !GetEffectiveColor(paint, flags).isOpaque();
-
-      // The next group of blend modes modifies the destination unless the
-      // source color is transparent (or there is a color or image filter).
+      // source color is transparent.
       case DlBlendMode::kSrcOver:
       case DlBlendMode::kDstOver:
       case DlBlendMode::kDstOut:
@@ -1515,14 +1558,18 @@ bool DisplayListBuilder::paint_affects_dest(const DlPaint& paint,
       case DlBlendMode::kSoftLight:
       case DlBlendMode::kDifference:
       case DlBlendMode::kExclusion:
-        return !GetEffectiveColor(paint, flags).isTransparent();
+        return GetEffectiveColor(paint, flags).isTransparent()
+                   ? OpResult::kNoEffect
+                   : OpResult::kDrawsPixels;
 
       // Color Burn only leaves the pixel alone when the source is white.
       case DlBlendMode::kColorBurn:
-        return GetEffectiveColor(paint, flags) != DlColor::kWhite();
+        return GetEffectiveColor(paint, flags) == DlColor::kWhite()
+                   ? OpResult::kNoEffect
+                   : OpResult::kDrawsPixels;
     }
   }
-  return true;
+  return OpResult::kDrawsPixels;
 }
 
 }  // namespace flutter

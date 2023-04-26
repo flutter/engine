@@ -521,6 +521,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool has_layer() const { return has_layer_; }
     bool cannot_inherit_opacity() const { return cannot_inherit_opacity_; }
     bool has_compatible_op() const { return has_compatible_op_; }
+    bool affects_transparent_layer() const {
+      return affects_transparent_layer_;
+    }
 
     bool is_group_opacity_compatible() const {
       return !cannot_inherit_opacity_;
@@ -541,6 +544,12 @@ class DisplayListBuilder final : public virtual DlCanvas,
           has_compatible_op_ = true;
         }
       }
+    }
+
+    // Records that the current layer contains an op that produces visible
+    // output on a transparent surface.
+    void add_visible_op() {
+      affects_transparent_layer_ = true;
     }
 
     // The filter to apply to the layer bounds when it is restored
@@ -583,6 +592,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool is_unbounded_ = false;
     bool has_deferred_save_op_ = false;
     bool is_nop_ = false;
+    bool affects_transparent_layer_ = false;
 
     friend class DisplayListBuilder;
   };
@@ -698,9 +708,26 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   static DisplayListAttributeFlags FlagsForPointMode(PointMode mode);
 
+  enum class OpResult {
+    kNoEffect,
+    kClearsPixels,
+    kDrawsPixels,
+  };
+
   bool paint_nops_on_transparency();
-  bool paint_affects_dest(const DlPaint& paint,
-                          DisplayListAttributeFlags flags = kDrawPaintFlags);
+  OpResult PaintResult(const DlPaint& paint,
+                       DisplayListAttributeFlags flags = kDrawPaintFlags);
+
+  void UpdateLayerResult(OpResult result) {
+    switch (result) {
+      case OpResult::kNoEffect:
+      case OpResult::kClearsPixels:
+        break;
+      case OpResult::kDrawsPixels:
+        current_layer_->add_visible_op();
+        break;
+    }
+  }
 
   // kAnyColor is a non-opaque and non-transparent color that will not
   // trigger any short-circuit tests about the results of a blend.

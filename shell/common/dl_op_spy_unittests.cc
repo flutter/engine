@@ -13,21 +13,31 @@ namespace flutter {
 namespace testing {
 
 // The following 2 macros demonstrate that the DlOpSpy class is equivalent
-// to simpler tests on the DisplayList object itself now that the
-// DisplayListBuilder implements operation culling.
+// to DisplayList::affects_transparent_surface() now that DisplayListBuilder
+// implements operation culling.
 // See https://github.com/flutter/flutter/issues/125403
-#define ASSERT_DID_DRAW(spy, dl)          \
-  do {                                    \
-    ASSERT_TRUE(spy.did_draw());          \
-    ASSERT_GT(dl->op_count(), 0u);        \
-    ASSERT_FALSE(dl->bounds().isEmpty()); \
+#define ASSERT_DID_DRAW(spy, dl)                    \
+  do {                                              \
+    ASSERT_TRUE(spy.did_draw());                    \
+    ASSERT_TRUE(dl->affects_transparent_surface()); \
+    ASSERT_GT(dl->op_count(), 0u);                  \
+    ASSERT_FALSE(dl->bounds().isEmpty());           \
   } while (0)
 
-#define ASSERT_NO_DRAW(spy, dl)          \
-  do {                                   \
-    ASSERT_FALSE(spy.did_draw());        \
-    ASSERT_EQ(dl->op_count(), 0u);       \
-    ASSERT_TRUE(dl->bounds().isEmpty()); \
+#define ASSERT_TRANSPARENT_DRAW(spy, dl)             \
+  do {                                               \
+    ASSERT_FALSE(spy.did_draw());                    \
+    ASSERT_FALSE(dl->affects_transparent_surface()); \
+    ASSERT_GT(dl->op_count(), 0u);                   \
+    ASSERT_FALSE(dl->bounds().isEmpty());            \
+  } while (0)
+
+#define ASSERT_NO_DRAW(spy, dl)                      \
+  do {                                               \
+    ASSERT_FALSE(spy.did_draw());                    \
+    ASSERT_FALSE(dl->affects_transparent_surface()); \
+    ASSERT_EQ(dl->op_count(), 0u);                   \
+    ASSERT_TRUE(dl->bounds().isEmpty());             \
   } while (0)
 
 TEST(DlOpSpy, DidDrawIsFalseByDefault) {
@@ -112,16 +122,16 @@ TEST(DlOpSpy, DrawColor) {
     dl->Dispatch(dl_op_spy);
     ASSERT_DID_DRAW(dl_op_spy, dl);
   }
-  {  // Transparent color source.
+  {  // Transparent color with kSrc.
     DisplayListBuilder builder;
     auto color = DlColor::kTransparent();
     builder.DrawColor(color, DlBlendMode::kSrc);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
-    ASSERT_DID_DRAW(dl_op_spy, dl);
+    ASSERT_TRANSPARENT_DRAW(dl_op_spy, dl);
   }
-  {  // Transparent color source-over.
+  {  // Transparent color with kSrcOver.
     DisplayListBuilder builder;
     auto color = DlColor::kTransparent();
     builder.DrawColor(color, DlBlendMode::kSrcOver);
