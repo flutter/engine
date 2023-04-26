@@ -251,7 +251,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   ASSERT_NE(old_packer, new_packer);
 }
 
-TEST_P(TypographerTest, GlyphAtlasUsesLinearTexture) {
+TEST_P(TypographerTest, GlyphAtlasUsesLinearTextureAlphaBitmap) {
   if (!GetContext()
            ->GetCapabilities()
            ->SupportsSharedDeviceBufferTextureMemory()) {
@@ -268,6 +268,30 @@ TEST_P(TypographerTest, GlyphAtlasUsesLinearTexture) {
   ASSERT_TRUE(blob);
   auto atlas = context->CreateGlyphAtlas(
       GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+      GetContext()->GetCapabilities(), TextFrameFromTextBlob(blob));
+
+  auto* first_texture = atlas->GetTexture().get();
+
+  ASSERT_TRUE(first_texture->IsValid());
+}
+
+TEST_P(TypographerTest, GlyphAtlasUsesLinearTextureColor) {
+  if (!GetContext()
+           ->GetCapabilities()
+           ->SupportsSharedDeviceBufferTextureMemory()) {
+    GTEST_SKIP()
+        << "Skipping test that requires "
+           "SupportsSharedDeviceBufferTextureMemory on non metal platform";
+  }
+
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("s", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas = context->CreateGlyphAtlas(
+      GlyphAtlas::Type::kColorBitmap, atlas_context,
       GetContext()->GetCapabilities(), TextFrameFromTextBlob(blob));
 
   auto* first_texture = atlas->GetTexture().get();

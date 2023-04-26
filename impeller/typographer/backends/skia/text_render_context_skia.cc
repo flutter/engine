@@ -38,6 +38,16 @@ std::unique_ptr<TextRenderContext> TextRenderContext::Create(
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
 
+std::optional<uint16_t> ComputeMinimumAlignment(
+    const std::shared_ptr<Allocator>& allocator,
+    const std::shared_ptr<const Capabilities>& capabilities,
+    PixelFormat format) {
+  if (!capabilities->SupportsSharedDeviceBufferTextureMemory()) {
+    return std::nullopt;
+  }
+  return allocator->MinimumBytesPerRow(format);
+}
+
 TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
     : TextRenderContext(std::move(context)) {}
 
@@ -140,15 +150,21 @@ namespace {
 ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
-    const std::shared_ptr<GlyphAtlasContext>& atlas_context) {
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    std::optional<uint16_t> minimum_alignment) {
   // This size needs to be above the minimum required aligment for linear
   // textures. This is 256 for older intel macs and decreases on iOS devices.
   static constexpr auto kMinAtlasSize = 256u;
   static constexpr auto kMaxAtlasSize = 4096u;
+  // In case a device happens to have a larger minimum alignment, verify that
+  // 256 is sufficient here.
+  uint16_t minimum_size = minimum_alignment.value_or(0) > kMinAtlasSize
+                              ? minimum_alignment.value()
+                              : kMinAtlasSize;
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size(kMinAtlasSize, kMinAtlasSize);
+  ISize current_size(minimum_size, minimum_size);
   size_t total_pairs = pairs.size() + 1;
   do {
     auto rect_packer = std::shared_ptr<GrRectanizer>(
@@ -523,13 +539,25 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
     return last_atlas;
   }
   // A new glyph atlas must be created.
+  PixelFormat format;
+  switch (type) {
+    case GlyphAtlas::Type::kSignedDistanceField:
+    case GlyphAtlas::Type::kAlphaBitmap:
+      format = PixelFormat::kA8UNormInt;
+      break;
+    case GlyphAtlas::Type::kColorBitmap:
+      format = PixelFormat::kR8G8B8A8UNormInt;
+      break;
+  }
 
   // ---------------------------------------------------------------------------
   // Step 4: Get the optimum size of the texture atlas.
   // ---------------------------------------------------------------------------
   auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
+  auto min_alignment = ComputeMinimumAlignment(
+      GetContext()->GetResourceAllocator(), capabilities, format);
   auto atlas_size = OptimumAtlasSizeForFontGlyphPairs(
-      font_glyph_pairs, glyph_positions, atlas_context);
+      font_glyph_pairs, glyph_positions, atlas_context, min_alignment);
 
   atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
   if (atlas_size.IsEmpty()) {
@@ -569,18 +597,10 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 8: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
-  PixelFormat format;
-  switch (type) {
-    case GlyphAtlas::Type::kSignedDistanceField:
-      ConvertBitmapToSignedDistanceField(
-          reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
-          atlas_size.height);
-    case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
-      break;
-    case GlyphAtlas::Type::kColorBitmap:
-      format = PixelFormat::kR8G8B8A8UNormInt;
-      break;
+  if (type == GlyphAtlas::Type::kSignedDistanceField) {
+    ConvertBitmapToSignedDistanceField(
+        reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
+        atlas_size.height);
   }
   auto texture =
       UploadGlyphTextureAtlas(*GetContext()->GetResourceAllocator().get(),
