@@ -148,6 +148,15 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   return subpass_pointer;
 }
 
+static RenderTarget::AttachmentConfig GetDefaultStencilConfig(bool readable) {
+  return RenderTarget::AttachmentConfig{
+      .storage_mode = readable ? StorageMode::kDevicePrivate
+                               : StorageMode::kDeviceTransient,
+      .load_action = LoadAction::kDontCare,
+      .store_action = StoreAction::kDontCare,
+  };
+}
+
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
                                            bool readable,
@@ -170,13 +179,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},  // color_attachment_config
-        RenderTarget::AttachmentConfig{
-            .storage_mode = readable ? StorageMode::kDevicePrivate
-                                     : StorageMode::kDeviceTransient,
-            .load_action = LoadAction::kDontCare,
-            .store_action = StoreAction::kDontCare,
-        }  // stencil_attachment_config
+            .clear_color = clear_color},   // color_attachment_config
+        GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   } else {
     target = RenderTarget::CreateOffscreen(
@@ -187,13 +191,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
-        },  // color_attachment_config
-        RenderTarget::AttachmentConfig{
-            .storage_mode = readable ? StorageMode::kDevicePrivate
-                                     : StorageMode::kDeviceTransient,
-            .load_action = LoadAction::kDontCare,
-            .store_action = StoreAction::kDontCare,
-        }  // stencil_attachment_config
+        },                                 // color_attachment_config
+        GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   }
 
@@ -212,6 +211,10 @@ bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
   if (render_target.GetColorAttachments().empty()) {
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
+    return false;
+  }
+  if (!render_target.GetStencilAttachment().has_value()) {
+    VALIDATION_LOG << "The root RenderTarget must have a stencil attachment.";
     return false;
   }
 
@@ -291,6 +294,18 @@ bool EntityPass::Render(ContentContext& renderer,
     }
 
     return true;
+  }
+
+  {
+    auto stencil_texture = render_target.GetStencilAttachment()->texture;
+    if (stencil_texture &&
+        stencil_texture->GetTextureDescriptor().storage_mode ==
+            StorageMode::kDeviceTransient) {
+      VALIDATION_LOG
+          << "The root RenderTarget stencil must not be transient on "
+             "this backend.";
+      return false;
+    }
   }
 
   // Set up the clear color of the root pass.
