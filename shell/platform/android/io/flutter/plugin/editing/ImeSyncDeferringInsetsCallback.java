@@ -43,7 +43,7 @@ import java.util.List;
 // a no-op. When onEnd indicates the end of the animation, the deferred call is
 // dispatched again, this time avoiding any flicker since the animation is now
 // complete.
-@VisibleForTesting
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 @TargetApi(30)
 @RequiresApi(30)
 @SuppressLint({"NewApi", "Override"})
