@@ -61,7 +61,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   color0.resolve_texture = resolve_tex;
 
   TextureDescriptor stencil0_tex;
-  stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
+  stencil0_tex.storage_mode = StorageMode::kDevicePrivate;
   stencil0_tex.type = TextureType::kTexture2D;
   stencil0_tex.sample_count = SampleCount::kCount4;
   stencil0_tex.format = context->GetCapabilities()->GetDefaultStencilFormat();
