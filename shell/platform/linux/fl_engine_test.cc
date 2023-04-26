@@ -5,10 +5,12 @@
 // Included first as it collides with the X11 headers.
 #include "gtest/gtest.h"
 
+#include "flutter/shell/platform/common/application_lifecycle.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
 // MOCK_ENGINE_PROC is leaky by design
@@ -421,6 +423,39 @@ TEST(FlEngineTest, SwitchesEmpty) {
   g_autoptr(GPtrArray) switches = fl_engine_get_switches(engine);
 
   EXPECT_EQ(switches->len, 0U);
+}
+
+TEST(FlEngineTest, SendWindowStateEvent) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+
+  bool called = false;
+  flutter::AppLifecycleState state = flutter::kAppLifecycleStateDetached;
+  embedder_api->SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage,
+      ([&called, &state](auto engine, const FlutterPlatformMessage* message) {
+        EXPECT_STREQ(message->channel, "flutter/lifecycle");
+        called = true;
+        g_autoptr(FlStringCodec) codec = fl_string_codec_new();
+        g_autoptr(GBytes) data =
+            g_bytes_new(message->message, message->message_size);
+        g_autoptr(GError) error = nullptr;
+        g_autoptr(FlValue) parsed_state = fl_message_codec_decode_message(
+            FL_MESSAGE_CODEC(codec), data, &error);
+
+        state = flutter::StringToAppLifecycleState(
+            fl_value_get_string(parsed_state));
+        return kSuccess;
+      }));
+  fl_engine_send_window_state_event(engine, false, false);
+  EXPECT_EQ(state, flutter::kAppLifecycleStateHidden);
+  fl_engine_send_window_state_event(engine, false, true);
+  EXPECT_EQ(state, flutter::kAppLifecycleStateHidden);
+  fl_engine_send_window_state_event(engine, true, false);
+  EXPECT_EQ(state, flutter::kAppLifecycleStateInactive);
+  fl_engine_send_window_state_event(engine, true, true);
+  EXPECT_EQ(state, flutter::kAppLifecycleStateResumed);
+  EXPECT_TRUE(called);
 }
 
 #ifndef FLUTTER_RELEASE

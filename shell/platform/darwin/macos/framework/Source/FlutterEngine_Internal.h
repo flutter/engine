@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include "flutter/shell/platform/common/application_lifecycle.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
@@ -171,6 +173,11 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (BOOL)unregisterTextureWithID:(int64_t)textureID;
 
 - (nonnull FlutterPlatformViewController*)platformViewController;
+
+/**
+ * Handles changes to the application state, sending them to the framework.
+ */
+- (void)setApplicationState:(flutter::AppLifecycleState)state;
 
 // Accessibility API.
 

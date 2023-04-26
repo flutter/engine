@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+#include "flutter/shell/platform/common/application_lifecycle.h"
 #include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -24,6 +25,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 
 NSString* const kFlutterPlatformChannel = @"flutter/platform";
+NSString* const kFlutterSettingsChannel = @"flutter/settings";
+NSString* const kFlutterLifecycleChannel = @"flutter/lifecycle";
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -390,7 +393,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   FlutterThreadSynchronizer* _threadSynchronizer;
 
+  // The next available view ID.
   int _nextViewId;
+
+  // Whether the application is currently the active application.
+  BOOL _active;
+
+  // Whether any portion of the application is currently visible.
+  BOOL _visible;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -402,7 +412,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-
+  _active = NO;
+  _visible = NO;
   _project = project ?: [[FlutterDartProject alloc] init];
   _messengerHandlers = [[NSMutableDictionary alloc] init];
   _currentMessengerConnection = 1;
@@ -433,11 +444,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
+  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  [appDelegate addApplicationLifecycleDelegate:self];
 
   return self;
 }
 
 - (void)dealloc {
+  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  if (appDelegate != nil) {
+    [appDelegate removeApplicationLifecycleDelegate:self];
+  }
   @synchronized(_isResponseValid) {
     [_isResponseValid removeAllObjects];
     [_isResponseValid addObject:@NO];
@@ -997,11 +1014,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
   _settingsChannel =
-      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
+      [FlutterBasicMessageChannel messageChannelWithName:kFlutterSettingsChannel
                                          binaryMessenger:self.binaryMessenger
                                                    codec:[FlutterJSONMessageCodec sharedInstance]];
   _platformChannel =
-      [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
+      [FlutterMethodChannel methodChannelWithName:kFlutterPlatformChannel
                                   binaryMessenger:self.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
@@ -1119,6 +1136,60 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (FlutterThreadSynchronizer*)testThreadSynchronizer {
   return _threadSynchronizer;
+}
+
+#pragma mark - FlutterAppLifecycleDelegate
+
+- (void)setApplicationState:(flutter::AppLifecycleState)state {
+  NSString* nextState =
+      [[NSString alloc] initWithCString:flutter::AppLifecycleStateToString(state)];
+  [self sendOnChannel:kFlutterLifecycleChannel
+              message:[nextState dataUsingEncoding:NSUTF8StringEncoding]];
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillBecomeActive
+ * notification.
+ */
+- (void)handleWillBecomeActive:(NSNotification*)notification {
+  _active = YES;
+  if (!_visible) {
+    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+  } else {
+    [self setApplicationState:flutter::kAppLifecycleStateResumed];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillResignActive
+ * notification.
+ */
+- (void)handleWillResignActive:(NSNotification*)notification {
+  _active = NO;
+  if (!_visible) {
+    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+  } else {
+    [self setApplicationState:flutter::kAppLifecycleStateInactive];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationDidUnhide
+ * notification.
+ */
+- (void)handleDidChangeOcclusionState:(NSNotification*)notification API_AVAILABLE(macos(10.9)) {
+  NSApplicationOcclusionState occlusionState = [[NSApplication sharedApplication] occlusionState];
+  if (occlusionState & NSApplicationOcclusionStateVisible) {
+    _visible = YES;
+    if (_active) {
+      [self setApplicationState:flutter::kAppLifecycleStateResumed];
+    } else {
+      [self setApplicationState:flutter::kAppLifecycleStateInactive];
+    }
+  } else {
+    _visible = NO;
+    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+  }
 }
 
 #pragma mark - FlutterBinaryMessenger

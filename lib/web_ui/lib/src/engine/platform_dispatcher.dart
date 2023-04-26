@@ -104,6 +104,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
+    _setAppLifecycleState(ui.AppLifecycleState.resumed);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -471,6 +472,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   PlatformViewMessageHandler? _platformViewMessageHandler;
 
+  static const String _kSkiaChannel = 'flutter/skia';
+  static const String _kAssetsChannel = 'flutter/assets';
+  static const String _kPlatformChannel = 'flutter/platform';
+  static const String _kServiceWorkerChannel = 'flutter/service_worker';
+  static const String _kTextInputChannel = 'flutter/textinput';
+  static const String _kContextMenuChannel = 'flutter/contextmenu';
+  static const String _kMouseCursorChannel = 'flutter/mousecursor';
+  static const String _kWebTestE2EChannel = 'flutter/web_test_e2e';
+  static const String _kPlatformViewsChannel = 'flutter/platform_views';
+  static const String _kAccessibilityChannel = 'flutter/accessibility';
+  static const String _kNavigationChannel = 'flutter/navigation';
+  static const String _kLifecycleChannel = 'flutter/lifecycle';
+
   void _sendPlatformMessage(
     String name,
     ByteData? data,
@@ -508,7 +522,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     switch (name) {
 
       /// This should be in sync with shell/common/shell.cc
-      case 'flutter/skia':
+      case _kSkiaChannel:
         const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
@@ -529,12 +543,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         }
         return;
 
-      case 'flutter/assets':
+      case _kAssetsChannel:
         final String url = utf8.decode(data!.buffer.asUint8List());
         _handleFlutterAssetsMessage(url, callback);
         return;
 
-      case 'flutter/platform':
+      case _kPlatformChannel:
         const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
@@ -590,15 +604,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         }
 
       // Dispatched by the bindings to delay service worker initialization.
-      case 'flutter/service_worker':
+      case _kServiceWorkerChannel:
         domWindow.dispatchEvent(createDomEvent('Event', 'flutter-first-frame'));
         return;
 
-      case 'flutter/textinput':
+      case _kTextInputChannel:
         textEditing.channel.handleTextInput(data, callback);
         return;
 
-      case 'flutter/contextmenu':
+      case _kContextMenuChannel:
         const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
@@ -613,7 +627,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         }
         return;
 
-      case 'flutter/mousecursor':
+      case _kMouseCursorChannel:
         const MethodCodec codec = StandardMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         final Map<dynamic, dynamic> arguments = decoded.arguments as Map<dynamic, dynamic>;
@@ -623,7 +637,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         }
         return;
 
-      case 'flutter/web_test_e2e':
+      case _kWebTestE2EChannel:
         const MethodCodec codec = JSONMethodCodec();
         replyToPlatformMessage(
             callback,
@@ -631,7 +645,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(codec, data)));
         return;
 
-      case 'flutter/platform_views':
+      case _kPlatformViewsChannel:
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
@@ -641,14 +655,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
         return;
 
-      case 'flutter/accessibility':
+      case _kAccessibilityChannel:
         // In widget tests we want to bypass processing of platform messages.
         const StandardMessageCodec codec = StandardMessageCodec();
         accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
-      case 'flutter/navigation':
+      case _kNavigationChannel:
         // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the view ID. Right now only one view is
         // supported.
@@ -1003,6 +1017,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _disconnectFontSizeObserver() {
     _fontSizeObserver?.disconnect();
     _fontSizeObserver = null;
+  }
+
+  void _setAppLifecycleState(ui.AppLifecycleState state) {
+    sendPlatformMessage(
+      _kLifecycleChannel,
+      Uint8List.fromList(utf8.encode(state.toString())).buffer.asByteData(),
+      null,
+    );
   }
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.

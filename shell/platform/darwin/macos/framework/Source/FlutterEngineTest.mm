@@ -856,6 +856,74 @@ TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
   EXPECT_TRUE(updated);
 }
 
+TEST_F(FlutterEngineTest, HandleLifecycleStates) {
+  __block flutter::AppLifecycleState sentState;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  // Have to enumerate all the values because OCMStub can't capture
+  // non-Objective-C object arguments.
+  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateDetached])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = kAppLifecycleStateHidden;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateResumed])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = kAppLifecycleStateResumed;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateInactive])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = kAppLifecycleStateInactive;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateHidden])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = kAppLifecycleStateHidden;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStatePaused])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = kAppLifecycleStatePaused;
+      }));
+
+  __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
+  id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
+  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation setReturnValue:&visibility];
+      });
+  NSApp = mockApplication;
+
+  NSNotification* willBecomeActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillBecomeActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+  NSNotification* willResignActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillResignActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+  NSNotification* didChangeOcclusionState =
+      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateResumed);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+
+  visibility = 0;
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+}
+
 }  // namespace flutter::testing
 
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)
