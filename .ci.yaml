@@ -456,6 +456,7 @@ targets:
       config_name: mac_impeller_cmake_example
 
   - name: Windows Android AOT Engine
+    bringup: true
     recipe: engine/engine
     properties:
       build_android_aot: "true"
@@ -464,6 +465,7 @@ targets:
     timeout: 60
 
   - name: Windows Host Engine
+    bringup: true
     recipe: engine/engine
     timeout: 60
     properties:

@@ -52,7 +52,7 @@ class SurfaceMTL final : public Surface {
   bool Present() const override;
 
  private:
-  std::shared_ptr<Context> context_;
+  std::weak_ptr<Context> context_;
   std::shared_ptr<Texture> resolve_texture_;
   id<CAMetalDrawable> drawable_ = nil;
   bool requires_blit_ = false;
@@ -60,7 +60,7 @@ class SurfaceMTL final : public Surface {
 
   static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 
-  SurfaceMTL(std::shared_ptr<Context> context,
+  SurfaceMTL(const std::weak_ptr<Context>& context,
              const RenderTarget& target,
              std::shared_ptr<Texture> resolve_texture,
              id<CAMetalDrawable> drawable,

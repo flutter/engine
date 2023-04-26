@@ -7,6 +7,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "impeller/renderer/render_target.h"
@@ -109,7 +110,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   color0.resolve_texture = resolve_tex;
 
   TextureDescriptor stencil_tex_desc;
-  stencil_tex_desc.storage_mode = StorageMode::kDeviceTransient;
+  stencil_tex_desc.storage_mode = StorageMode::kDevicePrivate;
   stencil_tex_desc.type = TextureType::kTexture2DMultisample;
   stencil_tex_desc.sample_count = SampleCount::kCount4;
   stencil_tex_desc.format =
@@ -138,11 +139,11 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
 
   // The constructor is private. So make_unique may not be used.
   return std::unique_ptr<SurfaceMTL>(
-      new SurfaceMTL(std::move(context), render_target_desc, resolve_tex,
+      new SurfaceMTL(context->weak_from_this(), render_target_desc, resolve_tex,
                      drawable, requires_blit, clip_rect));
 }
 
-SurfaceMTL::SurfaceMTL(std::shared_ptr<Context> context,
+SurfaceMTL::SurfaceMTL(const std::weak_ptr<Context>& context,
                        const RenderTarget& target,
                        std::shared_ptr<Texture> resolve_texture,
                        id<CAMetalDrawable> drawable,
@@ -178,6 +179,21 @@ bool SurfaceMTL::Present() const {
   if (drawable_ == nil) {
     return false;
   }
+
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+
+  // If a transaction is present, `presentDrawable` will present too early. And
+  // so we wait on an empty command buffer to get scheduled instead, which
+  // forces us to also wait for all of the previous command buffers in the queue
+  // to get scheduled.
+  id<MTLCommandBuffer> command_buffer =
+      ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
+  [command_buffer commit];
+  [command_buffer waitUntilScheduled];
+
   // If there is no partial repaint, then immediately present without a blit
   // pass.
   if (!requires_blit_) {
@@ -199,6 +215,7 @@ bool SurfaceMTL::Present() const {
   }
 
   [drawable_ present];
+
   return true;
 }
 #pragma GCC diagnostic pop
