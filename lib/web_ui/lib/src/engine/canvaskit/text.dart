@@ -866,6 +866,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     if (style.fontFamilyFallback != null) {
       fontFamilies.addAll(style.fontFamilyFallback!);
     }
+    FontFallbackData.instance.ensureCorrectVariant(style, fontFamilies);
     FontFallbackData.instance.ensureFontsSupportText(text, fontFamilies);
     _paragraphBuilder.addText(text);
   }

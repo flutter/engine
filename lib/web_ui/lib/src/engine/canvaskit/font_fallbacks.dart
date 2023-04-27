@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/canvaskit/renderer.dart';
+import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../font_change_util.dart';
@@ -17,6 +18,7 @@ import 'font_fallback_data.dart';
 import 'fonts.dart';
 import 'interval_tree.dart';
 import 'noto_font.dart';
+import 'text.dart';
 
 /// Global static font fallback data.
 class FontFallbackData {
@@ -59,7 +61,7 @@ class FontFallbackData {
   /// Fallback fonts which have been registered and loaded.
   final List<RegisteredFont> registeredFallbackFonts = <RegisteredFont>[];
 
-  final List<String> globalFontFallbacks = <String>['Roboto'];
+  final List<String> globalFontFallbacks = <String>[];
 
   /// A list of code units to check against the global fallback fonts.
   final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
@@ -70,6 +72,26 @@ class FontFallbackData {
   /// code units is very expensive.
   bool _scheduledCodeUnitCheck = false;
 
+  void ensureCorrectVariant(CkTextStyle style, List<String> fontFamilies) {
+    if (style.fontWeight == null || style.fontWeight == ui.FontWeight.w400) {
+      return;
+    }
+    // Use a heuristic to guess it it's likely that the default Noto Sans fallback
+    // font will be needed.
+    for (final String family in fontFamilies) {
+      if (CanvasKitRenderer.instance.fontCollection.isFontFamilyDownloaded(family)) {
+        return;
+      }
+    }
+
+    if (_notoSans.downloadedVariant(style.fontWeight!)) {
+      return;
+    }
+    _notoSans.markVariantDownloaded(style.fontWeight!);
+
+    notoDownloadQueue.add(NotoFont(_notoSans.name, _notoSans.variants![style.fontWeight!]!, ''));
+  }
+
   /// Determines if the given [text] contains any code points which are not
   /// supported by the current set of fonts.
   void ensureFontsSupportText(String text, List<String> fontFamilies) {
@@ -79,28 +101,15 @@ class FontFallbackData {
       return;
     }
 
-    // If the text is ASCII, then skip this check.
-    bool isAscii = true;
-    for (int i = 0; i < text.length; i++) {
-      if (text.codeUnitAt(i) >= 160) {
-        isAscii = false;
-        break;
-      }
-    }
-    if (isAscii) {
-      return;
-    }
-
     // We have a cache of code units which are known to be covered by at least
     // one of our fallback fonts, and a cache of code units which are known not
     // to be covered by any fallback font. From the given text, construct a set
     // of code units which need to be checked.
     final Set<int> runesToCheck = <int>{};
     for (final int rune in text.runes) {
-      // Filter out code units which ASCII, known to be covered, or known not
+      // Filter out code units which are known to be covered, or known not
       // to be covered.
-      if (!(rune < 160 ||
-          knownCoveredCodeUnits.contains(rune) ||
+      if (!(knownCoveredCodeUnits.contains(rune) ||
           codeUnitsWithNoKnownFont.contains(rune))) {
         runesToCheck.add(rune);
       }
@@ -161,6 +170,7 @@ class FontFallbackData {
       return;
     }
     final List<int> codeUnits = _codeUnitsToCheckAgainstFallbackFonts.toList();
+    print('MISSING CODE UNITS: $codeUnits');
     _codeUnitsToCheckAgainstFallbackFonts.clear();
     final List<bool> codeUnitsSupported =
         List<bool>.filled(codeUnits.length, false);
@@ -226,11 +236,7 @@ class FontFallbackData {
     // Insert emoji font before all other fallback fonts so we use the emoji
     // whenever it's available.
     if (family == 'Noto Color Emoji' || family == 'Noto Emoji') {
-      if (globalFontFallbacks.first == 'Roboto') {
-        globalFontFallbacks.insert(1, family);
-      } else {
-        globalFontFallbacks.insert(0, family);
-      }
+      globalFontFallbacks.insert(0, family);
     } else {
       globalFontFallbacks.add(family);
     }
@@ -256,6 +262,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   // The call to `findMinimumFontsForCodeUnits` will remove all code units that
   // were matched by `fonts` from `unmatchedCodeUnits`.
   final Set<int> unmatchedCodeUnits = Set<int>.from(coveredCodeUnits);
+  print('FONTS WHICH MIGHT COVER: ${fonts.map((f) => f.name).toList()}');
   fonts = findMinimumFontsForCodeUnits(unmatchedCodeUnits, fonts);
 
   fonts.forEach(notoDownloadQueue.add);
@@ -349,7 +356,9 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
       } else {
         // To be predictable, if there is a tie for best font, choose a font
         // from this list first, then just choose the first font.
-        if (bestFonts.contains(_notoSymbols)) {
+        if (bestFonts.contains(_notoSans)) {
+          bestFont = _notoSans;
+        } else if (bestFonts.contains(_notoSymbols)) {
           bestFont = _notoSymbols;
         } else if (bestFonts.contains(_notoSansSC)) {
           bestFont = _notoSansSC;
@@ -371,6 +380,7 @@ NotoFont _notoSansJP = fallbackFonts.singleWhere((NotoFont font) => font.name ==
 NotoFont _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR');
 List<NotoFont> _cjkFonts = <NotoFont>[_notoSansSC, _notoSansTC, _notoSansHK, _notoSansJP, _notoSansKR];
 
+NotoFont _notoSans = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans');
 NotoFont _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols');
 
 class FallbackFontDownloadQueue {

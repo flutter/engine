@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/ui.dart' as ui;
 import 'package:web_test_fonts/web_test_fonts.dart';
 
 import '../assets.dart';
@@ -14,14 +15,6 @@ import '../fonts.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
-
-// This URL was found by using the Google Fonts Developer API to find the URL
-// for Roboto. The API warns that this URL is not stable. In order to update
-// this, list out all of the fonts and find the URL for the regular
-// Roboto font. The API reference is here:
-// https://developers.google.com/fonts/docs/developer_api
-const String _robotoUrl =
-    'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection implements FlutterFontCollection {
@@ -127,14 +120,6 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
-    /// We need a default fallback font for CanvasKit, in order to
-    /// avoid crashing while laying out text with an unregistered font. We chose
-    /// Roboto to match Android.
-    if (!_isFontFamilyDownloaded('Roboto')) {
-      // Download Roboto and add it to the font buffers.
-      _downloadFont(pendingFonts, _robotoUrl, 'Roboto');
-    }
-
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
     _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
   }
@@ -170,7 +155,7 @@ class SkiaFontCollection implements FlutterFontCollection {
   }
 
   /// Whether the [fontFamily] was registered and/or loaded.
-  bool _isFontFamilyDownloaded(String fontFamily) {
+  bool isFontFamilyDownloaded(String fontFamily) {
     return _downloadedFontFamilies.contains(fontFamily);
   }
 
@@ -184,7 +169,7 @@ class SkiaFontCollection implements FlutterFontCollection {
   Future<void> debugDownloadTestFonts() async {
     final List<Future<UnregisteredFont?>> pendingFonts = <Future<UnregisteredFont?>>[];
     for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
-      if (!_isFontFamilyDownloaded(fontEntry.key)) {
+      if (!isFontFamilyDownloaded(fontEntry.key)) {
         _downloadFont(pendingFonts, fontEntry.value, fontEntry.key);
       }
     }

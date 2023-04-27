@@ -2,16 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/ui.dart' as ui;
+
 import '../text/unicode_range.dart';
 
 class NotoFont {
-  NotoFont(this.name, this.url, this._packedRanges);
+  NotoFont(this.name, this.url, this._packedRanges, {this.variants});
 
   final String name;
   final String url;
   final String _packedRanges;
+  final Map<ui.FontWeight, String>? variants;
+
   // A sorted list of Unicode ranges.
   late final List<CodeunitRange> _ranges = _unpackFontRange(_packedRanges);
+
+  Set<ui.FontWeight>? _downloadedVariants;
+  void markVariantDownloaded(ui.FontWeight variant) {
+    _downloadedVariants ??= <ui.FontWeight>{};
+    _downloadedVariants!.add(variant);
+  }
+
+  bool downloadedVariant(ui.FontWeight variant) =>
+      _downloadedVariants?.contains(variant) ?? false;
 
   List<CodeunitRange> computeUnicodeRanges() => _ranges;
 
@@ -74,16 +87,17 @@ class MutableInt {
 }
 
 List<CodeunitRange> _unpackFontRange(String packedRange) {
-    final MutableInt i = MutableInt(0);
-    final List<CodeunitRange> ranges = <CodeunitRange>[];
+  final MutableInt i = MutableInt(0);
+  final List<CodeunitRange> ranges = <CodeunitRange>[];
 
-    while (i.value < packedRange.length) {
-      final int rangeStart = _consumeInt36(packedRange, i, until: _kCharPipe);
-      final int rangeLength = _consumeInt36(packedRange, i, until: _kCharSemicolon);
-      final int rangeEnd = rangeStart + rangeLength;
-      ranges.add(CodeunitRange(rangeStart, rangeEnd));
-    }
-    return ranges;
+  while (i.value < packedRange.length) {
+    final int rangeStart = _consumeInt36(packedRange, i, until: _kCharPipe);
+    final int rangeLength =
+        _consumeInt36(packedRange, i, until: _kCharSemicolon);
+    final int rangeEnd = rangeStart + rangeLength;
+    ranges.add(CodeunitRange(rangeStart, rangeEnd));
+  }
+  return ranges;
 }
 
 int _consumeInt36(String packedData, MutableInt index, {required int until}) {

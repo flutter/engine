@@ -62,11 +62,35 @@ class GenerateFallbackFontDataCommand extends Command<bool>
         (googleFontsResult['items'] as List<dynamic>)
             .cast<Map<String, dynamic>>();
     final Map<String, Uri> urlForFamily = <String, Uri>{};
+    final Map<String, Map<String, String>> variantsForFamily =
+        <String, Map<String, String>>{};
     for (final Map<String, dynamic> fontData in fontDatas) {
       if (fallbackFonts.contains(fontData['family'])) {
         final Uri uri = Uri.parse(fontData['files']['regular'] as String)
             .replace(scheme: 'https');
         urlForFamily[fontData['family'] as String] = uri;
+      }
+      if (fontsWithVariants.contains(fontData['family'])) {
+        const Set<String> variants = <String>{
+          '100',
+          '200',
+          '300',
+          '400',
+          '500',
+          '600',
+          '700',
+          '800',
+          '900',
+        };
+        final Map<String, String> urlsForWeights = <String, String>{};
+        final Map<String, String> fontVariants =
+            (fontData['files'] as Map<String, dynamic>).cast<String, String>();
+        for (final MapEntry<String, String> entry in fontVariants.entries) {
+          if (variants.contains(entry.key)) {
+            urlsForWeights[entry.key] = entry.value;
+          }
+        }
+        variantsForFamily[fontData['family'] as String] = urlsForWeights;
       }
     }
     final Map<String, String> charsetForFamily = <String, String>{};
@@ -114,6 +138,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln();
     sb.writeln('// DO NOT EDIT! This file is generated. See:');
     sb.writeln('// dev/generate_fallback_font_data.dart');
+    sb.writeln("import 'package:ui/ui.dart' as ui;");
     sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
@@ -142,18 +167,20 @@ class GenerateFallbackFontDataCommand extends Command<bool>
 
       // Print the unicode ranges in a readable format for easier review. This
       // shouldn't affect code size because comments are removed in release mode.
-      sb.write('   // <int>[');
-      for (final String start in starts) {
-        sb.write('0x$start,');
+      sb.write('   // ');
+      for (int i = 0; i < starts.length; i++) {
+        sb.write('${starts[i]}-${ends[i]},');
       }
-      sb.writeln('],');
-      sb.write('   // <int>[');
-      for (final String end in ends) {
-        sb.write('0x$end,');
-      }
-      sb.writeln(']');
-
+      sb.writeln();
       sb.writeln("   '${_packFontRanges(starts, ends)}',");
+      if (variantsForFamily.containsKey(family)) {
+        sb.write('    variants: <ui.FontWeight, String>{');
+        for (final MapEntry<String, String> entry
+            in variantsForFamily[family]!.entries) {
+          sb.write("ui.FontWeight.w${entry.key}: '${entry.value}', ");
+        }
+        sb.writeln('},');
+      }
       sb.writeln(' ),');
     }
     sb.writeln('];');
@@ -314,6 +341,8 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Yi',
   'Noto Sans Zanabazar Square',
 ];
+
+final Set<String> fontsWithVariants = <String>{'Noto Sans'};
 
 String _packFontRanges(List<String> starts, List<String> ends) {
   assert(starts.length == ends.length);
