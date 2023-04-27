@@ -150,28 +150,29 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   }
   SkEncodedOrigin origin = codec_->getOrigin();
 
-  SkPixmap dst(info, pixels, row_bytes);
-  SkPixmap tmp;
-  SkBitmap tmpBitmap;
+  SkPixmap output_pixmap(info, pixels, row_bytes);
+  SkPixmap temp_pixmap;
+  SkBitmap temp_bitmap;
   if (origin == kTopLeft_SkEncodedOrigin) {
-    tmp = dst;  // we can decode directly into the output buffer
+    // We can decode directly into the output buffer.
+    temp_pixmap = output_pixmap;
   } else {
     // We need to decode into a different buffer so we can re-orient
     // the pixels later.
-    SkImageInfo tmpInfo = dst.info();
+    SkImageInfo temp_info = output_pixmap.info();
     if (SkEncodedOriginSwapsWidthHeight(origin)) {
       // We'll be decoding into a buffer that has height and width swapped.
-      tmpInfo = SkPixmapUtils::SwapWidthHeight(tmpInfo);
+      temp_info = SkPixmapUtils::SwapWidthHeight(temp_info);
     }
-    if (!tmpBitmap.tryAllocPixels(tmpInfo)) {
+    if (!temp_bitmap.tryAllocPixels(temp_info)) {
       FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
-                      << tmpInfo.computeMinByteSize() << "B";
+                      << temp_info.computeMinByteSize() << "B";
       return false;
     }
-    tmp = tmpBitmap.pixmap();
+    temp_pixmap = temp_bitmap.pixmap();
   }
 
-  SkCodec::Result result = codec_->getPixels(tmp, &options);
+  SkCodec::Result result = codec_->getPixels(temp_pixmap, &options);
   if (result != SkCodec::kSuccess) {
     FML_DLOG(WARNING) << "codec could not get pixels. "
                       << SkCodec::ResultToString(result);
@@ -180,7 +181,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
   if (origin == kTopLeft_SkEncodedOrigin) {
     return true;
   }
-  return SkPixmapUtils::Orient(dst, tmp, origin);
+  return SkPixmapUtils::Orient(output_pixmap, temp_pixmap, origin);
 }
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(

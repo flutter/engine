@@ -47,12 +47,12 @@ DecompressedImage CompressedImageSkia::Decode() const {
       },
       src);
 
-  auto img = SkImages::DeferredFromEncodedData(sk_data);
-  if (!img) {
+  auto image = SkImages::DeferredFromEncodedData(sk_data);
+  if (!image) {
     return {};
   }
 
-  const auto dims = img->imageInfo().dimensions();
+  const auto dims = image->imageInfo().dimensions();
   auto info = SkImageInfo::Make(dims.width(), dims.height(),
                                 kRGBA_8888_SkColorType, kPremul_SkAlphaType);
 
@@ -62,7 +62,7 @@ DecompressedImage CompressedImageSkia::Decode() const {
     return {};
   }
 
-  if (!img->readPixels(nullptr, bitmap->pixmap(), 0, 0)) {
+  if (!image->readPixels(nullptr, bitmap->pixmap(), 0, 0)) {
     VALIDATION_LOG << "Could not decompress image into arena.";
     return {};
   }
