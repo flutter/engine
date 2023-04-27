@@ -848,10 +848,10 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
-  auto compressed_img = ImageDecoderSkia::ImageFromCompressedData(
+  auto compressed_image = ImageDecoderSkia::ImageFromCompressedData(
       descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
-  ASSERT_EQ(compressed_img->width(), 6);
-  ASSERT_EQ(compressed_img->height(), 2);
+  ASSERT_EQ(compressed_image->width(), 6);
+  ASSERT_EQ(compressed_image->height(), 2);
 
 #if IMPELLER_SUPPORTS_RENDERING
   std::shared_ptr<impeller::Allocator> allocator =
