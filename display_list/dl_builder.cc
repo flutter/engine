@@ -1248,8 +1248,18 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar y) {
   DisplayListAttributeFlags flags = kDrawTextBlobFlags;
   OpResult result = PaintResult(current_, flags);
-  if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(blob->bounds().makeOffset(x, y), flags)) {
+  if (result == OpResult::kNoEffect) {
+    return;
+  }
+  bool unclipped = AccumulateOpBounds(blob->bounds().makeOffset(x, y), flags);
+  // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
+  // unit tests can use Fuchsia's font manager instead of the empty default.
+  // Until then we might encounter empty bounds for otherwise valid text and
+  // thus we ignore the results from AccumulateOpBounds.
+#if defined(OS_FUCHSIA)
+  unclipped = true;
+#endif  // OS_FUCHSIA
+  if (unclipped) {
     Push<DrawTextBlobOp>(0, 1, blob, x, y);
     // There is no way to query if the glyphs of a text blob overlap and
     // there are no current guarantees from either Skia or Impeller that
