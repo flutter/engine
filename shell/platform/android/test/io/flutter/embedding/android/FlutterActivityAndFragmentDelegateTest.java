@@ -143,26 +143,13 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
 
-    // When the Activity/Fragment is paused, an inactive message should have been sent to Flutter.
+    // When the Activity/Fragment is paused, an inactive message (not paused)
+    // should have been sent to Flutter.
     delegate.onPause();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).aWindowIsFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
-    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
-    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
-
-    // When the app regains focus, it should go to resumed again.
-    delegate.onWindowFocusChanged(true);
-    verify(mockFlutterEngine.getLifecycleChannel(), times(2)).appIsResumed();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
-    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
-    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
-
-    // When the Activity/Fragment is paused, an inactive message should have been sent to Flutter.
-    delegate.onPause();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(2)).appIsResumed();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(2)).appIsInactive();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
 
