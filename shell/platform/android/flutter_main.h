@@ -38,6 +38,7 @@ class FlutterMain {
                    jstring engineCachesPath,
                    jstring shorebirdYaml,
                    jstring version,
+                   jlong versionCode,
                    jlong initTimeMillis);
 
   void SetupDartVMServiceUriCallback(JNIEnv* env);
