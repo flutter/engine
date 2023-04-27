@@ -20,12 +20,16 @@
 
 namespace flutter {
 
-LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
-    : frame_size_(frame_size),
+LayerTree::LayerTree(const Config& config,
+                     const SkISize& frame_size,
+                     float device_pixel_ratio)
+    : root_layer_(config.root_layer),
+      frame_size_(frame_size),
       device_pixel_ratio_(device_pixel_ratio),
-      rasterizer_tracing_threshold_(0),
-      checkerboard_raster_cache_images_(false),
-      checkerboard_offscreen_layers_(false) {
+      rasterizer_tracing_threshold_(config.rasterizer_tracing_threshold),
+      checkerboard_raster_cache_images_(
+          config.checkerboard_raster_cache_images),
+      checkerboard_offscreen_layers_(config.checkerboard_offscreen_layers) {
   FML_CHECK(device_pixel_ratio_ != 0.0f);
 }
 

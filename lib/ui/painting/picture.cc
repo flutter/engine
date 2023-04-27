@@ -118,24 +118,24 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
-  return RasterizeToImage(display_list, nullptr, width, height,
-                          raw_image_callback);
+  return DoRasterizeToImage(display_list, nullptr, width, height,
+                            raw_image_callback);
 }
 
 Dart_Handle Picture::RasterizeLayerTreeToImage(
-    std::shared_ptr<LayerTree> layer_tree,
+    std::unique_ptr<LayerTree> layer_tree,
     uint32_t width,
     uint32_t height,
     Dart_Handle raw_image_callback) {
-  return RasterizeToImage(nullptr, std::move(layer_tree), width, height,
-                          raw_image_callback);
+  return DoRasterizeToImage(nullptr, std::move(layer_tree), width, height,
+                            raw_image_callback);
 }
 
-Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
-                                      std::shared_ptr<LayerTree> layer_tree,
-                                      uint32_t width,
-                                      uint32_t height,
-                                      Dart_Handle raw_image_callback) {
+Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
+                                        std::unique_ptr<LayerTree> layer_tree,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        Dart_Handle raw_image_callback) {
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
     return tonic::ToDart("Image callback was invalid");
   }
@@ -198,8 +198,9 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [ui_task_runner, snapshot_delegate, display_list, picture_bounds, ui_task,
-       layer_tree = std::move(layer_tree)] {
+      fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list,
+                         picture_bounds, ui_task,
+                         layer_tree = std::move(layer_tree)]() mutable {
         sk_sp<DlImage> image;
         if (layer_tree) {
           auto display_list = layer_tree->Flatten(
@@ -216,7 +217,7 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
 
         fml::TaskRunner::RunNowOrPostTask(
             ui_task_runner, [ui_task, image]() { ui_task(image); });
-      });
+      }));
 
   return Dart_Null();
 }
