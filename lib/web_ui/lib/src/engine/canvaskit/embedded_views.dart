@@ -28,6 +28,8 @@ class HtmlViewEmbedder {
   /// The [HtmlViewEmbedder] singleton.
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
+  bool renderViewsBehindCanvas = true;
+
   DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
 
   /// Force the view embedder to disable overlays.
@@ -123,24 +125,27 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    final bool hasAvailableOverlay =
-        _context.pictureRecordersCreatedDuringPreroll.length <
-            SurfaceFactory.instance.maximumOverlays;
-    if (!hasAvailableOverlay && !_warnedAboutTooManySurfaces) {
-      _warnedAboutTooManySurfaces = true;
-      printWarning('Flutter was unable to create enough overlay surfaces. '
-          'This is usually caused by too many platform views being '
-          'displayed at once. '
-          'You may experience incorrect rendering.');
-    }
-    // We need an overlay for each visible platform view. Invisible platform
-    // views will be grouped with (at most) one visible platform view later.
-    final bool needNewOverlay = platformViewManager.isVisible(viewId);
-    if (needNewOverlay && hasAvailableOverlay) {
-      final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-      pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-      _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+    if (!renderViewsBehindCanvas) {
+      
+      final bool hasAvailableOverlay =
+          _context.pictureRecordersCreatedDuringPreroll.length <
+              SurfaceFactory.instance.maximumOverlays;
+      if (!hasAvailableOverlay && !_warnedAboutTooManySurfaces) {
+        _warnedAboutTooManySurfaces = true;
+        printWarning('Flutter was unable to create enough overlay surfaces. '
+            'This is usually caused by too many platform views being '
+            'displayed at once. '
+            'You may experience incorrect rendering.');
+      }
+      // We need an overlay for each visible platform view. Invisible platform
+      // views will be grouped with (at most) one visible platform view later.
+      final bool needNewOverlay = platformViewManager.isVisible(viewId);
+      if (needNewOverlay && hasAvailableOverlay) {
+        final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+        pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+        pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
+        _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+      }
     }
 
     // Do nothing if the params didn't change.
@@ -167,14 +172,18 @@ class HtmlViewEmbedder {
     if (platformViewManager.isVisible(viewId)) {
       _context.visibleViewCount++;
     }
-    // We need a new overlay if this is a visible view.
-    final bool needNewOverlay = platformViewManager.isVisible(viewId);
+
     CkPictureRecorder? recorderToUseForRendering;
-    if (needNewOverlay) {
-      if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
-        recorderToUseForRendering =
-            _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
-        _context.pictureRecorders.add(recorderToUseForRendering);
+    if(!renderViewsBehindCanvas) {
+      // We need a new overlay if this is a visible view.
+      final bool needNewOverlay = platformViewManager.isVisible(viewId);
+    
+      if (needNewOverlay) {
+        if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
+          recorderToUseForRendering =
+              _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
+          _context.pictureRecorders.add(recorderToUseForRendering);
+        }
       }
     }
 
@@ -583,6 +592,9 @@ class HtmlViewEmbedder {
   //
   // TODO(hterkelsen): Test this more thoroughly.
   void _updateOverlays(ViewListDiffResult? diffResult) {
+    if(renderViewsBehindCanvas) {
+      return;
+    }
     if (diffResult != null &&
         diffResult.viewsToAdd.isEmpty &&
         diffResult.viewsToRemove.isEmpty) {

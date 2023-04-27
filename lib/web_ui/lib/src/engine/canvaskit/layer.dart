@@ -498,7 +498,8 @@ class PhysicalShapeEngineLayer extends ContainerLayer
 
   final double _elevation;
   final ui.Color _color;
-  final ui.Color? _shadowColor; // ignore: use_late_for_private_fields_and_variables
+  final ui.Color?
+      _shadowColor; // ignore: use_late_for_private_fields_and_variables
   final CkPath _path;
   final ui.Clip _clipBehavior;
 
@@ -612,6 +613,10 @@ class PlatformViewLayer extends Layer {
         paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
     if (canvas != null) {
       paintContext.leafNodesCanvas = canvas;
+    }
+
+    if (paintContext.viewEmbedder?.renderViewsBehindCanvas ?? false) {
+      paintContext.leafNodesCanvas?.clear(const ui.Color.fromARGB(0, 0, 0, 0));
     }
   }
 }
