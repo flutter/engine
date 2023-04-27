@@ -18,7 +18,8 @@ namespace fml {
 
 class ConcurrentTaskRunner;
 
-class ConcurrentMessageLoop {
+// This class is final for the logic in ~ConcurrentMessageLoop().
+class ConcurrentMessageLoop final {
  public:
   static std::unique_ptr<ConcurrentMessageLoop> Create(
       size_t worker_count = std::thread::hardware_concurrency());
