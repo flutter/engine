@@ -500,7 +500,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
       // Accumulate should always return true here because if the
       // clip was empty then that would have been caught up above
       // when we tested the PaintResult.
-      bool unclipped = AccumulateUnbounded();
+      [[maybe_unused]] bool unclipped = AccumulateUnbounded();
       FML_DCHECK(unclipped);
     }
     CheckLayerOpacityCompatibility(true);
@@ -520,7 +520,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // Accumulate should always return true here because if the
     // clip was empty then that would have been caught up above
     // when we tested the PaintResult.
-    bool unclipped = AccumulateUnbounded();
+    [[maybe_unused]] bool unclipped = AccumulateUnbounded();
     FML_DCHECK(unclipped);
     bounds  //
         ? Push<SaveLayerBackdropBoundsOp>(0, 1, options, *bounds, backdrop)
@@ -929,7 +929,7 @@ DisplayListAttributeFlags DisplayListBuilder::FlagsForPointMode(
     case PointMode::kPolygon:
       return kDrawPointsAsPolygonFlags;
   }
-  FML_DCHECK(false);
+  FML_UNREACHABLE();
 }
 void DisplayListBuilder::drawPoints(PointMode mode,
                                     uint32_t count,
@@ -966,7 +966,7 @@ void DisplayListBuilder::drawPoints(PointMode mode,
       data_ptr = Push<DrawPolygonOp>(bytes, 1, count);
       break;
     default:
-      FML_DCHECK(false);
+      FML_UNREACHABLE();
       return;
   }
   CopyV(data_ptr, pts, count);
