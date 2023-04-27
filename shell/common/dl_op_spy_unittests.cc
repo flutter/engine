@@ -359,8 +359,16 @@ TEST(DlOpSpy, DrawVertices) {
         SkPoint::Make(5, 15),
         SkPoint::Make(15, 5),
     };
-    const SkPoint texture_coordinates[] = {SkPoint::Make(5, 5)};
-    const DlColor colors[] = {DlColor::kBlack()};
+    const SkPoint texture_coordinates[] = {
+        SkPoint::Make(5, 5),
+        SkPoint::Make(15, 5),
+        SkPoint::Make(5, 15),
+    };
+    const DlColor colors[] = {
+        DlColor::kBlack(),
+        DlColor::kRed(),
+        DlColor::kGreen(),
+    };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
     builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
@@ -377,8 +385,16 @@ TEST(DlOpSpy, DrawVertices) {
         SkPoint::Make(5, 15),
         SkPoint::Make(15, 5),
     };
-    const SkPoint texture_coordinates[] = {SkPoint::Make(5, 5)};
-    const DlColor colors[] = {DlColor::kBlack()};
+    const SkPoint texture_coordinates[] = {
+        SkPoint::Make(5, 5),
+        SkPoint::Make(15, 5),
+        SkPoint::Make(5, 15),
+    };
+    const DlColor colors[] = {
+        DlColor::kBlack(),
+        DlColor::kRed(),
+        DlColor::kGreen(),
+    };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
     builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
