@@ -138,9 +138,10 @@ void Scene::RasterizeToImage(uint32_t width,
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
   if (layer_tree_config_ != nullptr) {
-    auto layer_tree = BuildLayerTree(device_width_, device_height_, device_pixel_ratio_);
-    // TODO(dkwingsmt): We don't need to reset here. But certain unit tests test it.
-    // Let's keep it this way for now.
+    auto layer_tree =
+        BuildLayerTree(device_width_, device_height_, device_pixel_ratio_);
+    // TODO(dkwingsmt): We don't need to reset here. But certain unit tests test
+    // it. Let's keep it this way for now.
     layer_tree_config_.reset();
     return layer_tree;
   } else {
