@@ -52,7 +52,6 @@ class Scene : public RefCountedDartWrappable<Scene> {
                                             uint32_t height,
                                             float pixel_ratio);
 
-  // No longer valid after calling `takeLayerTreeConfig`.
   std::unique_ptr<flutter::LayerTree::Config> layer_tree_config_;
   float device_pixel_ratio_;
   uint32_t device_width_;
