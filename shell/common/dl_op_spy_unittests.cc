@@ -12,7 +12,7 @@
 namespace flutter {
 namespace testing {
 
-// The following 2 macros demonstrate that the DlOpSpy class is equivalent
+// The following macros demonstrate that the DlOpSpy class is equivalent
 // to DisplayList::affects_transparent_surface() now that DisplayListBuilder
 // implements operation culling.
 // See https://github.com/flutter/flutter/issues/125403
@@ -20,29 +20,25 @@ namespace testing {
   do {                                              \
     ASSERT_TRUE(spy.did_draw());                    \
     ASSERT_TRUE(dl->affects_transparent_surface()); \
-    ASSERT_GT(dl->op_count(), 0u);                  \
-    ASSERT_FALSE(dl->bounds().isEmpty());           \
-  } while (0)
-
-#define ASSERT_TRANSPARENT_DRAW(spy, dl)             \
-  do {                                               \
-    ASSERT_FALSE(spy.did_draw());                    \
-    ASSERT_FALSE(dl->affects_transparent_surface()); \
-    ASSERT_GT(dl->op_count(), 0u);                   \
-    ASSERT_FALSE(dl->bounds().isEmpty());            \
   } while (0)
 
 #define ASSERT_NO_DRAW(spy, dl)                      \
   do {                                               \
     ASSERT_FALSE(spy.did_draw());                    \
     ASSERT_FALSE(dl->affects_transparent_surface()); \
-    ASSERT_EQ(dl->op_count(), 0u);                   \
-    ASSERT_TRUE(dl->bounds().isEmpty());             \
   } while (0)
 
 TEST(DlOpSpy, DidDrawIsFalseByDefault) {
   DlOpSpy dl_op_spy;
   ASSERT_FALSE(dl_op_spy.did_draw());
+}
+
+TEST(DlOpSpy, EmptyDisplayList) {
+  DisplayListBuilder builder;
+  sk_sp<DisplayList> dl = builder.Build();
+  DlOpSpy dl_op_spy;
+  dl->Dispatch(dl_op_spy);
+  ASSERT_NO_DRAW(dl_op_spy, dl);
 }
 
 TEST(DlOpSpy, SetColor) {
@@ -129,7 +125,7 @@ TEST(DlOpSpy, DrawColor) {
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
-    ASSERT_TRANSPARENT_DRAW(dl_op_spy, dl);
+    ASSERT_NO_DRAW(dl_op_spy, dl);
   }
   {  // Transparent color with kSrcOver.
     DisplayListBuilder builder;
