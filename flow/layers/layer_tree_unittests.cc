@@ -33,7 +33,7 @@ class LayerTreeTest : public CanvasTest {
   CompositorContext::ScopedFrame& frame() { return *scoped_frame_.get(); }
   const SkMatrix& root_transform() { return root_transform_; }
 
-  std::unique_ptr<LayerTree> BuildLayerTree(LayerTree::Config config) {
+  std::unique_ptr<LayerTree> BuildLayerTree(const LayerTree::Config& config) {
     return std::make_unique<LayerTree>(config, SkISize::Make(64, 64), 1.0f);
   }
 
