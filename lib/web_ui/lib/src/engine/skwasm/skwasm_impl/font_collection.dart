@@ -11,6 +11,14 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
+// This URL was found by using the Google Fonts Developer API to find the URL
+// for Roboto. The API warns that this URL is not stable. In order to update
+// this, list out all of the fonts and find the URL for the regular
+// Roboto font. The API reference is here:
+// https://developers.google.com/fonts/docs/developer_api
+const String _robotoUrl =
+    'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
+
 class SkwasmFontCollection implements FlutterFontCollection {
   SkwasmFontCollection() : handle = fontCollectionCreate();
 
@@ -27,6 +35,15 @@ class SkwasmFontCollection implements FlutterFontCollection {
     final List<Future<void>> fontFutures = <Future<void>>[];
     final List<String> loadedFonts = <String>[];
     final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
+
+    /// We need a default fallback font for Skwasm, in order to avoid crashing
+    /// while laying out text with an unregistered font. We chose Roboto to
+    /// match Android.
+    if (!manifest.families.any((FontFamily family) => family.name == 'Roboto')) {
+      manifest.families.add(
+        FontFamily('sans-serif', <FontAsset>[FontAsset(_robotoUrl, <String, String>{})])
+      );
+    }
 
     // We can't restore the pointers directly due to a bug in dart2wasm
     // https://github.com/dart-lang/sdk/issues/52142
@@ -45,6 +62,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
         }());
       }
     }
+
     await Future.wait(fontFutures);
 
     // Wait until all the downloading and registering is complete before

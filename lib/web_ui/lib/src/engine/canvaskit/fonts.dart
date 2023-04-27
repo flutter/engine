@@ -108,8 +108,8 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
-    /// We need a default fallback font for CanvasKit, in order to
-    /// avoid crashing while laying out text with an unregistered font. We chose
+    /// We need a default fallback font for CanvasKit, in order to avoid
+    /// crashing while laying out text with an unregistered font. We chose
     /// Roboto to match Android.
     if (!loadedRoboto) {
       // Download Roboto and add it to the font buffers.
