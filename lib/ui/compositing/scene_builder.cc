@@ -203,25 +203,6 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
   }
 }
 
-void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
-                                     const CanvasPath* path,
-                                     double elevation,
-                                     int color,
-                                     int shadow_color,
-                                     int clipBehavior,
-                                     const fml::RefPtr<EngineLayer>& oldLayer) {
-  auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
-      static_cast<DlColor>(color), static_cast<DlColor>(shadow_color),
-      static_cast<float>(elevation), path->path(),
-      static_cast<flutter::Clip>(clipBehavior));
-  PushLayer(layer);
-  EngineLayer::MakeRetained(layer_handle, layer);
-
-  if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer().get());
-  }
-}
-
 void SceneBuilder::addRetained(const fml::RefPtr<EngineLayer>& retainedLayer) {
   AddLayer(retainedLayer->Layer());
 }
