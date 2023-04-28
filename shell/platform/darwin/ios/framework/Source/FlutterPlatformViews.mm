@@ -886,7 +886,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     slices_.erase(viewId);
   }
 
-  views_to_dispose_ = views_to_dispose_next_frame;
+  views_to_dispose_ = std::move(views_to_dispose_next_frame);
 }
 
 void FlutterPlatformViewsController::BeginCATransaction() {
