@@ -50,8 +50,6 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
   static Dart_Handle RasterizeLayerTreeToImage(
       std::unique_ptr<LayerTree> layer_tree,
-      uint32_t width,
-      uint32_t height,
       Dart_Handle raw_image_callback);
 
   // Callers may provide either a display list or a layer tree. If a layer tree

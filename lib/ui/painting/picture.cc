@@ -124,11 +124,10 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
 
 Dart_Handle Picture::RasterizeLayerTreeToImage(
     std::unique_ptr<LayerTree> layer_tree,
-    uint32_t width,
-    uint32_t height,
     Dart_Handle raw_image_callback) {
-  return DoRasterizeToImage(nullptr, std::move(layer_tree), width, height,
-                            raw_image_callback);
+  auto frame_size = layer_tree->frame_size();
+  return DoRasterizeToImage(nullptr, std::move(layer_tree), frame_size.width(),
+                            frame_size.height(), raw_image_callback);
 }
 
 Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,

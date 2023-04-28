@@ -86,8 +86,7 @@ Dart_Handle Scene::toImage(uint32_t width,
   }
 
   return Picture::RasterizeLayerTreeToImage(
-      BuildLayerTree(width, height, device_pixel_ratio_), width, height,
-      raw_image_callback);
+      BuildLayerTree(width, height, device_pixel_ratio_), raw_image_callback);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
