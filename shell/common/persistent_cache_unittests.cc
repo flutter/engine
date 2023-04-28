@@ -24,20 +24,6 @@ namespace testing {
 
 using PersistentCacheTest = ShellTest;
 
-static void WaitForIO(Shell* shell) {
-  std::promise<bool> io_task_finished;
-  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
-      [&io_task_finished]() { io_task_finished.set_value(true); });
-  io_task_finished.get_future().wait();
-}
-
-static void WaitForRaster(Shell* shell) {
-  std::promise<bool> raster_task_finished;
-  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [&raster_task_finished]() { raster_task_finished.set_value(true); });
-  raster_task_finished.get_future().wait();
-}
-
 static void CheckTextSkData(const sk_sp<SkData>& data,
                             const std::string& expected) {
   std::string data_string(reinterpret_cast<const char*>(data->bytes()),
