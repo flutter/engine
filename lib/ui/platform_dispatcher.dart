@@ -1729,8 +1729,9 @@ enum AppLifecycleState {
   /// it is the default state before the application begins running.
   detached,
 
-  /// The application is in the default running mode for a running application
-  /// that has input focus and is visible.
+  /// On all platforms, this state indicates that the application is in the
+  /// default running mode for a running application that has input focus and is
+  /// visible.
   ///
   /// On Android, this state corresponds to the Flutter host view having focus
   /// ([`Activity.onWindowFocusChanged`](https://developer.android.com/reference/android/app/Activity#onWindowFocusChanged(boolean))
@@ -1743,6 +1744,9 @@ enum AppLifecycleState {
   /// was called with false), but hasn't had
   /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
   /// called on it.
+  ///
+  /// On iOS and macOS, this corresponds to the app running in the foreground
+  /// active state.
   resumed,
 
   /// At least one view of the application is visible, but none have input
@@ -1751,10 +1755,10 @@ enum AppLifecycleState {
   /// On non-web desktop platforms, this corresponds to an application that is
   /// not in the foreground, but still has visible windows.
   ///
-  /// On the web, this corresponds to an application that is not running in a
-  /// window or tab that has input focus.
+  /// On the web, this corresponds to an application that is running in a
+  /// window or tab that does not have input focus.
   ///
-  /// On iOS, this state corresponds to the Flutter host view running in the
+  /// On iOS and macOS, this state corresponds to the Flutter host view running in the
   /// foreground inactive state. Apps transition to this state when in a phone
   /// call, when responding to a TouchID request, when entering the app switcher
   /// or the control center, or when the UIViewController hosting the Flutter
@@ -1765,10 +1769,11 @@ enum AppLifecycleState {
   /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
   /// has been called), or in Android's "resumed" state (i.e.
   /// [`Activity.onResume`](https://developer.android.com/reference/android/app/Activity#onResume())
-  /// has been called) but it has lost window focus. Examples of when apps
+  /// has been called) but does not have window focus. Examples of when apps
   /// transition to this state include when the app is partially obscured or
-  /// another activity is focused, such as: a split-screen app, a phone call, a
-  /// picture-in-picture app, a system dialog, another view, when the
+  /// another activity is focused, a app running in a split screen that isn't
+  /// the current app, an app interrupted by a phone call, a picture-in-picture
+  /// app, a system dialog, another view. It will also be inactive when the
   /// notification window shade is down, or the application switcher is visible.
   ///
   /// On Android and iOS, apps in this state should assume that they may be
