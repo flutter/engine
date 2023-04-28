@@ -63,9 +63,11 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 @interface FlutterTextPosition : UITextPosition
 
 @property(nonatomic, readonly) NSUInteger index;
+@property(nonatomic, readonly) UITextStorageDirection affinity;
 
 + (instancetype)positionWithIndex:(NSUInteger)index;
-- (instancetype)initWithIndex:(NSUInteger)index;
++ (instancetype)positionWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity;
+- (instancetype)initWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity;
 
 @end
 

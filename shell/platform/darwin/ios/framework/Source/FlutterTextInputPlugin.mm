@@ -486,13 +486,18 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @implementation FlutterTextPosition
 
 + (instancetype)positionWithIndex:(NSUInteger)index {
-  return [[FlutterTextPosition alloc] initWithIndex:index];
+  return [[FlutterTextPosition alloc] initWithIndex:index affinity:UITextStorageDirectionForward];
 }
 
-- (instancetype)initWithIndex:(NSUInteger)index {
++ (instancetype)positionWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity {
+  return [[FlutterTextPosition alloc] initWithIndex:index affinity:affinity];
+}
+
+- (instancetype)initWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity {
   self = [super init];
   if (self) {
     _index = index;
+    _affinity = affinity;
   }
   return self;
 }
@@ -516,11 +521,13 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (UITextPosition*)start {
-  return [FlutterTextPosition positionWithIndex:self.range.location];
+  return [FlutterTextPosition positionWithIndex:self.range.location
+                                       affinity:UITextStorageDirectionForward];
 }
 
 - (UITextPosition*)end {
-  return [FlutterTextPosition positionWithIndex:self.range.location + self.range.length];
+  return [FlutterTextPosition positionWithIndex:self.range.location + self.range.length
+                                       affinity:UITextStorageDirectionBackward];
 }
 
 - (BOOL)isEmpty {
@@ -1402,11 +1409,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (UITextPosition*)beginningOfDocument {
-  return [FlutterTextPosition positionWithIndex:0];
+  return [FlutterTextPosition positionWithIndex:0 affinity:UITextStorageDirectionForward];
 }
 
 - (UITextPosition*)endOfDocument {
-  return [FlutterTextPosition positionWithIndex:self.text.length];
+  return [FlutterTextPosition positionWithIndex:self.text.length
+                                       affinity:UITextStorageDirectionBackward];
 }
 
 - (NSComparisonResult)comparePosition:(UITextPosition*)position toPosition:(UITextPosition*)other {
@@ -1418,7 +1426,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (positionIndex > otherIndex) {
     return NSOrderedDescending;
   }
-  return NSOrderedSame;
+  UITextStorageDirection positionAffinity = ((FlutterTextPosition*)position).affinity;
+  UITextStorageDirection otherAffinity = ((FlutterTextPosition*)other).affinity;
+  if (positionAffinity == otherAffinity) {
+    return NSOrderedSame;
+  }
+  if (positionAffinity == UITextStorageDirectionBackward) {
+    // positionAffinity points backwards, otherAffinity points forwards
+    return NSOrderedAscending;
+  }
+  // positionAffinity points forwards, otherAffinity points backwards
+  return NSOrderedDescending;
 }
 
 - (NSInteger)offsetFromPosition:(UITextPosition*)from toPosition:(UITextPosition*)toPosition {
@@ -1428,17 +1446,20 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (UITextPosition*)positionWithinRange:(UITextRange*)range
                    farthestInDirection:(UITextLayoutDirection)direction {
   NSUInteger index;
+  UITextStorageDirection affinity;
   switch (direction) {
     case UITextLayoutDirectionLeft:
     case UITextLayoutDirectionUp:
       index = ((FlutterTextPosition*)range.start).index;
+      affinity = UITextStorageDirectionForward;
       break;
     case UITextLayoutDirectionRight:
     case UITextLayoutDirectionDown:
       index = ((FlutterTextPosition*)range.end).index;
+      affinity = UITextStorageDirectionBackward;
       break;
   }
-  return [FlutterTextPosition positionWithIndex:index];
+  return [FlutterTextPosition positionWithIndex:index affinity:affinity];
 }
 
 - (UITextRange*)characterRangeByExtendingPosition:(UITextPosition*)position
@@ -1625,6 +1646,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   NSInteger index = ((FlutterTextPosition*)position).index;
+  UITextStorageDirection affinity = ((FlutterTextPosition*)position).affinity;
   // Get the bounds of the characters before and after the requested caret position.
   NSArray<UITextSelectionRect*>* rects =
       [self selectionRectsForRange:[FlutterTextRange
@@ -1647,7 +1669,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
                         characterAfterCaret.size.height);
     }
-  } else if (rects.count == 2 && _selectionAffinity == kTextAffinityDownstream) {
+  } else if (rects.count == 2 && affinity == UITextStorageDirectionForward) {
     // It's better to use the character after the caret.
     CGRect characterAfterCaret = rects[1].rect;
     // Return a zero-width rectangle along the upstream edge of the character after the caret
@@ -1678,7 +1700,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
              @"Expected a FlutterTextPosition for position (got %@).",
              [_selectedTextRange.start class]);
     NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
-    return [FlutterTextPosition positionWithIndex:currentIndex];
+    UITextStorageDirection currentAffinity =
+        ((FlutterTextPosition*)_selectedTextRange.start).affinity;
+    return [FlutterTextPosition positionWithIndex:currentIndex affinity:currentAffinity];
   }
 
   FlutterTextRange* range = [FlutterTextRange
@@ -1736,39 +1760,40 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   CGFloat verticalPrecision = _isFloatingCursorActive ? 10 : 1;
 
   BOOL isFirst = YES;
-  CGRect _closestRect = CGRectZero;
-  BOOL _closestRectIsRTL = NO;
-  NSUInteger _closestPosition = 0;
+  NSUInteger _closestRectIndex = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     NSUInteger position = _selectionRects[i].position;
     if (position >= start && position <= end) {
-      if (isFirst || IsSelectionRectCloserToPoint(
-                         point, _selectionRects[i].rect,
-                         _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft,
-                         _closestRect, _closestRectIsRTL,
-                         /*checkFarBoundary=*/NO, verticalPrecision)) {
-        isFirst = NO;
-        _closestRect = _selectionRects[i].rect;
-        _closestRectIsRTL = _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft;
-        _closestPosition = position;
-      }
-    }
-  }
-
-  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    NSUInteger position = _selectionRects[i].position + 1;
-    if (position >= start && position <= end) {
-      if (IsSelectionRectCloserToPoint(
+      if (isFirst ||
+          IsSelectionRectCloserToPoint(
               point, _selectionRects[i].rect,
-              _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft, _closestRect,
-              _closestRectIsRTL,
-              /*checkFarBoundary=*/YES, verticalPrecision)) {
-        _closestPosition = position;
+              _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft,
+              _selectionRects[_closestRectIndex].rect,
+              _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
+              /*checkFarBoundary=*/NO, verticalPrecision)) {
+        isFirst = NO;
+        _closestRectIndex = i;
       }
     }
   }
 
-  return [FlutterTextPosition positionWithIndex:_closestPosition];
+  // Check if the far side of the closest rect is a better fit (tapping end of line)
+  NSUInteger _closestPosition = _selectionRects[_closestRectIndex].position;
+  if ((_closestPosition + 1) <= end) {
+    if (IsSelectionRectCloserToPoint(
+            point, _selectionRects[_closestRectIndex].rect,
+            _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
+            _selectionRects[_closestRectIndex].rect,
+            _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
+            /*checkFarBoundary=*/YES, verticalPrecision)) {
+      // This is an upstream position
+      return [FlutterTextPosition positionWithIndex:(_closestPosition + 1)
+                                           affinity:UITextStorageDirectionBackward];
+    }
+  }
+
+  return [FlutterTextPosition positionWithIndex:_closestPosition
+                                       affinity:UITextStorageDirectionForward];
 }
 
 - (UITextRange*)characterRangeAtPoint:(CGPoint)point {

@@ -389,8 +389,8 @@ FLUTTER_ASSERT_ARC
 
 - (void)testTextRangeFromPositionMatchesUITextViewBehavior {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-  FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
-  FlutterTextPosition* toPosition = [[FlutterTextPosition alloc] initWithIndex:0];
+  FlutterTextPosition* fromPosition = [FlutterTextPosition positionWithIndex:2];
+  FlutterTextPosition* toPosition = [FlutterTextPosition positionWithIndex:0];
 
   FlutterTextRange* flutterRange = (FlutterTextRange*)[inputView textRangeFromPosition:fromPosition
                                                                             toPosition:toPosition];
@@ -1527,7 +1527,6 @@ FLUTTER_ASSERT_ARC
     @"text" : @"test",
     @"selectionBase" : @1,
     @"selectionExtent" : @1,
-    @"selectionAffinity" : @"TextAffinity.downstream"
   }];
 
   FlutterTextSelectionRect* first =
@@ -1541,57 +1540,82 @@ FLUTTER_ASSERT_ARC
   [inputView setSelectionRects:@[ first, second, third, fourth ]];
 
   // Verify zeroth caret rect is based on left edge of first character.
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:0]],
-                        CGRectMake(0, 0, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:0
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectMake(0, 0, 0, 100)));
   // Since the textAffinity is downstream, the caret rect will be based on the
   // left edge of the succeeding character.
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1]],
-                        CGRectMake(100, 100, 0, 100)));
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:2]],
-                        CGRectMake(200, 200, 0, 100)));
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:3]],
-                        CGRectMake(300, 300, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:1
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectMake(100, 100, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:2
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectMake(200, 200, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:3
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectMake(300, 300, 0, 100)));
   // There is no subsequent character for the last position, so the caret rect
   // will be based on the right edge of the preceding character.
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4]],
-                        CGRectMake(400, 300, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:4
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectMake(400, 300, 0, 100)));
   // Verify no caret rect for out-of-range character.
   XCTAssertTrue(CGRectEqualToRect(
-      [inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:5]], CGRectZero));
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:5
+                                                   affinity:UITextStorageDirectionForward]],
+      CGRectZero));
 
   // Check caret rects again again when text affinity is upstream.
   [inputView setTextInputState:@{
     @"text" : @"test",
     @"selectionBase" : @2,
     @"selectionExtent" : @2,
-    @"selectionAffinity" : @"TextAffinity.upstream"
   }];
   // Verify zeroth caret rect is based on left edge of first character.
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:0]],
-                        CGRectMake(0, 0, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:0
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectMake(0, 0, 0, 100)));
   // Since the textAffinity is upstream, all below caret rects will be based on
   // the right edge of the preceding character.
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1]],
-                        CGRectMake(100, 0, 0, 100)));
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:2]],
-                        CGRectMake(200, 100, 0, 100)));
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:3]],
-                        CGRectMake(300, 200, 0, 100)));
-  XCTAssertTrue(
-      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4]],
-                        CGRectMake(400, 300, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:1
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectMake(100, 0, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:2
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectMake(200, 100, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:3
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectMake(300, 200, 0, 100)));
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:4
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectMake(400, 300, 0, 100)));
   // Verify no caret rect for out-of-range character.
   XCTAssertTrue(CGRectEqualToRect(
-      [inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:5]], CGRectZero));
+      [inputView caretRectForPosition:[FlutterTextPosition
+                                          positionWithIndex:5
+                                                   affinity:UITextStorageDirectionBackward]],
+      CGRectZero));
 
   // Verify floating cursor updates are relative to original position, and that there is no bounds
   // change.
