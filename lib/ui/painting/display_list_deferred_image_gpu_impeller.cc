@@ -12,12 +12,11 @@ namespace flutter {
 
 sk_sp<DlDeferredImageGPUImpeller> DlDeferredImageGPUImpeller::Make(
     std::unique_ptr<LayerTree> layer_tree,
-    const SkISize& size,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner) {
   return sk_sp<DlDeferredImageGPUImpeller>(new DlDeferredImageGPUImpeller(
       DlDeferredImageGPUImpeller::ImageWrapper::Make(
-          std::move(layer_tree), size, std::move(snapshot_delegate),
+          std::move(layer_tree), std::move(snapshot_delegate),
           std::move(raster_task_runner))));
 }
 
@@ -108,12 +107,11 @@ DlDeferredImageGPUImpeller::ImageWrapper::Make(
 std::shared_ptr<DlDeferredImageGPUImpeller::ImageWrapper>
 DlDeferredImageGPUImpeller::ImageWrapper::Make(
     std::unique_ptr<LayerTree> layer_tree,
-    const SkISize& size,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner) {
-  auto wrapper = std::shared_ptr<ImageWrapper>(
-      new ImageWrapper(nullptr, size, std::move(snapshot_delegate),
-                       std::move(raster_task_runner)));
+  auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
+      nullptr, layer_tree->frame_size(), std::move(snapshot_delegate),
+      std::move(raster_task_runner)));
   wrapper->SnapshotDisplayList(std::move(layer_tree));
   return wrapper;
 }

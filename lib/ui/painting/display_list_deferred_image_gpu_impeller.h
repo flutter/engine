@@ -19,7 +19,6 @@ class DlDeferredImageGPUImpeller final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPUImpeller> Make(
       std::unique_ptr<LayerTree> layer_tree,
-      const SkISize& size,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -72,7 +71,6 @@ class DlDeferredImageGPUImpeller final : public DlImage {
 
     static std::shared_ptr<ImageWrapper> Make(
         std::unique_ptr<LayerTree> layer_tree,
-        const SkISize& size,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
