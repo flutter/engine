@@ -243,6 +243,7 @@ targets:
       - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
+    bringup: true
     recipe: engine/engine_arm
     properties:
       add_recipes_cq: "true"
@@ -389,7 +390,7 @@ targets:
       cpu: arm64
       lint_host: "true"
       lint_ios: "false"
-    timeout: 75
+    timeout: 120
     runIf:
       - DEPS
       - .ci.yaml
@@ -410,7 +411,7 @@ targets:
       cpu: arm64
       lint_host: "false"
       lint_ios: "true"
-    timeout: 75
+    timeout: 120
     runIf:
       - DEPS
       - .ci.yaml
