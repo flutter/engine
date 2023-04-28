@@ -160,8 +160,6 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   // thread owns the sole reference to the layer tree. So we do it in the
   // raster thread.
 
-  auto picture_bounds = SkISize::Make(width, height);
-
   auto ui_task =
       // The static leak checker gets confused by the use of fml::MakeCopyable.
       // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -201,16 +199,17 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list,
-                         &picture_bounds, ui_task,
+      fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list, width,
+                         height, ui_task,
                          layer_tree = std::move(layer_tree)]() mutable {
+        auto picture_bounds = SkISize::Make(width, height);
         sk_sp<DlImage> image;
         if (layer_tree) {
           FML_DCHECK(picture_bounds == layer_tree->frame_size());
-          auto display_list = layer_tree->Flatten(
-              SkRect::MakeWH(picture_bounds.width(), picture_bounds.height()),
-              snapshot_delegate->GetTextureRegistry(),
-              snapshot_delegate->GetGrContext());
+          auto display_list =
+              layer_tree->Flatten(SkRect::MakeWH(width, height),
+                                  snapshot_delegate->GetTextureRegistry(),
+                                  snapshot_delegate->GetGrContext());
 
           image = snapshot_delegate->MakeRasterSnapshot(display_list,
                                                         picture_bounds);
