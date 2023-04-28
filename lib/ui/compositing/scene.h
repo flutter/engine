@@ -48,6 +48,9 @@ class Scene : public RefCountedDartWrappable<Scene> {
         bool checkerboardRasterCacheImages,
         bool checkerboardOffscreenLayers);
 
+  // Returns true if `dispose()` has not been called.
+  bool valid();
+
   void RasterizeToImage(uint32_t width,
                         uint32_t height,
                         float pixel_ratio,
@@ -57,8 +60,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
                                             uint32_t height,
                                             float pixel_ratio);
 
-  // No longer valid after calling `takeLayerTreeConfig`.
-  std::unique_ptr<flutter::LayerTree::Config> layer_tree_config_;
+  flutter::LayerTree::Config layer_tree_config_;
 };
 
 }  // namespace flutter

@@ -40,19 +40,22 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  layer_tree_config_ = std::make_unique<LayerTree::Config>();
-  layer_tree_config_->root_layer = std::move(rootLayer);
-  layer_tree_config_->rasterizer_tracing_threshold = rasterizerTracingThreshold;
-  layer_tree_config_->checkerboard_raster_cache_images =
+  layer_tree_config_.root_layer = std::move(rootLayer);
+  layer_tree_config_.rasterizer_tracing_threshold = rasterizerTracingThreshold;
+  layer_tree_config_.checkerboard_raster_cache_images =
       checkerboardRasterCacheImages;
-  layer_tree_config_->checkerboard_offscreen_layers =
+  layer_tree_config_.checkerboard_offscreen_layers =
       checkerboardOffscreenLayers;
 }
 
 Scene::~Scene() {}
 
+bool Scene::valid() {
+  return layer_tree_config_.root_layer != nullptr;
+}
+
 void Scene::dispose() {
-  layer_tree_config_.reset();
+  layer_tree_config_.root_layer.reset();
   ClearDartWrapper();
 }
 
@@ -62,8 +65,8 @@ Dart_Handle Scene::toImageSync(uint32_t width,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
 
-  if (!layer_tree_config_) {
-    return tonic::ToDart("Scene's layer tree has been taken away.");
+  if (!valid()) {
+    return tonic::ToDart("Scene has been disposed.");
   }
 
   Scene::RasterizeToImage(width, height, static_cast<float>(pixel_ratio),
@@ -77,8 +80,8 @@ Dart_Handle Scene::toImage(uint32_t width,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
-  if (!layer_tree_config_) {
-    return tonic::ToDart("Scene's layer tree has been taken away.");
+  if (!valid()) {
+    return tonic::ToDart("Scene has been disposed.");
   }
 
   return Picture::RasterizeLayerTreeToImage(
@@ -133,22 +136,16 @@ void Scene::RasterizeToImage(uint32_t width,
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
                                                          uint64_t height,
                                                          float pixel_ratio) {
-  if (layer_tree_config_ != nullptr) {
-    auto layer_tree = BuildLayerTree(width, height, pixel_ratio);
-    // TODO(dkwingsmt): We don't need to reset here. But certain unit tests test
-    // it. Let's keep it this way for now.
-    layer_tree_config_.reset();
-    return layer_tree;
-  } else {
-    return nullptr;
-  }
+  return BuildLayerTree(width, height, pixel_ratio);
 }
 
 std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
                                                  uint32_t height,
                                                  float pixel_ratio) {
-  FML_CHECK(layer_tree_config_ != nullptr);
-  return std::make_unique<LayerTree>(*layer_tree_config_,
+  if (!valid()) {
+    return nullptr;
+  }
+  return std::make_unique<LayerTree>(layer_tree_config_,
                                      SkISize::Make(width, height), pixel_ratio);
 }
 
