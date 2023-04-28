@@ -40,13 +40,6 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  // Currently only supports a single window.
-  auto viewport_metrics = UIDartState::Current()
-                              ->platform_configuration()
-                              ->get_window(0)
-                              ->viewport_metrics();
-  device_pixel_ratio_ = static_cast<float>(viewport_metrics.device_pixel_ratio);
-
   layer_tree_config_ = std::make_unique<LayerTree::Config>();
   layer_tree_config_->root_layer = std::move(rootLayer);
   layer_tree_config_->rasterizer_tracing_threshold = rasterizerTracingThreshold;
@@ -67,12 +60,14 @@ Dart_Handle Scene::toImageSync(uint32_t width,
                                uint32_t height,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
+  double pixel_ratio = 1.0f;  // TODO(dkwingsmt)
 
   if (!layer_tree_config_) {
     return tonic::ToDart("Scene's layer tree has been taken away.");
   }
 
-  Scene::RasterizeToImage(width, height, raw_image_handle);
+  Scene::RasterizeToImage(width, height, static_cast<float>(pixel_ratio),
+                          raw_image_handle);
   return Dart_Null();
 }
 
@@ -80,13 +75,15 @@ Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
+  double pixel_ratio = 1.0f;  // TODO(dkwingsmt)
 
   if (!layer_tree_config_) {
     return tonic::ToDart("Scene's layer tree has been taken away.");
   }
 
   return Picture::RasterizeLayerTreeToImage(
-      BuildLayerTree(width, height, device_pixel_ratio_), raw_image_callback);
+      BuildLayerTree(width, height, static_cast<float>(pixel_ratio)),
+      raw_image_callback);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
@@ -114,6 +111,7 @@ static sk_sp<DlImage> CreateDeferredImage(
 
 void Scene::RasterizeToImage(uint32_t width,
                              uint32_t height,
+                             float pixel_ratio,
                              Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
   if (!dart_state) {
@@ -126,17 +124,17 @@ void Scene::RasterizeToImage(uint32_t width,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(),
-      BuildLayerTree(width, height, device_pixel_ratio_),
-      std::move(snapshot_delegate), std::move(raster_task_runner),
-      std::move(unref_queue));
+      BuildLayerTree(width, height, pixel_ratio), std::move(snapshot_delegate),
+      std::move(raster_task_runner), std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
-                                                         uint64_t height) {
+                                                         uint64_t height,
+                                                         float pixel_ratio) {
   if (layer_tree_config_ != nullptr) {
-    auto layer_tree = BuildLayerTree(width, height, device_pixel_ratio_);
+    auto layer_tree = BuildLayerTree(width, height, pixel_ratio);
     // TODO(dkwingsmt): We don't need to reset here. But certain unit tests test
     // it. Let's keep it this way for now.
     layer_tree_config_.reset();
@@ -149,6 +147,7 @@ std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
 std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
                                                  uint32_t height,
                                                  float pixel_ratio) {
+  FML_CHECK(layer_tree_config_ != nullptr);
   return std::make_unique<LayerTree>(*layer_tree_config_,
                                      SkISize::Make(width, height), pixel_ratio);
 }

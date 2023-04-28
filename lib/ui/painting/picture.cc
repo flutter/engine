@@ -125,6 +125,7 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
 Dart_Handle Picture::RasterizeLayerTreeToImage(
     std::unique_ptr<LayerTree> layer_tree,
     Dart_Handle raw_image_callback) {
+  FML_DCHECK(layer_tree != nullptr);
   auto frame_size = layer_tree->frame_size();
   return DoRasterizeToImage(nullptr, std::move(layer_tree), frame_size.width(),
                             frame_size.height(), raw_image_callback);
@@ -135,6 +136,9 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
                                         uint32_t width,
                                         uint32_t height,
                                         Dart_Handle raw_image_callback) {
+  // Either display_list or layer_tree should be provided.
+  FML_DCHECK((display_list == nullptr) != (layer_tree == nullptr));
+
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
     return tonic::ToDart("Image callback was invalid");
   }
@@ -198,10 +202,11 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list,
-                         picture_bounds, ui_task,
+                         &picture_bounds, ui_task,
                          layer_tree = std::move(layer_tree)]() mutable {
         sk_sp<DlImage> image;
         if (layer_tree) {
+          FML_DCHECK(picture_bounds == layer_tree->frame_size());
           auto display_list = layer_tree->Flatten(
               SkRect::MakeWH(picture_bounds.width(), picture_bounds.height()),
               snapshot_delegate->GetTextureRegistry(),

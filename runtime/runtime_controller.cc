@@ -325,7 +325,8 @@ void RuntimeController::Render(Scene* scene) {
   }
   const auto& viewport_metrics = window->viewport_metrics();
   client_.Render(scene->takeLayerTree(viewport_metrics.physical_width,
-                                      viewport_metrics.physical_height));
+                                      viewport_metrics.physical_height,
+                                      viewport_metrics.device_pixel_ratio));
 }
 
 // |PlatformConfigurationClient|
