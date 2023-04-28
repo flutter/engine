@@ -60,6 +60,21 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   flutter::LayerTree::Config layer_tree_config_;
 
+  // Fetches the pixel ratio from view 0, or if the window doesn't exist,
+  // fallback to 2.0f.
+  //
+  // The pixel ratio is used in toImage() and toImageSync(), and its only effect
+  // is to calculate the device's physical dimension, which is used by some
+  // physical shapes (see PhysicalShapeLayer).
+  //
+  // Physical shapes have been deprecated and should be removed soon. This
+  // method aims to keep the legacy behavior in single-window Flutter, which
+  // feeds the toImage and toImageSync with the pixel ratio of the only window.
+  //
+  // TODO(dkwingsmt): If PhysicalShapeLayer has been removed as well as
+  // {Preroll,Paint}Context.frame_device_pixel_ratio, remove this method and its
+  // related logic.
+  // https://github.com/flutter/flutter/issues/125720
   static float defaultViewPixelRatio();
 };
 
