@@ -21,27 +21,21 @@ class Scene extends NativeFieldWrapperClass1 {
   /// Synchronously creates a handle to an image from this scene.
   ///
   /// {@macro dart.ui.painting.Picture.toImageSync}
-  ///
-  /// The value of `pixelRatio` does not affect the dimension of the resulting
-  /// image. Instead, it is used to calculate the device's physical dimension
-  /// (for example, the device's physical width will be `width` / `pixelRatio`),
-  /// which is used by some deprecated shapes (see
-  /// [SceneBuilder.pushPhysicalShape]). This argument defaults to 1.0.
-  Image toImageSync(int width, int height, [double pixelRatio = 1.0]) {
+  Image toImageSync(int width, int height) {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
 
     final _Image image = _Image._();
-    final String? result =  _toImageSync(width, height, pixelRatio, image);
+    final String? result =  _toImageSync(width, height, image);
     if (result != null) {
       throw PictureRasterizationException._(result);
     }
     return Image._(image, image.width, image.height);
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Scene::toImageSync')
-  external String? _toImageSync(int width, int height, double pixelRatio, _Image outImage);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImageSync')
+  external String? _toImageSync(int width, int height, _Image outImage);
 
   /// Creates a raster image representation of the current state of the scene.
   ///
@@ -50,21 +44,11 @@ class Scene extends NativeFieldWrapperClass1 {
   /// Callers must dispose the [Image] when they are done with it. If the result
   /// will be shared with other methods or classes, [Image.clone] should be used
   /// and each handle created must be disposed.
-  ///
-  /// The returned image will be `width` pixels wide and `height` pixels high.
-  /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
-  /// `height` (bottom) bounds. Content outside these bounds is clipped.
-  ///
-  /// The value of `pixelRatio` does not affect the dimension of the resulting
-  /// image. Instead, it is used to calculate the device's physical dimension
-  /// (for example, the device's physical width will be `width` / `pixelRatio`),
-  /// which is used by some deprecated shapes (see
-  /// [SceneBuilder.pushPhysicalShape]). This argument defaults to 1.0.
-  Future<Image> toImage(int width, int height, [double pixelRatio = 1.0]) {
+  Future<Image> toImage(int width, int height) {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    return _futurize((_Callback<Image?> callback) => _toImage(width, height, pixelRatio, (_Image? image) {
+    return _futurize((_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
         if (image == null) {
           callback(null);
         } else {
@@ -74,8 +58,8 @@ class Scene extends NativeFieldWrapperClass1 {
     );
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Scene::toImage')
-  external String? _toImage(int width, int height, double pixelRatio, _Callback<_Image?> callback);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImage')
+  external String? _toImage(int width, int height, _Callback<_Image?> callback);
 
   /// Releases the resources used by this scene.
   ///

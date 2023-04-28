@@ -40,6 +40,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
+  initializeDefaultViewPixelRatioIfNecessary();
   layer_tree_config_.root_layer = std::move(rootLayer);
   layer_tree_config_.rasterizer_tracing_threshold = rasterizerTracingThreshold;
   layer_tree_config_.checkerboard_raster_cache_images =
@@ -61,7 +62,6 @@ void Scene::dispose() {
 
 Dart_Handle Scene::toImageSync(uint32_t width,
                                uint32_t height,
-                               double pixel_ratio,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
 
@@ -69,14 +69,13 @@ Dart_Handle Scene::toImageSync(uint32_t width,
     return tonic::ToDart("Scene has been disposed.");
   }
 
-  Scene::RasterizeToImage(width, height, static_cast<float>(pixel_ratio),
+  Scene::RasterizeToImage(width, height, defaultViewPixelRatio(),
                           raw_image_handle);
   return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
-                           double pixel_ratio,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
@@ -85,7 +84,7 @@ Dart_Handle Scene::toImage(uint32_t width,
   }
 
   return Picture::RasterizeLayerTreeToImage(
-      BuildLayerTree(width, height, static_cast<float>(pixel_ratio)),
+      BuildLayerTree(width, height, defaultViewPixelRatio()),
       raw_image_callback);
 }
 
@@ -147,6 +146,27 @@ std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
   }
   return std::make_unique<LayerTree>(layer_tree_config_,
                                      SkISize::Make(width, height), pixel_ratio);
+}
+
+float Scene::default_view_pixel_ratio_ = -1.0f;
+
+void Scene::initializeDefaultViewPixelRatioIfNecessary() {
+  if (default_view_pixel_ratio_ > 0) {
+    return;
+  }
+  auto window = UIDartState::Current()->platform_configuration()->get_window(0);
+  if (window != nullptr) {
+    default_view_pixel_ratio_ =
+        static_cast<float>(window->viewport_metrics().device_pixel_ratio);
+  }
+}
+
+float Scene::defaultViewPixelRatio() {
+  if (default_view_pixel_ratio_ > 0) {
+    return default_view_pixel_ratio_;
+  }
+  // A default value.
+  return 2.0f;
 }
 
 }  // namespace flutter

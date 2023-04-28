@@ -293,8 +293,8 @@ typedef CanvasPath Path;
   V(SceneBuilder, setCheckerboardRasterCacheImages, 2) \
   V(SceneBuilder, setRasterizerTracingThreshold, 2)    \
   V(Scene, dispose, 1)                                 \
-  V(Scene, toImage, 5)                                 \
-  V(Scene, toImageSync, 5)                             \
+  V(Scene, toImage, 4)                                 \
+  V(Scene, toImageSync, 4)                             \
   V(SemanticsUpdateBuilder, build, 2)                  \
   V(SemanticsUpdateBuilder, updateCustomAction, 5)     \
   V(SemanticsUpdateBuilder, updateNode, 36)            \
