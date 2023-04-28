@@ -18,8 +18,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-static const NSUInteger kFlutterClippingMaskViewPoolCapacity = 5;
-
 @implementation UIView (FirstResponder)
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
@@ -461,12 +459,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
-  if (mask_view_pool_.get() == nil) {
-    mask_view_pool_.reset([[FlutterClippingMaskViewPool alloc]
-        initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
+  if (clipView.maskView) {
+    [mask_view_pool_.get() insertViewToPool:(FlutterClippingMaskView*)(clipView.maskView)];
+    clipView.maskView = nil;
   }
-  [mask_view_pool_.get() recycleMaskViews];
-  clipView.maskView = nil;
   CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {

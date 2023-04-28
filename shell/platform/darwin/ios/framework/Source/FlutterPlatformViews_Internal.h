@@ -56,7 +56,7 @@
 // in the pool. If there are none available, a new FlutterClippingMaskView is constructed. If the
 // capacity is reached, the newly constructed FlutterClippingMaskView is not added to the pool.
 //
-// Call |recycleMaskViews| to mark all the FlutterClippingMaskViews in the pool available.
+// Call |insertViewToPool:| to return a maskView to the pool.
 @interface FlutterClippingMaskViewPool : NSObject
 
 // Initialize the pool with `capacity`. When the `capacity` is reached, a FlutterClippingMaskView is
@@ -66,8 +66,8 @@
 // Reuse a maskView from the pool, or allocate a new one.
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
 
-// Mark all the maskViews available.
-- (void)recycleMaskViews;
+// Insert the `maskView` into the pool.
+- (void)insertViewToPool:(FlutterClippingMaskView*)maskView;
 
 @end
 
@@ -291,27 +291,30 @@ class FlutterPlatformViewsController {
   int CountClips(const MutatorsStack& mutators_stack);
 
   void ClipViewSetMaskView(UIView* clipView);
+
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
-  // Clips are applied to the super view with a CALayer mask. Transforms are applied to the
-  // current view that's at the head of the chain. For example the following mutators stack [T_1,
-  // C_2, T_3, T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the
-  // following UIView tree:
-  //
-  // C_2 -> C_5 -> PLATFORM_VIEW
-  // (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
-  //
-  // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
-  //
-  // After each clip operation, we update the head to the super view of the current head.
+  // Clips are applied to the `embedded_view`'s super view(|ChildClippingView|) using a
+  // |FlutterClippingMaskView|. Transforms are applied to `embedded_view`
   //
   // The `bounding_rect` is the final bounding rect of the PlatformView
   // (EmbeddedViewParams::finalBoundingRect). If a clip mutator's rect contains the final bounding
   // rect of the PlatformView, the clip mutator is not applied for performance optimization.
+  //
+  // This method is only called when thew `embedded_view` needs to be re-composited at the current
+  // frame. See: `CompositeWithParams` for details.
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
                      const SkRect& bounding_rect);
+
+  // Composite the PlatformView with `view_id`.
+  // Every frame, during the paint traversal of the layer tree, this method is called for all
+  // the PlatformViews in `views_to_recomposite_`.
+  //
+  // Note that `views_to_recomposite_` does not represent all the views in the view hierarchy,
+  // if a PlatformView does not change its composition parameter from last frame, it is not
+  // included in the `views_to_recomposite_`.
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
