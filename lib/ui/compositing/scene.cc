@@ -45,8 +45,6 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
                               ->platform_configuration()
                               ->get_window(0)
                               ->viewport_metrics();
-  device_width_ = viewport_metrics.physical_width;
-  device_height_ = viewport_metrics.physical_height;
   device_pixel_ratio_ = static_cast<float>(viewport_metrics.device_pixel_ratio);
 
   layer_tree_config_ = std::make_unique<LayerTree::Config>();
@@ -88,8 +86,8 @@ Dart_Handle Scene::toImage(uint32_t width,
   }
 
   return Picture::RasterizeLayerTreeToImage(
-      BuildLayerTree(device_width_, device_height_, device_pixel_ratio_), width,
-      height, raw_image_callback);
+      BuildLayerTree(width, height, device_pixel_ratio_), width, height,
+      raw_image_callback);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
@@ -129,17 +127,17 @@ void Scene::RasterizeToImage(uint32_t width,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(),
-      BuildLayerTree(device_width_, device_height_, device_pixel_ratio_), width,
-      height, std::move(snapshot_delegate), std::move(raster_task_runner),
+      BuildLayerTree(width, height, device_pixel_ratio_), width, height,
+      std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 
-std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
+std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
+                                                         uint64_t height) {
   if (layer_tree_config_ != nullptr) {
-    auto layer_tree =
-        BuildLayerTree(device_width_, device_height_, device_pixel_ratio_);
+    auto layer_tree = BuildLayerTree(width, height, device_pixel_ratio_);
     // TODO(dkwingsmt): We don't need to reset here. But certain unit tests test
     // it. Let's keep it this way for now.
     layer_tree_config_.reset();

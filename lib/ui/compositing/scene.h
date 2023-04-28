@@ -26,7 +26,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      bool checkerboardRasterCacheImages,
                      bool checkerboardOffscreenLayers);
 
-  std::unique_ptr<flutter::LayerTree> takeLayerTree();
+  std::unique_ptr<flutter::LayerTree> takeLayerTree(uint64_t width,
+                                                    uint64_t height);
 
   Dart_Handle toImageSync(uint32_t width,
                           uint32_t height,
@@ -54,8 +55,6 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   std::unique_ptr<flutter::LayerTree::Config> layer_tree_config_;
   float device_pixel_ratio_;
-  uint32_t device_width_;
-  uint32_t device_height_;
 };
 
 }  // namespace flutter

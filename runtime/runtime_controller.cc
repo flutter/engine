@@ -316,7 +316,16 @@ void RuntimeController::ScheduleFrame() {
 
 // |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene) {
-  client_.Render(scene->takeLayerTree());
+  // TODO(dkwingsmt): Currently only supports a single window.
+  int64_t view_id = 0ll;
+  auto window =
+      UIDartState::Current()->platform_configuration()->get_window(view_id);
+  if (window == nullptr) {
+    return;
+  }
+  const auto& viewport_metrics = window->viewport_metrics();
+  client_.Render(scene->takeLayerTree(viewport_metrics.physical_width,
+                                      viewport_metrics.physical_height));
 }
 
 // |PlatformConfigurationClient|
