@@ -23,6 +23,8 @@
 
 namespace flutter {
 
+static constexpr float kFallbackPixelRatio = 2.0f;
+
 IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 void Scene::create(Dart_Handle scene_handle,
@@ -40,7 +42,6 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  initializeDefaultViewPixelRatioIfNecessary();
   layer_tree_config_.root_layer = std::move(rootLayer);
   layer_tree_config_.rasterizer_tracing_threshold = rasterizerTracingThreshold;
   layer_tree_config_.checkerboard_raster_cache_images =
@@ -148,25 +149,12 @@ std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
                                      SkISize::Make(width, height), pixel_ratio);
 }
 
-float Scene::default_view_pixel_ratio_ = -1.0f;
-
-void Scene::initializeDefaultViewPixelRatioIfNecessary() {
-  if (default_view_pixel_ratio_ > 0) {
-    return;
-  }
+float Scene::defaultViewPixelRatio() {
   auto window = UIDartState::Current()->platform_configuration()->get_window(0);
   if (window != nullptr) {
-    default_view_pixel_ratio_ =
-        static_cast<float>(window->viewport_metrics().device_pixel_ratio);
+    return static_cast<float>(window->viewport_metrics().device_pixel_ratio);
   }
-}
-
-float Scene::defaultViewPixelRatio() {
-  if (default_view_pixel_ratio_ > 0) {
-    return default_view_pixel_ratio_;
-  }
-  // A default value.
-  return 2.0f;
+  return kFallbackPixelRatio;
 }
 
 }  // namespace flutter

@@ -60,18 +60,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   flutter::LayerTree::Config layer_tree_config_;
 
-  static void initializeDefaultViewPixelRatioIfNecessary();
   static float defaultViewPixelRatio();
-
-  // The pixel ratio of window #0.
-  //
-  // Pixel ratio is used to render physical shapes (`PhysicalShapeLayer`),
-  // which have been deprecated. This field is used to keep backward
-  // compatibility, where physical shapes are drawn with the pixel ratio
-  // of window #0. Once `PhysicalShapeLayer` is removed as well as
-  // `{Preroll,Paint}Context.frame_device_pixel_ratio`, we should remove
-  // this field.
-  static float default_view_pixel_ratio_;
 };
 
 }  // namespace flutter
