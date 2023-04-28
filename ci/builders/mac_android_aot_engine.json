@@ -33,7 +33,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         },
         {
             "archives": [
@@ -69,7 +73,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         },
         {
             "archives": [
@@ -105,7 +113,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         },
         {
             "archives": [
@@ -140,7 +152,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         },
         {
             "archives": [
@@ -176,7 +192,11 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         },
         {
             "archives": [
@@ -212,10 +232,13 @@
                     "flutter/shell/platform/android:gen_snapshot"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14c18"
+                }
+            }
         }
     ],
-    "tests": [],
     "generators": [],
     "archives": []
 }
