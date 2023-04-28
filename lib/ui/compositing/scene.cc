@@ -58,9 +58,9 @@ void Scene::dispose() {
 
 Dart_Handle Scene::toImageSync(uint32_t width,
                                uint32_t height,
+                               double pixel_ratio,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
-  double pixel_ratio = 1.0f;  // TODO(dkwingsmt)
 
   if (!layer_tree_config_) {
     return tonic::ToDart("Scene's layer tree has been taken away.");
@@ -73,9 +73,9 @@ Dart_Handle Scene::toImageSync(uint32_t width,
 
 Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
+                           double pixel_ratio,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
-  double pixel_ratio = 1.0f;  // TODO(dkwingsmt)
 
   if (!layer_tree_config_) {
     return tonic::ToDart("Scene's layer tree has been taken away.");
