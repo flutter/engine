@@ -104,9 +104,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           damage_[texture] = SkIRect::MakeEmpty();
         }
 
+        std::optional<SkIRect> buffer_damage = surface_frame.submit_info().buffer_damage;
         std::optional<impeller::IRect> clip_rect;
-        if (surface_frame.submit_info().buffer_damage.has_value()) {
-          auto buffer_damage = surface_frame.submit_info().buffer_damage;
+        if (buffer_damage.has_value()) {
           clip_rect = impeller::IRect::MakeXYWH(buffer_damage->x(), buffer_damage->y(),
                                                 buffer_damage->width(), buffer_damage->height());
         }
@@ -118,8 +118,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           return surface->Present();
         }
 
-        impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
+        if (!buffer_damage.has_value()) {
+          auto size = surface->GetSize();
+          buffer_damage = SkIRect::MakeWH(size.width, size.height);
+          clip_rect = impeller::IRect::MakeXYWH(0, 0, size.width, size.height);
+        }
+        impeller::DlDispatcher impeller_dispatcher(clip_rect.value());
+        display_list->Dispatch(impeller_dispatcher, buffer_damage.value());
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(

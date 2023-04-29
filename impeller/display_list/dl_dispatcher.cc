@@ -43,6 +43,10 @@ namespace impeller {
 
 DlDispatcher::DlDispatcher() = default;
 
+DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
+
+DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
+
 DlDispatcher::~DlDispatcher() = default;
 
 static BlendMode ToBlendMode(flutter::DlBlendMode mode) {
@@ -1053,7 +1057,15 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  display_list->Dispatch(*this);
+  if (display_list->rtree()) {
+    Rect clip_bounds = canvas_.GetCurrentLocalClipBounds();
+    display_list->Dispatch(
+        *this,
+        SkRect::MakeLTRB(clip_bounds.GetLeft(), clip_bounds.GetTop(),
+                         clip_bounds.GetRight(), clip_bounds.GetBottom()));
+  } else {
+    display_list->Dispatch(*this);
+  }
 
   // Restore all saved state back to what it was before we interpreted
   // the display_list

@@ -23,15 +23,25 @@
 namespace impeller {
 
 Canvas::Canvas() {
-  Initialize();
+  Initialize(Rect::MakeLTRB(-1e9, -1e9, 1e9, 1e9));
+}
+
+Canvas::Canvas(Rect cull_rect) {
+  Initialize(cull_rect);
+}
+
+Canvas::Canvas(IRect cull_rect) {
+  Initialize(Rect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
+                            cull_rect.GetRight(), cull_rect.GetBottom()));
 }
 
 Canvas::~Canvas() = default;
 
-void Canvas::Initialize() {
+void Canvas::Initialize(Rect cull_rect) {
+  initial_cull_rect_ = cull_rect;
   base_pass_ = std::make_unique<EntityPass>();
   current_pass_ = base_pass_.get();
-  xformation_stack_.emplace_back(CanvasStackEntry{});
+  xformation_stack_.emplace_back(CanvasStackEntry{.clip_bounds = cull_rect});
   lazy_glyph_atlas_ = std::make_shared<LazyGlyphAtlas>();
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
@@ -54,6 +64,7 @@ void Canvas::Save(
     std::optional<EntityPass::BackdropFilterProc> backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
+  entry.clip_bounds = xformation_stack_.back().clip_bounds;
   entry.stencil_depth = xformation_stack_.back().stencil_depth;
   if (create_subpass) {
     entry.is_subpass = true;
@@ -107,6 +118,11 @@ void Canvas::Transform(const Matrix& xformation) {
 
 const Matrix& Canvas::GetCurrentTransformation() const {
   return xformation_stack_.back().xformation;
+}
+
+const Rect Canvas::GetCurrentLocalClipBounds() const {
+  Matrix inverse = xformation_stack_.back().xformation.Invert();
+  return xformation_stack_.back().clip_bounds.TransformBounds(inverse);
 }
 
 void Canvas::Translate(const Vector3& offset) {
@@ -257,21 +273,22 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
-  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
+  ClipGeometry(Geometry::MakeFillPath(path), clip_op, path.GetBoundingBox());
 }
 
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
-  ClipGeometry(Geometry::MakeRect(rect), clip_op);
+  ClipGeometry(Geometry::MakeRect(rect), clip_op, rect);
 }
 
 void Canvas::ClipRRect(const Rect& rect,
                        Scalar corner_radius,
                        Entity::ClipOperation clip_op) {
-  ClipGeometry(Geometry::MakeRRect(rect, corner_radius), clip_op);
+  ClipGeometry(Geometry::MakeRRect(rect, corner_radius), clip_op, rect);
 }
 
 void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
-                          Entity::ClipOperation clip_op) {
+                          Entity::ClipOperation clip_op,
+                          std::optional<Rect> geometry_bounds) {
   auto contents = std::make_shared<ClipContents>();
   contents->SetGeometry(std::move(geometry));
   contents->SetClipOperation(clip_op);
@@ -282,6 +299,19 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   entity.SetStencilDepth(GetStencilDepth());
 
   GetCurrentPass().AddEntity(entity);
+
+  if (geometry_bounds.has_value()) {
+    if (clip_op == Entity::ClipOperation::kIntersect) {
+      Rect transformed =
+          geometry_bounds.value().TransformBounds(GetCurrentTransformation());
+      auto new_bounds =
+          xformation_stack_.back().clip_bounds.Intersection(transformed);
+      xformation_stack_.back().clip_bounds = new_bounds.value_or(Rect{});
+    }
+    // else if kDifference we could chop off a side of the clip_bounds if
+    // the subtracted geometry was a rectangle and it spans the height or
+    // width of the current bounds.
+  }
 
   ++xformation_stack_.back().stencil_depth;
   xformation_stack_.back().contains_clips = true;
@@ -364,7 +394,7 @@ Picture Canvas::EndRecordingAsPicture() {
   picture.pass = std::move(base_pass_);
 
   Reset();
-  Initialize();
+  Initialize(initial_cull_rect_);
 
   return picture;
 }

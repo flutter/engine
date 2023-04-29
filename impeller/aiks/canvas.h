@@ -40,6 +40,10 @@ class Canvas {
 
   Canvas();
 
+  explicit Canvas(Rect cull_rect);
+
+  explicit Canvas(IRect cull_rect);
+
   ~Canvas();
 
   void Save();
@@ -56,6 +60,8 @@ class Canvas {
   void RestoreToCount(size_t count);
 
   const Matrix& GetCurrentTransformation() const;
+
+  const Rect GetCurrentLocalClipBounds() const;
 
   void ResetTransform();
 
@@ -135,8 +141,9 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  Rect initial_cull_rect_;
 
-  void Initialize();
+  void Initialize(Rect cull_rect);
 
   void Reset();
 
@@ -145,7 +152,8 @@ class Canvas {
   size_t GetStencilDepth() const;
 
   void ClipGeometry(std::unique_ptr<Geometry> geometry,
-                    Entity::ClipOperation clip_op);
+                    Entity::ClipOperation clip_op,
+                    std::optional<Rect> geometry_bounds);
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
