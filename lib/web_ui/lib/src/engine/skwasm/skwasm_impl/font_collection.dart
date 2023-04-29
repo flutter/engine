@@ -41,7 +41,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
     /// match Android.
     if (!manifest.families.any((FontFamily family) => family.name == 'Roboto')) {
       manifest.families.add(
-        FontFamily('sans-serif', <FontAsset>[FontAsset(_robotoUrl, <String, String>{})])
+        FontFamily('Roboto', <FontAsset>[FontAsset(_robotoUrl, <String, String>{})])
       );
     }
 

@@ -28,7 +28,7 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.width, isNonZero);
     expect(paragraph.height, isNonZero);
-  }, skip: isSkwasm);
+  });
 
   test('the presence of foreground style should not throw', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
@@ -38,5 +38,5 @@ Future<void> testMain() async {
     builder.addText('hi');
 
     expect(() => builder.build(), returnsNormally);
-  }, skip: isSkwasm);
+  });
 }

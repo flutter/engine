@@ -12,6 +12,7 @@ SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
 
   // This is the default behavior in Flutter
   style->setReplaceTabCharacters(true);
+
   return style;
 }
 

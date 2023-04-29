@@ -15,7 +15,7 @@ SKWASM_EXPORT FlutterFontCollection* fontCollection_create() {
   auto collection = sk_make_sp<FontCollection>();
   auto provider = sk_make_sp<TypefaceFontProvider>();
   collection->enableFontFallback();
-  collection->setDefaultFontManager(provider);
+  collection->setDefaultFontManager(provider, "Roboto");
   return new FlutterFontCollection{
       std::move(collection),
       std::move(provider),
