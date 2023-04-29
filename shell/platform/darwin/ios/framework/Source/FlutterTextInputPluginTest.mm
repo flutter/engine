@@ -1465,7 +1465,7 @@ FLUTTER_ASSERT_ARC
   ]];
 
   // Returns the matching rects within a range
-  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 2)];
   XCTAssertTrue(CGRectEqualToRect(testRect0, [inputView selectionRectsForRange:range][0].rect));
   XCTAssertTrue(CGRectEqualToRect(testRect1, [inputView selectionRectsForRange:range][1].rect));
   XCTAssertEqual(2U, [[inputView selectionRectsForRange:range] count]);

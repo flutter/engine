@@ -427,8 +427,12 @@ static BOOL IsApproximatelyEqual(float x, float y, float delta) {
 // Checks whether point should be considered closer to selectionRect compared to
 // otherSelectionRect.
 //
-// If checkRightBoundary is set, the right-center point on selectionRect and
-// otherSelectionRect will be used instead of the left-center point.
+// Uses the leading-center point on selectionRect and otherSelectionRect to compare.
+// For left-to-right text, this means the left-center point, and for right-to-left text,
+// this means the right-center point.
+//
+// If checkTrailingBoundary is set, the trailing-center point on selectionRect will
+// be used instead of the leading-center point.
 //
 // This uses special (empirically determined using a 1st gen iPad pro, 9.7" model running
 // iOS 14.7.1) logic for determining the closer rect, rather than a simple distance calculation.
@@ -440,19 +444,20 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                                          BOOL selectionRectIsRTL,
                                          CGRect otherSelectionRect,
                                          BOOL otherSelectionRectIsRTL,
-                                         BOOL checkFarBoundary,
+                                         BOOL checkTrailingBoundary,
                                          CGFloat verticalPrecision) {
   if (CGRectContainsPoint(
-          CGRectMake(
-              selectionRect.origin.x +
-                  ((checkFarBoundary ^ selectionRectIsRTL) ? 0.5 * selectionRect.size.width : 0),
-              selectionRect.origin.y, 0.5 * selectionRect.size.width, selectionRect.size.height),
+          CGRectMake(selectionRect.origin.x + ((checkTrailingBoundary ^ selectionRectIsRTL)
+                                                   ? 0.5 * selectionRect.size.width
+                                                   : 0),
+                     selectionRect.origin.y, 0.5 * selectionRect.size.width,
+                     selectionRect.size.height),
           point)) {
     return YES;
   }
   CGPoint pointForSelectionRect =
       CGPointMake(selectionRect.origin.x +
-                      (selectionRectIsRTL ^ checkFarBoundary ? selectionRect.size.width : 0),
+                      (selectionRectIsRTL ^ checkTrailingBoundary ? selectionRect.size.width : 0),
                   selectionRect.origin.y + selectionRect.size.height * 0.5);
   float yDist = fabs(pointForSelectionRect.y - point.y);
   float xDist = fabs(pointForSelectionRect.x - point.x);
@@ -471,10 +476,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   BOOL isAboveBottomOfLine = point.y <= selectionRect.origin.y + selectionRect.size.height;
   BOOL isCloserHorizontally = xDist <= xDistOther;
   BOOL isBelowBottomOfLine = point.y > selectionRect.origin.y + selectionRect.size.height;
-  BOOL isFarther = selectionRect.origin.x + (checkFarBoundary ? selectionRect.size.width : 0) >
-                   otherSelectionRect.origin.x;
+  BOOL isFarther;
   if (selectionRectIsRTL) {
     isFarther = selectionRect.origin.x < otherSelectionRect.origin.x;
+  } else {
+    isFarther = selectionRect.origin.x + (checkTrailingBoundary ? selectionRect.size.width : 0) >
+                otherSelectionRect.origin.x;
   }
   return (isCloserVertically ||
           (isEqualVertically &&
@@ -1636,9 +1643,19 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (BOOL)isRTLAtPosition:(NSUInteger)position {
-  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    if (_selectionRects[i].position == position) {
-      return _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft;
+  // _selectionRects is sorted by position already.
+  // We can use binary search.
+  NSInteger min = 0;
+  NSInteger max = [_selectionRects count];
+  while (min <= max) {
+    const NSUInteger mid = min + (max - min) / 2;
+    FlutterTextSelectionRect* rect = _selectionRects[mid];
+    if (rect.position > position) {
+      max = mid - 1;
+    } else if (rect.position == position) {
+      return rect.writingDirection == NSWritingDirectionRightToLeft;
+    } else {
+      min = mid + 1;
     }
   }
   return NO;
@@ -1652,7 +1669,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       [self selectionRectsForRange:[FlutterTextRange
                                        rangeWithNSRange:fml::RangeForCharactersInRange(
                                                             self.text,
-                                                            NSMakeRange(MAX(0, index - 1), 1))]];
+                                                            NSMakeRange(MAX(0, index - 1), 2))]];
   if (rects.count == 0) {
     return CGRectZero;
   }
@@ -1725,7 +1742,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   NSMutableArray* rects = [[NSMutableArray alloc] init];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    if (_selectionRects[i].position >= start && _selectionRects[i].position <= end) {
+    if (_selectionRects[i].position >= start &&
+        (_selectionRects[i].position < end || start == end)) {
       float width = _selectionRects[i].rect.size.width;
       if (start == end) {
         width = 0;
@@ -1770,7 +1788,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
               _selectionRects[i].writingDirection == NSWritingDirectionRightToLeft,
               _selectionRects[_closestRectIndex].rect,
               _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
-              /*checkFarBoundary=*/NO, verticalPrecision)) {
+              /*checkTrailingBoundary=*/NO, verticalPrecision)) {
         isFirst = NO;
         _closestRectIndex = i;
       }
@@ -1785,7 +1803,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
             _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
             _selectionRects[_closestRectIndex].rect,
             _selectionRects[_closestRectIndex].writingDirection == NSWritingDirectionRightToLeft,
-            /*checkFarBoundary=*/YES, verticalPrecision)) {
+            /*checkTrailingBoundary=*/YES, verticalPrecision)) {
       // This is an upstream position
       return [FlutterTextPosition positionWithIndex:(_closestPosition + 1)
                                            affinity:UITextStorageDirectionBackward];
