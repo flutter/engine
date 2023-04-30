@@ -11,6 +11,9 @@
       "libraries": {
         "ui": {
           "uri": "../../lib/ui/experiments/ui.dart"
+        },
+        "gpu": {
+          "uri": "../../lib/gpu/gpu.dart"
         }
       }
     }

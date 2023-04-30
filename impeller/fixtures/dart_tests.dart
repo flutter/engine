@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:ui';
+import 'dart:gpu';
 
 void main() {}
 

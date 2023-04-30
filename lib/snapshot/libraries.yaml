@@ -17,5 +17,7 @@ flutter:
   libraries:
     ui:
       uri: "../../lib/ui/ui.dart"
+    gpu:
+      uri: "../../lib/gpu/gpu.dart"
 
 
