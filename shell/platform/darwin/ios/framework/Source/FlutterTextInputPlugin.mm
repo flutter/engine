@@ -1665,11 +1665,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSInteger index = ((FlutterTextPosition*)position).index;
   UITextStorageDirection affinity = ((FlutterTextPosition*)position).affinity;
   // Get the bounds of the characters before and after the requested caret position.
-  NSArray<UITextSelectionRect*>* rects =
-      [self selectionRectsForRange:[FlutterTextRange
-                                       rangeWithNSRange:fml::RangeForCharactersInRange(
-                                                            self.text,
-                                                            NSMakeRange(MAX(0, index - 1), 2))]];
+  NSArray<UITextSelectionRect*>* rects = [self
+      selectionRectsForRange:[FlutterTextRange
+                                 rangeWithNSRange:fml::RangeForCharactersInRange(
+                                                      self.text,
+                                                      NSMakeRange(
+                                                          MAX(0, index - 1),
+                                                          (index >= (NSInteger)self.text.length)
+                                                              ? 1
+                                                              : 2))]];
   if (rects.count == 0) {
     return CGRectZero;
   }
@@ -1743,7 +1747,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSMutableArray* rects = [[NSMutableArray alloc] init];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     if (_selectionRects[i].position >= start &&
-        (_selectionRects[i].position < end || start == end)) {
+        (_selectionRects[i].position < end ||
+         (start == end && _selectionRects[i].position <= end))) {
       float width = _selectionRects[i].rect.size.width;
       if (start == end) {
         width = 0;
