@@ -798,7 +798,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
-    required int headingLevel,
+    int? headingLevel,
   }) {
     assert(_matrix4IsValid(transform));
     _updateNode(
@@ -837,7 +837,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
-      headingLevel,
+      headingLevel ?? -1,
     );
   }
   @Native<
