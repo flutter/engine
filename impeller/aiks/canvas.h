@@ -28,6 +28,15 @@ namespace impeller {
 
 class Entity;
 
+struct CanvasStackEntry {
+  Matrix xformation;
+  // |cull_rect| is conservative screen-space bounds of the clipped output area
+  std::optional<Rect> cull_rect;
+  size_t stencil_depth = 0u;
+  bool is_subpass = false;
+  bool contains_clips = false;
+};
+
 class Canvas {
  public:
   struct DebugOptions {
@@ -61,7 +70,7 @@ class Canvas {
 
   const Matrix& GetCurrentTransformation() const;
 
-  const Rect GetCurrentLocalClipBounds() const;
+  const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
@@ -141,9 +150,9 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
-  Rect initial_cull_rect_;
+  std::optional<Rect> initial_cull_rect_;
 
-  void Initialize(Rect cull_rect);
+  void Initialize(std::optional<Rect> cull_rect);
 
   void Reset();
 
@@ -152,8 +161,10 @@ class Canvas {
   size_t GetStencilDepth() const;
 
   void ClipGeometry(std::unique_ptr<Geometry> geometry,
-                    Entity::ClipOperation clip_op,
-                    std::optional<Rect> geometry_bounds);
+                    Entity::ClipOperation clip_op);
+
+  void IntersectCulling(Rect clip_bounds);
+  void SubtractCulling(Rect clip_bounds);
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,

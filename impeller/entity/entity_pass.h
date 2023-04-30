@@ -234,12 +234,4 @@ class EntityPass {
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
 };
 
-struct CanvasStackEntry {
-  Matrix xformation;
-  Rect clip_bounds;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
-  bool contains_clips = false;
-};
-
 }  // namespace impeller

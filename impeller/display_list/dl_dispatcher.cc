@@ -1057,12 +1057,21 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  if (display_list->rtree()) {
-    Rect clip_bounds = canvas_.GetCurrentLocalClipBounds();
-    display_list->Dispatch(
-        *this,
-        SkRect::MakeLTRB(clip_bounds.GetLeft(), clip_bounds.GetTop(),
-                         clip_bounds.GetRight(), clip_bounds.GetBottom()));
+  if (display_list->has_rtree()) {
+    // The canvas remembers the screen-space culling bounds clipped by
+    // the surface and the history of clip calls. DisplayList can cull
+    // the ops based on a rectangle expressed in its "destination bounds"
+    // so we need the canvas to transform those into the current local
+    // coordinate space into which the DisplayList will be rendered.
+    auto cull_bounds = canvas_.GetCurrentLocalCullingBounds();
+    if (cull_bounds.has_value()) {
+      Rect cull_rect = cull_bounds.value();
+      display_list->Dispatch(
+          *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
+                                  cull_rect.GetRight(), cull_rect.GetBottom()));
+    } else {
+      display_list->Dispatch(*this);
+    }
   } else {
     display_list->Dispatch(*this);
   }
