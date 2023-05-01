@@ -739,7 +739,7 @@ TEST(FlutterWindowsViewTest, WindowResizeTests) {
   fml::AutoResetWaitableEvent metrics_sent_latch;
   modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
       SendWindowMetricsEvent,
-      ([&metrics_sent_latch](auto engine,
+      ([&metrics_sent_latch](auto engine, int64_t view_id,
                              const FlutterWindowMetricsEvent* event) {
         metrics_sent_latch.Signal();
         return kSuccess;

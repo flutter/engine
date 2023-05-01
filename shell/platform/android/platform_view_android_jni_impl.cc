@@ -37,6 +37,8 @@
 
 namespace flutter {
 
+static constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
     nullptr;
 
@@ -337,7 +339,8 @@ static void SetViewportMetrics(JNIEnv* env,
       displayFeaturesState,
   };
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(
+      kFlutterDefaultViewId, metrics);
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {

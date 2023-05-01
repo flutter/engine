@@ -5,7 +5,7 @@
 #include "flutter/shell/gpu/gpu_studio_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/display_list_dispatcher.h"
+#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 

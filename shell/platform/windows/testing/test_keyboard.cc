@@ -192,7 +192,7 @@ void MockEmbedderApiForKeyboard(
         return kSuccess;
       };
   modifier.embedder_api().SendWindowMetricsEvent =
-      [](auto engine, const FlutterWindowMetricsEvent* event) {
+      [](auto engine, int64_t view_id, const FlutterWindowMetricsEvent* event) {
         return kSuccess;
       };
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };

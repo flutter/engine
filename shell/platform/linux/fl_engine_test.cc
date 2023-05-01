@@ -20,16 +20,17 @@ TEST(FlEngineTest, WindowMetrics) {
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
   bool called = false;
-  embedder_api->SendWindowMetricsEvent = MOCK_ENGINE_PROC(
-      SendWindowMetricsEvent,
-      ([&called](auto engine, const FlutterWindowMetricsEvent* event) {
-        called = true;
-        EXPECT_EQ(event->width, static_cast<size_t>(3840));
-        EXPECT_EQ(event->height, static_cast<size_t>(2160));
-        EXPECT_EQ(event->pixel_ratio, 2.0);
+  embedder_api->SendWindowMetricsEvent =
+      MOCK_ENGINE_PROC(SendWindowMetricsEvent,
+                       ([&called](auto engine, int64_t view_id,
+                                  const FlutterWindowMetricsEvent* event) {
+                         called = true;
+                         EXPECT_EQ(event->width, static_cast<size_t>(3840));
+                         EXPECT_EQ(event->height, static_cast<size_t>(2160));
+                         EXPECT_EQ(event->pixel_ratio, 2.0);
 
-        return kSuccess;
-      }));
+                         return kSuccess;
+                       }));
 
   g_autoptr(GError) error = nullptr;
   EXPECT_TRUE(fl_engine_start(engine, &error));

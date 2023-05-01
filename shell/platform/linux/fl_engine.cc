@@ -24,6 +24,8 @@
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
+static constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 
@@ -732,12 +734,14 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
     return;
   }
 
+  // TODO(dkwingsmt)
+  int64_t view_id = kFlutterDefaultViewId;
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
-  self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
+  self->embedder_api.SendWindowMetricsEvent(self->engine, view_id, &event);
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,
