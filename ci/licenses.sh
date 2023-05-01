@@ -75,7 +75,7 @@ function collect_licenses() (
   # `--interpret_irregexp`` tells dart to use interpreter mode for running
   # the regexp matching, rather than generating machine code for it.
   # For very large RegExps that are currently used in license script using
-  # interpreter is faster, then using unoptimized machine code, which has
+  # interpreter is faster than using unoptimized machine code, which has
   # no chance of being optimized(due to its size).
   dart --enable-asserts --interpret_irregexp lib/main.dart \
     --src ../../..                                         \
