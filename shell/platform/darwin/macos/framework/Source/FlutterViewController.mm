@@ -371,7 +371,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
 
-  int64_t _id;
+  FlutterViewId _id;
 }
 
 @synthesize viewId = _viewId;
