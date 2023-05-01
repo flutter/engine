@@ -460,7 +460,7 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
 }
 
 void Engine::Render(int64_t view_id,
-                    std::shared_ptr<flutter::LayerTree> layer_tree) {
+                    std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree) {
     return;
   }

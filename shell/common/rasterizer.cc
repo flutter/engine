@@ -237,7 +237,7 @@ RasterStatus Rasterizer::Draw(
   LayerTreePipeline::Consumer consumer =
       [this, &draw_result,
        &discard_callback](std::unique_ptr<LayerTreeItem> item) {
-        std::shared_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         int64_t view_id = item->view_id;
@@ -421,7 +421,7 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
 Rasterizer::DoDrawResult Rasterizer::DoDraw(
     int64_t view_id,
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-    std::shared_ptr<flutter::LayerTree> layer_tree) {
+    std::unique_ptr<flutter::LayerTree> layer_tree) {
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
                                 "Rasterizer::DoDraw");
   FML_DCHECK(delegate_.GetTaskRunners()

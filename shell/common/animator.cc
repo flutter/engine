@@ -129,7 +129,7 @@ void Animator::BeginFrame(
 }
 
 void Animator::Render(int64_t view_id,
-                      std::shared_ptr<flutter::LayerTree> layer_tree) {
+                      std::unique_ptr<flutter::LayerTree> layer_tree) {
   has_rendered_ = true;
   last_layer_tree_size_ = layer_tree->frame_size();
 

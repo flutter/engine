@@ -900,7 +900,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   void Render(int64_t view_id,
-              std::shared_ptr<flutter::LayerTree> layer_tree) override;
+              std::unique_ptr<flutter::LayerTree> layer_tree) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,

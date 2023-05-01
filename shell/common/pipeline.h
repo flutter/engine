@@ -253,13 +253,13 @@ class Pipeline {
 
 struct LayerTreeItem {
   LayerTreeItem(int64_t view_id,
-                std::shared_ptr<LayerTree> layer_tree,
+                std::unique_ptr<LayerTree> layer_tree,
                 std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
       : view_id(view_id),
         layer_tree(std::move(layer_tree)),
         frame_timings_recorder(std::move(frame_timings_recorder)) {}
   int64_t view_id;
-  std::shared_ptr<LayerTree> layer_tree;
+  std::unique_ptr<LayerTree> layer_tree;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
 };
 

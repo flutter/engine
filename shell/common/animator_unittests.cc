@@ -157,8 +157,8 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   task_runners.GetUITaskRunner()->PostDelayedTask(
       [&] {
         ASSERT_FALSE(delegate.notify_idle_called_);
-        auto layer_tree =
-            std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
+        auto layer_tree = std::make_unique<LayerTree>(
+            LayerTree::Config(), SkISize::Make(600, 800), 1.0);
         animator->Render(kDefaultViewId, std::move(layer_tree));
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
@@ -240,8 +240,8 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
     begin_frame_latch.Wait();
 
     PostTaskSync(task_runners.GetUITaskRunner(), [&] {
-      auto layer_tree =
-          std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
+      auto layer_tree = std::make_unique<LayerTree>(
+          LayerTree::Config(), SkISize::Make(600, 800), 1.0);
       animator->Render(kDefaultViewId, std::move(layer_tree));
     });
   }

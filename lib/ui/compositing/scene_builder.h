@@ -28,9 +28,9 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
 
  public:
-  static void Create(Dart_Handle wrapper, int64_t view_id) {
+  static void Create(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
-    auto res = fml::MakeRefCounted<SceneBuilder>(view_id);
+    auto res = fml::MakeRefCounted<SceneBuilder>();
     res->AssociateWithDartWrapper(wrapper);
   }
 
@@ -135,13 +135,12 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   }
 
  private:
-  SceneBuilder(int64_t view_id);
+  SceneBuilder();
 
   void AddLayer(std::shared_ptr<Layer> layer);
   void PushLayer(std::shared_ptr<ContainerLayer> layer);
   void PopLayer();
 
-  int64_t view_id_;
   std::vector<std::shared_ptr<ContainerLayer>> layer_stack_;
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
