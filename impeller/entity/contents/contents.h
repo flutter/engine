@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -30,22 +30,24 @@ ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
 
 class Contents {
  public:
-  Contents();
-
-  virtual ~Contents();
-
   struct StencilCoverage {
-    enum class Type { kNone, kAppend, kRestore };
+    enum class Type { kNoChange, kAppend, kRestore };
 
-    Type type = Type::kNone;
+    Type type = Type::kNoChange;
     std::optional<Rect> coverage = std::nullopt;
   };
 
-  /// @brief  Create an entity that renders a given snapshot.
-  static std::optional<Entity> EntityFromSnapshot(
-      const std::optional<Snapshot>& snapshot,
-      BlendMode blend_mode = BlendMode::kSourceOver,
-      uint32_t stencil_depth = 0);
+  using RenderProc = std::function<bool(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass)>;
+  using CoverageProc = std::function<std::optional<Rect>(const Entity& entity)>;
+
+  static std::shared_ptr<Contents> MakeAnonymous(RenderProc render_proc,
+                                                 CoverageProc coverage_proc);
+
+  Contents();
+
+  virtual ~Contents();
 
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
@@ -53,6 +55,12 @@ class Contents {
 
   /// @brief Get the screen space bounding rectangle that this contents affects.
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
+
+  /// @brief Whether this Contents only emits opaque source colors from the
+  ///        fragment stage. This value does not account for any entity
+  ///        properties (e.g. the blend mode), clips/visibility culling, or
+  ///        inherited opacity.
+  virtual bool IsOpaque() const;
 
   /// @brief Given the current screen space bounding rectangle of the stencil,
   ///        return the expected stencil coverage after this draw call. This
@@ -70,18 +78,20 @@ class Contents {
       const ContentContext& renderer,
       const Entity& entity,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
-      bool msaa_enabled = true) const;
+      bool msaa_enabled = true,
+      const std::string& label = "Snapshot") const;
 
   virtual bool ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const;
 
   /// @brief  Return the color source's intrinsic size, if available.
   ///
-  /// For example, a gradient has a size based on its end and beginning points,
-  /// ignoring any tiling. Solid colors and runtime effects have no size.
-  std::optional<Size> ColorSourceSize() const { return color_source_size_; }
+  ///         For example, a gradient has a size based on its end and beginning
+  ///         points, ignoring any tiling. Solid colors and runtime effects have
+  ///         no size.
+  std::optional<Size> GetColorSourceSize() const;
 
-  void SetColorSourceSize(Size size) { color_source_size_ = size; }
+  void SetColorSourceSize(Size size);
 
   /// @brief Whether or not this contents can accept the opacity peephole
   ///        optimization.
@@ -91,12 +101,12 @@ class Contents {
   ///        a way that makes accepting opacity impossible. It is always safe
   ///        to return false, especially if computing overlap would be
   ///        computationally expensive.
-  virtual bool CanAcceptOpacity(const Entity& entity) const;
+  virtual bool CanInheritOpacity(const Entity& entity) const;
 
   /// @brief Inherit the provided opacity.
-  virtual void InheritOpacity(Scalar opacity);
-
- protected:
+  ///
+  ///        Use of this method is invalid if CanAcceptOpacity returns false.
+  virtual void SetInheritedOpacity(Scalar opacity);
 
  private:
   std::optional<Size> color_source_size_;

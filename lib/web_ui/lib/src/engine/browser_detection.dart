@@ -268,4 +268,4 @@ int _detectWebGLVersion() {
 }
 
 /// Whether the current browser supports the Chromium variant of CanvasKit.
-final bool browserSupportsCanvaskitChromium = domIntl.v8BreakIterator != null;
+bool get browserSupportsCanvaskitChromium => domIntl.v8BreakIterator != null;

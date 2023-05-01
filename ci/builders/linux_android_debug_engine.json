@@ -44,39 +44,9 @@
                         "--android-variant",
                         "android_jit_release_x86"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
-        },
-        {
-            "archives": [
-                {
-                    "name": "android_debug_unopt",
-                    "type": "gcs",
-                    "base_path": "out/android_release/zip_archives/",
-                    "include_paths": []
-                }
-            ],
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
-            "gn": [
-                "--android",
-                "--unoptimized",
-                "--runtime-mode=debug",
-                "--no-lto"
-            ],
-            "name": "android_debug_unopt",
-            "ninja": {
-                "config": "android_debug_unopt",
-                "targets": []
-            },
-            "tests": []
         },
         {
             "archives": [
@@ -126,8 +96,7 @@
                         "--android-variant",
                         "android_debug"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -148,9 +117,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--android",
                 "--android-cpu=arm64",
@@ -163,8 +129,7 @@
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -183,9 +148,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--android",
                 "--android-cpu=x86",
@@ -198,8 +160,7 @@
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -218,9 +179,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--android",
                 "--android-cpu=x64",
@@ -233,9 +191,19 @@
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
                 ]
-            },
-            "tests": []
+            }
         }
     ],
-    "tests": []
+    "generators": {
+        "tasks": [
+            {
+                "name": "Verify-export-symbols-release-binaries",
+                "parameters": [
+                    "src/out"
+                ],
+                "script": "flutter/testing/symbols/verify_exported.dart",
+                "language": "dart"
+            }
+        ]
+    }
 }

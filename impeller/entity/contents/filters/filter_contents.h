@@ -9,10 +9,10 @@
 #include <variant>
 #include <vector>
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/sigma.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -126,7 +126,8 @@ class FilterContents : public Contents {
       const ContentContext& renderer,
       const Entity& entity,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
-      bool msaa_enabled = true) const override;
+      bool msaa_enabled = true,
+      const std::string& label = "Filter Snapshot") const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 

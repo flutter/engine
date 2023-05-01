@@ -11,9 +11,20 @@
 #include <vector>
 
 #include "impeller/geometry/path_component.h"
-#include "path_component.h"
 
 namespace impeller {
+
+enum class Cap {
+  kButt,
+  kRound,
+  kSquare,
+};
+
+enum class Join {
+  kMiter,
+  kRound,
+  kBevel,
+};
 
 enum class FillType {
   kNonZero,  // The default winding order.
@@ -77,7 +88,7 @@ class Path {
 
   ~Path();
 
-  size_t GetComponentCount() const;
+  size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   void SetFillType(FillType fill);
 

@@ -48,9 +48,9 @@ void PlatformConfiguration::DidCreateIsolate() {
   update_user_settings_data_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateUserSettingsData")));
-  update_lifecycle_state_.Set(
+  update_initial_lifecycle_state_.Set(
       tonic::DartState::Current(),
-      Dart_GetField(library, tonic::ToDart("_updateLifecycleState")));
+      Dart_GetField(library, tonic::ToDart("_updateInitialLifecycleState")));
   update_semantics_enabled_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateSemanticsEnabled")));
@@ -60,6 +60,9 @@ void PlatformConfiguration::DidCreateIsolate() {
   dispatch_platform_message_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_dispatchPlatformMessage")));
+  dispatch_pointer_data_packet_.Set(
+      tonic::DartState::Current(),
+      Dart_GetField(library, tonic::ToDart("_dispatchPointerDataPacket")));
   dispatch_semantics_action_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_dispatchSemanticsAction")));
@@ -108,17 +111,18 @@ void PlatformConfiguration::UpdateUserSettingsData(const std::string& data) {
                                                }));
 }
 
-void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
+void PlatformConfiguration::UpdateInitialLifecycleState(
+    const std::string& data) {
   std::shared_ptr<tonic::DartState> dart_state =
-      update_lifecycle_state_.dart_state().lock();
+      update_initial_lifecycle_state_.dart_state().lock();
   if (!dart_state) {
     return;
   }
   tonic::DartState::Scope scope(dart_state);
-  tonic::CheckAndHandleError(tonic::DartInvoke(update_lifecycle_state_.Get(),
-                                               {
-                                                   tonic::StdStringToDart(data),
-                                               }));
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      update_initial_lifecycle_state_.Get(), {
+                                                 tonic::StdStringToDart(data),
+                                             }));
 }
 
 void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
@@ -176,6 +180,26 @@ void PlatformConfiguration::DispatchPlatformMessage(
       tonic::DartInvoke(dispatch_platform_message_.Get(),
                         {tonic::ToDart(message->channel()), data_handle,
                          tonic::ToDart(response_id)}));
+}
+
+void PlatformConfiguration::DispatchPointerDataPacket(
+    const PointerDataPacket& packet) {
+  std::shared_ptr<tonic::DartState> dart_state =
+      dispatch_pointer_data_packet_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+
+  const std::vector<uint8_t>& buffer = packet.data();
+  Dart_Handle data_handle =
+      tonic::DartByteData::Create(buffer.data(), buffer.size());
+  if (Dart_IsError(data_handle)) {
+    return;
+  }
+
+  tonic::CheckAndHandleError(
+      tonic::DartInvoke(dispatch_pointer_data_packet_.Get(), {data_handle}));
 }
 
 void PlatformConfiguration::DispatchSemanticsAction(int32_t node_id,
@@ -378,17 +402,17 @@ void PlatformConfigurationNativeApi::SetIsolateDebugName(
   UIDartState::Current()->SetDebugName(name);
 }
 
-Dart_PerformanceMode PlatformConfigurationNativeApi::current_performace_mode_ =
+Dart_PerformanceMode PlatformConfigurationNativeApi::current_performance_mode_ =
     Dart_PerformanceMode_Default;
 
 Dart_PerformanceMode PlatformConfigurationNativeApi::GetDartPerformanceMode() {
-  return current_performace_mode_;
+  return current_performance_mode_;
 }
 
 int PlatformConfigurationNativeApi::RequestDartPerformanceMode(int mode) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  current_performace_mode_ = static_cast<Dart_PerformanceMode>(mode);
-  return Dart_SetPerformanceMode(current_performace_mode_);
+  current_performance_mode_ = static_cast<Dart_PerformanceMode>(mode);
+  return Dart_SetPerformanceMode(current_performance_mode_);
 }
 
 Dart_Handle PlatformConfigurationNativeApi::GetPersistentIsolateData() {

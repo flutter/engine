@@ -5,6 +5,8 @@
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 
 #include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 namespace flutter {
 
@@ -71,6 +73,11 @@ bool DlDeferredImageGPUSkia::isOpaque() const {
 // |DlImage|
 bool DlDeferredImageGPUSkia::isTextureBacked() const {
   return image_wrapper_ ? image_wrapper_->isTextureBacked() : false;
+}
+
+// |DlImage|
+bool DlDeferredImageGPUSkia::isUIThreadSafe() const {
+  return true;
 }
 
 // |DlImage|
@@ -144,7 +151,7 @@ sk_sp<SkImage> DlDeferredImageGPUSkia::ImageWrapper::CreateSkiaImage() const {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
 
   if (texture_.isValid() && context_) {
-    return SkImage::MakeFromTexture(
+    return SkImages::BorrowTextureFrom(
         context_.get(), texture_, kTopLeft_GrSurfaceOrigin,
         image_info_.colorType(), image_info_.alphaType(),
         image_info_.refColorSpace());

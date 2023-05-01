@@ -15,9 +15,11 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
@@ -49,6 +51,11 @@ fml::TaskRunnerAffineWeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
 fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
     const {
   return weak_factory_.GetWeakPtr();
+}
+
+void Rasterizer::SetImpellerContext(
+    std::weak_ptr<impeller::Context> impeller_context) {
+  impeller_context_ = std::move(impeller_context);
 }
 
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
@@ -272,9 +279,9 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
   };
 
   sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
-  SkCanvas* canvas = surface->getCanvas();
-  canvas->clear(SK_ColorTRANSPARENT);
-  display_list->RenderTo(canvas);
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  canvas.Clear(DlColor::kTransparent());
+  canvas.DrawDisplayList(display_list);
 
   sk_sp<SkImage> image = surface->makeImageSnapshot();
   return std::make_unique<SnapshotDelegate::GpuImageResult>(
@@ -342,9 +349,9 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
               return;
             }
 
-            SkCanvas* canvas = sk_surface->getCanvas();
-            canvas->clear(SK_ColorTRANSPARENT);
-            display_list->RenderTo(canvas);
+            auto canvas = DlSkCanvasAdapter(sk_surface->getCanvas());
+            canvas.Clear(DlColor::kTransparent());
+            canvas.DrawDisplayList(display_list);
 
             result = std::make_unique<SnapshotDelegate::GpuImageResult>(
                 texture, sk_ref_sp(context), nullptr, "");
@@ -542,7 +549,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
           .supports_readback,                // surface supports pixel reads
       raster_thread_merger_,                 // thread merger
       frame->GetDisplayListBuilder().get(),  // display list builder
-      surface_->GetAiksContext()             // aiks context
+      surface_->GetAiksContext().get()       // aiks context
   );
   if (compositor_frame) {
     compositor_context_->raster_cache().BeginFrame();

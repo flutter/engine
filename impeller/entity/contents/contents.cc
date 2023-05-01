@@ -7,10 +7,12 @@
 
 #include "fml/logging.h"
 #include "impeller/base/strings.h"
+#include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -27,48 +29,30 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
 
 ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
                                                const Entity& entity) {
-  ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  ContentContextOptions opts = OptionsFromPass(pass);
   opts.blend_mode = entity.GetBlendMode();
   return opts;
 }
 
-std::optional<Entity> Contents::EntityFromSnapshot(
-    const std::optional<Snapshot>& snapshot,
-    BlendMode blend_mode,
-    uint32_t stencil_depth) {
-  if (!snapshot.has_value()) {
-    return std::nullopt;
-  }
-
-  auto texture_rect = Rect::MakeSize(snapshot->texture->GetSize());
-
-  auto contents = TextureContents::MakeRect(texture_rect);
-  contents->SetTexture(snapshot->texture);
-  contents->SetSamplerDescriptor(snapshot->sampler_descriptor);
-  contents->SetSourceRect(texture_rect);
-  contents->SetOpacity(snapshot->opacity);
-
-  Entity entity;
-  entity.SetBlendMode(blend_mode);
-  entity.SetStencilDepth(stencil_depth);
-  entity.SetTransformation(snapshot->transform);
-  entity.SetContents(contents);
-  return entity;
+std::shared_ptr<Contents> Contents::MakeAnonymous(
+    Contents::RenderProc render_proc,
+    Contents::CoverageProc coverage_proc) {
+  return AnonymousContents::Make(std::move(render_proc),
+                                 std::move(coverage_proc));
 }
 
 Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+bool Contents::IsOpaque() const {
+  return false;
+}
+
 Contents::StencilCoverage Contents::GetStencilCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_stencil_coverage) const {
-  return {.type = StencilCoverage::Type::kNone,
+  return {.type = StencilCoverage::Type::kNoChange,
           .coverage = current_stencil_coverage};
 }
 
@@ -76,14 +60,15 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
   }
 
   auto texture = renderer.MakeSubpass(
-      "Snapshot", ISize::Ceil(coverage->size),
+      label, ISize::Ceil(coverage->size),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
@@ -110,21 +95,19 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   return snapshot;
 }
 
-bool Contents::CanAcceptOpacity(const Entity& entity) const {
+bool Contents::CanInheritOpacity(const Entity& entity) const {
   return false;
 }
 
-void Contents::InheritOpacity(Scalar opacity) {
-  FML_UNREACHABLE();
+void Contents::SetInheritedOpacity(Scalar opacity) {
+  VALIDATION_LOG << "Contents::SetInheritedOpacity should never be called when "
+                    "Contents::CanAcceptOpacity returns false.";
 }
 
 bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
     return false;
-  }
-  if (Entity::BlendModeShouldCoverWholeScreen(entity.GetBlendMode())) {
-    return true;
   }
 
   auto coverage = GetCoverage(entity);
@@ -135,6 +118,14 @@ bool Contents::ShouldRender(const Entity& entity,
     return true;
   }
   return stencil_coverage->IntersectsWithRect(coverage.value());
+}
+
+std::optional<Size> Contents::GetColorSourceSize() const {
+  return color_source_size_;
+};
+
+void Contents::SetColorSourceSize(Size size) {
+  color_source_size_ = size;
 }
 
 }  // namespace impeller

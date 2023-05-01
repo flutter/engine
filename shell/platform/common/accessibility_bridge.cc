@@ -37,12 +37,12 @@ AccessibilityBridge::~AccessibilityBridge() {
 }
 
 void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(
-    const FlutterSemanticsNode& node) {
+    const FlutterSemanticsNode2& node) {
   pending_semantics_node_updates_[node.id] = FromFlutterSemanticsNode(node);
 }
 
 void AccessibilityBridge::AddFlutterSemanticsCustomActionUpdate(
-    const FlutterSemanticsCustomAction& action) {
+    const FlutterSemanticsCustomAction2& action) {
   pending_semantics_custom_action_updates_[action.id] =
       FromFlutterSemanticsCustomAction(action);
 }
@@ -578,7 +578,7 @@ void AccessibilityBridge::SetTreeData(const SemanticsNode& node,
 
 AccessibilityBridge::SemanticsNode
 AccessibilityBridge::FromFlutterSemanticsNode(
-    const FlutterSemanticsNode& flutter_node) {
+    const FlutterSemanticsNode2& flutter_node) {
   SemanticsNode result;
   result.id = flutter_node.id;
   result.flags = flutter_node.flags;
@@ -629,7 +629,7 @@ AccessibilityBridge::FromFlutterSemanticsNode(
 
 AccessibilityBridge::SemanticsCustomAction
 AccessibilityBridge::FromFlutterSemanticsCustomAction(
-    const FlutterSemanticsCustomAction& flutter_custom_action) {
+    const FlutterSemanticsCustomAction2& flutter_custom_action) {
   SemanticsCustomAction result;
   result.id = flutter_custom_action.id;
   result.override_action = flutter_custom_action.override_action;

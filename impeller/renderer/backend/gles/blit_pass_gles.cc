@@ -10,13 +10,13 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -86,10 +86,12 @@ bool BlitPassGLES::EncodeCommands(
     return true;
   }
 
-  return reactor_->AddOperation([transients_allocator, &commands = commands_,
+  std::shared_ptr<const BlitPassGLES> shared_this = shared_from_this();
+  return reactor_->AddOperation([transients_allocator,
+                                 blit_pass = std::move(shared_this),
                                  label = label_](const auto& reactor) {
-    auto result =
-        EncodeCommandsInReactor(transients_allocator, reactor, commands, label);
+    auto result = EncodeCommandsInReactor(transients_allocator, reactor,
+                                          blit_pass->commands_, label);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }
@@ -127,11 +129,6 @@ bool BlitPassGLES::OnCopyTextureToBufferCommand(
   command->destination_offset = destination_offset;
 
   commands_.emplace_back(std::move(command));
-  return true;
-}
-
-bool BlitPassGLES::OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                                          std::string label) {
   return true;
 }
 

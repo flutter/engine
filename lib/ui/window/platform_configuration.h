@@ -30,7 +30,7 @@ class Scene;
 /// @brief An enum for defining the different kinds of accessibility features
 ///        that can be enabled by the platform.
 ///
-///         Must match the `AccessibilityFeatureFlag` enum in framework.
+///         Must match the `AccessibilityFeatures` class in framework.
 enum class AccessibilityFeatureFlag : int32_t {
   kAccessibleNavigation = 1 << 0,
   kInvertColors = 1 << 1,
@@ -296,7 +296,7 @@ class PlatformConfiguration final {
   ///
   /// @param[in]  data  The lifecycle state data.
   ///
-  void UpdateLifecycleState(const std::string& data);
+  void UpdateInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the embedder has
@@ -328,6 +328,15 @@ class PlatformConfiguration final {
   ///                      application.
   ///
   void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the PlatformConfiguration that the client has sent
+  ///             it pointer events. This call originates in the platform view
+  ///             and has been forwarded through the engine to here.
+  ///
+  /// @param[in]  packet  The pointer event(s) serialized into a packet.
+  ///
+  void DispatchPointerDataPacket(const PointerDataPacket& packet);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that the embedder encountered an
@@ -436,10 +445,11 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
-  tonic::DartPersistentValue update_lifecycle_state_;
+  tonic::DartPersistentValue update_initial_lifecycle_state_;
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
+  tonic::DartPersistentValue dispatch_pointer_data_packet_;
   tonic::DartPersistentValue dispatch_semantics_action_;
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;
@@ -538,7 +548,7 @@ class PlatformConfigurationNativeApi {
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 
  private:
-  static Dart_PerformanceMode current_performace_mode_;
+  static Dart_PerformanceMode current_performance_mode_;
 };
 
 }  // namespace flutter

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
@@ -20,7 +21,7 @@ class Path;
 class HostBuffer;
 struct VertexBuffer;
 
-class SolidColorContents final : public Contents {
+class SolidColorContents final : public ColorSourceContents {
  public:
   SolidColorContents();
 
@@ -29,17 +30,12 @@ class SolidColorContents final : public Contents {
   static std::unique_ptr<SolidColorContents> Make(const Path& path,
                                                   Color color);
 
-  void SetGeometry(std::shared_ptr<Geometry> geometry);
-
   void SetColor(Color color);
 
-  const Color& GetColor() const;
+  Color GetColor() const;
 
-  // | Contents|
-  bool CanAcceptOpacity(const Entity& entity) const override;
-
-  // | Contents|
-  void InheritOpacity(Scalar opacity) override;
+  // |Contents|
+  bool IsOpaque() const override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -54,8 +50,6 @@ class SolidColorContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  std::shared_ptr<Geometry> geometry_;
-
   Color color_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SolidColorContents);

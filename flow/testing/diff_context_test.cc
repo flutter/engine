@@ -5,15 +5,12 @@
 #include "diff_context_test.h"
 
 #include <utility>
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 
 namespace flutter {
 namespace testing {
 
-DiffContextTest::DiffContextTest()
-    : unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
-          GetCurrentTaskRunner(),
-          fml::TimeDelta::FromSeconds(0))) {}
+DiffContextTest::DiffContextTest() {}
 
 Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,
@@ -35,17 +32,14 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
 sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
                                                       SkColor color) {
   DisplayListBuilder builder;
-  builder.setColor(color);
-  builder.drawRect(bounds);
+  builder.DrawRect(bounds, DlPaint().setColor(color));
   return builder.Build();
 }
 
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
-    sk_sp<DisplayList> display_list,
+    const sk_sp<DisplayList>& display_list,
     const SkPoint& offset) {
-  return std::make_shared<DisplayListLayer>(
-      offset, SkiaGPUObject(std::move(display_list), unref_queue()), false,
-      false);
+  return std::make_shared<DisplayListLayer>(offset, display_list, false, false);
 }
 
 std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(

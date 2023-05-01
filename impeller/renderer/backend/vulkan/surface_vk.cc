@@ -43,9 +43,8 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
   std::shared_ptr<Texture> resolve_tex =
-      std::make_shared<TextureVK>(resolve_tex_desc,  //
-                                  context,           //
-                                  swapchain_image    //
+      std::make_shared<TextureVK>(context,         //
+                                  swapchain_image  //
       );
 
   if (!resolve_tex) {
@@ -61,33 +60,8 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   color0.store_action = StoreAction::kMultisampleResolve;
   color0.resolve_texture = resolve_tex;
 
-  TextureDescriptor stencil0_tex;
-  stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
-  stencil0_tex.type = TextureType::kTexture2D;
-  stencil0_tex.sample_count = SampleCount::kCount4;
-  stencil0_tex.format =
-      context->GetDeviceCapabilities().GetDefaultStencilFormat();
-  stencil0_tex.size = msaa_tex_desc.size;
-  stencil0_tex.usage =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-
-  auto stencil_tex =
-      context->GetResourceAllocator()->CreateTexture(stencil0_tex);
-  if (!stencil_tex) {
-    VALIDATION_LOG << "Could not create stencil texture.";
-    return nullptr;
-  }
-  stencil_tex->SetLabel("ImpellerOnscreenStencil");
-
-  StencilAttachment stencil0;
-  stencil0.texture = stencil_tex;
-  stencil0.clear_stencil = 0;
-  stencil0.load_action = LoadAction::kClear;
-  stencil0.store_action = StoreAction::kDontCare;
-
   RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
-  render_target_desc.SetStencilAttachment(stencil0);
 
   // The constructor is private. So make_unique may not be used.
   return std::unique_ptr<SurfaceVK>(

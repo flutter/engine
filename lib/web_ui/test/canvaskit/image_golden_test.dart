@@ -11,7 +11,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -95,12 +95,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
       // Disallow double-dispose.
       expect(() => image.dispose(), throwsAssertionError);
-      testCollector.collectNow();
     });
 
-    test('CkAnimatedImage remembers last animation position after resurrection', () async {
-      browserSupportsFinalizationRegistry = false;
-
+    test('CkAnimatedImage iterates frames correctly', () async {
       final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
       expect(image.frameCount, 3);
       expect(image.repetitionCount, -1);
@@ -109,16 +106,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       await expectFrameData(frame1, <int>[255, 0, 0, 255]);
       final ui.FrameInfo frame2 = await image.getNextFrame();
       await expectFrameData(frame2, <int>[0, 255, 0, 255]);
-
-      // Pretend that the image is temporarily deleted.
-      image.delete();
-      image.didDelete();
-
-      // Check that we got the 3rd frame after resurrection.
       final ui.FrameInfo frame3 = await image.getNextFrame();
       await expectFrameData(frame3, <int>[0, 0, 255, 255]);
-
-      testCollector.collectNow();
     });
 
     test('CkImage toString', () {
@@ -128,7 +117,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final CkImage image = CkImage(skImage);
       expect(image.toString(), '[1×1]');
       image.dispose();
-      testCollector.collectNow();
     });
 
     test('CkImage can be explicitly disposed of', () {
@@ -137,14 +125,13 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
               .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect(image.debugDisposed, isFalse);
-      expect(image.box.isDeletedPermanently, isFalse);
+      expect(image.box.isDisposed, isFalse);
       image.dispose();
       expect(image.debugDisposed, isTrue);
-      expect(image.box.isDeletedPermanently, isTrue);
+      expect(image.box.isDisposed, isTrue);
 
       // Disallow double-dispose.
       expect(() => image.dispose(), throwsAssertionError);
-      testCollector.collectNow();
     });
 
     test('CkImage can be explicitly disposed of when cloned', () async {
@@ -152,7 +139,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
               .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
-      final SkiaObjectBox<CkImage, SkImage> box = image.box;
+      final CountedRef<CkImage, SkImage> box = image.box;
       expect(box.refCount, 1);
       expect(box.debugGetStackTraces().length, 1);
 
@@ -161,24 +148,20 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(box.debugGetStackTraces().length, 2);
 
       expect(image.isCloneOf(clone), isTrue);
-      expect(box.isDeletedPermanently, isFalse);
+      expect(box.isDisposed, isFalse);
 
-      testCollector.collectNow();
       expect(skImage.isDeleted(), isFalse);
       image.dispose();
       expect(box.refCount, 1);
-      expect(box.isDeletedPermanently, isFalse);
+      expect(box.isDisposed, isFalse);
 
-      testCollector.collectNow();
       expect(skImage.isDeleted(), isFalse);
       clone.dispose();
       expect(box.refCount, 0);
-      expect(box.isDeletedPermanently, isTrue);
+      expect(box.isDisposed, isTrue);
 
-      testCollector.collectNow();
       expect(skImage.isDeleted(), isTrue);
       expect(box.debugGetStackTraces().length, 0);
-      testCollector.collectNow();
     });
 
     test('CkImage toByteData', () async {
@@ -188,7 +171,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final CkImage image = CkImage(skImage);
       expect((await image.toByteData()).lengthInBytes, greaterThan(0));
       expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
-      testCollector.collectNow();
     });
 
     test('toByteData with decodeImageFromPixels on videoFrame formats', () async {
@@ -262,29 +244,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       // The precise PNG encoding is browser-specific, but we can check the file
       // signature.
       expect(detectContentType(png.buffer.asUint8List()), 'image/png');
-      testCollector.collectNow();
     // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
     }, skip: isFirefox || isSafari);
-
-    // Regression test for https://github.com/flutter/flutter/issues/72469
-    test('CkImage can be resurrected', () {
-      browserSupportsFinalizationRegistry = false;
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.box.rawSkiaObject, isNotNull);
-
-      // Pretend that the image is temporarily deleted.
-      image.box.delete();
-      image.box.didDelete();
-      expect(image.box.rawSkiaObject, isNull);
-
-      // Attempting to access the skia object here would previously throw
-      // "Stack Overflow" in Safari.
-      expect(image.box.skiaObject, isNotNull);
-      testCollector.collectNow();
-    });
 
     test('skiaInstantiateWebImageCodec loads an image from the network',
         () async {
@@ -302,7 +263,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final ui.Image image = (await codec.getNextFrame()).image;
       expect(image.height, 1);
       expect(image.width, 1);
-      testCollector.collectNow();
     });
 
     test('instantiateImageCodec respects target image size',
@@ -332,8 +292,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         image.dispose();
         codec.dispose();
       }
-
-      testCollector.collectNow();
     });
 
     test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
@@ -359,8 +317,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         expect(image.height, 1);
         image.dispose();
         codec.dispose();
-
-        testCollector.collectNow();
     });
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
@@ -381,7 +337,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           'https://flutter.dev/docs/development/platform-integration/web-images',
         );
       }
-      testCollector.collectNow();
     });
 
     test('skiaInstantiateWebImageCodec throws exception on HTTP error',
@@ -397,7 +352,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           'Server response code: 404',
         );
       }
-      testCollector.collectNow();
     });
 
     test('skiaInstantiateWebImageCodec includes URL in the error for malformed image',
@@ -429,7 +383,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           );
         }
       }
-      testCollector.collectNow();
     });
 
     test('Reports error when failing to decode empty image data', () async {
@@ -779,7 +732,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       }
       CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       await matchGoldenFile(
-        'canvaskit_picture_texture_toimage',
+        'canvaskit_picture_texture_toimage.png',
         region: const ui.Rect.fromLTRB(0, 0, 128, 128),
       );
       mandrill.dispose();
@@ -851,7 +804,6 @@ void _testCkAnimatedImage() {
     // The precise PNG encoding is browser-specific, but we can check the file
     // signature.
     expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
-    testCollector.collectNow();
   });
 
   test('CkAnimatedImage toByteData(RGBA)', () async {
@@ -867,7 +819,6 @@ void _testCkAnimatedImage() {
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
-    testCollector.collectNow();
   });
 }
 
@@ -887,7 +838,6 @@ void _testCkBrowserImageDecoder() {
     // The precise PNG encoding is browser-specific, but we can check the file
     // signature.
     expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
-    testCollector.collectNow();
   });
 
   test('ImageDecoder toByteData(RGBA)', () async {
@@ -906,10 +856,7 @@ void _testCkBrowserImageDecoder() {
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
-    testCollector.collectNow();
-    // TODO(jacksongardner): enable on wasm
-    // see https://github.com/flutter/flutter/issues/118334
-  }, skip: isWasm);
+  });
 
   test('ImageDecoder expires after inactivity', () async {
     const Duration testExpireDuration = Duration(milliseconds: 100);
@@ -952,11 +899,8 @@ void _testCkBrowserImageDecoder() {
     final ui.FrameInfo frame3 = await image.getNextFrame();
     await expectFrameData(frame3, <int>[0, 0, 255, 255]);
 
-    testCollector.collectNow();
     debugRestoreWebDecoderExpireDuration();
-    // TODO(jacksongardner): enable on wasm
-    // see https://github.com/flutter/flutter/issues/118334
-  }, skip: isWasm);
+  });
 }
 
 Future<void> expectFrameData(ui.FrameInfo frame, List<int> data) async {
