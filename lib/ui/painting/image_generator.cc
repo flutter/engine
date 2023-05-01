@@ -88,6 +88,10 @@ static SkImageInfo getInfoIncludingExif(SkCodec* codec) {
   if (SkEncodedOriginSwapsWidthHeight(codec->getOrigin())) {
     info = SkPixmapUtils::SwapWidthHeight(info);
   }
+  if (kUnpremul_SkAlphaType == info.alphaType()) {
+    // Prefer premul over unpremul (this produces better filtering in general)
+    info = info.makeAlphaType(kPremul_SkAlphaType);
+  }
   return info;
 }
 
