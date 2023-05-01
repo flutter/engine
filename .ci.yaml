@@ -298,7 +298,6 @@ targets:
       - main
       - master
     properties:
-      drone_dimensions: ["os=Linux"]
       add_recipes_cq: "true"
       cores: "32"
       gclient_variables: >-
@@ -311,7 +310,7 @@ targets:
       framework: "true"
       no_goma: "true"
       drone_dimensions: >
-        ["device_type=none"]
+        ["device_type=none", "os=Linux"]
       shard: web_tests
       subshards: >-
               ["0", "1", "2", "3", "4", "5", "6", "7_last"]
