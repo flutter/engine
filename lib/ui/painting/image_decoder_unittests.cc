@@ -852,6 +852,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
       descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
   ASSERT_EQ(compressed_image->width(), 6);
   ASSERT_EQ(compressed_image->height(), 2);
+  ASSERT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
 
 #if IMPELLER_SUPPORTS_RENDERING
   std::shared_ptr<impeller::Allocator> allocator =
@@ -868,6 +869,24 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_EQ(result_2->sk_bitmap->width(), 10);
   ASSERT_EQ(result_2->sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
+}
+
+TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
+  auto data = OpenFixtureAsSkData("heart_end.png");
+  ASSERT_TRUE(data);
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> generator =
+      registry.CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                                         std::move(generator));
+  auto compressed_image = ImageDecoderSkia::ImageFromCompressedData(
+      descriptor.get(), 250, 250, fml::tracing::TraceFlow(""));
+  ASSERT_TRUE(compressed_image);
+  ASSERT_EQ(compressed_image->width(), 250);
+  ASSERT_EQ(compressed_image->height(), 250);
+  ASSERT_EQ(compressed_image->alphaType(), kPremul_SkAlphaType);
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
