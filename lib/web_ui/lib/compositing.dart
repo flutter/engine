@@ -120,6 +120,7 @@ abstract class SceneBuilder {
     Offset offset = Offset.zero,
     double width = 0.0,
     double height = 0.0,
+    int zIndex,
   });
   void setRasterizerTracingThreshold(int frameInterval);
   void setCheckerboardRasterCacheImages(bool checkerboard);

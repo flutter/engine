@@ -91,7 +91,7 @@ class Surface {
   /// Conversely, the canvas that lives inside this element can be swapped, for
   /// example, when the screen size changes, or when the WebGL context is lost
   /// due to the browser tab becoming dormant.
-  final DomElement htmlElement = createDomElement('flt-canvas-container')..setAttribute('style', 'position:relative;z-index:1;');
+  final DomElement htmlElement = createDomElement('flt-canvas-container');
 
   /// The underlying `<canvas>` element used for this surface.
   DomCanvasElement? htmlCanvas;

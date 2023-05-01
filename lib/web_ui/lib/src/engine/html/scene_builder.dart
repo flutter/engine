@@ -441,6 +441,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
     double height = 0.0,
+    int? zIndex
   }) {
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }

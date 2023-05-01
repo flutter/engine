@@ -12,6 +12,8 @@ import 'layer_tree.dart';
 import 'path.dart';
 import 'picture.dart';
 
+const int defaultPlatformViewLayerZIndex = -1;
+
 class LayerScene implements ui.Scene {
   LayerScene(RootLayer rootLayer) : layerTree = LayerTree(rootLayer);
 
@@ -82,8 +84,9 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0,
     Object? webOnlyPaintedBy,
+    int? zIndex,
   }) {
-    currentLayer.add(PlatformViewLayer(viewId, offset, width, height));
+    currentLayer.add(PlatformViewLayer(viewId, offset, width, height, zIndex ?? defaultPlatformViewLayerZIndex));
   }
 
   @override

@@ -814,11 +814,14 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// synchronized with the UIView frames adding additional performance overhead.
   ///
   /// The `offset` argument is not used for iOS and Android.
+  /// The `zIndex` argument is only used by the CanvasKit renderer. Negative values render behind the 
+  /// canvas and will not require additional WebGL contexts. 
   void addPlatformView(
     int viewId, {
     Offset offset = Offset.zero,
     double width = 0.0,
     double height = 0.0,
+    int? zIndex,
   }) {
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }

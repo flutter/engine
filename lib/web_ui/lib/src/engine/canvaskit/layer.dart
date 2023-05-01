@@ -584,12 +584,13 @@ class ColorFilterEngineLayer extends ContainerLayer
 
 /// A layer which renders a platform view (an HTML element in this case).
 class PlatformViewLayer extends Layer {
-  PlatformViewLayer(this.viewId, this.offset, this.width, this.height);
+  PlatformViewLayer(this.viewId, this.offset, this.width, this.height, this.zIndex);
 
   final int viewId;
   final ui.Offset offset;
   final double width;
   final double height;
+  final int zIndex;
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
@@ -603,6 +604,7 @@ class PlatformViewLayer extends Layer {
         offset,
         ui.Size(width, height),
         prerollContext.mutatorsStack,
+        zIndex,
       ),
     );
   }
@@ -615,7 +617,7 @@ class PlatformViewLayer extends Layer {
       paintContext.leafNodesCanvas = canvas;
     }
 
-    if (paintContext.viewEmbedder?.renderViewsBehindCanvas ?? false) {
+    if (zIndex < 0) {
       paintContext.leafNodesCanvas?.clear(const ui.Color.fromARGB(0, 0, 0, 0));
     }
   }

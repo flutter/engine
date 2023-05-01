@@ -28,8 +28,6 @@ class HtmlViewEmbedder {
   /// The [HtmlViewEmbedder] singleton.
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
-  bool renderViewsBehindCanvas = true;
-
   DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
 
   /// Force the view embedder to disable overlays.
@@ -125,7 +123,7 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    if (!renderViewsBehindCanvas) {
+    if (params.zIndex >= 0) {
       
       final bool hasAvailableOverlay =
           _context.pictureRecordersCreatedDuringPreroll.length <
@@ -174,7 +172,7 @@ class HtmlViewEmbedder {
     }
 
     CkPictureRecorder? recorderToUseForRendering;
-    if(!renderViewsBehindCanvas) {
+    if((_currentCompositionParams[viewId]?.zIndex ?? defaultPlatformViewLayerZIndex) >= 0) {
       // We need a new overlay if this is a visible view.
       final bool needNewOverlay = platformViewManager.isVisible(viewId);
     
@@ -224,6 +222,10 @@ class HtmlViewEmbedder {
         root: newPlatformViewRoot,
         clipCount: currentClippingCount,
       );
+
+      if(params.zIndex != 0) {
+        newPlatformViewRoot.style.zIndex = params.zIndex.toString();
+      }
     }
 
     // Apply mutators to the slot
@@ -592,9 +594,6 @@ class HtmlViewEmbedder {
   //
   // TODO(hterkelsen): Test this more thoroughly.
   void _updateOverlays(ViewListDiffResult? diffResult) {
-    if(renderViewsBehindCanvas) {
-      return;
-    }
     if (diffResult != null &&
         diffResult.viewsToAdd.isEmpty &&
         diffResult.viewsToRemove.isEmpty) {
@@ -658,6 +657,10 @@ class HtmlViewEmbedder {
 
     for (int i = 0; i < views.length; i++) {
       final int view = views[i];
+      if((_currentCompositionParams[view]?.zIndex ?? defaultPlatformViewLayerZIndex) < 0) {
+        // If view will be rendered behind canvas we don't need an overlay
+        continue;
+      }
       if (platformViewManager.isInvisible(view)) {
         // We add as many invisible views as we find to the current group.
         currentGroup.add(view);
@@ -797,12 +800,13 @@ class ViewClipChain {
 
 /// The parameters passed to the view embedder.
 class EmbeddedViewParams {
-  EmbeddedViewParams(this.offset, this.size, MutatorsStack mutators)
+  EmbeddedViewParams(this.offset, this.size, MutatorsStack mutators, this.zIndex)
       : mutators = MutatorsStack._copy(mutators);
 
   final ui.Offset offset;
   final ui.Size size;
   final MutatorsStack mutators;
+  final int zIndex;
 
   @override
   bool operator ==(Object other) {
@@ -812,11 +816,12 @@ class EmbeddedViewParams {
     return other is EmbeddedViewParams &&
         other.offset == offset &&
         other.size == size &&
-        other.mutators == mutators;
+        other.mutators == mutators && 
+        other.zIndex == zIndex;
   }
 
   @override
-  int get hashCode => Object.hash(offset, size, mutators);
+  int get hashCode => Object.hash(offset, size, mutators, zIndex);
 }
 
 enum MutatorType {
