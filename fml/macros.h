@@ -38,4 +38,12 @@
   TypeName() = delete;                               \
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName)
 
+#if defined(__clang__)
+#define FML_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
+#else
+#define FML_THREAD_ANNOTATION_ATTRIBUTE__(x)  // no-op
+#endif
+
+#define FML_GUARDED_BY(x) FML_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+
 #endif  // FLUTTER_FML_MACROS_H_

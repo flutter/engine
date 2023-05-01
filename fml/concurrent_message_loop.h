@@ -73,9 +73,9 @@ class ConcurrentTaskRunner : public BasicTaskRunner {
  private:
   friend ConcurrentMessageLoop;
 
-  // Raw pointer that is cleared out in ~ConcurrentMessageLoop.
-  ConcurrentMessageLoop* weak_loop_;
   std::mutex weak_loop_mutex_;
+  // Raw pointer that is cleared out in ~ConcurrentMessageLoop.
+  ConcurrentMessageLoop* weak_loop_ FML_GUARDED_BY(weak_loop_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ConcurrentTaskRunner);
 };
