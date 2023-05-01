@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <zircon/status.h>
 #include "flow/embedded_views.h"
 #include "pointer_injector_delegate.h"
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -34,6 +35,7 @@ static constexpr char kFlutterPlatformChannel[] = "flutter/platform";
 static constexpr char kAccessibilityChannel[] = "flutter/accessibility";
 static constexpr char kFlutterPlatformViewsChannel[] = "flutter/platform_views";
 static constexpr char kFuchsiaShaderWarmupChannel[] = "fuchsia/shader_warmup";
+static constexpr char kFuchsiaInputTestChannel[] = "fuchsia/input_test";
 
 PlatformView::PlatformView(
     bool is_flatland,
@@ -56,7 +58,8 @@ PlatformView::PlatformView(
     OnShaderWarmup on_shader_warmup,
     AwaitVsyncCallback await_vsync_callback,
     AwaitVsyncForSecondaryCallbackCallback
-        await_vsync_for_secondary_callback_callback)
+        await_vsync_for_secondary_callback_callback,
+    std::shared_ptr<sys::ServiceDirectory> svc)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       external_view_embedder_(external_view_embedder),
       focus_delegate_(
@@ -140,6 +143,47 @@ PlatformView::PlatformView(
       std::move(pointerinjector_registry), std::move(view_ref_clone),
       is_flatland);
 
+  if (svc) {
+    // Connect to TouchInputListener
+    fuchsia::ui::test::input::TouchInputListenerHandle touch_input_listener;
+    zx_status_t touch_input_listener_status =
+        svc->Connect<fuchsia::ui::test::input::TouchInputListener>(
+            touch_input_listener.NewRequest());
+    if (touch_input_listener_status != ZX_OK) {
+      FML_LOG(WARNING)
+          << "fuchsia::ui::test::input::TouchInputListener connection failed: "
+          << zx_status_get_string(touch_input_listener_status);
+    } else {
+      touch_input_listener_.Bind(std::move(touch_input_listener));
+    }
+
+    // Connect to KeyboardInputListener
+    fuchsia::ui::test::input::KeyboardInputListenerHandle
+        keyboard_input_listener;
+    zx_status_t keyboard_input_listener_status =
+        svc->Connect<fuchsia::ui::test::input::KeyboardInputListener>(
+            keyboard_input_listener.NewRequest());
+    if (keyboard_input_listener_status != ZX_OK) {
+      FML_LOG(WARNING) << "fuchsia::ui::test::input::KeyboardInputListener "
+                          "connection failed: "
+                       << zx_status_get_string(keyboard_input_listener_status);
+    } else {
+      keyboard_input_listener_.Bind(std::move(keyboard_input_listener));
+    }
+    // Connect to MouseInputListener
+    fuchsia::ui::test::input::MouseInputListenerHandle mouse_input_listener;
+    zx_status_t mouse_input_listener_status =
+        svc->Connect<fuchsia::ui::test::input::MouseInputListener>(
+            mouse_input_listener.NewRequest());
+    if (mouse_input_listener_status != ZX_OK) {
+      FML_LOG(WARNING)
+          << "fuchsia::ui::test::input::MouseInputListener connection failed: "
+          << zx_status_get_string(mouse_input_listener_status);
+    } else {
+      mouse_input_listener_.Bind(std::move(mouse_input_listener));
+    }
+  }
+
   // Finally! Register the native platform message handlers.
   RegisterPlatformMessageHandlers();
 }
@@ -162,6 +206,9 @@ void PlatformView::RegisterPlatformMessageHandlers() {
   platform_message_handlers_[kFuchsiaShaderWarmupChannel] =
       std::bind(&HandleFuchsiaShaderWarmupChannelPlatformMessage,
                 on_shader_warmup_, std::placeholders::_1);
+  platform_message_handlers_[kFuchsiaInputTestChannel] =
+      std::bind(&PlatformView::HandleFuchsiaInputTestChannelPlatformMessage,
+                this, std::placeholders::_1);
 }
 
 static flutter::PointerData::Change GetChangeFromPointerEventPhase(
@@ -671,6 +718,145 @@ bool PlatformView::HandleFuchsiaShaderWarmupChannelPlatformMessage(
   on_shader_warmup(skp_paths, completion_callback, width, height);
   // The response has already been completed by us.
   return true;
+}
+
+namespace {
+template <typename T, typename O, typename F>
+bool WithMember(O obj, const char* member_name, F func) {
+  auto it = obj.FindMember(member_name);
+  if (it == obj.MemberEnd()) {
+    return false;
+  }
+  if (!it->value.template Is<T>()) {
+    return false;
+  }
+  func(it->value.template Get<T>());
+  return true;
+}
+}  // namespace
+
+// Channel handler for kFuchsiaInputTestChannel
+bool PlatformView::HandleFuchsiaInputTestChannelPlatformMessage(
+    std::unique_ptr<flutter::PlatformMessage> message) {
+  FML_DCHECK(message->channel() == kFuchsiaInputTestChannel);
+
+  const auto& data = message->data();
+  rapidjson::Document document;
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
+  if (document.HasParseError() || !document.IsObject()) {
+    FML_LOG(ERROR) << "Could not parse document";
+    return false;
+  }
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method == root.MemberEnd() || !method->value.IsString()) {
+    FML_LOG(ERROR) << "Missing method";
+    return false;
+  }
+
+  FML_LOG(INFO) << "fuchsia/input_test: method=" << method->value.GetString();
+
+  if (method->value == "TouchInputListener.ReportTouchInput") {
+    if (!touch_input_listener_) {
+      FML_LOG(ERROR) << "TouchInputListener not found.";
+      return false;
+    }
+
+    fuchsia::ui::test::input::TouchInputListenerReportTouchInputRequest request;
+    WithMember<double>(root, "local_x",
+                       [&](double local_x) { request.set_local_x(local_x); });
+    WithMember<double>(root, "local_y",
+                       [&](double local_y) { request.set_local_y(local_y); });
+    WithMember<int64_t>(root, "time_received", [&](uint64_t time_received) {
+      request.set_time_received(time_received);
+    });
+    WithMember<std::string>(root, "component_name",
+                            [&](std::string component_name) {
+                              request.set_component_name(component_name);
+                            });
+
+    touch_input_listener_->ReportTouchInput(std::move(request));
+    return true;
+  }
+
+  if (method->value == "KeyboardInputListener.ReportTextInput") {
+    if (!keyboard_input_listener_) {
+      FML_LOG(ERROR) << "KeyboardInputListener not found.";
+      return false;
+    }
+
+    fuchsia::ui::test::input::KeyboardInputListenerReportTextInputRequest
+        request;
+    WithMember<std::string>(root, "text",
+                            [&](std::string text) { request.set_text(text); });
+
+    keyboard_input_listener_->ReportTextInput(std::move(request));
+    return true;
+  }
+
+  if (method->value == "MouseInputListener.ReportMouseInput") {
+    if (!mouse_input_listener_) {
+      FML_LOG(ERROR) << "MouseInputListener not found.";
+      return false;
+    }
+
+    fuchsia::ui::test::input::MouseInputListenerReportMouseInputRequest request;
+    WithMember<double>(root, "local_x",
+                       [&](double local_x) { request.set_local_x(local_x); });
+    WithMember<double>(root, "local_y",
+                       [&](double local_y) { request.set_local_y(local_y); });
+    WithMember<int64_t>(root, "time_received", [&](uint64_t time_received) {
+      request.set_time_received(time_received);
+    });
+    WithMember<std::string>(root, "component_name",
+                            [&](std::string component_name) {
+                              request.set_component_name(component_name);
+                            });
+    WithMember<int>(root, "buttons", [&](int button_mask) {
+      std::vector<fuchsia::ui::test::input::MouseButton> buttons;
+      if (button_mask & 1) {
+        buttons.push_back(fuchsia::ui::test::input::MouseButton::FIRST);
+      }
+      if (button_mask & 2) {
+        buttons.push_back(fuchsia::ui::test::input::MouseButton::SECOND);
+      }
+      if (button_mask & 4) {
+        buttons.push_back(fuchsia::ui::test::input::MouseButton::THIRD);
+      }
+      request.set_buttons(buttons);
+    });
+    WithMember<std::string>(root, "phase", [&](std::string phase) {
+      if (phase == "add") {
+        request.set_phase(fuchsia::ui::test::input::MouseEventPhase::ADD);
+      } else if (phase == "hover") {
+        request.set_phase(fuchsia::ui::test::input::MouseEventPhase::HOVER);
+      } else if (phase == "down") {
+        request.set_phase(fuchsia::ui::test::input::MouseEventPhase::DOWN);
+      } else if (phase == "move") {
+        request.set_phase(fuchsia::ui::test::input::MouseEventPhase::MOVE);
+      } else if (phase == "up") {
+        request.set_phase(fuchsia::ui::test::input::MouseEventPhase::UP);
+      } else {
+        FML_LOG(ERROR) << "Unexpected mouse phase: " << phase;
+      }
+    });
+    WithMember<double>(
+        root, "wheel_x_physical_pixel", [&](double wheel_x_physical_pixel) {
+          request.set_wheel_x_physical_pixel(wheel_x_physical_pixel);
+        });
+    WithMember<double>(
+        root, "wheel_y_physical_pixel", [&](double wheel_y_physical_pixel) {
+          request.set_wheel_y_physical_pixel(wheel_y_physical_pixel);
+        });
+
+    mouse_input_listener_->ReportMouseInput(std::move(request));
+    return true;
+  }
+
+  FML_LOG(ERROR) << "fuchsia/input_test: unrecognized method "
+                 << method->value.GetString();
+  return false;
 }
 
 }  // namespace flutter_runner

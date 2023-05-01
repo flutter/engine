@@ -10,7 +10,6 @@ import 'dart:ui';
 import 'package:args/args.dart';
 import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
 import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
 import 'package:fuchsia_services/services.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:zircon/zircon.dart';
@@ -50,7 +49,6 @@ class TestApp {
   final bool showOverlay;
   final bool hitTestable;
   final bool focusable;
-  final _responseListener = test_touch.TouchInputListenerProxy();
 
   Color _backgroundColor = _blue;
 
@@ -159,25 +157,27 @@ class TestApp {
       }
 
       if (data.change == PointerChange.down || data.change == PointerChange.move) {
-        Incoming.fromSvcPath()
-          ..connectToService(_responseListener)
-          ..close();
-
-        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+        _reportTouchInput(
           localX: data.physicalX,
           localY: data.physicalY,
           timeReceived: nowNanos,
-          componentName: 'embedding-flutter-view',
-        ));
+        );
       }
     }
 
     window.scheduleFrame();
   }
 
-  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+  void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
-    await _responseListener.reportTouchInput(request);
+    final message = utf8.encoder.convert(json.encode({
+      'method': 'TouchInputListener.ReportTouchInput',
+      'local_x': localX,
+      'local_y': localY,
+      'time_received': timeReceived,
+      'component_name': 'embedding-flutter-view',
+    })).buffer.asByteData();
+    PlatformDispatcher.instance.sendPlatformMessage('fuchsia/input_test', message, null);
   }
 }
 
