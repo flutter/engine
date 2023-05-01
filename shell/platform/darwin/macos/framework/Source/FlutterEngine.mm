@@ -23,7 +23,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 
-
 /**
  * The view ID for APIs that don't support multi-view.
  *
