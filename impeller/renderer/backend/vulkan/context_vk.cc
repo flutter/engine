@@ -111,8 +111,9 @@ ContextVK::~ContextVK() {
     [[maybe_unused]] auto result = device_->waitIdle();
   }
   CommandPoolVK::ClearAllPools(this);
-  // Shut down the worker message loop before the context starts getting torn
-  // down.
+  // Delete `worker_message_loop_` to ensure that ~ConcurrentMessageLoop() is
+  // executed before the instance variables are deleted. This will synchronize
+  // on joining ConcurrentMessageLoop's threads.
   worker_message_loop_.reset();
 }
 
