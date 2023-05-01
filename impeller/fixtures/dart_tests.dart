@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui';
-import 'dart:gpu';
+import 'dart:ui' as ui;
+//import 'dart:gpu';
 
 void main() {}
 
