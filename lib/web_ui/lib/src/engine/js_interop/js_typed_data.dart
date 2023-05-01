@@ -13,15 +13,18 @@ class ArrayBuffer {}
 class TypedArray {}
 
 extension TypedArrayExtension on TypedArray {
-  external void set(Uint8Array source, JSNumber start);
+  external void set(JSUint8Array1 source, JSNumber start);
   external JSNumber get length;
 }
 
-@JS()
+// Due to some differences between wasm and JS backends, we can't use the
+// JSUint8Array object provided by the dart sdk. So for now, we can define this
+// as an opaque JS object.
+@JS('Uint8Array')
 @staticInterop
-class Uint8Array extends TypedArray {
-  external factory Uint8Array._(JSAny bufferOrLength);
+class JSUint8Array1 extends TypedArray {
+  external factory JSUint8Array1._(JSAny bufferOrLength);
 }
 
-Uint8Array createUint8ArrayFromBuffer(ArrayBuffer buffer) => Uint8Array._(buffer as JSObject);
-Uint8Array createUint8ArrayFromLength(int length) => Uint8Array._(length.toJS);
+JSUint8Array1 createUint8ArrayFromBuffer(ArrayBuffer buffer) => JSUint8Array1._(buffer as JSObject);
+JSUint8Array1 createUint8ArrayFromLength(int length) => JSUint8Array1._(length.toJS);

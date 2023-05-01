@@ -203,10 +203,10 @@ Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCa
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
 Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
-  final Uint8Array result = createUint8ArrayFromLength(contentLength);
+  final JSUint8Array1 result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
-  await payload.read<Uint8Array>((Uint8Array chunk) {
+  await payload.read<JSUint8Array1>((JSUint8Array1 chunk) {
     cumulativeBytesLoaded += chunk.length.toDart.toInt();
     chunkCallback(cumulativeBytesLoaded, contentLength);
     result.set(chunk, position.toJS);

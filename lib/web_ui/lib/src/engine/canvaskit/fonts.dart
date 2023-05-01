@@ -113,7 +113,7 @@ class SkiaFontCollection implements FlutterFontCollection {
     /// Roboto to match Android.
     if (!loadedRoboto) {
       // Download Roboto and add it to the font buffers.
-      pendingDownloads.add(_downloadFont('RobotoFallback', _robotoUrl, 'Roboto'));
+      pendingDownloads.add(_downloadFont('Roboto', _robotoUrl, 'Roboto'));
     }
 
     final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};

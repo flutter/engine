@@ -72,15 +72,15 @@ class SkwasmFontCollection implements FlutterFontCollection {
       return FontNotFoundError(assetManager.getAssetUrl(asset.asset));
     }
     int length = 0;
-    final List<Uint8Array> chunks = <Uint8Array>[];
-    await response.read((Uint8Array chunk) {
+    final List<JSUint8Array1> chunks = <JSUint8Array1>[];
+    await response.read((JSUint8Array1 chunk) {
       length += chunk.length.toDart.toInt();
       chunks.add(chunk);
     });
     final SkDataHandle fontData = skDataCreate(length);
     int dataAddress = skDataGetPointer(fontData).cast<Int8>().address;
-    final Uint8Array wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
-    for (final Uint8Array chunk in chunks) {
+    final JSUint8Array1 wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
+    for (final JSUint8Array1 chunk in chunks) {
       wasmMemory.set(chunk, dataAddress.toJS);
       dataAddress += chunk.length.toDart.toInt();
     }
