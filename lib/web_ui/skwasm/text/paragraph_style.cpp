@@ -13,6 +13,11 @@ SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
   // This is the default behavior in Flutter
   style->setReplaceTabCharacters(true);
 
+  // Default text style has a black color
+  TextStyle textStyle;
+  textStyle.setColor(SK_ColorBLACK);
+  style->setTextStyle(textStyle);
+
   return style;
 }
 

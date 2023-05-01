@@ -8,7 +8,11 @@
 using namespace skia::textlayout;
 
 SKWASM_EXPORT TextStyle* textStyle_create() {
-  return new TextStyle();
+  auto style = new TextStyle();
+
+  // Default color in flutter is black.
+  style->setColor(SK_ColorBLACK);
+  return style;
 }
 
 SKWASM_EXPORT void textStyle_dispose(TextStyle* style) {
