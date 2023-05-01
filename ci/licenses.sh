@@ -72,10 +72,10 @@ function run_tests() (
 # Runs in a subshell.
 function collect_licenses() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  dart --enable-asserts lib/main.dart         \
-    --src ../../..                            \
-    --out ../../../out/license_script_output  \
-    --golden ../../ci/licenses_golden \
+  dart --enable-asserts --interpret_irregexp lib/main.dart \
+    --src ../../..                                         \
+    --out ../../../out/license_script_output               \
+    --golden ../../ci/licenses_golden                      \
     "${QUIET}"
 )
 
