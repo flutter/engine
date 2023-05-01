@@ -55,8 +55,7 @@
                         "dart",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -110,8 +109,7 @@
                         "dart,engine",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -173,8 +171,7 @@
                         "--type",
                         "dart,engine,impeller-golden"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -218,8 +215,7 @@
                     "flutter/build/archives:dart_sdk_archive",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -257,8 +253,7 @@
                     "flutter/build/archives:artifacts",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
@@ -298,11 +293,9 @@
                     "flutter/build/archives:artifacts",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
-            },
-            "tests": []
+            }
         }
     ],
-    "tests": [],
     "generators": {
         "tasks": [
             {
