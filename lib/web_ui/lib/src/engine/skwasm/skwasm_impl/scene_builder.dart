@@ -60,7 +60,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
     double height = 0.0,
-    int zIndex = 0
+    int? zIndex
   }) {
     throw UnimplementedError('Platform view not yet implemented with skwasm renderer.');
   }

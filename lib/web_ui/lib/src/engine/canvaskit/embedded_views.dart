@@ -15,11 +15,13 @@ import '../vector_math.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
+import 'layer_scene_builder.dart';
 import 'path.dart';
 import 'picture_recorder.dart';
 import 'renderer.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
+
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
