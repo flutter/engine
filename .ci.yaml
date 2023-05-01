@@ -298,6 +298,7 @@ targets:
       - main
       - master
     properties:
+      drone_dimensions: ["os=Linux"]
       add_recipes_cq: "true"
       cores: "32"
       gclient_variables: >-
