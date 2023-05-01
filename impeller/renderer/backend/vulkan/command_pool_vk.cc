@@ -52,6 +52,9 @@ std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
 }
 
 void CommandPoolVK::ClearAllPools(const ContextVK* context) {
+  if (tls_command_pool.get()) {
+    tls_command_pool.get()->erase(context->GetHash());
+  }
   Lock pool_lock(g_all_pools_mutex);
   if (auto found = g_all_pools.find(context); found != g_all_pools.end()) {
     for (auto& weak_pool : found->second) {
