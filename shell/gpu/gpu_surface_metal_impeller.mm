@@ -104,9 +104,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           damage_[texture] = SkIRect::MakeEmpty();
         }
 
-        std::optional<SkIRect> buffer_damage = surface_frame.submit_info().buffer_damage;
         std::optional<impeller::IRect> clip_rect;
-        if (buffer_damage.has_value()) {
+        if (surface_frame.submit_info().buffer_damage.has_value()) {
+          auto buffer_damage = surface_frame.submit_info().buffer_damage;
           clip_rect = impeller::IRect::MakeXYWH(buffer_damage->x(), buffer_damage->y(),
                                                 buffer_damage->width(), buffer_damage->height());
         }
@@ -118,13 +118,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           return surface->Present();
         }
 
-        if (!buffer_damage.has_value()) {
-          auto size = surface->GetSize();
-          buffer_damage = SkIRect::MakeWH(size.width, size.height);
-          clip_rect = impeller::IRect::MakeXYWH(0, 0, size.width, size.height);
-        }
-        impeller::DlDispatcher impeller_dispatcher(clip_rect.value());
-        display_list->Dispatch(impeller_dispatcher, buffer_damage.value());
+        impeller::IRect cull_rect = surface->coverage();
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        impeller::DlDispatcher impeller_dispatcher(cull_rect);
+        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
