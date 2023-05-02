@@ -42,7 +42,8 @@ class RollFallbackFontsCommand extends Command<bool>
   final String name = 'roll-fallback-fonts';
 
   @override
-  final String description = 'Generate fallback font data from GoogleFonts';
+  final String description = 'Generate fallback font data from GoogleFonts and '
+                             'upload fonts to cipd.';
 
   String get apiKey => stringArg('key');
   bool get isDryRun => boolArg('dry-run');
@@ -125,7 +126,7 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln('// found in the LICENSE file.');
     sb.writeln();
     sb.writeln('// DO NOT EDIT! This file is generated. See:');
-    sb.writeln('// dev/generate_fallback_font_data.dart');
+    sb.writeln('// dev/roll_fallback_fonts.dart');
     sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();

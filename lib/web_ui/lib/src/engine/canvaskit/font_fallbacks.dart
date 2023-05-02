@@ -462,7 +462,9 @@ class NotoDownloader {
   int get debugActiveDownloadCount => _debugActiveDownloadCount;
   int _debugActiveDownloadCount = 0;
 
-  final String fallbackFontsUrlPrefix = 'https://fonts.gstatic.com/s/';
+  static const String _defaultFallbackFontsUrlPrefix = 'https://fonts.gstatic.com/s/';
+  String? fallbackFontUrlPrefixOverride;
+  String get fallbackFontUrlPrefix => fallbackFontUrlPrefixOverride ?? _defaultFallbackFontsUrlPrefix; 
 
   /// Returns a future that resolves when there are no pending downloads.
   ///
@@ -494,7 +496,7 @@ class NotoDownloader {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<ByteBuffer> data = httpFetchByteBuffer('$fallbackFontsUrlPrefix$url');
+    final Future<ByteBuffer> data = httpFetchByteBuffer('$fallbackFontUrlPrefix$url');
     if (assertionsEnabled) {
       unawaited(data.whenComplete(() {
         _debugActiveDownloadCount -= 1;
@@ -510,7 +512,7 @@ class NotoDownloader {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<String> data = httpFetchText(url);
+    final Future<String> data = httpFetchText('$fallbackFontUrlPrefix$url');
     if (assertionsEnabled) {
       unawaited(data.whenComplete(() {
         _debugActiveDownloadCount -= 1;

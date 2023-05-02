@@ -18,7 +18,7 @@ import 'common.dart';
 //                come from fonts.google.com, where fonts can change any time.
 //                These tests are skipped.
 //                https://github.com/flutter/flutter/issues/86432
-const bool kIssue86432Exists = true;
+const bool kIssue86432Exists = false;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -34,6 +34,7 @@ void testMain() {
       expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
       expect(notoDownloadQueue.isPending, isFalse);
       FontFallbackData.debugReset();
+      notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
     });
 
     tearDown(() {

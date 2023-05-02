@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // DO NOT EDIT! This file is generated. See:
-// dev/generate_fallback_font_data.dart
+// dev/roll_fallback_fonts.dart
 import '../configuration.dart';
 import 'noto_font.dart';
 

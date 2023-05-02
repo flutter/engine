@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:js_interop';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/assets.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/configuration.dart';
