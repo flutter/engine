@@ -490,4 +490,14 @@ class LoggingDownloader implements NotoDownloader {
 
   @override
   int get debugActiveDownloadCount => delegate.debugActiveDownloadCount;
+
+  @override
+  String? get fallbackFontUrlPrefixOverride =>
+    delegate.fallbackFontUrlPrefixOverride;
+
+  @override set fallbackFontUrlPrefixOverride(String? override) =>
+    delegate.fallbackFontUrlPrefixOverride;
+
+  @override
+  String get fallbackFontUrlPrefix => delegate.fallbackFontUrlPrefix;
 }
