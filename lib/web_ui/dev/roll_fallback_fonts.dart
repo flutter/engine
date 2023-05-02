@@ -206,9 +206,15 @@ class RollFallbackFontsCommand extends Command<bool>
     }
 
     print('Setting new fallback fonts deps version to $versionString');
+    final String depFilePath = path.join(
+      environment.engineSrcDir.path,
+      'flutter',
+      'DEPS',
+    );
     await runProcess('gclient', <String>[
       'setdep',
       '--revision=src/third_party/flutter_fallback_fonts:$packageName@$versionString',
+      '--deps-file=$depFilePath'
     ]);
   }
 }
