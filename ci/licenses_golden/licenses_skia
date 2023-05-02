@@ -1,4 +1,4 @@
-Signature: 36a984751221a669495519706f39910f
+Signature: c6acdcd91b80ebbccd69c9130afca6f3
 
 ====================================================================================================
 LIBRARY: etc1
@@ -7307,6 +7307,8 @@ ORIGIN: ../../../third_party/skia/include/private/gpu/graphite/MtlGraphiteTypesP
 ORIGIN: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Canvas.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/ColorFilters.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/jetski/src/Font.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/jetski/src/FontChainAdapter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Gradients.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Image.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/ImageFilter.cpp + ../../../third_party/skia/LICENSE
@@ -7322,6 +7324,7 @@ ORIGIN: ../../../third_party/skia/modules/jetski/src/Surface.cpp + ../../../thir
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Surface.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/SurfaceThread.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/SurfaceThread.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/jetski/src/Text.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Utils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/jetski/src/Utils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skottie/src/effects/BulgeEffect.cpp + ../../../third_party/skia/LICENSE
@@ -7391,6 +7394,8 @@ FILE: ../../../third_party/skia/include/private/gpu/graphite/MtlGraphiteTypesPri
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
 FILE: ../../../third_party/skia/modules/jetski/src/Canvas.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/ColorFilters.cpp
+FILE: ../../../third_party/skia/modules/jetski/src/Font.cpp
+FILE: ../../../third_party/skia/modules/jetski/src/FontChainAdapter.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/Gradients.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/Image.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/ImageFilter.cpp
@@ -7406,6 +7411,7 @@ FILE: ../../../third_party/skia/modules/jetski/src/Surface.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/Surface.h
 FILE: ../../../third_party/skia/modules/jetski/src/SurfaceThread.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/SurfaceThread.h
+FILE: ../../../third_party/skia/modules/jetski/src/Text.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/jetski/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/BulgeEffect.cpp
