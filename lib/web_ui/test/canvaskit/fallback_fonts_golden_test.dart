@@ -29,18 +29,7 @@ void testMain() {
 
     setUp(() {
       FontFallbackData.debugReset();
-      notoDownloadQueue.downloader = TestDownloader();
-      TestDownloader.mockDownloads.clear();
-      final String notoSansArabicUrl = fallbackFonts
-          .singleWhere((NotoFont font) => font.name == 'Noto Sans Arabic')
-          .url;
-      final String notoEmojiUrl = fallbackFonts
-          .singleWhere((NotoFont font) => font.name == 'Noto Emoji')
-          .url;
-      TestDownloader.mockDownloads[notoSansArabicUrl] =
-          '/assets/fonts/NotoNaskhArabic-Regular.ttf';
-      TestDownloader.mockDownloads[notoEmojiUrl] =
-          '/assets/fonts/NotoColorEmoji.ttf';
+      notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
       savedCallback = ui.window.onPlatformMessage;
     });
 
