@@ -69,7 +69,7 @@
                 "--android",
                 "--unoptimized"
             ],
-            "name": "host_debug",
+            "name": "android_debug_unopt",
             "ninja": {
                 "config": "android_debug_unopt",
                 "targets": [
