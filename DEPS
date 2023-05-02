@@ -913,6 +913,15 @@ deps = {
     ],
     'condition': 'download_impeller_cmake_example and host_os == "mac"',
     'dep_type': 'cipd',
+  },
+
+  'src/third_party/flutter_fallback_fonts': {
+      'packages': [
+        {
+          'package': 'flutter/flutter_font_fallbacks',
+          'version': ''
+        }
+      ]
   }
 }
 

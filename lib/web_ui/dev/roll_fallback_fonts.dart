@@ -2,20 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode;
+import 'dart:convert' show ByteConversionSink, jsonDecode, utf8;
 import 'dart:io' as io;
+import 'dart:typed_data';
 
 import 'package:args/command_runner.dart';
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import 'cipd.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'utils.dart';
 
-class GenerateFallbackFontDataCommand extends Command<bool>
+const String expectedUrlPrefix = 'https://fonts.gstatic.com/s/';
+
+class RollFallbackFontsCommand extends Command<bool>
     with ArgUtils<bool> {
-  GenerateFallbackFontDataCommand() {
+  RollFallbackFontsCommand() {
     argParser.addOption(
       'key',
       defaultsTo: '',
@@ -23,22 +29,23 @@ class GenerateFallbackFontDataCommand extends Command<bool>
           'Google Fonts.',
     );
     argParser.addFlag(
-      'download-test-fonts',
-      defaultsTo: true,
-      help: 'Whether to download the Noto fonts into a local folder to use in'
-          'tests.',
+      'dry-run',
+      help: 'Whether or not to push changes to CIPD. When --dry-run is set, the '
+            'script will download everything and attempt to prepare the bundle '
+            'but will stop before publishing. When not set, the bundle will be '
+            'published.',
+      negatable: false,
     );
   }
 
   @override
-  final String name = 'generate-fallback-font-data';
+  final String name = 'roll-fallback-fonts';
 
   @override
   final String description = 'Generate fallback font data from GoogleFonts';
 
   String get apiKey => stringArg('key');
-
-  bool get downloadTestFonts => boolArg('download-test-fonts');
+  bool get isDryRun => boolArg('dry-run');
 
   @override
   Future<bool> run() async {
@@ -70,17 +77,9 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       }
     }
     final Map<String, String> charsetForFamily = <String, String>{};
-    final io.Directory fontDir = downloadTestFonts
-        ? await io.Directory(path.join(
-            environment.webUiBuildDir.path,
-            'assets',
-            'noto',
-          )).create(recursive: true)
-        : await io.Directory.systemTemp.createTemp('fonts');
-    // Delete old fonts in the font directory.
-    await for (final io.FileSystemEntity file in fontDir.list()) {
-      await file.delete();
-    }
+    final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
+    final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
+    final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
     for (final String family in fallbackFonts) {
       print('Downloading $family...');
       final Uri? uri = urlForFamily[family];
@@ -92,9 +91,20 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       if (fontResponse.statusCode != 200) {
         throw ToolExit('Failed to download font for $family');
       }
+      final String urlString = uri.toString();
+      if (!urlString.startsWith(expectedUrlPrefix)) {
+        throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
+      }
+      final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
       final io.File fontFile =
-          io.File(path.join(fontDir.path, path.basename(uri.path)));
-      await fontFile.writeAsBytes(fontResponse.bodyBytes);
+          io.File(path.join(fontDir.path, urlSuffix));
+
+      final Uint8List bodyBytes = fontResponse.bodyBytes;
+      hasher.add(utf8.encode(urlSuffix));
+      hasher.add(bodyBytes);
+
+      await fontFile.create(recursive: true);
+      await fontFile.writeAsBytes(bodyBytes);
       final io.ProcessResult fcQueryResult =
           await io.Process.run('fc-query', <String>[
         '--format=%{charset}',
@@ -104,6 +114,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       final String encodedCharset = fcQueryResult.stdout as String;
       charsetForFamily[family] = encodedCharset;
     }
+    hasher.close();
 
     final StringBuffer sb = StringBuffer();
 
@@ -126,7 +137,12 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       if (family == 'Noto Color Emoji') {
         sb.write(' if (configuration.useColorEmoji)');
       }
-      sb.writeln(" NotoFont('$family', '${urlForFamily[family]!}',");
+      final String urlString = urlForFamily[family]!.toString();
+      if (!urlString.startsWith(expectedUrlPrefix)) {
+        throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
+      }
+      final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
+      sb.writeln(" NotoFont('$family', '$urlSuffix',");
       final List<String> starts = <String>[];
       final List<String> ends = <String>[];
       for (final String range in charsetForFamily[family]!.split(' ')) {
@@ -167,6 +183,33 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       'font_fallback_data.dart',
     ));
     await fontDataFile.writeAsString(sb.toString());
+
+    final crypto.Digest digest = hashSink.events.single;
+    final String versionString = digest.toString();
+    const String packageName = 'flutter/flutter_font_fallbacks';
+    if (await cipdKnowsPackageVersion(
+      package: packageName,
+      versionTag: versionString)) {
+        print('Package already exists with hash $versionString. Skipping upload');
+    } else {
+      print('Uploading fallback fonts to CIPD with hash $versionString');
+      await uploadDirectoryToCipd(
+        directory: fontDir,
+        packageName: packageName,
+        configFileName: 'cipd.flutter_font_fallbacks.yaml',
+        description: 'A set of Noto fonts to fall back to for use in testing.',
+        root: fontDir.path,
+        version: versionString,
+        buildId: versionString,
+        isDryRun: isDryRun,
+      );
+    }
+
+    print('Setting new fallback fonts deps version to $versionString');
+    await runProcess('gclient', <String>[
+      'setdep',
+      '--revision=src/third_party/flutter_fallback_fonts:$packageName@$versionString',
+    ]);
   }
 }
 
