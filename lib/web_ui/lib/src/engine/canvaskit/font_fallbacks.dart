@@ -464,7 +464,7 @@ class NotoDownloader {
 
   static const String _defaultFallbackFontsUrlPrefix = 'https://fonts.gstatic.com/s/';
   String? fallbackFontUrlPrefixOverride;
-  String get fallbackFontUrlPrefix => fallbackFontUrlPrefixOverride ?? _defaultFallbackFontsUrlPrefix; 
+  String get fallbackFontUrlPrefix => fallbackFontUrlPrefixOverride ?? _defaultFallbackFontsUrlPrefix;
 
   /// Returns a future that resolves when there are no pending downloads.
   ///
