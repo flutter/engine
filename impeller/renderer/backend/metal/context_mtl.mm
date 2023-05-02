@@ -52,12 +52,14 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetHasThreadingRestrictions(false)
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
+      .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
       .SetSupportsDecalTileMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-      .SetSupportsCompute(true, DeviceSupportsComputeSubgroups(device))
+      .SetSupportsCompute(true)
+      .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
       .Build();
@@ -226,6 +228,11 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 ContextMTL::~ContextMTL() = default;
 
 // |Context|
+std::string ContextMTL::DescribeGpuModel() const {
+  return std::string([[device_ name] UTF8String]);
+}
+
+// |Context|
 bool ContextMTL::IsValid() const {
   return is_valid_;
 }
@@ -280,6 +287,10 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   device_capabilities_ = InferMetalCapabilities(device_, format);
   return true;
+}
+
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
+  return [command_queue_ commandBuffer];
 }
 
 }  // namespace impeller

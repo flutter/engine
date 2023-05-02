@@ -46,8 +46,13 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
+  uint64_t GetHash() const { return hash_; }
+
   // |Context|
   ~ContextVK() override;
+
+  // |Context|
+  std::string DescribeGpuModel() const override;
 
   // |Context|
   bool IsValid() const override;
@@ -130,6 +135,8 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<SwapchainVK> swapchain_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
+  std::string device_name_;
+  const uint64_t hash_;
 
   bool is_valid_ = false;
 

@@ -29,6 +29,11 @@ class StandardCapabilities final : public Capabilities {
   bool SupportsSSBO() const override { return supports_ssbo_; }
 
   // |Capabilities|
+  bool SupportsBufferToTextureBlits() const override {
+    return supports_buffer_to_texture_blits_;
+  }
+
+  // |Capabilities|
   bool SupportsTextureToTextureBlits() const override {
     return supports_texture_to_texture_blits_;
   }
@@ -75,6 +80,7 @@ class StandardCapabilities final : public Capabilities {
   StandardCapabilities(bool has_threading_restrictions,
                        bool supports_offscreen_msaa,
                        bool supports_ssbo,
+                       bool supports_buffer_to_texture_blits,
                        bool supports_texture_to_texture_blits,
                        bool supports_framebuffer_fetch,
                        bool supports_compute,
@@ -87,6 +93,7 @@ class StandardCapabilities final : public Capabilities {
       : has_threading_restrictions_(has_threading_restrictions),
         supports_offscreen_msaa_(supports_offscreen_msaa),
         supports_ssbo_(supports_ssbo),
+        supports_buffer_to_texture_blits_(supports_buffer_to_texture_blits),
         supports_texture_to_texture_blits_(supports_texture_to_texture_blits),
         supports_framebuffer_fetch_(supports_framebuffer_fetch),
         supports_compute_(supports_compute),
@@ -103,6 +110,7 @@ class StandardCapabilities final : public Capabilities {
   bool has_threading_restrictions_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
+  bool supports_buffer_to_texture_blits_ = false;
   bool supports_texture_to_texture_blits_ = false;
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
@@ -136,6 +144,12 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsSSBO(bool value) {
   return *this;
 }
 
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsBufferToTextureBlits(
+    bool value) {
+  supports_buffer_to_texture_blits_ = value;
+  return *this;
+}
+
 CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsTextureToTextureBlits(
     bool value) {
   supports_texture_to_texture_blits_ = value;
@@ -148,16 +162,20 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsFramebufferFetch(
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsCompute(bool compute,
-                                                             bool subgroups) {
-  supports_compute_ = compute;
-  supports_compute_subgroups_ = subgroups;
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsCompute(bool value) {
+  supports_compute_ = value;
+  return *this;
+}
+
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsComputeSubgroups(
+    bool value) {
+  supports_compute_subgroups_ = value;
   return *this;
 }
 
 CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromOnscreenTexture(
     bool read_from_onscreen_texture) {
-  supports_read_from_resolve_ = read_from_onscreen_texture;
+  supports_read_from_onscreen_texture_ = read_from_onscreen_texture;
   return *this;
 }
 
@@ -189,6 +207,7 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       has_threading_restrictions_,                                        //
       supports_offscreen_msaa_,                                           //
       supports_ssbo_,                                                     //
+      supports_buffer_to_texture_blits_,                                  //
       supports_texture_to_texture_blits_,                                 //
       supports_framebuffer_fetch_,                                        //
       supports_compute_,                                                  //

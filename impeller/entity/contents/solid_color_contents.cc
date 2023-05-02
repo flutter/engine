@@ -21,21 +21,11 @@ void SolidColorContents::SetColor(Color color) {
 }
 
 Color SolidColorContents::GetColor() const {
-  return color_.WithAlpha(color_.alpha * inherited_opacity_);
+  return color_.WithAlpha(color_.alpha * GetOpacity());
 }
 
-void SolidColorContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
-}
-
-// | Contents|
-bool SolidColorContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
-
-// | Contents|
-void SolidColorContents::SetInheritedOpacity(Scalar opacity) {
-  inherited_opacity_ = opacity;
+bool SolidColorContents::IsOpaque() const {
+  return GetColor().IsOpaque();
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
@@ -43,10 +33,12 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   if (GetColor().IsTransparent()) {
     return std::nullopt;
   }
-  if (geometry_ == nullptr) {
+
+  auto geometry = GetGeometry();
+  if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransformation());
 };
 
 bool SolidColorContents::ShouldRender(
@@ -68,7 +60,8 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.label = "Solid Fill";
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
