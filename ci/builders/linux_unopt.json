@@ -12,10 +12,10 @@
                 "--runtime-mode",
                 "debug",
                 "--unoptimized",
-	        "--prebuilt-dart-sdk",
-	        "--asan",
-	        "--lsan",
-	        "--dart-debug"
+                "--prebuilt-dart-sdk",
+                "--asan",
+                "--lsan",
+                "--dart-debug"
             ],
             "name": "host_debug_unopt_san",
             "ninja": {
@@ -35,7 +35,7 @@
                         "--type",
                         "dart,engine",
                         "--engine-capture-core-dump",
-			"--use-sanitizer-suppressions"
+                        "--use-sanitizer-suppressions"
                     ],
                     "script": "flutter/testing/run_tests.py"
                 }
@@ -50,14 +50,15 @@
                 "download_android_deps": false
             },
             "gn": [
-               "--unoptimized",
-	       "--prebuilt-dart-sdk"
+                "--unoptimized",
+                "--prebuilt-dart-sdk"
             ],
             "name": "host_debug_unopt",
             "ninja": {
                 "config": "host_debug_unopt",
                 "targets": [
-                    "sky_engine"
+                    "sky_engine",
+                    "flutter/build/dart:copy_dart_sdk"
                 ]
             },
             "tests": [
@@ -65,12 +66,13 @@
                     "name": "analyze_dart_ui",
                     "script": "flutter/ci/analyze.sh"
                 },
-		{   "name": "test: observatory and service protocol",
-		    "script": "src/out/host_debug_unopt/flutter_tester",
+                {
+                    "name": "test: observatory and service protocol",
+                    "script": "src/out/host_debug_unopt/flutter_tester",
                     "parameters": [
-                       "src/flutter/shell/testing/observatory/empty_main.dart'"
+                        "src/flutter/shell/testing/observatory/empty_main.dart'"
                     ]
-		}
+                }
             ]
         },
         {
@@ -83,26 +85,28 @@
             },
             "gn": [
                 "--android",
-	        "--unoptimized"
+                "--unoptimized"
             ],
             "name": "host_debug",
             "ninja": {
                 "config": "host_debug",
                 "targets": [
-		    "flutter/shell/platform/android:robolectric_tests",
+                    "flutter/shell/platform/android:robolectric_tests",
                     "flutter/impeller"
                 ]
             },
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Host Tests for host_debug",
+                    "name": "test: Host Tests for android_debug_unopt",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "android_debug_unopt",
                         "--type",
-                        "dart",
-                        "--engine-capture-core-dump"
+                        "java",
+                        "--engine-capture-core-dump",
+                        "--android-variant",
+                        "android_debug_unopt"
                     ],
                     "script": "flutter/testing/run_tests.py"
                 }
