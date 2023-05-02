@@ -22,6 +22,7 @@
                 "config": "host_debug_unopt",
                 "targets": [
                     "flutter/build/dart:copy_dart_sdk",
+                    "flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
                     "flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
                     "flutter/shell/testing",
                     "sky_engine"
@@ -63,9 +64,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_variables": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--android",
                 "--unoptimized"
