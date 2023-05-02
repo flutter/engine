@@ -29,7 +29,7 @@ void testMain() {
 
     setUp(() {
       FontFallbackData.debugReset();
-      notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
+      notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
       savedCallback = ui.window.onPlatformMessage;
     });
 
