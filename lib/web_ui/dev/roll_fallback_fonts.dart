@@ -78,6 +78,7 @@ class RollFallbackFontsCommand extends Command<bool>
     }
     final Map<String, String> charsetForFamily = <String, String>{};
     final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
+    print('Downloading fonts into temp directory: ${fontDir.path}');
     final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
     final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
     for (final String family in fallbackFonts) {
