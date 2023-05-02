@@ -149,7 +149,7 @@ class Engine final : public fuchsia::memorypressure::Watcher {
 
   std::unique_ptr<flutter::Studio> CreateStudio();
 
-  std::unique_ptr<flutter::Surface> CreateSurface(int64_t view_id);
+  std::unique_ptr<flutter::Surface> CreateSurface();
 
   Delegate& delegate_;
 
