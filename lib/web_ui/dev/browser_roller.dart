@@ -206,30 +206,6 @@ class _BrowserRoller {
     return root;
   }
 
-  // Determine if a `package` tagged with version:`versionTag` already exists in CIPD.
-  Future<bool> _cipdKnowsPackageVersion({
-    required String package,
-    required String versionTag,
-  }) async {
-    // $ cipd search $package -tag version:$versionTag
-    // Instances:
-    //   $package:CIPD_PACKAGE_ID
-    // or:
-    // No matching instances.
-    final String logLevel = verbose ? 'debug' : 'warning';
-    vprint('  Searching for $package version:$versionTag in CIPD');
-    final String stdout = await evalProcess('cipd', <String>[
-      'search',
-      package,
-      '--tag',
-      'version:$versionTag',
-      '--log-level',
-      logLevel,
-    ], workingDirectory: _rollDir.path);
-
-    return stdout.contains('Instances:') && stdout.contains(package);
-  }
-
   // Downloads Chromium from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromium(_Platform platform) async {
@@ -240,7 +216,11 @@ class _BrowserRoller {
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling Chromium for ${platform.name} (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
-    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: majorVersion,
+      isVerbose: verbose
+    )) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
@@ -287,7 +267,11 @@ class _BrowserRoller {
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform.name}_driver'));
     print('\nRolling Chromedriver for ${platform.os}-${platform.arch} (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
-    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: majorVersion,
+      isVerbose: verbose
+    )) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
@@ -329,7 +313,11 @@ class _BrowserRoller {
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling Firefox for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
-    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: version)) {
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: version,
+      isVerbose: verbose
+    )) {
       print('  Skipping $cipdPackageName version:$version. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
