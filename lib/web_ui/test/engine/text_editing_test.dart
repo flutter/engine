@@ -1943,8 +1943,9 @@ Future<void> testMain() async {
       checkTextAreaEditingState(textarea, '1\n2\n3\n4\n', 8, 8);
 
       // 'mousedown' event should be prevented.
-      final bool prevented = !textarea.dispatchEvent(createDomEvent('Event', 'mousedown'));
-      expect(prevented, true);
+      final DomEvent event = createDomEvent('Event', 'mousedown');
+      textarea.dispatchEvent(event);
+      expect(event.defaultPrevented, isTrue);
 
       hideKeyboard();
     });
