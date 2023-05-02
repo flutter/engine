@@ -1,0 +1,112 @@
+{
+    "builds": [
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "gn": [
+                "--runtime-mode",
+                "debug",
+                "--unoptimized",
+	        "--prebuilt-dart-sdk",
+	        "--asan",
+	        "--lsan",
+	        "--dart-debug"
+            ],
+            "name": "host_debug_unopt_san",
+            "ninja": {
+                "config": "host_debug_unopt"
+            },
+            "tests": [
+                {
+                    "name": "test:format_and_dart_test",
+                    "script": "flutter/ci/format.sh"
+                },
+                {
+                    "language": "python3",
+                    "name": "test: Host_Tests_for_host_debug_unopt",
+                    "parameters": [
+                        "--variant",
+                        "host_debug_unopt",
+                        "--type",
+                        "dart,engine",
+                        "--engine-capture-core-dump",
+			"--use-sanitizer-suppressions"
+                    ],
+                    "script": "flutter/testing/run_tests.py"
+                }
+            ]
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "gn": [
+               "--unoptimized",
+	       "--prebuilt-dart-sdk"
+            ],
+            "name": "host_debug_unopt",
+            "ninja": {
+                "config": "host_debug_unopt",
+                "targets": [
+                    "sky_engine"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "analyze_dart_ui",
+                    "script": "flutter/ci/analyze.sh"
+                },
+		{   "name": "test: observatory and service protocol",
+		    "script": "src/out/host_debug_unopt/flutter_tester",
+                    "parameters": [
+                       "src/flutter/shell/testing/observatory/empty_main.dart'"
+                    ]
+		}
+            ]
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "gn": [
+                "--android",
+	        "--unoptimized"
+            ],
+            "name": "host_debug",
+            "ninja": {
+                "config": "host_debug",
+                "targets": [
+		    "flutter/shell/platform/android:robolectric_tests",
+                    "flutter/impeller"
+                ]
+            },
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Host Tests for host_debug",
+                    "parameters": [
+                        "--variant",
+                        "host_debug",
+                        "--type",
+                        "dart",
+                        "--engine-capture-core-dump"
+                    ],
+                    "script": "flutter/testing/run_tests.py"
+                }
+            ]
+        }
+    ]
+}
