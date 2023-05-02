@@ -166,10 +166,12 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   }
 
   [buffer_ commit];
-  [buffer_ waitUntilScheduled];
+
   buffer_ = nil;
   return true;
 }
+
+void CommandBufferMTL::OnWaitUntilScheduled() {}
 
 std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
     RenderTarget target) {

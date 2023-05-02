@@ -8,11 +8,11 @@
 #include "fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -29,12 +29,7 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
 
 ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
                                                const Entity& entity) {
-  ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  ContentContextOptions opts = OptionsFromPass(pass);
   opts.blend_mode = entity.GetBlendMode();
   return opts;
 }
@@ -50,6 +45,10 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+bool Contents::IsOpaque() const {
+  return false;
+}
+
 Contents::StencilCoverage Contents::GetStencilCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_stencil_coverage) const {
@@ -61,14 +60,15 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
   }
 
   auto texture = renderer.MakeSubpass(
-      "Snapshot", ISize::Ceil(coverage->size),
+      label, ISize::Ceil(coverage->size),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
@@ -95,7 +95,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   return snapshot;
 }
 
-bool Contents::CanAcceptOpacity(const Entity& entity) const {
+bool Contents::CanInheritOpacity(const Entity& entity) const {
   return false;
 }
 
@@ -108,9 +108,6 @@ bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
     return false;
-  }
-  if (Entity::IsBlendModeDestructive(entity.GetBlendMode())) {
-    return true;
   }
 
   auto coverage = GetCoverage(entity);

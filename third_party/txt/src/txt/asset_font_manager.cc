@@ -40,28 +40,28 @@ void AssetFontManager::onGetFamilyName(int index, SkString* familyName) const {
   familyName->set(font_provider_->GetFamilyName(index).c_str());
 }
 
-SkFontStyleSet* AssetFontManager::onCreateStyleSet(int index) const {
+sk_sp<SkFontStyleSet> AssetFontManager::onCreateStyleSet(int index) const {
   FML_DCHECK(false);
   return nullptr;
 }
 
-SkFontStyleSet* AssetFontManager::onMatchFamily(
+sk_sp<SkFontStyleSet> AssetFontManager::onMatchFamily(
     const char family_name_string[]) const {
   std::string family_name(family_name_string);
   return font_provider_->MatchFamily(family_name);
 }
 
-SkTypeface* AssetFontManager::onMatchFamilyStyle(
+sk_sp<SkTypeface> AssetFontManager::onMatchFamilyStyle(
     const char familyName[],
     const SkFontStyle& style) const {
-  SkFontStyleSet* font_style_set =
+  sk_sp<SkFontStyleSet> font_style_set =
       font_provider_->MatchFamily(std::string(familyName));
   if (font_style_set == nullptr)
     return nullptr;
   return font_style_set->matchStyle(style);
 }
 
-SkTypeface* AssetFontManager::onMatchFamilyStyleCharacter(
+sk_sp<SkTypeface> AssetFontManager::onMatchFamilyStyleCharacter(
     const char familyName[],
     const SkFontStyle&,
     const char* bcp47[],

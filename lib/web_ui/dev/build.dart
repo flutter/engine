@@ -9,20 +9,16 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
+import 'exceptions.dart';
 import 'pipeline.dart';
 import 'utils.dart';
-
-enum RuntimeMode {
-  profile,
-  release,
-}
 
 const Map<String, String> targetAliases = <String, String>{
   'sdk': 'flutter/web_sdk',
   'web_sdk': 'flutter/web_sdk',
   'canvaskit': 'flutter/third_party/canvaskit:canvaskit_group',
   'canvaskit_chromium': 'flutter/third_party/canvaskit:canvaskit_chromium_group',
-  'skwasm': 'flutter/lib/web_ui/skwasm',
+  'skwasm': 'flutter/third_party/canvaskit:skwasm_group',
   'archive': 'flutter/web_sdk:flutter_web_sdk_archive',
 };
 
@@ -45,6 +41,17 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
           'output will be located at "out/wasm_profile".\nThis only applies to '
           'the wasm build. The host build is always built in release mode.',
     );
+    argParser.addFlag(
+      'debug',
+      help: 'Build in debug mode instead of release mode. In this mode, the '
+          'output will be located at "out/wasm_debug".\nThis only applies to '
+          'the wasm build. The host build is always built in release mode.',
+    );
+    argParser.addFlag(
+      'dwarf',
+      help: 'Embed DWARF debugging info into the output wasm modules. This is '
+          'only valid in debug mode.',
+    );
   }
 
   @override
@@ -57,18 +64,20 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get host => boolArg('host');
 
-  RuntimeMode get runtimeMode =>
-      boolArg('profile') ? RuntimeMode.profile : RuntimeMode.release;
-
   List<String> get targets => argResults?.rest ?? <String>[];
+  bool get embedDwarf => boolArg('dwarf');
 
   @override
   FutureOr<bool> run() async {
+    if (embedDwarf && runtimeMode != RuntimeMode.debug) {
+      throw ToolExit('Embedding DWARF data requires debug runtime mode.');
+    }
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(
         host: host,
         runtimeMode: runtimeMode,
+        embedDwarf: embedDwarf,
       ),
       NinjaPipelineStep(
         host: host,
@@ -101,25 +110,18 @@ class GnPipelineStep extends ProcessStep {
   GnPipelineStep({
     required this.host,
     required this.runtimeMode,
+    required this.embedDwarf,
   });
 
   final bool host;
   final RuntimeMode runtimeMode;
+  final bool embedDwarf;
 
   @override
   String get description => 'gn';
 
   @override
   bool get isSafeToInterrupt => false;
-
-  String get runtimeModeFlag {
-    switch (runtimeMode) {
-      case RuntimeMode.profile:
-        return 'profile';
-      case RuntimeMode.release:
-        return 'release';
-    }
-  }
 
   List<String> get _gnArgs {
     if (host) {
@@ -130,7 +132,11 @@ class GnPipelineStep extends ProcessStep {
     } else {
       return <String>[
         '--web',
-        '--runtime-mode=$runtimeModeFlag',
+        '--runtime-mode=${runtimeMode.name}',
+        if (runtimeMode == RuntimeMode.debug)
+          '--unoptimized',
+        if (embedDwarf)
+          '--wasm-use-dwarf',
       ];
     }
   }
@@ -169,12 +175,7 @@ class NinjaPipelineStep extends ProcessStep {
     if (host) {
       return environment.hostDebugUnoptDir.path;
     }
-    switch (runtimeMode) {
-      case RuntimeMode.profile:
-        return environment.wasmProfileOutDir.path;
-      case RuntimeMode.release:
-        return environment.wasmReleaseOutDir.path;
-    }
+    return getBuildDirectoryForRuntimeMode(runtimeMode).path;
   }
 
   @override

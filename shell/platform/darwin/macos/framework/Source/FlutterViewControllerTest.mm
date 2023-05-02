@@ -59,6 +59,7 @@
 - (bool)testKeyEventsAreSentToFramework;
 - (bool)testKeyEventsArePropagatedIfNotHandled;
 - (bool)testKeyEventsAreNotPropagatedIfHandled;
+- (bool)testCtrlTabKeyEventIsPropagated;
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
 - (bool)testTrackpadGesturesAreSentToFramework;
@@ -66,6 +67,8 @@
 - (bool)testModifierKeysAreSynthesizedOnMouseMove;
 - (bool)testViewWillAppearCalledMultipleTimes;
 - (bool)testFlutterViewIsConfigured;
+- (bool)testLookupKeyAssets;
+- (bool)testLookupKeyAssetsWithPackage;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -207,6 +210,10 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreNotPropagatedIfHandled]);
 }
 
+TEST(FlutterViewControllerTest, TestCtrlTabKeyEventIsPropagated) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testCtrlTabKeyEventIsPropagated]);
+}
+
 TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
   ASSERT_TRUE(
       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
@@ -234,6 +241,14 @@ TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
 
 TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testFlutterViewIsConfigured]);
+}
+
+TEST(FlutterViewControllerTest, testLookupKeyAssets) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssets]);
+}
+
+TEST(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssetsWithPackage]);
 }
 
 }  // namespace flutter::testing
@@ -277,6 +292,45 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   } @catch (...) {
     return false;
   }
+  return true;
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/122084.
+- (bool)testCtrlTabKeyEventIsPropagated {
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  __block bool called = false;
+  __block FlutterKeyEvent last_event;
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+                                                  callback:nil
+                                                  userData:nil])
+      .andDo((^(NSInvocation* invocation) {
+        FlutterKeyEvent* event;
+        [invocation getArgument:&event atIndex:2];
+        called = true;
+        last_event = *event;
+      }));
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  // Ctrl+tab
+  NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                    location:NSZeroPoint
+                               modifierFlags:0x40101
+                                   timestamp:0
+                                windowNumber:0
+                                     context:nil
+                                  characters:@""
+                 charactersIgnoringModifiers:@""
+                                   isARepeat:NO
+                                     keyCode:48];
+  const uint64_t kPhysicalKeyTab = 0x7002b;
+
+  [viewController viewWillAppear];  // Initializes the event channel.
+  [viewController.view performKeyEquivalent:event];
+
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(last_event.physical, kPhysicalKeyTab);
   return true;
 }
 
@@ -832,6 +886,24 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   return true;
 }
 
+- (bool)testLookupKeyAssets {
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:nil];
+  NSString* key = [viewController lookupKeyForAsset:@"test.png"];
+  EXPECT_TRUE(
+      [key isEqualToString:@"Contents/Frameworks/App.framework/Resources/flutter_assets/test.png"]);
+  return true;
+}
+
+- (bool)testLookupKeyAssetsWithPackage {
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:nil];
+
+  NSString* packageKey = [viewController lookupKeyForAsset:@"test.png" fromPackage:@"test"];
+  EXPECT_TRUE([packageKey
+      isEqualToString:
+          @"Contents/Frameworks/App.framework/Resources/flutter_assets/packages/test/test.png"]);
+  return true;
+}
+
 static void SwizzledNoop(id self, SEL _cmd) {}
 
 // Verify workaround an AppKit bug where mouseDown/mouseUp are not called on the view controller if
@@ -874,6 +946,7 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   // Restore the original NSResponder mouseDown/mouseUp implementations.
   method_setImplementation(mouseDown, origMouseDown);
   method_setImplementation(mouseUp, origMouseUp);
+
   return true;
 }
 

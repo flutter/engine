@@ -6,9 +6,9 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/sampler.h"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -22,7 +22,7 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
   // |Sampler|
   ~SamplerVK() override;
 
-  vk::Sampler GetSamplerVK() const;
+  vk::Sampler GetSampler() const;
 
   const std::shared_ptr<SharedObjectVKT<vk::Sampler>>& GetSharedSampler() const;
 

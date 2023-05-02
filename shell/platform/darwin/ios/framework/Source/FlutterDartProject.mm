@@ -32,55 +32,11 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-// Finds a bundle with the named `bundleID` within `searchURL`.
-//
-// Returns `nil` if the bundle cannot be found or if errors are encountered.
-NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
-  NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
-                 enumeratorAtURL:searchURL
-      includingPropertiesForKeys:nil
-                         options:NSDirectoryEnumerationSkipsSubdirectoryDescendants |
-                                 NSDirectoryEnumerationSkipsHiddenFiles
-                    // Skip directories where errors are encountered.
-                    errorHandler:nil];
-
-  for (NSURL* candidate in frameworkEnumerator) {
-    NSBundle* bundle = [NSBundle bundleWithURL:candidate];
-    if ([bundle.bundleIdentifier isEqualToString:bundleID]) {
-      return bundle;
-    }
-  }
-  return nil;
-}
-
-// Finds a bundle with the named `bundleID`.
-//
-// `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
-// tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
-// in a medium sized Flutter app on an iPhone 13. It is likely that the slowness
-// comes from having to traverse and load all bundles known to the process.
-// Using `+[NSBundle allframeworks]` and filtering also suffers from the same
-// problem.
-//
-// This implementation is an optimization to first limit the search space to
-// `+[NSBundle privateFrameworksURL]` of the main bundle, which is usually where
-// frameworks used by this file are placed. If the desired bundle cannot be
-// found here, the implementation falls back to
-// `+[NSBundle bundleWithIdentifier:]`.
-NS_INLINE NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID) {
-  NSBundle* bundle = FLTFrameworkBundleInternal(bundleID, NSBundle.mainBundle.privateFrameworksURL);
-  if (bundle != nil) {
-    return bundle;
-  }
-  // Fallback to slow implementation.
-  return [NSBundle bundleWithIdentifier:bundleID];
-}
-
-flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
-  auto command_line = flutter::CommandLineFromNSProcessInfo();
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* processInfoOrNil) {
+  auto command_line = flutter::CommandLineFromNSProcessInfo(processInfoOrNil);
 
   // Precedence:
-  // 1. Settings from the specified NSBundle.
+  // 1. Settings from the specified NSBundle (except for enable-impeller).
   // 2. Settings passed explicitly via command-line arguments.
   // 3. Settings from the NSBundle with the default bundle ID.
   // 4. Settings from the main NSBundle and default values.
@@ -206,11 +162,21 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
   settings.enable_wide_gamut = enableWideGamut;
 
-  // Whether to enable Impeller.
-  NSNumber* enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
-  // Change the default only if the option is present.
-  if (enableImpeller != nil) {
-    settings.enable_impeller = enableImpeller.boolValue;
+  // TODO(dnfield): We should reverse the order for all these settings so that command line options
+  // are preferred to plist settings. https://github.com/flutter/flutter/issues/124049
+  // Whether to enable Impeller. If the command line explicitly
+  // specified an option for this, ignore what's in the plist.
+  if (!command_line.HasOption("enable-impeller")) {
+    // Next, look in the app bundle.
+    NSNumber* enableImpeller = [bundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+    if (enableImpeller == nil) {
+      // If it isn't in the app bundle, look in the main bundle.
+      enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+    }
+    // Change the default only if the option is present.
+    if (enableImpeller != nil) {
+      settings.enable_impeller = enableImpeller.boolValue;
+    }
   }
 
   NSNumber* enableTraceSystrace = [mainBundle objectForInfoDictionaryKey:@"FLTTraceSystrace"];
@@ -275,6 +241,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 @implementation FlutterDartProject {
   flutter::Settings _settings;
 }
+
+// This property is marked unavailable on iOS in the common header.
+// That doesn't seem to be enough to prevent this property from being synthesized.
+// Mark dynamic to avoid warnings.
+@dynamic dartEntrypointArguments;
 
 #pragma mark - Override base class designated initializers
 
@@ -427,6 +398,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 - (BOOL)isWideGamutEnabled {
   return _settings.enable_wide_gamut;
+}
+
+- (BOOL)isImpellerEnabled {
+  return _settings.enable_impeller;
 }
 
 @end

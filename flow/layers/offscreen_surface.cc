@@ -4,11 +4,14 @@
 
 #include "flutter/flow/layers/offscreen_surface.h"
 
-#include "third_party/skia/include/core/SkImageEncoder.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkPixmap.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
-#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
@@ -53,7 +56,7 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
   // If the caller want the pixels to be compressed, there is a Skia utility to
   // compress to PNG. Use that.
   if (compressed) {
-    return cpu_snapshot->encodeToData();
+    return SkPngEncoder::Encode(nullptr, cpu_snapshot.get(), {});
   }
 
   // Copy it into a bitmap and return the same.

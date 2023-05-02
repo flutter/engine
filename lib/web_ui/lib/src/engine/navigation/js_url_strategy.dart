@@ -5,7 +5,8 @@
 @JS()
 library js_url_strategy;
 
-import 'package:js/js.dart';
+import 'dart:js_interop';
+
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
@@ -14,7 +15,7 @@ typedef _PathGetter = String Function();
 
 typedef _StateGetter = Object? Function();
 
-typedef _AddPopStateListener = ui.VoidCallback Function(DomEventListener);
+typedef _AddPopStateListener = ui.VoidCallback Function(DartDomEventListener);
 
 typedef _StringToString = String Function(String);
 
@@ -47,7 +48,7 @@ abstract class JsUrlStrategy {
 extension JsUrlStrategyExtension on JsUrlStrategy {
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
-  external ui.VoidCallback addPopStateListener(DomEventListener fn);
+  external ui.VoidCallback addPopStateListener(DartDomEventListener fn);
 
   /// Returns the active path in the browser.
   external String getPath();

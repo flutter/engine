@@ -6,7 +6,6 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
 
@@ -62,17 +61,20 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
   // Create the device capabilities.
   {
     device_capabilities_ =
-        DeviceCapabilitiesBuilder()
+        CapabilitiesBuilder()
             .SetHasThreadingRestrictions(true)
             .SetSupportsOffscreenMSAA(false)
             .SetSupportsSSBO(false)
+            .SetSupportsBufferToTextureBlits(false)
             .SetSupportsTextureToTextureBlits(
                 reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
             .SetSupportsFramebufferFetch(false)
-            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
+            .SetDefaultColorFormat(PixelFormat::kR8G8B8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-            .SetSupportsCompute(false, false)
+            .SetSupportsCompute(false)
+            .SetSupportsComputeSubgroups(false)
             .SetSupportsReadFromResolve(false)
+            .SetSupportsReadFromOnscreenTexture(false)
             .Build();
   }
 
@@ -105,6 +107,11 @@ bool ContextGLES::IsValid() const {
 }
 
 // |Context|
+std::string ContextGLES::DescribeGpuModel() const {
+  return reactor_->GetProcTable().GetDescription()->GetString();
+}
+
+// |Context|
 std::shared_ptr<Allocator> ContextGLES::GetResourceAllocator() const {
   return resource_allocator_;
 }
@@ -131,13 +138,9 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 }
 
 // |Context|
-const IDeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
-  return *device_capabilities_;
-}
-
-// |Context|
-PixelFormat ContextGLES::GetColorAttachmentPixelFormat() const {
-  return PixelFormat::kR8G8B8A8UNormInt;
+const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
+    const {
+  return device_capabilities_;
 }
 
 }  // namespace impeller

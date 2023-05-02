@@ -10,15 +10,15 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
@@ -87,8 +87,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  using VS = GaussianBlurPipeline::VertexShader;
-  using FS = GaussianBlurPipeline::FragmentShader;
+  using VS = GaussianBlurAlphaDecalPipeline::VertexShader;
+  using FS = GaussianBlurAlphaDecalPipeline::FragmentShader;
 
   //----------------------------------------------------------------------------
   /// Handle inputs.
@@ -100,7 +100,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   // Input 0 snapshot.
 
-  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  auto input_snapshot =
+      inputs[0]->GetSnapshot("GaussianBlur", renderer, entity);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -148,7 +149,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   // Source override snapshot.
 
   auto source = source_override_ ? source_override_ : inputs[0];
-  auto source_snapshot = source->GetSnapshot(renderer, entity);
+  auto source_snapshot =
+      source->GetSnapshot("GaussianBlur(Override)", renderer, entity);
   if (!source_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -192,19 +194,15 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     frame_info.alpha_mask_sampler_y_coord_scale =
         source_snapshot->texture->GetYCoordScale();
 
-    FS::FragInfo frag_info;
+    FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+    frag_info.blur_radius = std::round(r.radius);
 
     // The blur direction is in input UV space.
-    frag_info.blur_direction =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
-
-    frag_info.src_factor = src_color_factor_;
-    frag_info.inner_blur_factor = inner_blur_factor_;
-    frag_info.outer_blur_factor = outer_blur_factor_;
-    frag_info.texture_size = Point(input_snapshot->GetCoverage().value().size);
+    frag_info.blur_uv_offset =
+        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
+        Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
     cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
@@ -217,10 +215,14 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto source_descriptor = source_snapshot->sampler_descriptor;
     switch (tile_mode_) {
       case Entity::TileMode::kDecal:
-        cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+        if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+          input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+        }
         break;
       case Entity::TileMode::kClamp:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
         input_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
         input_descriptor.height_address_mode = SamplerAddressMode::kClampToEdge;
         source_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
@@ -228,31 +230,55 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
             SamplerAddressMode::kClampToEdge;
         break;
       case Entity::TileMode::kMirror:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
         input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
         input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
         source_descriptor.width_address_mode = SamplerAddressMode::kMirror;
         source_descriptor.height_address_mode = SamplerAddressMode::kMirror;
         break;
       case Entity::TileMode::kRepeat:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
         input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
         input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
         source_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
         source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
         break;
     }
+    input_descriptor.mag_filter = MinMagFilter::kLinear;
+    input_descriptor.min_filter = MinMagFilter::kLinear;
+
+    bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
+    bool has_decal_specialization =
+        tile_mode_ == Entity::TileMode::kDecal &&
+        !renderer.GetDeviceCapabilities().SupportsDecalTileMode();
+
+    if (has_alpha_mask && has_decal_specialization) {
+      cmd.pipeline = renderer.GetGaussianBlurAlphaDecalPipeline(options);
+    } else if (has_alpha_mask) {
+      cmd.pipeline = renderer.GetGaussianBlurAlphaPipeline(options);
+    } else if (has_decal_specialization) {
+      cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+    } else {
+      cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+    }
 
     FS::BindTextureSampler(
         cmd, input_snapshot->texture,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             input_descriptor));
-    FS::BindAlphaMaskSampler(
-        cmd, source_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            source_descriptor));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+    if (has_alpha_mask) {
+      FS::MaskInfo mask_info;
+      mask_info.src_factor = src_color_factor_;
+      mask_info.inner_blur_factor = inner_blur_factor_;
+      mask_info.outer_blur_factor = outer_blur_factor_;
+
+      FS::BindAlphaMaskSampler(
+          cmd, source_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              source_descriptor));
+      FS::BindMaskInfo(cmd, host_buffer.EmplaceUniform(mask_info));
+    }
 
     return pass.AddCommand(cmd);
   };

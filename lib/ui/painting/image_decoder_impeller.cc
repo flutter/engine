@@ -9,17 +9,26 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/impeller/display_list/display_list_image_impeller.h"
-#include "flutter/impeller/renderer/allocator.h"
+#include "flutter/impeller/core/allocator.h"
+#include "flutter/impeller/core/texture.h"
+#include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/impeller/renderer/texture.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
+#include "impeller/display_list/skia_conversions.h"
 #include "impeller/geometry/size.h"
-#include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkMallocPixelRef.h"
+#include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/skia/include/core/SkPixmap.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSamplingOptions.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -98,20 +107,6 @@ static SkAlphaType ChooseCompatibleAlphaType(SkAlphaType type) {
   return type;
 }
 
-static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
-  switch (type) {
-    case kRGBA_8888_SkColorType:
-      return impeller::PixelFormat::kR8G8B8A8UNormInt;
-    case kRGBA_F16_SkColorType:
-      return impeller::PixelFormat::kR16G16B16A16Float;
-    case kBGR_101010x_XR_SkColorType:
-      return impeller::PixelFormat::kB10G10R10XR;
-    default:
-      return std::nullopt;
-  }
-  return std::nullopt;
-}
-
 std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
@@ -133,8 +128,8 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   auto decode_size = source_size;
   if (descriptor->is_compressed()) {
     decode_size = descriptor->get_scaled_dimensions(std::max(
-        static_cast<double>(target_size.width()) / source_size.width(),
-        static_cast<double>(target_size.height()) / source_size.height()));
+        static_cast<float>(target_size.width()) / source_size.width(),
+        static_cast<float>(target_size.height()) / source_size.height()));
   }
 
   //----------------------------------------------------------------------------
@@ -164,7 +159,8 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
             .makeAlphaType(alpha_type);
   }
 
-  const auto pixel_format = ToPixelFormat(image_info.colorType());
+  const auto pixel_format =
+      impeller::skia_conversions::ToPixelFormat(image_info.colorType());
   if (!pixel_format.has_value()) {
     FML_DLOG(ERROR) << "Codec pixel format not supported by Impeller.";
     return std::nullopt;
@@ -185,11 +181,6 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
       FML_DLOG(ERROR) << "Could not decompress image.";
       return std::nullopt;
     }
-  } else if (image_info.colorType() == base_image_info.colorType()) {
-    auto pixel_ref = SkMallocPixelRef::MakeWithData(
-        image_info, descriptor->row_bytes(), descriptor->data());
-    bitmap->setPixelRef(pixel_ref, 0, 0);
-    bitmap->setImmutable();
   } else {
     auto temp_bitmap = std::make_shared<SkBitmap>();
     temp_bitmap->setInfo(base_image_info);
@@ -255,7 +246,8 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
   if (!context || !buffer) {
     return nullptr;
   }
-  const auto pixel_format = ToPixelFormat(image_info.colorType());
+  const auto pixel_format =
+      impeller::skia_conversions::ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
     FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
     return nullptr;
@@ -266,6 +258,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+  texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
@@ -313,7 +306,8 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToShared(
     return nullptr;
   }
   const auto image_info = bitmap->info();
-  const auto pixel_format = ToPixelFormat(image_info.colorType());
+  const auto pixel_format =
+      impeller::skia_conversions::ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
     FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
     return nullptr;
@@ -368,6 +362,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToShared(
       FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
       return nullptr;
     }
+    command_buffer->WaitUntilScheduled();
   }
 
   return impeller::DlImageImpeller::Make(std::move(texture));
@@ -402,7 +397,10 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        result,
        supports_wide_gamut = supports_wide_gamut_  //
   ]() {
-        FML_CHECK(context) << "No valid impeller context";
+        if (!context) {
+          result(nullptr);
+          return;
+        }
         auto max_size_supported =
             context->GetResourceAllocator()->GetMaxTextureSizeSupported();
 

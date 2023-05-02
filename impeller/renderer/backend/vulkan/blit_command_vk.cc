@@ -29,11 +29,31 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
   const auto& src = TextureVK::Cast(*source);
   const auto& dst = TextureVK::Cast(*destination);
 
-  const auto src_layout = vk::ImageLayout::eTransferSrcOptimal;
-  const auto dst_layout = vk::ImageLayout::eTransferDstOptimal;
+  if (!encoder.Track(source) || !encoder.Track(destination)) {
+    return false;
+  }
 
-  if (!src.SetLayout(src_layout, cmd_buffer) ||
-      !dst.SetLayout(dst_layout, cmd_buffer)) {
+  LayoutTransition src_tran;
+  src_tran.cmd_buffer = cmd_buffer;
+  src_tran.new_layout = vk::ImageLayout::eTransferSrcOptimal;
+  src_tran.src_access = vk::AccessFlagBits::eTransferWrite |
+                        vk::AccessFlagBits::eShaderWrite |
+                        vk::AccessFlagBits::eColorAttachmentWrite;
+  src_tran.src_stage = vk::PipelineStageFlagBits::eTransfer |
+                       vk::PipelineStageFlagBits::eFragmentShader |
+                       vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  src_tran.dst_access = vk::AccessFlagBits::eTransferRead;
+  src_tran.dst_stage = vk::PipelineStageFlagBits::eTransfer;
+
+  LayoutTransition dst_tran;
+  dst_tran.cmd_buffer = cmd_buffer;
+  dst_tran.new_layout = vk::ImageLayout::eTransferDstOptimal;
+  dst_tran.src_access = {};
+  dst_tran.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  dst_tran.dst_access = vk::AccessFlagBits::eShaderRead;
+  dst_tran.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+  if (!src.SetLayout(src_tran) || !dst.SetLayout(dst_tran)) {
     VALIDATION_LOG << "Could not complete layout transitions.";
     return false;
   }
@@ -54,11 +74,11 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
 
   // Issue the copy command now that the images are already in the right
   // layouts.
-  cmd_buffer.copyImage(src.GetImage(),  //
-                       src_layout,      //
-                       dst.GetImage(),  //
-                       dst_layout,      //
-                       image_copy       //
+  cmd_buffer.copyImage(src.GetImage(),       //
+                       src_tran.new_layout,  //
+                       dst.GetImage(),       //
+                       dst_tran.new_layout,  //
+                       image_copy            //
   );
 
   return true;
@@ -79,6 +99,24 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   // cast source and destination to TextureVK
   const auto& src = TextureVK::Cast(*source);
+
+  if (!encoder.Track(source) || !encoder.Track(destination)) {
+    return false;
+  }
+
+  LayoutTransition transition;
+  transition.cmd_buffer = cmd_buffer;
+  transition.new_layout = vk::ImageLayout::eTransferSrcOptimal;
+  transition.src_access = vk::AccessFlagBits::eShaderWrite |
+                          vk::AccessFlagBits::eTransferWrite |
+                          vk::AccessFlagBits::eColorAttachmentWrite;
+  transition.src_stage = vk::PipelineStageFlagBits::eFragmentShader |
+                         vk::PipelineStageFlagBits::eTransfer |
+                         vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  transition.dst_access = vk::AccessFlagBits::eShaderRead;
+  transition.dst_stage = vk::PipelineStageFlagBits::eVertexShader |
+                         vk::PipelineStageFlagBits::eFragmentShader;
+
   const auto& dst = DeviceBufferVK::Cast(*destination);
 
   vk::BufferImageCopy image_copy;
@@ -92,15 +130,15 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
   image_copy.setImageExtent(
       vk::Extent3D(source_region.size.width, source_region.size.height, 1));
 
-  if (!src.SetLayout(vk::ImageLayout::eTransferSrcOptimal, cmd_buffer)) {
+  if (!src.SetLayout(transition)) {
     VALIDATION_LOG << "Could not encode layout transition.";
     return false;
   }
 
-  cmd_buffer.copyImageToBuffer(src.GetImage(),                        //
-                               vk::ImageLayout::eTransferSrcOptimal,  //
-                               dst.GetVKBufferHandle(),               //
-                               image_copy                             //
+  cmd_buffer.copyImageToBuffer(src.GetImage(),         //
+                               transition.new_layout,  //
+                               dst.GetBuffer(),        //
+                               image_copy              //
   );
 
   return true;
@@ -148,7 +186,7 @@ static void InsertImageMemoryBarrier(const vk::CommandBuffer& cmd,
 }
 
 bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
-  const auto& src = TextureVK::Cast(*texture);
+  auto& src = TextureVK::Cast(*texture);
 
   const auto size = src.GetTextureDescriptor().size;
   uint32_t mip_count = src.GetTextureDescriptor().mip_count;
@@ -159,6 +197,10 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   const auto& image = src.GetImage();
   const auto& cmd = encoder.GetCommandBuffer();
+
+  if (!encoder.Track(texture)) {
+    return false;
+  }
 
   // Transition the base mip level to transfer-src layout so we can read from
   // it and transition the rest to dst-optimal since they are going to be
@@ -204,10 +246,12 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     // offsets[0] is origin.
     blit.srcOffsets[1].x = size.width;
     blit.srcOffsets[1].y = size.height;
+    blit.srcOffsets[1].z = 1u;
 
     // offsets[0] is origin.
-    blit.dstOffsets[1].x = size.width >> mip_level;
-    blit.dstOffsets[1].y = size.height >> mip_level;
+    blit.dstOffsets[1].x = std::max<int32_t>(size.width >> mip_level, 1u);
+    blit.dstOffsets[1].y = std::max<int32_t>(size.height >> mip_level, 1u);
+    blit.dstOffsets[1].z = 1u;
 
     cmd.blitImage(image,                                 // src image
                   vk::ImageLayout::eTransferSrcOptimal,  // src layout
@@ -222,27 +266,27 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   // Transition all mip levels to shader read. The base mip level has a
   // different "old" layout than the rest now.
   InsertImageMemoryBarrier(
-      cmd,                                      // command buffer
-      image,                                    // image
-      vk::AccessFlagBits::eTransferRead,        // src access mask
-      vk::AccessFlagBits::eShaderRead,          // dst access mask
-      vk::ImageLayout::eTransferSrcOptimal,     // old layout
-      vk::ImageLayout::eShaderReadOnlyOptimal,  // new layout
-      vk::PipelineStageFlagBits::eTransfer,     // src stage
-      vk::PipelineStageFlagBits::eAllGraphics,  // dst stage
-      0u                                        // mip level
+      cmd,                                         // command buffer
+      image,                                       // image
+      vk::AccessFlagBits::eTransferWrite,          // src access mask
+      vk::AccessFlagBits::eShaderRead,             // dst access mask
+      vk::ImageLayout::eTransferSrcOptimal,        // old layout
+      vk::ImageLayout::eShaderReadOnlyOptimal,     // new layout
+      vk::PipelineStageFlagBits::eTransfer,        // src stage
+      vk::PipelineStageFlagBits::eFragmentShader,  // dst stage
+      0u                                           // mip level
   );
   InsertImageMemoryBarrier(
-      cmd,                                      // command buffer
-      image,                                    // image
-      vk::AccessFlagBits::eTransferRead,        // src access mask
-      vk::AccessFlagBits::eShaderRead,          // dst access mask
-      vk::ImageLayout::eTransferDstOptimal,     // old layout
-      vk::ImageLayout::eShaderReadOnlyOptimal,  // new layout
-      vk::PipelineStageFlagBits::eTransfer,     // src stage
-      vk::PipelineStageFlagBits::eAllGraphics,  // dst stage
-      1u,                                       // mip level
-      mip_count - 1                             // mip level count
+      cmd,                                         // command buffer
+      image,                                       // image
+      vk::AccessFlagBits::eTransferWrite,          // src access mask
+      vk::AccessFlagBits::eShaderRead,             // dst access mask
+      vk::ImageLayout::eTransferDstOptimal,        // old layout
+      vk::ImageLayout::eShaderReadOnlyOptimal,     // new layout
+      vk::PipelineStageFlagBits::eTransfer,        // src stage
+      vk::PipelineStageFlagBits::eFragmentShader,  // dst stage
+      1u,                                          // mip level
+      mip_count - 1                                // mip level count
   );
 
   // We modified the layouts of this image from underneath it. Tell it its new

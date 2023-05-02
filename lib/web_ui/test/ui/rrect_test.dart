@@ -12,7 +12,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
   setUpUiTest();
   test('RRect.contains()', () {
     final RRect rrect = RRect.fromRectAndCorners(

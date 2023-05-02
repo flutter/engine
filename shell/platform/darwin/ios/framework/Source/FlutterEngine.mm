@@ -435,7 +435,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
-  } else {
+  } else if (_shell) {
     flutter::PlatformViewIOS* platform_view = [self iosPlatformView];
     if (platform_view) {
       platform_view->SetOwnerViewController({});
@@ -1096,7 +1096,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client) ]];
 }
 
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    didResignFirstResponderWithTextInputClient:(int)client {
+  // When flutter text input view resign first responder, send a message to
+  // framework to ensure the focus state is correct. This is useful when close
+  // keyboard from platform side.
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.onConnectionClosed"
+                              arguments:@[ @(client) ]];
+
   // Platform view's first responder detection logic:
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view
@@ -1394,6 +1401,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (FlutterDartProject*)project {
   return _dartProject.get();
+}
+
+- (BOOL)isUsingImpeller {
+  return self.project.isImpellerEnabled;
 }
 
 @end

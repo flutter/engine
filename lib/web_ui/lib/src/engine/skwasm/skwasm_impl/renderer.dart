@@ -6,16 +6,19 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../embedder.dart';
-import '../../fonts.dart';
-import '../../html_image_codec.dart';
-import '../../renderer.dart';
-
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
+  late DomCanvasElement sceneElement;
+  late SkwasmSurface surface;
+  ui.Size? surfaceSize;
+
+  @override
+  final SkwasmFontCollection fontCollection = SkwasmFontCollection();
+
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
     return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
@@ -42,9 +45,24 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Gradient createConicalGradient(ui.Offset focal, double focalRadius, ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix]) {
-    throw UnimplementedError('createConicalGradient not yet implemented');
-  }
+  ui.Gradient createConicalGradient(
+    ui.Offset focal,
+    double focalRadius,
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix]) => SkwasmGradient.conical(
+      focal: focal,
+      focalRadius: focalRadius,
+      center: center,
+      centerRadius: radius,
+      colors: colors,
+      colorStops: colorStops,
+      tileMode: tileMode,
+      matrix4: matrix,
+    );
 
   @override
   ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
@@ -62,9 +80,21 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Gradient createLinearGradient(ui.Offset from, ui.Offset to, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    throw UnimplementedError('createLinearGradientn ot yet implemented');
-  }
+  ui.Gradient createLinearGradient(
+    ui.Offset from,
+    ui.Offset to,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4
+  ]) => SkwasmGradient.linear(
+    from: from,
+    to: to,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    matrix4: matrix4,
+  );
 
   @override
   ui.ImageFilter createMatrixImageFilter(Float64List matrix4, {ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
@@ -75,14 +105,22 @@ class SkwasmRenderer implements Renderer {
   ui.Paint createPaint() => SkwasmPaint();
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) {
-    throw UnimplementedError('createParagraphBuilder not yet implemented');
-  }
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => SkwasmParagraphBuilder();
 
   @override
-  ui.ParagraphStyle createParagraphStyle({ui.TextAlign? textAlign, ui.TextDirection? textDirection, int? maxLines, String? fontFamily, double? fontSize, double? height, ui.TextHeightBehavior? textHeightBehavior, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.StrutStyle? strutStyle, String? ellipsis, ui.Locale? locale}) {
-    throw UnimplementedError('createParagraphStyle not yet implemented');
-  }
+  ui.ParagraphStyle createParagraphStyle({
+    ui.TextAlign? textAlign,
+    ui.TextDirection? textDirection,
+    int? maxLines, String? fontFamily,
+    double? fontSize,
+    double? height,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
+    String? ellipsis,
+    ui.Locale? locale
+  }) => SkwasmParagraphStyle();
 
   @override
   ui.Path createPath() => SkwasmPath();
@@ -91,29 +129,83 @@ class SkwasmRenderer implements Renderer {
   ui.PictureRecorder createPictureRecorder() => SkwasmPictureRecorder();
 
   @override
-  ui.Gradient createRadialGradient(ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    throw UnimplementedError('createRadialGradient not yet implemented');
-  }
+  ui.Gradient createRadialGradient(
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4
+  ]) => SkwasmGradient.radial(
+    center: center,
+    radius: radius,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    matrix4: matrix4
+  );
 
   @override
-  ui.SceneBuilder createSceneBuilder() {
-    throw UnimplementedError('createSceneBuilder not yet implemented');
-  }
+  ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();
 
   @override
-  ui.StrutStyle createStrutStyle({String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? height, ui.TextLeadingDistribution? leadingDistribution, double? leading, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, bool? forceStrutHeight}) {
+  ui.StrutStyle createStrutStyle({
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    double? leading,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    bool? forceStrutHeight
+  }) {
     throw UnimplementedError('createStrutStyle not yet implemented');
   }
 
   @override
-  ui.Gradient createSweepGradient(ui.Offset center, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, double startAngle = 0.0, double endAngle = math.pi * 2, Float32List? matrix4]) {
-    throw UnimplementedError('createSweepGradient not yet implemented');
-  }
+  ui.Gradient createSweepGradient(
+    ui.Offset center,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    double startAngle = 0.0,
+    double endAngle = math.pi * 2,
+    Float32List? matrix4
+  ]) => SkwasmGradient.sweep(
+    center: center,
+    colors: colors,
+    colorStops: colorStops,
+    tileMode: tileMode,
+    startAngle: startAngle,
+    endAngle: endAngle,
+    matrix4: matrix4
+  );
 
   @override
-  ui.TextStyle createTextStyle({ui.Color? color, ui.TextDecoration? decoration, ui.Color? decorationColor, ui.TextDecorationStyle? decorationStyle, double? decorationThickness, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.TextBaseline? textBaseline, String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? letterSpacing, double? wordSpacing, double? height, ui.TextLeadingDistribution? leadingDistribution, ui.Locale? locale, ui.Paint? background, ui.Paint? foreground, List<ui.Shadow>? shadows, List<ui.FontFeature>? fontFeatures, List<ui.FontVariation>? fontVariations}) {
-    throw UnimplementedError('createTextStyle not yet implemented');
-  }
+  ui.TextStyle createTextStyle({
+    ui.Color? color,
+    ui.TextDecoration? decoration,
+    ui.Color? decorationColor,
+    ui.TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    ui.Locale? locale,
+    ui.Paint? background,
+    ui.Paint? foreground,
+    List<ui.Shadow>? shadows,
+    List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations
+  }) => SkwasmTextStyle();
 
   @override
   ui.Vertices createVertices(
@@ -155,11 +247,15 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  FlutterFontCollection get fontCollection => throw UnimplementedError('fontCollection not yet implemented');
-
-  @override
   FutureOr<void> initialize() {
-    throw UnimplementedError('initialize not yet implemented');
+    // TODO(jacksongardner): This is very basic and doesn't work for element
+    // embedding or with platform views. We need to update this at some point
+    // to deal with those cases.
+    sceneElement = createDomCanvasElement();
+    sceneElement.id = 'flt-scene';
+    domDocument.body!.appendChild(sceneElement);
+    surface = SkwasmSurface('#flt-scene');
+    domDocument.body!.removeChild(sceneElement);
   }
 
   @override
@@ -173,8 +269,23 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  void renderScene(ui.Scene scene) {
-    throw UnimplementedError('renderScene not yet implemented');
+  Future<void> renderScene(ui.Scene scene) async {
+    final ui.Size frameSize = ui.window.physicalSize;
+    if (frameSize != surfaceSize) {
+      final double logicalWidth = frameSize.width.ceil() / window.devicePixelRatio;
+      final double logicalHeight = frameSize.height.ceil() / window.devicePixelRatio;
+      final DomCSSStyleDeclaration style = sceneElement.style;
+      style.width = '${logicalWidth}px';
+      style.height = '${logicalHeight}px';
+
+      surface.setSize(frameSize.width.ceil(), frameSize.height.ceil());
+      surfaceSize = frameSize;
+    }
+    final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
+    await surface.renderPicture(picture);
+
+    // TODO(jacksongardner): Remove this hack. See https://github.com/flutter/flutter/issues/124616
+    await Future<void>.delayed(const Duration(milliseconds: 100));
   }
 
   @override
@@ -182,14 +293,23 @@ class SkwasmRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    throw UnimplementedError('reset not yet implemented');
+    embedder.addSceneToSceneHost(sceneElement);
+  }
+
+  static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
+
+  @override
+  void clearFragmentProgramCache() {
+    _programs.clear();
   }
 
   @override
-  void clearFragmentProgramCache() { }
-
-  @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
-    throw UnimplementedError('createFragmentProgram not yet implemented');
+    if (_programs.containsKey(assetKey)) {
+      return _programs[assetKey]!;
+    }
+    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+      return SkwasmFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
+    });
   }
 }

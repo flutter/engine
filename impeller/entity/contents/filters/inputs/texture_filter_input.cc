@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
@@ -21,6 +21,7 @@ FilterInput::Variant TextureFilterInput::GetInput() const {
 }
 
 std::optional<Snapshot> TextureFilterInput::GetSnapshot(
+    const std::string& label,
     const ContentContext& renderer,
     const Entity& entity) const {
   auto snapshot =

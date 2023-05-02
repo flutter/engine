@@ -28,7 +28,8 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
       .transform = Matrix::MakeTranslation(coverage.value().origin)};
 }
 
-std::shared_ptr<Image> Picture::ToImage(AiksContext& context, ISize size) {
+std::shared_ptr<Image> Picture::ToImage(AiksContext& context,
+                                        ISize size) const {
   if (size.IsEmpty()) {
     return nullptr;
   }
@@ -39,7 +40,7 @@ std::shared_ptr<Image> Picture::ToImage(AiksContext& context, ISize size) {
 std::shared_ptr<Texture> Picture::RenderToTexture(
     AiksContext& context,
     ISize size,
-    std::optional<const Matrix> translate) {
+    std::optional<const Matrix> translate) const {
   FML_DCHECK(!size.IsEmpty());
 
   pass->IterateAllEntities([&translate](auto& entity) -> bool {
@@ -54,10 +55,23 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   // features to Image someday.
   auto impeller_context = context.GetContext();
   RenderTarget target;
-  if (impeller_context->GetDeviceCapabilities().SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(*impeller_context, size);
+  if (impeller_context->GetCapabilities()->SupportsOffscreenMSAA()) {
+    target = RenderTarget::CreateOffscreenMSAA(
+        *impeller_context,        // context
+        size,                     // size
+        "Picture Snapshot MSAA",  // label
+        RenderTarget::
+            kDefaultColorAttachmentConfigMSAA,  // color_attachment_config
+        std::nullopt                            // stencil_attachment_config
+    );
   } else {
-    target = RenderTarget::CreateOffscreen(*impeller_context, size);
+    target = RenderTarget::CreateOffscreen(
+        *impeller_context,                            // context
+        size,                                         // size
+        "Picture Snapshot",                           // label
+        RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
+        std::nullopt  // stencil_attachment_config
+    );
   }
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";

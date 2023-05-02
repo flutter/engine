@@ -9,9 +9,9 @@
 #include <optional>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
-#include "impeller/renderer/allocator.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -23,6 +23,7 @@ class RenderTarget final {
     StorageMode storage_mode;
     LoadAction load_action;
     StoreAction store_action;
+    Color clear_color;
   };
 
   struct AttachmentConfigMSAA {
@@ -30,23 +31,27 @@ class RenderTarget final {
     StorageMode resolve_storage_mode;
     LoadAction load_action;
     StoreAction store_action;
+    Color clear_color;
   };
 
   static constexpr AttachmentConfig kDefaultColorAttachmentConfig = {
       .storage_mode = StorageMode::kDevicePrivate,
       .load_action = LoadAction::kClear,
-      .store_action = StoreAction::kStore};
+      .store_action = StoreAction::kStore,
+      .clear_color = Color::BlackTransparent()};
 
   static constexpr AttachmentConfigMSAA kDefaultColorAttachmentConfigMSAA = {
       .storage_mode = StorageMode::kDeviceTransient,
       .resolve_storage_mode = StorageMode::kDevicePrivate,
       .load_action = LoadAction::kClear,
-      .store_action = StoreAction::kMultisampleResolve};
+      .store_action = StoreAction::kMultisampleResolve,
+      .clear_color = Color::BlackTransparent()};
 
   static constexpr AttachmentConfig kDefaultStencilAttachmentConfig = {
       .storage_mode = StorageMode::kDeviceTransient,
       .load_action = LoadAction::kClear,
-      .store_action = StoreAction::kDontCare};
+      .store_action = StoreAction::kDontCare,
+      .clear_color = Color::BlackTransparent()};
 
   static RenderTarget CreateOffscreen(
       const Context& context,
@@ -70,6 +75,13 @@ class RenderTarget final {
   ~RenderTarget();
 
   bool IsValid() const;
+
+  void SetupStencilAttachment(const Context& context,
+                              ISize size,
+                              bool msaa,
+                              const std::string& label = "Offscreen",
+                              AttachmentConfig stencil_attachment_config =
+                                  kDefaultStencilAttachmentConfig);
 
   SampleCount GetSampleCount() const;
 
@@ -101,13 +113,15 @@ class RenderTarget final {
 
   size_t GetTotalAttachmentCount() const;
 
+  void IterateAllAttachments(
+      const std::function<bool(const Attachment& attachment)>& iterator) const;
+
+  std::string ToString() const;
+
  private:
   std::map<size_t, ColorAttachment> colors_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
-
-  void IterateAllAttachments(
-      const std::function<bool(const Attachment& attachment)>& iterator) const;
 };
 
 }  // namespace impeller
