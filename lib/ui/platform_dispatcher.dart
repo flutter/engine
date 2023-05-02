@@ -1709,6 +1709,8 @@ class FrameTiming {
 ///
 /// See also:
 ///
+/// * [AppLifecycleListener], an object used observe the lifecycle state
+///   that provides state transition callbacks.
 /// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
 ///   from the widgets layer.
 /// * iOS's [IOKit activity lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc) documentation.
