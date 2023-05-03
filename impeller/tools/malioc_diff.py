@@ -68,6 +68,22 @@ def parse_args(argv):
       help='The path to a json file containing existing malioc results.',
   )
   parser.add_argument(
+      '--after-relative-to-checkout',
+      type=str,
+      help=(
+          'A relative path calculated from the checkout directory to '
+          'a directory tree containing new malioc results in json files'
+      ),
+  )
+  parser.add_argument(
+      '--before-relative-to-checkout',
+      type=str,
+      help=(
+          'A relative path calculated from the checkout directory to '
+          'a json file containing existing malioc results in json files'
+      ),
+  )
+  parser.add_argument(
       '--print-diff',
       '-p',
       default=False,
@@ -284,14 +300,15 @@ def compare_shaders(malioc_tree, before_shader, after_shader):
 def main(argv):
   args = parse_args(argv[1:])
 
-  # Generate full paths if relative ones are provided.
+  # Generate full paths if relative ones are provided with before and
+  # after taking precedence.
   args.before = (
-      args.before if os.path.isabs(args.before) else
-      os.path.join(BUILD_ROOT_DIR, args.before)
+      args.before or
+      os.path.join(BUILD_ROOT_DIR, args.before_relative_to_checkout)
   )
   args.after = (
-      args.after if os.path.isabs(args.after) else
-      os.path.join(BUILD_ROOT_DIR, args.after)
+      args.after or
+      os.path.join(BUILD_ROOT_DIR, args.after_relative_to_checkout)
   )
 
   if not validate_args(args):
