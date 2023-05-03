@@ -9,6 +9,7 @@ import 'text_editing/text_editing.dart';
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
 void applyGlobalCssRulesToSheet(
   DomHTMLStyleElement styleElement, {
+  String cssSelectorPrefix = '',
   required String defaultCssFont,
 }) {
   // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
@@ -22,7 +23,7 @@ void applyGlobalCssRulesToSheet(
   //
   // Fixes #115216 by ensuring that our parameters only affect the flt-scene-host children.
   sheet.insertRule('''
-    flt-scene-host {
+    $cssSelectorPrefix flt-scene-host {
       color: red;
       font: $defaultCssFont;
     }
@@ -32,7 +33,7 @@ void applyGlobalCssRulesToSheet(
   // on using gray background. This CSS rule disables that.
   if (isSafari) {
     sheet.insertRule('''
-    * {
+      $cssSelectorPrefix * {
       -webkit-tap-highlight-color: transparent;
     }
     ''', sheet.cssRules.length);
@@ -44,8 +45,8 @@ void applyGlobalCssRulesToSheet(
     //
     // - See: https://github.com/flutter/flutter/issues/44803
     sheet.insertRule('''
-      flt-paragraph,
-      flt-span {
+      $cssSelectorPrefix flt-paragraph,
+      $cssSelectorPrefix flt-span {
         line-height: 100%;
       }
     ''', sheet.cssRules.length);
@@ -54,7 +55,7 @@ void applyGlobalCssRulesToSheet(
   // This undoes browser's default painting and layout attributes of range
   // input, which is used in semantics.
   sheet.insertRule('''
-    flt-semantics input[type=range] {
+    $cssSelectorPrefix flt-semantics input[type=range] {
       appearance: none;
       -webkit-appearance: none;
       width: 100%;
@@ -69,7 +70,7 @@ void applyGlobalCssRulesToSheet(
 
   if (isSafari) {
     sheet.insertRule('''
-      flt-semantics input[type=range]::-webkit-slider-thumb {
+      $cssSelectorPrefix flt-semantics input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
       }
     ''', sheet.cssRules.length);
@@ -78,27 +79,27 @@ void applyGlobalCssRulesToSheet(
   // The invisible semantic text field may have a visible cursor and selection
   // highlight. The following 2 CSS rules force everything to be transparent.
   sheet.insertRule('''
-    input::selection {
+    $cssSelectorPrefix input::selection {
       background-color: transparent;
     }
   ''', sheet.cssRules.length);
   sheet.insertRule('''
-    textarea::selection {
+    $cssSelectorPrefix textarea::selection {
       background-color: transparent;
     }
   ''', sheet.cssRules.length);
 
   sheet.insertRule('''
-    flt-semantics input,
-    flt-semantics textarea,
-    flt-semantics [contentEditable="true"] {
+    $cssSelectorPrefix flt-semantics input,
+    $cssSelectorPrefix flt-semantics textarea,
+    $cssSelectorPrefix flt-semantics [contentEditable="true"] {
       caret-color: transparent;
     }
     ''', sheet.cssRules.length);
 
   // Hide placeholder text
   sheet.insertRule('''
-    .flt-text-editing::placeholder {
+    $cssSelectorPrefix .flt-text-editing::placeholder {
       opacity: 0;
     }
   ''', sheet.cssRules.length);
@@ -108,10 +109,10 @@ void applyGlobalCssRulesToSheet(
   // See: https://github.com/flutter/flutter/issues/118337.
   if (browserHasAutofillOverlay()) {
     sheet.insertRule('''
-      .transparentTextEditing:-webkit-autofill,
-      .transparentTextEditing:-webkit-autofill:hover,
-      .transparentTextEditing:-webkit-autofill:focus,
-      .transparentTextEditing:-webkit-autofill:active {
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:hover,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:focus,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:active {
         opacity: 0 !important;
       }
     ''', sheet.cssRules.length);
@@ -127,7 +128,7 @@ void applyGlobalCssRulesToSheet(
     // the ::-ms-reveal pseudo-selector).
     try {
       sheet.insertRule('''
-        input::-ms-reveal {
+        $cssSelectorPrefix input::-ms-reveal {
           display: none;
         }
         ''', sheet.cssRules.length);
@@ -138,7 +139,7 @@ void applyGlobalCssRulesToSheet(
       // Add a fake rule if our code failed because we're under testing
       assert(() {
         sheet.insertRule('''
-          input.fallback-for-fakey-browser-in-ci {
+          $cssSelectorPrefix input.fallback-for-fakey-browser-in-ci {
             display: none;
           }
           ''', sheet.cssRules.length);

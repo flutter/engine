@@ -432,7 +432,6 @@ DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
   root.appendChild(styleElement);
   applyGlobalCssRulesToSheet(
     styleElement,
-    hasAutofillOverlay: browserHasAutofillOverlay(),
     cssSelectorPrefix: FlutterViewEmbedder.flutterViewTagName,
     defaultCssFont: defaultFont,
   );
