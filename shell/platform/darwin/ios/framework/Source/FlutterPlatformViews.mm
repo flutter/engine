@@ -624,6 +624,9 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 void FlutterPlatformViewsController::Reset() {
   UIView* flutter_view = flutter_view_.get();
   for (UIView* sub_view in [flutter_view subviews]) {
+    if (![sub_view isKindOfClass:[ChildClippingView class]]) {
+      continue;
+    }
     [sub_view removeFromSuperview];
   }
   root_views_.clear();
