@@ -271,8 +271,7 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Update the specified display data in the framework.
   ///
-  /// @param[in]  locale_data  The locale data. This should consist of groups of
-  ///             4 strings, each group representing a single locale.
+  /// @param[in]  displays  The display data to send to Dart.
   ///
   void UpdateDisplays(const std::vector<DisplayData>& displays);
 

@@ -900,7 +900,7 @@ void hooksTests() async {
       };
     });
 
-    _callHook('_updateDisplays', 4, <int>[0], <double>[800, 600], <double>[1.5], <double>[65]);
+    _callHook('_updateDisplays', 5, <int>[0], <double>[800], <double>[600], <double>[1.5], <double>[65]);
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
     expectEquals(display.id, 0);

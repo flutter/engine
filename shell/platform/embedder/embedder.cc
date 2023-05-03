@@ -3000,7 +3000,8 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
       for (size_t i = 0; i < display_count; i++) {
         displays.push_back(std::make_unique<flutter::Display>(
             embedder_displays[i].display_id, embedder_displays[i].refresh_rate,
-            // TODO(dnfield): Supply real values.
+            // TODO(dnfield): Supply real values
+            // https://github.com/flutter/flutter/issues/125939
             -1, -1, -1));
       }
       engine->GetShell().OnDisplayUpdates(std::move(displays));

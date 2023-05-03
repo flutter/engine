@@ -87,13 +87,14 @@ void PlatformConfiguration::DidCreateIsolate() {
 void PlatformConfiguration::UpdateDisplays(
     const std::vector<DisplayData>& displays) {
   std::vector<DisplayId> ids;
-  std::vector<double> sizes;
+  std::vector<double> widths;
+  std::vector<double> heights;
   std::vector<double> device_pixel_ratios;
   std::vector<double> refresh_rates;
   for (const auto& display : displays) {
     ids.push_back(display.id);
-    sizes.push_back(display.width);
-    sizes.push_back(display.height);
+    widths.push_back(display.width);
+    heights.push_back(display.height);
     device_pixel_ratios.push_back(display.pixel_ratio);
     refresh_rates.push_back(display.refresh_rate);
   }
@@ -107,7 +108,8 @@ void PlatformConfiguration::UpdateDisplays(
       update_displays_.Get(),
       {
           tonic::ToDart<std::vector<DisplayId>>(ids),
-          tonic::ToDart<std::vector<double>>(sizes),
+          tonic::ToDart<std::vector<double>>(widths),
+          tonic::ToDart<std::vector<double>>(heights),
           tonic::ToDart<std::vector<double>>(device_pixel_ratios),
           tonic::ToDart<std::vector<double>>(refresh_rates),
       }));

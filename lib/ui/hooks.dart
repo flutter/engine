@@ -7,17 +7,21 @@ part of dart.ui;
 @pragma('vm:entry-point')
 void _updateDisplays(
   List<int> ids,
-  List<double> sizes,
+  List<double> widths,
+  List<double> heights,
   List<double> devicePixelRatios,
   List<double> refreshRates,
 ) {
+  assert(ids.length == widths.length);
+  assert(ids.length == heights.length);
+  assert(ids.length == devicePixelRatios.length);
+  assert(ids.length == refreshRates.length);
   final List<Display> displays = <Display>[];
-  int sizeIndex = 0;
   for (int index = 0; index < ids.length; index += 1) {
     final int displayId = ids[index];
     displays.add(Display._(
       id: displayId,
-      size: Size(sizes[sizeIndex++], sizes[sizeIndex++]),
+      size: Size(widths[index], heights[index]),
       devicePixelRatio: devicePixelRatios[index],
       refreshRate: refreshRates[index],
     ));
