@@ -224,7 +224,7 @@ void testMain() {
       final Set<int> supportedUniqueCodeUnits = <int>{};
       final IntervalTree<NotoFont> notoTree =
           FontFallbackData.instance.notoTree;
-      for (final NotoFont font in fallbackFonts) {
+      for (final NotoFont font in FontFallbackData.instance.fallbackFonts) {
         testedFonts.add(font.name);
         for (final CodeunitRange range in font.computeUnicodeRanges()) {
           for (int codeUnit = range.start; codeUnit < range.end; codeUnit++) {
@@ -408,7 +408,7 @@ void testMain() {
         }
 
         try {
-          findMinimumFontsForCodeUnits(codeUnits, fonts);
+          FontFallbackData.instance.findMinimumFontsForCodeUnits(codeUnits, fonts);
         } catch (e) {
           print(
             'findMinimumFontsForCodeunits failed:\n'
