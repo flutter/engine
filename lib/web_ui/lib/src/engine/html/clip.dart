@@ -5,12 +5,8 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
-import '../shadow.dart';
 import '../svg.dart';
 import '../util.dart';
-import 'dom_canvas.dart';
-import 'painting.dart';
-import 'path/path.dart';
 import 'path_to_svg_clip.dart';
 import 'surface.dart';
 import 'surface_stats.dart';

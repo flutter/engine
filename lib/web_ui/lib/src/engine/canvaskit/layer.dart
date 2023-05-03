@@ -12,7 +12,6 @@ import 'painting.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'raster_cache.dart';
-import 'util.dart';
 
 /// A layer to be composed into a scene.
 ///

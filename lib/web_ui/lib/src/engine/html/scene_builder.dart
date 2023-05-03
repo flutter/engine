@@ -19,7 +19,6 @@ import 'color_filter.dart';
 import 'image_filter.dart';
 import 'offset.dart';
 import 'opacity.dart';
-import 'path/path.dart';
 import 'path_to_svg_clip.dart';
 import 'picture.dart';
 import 'platform_view.dart';

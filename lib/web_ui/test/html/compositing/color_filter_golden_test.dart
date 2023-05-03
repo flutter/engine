@@ -113,23 +113,6 @@ Picture _drawTestPictureWithCircles(double offsetX, double offsetY) {
   return recorder.endRecording();
 }
 
-Picture _drawTestPictureWithImage(ColorFilter filter) {
-  final EnginePictureRecorder recorder =
-      PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
-      recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
-  final Image testImage = createTestImage();
-  canvas.drawImageRect(
-      testImage,
-      const Rect.fromLTWH(0, 0, 200, 150),
-      const Rect.fromLTWH(0, 0, 300, 300),
-      (Paint()
-        ..style = PaintingStyle.fill
-        ..colorFilter = filter
-        ..color = const Color.fromRGBO(0, 0, 255, 1)) as SurfacePaint);
-  return recorder.endRecording();
-}
-
 Picture _drawBackground() {
   final EnginePictureRecorder recorder =
       PictureRecorder() as EnginePictureRecorder;
