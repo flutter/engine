@@ -108,6 +108,23 @@ def parse_args(argv):
 
 
 def validate_args(args):
+  if not args.after and not args.after_relative_to_src:
+    print('--after argument or --after-relative-to-src must be specified.')
+    return False
+
+  if not args.before and not args.before_relative_to_src:
+    print('--before argument or --before-relative-to-src must be specified.')
+    return False
+
+  # Generate full paths if relative ones are provided with before and
+  # after taking precedence.
+  args.before = (
+      args.before or os.path.join(BUILD_ROOT_DIR, args.before_relative_to_src)
+  )
+  args.after = (
+      args.after or os.path.join(BUILD_ROOT_DIR, args.after_relative_to_src)
+  )
+
   if not args.after or not os.path.isdir(args.after):
     print('The --after argument must refer to a directory.')
     return False
@@ -299,15 +316,6 @@ def compare_shaders(malioc_tree, before_shader, after_shader):
 
 def main(argv):
   args = parse_args(argv[1:])
-
-  # Generate full paths if relative ones are provided with before and
-  # after taking precedence.
-  args.before = (
-      args.before or os.path.join(BUILD_ROOT_DIR, args.before_relative_to_src)
-  )
-  args.after = (
-      args.after or os.path.join(BUILD_ROOT_DIR, args.after_relative_to_src)
-  )
 
   if not validate_args(args):
     return 1
