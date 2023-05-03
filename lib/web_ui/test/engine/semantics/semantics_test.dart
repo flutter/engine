@@ -847,6 +847,92 @@ void _testContainer() {
 
     semantics().semanticsEnabled = false;
   });
+
+  test('descendant nodes are removed from the node map, unless reparented', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+      );
+      updateNode(
+        builder,
+        id: 1,
+        childrenInTraversalOrder: Int32List.fromList(<int>[3, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4]),
+      );
+      updateNode(
+        builder,
+        id: 2,
+        childrenInTraversalOrder: Int32List.fromList(<int>[5, 6]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[5, 6]),
+      );
+      updateNode(builder, id: 3);
+      updateNode(builder, id: 4);
+      updateNode(builder, id: 5);
+      updateNode(builder, id: 6);
+
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+  <sem style="$rootSemanticStyle">
+    <sem-c>
+      <sem style="z-index: 2">
+        <sem-c>
+          <sem style="z-index: 2"></sem>
+          <sem style="z-index: 1"></sem>
+        </sem-c>
+      </sem>
+      <sem style="z-index: 1">
+        <sem-c>
+          <sem style="z-index: 2"></sem>
+          <sem style="z-index: 1"></sem>
+        </sem-c>
+      </sem>
+    </sem-c>
+  </sem>''');
+
+      expect(EngineSemanticsOwner.instance.debugSemanticsTree!.keys.toList(), unorderedEquals(<int>[0, 1, 2, 3, 4, 5, 6]));
+    }
+
+    // Remove node #2 => expect nodes #2 and #5 to be removed and #6 reparented.
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+      );
+      updateNode(
+        builder,
+        id: 1,
+        childrenInTraversalOrder: Int32List.fromList(<int>[3, 4, 6]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 6]),
+      );
+
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+  <sem style="$rootSemanticStyle">
+    <sem-c>
+      <sem style="z-index: 2">
+        <sem-c>
+          <sem style="z-index: 3"></sem>
+          <sem style="z-index: 2"></sem>
+          <sem style="z-index: 1"></sem>
+        </sem-c>
+      </sem>
+    </sem-c>
+  </sem>''');
+
+      expect(EngineSemanticsOwner.instance.debugSemanticsTree!.keys.toList(), unorderedEquals(<int>[0, 1, 3, 4, 6]));
+    }
+
+    semantics().semanticsEnabled = false;
+  });
 }
 
 void _testVerticalScrolling() {
@@ -951,7 +1037,7 @@ void _testVerticalScrolling() {
       childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
     );
 
-    for (int id = 1; id <= 5; id++) {
+    for (int id = 1; id <= 3; id++) {
       updateNode(
         builder,
         id: id,
