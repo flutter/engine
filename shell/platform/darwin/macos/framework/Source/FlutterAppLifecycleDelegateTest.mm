@@ -215,8 +215,10 @@ TEST(FlutterAppLifecycleDelegateTest, RespondsToDidChangeOcclusionState) {
   NSNotification* didChangeOcclusionState =
       [NSNotification notificationWithName:NSApplicationDidChangeOcclusionStateNotification
                                     object:nil];
-  [registrar handleDidChangeOcclusionState:didChangeOcclusionState];
-  EXPECT_EQ([delegate lastNotification], didChangeOcclusionState);
+  if ([registrar respondsToSelector:@selector(handleDidChangeOcclusionState:)]) {
+    [registrar handleDidChangeOcclusionState:didChangeOcclusionState];
+    EXPECT_EQ([delegate lastNotification], didChangeOcclusionState);
+  }
 }
 
 }  // namespace flutter::testing

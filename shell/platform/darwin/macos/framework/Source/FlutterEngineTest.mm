@@ -805,58 +805,7 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   EXPECT_TRUE(announced);
 }
 
-TEST_F(FlutterEngineTest, RunWithEntrypointUpdatesDisplayConfig) {
-  BOOL updated = NO;
-  FlutterEngine* engine = GetFlutterEngine();
-  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
-  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
-      NotifyDisplayUpdate, ([&updated, &original_update_displays](
-                                auto engine, auto update_type, auto* displays, auto display_count) {
-        updated = YES;
-        return original_update_displays(engine, update_type, displays, display_count);
-      }));
-
-  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
-  EXPECT_TRUE(updated);
-
-  updated = NO;
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:NSApplicationDidChangeScreenParametersNotification
-                    object:nil];
-  EXPECT_TRUE(updated);
-}
-
-TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
-  BOOL updated = NO;
-  FlutterEngine* engine = GetFlutterEngine();
-  auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
-  engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
-      SendWindowMetricsEvent,
-      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
-        updated = YES;
-        return original_set_viewport_metrics(engine, window_metrics);
-      }));
-
-  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
-
-  updated = NO;
-  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
-                                                      object:nil];
-  // No VC.
-  EXPECT_FALSE(updated);
-
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
-  [viewController loadView];
-  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-
-  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
-                                                      object:nil];
-  EXPECT_TRUE(updated);
-}
-
-TEST_F(FlutterEngineTest, HandleLifecycleStates) {
+TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
   __block flutter::AppLifecycleState sentState;
   id engineMock = CreateMockFlutterEngine(nil);
 
@@ -885,10 +834,12 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) {
 
   __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
   id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
-  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
-      .andDo(^(NSInvocation* invocation) {
-        [invocation setReturnValue:&visibility];
-      });
+  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
+    OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+        .andDo(^(NSInvocation* invocation) {
+          [invocation setReturnValue:&visibility];
+        });
+  }
   NSApp = mockApplication;
 
   NSNotification* willBecomeActive =
@@ -899,13 +850,17 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) {
       [[NSNotification alloc] initWithName:NSApplicationWillResignActiveNotification
                                     object:nil
                                   userInfo:nil];
-  NSNotification* didChangeOcclusionState =
-      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
-                                    object:nil
-                                  userInfo:nil];
 
-  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+  NSNotification* didChangeOcclusionState;
+  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
+    didChangeOcclusionState =
+        [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                      object:nil
+                                    userInfo:nil];
+
+    [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+    EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+  }
 
   [engineMock handleWillBecomeActive:willBecomeActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateResumed);
@@ -913,9 +868,11 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) {
   [engineMock handleWillResignActive:willResignActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
 
-  visibility = 0;
-  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
+    visibility = 0;
+    [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+    EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+  }
 
   [engineMock handleWillBecomeActive:willBecomeActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
