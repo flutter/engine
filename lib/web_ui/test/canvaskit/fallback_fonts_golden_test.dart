@@ -428,7 +428,10 @@ void testMain() {
         }
       }
     });
-  }, skip: isSafari);
+  },
+  skip: isSafari,
+  // These tests can take a long time, particularly when compiled to wasm.
+  timeout: const Timeout.factor(4));
 }
 
 class TestDownloader extends NotoDownloader {
