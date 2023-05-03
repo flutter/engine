@@ -129,7 +129,6 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln();
     sb.writeln('// DO NOT EDIT! This file is generated. See:');
     sb.writeln('// dev/roll_fallback_fonts.dart');
-    sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
     sb.writeln('List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[');
