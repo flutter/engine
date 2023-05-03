@@ -114,6 +114,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
                          isVertical:(BOOL)isVertical;
 
 - (instancetype)init NS_UNAVAILABLE;
+
+- (BOOL)isRTL;
 @end
 
 API_AVAILABLE(ios(13.0)) @interface FlutterTextPlaceholder : UITextPlaceholder
