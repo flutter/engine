@@ -106,7 +106,7 @@ class RollFallbackFontsCommand extends Command<bool>
       hasher.add(bodyBytes);
 
       await fontFile.create(recursive: true);
-      await fontFile.writeAsBytes(bodyBytes);
+      await fontFile.writeAsBytes(bodyBytes, flush: true);
       final io.ProcessResult fcQueryResult =
           await io.Process.run('fc-query', <String>[
         '--format=%{charset}',
@@ -130,14 +130,14 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln("import '../configuration.dart';");
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
-    sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');
+    sb.writeln('final List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[');
 
     for (final String family in fallbackFonts) {
       if (family == 'Noto Emoji') {
-        sb.write(' if (!configuration.useColorEmoji)');
+        sb.write(' if (!useColorEmoji)');
       }
       if (family == 'Noto Color Emoji') {
-        sb.write(' if (configuration.useColorEmoji)');
+        sb.write(' if (useColorEmoji)');
       }
       final String urlString = urlForFamily[family]!.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
