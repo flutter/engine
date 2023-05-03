@@ -84,6 +84,7 @@ class RunSuiteStep implements PipelineStep {
       '--platform=${browserEnvironment.packageTestRuntime.identifier}',
       '--precompiled=$bundleBuildPath',
       '--configuration=$configurationFilePath',
+      '--timeout=300s', // Five minute timeout by default.
       '--',
       ..._collectTestPaths(),
     ];

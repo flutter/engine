@@ -321,7 +321,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     );
     await runProcess('gclient', <String>[
       'setdep',
-      '--revision=src/third_party/flutter_font_fallbacks:$packageName@$versionString',
+      '--revision=src/third_party/google_fonts_for_unit_tests:$packageName@$versionString',
       '--deps-file=$depFilePath'
     ]);
   }
