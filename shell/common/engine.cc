@@ -583,8 +583,8 @@ const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
 }
 
-void Engine::SetDisplays(std::vector<DisplayData> displays) {
-  runtime_controller_->SetDisplays(std::move(displays));
+void Engine::SetDisplays(const std::vector<DisplayData>& displays) {
+  runtime_controller_->SetDisplays(displays);
   ScheduleFrame();
 }
 

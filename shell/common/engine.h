@@ -691,7 +691,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  displays  A complete list of displays
   ///
-  void SetDisplays(std::vector<DisplayData> displays);
+  void SetDisplays(const std::vector<DisplayData>& displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a message.

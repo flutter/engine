@@ -500,12 +500,12 @@ void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return client_.RequestDartDeferredLibrary(loading_unit_id);
 }
 
-bool RuntimeController::SetDisplays(std::vector<DisplayData> displays) {
+bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
   TRACE_EVENT0("flutter", "SetDisplays");
   platform_data_.displays = displays;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->UpdateDisplays(std::move(displays));
+    platform_configuration->UpdateDisplays(displays);
     return true;
   }
   return false;

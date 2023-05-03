@@ -180,7 +180,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             flushed to the isolate when it starts.
   ///
   /// @param[in]  displays  The available displays.
-  bool SetDisplays(std::vector<DisplayData> displays);
+  bool SetDisplays(const std::vector<DisplayData>& displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If

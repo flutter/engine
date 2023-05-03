@@ -1447,7 +1447,8 @@ TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
               })));
   session_listener->OnScenicEvent(std::move(scenic_events));
   RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics(2.f, 40.f, 40.f, -1));
+  EXPECT_EQ(delegate.metrics(),
+            flutter::ViewportMetrics(2.f, 40.f, 40.f, -1, 0));
 
   // Inject
   std::vector<fuchsia::ui::pointer::TouchEvent> events =

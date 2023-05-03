@@ -84,7 +84,8 @@ void PlatformConfiguration::DidCreateIsolate() {
                        kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
 }
 
-void PlatformConfiguration::UpdateDisplays(std::vector<DisplayData> displays) {
+void PlatformConfiguration::UpdateDisplays(
+    const std::vector<DisplayData>& displays) {
   std::vector<DisplayId> ids;
   std::vector<double> sizes;
   std::vector<double> device_pixel_ratios;
