@@ -215,7 +215,7 @@ class RollFallbackFontsCommand extends Command<bool>
     );
     await runProcess('gclient', <String>[
       'setdep',
-      '--revision=src/third_party/flutter_fallback_fonts:$packageName@$versionString',
+      '--revision=src/third_party/flutter_font_fallbacks:$packageName@$versionString',
       '--deps-file=$depFilePath'
     ]);
   }

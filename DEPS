@@ -915,7 +915,7 @@ deps = {
     'dep_type': 'cipd',
   },
 
-  'src/third_party/flutter_fallback_fonts': {
+  'src/third_party/flutter_font_fallbacks': {
       'packages': [
         {
           'package': 'flutter/flutter_font_fallbacks',
