@@ -6,6 +6,9 @@ import '../dom.dart';
 import '../semantics.dart';
 import '../util.dart';
 
+/// Provides accessibility for dialogs.
+///
+/// See also [Role.dialog].
 class Dialog extends RoleManager {
   Dialog(SemanticsObject semanticsObject) : super(Role.dialog, semanticsObject);
 
