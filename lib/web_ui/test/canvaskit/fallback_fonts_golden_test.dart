@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -18,7 +19,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 50);
+const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 100);
 
 void testMain() {
   group('Font fallbacks', () {
@@ -28,6 +29,14 @@ void testMain() {
     ui.PlatformMessageCallback? savedCallback;
 
     setUp(() {
+      // We render some color emojis in this test.
+      final FlutterConfiguration config = FlutterConfiguration()
+        ..setUserConfiguration(
+          js_util.jsify(<String, Object?>{
+            'useColorEmoji': true,
+          }) as JsFlutterConfiguration);
+      debugSetConfiguration(config);
+
       FontFallbackData.debugReset();
       notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
       savedCallback = ui.window.onPlatformMessage;
@@ -80,7 +89,7 @@ void testMain() {
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isSafari || isFirefox);
 
-    test('will put the Noto Emoji font before other fallback fonts in the list',
+    test('will put the Noto Color Emoji font before other fallback fonts in the list',
         () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
@@ -112,12 +121,12 @@ void testMain() {
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
         'Roboto',
-        'Noto Emoji',
+        'Noto Color Emoji',
         'Noto Sans Arabic',
       ]);
     });
 
-    test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
+    test('will download Noto Color Emojis and Noto Symbols if no matching Noto Font',
         () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
@@ -133,7 +142,7 @@ void testMain() {
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
-          contains('Noto Emoji'));
+          contains('Noto Color Emoji'));
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
@@ -239,7 +248,7 @@ void testMain() {
           testedFonts,
           unorderedEquals(<String>{
             'Noto Sans',
-            'Noto Emoji',
+            'Noto Color Emoji',
             'Noto Sans Symbols',
             'Noto Sans Symbols 2',
             'Noto Sans Adlam',

@@ -10,7 +10,7 @@ import 'package:ui/src/engine.dart';
 /// Global static font fallback data.
 class FontFallbackData {
 
-  factory FontFallbackData() => 
+  factory FontFallbackData() =>
     FontFallbackData._(getFallbackFontData(configuration.useColorEmoji));
 
   FontFallbackData._(List<NotoFont> fallbackFonts) :
@@ -328,7 +328,7 @@ class FontFallbackData {
       // on locale. Otherwise just choose the first font.
       NotoFont bestFont = bestFonts.first;
       if (bestFonts.length > 1) {
-        if (bestFonts.every((NotoFont font) => 
+        if (bestFonts.every((NotoFont font) =>
           font == _notoSansSC ||
           font == _notoSansTC ||
           font == _notoSansHK ||
