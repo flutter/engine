@@ -250,6 +250,13 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   ChildClippingView* clipping_view =
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
+  auto root_view = root_views_[viewId];
+
+  if (root_view.get()) {
+    // Remove the old view for the same view id from the view tree.
+    // |BringLayersIntoView| will add the newly created view back to view tree if needed.
+    [root_view.get() removeFromSuperview];
+  }
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
 
   result(nil);

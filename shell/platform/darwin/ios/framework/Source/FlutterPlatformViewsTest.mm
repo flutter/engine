@@ -2897,4 +2897,102 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   }
 }
 
+- (void)testDuplicateCreateCallsDoNotLeaveDanglingViewsInViewTree {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  UIView* platformViewFirstFrame;
+  UIView* platformViewSecondFrame;
+  {
+    FlutterResult result = ^(id result) {
+    };
+
+    flutterPlatformViewsController->OnMethodCall(
+        [FlutterMethodCall methodCallWithMethodName:@"create"
+                                          arguments:@{
+                                            @"id" : @0,
+                                            @"viewType" : @"MockFlutterPlatformView"
+                                          }],
+        result);
+
+    // First frame
+    flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+    flutter::MutatorsStack stack;
+    SkMatrix finalMatrix;
+    auto embeddedViewParams0 =
+        std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+    flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams0));
+    flutterPlatformViewsController->CompositeEmbeddedView(0);
+
+    const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
+    sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+    flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+    auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
+        std::move(mock_sk_surface), framebuffer_info,
+        [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+        /*frame_size=*/SkISize::Make(800, 600));
+
+    flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
+
+    XCTAssertEqual(mockFlutterView.subviews.count, 1u);
+  }
+
+  platformViewFirstFrame = mockFlutterView.subviews.firstObject;
+
+  {
+    FlutterResult result = ^(id result) {
+    };
+
+    flutterPlatformViewsController->OnMethodCall(
+        [FlutterMethodCall methodCallWithMethodName:@"create"
+                                          arguments:@{
+                                            @"id" : @0,
+                                            @"viewType" : @"MockFlutterPlatformView"
+                                          }],
+        result);
+
+    // Second frame, view tree should only have 1 view.
+    flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+    flutter::MutatorsStack stack;
+    SkMatrix finalMatrix;
+    auto embeddedViewParams0 =
+        std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+    flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams0));
+    flutterPlatformViewsController->CompositeEmbeddedView(0);
+
+    const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
+    sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+    flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+    auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
+        std::move(mock_sk_surface), framebuffer_info,
+        [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+        /*frame_size=*/SkISize::Make(800, 600));
+
+    flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
+
+    XCTAssertEqual(mockFlutterView.subviews.count, 1u);
+    platformViewSecondFrame = mockFlutterView.subviews.firstObject;
+  }
+  XCTAssertNotEqual(platformViewSecondFrame, platformViewFirstFrame);
+}
+
 @end
