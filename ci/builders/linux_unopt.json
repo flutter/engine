@@ -70,7 +70,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "build_dependencies": [
+            "dependencies": [
                 {
                     "dependency": "arm_tools",
                     "version": "last_updated:2023-02-03T15:32:01-0800"
