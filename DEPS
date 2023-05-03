@@ -28,7 +28,7 @@ vars = {
   # This prevents us from downloading the Emscripten toolchain for builds
   # which do not build for the web. This toolchain is needed to build CanvasKit
   # for the web engine.
-  'download_emsdk': False,
+  'download_emsdk': True,
 
   # For experimental features some dependencies may only be avaialable in the master/main
   # channels. This variable is being set when CI is checking out the repository.
