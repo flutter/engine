@@ -118,7 +118,7 @@ class CopyArtifactsStep implements PipelineStep {
     final io.Directory fallbackFontsSource = io.Directory(pathlib.join(
       environment.engineSrcDir.path,
       'third_party',
-      'flutter_fallback_fonts',
+      'flutter_font_fallbacks',
     ));
     final String fallbackFontsDestinationPath = pathlib.join(
       environment.webTestsArtifactsDir.path,
