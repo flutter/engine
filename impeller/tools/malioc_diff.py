@@ -68,18 +68,18 @@ def parse_args(argv):
       help='The path to a json file containing existing malioc results.',
   )
   parser.add_argument(
-      '--after-relative-to-checkout',
+      '--after-relative-to-src',
       type=str,
       help=(
-          'A relative path calculated from the checkout directory to '
+          'A relative path calculated from the engine src directory to '
           'a directory tree containing new malioc results in json files'
       ),
   )
   parser.add_argument(
-      '--before-relative-to-checkout',
+      '--before-relative-to-src',
       type=str,
       help=(
-          'A relative path calculated from the checkout directory to '
+          'A relative path calculated from the engine src directory to '
           'a json file containing existing malioc results in json files'
       ),
   )
@@ -303,12 +303,10 @@ def main(argv):
   # Generate full paths if relative ones are provided with before and
   # after taking precedence.
   args.before = (
-      args.before or
-      os.path.join(BUILD_ROOT_DIR, args.before_relative_to_checkout)
+      args.before or os.path.join(BUILD_ROOT_DIR, args.before_relative_to_src)
   )
   args.after = (
-      args.after or
-      os.path.join(BUILD_ROOT_DIR, args.after_relative_to_checkout)
+      args.after or os.path.join(BUILD_ROOT_DIR, args.after_relative_to_src)
   )
 
   if not validate_args(args):
