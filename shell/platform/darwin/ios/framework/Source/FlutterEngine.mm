@@ -882,7 +882,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   auto scale = UIScreen.mainScreen.scale;
   displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(
       0, vsync_waiter_ios, screen_size.width, screen_size.height, scale));
-  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
+  _shell->OnDisplayUpdates(std::move(displays));
 }
 
 - (BOOL)run {

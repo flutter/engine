@@ -2071,8 +2071,7 @@ void Shell::SetGpuAvailability(GpuAvailability availability) {
   }
 }
 
-void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
-                             std::vector<std::unique_ptr<Display>> displays) {
+void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
   FML_DCHECK(is_setup_);
   std::vector<DisplayData> display_data;
   for (const auto& display : displays) {
@@ -2086,7 +2085,7 @@ void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
         }
       });
 
-  display_manager_->HandleDisplayUpdates(update_type, std::move(displays));
+  display_manager_->HandleDisplayUpdates(std::move(displays));
 }
 
 fml::TimePoint Shell::GetCurrentTimePoint() {

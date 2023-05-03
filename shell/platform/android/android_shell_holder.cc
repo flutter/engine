@@ -344,7 +344,7 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
 void AndroidShellHolder::UpdateDisplayMetrics() {
   std::vector<std::unique_ptr<Display>> displays;
   displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
-  shell_->OnDisplayUpdates(DisplayUpdateType::kStartup, std::move(displays));
+  shell_->OnDisplayUpdates(std::move(displays));
 }
 
 }  // namespace flutter

@@ -23,17 +23,10 @@ double DisplayManager::GetMainDisplayRefreshRate() const {
 }
 
 void DisplayManager::HandleDisplayUpdates(
-    DisplayUpdateType update_type,
     std::vector<std::unique_ptr<Display>> displays) {
+  FML_DCHECK(!displays.empty());
   std::scoped_lock lock(displays_mutex_);
-  FML_CHECK(!displays.empty());
-  switch (update_type) {
-    case DisplayUpdateType::kStartup:
-      displays_ = std::move(displays);
-      return;
-    default:
-      FML_CHECK(false) << "Unknown DisplayUpdateType.";
-  }
+  displays_ = std::move(displays);
 }
 
 }  // namespace flutter

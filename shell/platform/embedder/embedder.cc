@@ -3003,8 +3003,7 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
             // TODO(dnfield): Supply real values.
             -1, -1, -1));
       }
-      engine->GetShell().OnDisplayUpdates(flutter::DisplayUpdateType::kStartup,
-                                          std::move(displays));
+      engine->GetShell().OnDisplayUpdates(std::move(displays));
       return kSuccess;
     }
     default:

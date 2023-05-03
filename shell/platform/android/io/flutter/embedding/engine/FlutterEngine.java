@@ -651,6 +651,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
 
   @Override
   public void updateDisplayMetrics(float width, float height, float density) {
+    System.out.writeln("HERE");
     flutterJNI.updateDisplayMetrics(0 /* display ID */, width, height, density);
   }
 }

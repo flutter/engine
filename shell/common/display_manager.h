@@ -12,17 +12,6 @@
 
 namespace flutter {
 
-/// The update type parameter that is passed to
-/// `DisplayManager::HandleDisplayUpdates`.
-enum class DisplayUpdateType {
-  /// `flutter::Display`s that were active during start-up. A display is
-  /// considered active if:
-  ///    1. The frame buffer hardware is connected.
-  ///    2. The display is drawable, e.g. it isn't being mirrored from another
-  ///       connected display or sleeping.
-  kStartup
-};
-
 /// Manages lifecycle of the connected displays. This class is thread-safe.
 class DisplayManager {
  public:
@@ -39,8 +28,7 @@ class DisplayManager {
   double GetMainDisplayRefreshRate() const;
 
   /// Handles the display updates.
-  void HandleDisplayUpdates(DisplayUpdateType update_type,
-                            std::vector<std::unique_ptr<Display>> displays);
+  void HandleDisplayUpdates(std::vector<std::unique_ptr<Display>> displays);
 
  private:
   /// Guards `displays_` vector.
