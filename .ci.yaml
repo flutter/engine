@@ -81,6 +81,7 @@ platform_properties:
 targets:
   - name: Linux Android AOT Engine
     recipe: engine/engine
+    bringup: true
     properties:
       add_recipes_cq: "true"
       build_android_aot: "true"
@@ -310,7 +311,7 @@ targets:
       framework: "true"
       no_goma: "true"
       drone_dimensions: >
-        ["device_type=none"]
+        ["device_type=none", "os=Linux"]
       shard: web_tests
       subshards: >-
               ["0", "1", "2", "3", "4", "5", "6", "7_last"]
@@ -341,7 +342,6 @@ targets:
         {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
-      mac_model: "Macmini8,1"
     timeout: 75
 
   - name: Linux mac_android_aot_engine
@@ -381,7 +381,6 @@ targets:
           "ios-16-4_14e222b",
           "ios-16-2_14c18"
         ]
-      mac_model: "Macmini8,1"
     timeout: 75
 
   - name: Mac Host clang-tidy
