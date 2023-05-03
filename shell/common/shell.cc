@@ -2073,6 +2073,8 @@ void Shell::SetGpuAvailability(GpuAvailability availability) {
 
 void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
   FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
   std::vector<DisplayData> display_data;
   for (const auto& display : displays) {
     display_data.push_back(display->GetDisplayData());
