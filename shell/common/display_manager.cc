@@ -29,7 +29,6 @@ void DisplayManager::HandleDisplayUpdates(
   FML_CHECK(!displays.empty());
   switch (update_type) {
     case DisplayUpdateType::kStartup:
-      FML_CHECK(displays_.empty());
       displays_ = std::move(displays);
       return;
     default:

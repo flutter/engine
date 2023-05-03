@@ -119,7 +119,8 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetAccessibilityFeatures(
              platform_data_.accessibility_feature_flags_) &&
          SetUserSettingsData(platform_data_.user_settings_data) &&
-         SetInitialLifecycleState(platform_data_.lifecycle_state);
+         SetInitialLifecycleState(platform_data_.lifecycle_state) &&
+         SetDisplays(platform_data_.displays);
 }
 
 bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
@@ -497,6 +498,17 @@ void RuntimeController::LoadDartDeferredLibraryError(
 
 void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return client_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+bool RuntimeController::SetDisplays(std::vector<DisplayData> displays) {
+  TRACE_EVENT0("flutter", "SetDisplays");
+  platform_data_.displays = displays;
+
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateDisplays(std::move(displays));
+    return true;
+  }
+  return false;
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

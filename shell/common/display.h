@@ -19,6 +19,16 @@ typedef size_t DisplayId;
 /// To be used when the display refresh rate is unknown.
 static constexpr double kUnknownDisplayRefreshRate = 0;
 
+/// The POD of a |Display|. This data is for a point in time and suitable
+/// for copying.
+struct DisplayData {
+  DisplayId id;
+  double width;
+  double height;
+  double pixel_ratio;
+  double refresh_rate;
+};
+
 /// Display refers to a graphics hardware system consisting of a framebuffer,
 /// typically a monitor or a screen. This class holds the various display
 /// settings.
@@ -48,13 +58,23 @@ class Display {
   DisplayId GetDisplayId() const { return display_id_; }
 
   /// The width of the display in physical pixels.
-  double GetWidth() const { return width_; }
+  virtual double GetWidth() const { return width_; }
 
   /// The height of the display in physical pixels.
-  double GetHeight() const { return height_; }
+  virtual double GetHeight() const { return height_; }
 
   /// The device pixel ratio of the display.
-  double GetDevicePixelRatio() const { return device_pixel_ratio_; }
+  virtual double GetDevicePixelRatio() const { return device_pixel_ratio_; }
+
+  DisplayData GetDisplayData() {
+    return DisplayData{
+        .id = GetDisplayId(),
+        .width = GetWidth(),
+        .height = GetHeight(),
+        .pixel_ratio = GetDevicePixelRatio(),
+        .refresh_rate = GetRefreshRate(),
+    };
+  }
 
  private:
   DisplayId display_id_;

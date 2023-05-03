@@ -583,4 +583,9 @@ const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
 }
 
+void Engine::SetDisplays(std::vector<DisplayData> displays) {
+  runtime_controller_->SetDisplays(std::move(displays));
+  ScheduleFrame();
+}
+
 }  // namespace flutter

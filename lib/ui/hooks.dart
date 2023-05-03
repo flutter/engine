@@ -7,17 +7,22 @@ part of dart.ui;
 @pragma('vm:entry-point')
 void _updateDisplays(
   List<int> ids,
-  List<double> devicePixelRatios,
   List<double> sizes,
+  List<double> devicePixelRatios,
+  List<double> refreshRates,
 ) {
   final List<Display> displays = <Display>[];
-  for (int i = 0; i < ids.length; i += 1) {
+  int sizeIndex = 0;
+  for (int index = 0; index < ids.length; index += 1) {
+    final int displayId = ids[index];
     displays.add(Display._(
-      id: ids[i],
-      devicePixelRatio: devicePixelRatios[i],
-      size: Size(sizes[i * 2], sizes[i * 2 + 1]),
+      id: displayId,
+      size: Size(sizes[sizeIndex++], sizes[sizeIndex++]),
+      devicePixelRatio: devicePixelRatios[index],
+      refreshRate: refreshRates[index],
     ));
   }
+
   PlatformDispatcher.instance._updateDisplays(displays);
 }
 

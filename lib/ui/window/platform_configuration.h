@@ -274,7 +274,7 @@ class PlatformConfiguration final {
   /// @param[in]  locale_data  The locale data. This should consist of groups of
   ///             4 strings, each group representing a single locale.
   ///
-  void UpdateDisplays(const std::vector<Display>& displays);
+  void UpdateDisplays(std::vector<DisplayData> displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Update the specified locale data in the framework.

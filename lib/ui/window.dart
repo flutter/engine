@@ -11,6 +11,7 @@ class Display {
     required this.id,
     required this.devicePixelRatio,
     required this.size,
+    required this.refreshRate,
   });
 
   /// A unique identifier for this display.
@@ -26,10 +27,11 @@ class Display {
   /// The physical size of this display.
   final Size size;
 
-  // TODO(dnfield): Implement refresh rate here. This would have to be a native
-  // getter to avoid trying to send updates to the display array every time
-  // the refresh rate changes, particularly on platforms that dynamically adjust
-  // the refresh rate during scrolling.
+  /// The refresh rate in FPS of this display.
+  final double refreshRate;
+
+  @override
+  String toString() => 'Display(id: $id, size: $size, devicePixelRatio: $devicePixelRatio, refreshRate: $refreshRate)';
 }
 
 /// A view into which a Flutter [Scene] is drawn.
@@ -96,8 +98,11 @@ class FlutterView {
     return platformDispatcher._viewConfigurations[viewId]!;
   }
 
-  ///
-  Display get display => _viewConfiguration.display;
+  /// The [Display] this view is drawn in.
+  Display get display {
+    assert(platformDispatcher._displays.containsKey(_viewConfiguration.displayId));
+    return platformDispatcher._displays[_viewConfiguration.displayId]!;
+  }
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.

@@ -2998,14 +2998,10 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     case kFlutterEngineDisplaysUpdateTypeStartup: {
       std::vector<std::unique_ptr<flutter::Display>> displays;
       for (size_t i = 0; i < display_count; i++) {
-        if (embedder_displays[i].single_display) {
-          displays.push_back(std::make_unique<flutter::Display>(
-              embedder_displays[i].refresh_rate));
-        } else {
-          displays.push_back(std::make_unique<flutter::Display>(
-              embedder_displays[i].display_id,
-              embedder_displays[i].refresh_rate));
-        }
+        displays.push_back(std::make_unique<flutter::Display>(
+            embedder_displays[i].display_id, embedder_displays[i].refresh_rate,
+            // TODO(dnfield): Supply real values.
+            -1, -1, -1));
       }
       engine->GetShell().OnDisplayUpdates(flutter::DisplayUpdateType::kStartup,
                                           std::move(displays));

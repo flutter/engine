@@ -81,18 +81,35 @@ void PlatformConfiguration::DidCreateIsolate() {
   // See: https://github.com/flutter/flutter/issues/120306
   windows_.emplace(kImplicitViewId,
                    std::make_unique<Window>(
-                       kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1}));
+                       kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
 }
 
-void PlatformConfiguration::UpdateDisplays(
-    const std::vector<Display> displays) {
+void PlatformConfiguration::UpdateDisplays(std::vector<DisplayData> displays) {
   std::vector<DisplayId> ids;
   std::vector<double> sizes;
   std::vector<double> device_pixel_ratios;
-  for (const auto display : displays) {
+  std::vector<double> refresh_rates;
+  for (const auto& display : displays) {
     ids.push_back(display.id);
-    refresh_rates.push_back(display.GetRefreshRate());
+    sizes.push_back(display.width);
+    sizes.push_back(display.height);
+    device_pixel_ratios.push_back(display.pixel_ratio);
+    refresh_rates.push_back(display.refresh_rate);
   }
+  std::shared_ptr<tonic::DartState> dart_state =
+      update_displays_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      update_displays_.Get(),
+      {
+          tonic::ToDart<std::vector<DisplayId>>(ids),
+          tonic::ToDart<std::vector<double>>(sizes),
+          tonic::ToDart<std::vector<double>>(device_pixel_ratios),
+          tonic::ToDart<std::vector<double>>(refresh_rates),
+      }));
 }
 
 void PlatformConfiguration::UpdateLocales(
