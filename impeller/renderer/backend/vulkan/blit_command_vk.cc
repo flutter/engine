@@ -165,18 +165,13 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
     return false;
   }
 
-  LayoutTransition transition;
-  transition.cmd_buffer = cmd_buffer;
-  transition.new_layout = vk::ImageLayout::eTransferSrcOptimal;
-  transition.src_access = vk::AccessFlagBits::eShaderWrite |
-                          vk::AccessFlagBits::eTransferWrite |
-                          vk::AccessFlagBits::eColorAttachmentWrite;
-  transition.src_stage = vk::PipelineStageFlagBits::eFragmentShader |
-                         vk::PipelineStageFlagBits::eTransfer |
-                         vk::PipelineStageFlagBits::eColorAttachmentOutput;
-  transition.dst_access = vk::AccessFlagBits::eShaderRead;
-  transition.dst_stage = vk::PipelineStageFlagBits::eVertexShader |
-                         vk::PipelineStageFlagBits::eFragmentShader;
+  LayoutTransition dst_tran;
+  dst_tran.cmd_buffer = cmd_buffer;
+  dst_tran.new_layout = vk::ImageLayout::eTransferDstOptimal;
+  dst_tran.src_access = {};
+  dst_tran.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  dst_tran.dst_access = vk::AccessFlagBits::eShaderRead;
+  dst_tran.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 
   vk::BufferImageCopy image_copy;
   image_copy.setBufferOffset(source.range.offset);
@@ -189,15 +184,15 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
   image_copy.setImageExtent(vk::Extent3D(destination->GetSize().width,
                                          destination->GetSize().height, 1));
 
-  if (!dst.SetLayout(transition)) {
+  if (!dst.SetLayout(dst_tran)) {
     VALIDATION_LOG << "Could not encode layout transition.";
     return false;
   }
 
-  cmd_buffer.copyBufferToImage(src.GetBuffer(),        //
-                               dst.GetImage(),         //
-                               transition.new_layout,  //
-                               image_copy              //
+  cmd_buffer.copyBufferToImage(src.GetBuffer(),      //
+                               dst.GetImage(),       //
+                               dst_tran.new_layout,  //
+                               image_copy            //
   );
 
   return true;
