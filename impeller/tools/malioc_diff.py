@@ -316,7 +316,6 @@ def compare_shaders(malioc_tree, before_shader, after_shader):
 
 def main(argv):
   args = parse_args(argv[1:])
-
   if not validate_args(args):
     return 1
 
