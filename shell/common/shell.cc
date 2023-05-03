@@ -2083,7 +2083,7 @@ void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
       [engine = engine_->GetWeakPtr(),
        display_data = std::move(display_data)]() {
         if (engine) {
-          engine->SetDisplays(std::move(display_data));
+          engine->SetDisplays(display_data);
         }
       });
 
