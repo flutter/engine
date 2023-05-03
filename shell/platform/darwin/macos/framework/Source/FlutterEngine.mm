@@ -176,11 +176,9 @@ constexpr char kTextPlainFormat[] = "text/plain";
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
     // allow tests to override it so that an actual exit doesn't occur.
-    NSApplication* flutterApp = [NSApplication sharedApplication];
-    [flutterApp terminate:sender];
+    [NSApp terminate:sender];
   };
-  FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
+  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
   appDelegate.terminationHandler = self;
   return self;
 }
