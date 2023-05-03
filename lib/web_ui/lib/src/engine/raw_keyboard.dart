@@ -133,6 +133,9 @@ class RawKeyboard {
         _lastMetaState |= modifierNumLock;
       } else if (event.key == 'ScrollLock') {
         _lastMetaState |= modifierScrollLock;
+      } else if (event.key == 'Meta') {
+        // On Chrome Linux, metaState can be wrong when a Meta key is pressed.
+        _lastMetaState |= _modifierMeta;
       }
     }
     final Map<String, dynamic> eventData = <String, dynamic>{
