@@ -492,13 +492,14 @@ String _packFontRanges(List<String> starts, List<String> ends) {
   return sb.toString();
 }
 
-bool _checkForLicenseAttribution(Uint8List fontData) {
-  final Uint16List u16Data = fontData.buffer.asUint16List();
-  const String attributionString = 'This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL';
-  for (int i = 0; i < u16Data.length - attributionString.length; i++) {
+bool _checkForLicenseAttribution(Uint8List fontBytes) {
+  final ByteData fontData = fontBytes.buffer.asByteData();
+  final int codePointCount = fontData.lengthInBytes ~/ 2;
+  const String attributionString = 'This Font Software is licensed under the SIL Open Font License, Version 1.1.';
+  for (int i = 0; i < codePointCount - attributionString.length; i++) {
     bool match = true;
     for (int j = 0; j < attributionString.length; j++) {
-      if (u16Data[i + j] == attributionString.codeUnitAt(j)) {
+      if (fontData.getUint16((i + j) * 2) != attributionString.codeUnitAt(j)) {
         match = false;
         break;
       }
