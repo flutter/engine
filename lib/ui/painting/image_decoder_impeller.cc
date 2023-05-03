@@ -415,14 +415,14 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         auto upload_texture_and_invoke_result = [result, context,
                                                  bitmap_result =
                                                      bitmap_result.value()]() {
-// TODO(jonahwilliams): remove ifdef once blit from buffer to texture is
-// implemented on other platforms.
-#ifdef FML_OS_IOS
-          result(UploadTextureToPrivate(context, bitmap_result.device_buffer,
-                                        bitmap_result.image_info));
-#else
-          result(UploadTextureToShared(context, bitmap_result.sk_bitmap));
-#endif
+          // TODO(jonahwilliams): remove ifdef once blit from buffer to texture
+          // is implemented on other platforms.
+          if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
+            result(UploadTextureToPrivate(context, bitmap_result.device_buffer,
+                                          bitmap_result.image_info));
+          } else {
+            result(UploadTextureToShared(context, bitmap_result.sk_bitmap));
+          }
         };
         // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
         // Technically we don't need to post tasks to the io runner, but without
