@@ -2,21 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:args/args.dart';
-import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
-import 'package:fuchsia_services/services.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:zircon/zircon.dart';
 
 final _argsCsvFilePath = '/config/data/args.csv';
 
-void main(List<String> args) {
+void main(List<String> args) async {
   print('Launching embedding-flutter-view');
 
   args = args + _GetArgsFromConfigFile();
@@ -32,7 +30,7 @@ void main(List<String> args) {
 
   // TODO(fxbug.dev/125514): Support Flatland Child View.
   TestApp app = TestApp(
-    ChildView.gfx(_launchGfxChildView()),
+    ChildView(await _launchChildView(false)),
     showOverlay: arguments['showOverlay'],
     hitTestable: arguments['hitTestable'],
     focusable: arguments['focusable'],
@@ -182,17 +180,9 @@ class TestApp {
 }
 
 class ChildView {
-  final ViewHolderToken viewHolderToken;
-  final ViewportCreationToken viewportCreationToken;
   final int viewId;
 
-  ChildView(this.viewportCreationToken) : viewHolderToken = null, viewId = viewportCreationToken.value.handle.handle {
-    assert(viewId != null);
-  }
-
-  ChildView.gfx(this.viewHolderToken) : viewportCreationToken = null, viewId = viewHolderToken.value.handle.handle {
-    assert(viewId != null);
-  }
+  ChildView(this.viewId);
 
   void create(
     bool hitTestable,
@@ -230,26 +220,18 @@ class ChildView {
   }
 }
 
-ViewHolderToken _launchGfxChildView() {
-  ViewProviderProxy viewProvider = ViewProviderProxy();
-  Incoming.fromSvcPath()
-    ..connectToService(viewProvider)
-    ..close();
+Future<int> _launchChildView(bool useFlatland) async {
+  final message = Int8List.fromList([useFlatland ? 0x31 : 0x30]);
+  final completer = new Completer<ByteData>();
+  PlatformDispatcher.instance.sendPlatformMessage(
+      'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {
+    completer.complete(reply);
+  });
 
-  final viewTokens = EventPairPair();
-  assert(viewTokens.status == ZX.OK);
-  final viewHolderToken = ViewHolderToken(value: viewTokens.first);
-
-  final viewRefs = EventPairPair();
-  assert(viewRefs.status == ZX.OK);
-  final viewRefControl = ViewRefControl(reference: viewRefs.first.duplicate(ZX.DEFAULT_EVENTPAIR_RIGHTS & ~ZX.RIGHT_DUPLICATE));
-  final viewRef = ViewRef(reference: viewRefs.second.duplicate(ZX.RIGHTS_BASIC));
-
-  viewProvider.createViewWithViewRef(viewTokens.second, viewRefControl, viewRef);
-  viewProvider.ctrl.close();
-
-  return viewHolderToken;
+  return int.parse(
+      ascii.decode(((await completer.future).buffer.asUint8List())));
 }
+
 
 List<String> _GetArgsFromConfigFile() {
   List<String> args;

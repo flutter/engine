@@ -86,7 +86,7 @@ class PlatformView : public flutter::PlatformView {
       AwaitVsyncCallback await_vsync_callback,
       AwaitVsyncForSecondaryCallbackCallback
           await_vsync_for_secondary_callback_callback,
-      std::shared_ptr<sys::ServiceDirectory> svc);
+      std::shared_ptr<sys::ServiceDirectory> dart_application_svc);
 
   ~PlatformView() override;
 
@@ -140,6 +140,10 @@ class PlatformView : public flutter::PlatformView {
 
   // Channel handler for kFuchsiaInputTestChannel.
   bool HandleFuchsiaInputTestChannelPlatformMessage(
+      std::unique_ptr<flutter::PlatformMessage> message);
+
+  // Channel handler for kFuchsiaChildViewChannel.
+  bool HandleFuchsiaChildViewChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
   virtual void OnCreateView(ViewCallback on_view_created,
@@ -196,6 +200,9 @@ class PlatformView : public flutter::PlatformView {
   fuchsia::ui::test::input::TouchInputListenerPtr touch_input_listener_;
   fuchsia::ui::test::input::KeyboardInputListenerPtr keyboard_input_listener_;
   fuchsia::ui::test::input::MouseInputListenerPtr mouse_input_listener_;
+
+  // Component's service directory.
+  std::shared_ptr<sys::ServiceDirectory> dart_application_svc_;
 
   fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
