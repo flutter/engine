@@ -315,7 +315,7 @@ bool CapabilitiesVK::SupportsSSBO() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
-  return false;
+  return true;
 }
 
 // |Capabilities|

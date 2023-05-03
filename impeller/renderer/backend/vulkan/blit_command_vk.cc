@@ -145,6 +145,65 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
 }
 
 //------------------------------------------------------------------------------
+/// BlitCopyBufferToTextureCommandVK
+///
+
+BlitCopyBufferToTextureCommandVK::~BlitCopyBufferToTextureCommandVK() = default;
+
+std::string BlitCopyBufferToTextureCommandVK::GetLabel() const {
+  return label;
+}
+
+bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
+  const auto& cmd_buffer = encoder.GetCommandBuffer();
+
+  // cast destination to TextureVK
+  const auto& dst = TextureVK::Cast(*destination);
+  const auto& src = DeviceBufferVK::Cast(*source.buffer);
+
+  if (!encoder.Track(source.buffer) || !encoder.Track(destination)) {
+    return false;
+  }
+
+  LayoutTransition transition;
+  transition.cmd_buffer = cmd_buffer;
+  transition.new_layout = vk::ImageLayout::eTransferSrcOptimal;
+  transition.src_access = vk::AccessFlagBits::eShaderWrite |
+                          vk::AccessFlagBits::eTransferWrite |
+                          vk::AccessFlagBits::eColorAttachmentWrite;
+  transition.src_stage = vk::PipelineStageFlagBits::eFragmentShader |
+                         vk::PipelineStageFlagBits::eTransfer |
+                         vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  transition.dst_access = vk::AccessFlagBits::eShaderRead;
+  transition.dst_stage = vk::PipelineStageFlagBits::eVertexShader |
+                         vk::PipelineStageFlagBits::eFragmentShader;
+
+  vk::BufferImageCopy image_copy;
+  image_copy.setBufferOffset(source.range.offset);
+  image_copy.setBufferRowLength(0);
+  image_copy.setBufferImageHeight(0);
+  image_copy.setImageSubresource(
+      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setImageOffset(
+      vk::Offset3D(destination_origin.x, destination_origin.y, 0));
+  image_copy.setImageExtent(vk::Extent3D(destination->GetSize().width,
+                                         destination->GetSize().height, 1));
+
+  if (!dst.SetLayout(transition)) {
+    VALIDATION_LOG << "Could not encode layout transition.";
+    return false;
+  }
+
+  cmd_buffer.copyBufferToImage(src.GetBuffer(),        //
+                               dst.GetImage(),         //
+                               transition.new_layout,  //
+                               image_copy              //
+  );
+
+  return true;
+}
+
+//------------------------------------------------------------------------------
 /// BlitGenerateMipmapCommandVK
 ///
 
