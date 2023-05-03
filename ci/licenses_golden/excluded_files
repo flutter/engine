@@ -1863,7 +1863,7 @@
 ../../../third_party/flatbuffers/tests
 ../../../third_party/flatbuffers/ts
 ../../../third_party/flatbuffers/typescript.bzl
-../../../third_party/flutter_fallback_fonts
+../../../third_party/flutter_font_fallbacks
 ../../../third_party/fontconfig
 ../../../third_party/freetype2/.clang-format
 ../../../third_party/freetype2/.git
