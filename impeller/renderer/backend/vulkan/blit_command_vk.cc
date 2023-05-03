@@ -170,8 +170,10 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
   dst_tran.new_layout = vk::ImageLayout::eTransferDstOptimal;
   dst_tran.src_access = {};
   dst_tran.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
-  dst_tran.dst_access = vk::AccessFlagBits::eShaderRead;
-  dst_tran.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+  dst_tran.dst_access =
+      vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eTransferWrite;
+  dst_tran.dst_stage = vk::PipelineStageFlagBits::eFragmentShader |
+                       vk::PipelineStageFlagBits::eTransfer;
 
   vk::BufferImageCopy image_copy;
   image_copy.setBufferOffset(source.range.offset);
