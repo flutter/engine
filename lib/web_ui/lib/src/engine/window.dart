@@ -46,7 +46,7 @@ set customUrlStrategy(ui_web.UrlStrategy? strategy) {
 }
 
 class EngineFlutterDisplay extends ui.Display {
-  const EngineFlutterDisplay({
+  EngineFlutterDisplay({
     required this.id,
     required this.devicePixelRatio,
     required this.size,
