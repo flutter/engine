@@ -255,6 +255,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   if (root_view.get()) {
     // Remove the old view for the same view id from the view tree.
     // |BringLayersIntoView| will add the newly created view back to view tree if needed.
+    // See: https://github.com/flutter/flutter/issues/125913
     [root_view.get() removeFromSuperview];
   }
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
