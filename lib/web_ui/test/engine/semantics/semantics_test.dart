@@ -82,6 +82,9 @@ void runSemanticsTests() {
   group('group', () {
     _testGroup();
   });
+  group('dialog', () {
+    _testDialog();
+  });
 }
 
 void _testEngineAccessibilityBuilder() {
@@ -2167,6 +2170,73 @@ void _testGroup() {
     expectSemanticsTree('''
 <sem role="group" aria-label="this is a label for a group of elements" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
 ''');
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+void _testDialog() {
+  test('renders named and labeled routes', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      label: 'this is a dialog label',
+      flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+      childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    semantics().updateSemantics(builder.build());
+    expectSemanticsTree('''
+<sem role="dialog" aria-label="this is a dialog label" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
+''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('warns about missing label', () {
+    final List<String> warnings = <String>[];
+    printWarning = warnings.add;
+
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+      childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    semantics().updateSemantics(builder.build());
+    expect(
+      warnings,
+      <String>[
+        'Semantic node 0 was assigned dialog role, but is missing a label. A dialog should contain a label so that a screen reader can communicate to the user that a dialog appeared and a user action is requested.',
+      ],
+    );
 
     semantics().semanticsEnabled = false;
   });
