@@ -24,6 +24,9 @@ void main() {
     ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
 
+  final FlutterView view = PlatformDispatcher.instance.implicitView!;
+  assert(view.display.size == view.physicalSize);
+
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
   PlatformDispatcher.instance.sendPlatformMessage('waiting_for_status', data, null);
