@@ -13,7 +13,7 @@ class FontFallbackData {
   factory FontFallbackData() =>
     FontFallbackData._(getFallbackFontData(configuration.useColorEmoji));
 
-  FontFallbackData._(List<NotoFont> fallbackFonts) :
+  FontFallbackData._(this.fallbackFonts) :
     _notoSansSC = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans SC'),
     _notoSansTC = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans TC'),
     _notoSansHK = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans HK'),
@@ -41,7 +41,7 @@ class FontFallbackData {
   /// Code units which are known to be covered by at least one fallback font.
   final Set<int> knownCoveredCodeUnits = <int>{};
 
-  final List<NotoFont> fallbackFonts = getFallbackFontData(configuration.useColorEmoji);
+  final List<NotoFont> fallbackFonts;
 
   /// Index of all font families by code unit range.
   final IntervalTree<NotoFont> notoTree;
