@@ -17,7 +17,7 @@
                 "--lsan",
                 "--dart-debug"
             ],
-            "name": "host_debug_unopt_san",
+            "name": "host_debug_unopt",
             "ninja": {
                 "config": "host_debug_unopt",
                 "targets": [
