@@ -44,6 +44,12 @@ CORES = [
     'Mali-T880',  # 2016
 ]
 
+# Path to the engine root checkout. This is used to calculate absolute
+# paths if relative ones are passed to the script.
+BUILD_ROOT_DIR = os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
+)
+
 
 def parse_args(argv):
   parser = argparse.ArgumentParser(
@@ -277,6 +283,17 @@ def compare_shaders(malioc_tree, before_shader, after_shader):
 
 def main(argv):
   args = parse_args(argv[1:])
+
+  # Generate full paths if relative ones are provided.
+  args.before = (
+      args.before if os.path.isabs(args.before) else
+      os.path.join(BUILD_ROOT_DIR, args.before)
+  )
+  args.after = (
+      args.after if os.path.isabs(args.after) else
+      os.path.join(BUILD_ROOT_DIR, args.after)
+  )
+
   if not validate_args(args):
     return 1
 
