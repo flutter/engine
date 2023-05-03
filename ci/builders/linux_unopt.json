@@ -55,10 +55,12 @@
                     "script": "flutter/ci/analyze.sh"
                 },
                 {
+                    "language": "dart",
                     "name": "test: observatory and service protocol",
-                    "script": "src/out/host_debug_unopt/flutter_tester",
+                    "script": "flutter/shell/testing/observatory/test.dart",
                     "parameters": [
-                        "src/flutter/shell/testing/observatory/empty_main.dart'"
+                        "out/host_debug_unopt/flutter_tester",
+                        "flutter/shell/testing/observatory/empty_main.dart"
                     ]
                 }
             ]
@@ -95,6 +97,18 @@
                         "android_debug_unopt"
                     ],
                     "script": "flutter/testing/run_tests.py"
+                },
+                {
+                    "language": "python3",
+                    "name": "malioc diff",
+                    "parameters": [
+                        "--before",
+                        "flutter/impeller/tools/malioc.json",
+                        "--after",
+                        "out/android_debug_unopt/gen/malioc",
+                        "--print-diff"
+                    ],
+                    "script": "flutter/impeller/tools/malioc_diff.py"
                 }
             ]
         }
