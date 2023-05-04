@@ -837,7 +837,7 @@ TEST_F(FlutterWindowsEngineTest, LifecycleManagerDisabledByDefault) {
                                                                0);
 }
 
-TEST_F(FlutterWindowsEngineTest, RegisterTopLevelHandler) {
+TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
   auto window_binding_handler =
