@@ -12,21 +12,21 @@ import 'package:ui/src/engine.dart';
 class FontAsset {
   FontAsset(this.asset, this.descriptors);
 
-  String asset;
-  Map<String, String> descriptors;
+  final String asset;
+  final Map<String, String> descriptors;
 }
 
 class FontFamily {
   FontFamily(this.name, this.fontAssets);
 
-  String name;
-  List<FontAsset> fontAssets;
+  final String name;
+  final List<FontAsset> fontAssets;
 }
 
 class FontManifest {
   FontManifest(this.families);
 
-  List<FontFamily> families;
+  final List<FontFamily> families;
 }
 
 Future<FontManifest> fetchFontManifest(AssetManager assetManager) async {

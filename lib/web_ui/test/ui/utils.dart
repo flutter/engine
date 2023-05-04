@@ -8,8 +8,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart';
 
-import '../common/utils.dart';
-
 Picture drawPicture(void Function(Canvas) drawCommands) {
   final PictureRecorder recorder = PictureRecorder();
   final Canvas canvas = Canvas(recorder);

@@ -7,8 +7,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../common/utils.dart';
-
 /// Commit a recording canvas to a bitmap, and compare with the expected.
 ///
 /// [region] specifies the area of the canvas that will be included in the

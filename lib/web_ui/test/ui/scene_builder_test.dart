@@ -11,7 +11,6 @@ import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../common/test_initialization.dart';
-import '../common/utils.dart';
 import 'utils.dart';
 
 void main() {
