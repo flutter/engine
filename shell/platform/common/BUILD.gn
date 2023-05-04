@@ -63,8 +63,6 @@ source_set("common_cpp_enums") {
     "platform_provided_menu.h",
   ]
 
-  sources = [ "application_lifecycle.cc" ]
-
   public_configs = [
     "//flutter:config",
     "//flutter/common:flutter_config",

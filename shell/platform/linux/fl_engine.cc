@@ -126,12 +126,10 @@ static void parse_locale(const gchar* locale,
   }
 }
 
-static void set_app_lifecycle_state(FlEngine* self,
-                                    flutter::AppLifecycleState state) {
+static void set_app_lifecycle_state(FlEngine* self, const gchar* state) {
   FlBinaryMessenger* binary_messenger = fl_engine_get_binary_messenger(self);
 
-  g_autoptr(FlValue) value =
-      fl_value_new_string(flutter::AppLifecycleStateToString(state));
+  g_autoptr(FlValue) value = fl_value_new_string(state);
   g_autoptr(FlStringCodec) codec = fl_string_codec_new();
   g_autoptr(GBytes) message =
       fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, nullptr);

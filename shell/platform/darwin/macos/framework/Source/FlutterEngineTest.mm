@@ -806,7 +806,7 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
 }
 
 TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
-  __block flutter::AppLifecycleState sentState;
+  __block const char* sentState;
   id engineMock = CreateMockFlutterEngine(nil);
 
   // Have to enumerate all the values because OCMStub can't capture

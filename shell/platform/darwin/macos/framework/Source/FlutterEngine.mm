@@ -1141,9 +1141,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 #pragma mark - FlutterAppLifecycleDelegate
 
-- (void)setApplicationState:(flutter::AppLifecycleState)state {
-  NSString* nextState =
-      [[NSString alloc] initWithCString:flutter::AppLifecycleStateToString(state)];
+- (void)setApplicationState:(const char*)state {
+  NSString* nextState = [[NSString alloc] initWithCString:state];
   [self sendOnChannel:kFlutterLifecycleChannel
               message:[nextState dataUsingEncoding:NSUTF8StringEncoding]];
 }

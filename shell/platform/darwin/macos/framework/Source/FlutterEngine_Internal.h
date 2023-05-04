@@ -176,8 +176,11 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 
 /**
  * Handles changes to the application state, sending them to the framework.
+ *
+ * @param state One of the lifecycle constants in application_lifecycle.h,
+ *              corresponding to the Dart enum AppLifecycleState.
  */
-- (void)setApplicationState:(flutter::AppLifecycleState)state;
+- (void)setApplicationState:(const char*)state;
 
 // Accessibility API.
 
