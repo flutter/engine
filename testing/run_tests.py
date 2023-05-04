@@ -633,7 +633,7 @@ def ensure_ios_tests_are_built(ios_out_dir):
   flutter_dylib = os.path.join(tmp_out_dir, 'libFlutter.dylib')
   flutter_dylib_time = os.path.getmtime(flutter_dylib)
 
-  final_message = "%s is older than %s. Please run the following commands: \n%s" % (
+  final_message = '%s is older than %s. Please run the following commands: \n%s' % (
       ios_test_lib, flutter_dylib, '\n'.join(message)
   )
   assert flutter_dylib_time <= ios_test_lib_time, final_message
