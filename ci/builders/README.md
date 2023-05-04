@@ -46,7 +46,8 @@ file to be used by engine\_v2 recipes. Full documentation of the `.ci.yaml` file
 can be found [in the Cocoon repository here](https://github.com/flutter/cocoon/blob/main/CI_YAML.md).
 
 The following is a sample build configuration referencing
-[android\_aot\_engine.json](https://cs.opensource.google/flutter/engine/+/main:ci/builders/mac_android_aot_engine.json):
+[android\_aot\_engine.json](https://github.com/flutter/engine/blob/main/ci/builders/mac_android_aot_engine.json)
+in the `config_name` under `properties`:
 
 ```yaml
   - name: Mac mac_android_aot_engine
