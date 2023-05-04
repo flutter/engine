@@ -88,8 +88,8 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   // the extent of the layer during the restore()). ColorFilterLayer must clip
   // before the saveLayer in these cases to ensure it doesn't go beyond its
   // reported paint_bounds().
-  if (filter_ && filter_.affects_transparent_black()) {
-    mutator.applyClipRect(paint_bounds());
+  if (filter_ && filter_.modifies_transparent_black()) {
+    mutator.clipRect(paint_bounds(), /*is_aa=*/false);
   }
 
   // Now apply the color filter and then try rendering children either from
