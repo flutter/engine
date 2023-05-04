@@ -314,7 +314,7 @@ of tasks.
 
 ##### Task
 
-Task is a dictionary describing the scripts to be executed.
+A `task` is a dictionary describing the scripts to be executed.
 
 The property's description is as follows:
 
