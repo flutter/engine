@@ -6,7 +6,6 @@ import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -1528,11 +1527,6 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
-  setUpAll(() async {
-    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
-    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
-  });
-
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that

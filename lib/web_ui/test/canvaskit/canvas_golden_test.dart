@@ -14,12 +14,6 @@ import 'package:web_engine_tester/golden_tester.dart';
 
 import 'common.dart';
 
-// TODO(yjbanov): tests that render using Noto are not hermetic, as those fonts
-//                come from fonts.google.com, where fonts can change any time.
-//                These tests are skipped.
-//                https://github.com/flutter/flutter/issues/86432
-const bool kIssue86432Exists = true;
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -33,7 +27,9 @@ void testMain() {
     setUp(() {
       expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
       expect(notoDownloadQueue.isPending, isFalse);
+
       FontFallbackData.debugReset();
+      notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
     });
 
     tearDown(() {
@@ -52,141 +48,6 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-    });
-
-    // Regression test for https://github.com/flutter/flutter/issues/51237
-    // Draws a grid of shadows at different offsets. Prior to directional
-    // light the shadows would shift depending on the offset. With directional
-    // light the cells in the grid must look identical.
-    test('uses directional shadows', () async {
-      const ui.Rect region = ui.Rect.fromLTRB(0, 0, 820, 420);
-      final CkPicture picture = paintPicture(region, (CkCanvas canvas) {
-        final CkPath shape = CkPath()
-          ..addRect(const ui.Rect.fromLTRB(0, 0, 40, 40));
-        final CkPaint shapePaint = CkPaint()
-          ..style = ui.PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const ui.Color(0xFF009900);
-        final CkPaint shadowBoundsPaint = CkPaint()
-          ..style = ui.PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const ui.Color(0xFF000099);
-        canvas.translate(20, 20);
-
-        for (int row = 0; row < 5; row += 1) {
-          canvas.save();
-          for (int col = 0; col < 10; col += 1) {
-            final double elevation = 2 * (col % 5).toDouble();
-            canvas.drawShadow(shape, const ui.Color(0xFFFF0000), elevation, true);
-            canvas.drawPath(shape, shapePaint);
-
-            final PhysicalShapeEngineLayer psl = PhysicalShapeEngineLayer(
-              elevation,
-              const ui.Color(0xFF000000),
-              const ui.Color(0xFF000000),
-              shape,
-              ui.Clip.antiAlias,
-            );
-            psl.preroll(
-              PrerollContext(
-                RasterCache(),
-                HtmlViewEmbedder.instance,
-              ),
-              Matrix4.identity(),
-            );
-            canvas.drawRect(psl.paintBounds, shadowBoundsPaint);
-
-            final CkParagraph p = makeSimpleText('$elevation');
-            p.layout(const ui.ParagraphConstraints(width: 1000));
-            canvas.drawParagraph(
-                p, ui.Offset(20 - p.maxIntrinsicWidth / 2, 20 - p.height / 2));
-            canvas.translate(80, 0);
-          }
-          canvas.restore();
-          canvas.translate(0, 80);
-        }
-      });
-      await matchPictureGolden('canvaskit_directional_shadows.png', picture,
-          region: region);
-    });
-
-    test('computes shadow bounds correctly with parent transforms', () async {
-      const double rectSize = 50;
-      const double halfSize = rectSize / 2;
-      const double padding = 110;
-      const ui.Rect region = ui.Rect.fromLTRB(
-        0,
-        0,
-        (rectSize + padding) * 3 + padding,
-        (rectSize + padding) * 2 + padding,
-      );
-      late List<PhysicalShapeEngineLayer> physicalShapeLayers;
-
-      LayerTree buildTestScene({required bool paintShadowBounds}) {
-        final Iterator<PhysicalShapeEngineLayer>? shadowBounds =
-            paintShadowBounds ? physicalShapeLayers.iterator : null;
-        physicalShapeLayers = <PhysicalShapeEngineLayer>[];
-
-        final LayerSceneBuilder builder = LayerSceneBuilder();
-        builder.pushOffset(padding + halfSize, padding + halfSize);
-
-        final CkPath shape = CkPath()
-          ..addRect(
-              const ui.Rect.fromLTRB(-halfSize, -halfSize, halfSize, halfSize));
-        final CkPaint shadowBoundsPaint = CkPaint()
-          ..style = ui.PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const ui.Color(0xFF000099);
-
-        for (int row = 0; row < 2; row += 1) {
-          for (int col = 0; col < 3; col += 1) {
-            builder.pushOffset(
-                col * (rectSize + padding), row * (rectSize + padding));
-            builder.pushTransform(Float64List.fromList(
-                Matrix4.rotationZ(row * math.pi / 4).storage));
-            final double scale = 1 / (1 + col);
-            builder.pushTransform(Float64List.fromList(
-                Matrix4.diagonal3Values(scale, scale, 1).storage));
-            physicalShapeLayers.add(builder.pushPhysicalShape(
-              path: shape,
-              elevation: 6,
-              color: const ui.Color(0xFF009900),
-              shadowColor: const ui.Color(0xFF000000),
-            ));
-            if (shadowBounds != null) {
-              shadowBounds.moveNext();
-              final ui.Rect bounds = shadowBounds.current.paintBounds;
-              builder.addPicture(
-                  ui.Offset.zero,
-                  paintPicture(region, (CkCanvas canvas) {
-                    canvas.drawRect(bounds, shadowBoundsPaint);
-                  }));
-            }
-            builder.pop();
-            builder.pop();
-            builder.pop();
-            builder.pop();
-          }
-        }
-        builder.pop();
-        return builder.build().layerTree;
-      }
-
-      // Render the scene once without painting the shadow bounds just to
-      // preroll the scene to compute the shadow bounds.
-      buildTestScene(paintShadowBounds: false).rootLayer.preroll(
-            PrerollContext(
-              RasterCache(),
-              HtmlViewEmbedder.instance,
-            ),
-            Matrix4.identity(),
-          );
-
-      // Render again, this time with the shadow bounds.
-      final LayerTree layerTree = buildTestScene(paintShadowBounds: true);
-
-      CanvasKitRenderer.instance.rasterizer.draw(layerTree);
-      await matchGoldenFile('canvaskit_shadow_bounds.png', region: region);
     });
 
     test('text styles - default', () async {
@@ -264,28 +125,28 @@ void testMain() {
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('zh', 'CN'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - paragraph locale zh_TW', () async {
       await testTextStyle('paragraph locale zh_TW',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('zh', 'TW'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - paragraph locale ja', () async {
       await testTextStyle('paragraph locale ja',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('ja'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - paragraph locale ko', () async {
       await testTextStyle('paragraph locale ko',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('ko'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - color', () async {
       await testTextStyle('color', color: const ui.Color(0xFF009900));
@@ -401,28 +262,28 @@ void testMain() {
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('zh', 'CN'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - locale zh_TW', () async {
       await testTextStyle('locale zh_TW',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('zh', 'TW'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - locale ja', () async {
       await testTextStyle('locale ja',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('ja'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - locale ko', () async {
       await testTextStyle('locale ko',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('ko'));
-    }, skip: kIssue86432Exists);
+    });
 
     test('text styles - background', () async {
       await testTextStyle('background',
@@ -538,7 +399,7 @@ void testMain() {
         outerText: '欢',
         innerText: '',
       );
-    }, skip: kIssue86432Exists);
+    });
 
     test('text style - symbols', () async {
       // One of the CJK fonts loaded in one of the tests above also contains
@@ -550,7 +411,7 @@ void testMain() {
         outerText: '← ↑ → ↓ ',
         innerText: '',
       );
-    }, skip: kIssue86432Exists);
+    });
 
     test(
         'text style - foreground/background/color do not leak across paragraphs',
@@ -871,13 +732,11 @@ Future<void> testSampleText(String language, String text,
     paragraphHeight = paragraph.height;
     return recorder.endRecording();
   });
-  if (!kIssue86432Exists) {
-    await matchPictureGolden(
-      'canvaskit_sample_text_$language.png',
-      picture,
-      region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
-    );
-  }
+  await matchPictureGolden(
+    'canvaskit_sample_text_$language.png',
+    picture,
+    region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
+  );
 }
 
 typedef ParagraphFactory = CkParagraph Function();
