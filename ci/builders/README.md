@@ -16,7 +16,7 @@ for efficient builds with dependency reusability.
 * **[recipes](https://github.com/luci/recipes-py)** - domain specific
 language for specifying sequences of subprocess calls in a cross-platform and
 testable way.
-* **Generator** - scripts in dart, python or bash that combine the output of
+* **Generator** - scripts in Dart, python or bash that combine the output of
 sub-builds to generate artifacts.
 * **Builder** - a combination of configuration, recipes and a given commit to
 build and test artifacts.
