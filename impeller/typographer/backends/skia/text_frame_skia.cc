@@ -7,11 +7,13 @@
 #include <vector>
 
 #include "flutter/fml/logging.h"
+#include "impeller/display_list/skia_conversions.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "include/core/SkFontTypes.h"
 #include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 #include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
@@ -36,6 +38,15 @@ static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
 
 static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
+}
+
+Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob) {
+  if (!blob) {
+    return {};
+  }
+
+  return skia_conversions::ToPath(
+      skia::textlayout::Paragraph::getPaths(blob.get()));
 }
 
 TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {

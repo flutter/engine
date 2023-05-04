@@ -1088,9 +1088,23 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
   Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLength();
-  canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
-                        impeller::Point{x, y},               //
-                        paint_                               //
+  auto text_frame = TextFrameFromTextBlob(blob, scale);
+  if (paint_.style == Paint::Style::kStroke) {
+    auto path = PathDataFromTextBlob(blob);
+    auto bounds = text_frame.GetBounds();
+    if (!bounds.has_value()) {
+      return;
+    }
+    canvas_.Save();
+    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+    canvas_.DrawPath(path, paint_);
+    canvas_.Restore();
+    return;
+  }
+
+  canvas_.DrawTextFrame(text_frame,             //
+                        impeller::Point{x, y},  //
+                        paint_                  //
   );
 }
 

@@ -5,10 +5,13 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/geometry/path.h"
 #include "impeller/typographer/text_frame.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {
+
+Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob);
 
 TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob,
                                 Scalar scale = 1.0f);
