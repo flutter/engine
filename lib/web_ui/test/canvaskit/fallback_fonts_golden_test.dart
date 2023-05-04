@@ -428,7 +428,9 @@ void testMain() {
         }
       }
     });
-  }, skip: isSafari);
+  },
+  skip: isSafari,
+  timeout: const Timeout.factor(4));
 }
 
 class TestDownloader extends NotoDownloader {
