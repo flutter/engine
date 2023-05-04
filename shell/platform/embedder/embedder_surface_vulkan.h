@@ -36,9 +36,6 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface {
   // |EmbedderSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |EmbedderSurface|
-  sk_sp<GrDirectContext> CreateResourceContext() const override;
-
   sk_sp<GrDirectContext> CreateGrContext(VkInstance instance,
                                          uint32_t version,
                                          size_t instance_extension_count,

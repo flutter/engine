@@ -50,8 +50,4 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(
   return surface;
 }
 
-sk_sp<GrDirectContext> EmbedderSurfaceMetal::CreateResourceContext() const {
-  return studio_->CreateResourceContext();
-}
-
 }  // namespace flutter

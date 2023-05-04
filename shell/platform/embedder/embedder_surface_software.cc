@@ -41,9 +41,4 @@ std::unique_ptr<Surface> EmbedderSurfaceSoftware::CreateGPUSurface() {
   return surface;
 }
 
-// |EmbedderSurface|
-sk_sp<GrDirectContext> EmbedderSurfaceSoftware::CreateResourceContext() const {
-  return nullptr;
-}
-
 }  // namespace flutter

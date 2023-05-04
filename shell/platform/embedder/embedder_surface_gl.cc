@@ -37,9 +37,4 @@ std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
   );
 }
 
-// |EmbedderSurface|
-sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateResourceContext() const {
-  return studio_->CreateResourceContext();
-}
-
 }  // namespace flutter

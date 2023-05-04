@@ -32,9 +32,6 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface {
   // |EmbedderSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |EmbedderSurface|
-  sk_sp<GrDirectContext> CreateResourceContext() const override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceSoftware);
 };
 
