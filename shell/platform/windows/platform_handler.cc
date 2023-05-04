@@ -23,7 +23,8 @@ static constexpr char kHasStringsClipboardMethod[] = "Clipboard.hasStrings";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
-static constexpr char kRegisterBindingMethod[] = "System.enableApplicationLifecycle";
+static constexpr char kRegisterBindingMethod[] =
+    "System.enableApplicationLifecycle";
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 
 static constexpr char kExitCodeKey[] = "exitCode";
@@ -497,7 +498,7 @@ void PlatformHandler::HandleMethodCall(
 
     SystemSoundPlay(sound_type.GetString(), std::move(result));
   } else if (method.compare(kRegisterBindingMethod) == 0) {
-    engine_->OnServiceBindingsRegistered();
+    engine_->OnApplicationLifecycleEnabled();
     result->Success();
   } else {
     result->NotImplemented();

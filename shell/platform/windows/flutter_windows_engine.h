@@ -271,7 +271,7 @@ class FlutterWindowsEngine {
 
   // Called in response to the framework registering a ServiceBindings.
   // Registers the top level handler for the WM_CLOSE window message.
-  void OnServiceBindingsRegistered();
+  void OnApplicationLifecycleEnabled();
 
  protected:
   // Creates the keyboard key handler.

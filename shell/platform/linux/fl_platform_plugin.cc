@@ -20,7 +20,8 @@ static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kClipboardHasStringsMethod[] = "Clipboard.hasStrings";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
-static constexpr char kRegisterBindingMethod[] = "System.enableApplicationLifecycle";
+static constexpr char kRegisterBindingMethod[] =
+    "System.enableApplicationLifecycle";
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 static constexpr char kSystemNavigatorPopMethod[] = "SystemNavigator.pop";
 static constexpr char kTextKey[] = "text";

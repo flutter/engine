@@ -778,7 +778,7 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
-void FlutterWindowsEngine::OnServiceBindingsRegistered() {
+void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
   lifecycle_manager_->BeginProcessingClose();
 }
 
