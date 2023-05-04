@@ -744,6 +744,16 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
                                         arguments:@{@"type" : @"cancelable"}];
 
+  // Always terminate when the binding isn't ready (which is the default).
+  triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+
+  // Once the binding is ready, handle the request.
+  terminationHandler.bindingIsReady = YES;
   triedToTerminate = FALSE;
   calledAfterTerminate = @"";
   nextResponse = @"exit";
