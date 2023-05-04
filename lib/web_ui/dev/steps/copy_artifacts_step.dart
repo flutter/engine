@@ -118,8 +118,7 @@ class CopyArtifactsStep implements PipelineStep {
     final io.Directory fallbackFontsSource = io.Directory(pathlib.join(
       environment.engineSrcDir.path,
       'third_party',
-      'google_fonts_for_unit_tests
-',
+      'google_fonts_for_unit_tests',
     ));
     final String fallbackFontsDestinationPath = pathlib.join(
       environment.webTestsArtifactsDir.path,
