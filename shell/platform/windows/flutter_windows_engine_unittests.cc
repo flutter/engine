@@ -818,7 +818,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   }
 }
 
-TEST_F(FlutterWindowsEngineTest, DoNotRegisterTopLevelHandler) {
+TEST_F(FlutterWindowsEngineTest, LifecycleManagerDisabledByDefault) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
   auto window_binding_handler =
