@@ -337,7 +337,8 @@ static void method_call_cb(FlMethodChannel* channel,
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
   } else if (strcmp(method, kRegisterBindingMethod) == 0) {
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_null()));
+    response =
+        FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_null()));
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
