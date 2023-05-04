@@ -66,9 +66,10 @@ To keep the build definition language simple the following assumptions were
 made during its design:
 
 * A build can be expressed as a set of independent sub-builds.
-* A sub-build can be defined as a sequence of gn, ninja, self contained test
-scripts, self contained generator scripts. All the elements are optional
-allowing to use gn+ninja without generators or generators without gn+ninja.
+* A sub-build can be defined as a sequence of a `gn` configuration step,
+  a `ninja` build step, followed by self-contained test scripts, and self-contained
+  generator scripts. All the elements are optional allowing to use gn+ninja without
+  generators or generators without gn+ninja.
 * All the sub-builds required by a global generator are defined within the same
 configuration file.
 
