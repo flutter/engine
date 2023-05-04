@@ -25,7 +25,7 @@ void main() {
     ..scheduleFrame();
 
   final FlutterView view = PlatformDispatcher.instance.implicitView!;
-  assert(view.display.size == view.physicalSize);
+  assert(view.display.size == view.physicalSize, 'Expected view size ${view.physicalSize} to match the size in ${view.display}');
 
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
