@@ -39,10 +39,11 @@ The [engine orchestrator recipe](https://cs.opensource.google/flutter/recipes/+/
 reads each file in that directory, shards their builds, collects artifacts and
 uploads them to the Google Cloud Storage bucket.
 
-Ci\_yaml gets all the components together. A new build will be added to the
-[.ci.yaml](https://cs.opensource.google/flutter/engine/+/main:.ci.yaml) file
-with a property pointing to the build definition file to be used by engine\_v2
-recipes.
+The [.ci.yaml file](https://github.com/flutter/engine/blob/main/.ci.yaml) at the
+root of the `flutter/engine` repository puts all the components together.
+Builds are specified in that file using a property pointing to the build definition
+file to be used by engine\_v2 recipes. Full documentation of the `.ci.yaml` file format
+can be found [in the Cocoon repository here](https://github.com/flutter/cocoon/blob/main/CI_YAML.md).
 
 The following is a sample build configuration referencing
 [android\_aot\_engine.json](https://cs.opensource.google/flutter/engine/+/main:ci/builders/mac_android_aot_engine.json):
