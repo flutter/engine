@@ -32,7 +32,7 @@ operations.
 
 ## USAGE EXAMPLES
 
-Engine builds files using the Build Definition Language can be found in
+Engine build definition files using the Build Definition Language can be found in the
 [flutter/engine/ci/builders](https://cs.opensource.google/flutter/engine/+/main:ci/builders/) directory.
 
 The [engine orchestrator recipe](https://cs.opensource.google/flutter/recipes/+/main:recipes/engine_v2/) reads the file, shard builds, collect artifacts and upload them to
