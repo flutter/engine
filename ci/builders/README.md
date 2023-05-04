@@ -1,9 +1,9 @@
 # Flutter Engine Build Definition Language
 
-The ***Flutter Engine Build Definition Language*** describes a complex build
-using a combination of sub-builds, archives, generators and dependencies. It
-simplifies sub-builds sharding mapping build inputs to workflows and listing
-the generated artifacts explicitly. The Build Definition Language, Engine
+The ***Flutter Engine Build Definition Language*** describes a build on CI
+by defining a combination of *sub-builds*, *archives*, *generators* and *dependencies*. It
+makes it simple to shard sub-builds by mapping build inputs to workflows, and listing
+the sub-build-generated artifacts explicitly. The Build Definition Language, Engine
 Recipes V2 and the generation of artifacts using GN+Ninja set the groundwork
 for efficient builds with dependency reusability.  
 
