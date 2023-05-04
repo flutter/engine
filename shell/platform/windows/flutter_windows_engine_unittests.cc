@@ -818,5 +818,52 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   }
 }
 
+TEST_F(FlutterWindowsEngineTest, DoNotRegisterTopLevelHandler) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
+    return false;
+  });
+  // Quit should not be called when there is more than one window.
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(0);
+  modifier.SetLifecycleManager(std::move(handler));
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
+}
+
+TEST_F(FlutterWindowsEngineTest, RegisterTopLevelHandler) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+  engine->OnServiceBindingsRegistered();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
+    return false;
+  });
+  // Quit should not be called when there is more than one window.
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
+  modifier.SetLifecycleManager(std::move(handler));
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
+}
+
 }  // namespace testing
 }  // namespace flutter
