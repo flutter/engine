@@ -645,7 +645,6 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
-  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -658,6 +657,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnServiceBindingsRegistered();
 
   engine->Run();
 
@@ -682,7 +682,6 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
-  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -695,6 +694,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnServiceBindingsRegistered();
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
@@ -733,7 +733,6 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
-  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -756,6 +755,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
                 hwnd, msg, wparam, lparam);
           });
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnServiceBindingsRegistered();
 
   engine->Run();
 
@@ -795,7 +795,6 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
-  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -807,6 +806,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   // Quit should not be called when there is more than one window.
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnServiceBindingsRegistered();
 
   engine->Run();
 
@@ -845,7 +845,6 @@ TEST_F(FlutterWindowsEngineTest, RegisterTopLevelHandler) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
-  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -855,6 +854,7 @@ TEST_F(FlutterWindowsEngineTest, RegisterTopLevelHandler) {
   });
   EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnServiceBindingsRegistered();
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
                                                                0);
