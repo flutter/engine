@@ -38,7 +38,7 @@ class CommandPoolVK {
 
  private:
   const std::thread::id owner_id_;
-  const vk::UniqueDevice* device_ = nullptr;
+  const vk::Device* device_ = nullptr;
   vk::UniqueCommandPool graphics_pool_;
   Mutex buffers_to_collect_mutex_;
   std::set<SharedHandleVK<vk::CommandBuffer>> buffers_to_collect_

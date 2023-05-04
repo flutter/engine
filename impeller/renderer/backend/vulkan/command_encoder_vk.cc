@@ -14,7 +14,7 @@ namespace impeller {
 
 class TrackedObjectsVK {
  public:
-  explicit TrackedObjectsVK(const vk::UniqueDevice* device,
+  explicit TrackedObjectsVK(const vk::Device* device,
                             const std::shared_ptr<CommandPoolVK>& pool)
       : desc_pool_(device) {
     if (!pool) {
@@ -95,7 +95,7 @@ class TrackedObjectsVK {
   FML_DISALLOW_COPY_AND_ASSIGN(TrackedObjectsVK);
 };
 
-CommandEncoderVK::CommandEncoderVK(const vk::UniqueDevice* device,
+CommandEncoderVK::CommandEncoderVK(const vk::Device* device,
                                    const std::shared_ptr<QueueVK>& queue,
                                    const std::shared_ptr<CommandPoolVK>& pool,
                                    std::shared_ptr<FenceWaiterVK> fence_waiter)
@@ -137,7 +137,7 @@ bool CommandEncoderVK::Submit() {
   if (command_buffer.end() != vk::Result::eSuccess) {
     return false;
   }
-  auto [fence_result, fence] = (*device_)->createFenceUnique({});
+  auto [fence_result, fence] = device_->createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
     return false;
   }

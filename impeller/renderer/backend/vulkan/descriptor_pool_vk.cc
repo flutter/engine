@@ -9,12 +9,12 @@
 
 namespace impeller {
 
-DescriptorPoolVK::DescriptorPoolVK(const vk::UniqueDevice* device)
+DescriptorPoolVK::DescriptorPoolVK(const vk::Device* device)
     : device_(device) {}
 
 DescriptorPoolVK::~DescriptorPoolVK() = default;
 
-static vk::UniqueDescriptorPool CreatePool(const vk::UniqueDevice* device,
+static vk::UniqueDescriptorPool CreatePool(const vk::Device* device,
                                            uint32_t pool_count) {
   TRACE_EVENT0("impeller", "CreateDescriptorPool");
   std::vector<vk::DescriptorPoolSize> pools = {
@@ -29,7 +29,7 @@ static vk::UniqueDescriptorPool CreatePool(const vk::UniqueDevice* device,
   pool_info.setMaxSets(pools.size() * pool_count);
   pool_info.setPoolSizes(pools);
 
-  auto [result, pool] = (*device)->createDescriptorPoolUnique(pool_info);
+  auto [result, pool] = device->createDescriptorPoolUnique(pool_info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to create a descriptor pool";
   }
@@ -45,7 +45,7 @@ std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
   vk::DescriptorSetAllocateInfo set_info;
   set_info.setDescriptorPool(pool.value());
   set_info.setSetLayouts(layout);
-  auto [result, sets] = (*device_)->allocateDescriptorSets(set_info);
+  auto [result, sets] = device_->allocateDescriptorSets(set_info);
   if (result == vk::Result::eErrorOutOfPoolMemory) {
     return GrowPool() ? AllocateDescriptorSet(layout) : std::nullopt;
   }

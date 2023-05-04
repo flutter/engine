@@ -285,7 +285,7 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  ContextVK::SetDebugName(device_, descs_layout.get(),
+  ContextVK::SetDebugName(&device_, descs_layout.get(),
                           "Descriptor Set Layout " + desc.GetLabel());
 
   //----------------------------------------------------------------------------
@@ -321,9 +321,9 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  ContextVK::SetDebugName(device_, *pipeline_layout.value,
+  ContextVK::SetDebugName(&device_, *pipeline_layout.value,
                           "Pipeline Layout " + desc.GetLabel());
-  ContextVK::SetDebugName(device_, *pipeline, "Pipeline " + desc.GetLabel());
+  ContextVK::SetDebugName(&device_, *pipeline, "Pipeline " + desc.GetLabel());
 
   return std::make_unique<PipelineVK>(weak_from_this(),                  //
                                       desc,                              //

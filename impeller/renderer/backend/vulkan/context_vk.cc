@@ -379,7 +379,7 @@ void ContextVK::Setup(Settings settings) {
   /// Label all the relevant objects. This happens after setup so that the debug
   /// messengers have had a chance to be setup.
   ///
-  SetDebugName(device_.get(), device_.get(), "ImpellerDevice");
+  SetDebugName(GetDevice(), device_.get(), "ImpellerDevice");
 }
 
 // |Context|
@@ -422,8 +422,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-const vk::UniqueDevice* ContextVK::GetDevice() const {
-  return &device_;
+const vk::Device* ContextVK::GetDevice() const {
+  return &device_.get();
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
@@ -490,7 +490,7 @@ std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     return nullptr;
   }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      &device_,                //
+      &device_.get(),          //
       queues_.graphics_queue,  //
       tls_pool,                //
       fence_waiter_            //

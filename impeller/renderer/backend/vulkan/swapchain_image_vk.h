@@ -15,7 +15,7 @@ namespace impeller {
 class SwapchainImageVK final : public TextureSourceVK {
  public:
   SwapchainImageVK(TextureDescriptor desc,
-                   const vk::UniqueDevice* device,
+                   const vk::Device* device,
                    vk::Image image);
 
   // |TextureSourceVK|
