@@ -297,8 +297,8 @@ section.
 * The script is in charge of generating the final artifact, e.g. if the script
 generates multiple files that will be zipped later then it is the script
 responsibility to generate the final zip.
-* If the generator is producing a Mac/iOS artifact then it is the script
-responsibility to embed the signing metadata.
+* If the generator is producing a Mac/iOS artifact, then it is the responsibility
+of the script to embed the signing metadata.
 
 Generators contain a single property “tasks” which is a list of tasks to be
 performed.
