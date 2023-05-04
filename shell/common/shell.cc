@@ -2100,6 +2100,9 @@ Shell::GetPlatformMessageHandler() const {
 }
 
 const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
+  if (!engine_) {
+    return {};
+  }
   return engine_->GetVsyncWaiter();
 }
 

@@ -875,7 +875,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)updateDisplays {
-  auto vsync_waiter = std::shared_ptr<flutter::VsyncWaiter>(_shell->GetVsyncWaiter().lock());
+  if (!_shell) {
+    // Tests may do this.
+    return;
+  }
+  auto vsync_waiter = _shell->GetVsyncWaiter().lock();
   auto vsync_waiter_ios = std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
   std::vector<std::unique_ptr<flutter::Display>> displays;
   auto screen_size = UIScreen.mainScreen.nativeBounds.size;
