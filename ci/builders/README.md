@@ -35,8 +35,9 @@ operations.
 Engine build definition files using the Build Definition Language can be found in the
 [flutter/engine/ci/builders](https://cs.opensource.google/flutter/engine/+/main:ci/builders/) directory.
 
-The [engine orchestrator recipe](https://cs.opensource.google/flutter/recipes/+/main:recipes/engine_v2/) reads the file, shard builds, collect artifacts and upload them to
-the Google Cloud Storage bucket.
+The [engine orchestrator recipe](https://cs.opensource.google/flutter/recipes/+/main:recipes/engine_v2/)
+reads each file in that directory, shards their builds, collects artifacts and
+uploads them to the Google Cloud Storage bucket.
 
 Ci\_yaml gets all the components together. A new build will be added to the
 [.ci.yaml](https://cs.opensource.google/flutter/engine/+/main:.ci.yaml) file
