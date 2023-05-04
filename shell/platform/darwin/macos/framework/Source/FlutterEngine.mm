@@ -176,9 +176,10 @@ constexpr char kTextPlainFormat[] = "text/plain";
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
     // allow tests to override it so that an actual exit doesn't occur.
-    [NSApp terminate:sender];
+    [[NSApplication sharedApplication] terminate:sender];
   };
-  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
   appDelegate.terminationHandler = self;
   return self;
 }
@@ -442,14 +443,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
-  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
   [appDelegate addApplicationLifecycleDelegate:self];
 
   return self;
 }
 
 - (void)dealloc {
-  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
   if (appDelegate != nil) {
     [appDelegate removeApplicationLifecycleDelegate:self];
   }
@@ -1074,7 +1077,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
-    [NSApp terminate:self];
+    [[NSApplication sharedApplication] terminate:self];
     result(nil);
   } else if ([call.method isEqualToString:@"SystemSound.play"]) {
     [self playSystemSound:call.arguments];
