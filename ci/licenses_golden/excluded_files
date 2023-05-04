@@ -2576,8 +2576,6 @@
 ../../../third_party/skia/OWNERS
 ../../../third_party/skia/OWNERS.android
 ../../../third_party/skia/PRESUBMIT.py
-../../../third_party/skia/PRESUBMIT_test.py
-../../../third_party/skia/PRESUBMIT_test_mocks.py
 ../../../third_party/skia/README
 ../../../third_party/skia/README.chromium
 ../../../third_party/skia/WORKSPACE.bazel
@@ -2599,10 +2597,8 @@
 ../../../third_party/skia/example
 ../../../third_party/skia/experimental
 ../../../third_party/skia/fuzz/README.md
-../../../third_party/skia/gm/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
-../../../third_party/skia/gn/bazel_build.py
 ../../../third_party/skia/gn/call.py
 ../../../third_party/skia/gn/checkdir.py
 ../../../third_party/skia/gn/codesign_ios.py
@@ -2634,10 +2630,6 @@
 ../../../third_party/skia/include/android/BUILD.bazel
 ../../../third_party/skia/include/codec/BUILD.bazel
 ../../../third_party/skia/include/config/BUILD.bazel
-../../../third_party/skia/include/config/OWNERS
-../../../third_party/skia/include/config/WORKSPACE.bazel
-../../../third_party/skia/include/config/copts.bzl
-../../../third_party/skia/include/config/linkopts.bzl
 ../../../third_party/skia/include/core/BUILD.bazel
 ../../../third_party/skia/include/docs/BUILD.bazel
 ../../../third_party/skia/include/effects/BUILD.bazel
@@ -2801,6 +2793,8 @@
 ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel
 ../../../third_party/skia/src/gpu/gl/BUILD.bazel
 ../../../third_party/skia/src/gpu/mtl/BUILD.bazel
+../../../third_party/skia/src/gpu/piet/BUILD.bazel
+../../../third_party/skia/src/gpu/piet/README.md
 ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/vk/BUILD.bazel
 ../../../third_party/skia/src/image/BUILD.bazel
@@ -2809,7 +2803,6 @@
 ../../../third_party/skia/src/pathops/BUILD.bazel
 ../../../third_party/skia/src/pdf/BUILD.bazel
 ../../../third_party/skia/src/ports/BUILD.bazel
-../../../third_party/skia/src/ports/fontations/BUILD.bazel
 ../../../third_party/skia/src/sfnt/BUILD.bazel
 ../../../third_party/skia/src/shaders/BUILD.bazel
 ../../../third_party/skia/src/shaders/gradients/BUILD.bazel
@@ -2841,18 +2834,15 @@
 ../../../third_party/skia/third_party/libjpeg-turbo
 ../../../third_party/skia/third_party/libpng
 ../../../third_party/skia/third_party/lua
-../../../third_party/skia/third_party/vello
+../../../third_party/skia/third_party/piet-gpu/Makefile
 ../../../third_party/skia/third_party/vulkanmemoryallocator/BUILD.bazel
 ../../../third_party/skia/toolchain/BUILD.bazel
-../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/BUILD.bazel
 ../../../third_party/skia/toolchain/clang_layering_check.bzl
 ../../../third_party/skia/toolchain/download_linux_amd64_toolchain.bzl
 ../../../third_party/skia/toolchain/download_mac_toolchain.bzl
-../../../third_party/skia/toolchain/download_ndk_linux_amd64_toolchain.bzl
 ../../../third_party/skia/toolchain/download_toolchains.bzl
 ../../../third_party/skia/toolchain/linux_amd64_toolchain_config.bzl
 ../../../third_party/skia/toolchain/mac_toolchain_config.bzl
-../../../third_party/skia/toolchain/ndk_linux_arm64_toolchain_config.bzl
 ../../../third_party/skia/toolchain/utils.bzl
 ../../../third_party/skia/tools
 ../../../third_party/sqlite/.git
