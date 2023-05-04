@@ -22,7 +22,7 @@ sub-builds to generate artifacts.
 build and test artifacts.
 * **Build** - a builder running with specific properties, repository and
 commit.
-* **[Gn](https://gn.googlesource.com/gn/)** - a meta-build system that
+* **[GN](https://gn.googlesource.com/gn/)** - a meta-build system that
 generates build files for [Ninja](https://ninja-build.org/).
 * **[Ninja](https://ninja-build.org)** - Ninja is a small build system with a
 focus on speed.
