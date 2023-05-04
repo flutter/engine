@@ -23,7 +23,6 @@ Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
   sb.pushOffset(0, 0);
   sb.addPicture(Offset.zero, picture);
   await renderer.renderScene(sb.build());
-  await awaitNextFrame();
 }
 
 /// Returns [true] if this test is running in the CanvasKit renderer.

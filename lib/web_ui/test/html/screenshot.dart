@@ -46,7 +46,6 @@ Future<void> canvasScreenshot(
     }
     sceneElement.append(engineCanvas.rootElement);
     domDocument.body!.append(sceneElement);
-    await awaitNextFrame();
     await matchGoldenFile('$fileName.png',
         region: region);
   } finally {
@@ -64,7 +63,6 @@ Future<void> sceneScreenshot(SurfaceSceneBuilder sceneBuilder, String fileName,
         .build()
         .webOnlyRootElement;
     domDocument.body!.append(sceneElement!);
-    await awaitNextFrame();
     await matchGoldenFile('$fileName.png',
         region: region);
   } finally {

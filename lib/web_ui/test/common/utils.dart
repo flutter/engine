@@ -6,9 +6,3 @@ import 'dart:async';
 import 'dart:js_interop';
 
 import 'package:ui/src/engine.dart';
-
-Future<void> awaitNextFrame() {
-  final Completer<void> completer = Completer<void>();
-  domWindow.requestAnimationFrame((JSNumber time) => completer.complete());
-  return completer.future;
-}
