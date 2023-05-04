@@ -108,9 +108,9 @@
                     "language": "python3",
                     "name": "malioc diff",
                     "parameters": [
-                        "--before",
+                        "--before-relative-to-src",
                         "flutter/impeller/tools/malioc.json",
-                        "--after",
+                        "--after-relative-to-src",
                         "out/android_debug_unopt/gen/malioc",
                         "--print-diff"
                     ],
