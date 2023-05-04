@@ -6,7 +6,9 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/text_sdf_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -280,6 +282,31 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
   // Characters probably have overlap due to low fidelity text metrics, but this
   // could be fixed.
   ASSERT_TRUE(frame_2.MaybeHasOverlapping());
+}
+
+TEST_P(TypographerTest, ValidateSDFFunctions) {
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
+  ASSERT_TRUE(blob);
+
+  auto atlas =
+      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+                                TextFrameFromTextBlob(blob));
+
+  auto pixels =
+      reinterpret_cast<uint8_t*>(atlas_context->GetBitmap()->getPixels());
+  auto atlas_size = atlas_context->GetAtlasSize();
+  ConvertBitmapToSignedDistanceField(pixels, atlas_size.width,
+                                     atlas_size.height);
+  // Validate that there is at least one non-zero pixel.
+  bool non_zero = false;
+  for (auto i = 0u; i < atlas_size.width * atlas_size.height; i++) {
+    non_zero |= pixels[i] != 0u;
+  }
+  ASSERT_TRUE(non_zero);
 }
 
 }  // namespace testing

@@ -10,6 +10,8 @@ impeller_component("typographer") {
     "backends/skia/text_frame_skia.h",
     "backends/skia/text_render_context_skia.cc",
     "backends/skia/text_render_context_skia.h",
+    "backends/skia/text_sdf_atlas.cc",
+    "backends/skia/text_sdf_atlas.h",
     "backends/skia/typeface_skia.cc",
     "backends/skia/typeface_skia.h",
     "font.cc",
