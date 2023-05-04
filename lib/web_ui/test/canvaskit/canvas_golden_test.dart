@@ -29,15 +29,6 @@ void testMain() {
       expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
       expect(notoDownloadQueue.isPending, isFalse);
 
-      // We render some color emojis in this test.
-      final FlutterConfiguration config = FlutterConfiguration()
-        ..setUserConfiguration(
-        js_util.jsify(<String, Object?>{
-          'useColorEmoji': true,
-        }) as JsFlutterConfiguration);
-      debugSetConfiguration(config);
-
-
       FontFallbackData.debugReset();
       notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
     });

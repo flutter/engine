@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_util' as js_util;
+
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
@@ -17,6 +19,15 @@ void setUpUnitTests({
     if (emulateTesterEnvironment) {
       ui.debugEmulateFlutterTesterEnvironment = true;
     }
+
+    // Some of our tests rely on color emoji
+    final engine.FlutterConfiguration config = engine.FlutterConfiguration()
+      ..setUserConfiguration(
+        js_util.jsify(<String, Object?>{
+          'useColorEmoji': true,
+        }) as engine.JsFlutterConfiguration);
+    engine.debugSetConfiguration(config);
+    engine.notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     await engine.initializeEngine(assetManager: fakeAssetManager);

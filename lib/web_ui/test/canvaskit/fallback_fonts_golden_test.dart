@@ -33,14 +33,6 @@ void testMain() {
     ui.PlatformMessageCallback? savedCallback;
 
     setUp(() {
-      // We render some color emojis in this test.
-      final FlutterConfiguration config = FlutterConfiguration()
-        ..setUserConfiguration(
-          js_util.jsify(<String, Object?>{
-            'useColorEmoji': true,
-          }) as JsFlutterConfiguration);
-      debugSetConfiguration(config);
-
       FontFallbackData.debugReset();
       notoDownloadQueue.downloader.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
       savedCallback = ui.window.onPlatformMessage;
