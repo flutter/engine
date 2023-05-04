@@ -138,6 +138,16 @@ def is_mac():
   return sys.platform == 'darwin'
 
 
+def is_aarm64():
+  assert is_mac()
+  output = subprocess.check_output(['sysctl', 'machdep.cpu'])
+  text = output.decode('utf-8')
+  aarm64 = text.find('Apple') >= 0
+  if not aarm64:
+    assert text.find('GenuineIntel') >= 0
+  return aarm64
+
+
 def is_linux():
   return sys.platform.startswith('linux')
 
@@ -467,6 +477,22 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage
     )
+    extra_env = {
+        # pylint: disable=line-too-long
+        # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+        'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
+        'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+            '1',  # Validates accesses to device and constant memory.
+        'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+            '1',  # Validates accesses to threadgroup memory.
+        'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+            '1',  # Validates that texture references are not nil.
+    }
+    if is_aarm64():
+      extra_env.append({
+          'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+          'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
+      })
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
@@ -474,18 +500,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags,
         coverage=coverage,
-        extra_env={
-            # pylint: disable=line-too-long
-            # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-            'MTL_SHADER_VALIDATION':
-                '1',  # Enables all shader validation tests.
-            'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-                '1',  # Validates accesses to device and constant memory.
-            'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-                '1',  # Validates accesses to threadgroup memory.
-            'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-                '1',  # Validates that texture references are not nil.
-        },
+        extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
         # https://github.com/flutter/flutter/issues/114872
         allowed_failure_output=[
@@ -607,12 +622,21 @@ def ensure_ios_tests_are_built(ios_out_dir):
   message.append(
       'gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator'
   )
-  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  message.append('ninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = "%s or %s doesn't exist. Please run the following commands: \n%s" % (
       ios_out_dir, ios_test_lib, '\n'.join(message)
   )
   assert os.path.exists(tmp_out_dir
                        ) and os.path.exists(ios_test_lib), final_message
+
+  ios_test_lib_time = os.path.getmtime(ios_test_lib)
+  flutter_dylib = os.path.join(tmp_out_dir, 'libFlutter.dylib')
+  flutter_dylib_time = os.path.getmtime(flutter_dylib)
+
+  final_message = '%s is older than %s. Please run the following commands: \n%s' % (
+      ios_test_lib, flutter_dylib, '\n'.join(message)
+  )
+  assert flutter_dylib_time <= ios_test_lib_time, final_message
 
 
 def assert_expected_xcode_version():

@@ -67,7 +67,6 @@
 ../../../flutter/flow/layers/offscreen_surface_unittests.cc
 ../../../flutter/flow/layers/opacity_layer_unittests.cc
 ../../../flutter/flow/layers/performance_overlay_layer_unittests.cc
-../../../flutter/flow/layers/physical_shape_layer_unittests.cc
 ../../../flutter/flow/layers/platform_view_layer_unittests.cc
 ../../../flutter/flow/layers/shader_mask_layer_unittests.cc
 ../../../flutter/flow/layers/texture_layer_unittests.cc
@@ -120,6 +119,7 @@
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
 ../../../flutter/impeller/aiks/aiks_unittests.cc
+../../../flutter/impeller/aiks/canvas_unittests.cc
 ../../../flutter/impeller/archivist/archivist_unittests.cc
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/base_unittests.cc
@@ -1988,6 +1988,7 @@
 ../../../third_party/glfw/examples
 ../../../third_party/glfw/src/CMakeLists.txt
 ../../../third_party/glfw/tests
+../../../third_party/google_fonts_for_unit_tests
 ../../../third_party/googletest
 ../../../third_party/gradle
 ../../../third_party/gtest-parallel/.git
