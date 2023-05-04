@@ -19,12 +19,14 @@
 namespace impeller {
 
 PipelineLibraryVK::PipelineLibraryVK(
-    std::weak_ptr<DeviceHolder> device,
+    std::weak_ptr<DeviceHolder> device_holder,
+    const vk::Device* device,
     std::shared_ptr<const Capabilities> caps,
     fml::UniqueFD cache_directory,
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
-    : device_(device),
+    : device_holder_(device_holder),
       pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
+                                                   device_holder,
                                                    device,
                                                    std::move(cache_directory))),
       worker_task_runner_(std::move(worker_task_runner)) {
@@ -225,7 +227,7 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   blend_state.setAttachments(attachment_blend_state);
   pipeline_info.setPColorBlendState(&blend_state);
 
-  std::shared_ptr<DeviceHolder> strong_device = device_.lock();
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
     return nullptr;
   }

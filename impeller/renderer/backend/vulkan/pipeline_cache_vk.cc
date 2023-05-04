@@ -53,13 +53,13 @@ static std::unique_ptr<fml::Mapping> OpenCacheFile(
 }
 
 PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
-                                 std::weak_ptr<DeviceHolder> device,
+                                 std::weak_ptr<DeviceHolder> device_holder,
+                                 const vk::Device* device,
                                  fml::UniqueFD cache_directory)
     : caps_(std::move(caps)),
-      device_(device),
+      device_holder_(device_holder),
       cache_directory_(std::move(cache_directory)) {
-  std::shared_ptr<DeviceHolder> strong_device = device_.lock();
-  if (!caps_ || !strong_device) {
+  if (!caps_ || !device || !*device) {
     return;
   }
 
@@ -81,8 +81,7 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
     cache_info.pInitialData = existing_cache_data->GetMapping();
   }
 
-  auto [result, existing_cache] =
-      strong_device->GetDevice()->createPipelineCacheUnique(cache_info);
+  auto [result, existing_cache] = device->createPipelineCacheUnique(cache_info);
 
   if (result == vk::Result::eSuccess) {
     cache_ = std::move(existing_cache);
@@ -94,8 +93,7 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
                   << vk::to_string(result) << ". Starting with a fresh cache.";
     cache_info.pInitialData = nullptr;
     cache_info.initialDataSize = 0u;
-    auto [result2, new_cache] =
-        strong_device->GetDevice()->createPipelineCacheUnique(cache_info);
+    auto [result2, new_cache] = device->createPipelineCacheUnique(cache_info);
     if (result2 == vk::Result::eSuccess) {
       cache_ = std::move(new_cache);
     } else {
@@ -115,7 +113,7 @@ bool PipelineCacheVK::IsValid() const {
 
 vk::UniquePipeline PipelineCacheVK::CreatePipeline(
     const vk::GraphicsPipelineCreateInfo& info) {
-  std::shared_ptr<DeviceHolder> strong_device = device_.lock();
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
     return {};
   }
@@ -131,7 +129,7 @@ vk::UniquePipeline PipelineCacheVK::CreatePipeline(
 }
 
 std::shared_ptr<fml::Mapping> PipelineCacheVK::CopyPipelineCacheData() const {
-  std::shared_ptr<DeviceHolder> strong_device = device_.lock();
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
     return nullptr;
   }

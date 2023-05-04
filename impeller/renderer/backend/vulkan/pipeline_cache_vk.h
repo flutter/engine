@@ -16,7 +16,8 @@ namespace impeller {
 class PipelineCacheVK {
  public:
   explicit PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
-                           std::weak_ptr<DeviceHolder> device,
+                           std::weak_ptr<DeviceHolder> device_holder,
+                           const vk::Device* device,
                            fml::UniqueFD cache_directory);
 
   ~PipelineCacheVK();
@@ -29,7 +30,7 @@ class PipelineCacheVK {
 
  private:
   const std::shared_ptr<const Capabilities> caps_;
-  std::weak_ptr<DeviceHolder> device_;
+  std::weak_ptr<DeviceHolder> device_holder_;
   const fml::UniqueFD cache_directory_;
   mutable Mutex cache_mutex_;
   vk::UniquePipelineCache cache_ IPLR_GUARDED_BY(cache_mutex_);

@@ -14,4 +14,4 @@ class DeviceHolder {
   virtual const vk::Device* GetDevice() const = 0;
 };
 
-}
+}  // namespace impeller
