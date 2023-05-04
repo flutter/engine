@@ -753,7 +753,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   EXPECT_TRUE(triedToTerminate);
 
   // Once the binding is ready, handle the request.
-  terminationHandler.bindingIsReady = YES;
+  terminationHandler.acceptingRequests = YES;
   triedToTerminate = FALSE;
   calledAfterTerminate = @"";
   nextResponse = @"exit";

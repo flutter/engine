@@ -168,7 +168,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                     terminator:(FlutterTerminationCallback)terminator {
   self = [super init];
-  _bindingIsReady = NO;
+  _acceptingRequests = NO;
   _engine = engine;
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
@@ -206,8 +206,8 @@ constexpr char kTextPlainFormat[] = "text/plain";
                              exitType:(FlutterAppExitType)type
                                result:(nullable FlutterResult)result {
   _shouldTerminate = YES;
-  if (![self bindingIsReady]) {
-    // Until the binding has signaled that it is ready to handle application
+  if (![self acceptingRequests]) {
+    // Until the Dart application has signaled that it is ready to handle
     // termination requests, the app will just terminate when asked.
     type = kFlutterAppExitTypeRequired;
   }
@@ -1038,7 +1038,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
     [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
   } else if ([call.method isEqualToString:@"System.initializationComplete"]) {
-    [self terminationHandler].bindingIsReady = YES;
+    [self terminationHandler].acceptingRequests = YES;
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
