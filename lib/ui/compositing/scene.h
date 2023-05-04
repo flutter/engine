@@ -27,8 +27,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      bool checkerboardOffscreenLayers);
 
   std::unique_ptr<flutter::LayerTree> takeLayerTree(uint64_t width,
-                                                    uint64_t height,
-                                                    float pixel_ratio);
+                                                    uint64_t height);
 
   Dart_Handle toImageSync(uint32_t width,
                           uint32_t height,
@@ -51,31 +50,11 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   void RasterizeToImage(uint32_t width,
                         uint32_t height,
-                        float pixel_ratio,
                         Dart_Handle raw_image_handle);
 
-  std::unique_ptr<LayerTree> BuildLayerTree(uint32_t width,
-                                            uint32_t height,
-                                            float pixel_ratio);
+  std::unique_ptr<LayerTree> BuildLayerTree(uint32_t width, uint32_t height);
 
   flutter::LayerTree::Config layer_tree_config_;
-
-  // Fetches the pixel ratio from view 0, or if the window doesn't exist,
-  // fallback to 2.0f.
-  //
-  // The pixel ratio is used in toImage() and toImageSync(), and its only effect
-  // is to calculate the device's physical dimension, which is used by some
-  // physical shapes (see PhysicalShapeLayer).
-  //
-  // Physical shapes have been deprecated and should be removed soon. This
-  // method aims to keep the legacy behavior in single-window Flutter, which
-  // feeds the toImage and toImageSync with the pixel ratio of the only window.
-  //
-  // TODO(dkwingsmt): If PhysicalShapeLayer has been removed as well as
-  // {Preroll,Paint}Context.frame_device_pixel_ratio, remove this method and its
-  // related logic.
-  // https://github.com/flutter/flutter/issues/125720
-  static float defaultViewPixelRatio();
 };
 
 }  // namespace flutter

@@ -23,8 +23,6 @@
 
 namespace flutter {
 
-static constexpr float kFallbackPixelRatio = 2.0f;
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 void Scene::create(Dart_Handle scene_handle,
@@ -70,8 +68,7 @@ Dart_Handle Scene::toImageSync(uint32_t width,
     return tonic::ToDart("Scene has been disposed.");
   }
 
-  Scene::RasterizeToImage(width, height, defaultViewPixelRatio(),
-                          raw_image_handle);
+  Scene::RasterizeToImage(width, height, raw_image_handle);
   return Dart_Null();
 }
 
@@ -84,9 +81,8 @@ Dart_Handle Scene::toImage(uint32_t width,
     return tonic::ToDart("Scene has been disposed.");
   }
 
-  return Picture::RasterizeLayerTreeToImage(
-      BuildLayerTree(width, height, defaultViewPixelRatio()),
-      raw_image_callback);
+  return Picture::RasterizeLayerTreeToImage(BuildLayerTree(width, height),
+                                            raw_image_callback);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
@@ -114,7 +110,6 @@ static sk_sp<DlImage> CreateDeferredImage(
 
 void Scene::RasterizeToImage(uint32_t width,
                              uint32_t height,
-                             float pixel_ratio,
                              Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
   if (!dart_state) {
@@ -126,35 +121,25 @@ void Scene::RasterizeToImage(uint32_t width,
 
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
-      dart_state->IsImpellerEnabled(),
-      BuildLayerTree(width, height, pixel_ratio), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue));
+      dart_state->IsImpellerEnabled(), BuildLayerTree(width, height),
+      std::move(snapshot_delegate), std::move(raster_task_runner),
+      std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
-                                                         uint64_t height,
-                                                         float pixel_ratio) {
-  return BuildLayerTree(width, height, pixel_ratio);
+                                                         uint64_t height) {
+  return BuildLayerTree(width, height);
 }
 
 std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
-                                                 uint32_t height,
-                                                 float pixel_ratio) {
+                                                 uint32_t height) {
   if (!valid()) {
     return nullptr;
   }
   return std::make_unique<LayerTree>(layer_tree_config_,
-                                     SkISize::Make(width, height), pixel_ratio);
-}
-
-float Scene::defaultViewPixelRatio() {
-  auto window = UIDartState::Current()->platform_configuration()->get_window(0);
-  if (window != nullptr) {
-    return static_cast<float>(window->viewport_metrics().device_pixel_ratio);
-  }
-  return kFallbackPixelRatio;
+                                     SkISize::Make(width, height));
 }
 
 }  // namespace flutter
