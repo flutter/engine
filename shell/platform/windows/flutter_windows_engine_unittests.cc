@@ -830,10 +830,6 @@ TEST_F(FlutterWindowsEngineTest, DoNotRegisterTopLevelHandler) {
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
-    return false;
-  });
-  // Quit should not be called when there is more than one window.
   EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
 
@@ -857,7 +853,6 @@ TEST_F(FlutterWindowsEngineTest, RegisterTopLevelHandler) {
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
     return false;
   });
-  // Quit should not be called when there is more than one window.
   EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
 
