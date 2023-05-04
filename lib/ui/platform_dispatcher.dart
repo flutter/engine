@@ -154,6 +154,18 @@ class PlatformDispatcher {
   /// If any of their configurations change, [onMetricsChanged] will be called.
   ///
   /// To get the display for a [FlutterView], use [FlutterView.display].
+  ///
+  /// Platforms may limit what information is available to the application with
+  /// regard to secondary displays and/or displays that do not have an active
+  /// application window.
+  ///
+  /// Presently, on Android and Web this collection will only contain the
+  /// display that the current window is on. On iOS, it will only contains the
+  /// main display on the phone or tablet. On Desktop, it will contain only
+  /// a main display with a valid refresh rate but invalid size and device
+  /// pixel ratio values.
+  // TODO(dnfield): Update these docs when https://github.com/flutter/flutter/issues/125939
+  // and https://github.com/flutter/flutter/issues/125938 are resolved.
   Iterable<Display> get displays => _displays.values;
   final Map<int, Display> _displays = <int, Display>{};
 
