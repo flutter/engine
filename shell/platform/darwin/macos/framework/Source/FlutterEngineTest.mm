@@ -834,13 +834,10 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
 
   __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
   id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
-  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
-    OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
-        .andDo(^(NSInvocation* invocation) {
-          [invocation setReturnValue:&visibility];
-        });
-  }
-  NSApp = mockApplication;
+  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation setReturnValue:&visibility];
+      });
 
   NSNotification* willBecomeActive =
       [[NSNotification alloc] initWithName:NSApplicationWillBecomeActiveNotification
@@ -852,15 +849,13 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
                                   userInfo:nil];
 
   NSNotification* didChangeOcclusionState;
-  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
-    didChangeOcclusionState =
-        [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
-                                      object:nil
-                                    userInfo:nil];
+  didChangeOcclusionState =
+      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                    object:nil
+                                  userInfo:nil];
 
-    [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-    EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
-  }
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
 
   [engineMock handleWillBecomeActive:willBecomeActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateResumed);
@@ -868,17 +863,17 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
   [engineMock handleWillResignActive:willResignActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
 
-  if ([mockApplication respondsToSelector:@selector(occlusionState)]) {
-    visibility = 0;
-    [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-    EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
-  }
+  visibility = 0;
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
 
   [engineMock handleWillBecomeActive:willBecomeActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
 
   [engineMock handleWillResignActive:willResignActive];
   EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+
+  [mockApplication stopMocking];
 }
 
 }  // namespace flutter::testing
