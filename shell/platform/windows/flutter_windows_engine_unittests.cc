@@ -645,6 +645,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
+  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -681,6 +682,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
+  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -731,6 +733,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
+  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -792,6 +795,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
+  engine->OnServiceBindingsRegistered();
 
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };

@@ -24,6 +24,7 @@ static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
+static constexpr char kRegisterBinding[] = "System.registerBinding";
 
 static constexpr char kExitCodeKey[] = "exitCode";
 
@@ -495,6 +496,9 @@ void PlatformHandler::HandleMethodCall(
     const rapidjson::Value& sound_type = method_call.arguments()[0];
 
     SystemSoundPlay(sound_type.GetString(), std::move(result));
+  } else if (method.compare(kRegisterBinding) == 0) {
+    engine_->OnServiceBindingsRegistered();
+    result->Success();
   } else {
     result->NotImplemented();
   }
