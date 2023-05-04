@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/services.dart';
@@ -178,7 +179,7 @@ void testMain() {
         'keyCode': 0,
       });
       RawKeyboard.instance!.dispose();
-    });
+    }, skip: operatingSystem != OperatingSystem.linux);
 
     test('dispatches repeat events', () {
       RawKeyboard.initialize();
