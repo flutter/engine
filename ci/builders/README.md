@@ -357,9 +357,9 @@ new artifacts combining outputs of multiple sub-builds.
 ### Global Archives
 
 The archives component provides instructions to upload the artifacts generated
-by the global generators. Is a list of dictionaries with two keys: source and
-destination. Source is a path relative to the checkout repository and
-destination is a relative path to &lt;bucket>/flutter/&lt;commit>.
+by the global generators. Is a list of dictionaries with two keys: `source` and
+`destination`. `source` is a path relative to the checkout repository and
+`destination` is a relative path to &lt;bucket>/flutter/&lt;commit>.
 
 ```yaml
 "archives": [
