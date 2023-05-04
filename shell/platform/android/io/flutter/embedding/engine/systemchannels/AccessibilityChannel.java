@@ -67,6 +67,14 @@ public class AccessibilityChannel {
                 }
                 break;
               }
+            case "focus":
+              {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId != null) {
+                  handler.onFocus(nodeId);
+                }
+                break;
+              }
             case "tooltip":
               {
                 String tooltipMessage = (String) data.get("message");
@@ -175,6 +183,9 @@ public class AccessibilityChannel {
 
     /** The user has long pressed on the widget with the given {@code nodeId}. */
     void onLongPress(int nodeId);
+
+    /** Focus on the widget with the given {@code nodeId}. */
+    void onFocus(int nodeId);
 
     /** The user has opened a tooltip. */
     void onTooltip(@NonNull String message);

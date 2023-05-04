@@ -309,6 +309,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
         }
 
+        /** The user has requested focus on the given {@code nodeId}. */
+        @Override
+        public void onFocus(int nodeId) {
+          sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_FOCUSED);
+          rootAccessibilityView.announceForAccessibility("hahaha");
+        }
+
         /** The user has opened a tooltip. */
         @Override
         public void onTooltip(@NonNull String message) {
@@ -655,6 +662,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     result.setClassName("android.view.View");
     result.setSource(rootAccessibilityView, virtualViewId);
     result.setFocusable(semanticsNode.isFocusable());
+    result.setUniqueId(Integer.toString(semanticsNode.id));
     if (inputFocusedSemanticsNode != null) {
       result.setFocused(inputFocusedSemanticsNode.id == virtualViewId);
     }
