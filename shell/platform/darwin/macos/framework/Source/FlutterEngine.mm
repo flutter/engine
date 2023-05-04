@@ -1031,6 +1031,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
     [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+  } else if ([call.method isEqualToString:@"System.registerBinding"]) {
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
