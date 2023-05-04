@@ -69,13 +69,13 @@ class CommandEncoderVK {
   friend class ::impeller::testing::
       BlitCommandVkTest_BlitGenerateMipmapCommandVK_Test;
 
-  vk::Device device_ = {};
+  const vk::UniqueDevice* device_ = nullptr;
   std::shared_ptr<QueueVK> queue_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   bool is_valid_ = false;
 
-  CommandEncoderVK(vk::Device device,
+  CommandEncoderVK(const vk::UniqueDevice* device,
                    const std::shared_ptr<QueueVK>& queue,
                    const std::shared_ptr<CommandPoolVK>& pool,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);

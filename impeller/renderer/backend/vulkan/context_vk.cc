@@ -421,8 +421,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-vk::Device ContextVK::GetDevice() const {
-  return *device_;
+const vk::UniqueDevice* ContextVK::GetDevice() const {
+  return &device_;
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
@@ -489,7 +489,7 @@ std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     return nullptr;
   }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      *device_,                //
+      &device_,                //
       queues_.graphics_queue,  //
       tls_pool,                //
       fence_waiter_            //

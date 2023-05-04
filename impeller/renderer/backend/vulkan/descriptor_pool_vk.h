@@ -26,7 +26,7 @@ namespace impeller {
 ///
 class DescriptorPoolVK {
  public:
-  explicit DescriptorPoolVK(vk::Device device);
+  explicit DescriptorPoolVK(const vk::UniqueDevice* device);
 
   ~DescriptorPoolVK();
 
@@ -34,7 +34,7 @@ class DescriptorPoolVK {
       const vk::DescriptorSetLayout& layout);
 
  private:
-  const vk::Device device_;
+  const vk::UniqueDevice* device_;
   uint32_t pool_size_ = 31u;
   std::queue<vk::UniqueDescriptorPool> pools_;
 

@@ -74,7 +74,7 @@ CommandPoolVK::CommandPoolVK(const ContextVK* context)
 
   pool_info.queueFamilyIndex = context->GetGraphicsQueue()->GetIndex().family;
   pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient;
-  auto pool = context->GetDevice().createCommandPoolUnique(pool_info);
+  auto pool = (*context->GetDevice())->createCommandPoolUnique(pool_info);
   if (pool.result != vk::Result::eSuccess) {
     return;
   }
@@ -113,7 +113,7 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
   alloc_info.commandPool = graphics_pool_.get();
   alloc_info.commandBufferCount = 1u;
   alloc_info.level = vk::CommandBufferLevel::ePrimary;
-  auto [result, buffers] = device_.allocateCommandBuffersUnique(alloc_info);
+  auto [result, buffers] = (*device_)->allocateCommandBuffersUnique(alloc_info);
   if (result != vk::Result::eSuccess) {
     return {};
   }

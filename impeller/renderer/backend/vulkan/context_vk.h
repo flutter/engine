@@ -106,7 +106,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  vk::Device GetDevice() const;
+  const vk::UniqueDevice* GetDevice() const;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 
