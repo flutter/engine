@@ -87,7 +87,6 @@ class RunSuiteStep implements PipelineStep {
 
       // TODO(jacksongardner): Set the default timeout to five minutes when
       // https://github.com/dart-lang/test/issues/2006 is fixed.
-      '--timeout=300s', // Five minute timeout by default.
       '--',
       ..._collectTestPaths(),
     ];
