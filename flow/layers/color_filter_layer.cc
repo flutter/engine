@@ -82,6 +82,16 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
+  // If the color filter modifies transparent black, then when it's applied to
+  // a saveLayer, that layer will extend beyond the paint bounds provided in the
+  // SaveLayerRec (which defines the bounds of the content within the layer, not
+  // the extent of the layer during the restore()). ColorFilterLayer must clip
+  // before the saveLayer in these cases to ensure it doesn't go beyond its
+  // reported paint_bounds().
+  if (filter_ && filter_.affects_transparent_black()) {
+    mutator.applyClipRect(paint_bounds());
+  }
+
   // Now apply the color filter and then try rendering children either from
   // cache or directly.
   mutator.applyColorFilter(paint_bounds(), filter_);
