@@ -622,7 +622,7 @@ def ensure_ios_tests_are_built(ios_out_dir):
   message.append(
       'gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator'
   )
-  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  message.append('ninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = "%s or %s doesn't exist. Please run the following commands: \n%s" % (
       ios_out_dir, ios_test_lib, '\n'.join(message)
   )
