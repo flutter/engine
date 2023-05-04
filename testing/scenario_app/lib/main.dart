@@ -25,7 +25,13 @@ void main() {
     ..scheduleFrame();
 
   final FlutterView view = PlatformDispatcher.instance.implicitView!;
-  assert(view.display.size == view.physicalSize, 'Expected view size ${view.physicalSize} to match the size in ${view.display}');
+  // Asserting that this is greater than zero since this app runs on different
+  // platforms with different sizes. If it is greater than zero, it has been
+  // initialized to some meaningful value at least.
+  assert(
+    view.display.size > Offset.zero,
+    'Expected ${view.display} to be initialized.',
+  );
 
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
