@@ -170,6 +170,11 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
+#ifdef IMPELLER_DEBUG
+  checkerboard_pipelines_[{}] =
+      CreateDefaultPipeline<CheckerboardPipeline>(*context_);
+#endif  // IMPELLER_DEBUG
+
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
   linear_gradient_fill_pipelines_[{}] =
@@ -287,6 +292,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
+  porter_duff_blend_pipelines_[{}] =
+      CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =

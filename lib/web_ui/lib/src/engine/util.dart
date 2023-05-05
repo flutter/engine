@@ -339,20 +339,15 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.bottom >= other.bottom;
 }
 
-/// Converts color to a css compatible attribute value.
-String? colorToCssString(ui.Color? color) {
-  if (color == null) {
-    return null;
+extension CssColor on ui.Color {
+  /// Converts color to a css compatible attribute value.
+  String toCssString() {
+    return colorValueToCssString(value);
   }
-  final int value = color.value;
-  return colorValueToCssString(value);
 }
 
 // Converts a color value (as an int) into a CSS-compatible value.
-String? colorValueToCssString(int? value) {
-  if (value == null) {
-    return null;
-  }
+String colorValueToCssString(int value) {
   if (value == 0xFF000000) {
     return '#000000';
   }
@@ -679,16 +674,21 @@ void setClipPath(DomElement element, String? value) {
   }
 }
 
-void setThemeColor(ui.Color color) {
+void setThemeColor(ui.Color? color) {
   DomHTMLMetaElement? theme =
       domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
-  if (theme == null) {
-    theme = createDomHTMLMetaElement()
-      ..id = 'flutterweb-theme'
-      ..name = 'theme-color';
-    domDocument.head!.append(theme);
+
+  if (color != null) {
+    if (theme == null) {
+      theme = createDomHTMLMetaElement()
+        ..id = 'flutterweb-theme'
+        ..name = 'theme-color';
+      domDocument.head!.append(theme);
+    }
+    theme.content = color.toCssString();
+  } else {
+    theme?.remove();
   }
-  theme.content = colorToCssString(color)!;
 }
 
 bool? _ellipseFeatureDetected;

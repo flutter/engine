@@ -37,6 +37,9 @@ class ContextMTL final : public Context,
   id<MTLDevice> GetMTLDevice() const;
 
   // |Context|
+  std::string DescribeGpuModel() const override;
+
+  // |Context|
   bool IsValid() const override;
 
   // |Context|
@@ -59,6 +62,8 @@ class ContextMTL final : public Context,
 
   // |Context|
   bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
+
+  id<MTLCommandBuffer> CreateMTLCommandBuffer() const;
 
  private:
   id<MTLDevice> device_ = nullptr;

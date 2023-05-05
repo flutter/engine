@@ -22,8 +22,7 @@
                     "flutter",
                     "flutter/sky/packages"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [],
@@ -61,8 +60,7 @@
                         "impeller-vulkan",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -78,7 +76,8 @@
                         "out/host_debug/zip_archives/linux-x64/font-subset.zip",
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip"
-                    ]
+                    ],
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
@@ -118,8 +117,7 @@
                         "dart",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -167,8 +165,7 @@
                         "dart,engine",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -180,7 +177,8 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/host_release/zip_archives/flutter_patched_sdk_product.zip"
-                    ]
+                    ],
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
@@ -225,11 +223,21 @@
                         "dart,engine,benchmarks",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         }
     ],
-    "tests": []
+    "generators": {
+        "tasks": [
+            {
+                "name": "Verify-export-symbols-release-binaries",
+                "parameters": [
+                    "src/out"
+                ],
+                "script": "flutter/testing/symbols/verify_exported.dart",
+                "language": "dart"
+            }
+        ]
+    }
 }

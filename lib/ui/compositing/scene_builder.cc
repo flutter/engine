@@ -16,7 +16,6 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
-#include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
@@ -203,25 +202,6 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
   }
 }
 
-void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
-                                     const CanvasPath* path,
-                                     double elevation,
-                                     int color,
-                                     int shadow_color,
-                                     int clipBehavior,
-                                     const fml::RefPtr<EngineLayer>& oldLayer) {
-  auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
-      static_cast<DlColor>(color), static_cast<DlColor>(shadow_color),
-      static_cast<float>(elevation), path->path(),
-      static_cast<flutter::Clip>(clipBehavior));
-  PushLayer(layer);
-  EngineLayer::MakeRetained(layer_handle, layer);
-
-  if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer().get());
-  }
-}
-
 void SceneBuilder::addRetained(const fml::RefPtr<EngineLayer>& retainedLayer) {
   AddLayer(retainedLayer->Layer());
 }
@@ -243,9 +223,8 @@ void SceneBuilder::addPicture(double dx,
   // been disposed but not collected yet, but the display list is null.
   if (picture->display_list()) {
     auto layer = std::make_unique<flutter::DisplayListLayer>(
-        SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)),
-        UIDartState::CreateGPUObject(picture->display_list()), !!(hints & 1),
-        !!(hints & 2));
+        SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)), picture->display_list(),
+        !!(hints & 1), !!(hints & 2));
     AddLayer(std::move(layer));
   }
 }

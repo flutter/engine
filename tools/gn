@@ -199,12 +199,32 @@ def get_target_cpu(args):
   return 'x64'
 
 
+def buildtools_dir():
+  host_os = get_host_os()
+  host_cpu = get_host_cpu()
+  if host_os == 'win':
+    host_os = 'windows'
+  if host_os == 'mac' and host_cpu == 'arm64':
+    host_cpu = 'x64'
+  return '%s-%s' % (host_os, host_cpu)
+
+
 def setup_goma(args):
   goma_gn_args = {}
 
-  goma_dir = os.environ.get('GOMA_DIR')
-  goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
+  # When running in CI, the recipes use their own goma install, and take
+  # care of starting and stopping the compiler proxy.
+  running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
 
+  # Prefer the goma fetched by gclient if it exists.
+  cipd_goma_dir = os.path.join(SRC_ROOT, 'buildtools', buildtools_dir(), 'goma')
+
+  # Next, if GOMA_DIR is set, use that install.
+  goma_dir = os.environ.get('GOMA_DIR')
+
+  # Finally, look for goma in the install location recommended in our
+  # documentation.
+  goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
   # GOMA has a different default (home) path on gWindows.
   if not os.path.exists(goma_home_dir) and sys.platform.startswith(
       ('cygwin', 'win')):
@@ -214,6 +234,9 @@ def setup_goma(args):
     goma_gn_args['use_goma'] = False
     goma_gn_args['goma_dir'] = None
     print('Disabling GOMA for wasm builds, it is not supported yet.')
+  elif args.goma and not running_on_luci and os.path.exists(cipd_goma_dir):
+    goma_gn_args['use_goma'] = True
+    goma_gn_args['goma_dir'] = cipd_goma_dir
   elif args.goma and goma_dir and os.path.exists(goma_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = goma_dir
@@ -233,7 +256,7 @@ def setup_goma(args):
     goma_gn_args['goma_dir'] = None
 
   if goma_gn_args['use_goma'] and sys.platform == 'darwin':
-    if (os.environ.get('LUCI_CONTEXT') is None or args.xcode_symlinks or
+    if (not running_on_luci or args.xcode_symlinks or
         os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS', '0') == '1'):
       goma_gn_args['create_xcode_symlinks'] = True
 
@@ -279,6 +302,7 @@ def to_gn_args(args):
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
   gn_args['skia_use_legacy_layer_bounds'
          ] = True  # Temporary: See skbug.com/12083, skbug.com/12303.
+  gn_args['skia_use_legacy_colorfilter_imagefilter'] = True  # Temporary staging
   gn_args['skia_use_icu'] = True
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['android_full_debug'
@@ -382,10 +406,6 @@ def to_gn_args(args):
     gn_args['dart_runtime_mode'] = 'release'
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
-
-  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
-  # it doesn't build properly with our gn configuration.
-  gn_args['dart_include_wasm_opt'] = False
 
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
@@ -494,6 +514,10 @@ def to_gn_args(args):
           'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn'
       )
   elif is_host_build(args):
+    # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+    # it doesn't build properly with our gn configuration.
+    gn_args['dart_include_wasm_opt'] = False
+
     # dart_platform_sdk is only defined for host builds, linux arm host builds
     # specify target_os=linux.
     # dart_platform_sdk=True means exclude web-related files, e.g. dart2js,
@@ -580,8 +604,10 @@ def to_gn_args(args):
   # There is a special case for Android on Windows because there we _only_ build
   # gen_snapshot, but the build defines otherwise make it look like the build is
   # for a host Windows build and make GN think we will be building ANGLE.
-  if is_host_build(args) or (args.target_os == 'android' and
-                             get_host_os() == 'win'):
+  # Angle is not used on Mac hosts as there are no tests for the OpenGL backend.
+  if (is_host_build(args) and
+      gn_args['host_os'] != 'mac') or (args.target_os == 'android' and
+                                       get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False
@@ -670,6 +696,35 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_webgpu'] = False
   gn_args['skia_canvaskit_profile_build'] = args.runtime_mode == 'profile'
   gn_args['flutter_prebuilt_dart_sdk'] = True
+
+
+def run_impeller_cmake(args):
+  impeller_cmake_dir = os.path.join('third_party', 'impeller-cmake-example')
+  if not os.path.isdir(os.path.join(SRC_ROOT, impeller_cmake_dir)):
+    print(
+        'The Impeller cmake example directory "{}" does not exist'
+        .format(impeller_cmake_dir)
+    )
+    return 1
+  goma_gn_args = setup_goma(args)
+  goma_dir = goma_gn_args['goma_dir']
+  cmake_cmd = [
+      'python3',
+      os.path.join(SRC_ROOT, 'flutter', 'ci', 'impeller_cmake_build_test.py'),
+      '--path',
+      impeller_cmake_dir,
+      '--cmake',
+  ]
+  if goma_dir is not None:
+    cmake_cmd = cmake_cmd + ['--goma-dir', goma_dir]
+  if args.xcode_symlinks:
+    cmake_cmd = cmake_cmd + ['--xcode-symlinks']
+  try:
+    cmake_call_result = subprocess.call(cmake_cmd, cwd=SRC_ROOT)
+  except subprocess.CalledProcessError as exc:
+    print('Failed to generate cmake files: ', exc.returncode, exc.output)
+    return 1
+  return cmake_call_result
 
 
 def parse_args(args):
@@ -1032,6 +1087,13 @@ def parse_args(args):
       '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
+  parser.add_argument(
+      '--impeller-cmake-example',
+      default=False,
+      action='store_true',
+      help='Do not run GN. Instead configure the Impeller cmake example build.',
+  )
+
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')
   parser.add_argument('--lsan', default=False, action='store_true')
@@ -1083,6 +1145,9 @@ def validate_args(args):
 def main(argv):
   args = parse_args(argv)
   validate_args(args)
+
+  if args.impeller_cmake_example:
+    return run_impeller_cmake(args)
 
   exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
 
