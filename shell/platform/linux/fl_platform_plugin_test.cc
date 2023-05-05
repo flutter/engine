@@ -112,16 +112,18 @@ TEST(FlPlatformPluginTest, ExitApplication) {
 
   g_autoptr(FlPlatformPlugin) plugin = fl_platform_plugin_new(messenger);
   EXPECT_NE(plugin, nullptr);
-
-  g_autoptr(FlValue) args = fl_value_new_map();
-  fl_value_set_string_take(args, "type", fl_value_new_string("cancelable"));
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
-  g_autoptr(GBytes) message = fl_method_codec_encode_method_call(
-      FL_METHOD_CODEC(codec), "System.exitApplication", args, nullptr);
 
   g_autoptr(FlValue) requestArgs = fl_value_new_map();
   fl_value_set_string_take(requestArgs, "type",
                            fl_value_new_string("cancelable"));
+
+  // Indicate that the binding is initialized.
+  g_autoptr(GBytes) init_message = fl_method_codec_encode_method_call(
+      FL_METHOD_CODEC(codec), "System.initializationComplete", nullptr,
+      nullptr);
+  messenger.ReceiveMessage("flutter/platform", init_message);
+
   EXPECT_CALL(messenger,
               fl_binary_messenger_send_on_channel(
                   ::testing::Eq<FlBinaryMessenger*>(messenger),
@@ -129,5 +131,9 @@ TEST(FlPlatformPluginTest, ExitApplication) {
                   MethodCall("System.requestAppExit", FlValueEq(requestArgs)),
                   ::testing::_, ::testing::_, ::testing::_));
 
+  g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "type", fl_value_new_string("cancelable"));
+  g_autoptr(GBytes) message = fl_method_codec_encode_method_call(
+      FL_METHOD_CODEC(codec), "System.exitApplication", args, nullptr);
   messenger.ReceiveMessage("flutter/platform", message);
 }

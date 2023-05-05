@@ -244,6 +244,7 @@ static void request_app_exit(FlPlatformPlugin* self, const char* type) {
   if (!self->app_initialization_complete ||
       g_str_equal(type, kExitTypeRequired)) {
     quit_application();
+    return;
   }
 
   fl_value_set_string_take(args, kExitTypeKey, fl_value_new_string(type));
