@@ -478,8 +478,8 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
     DlPaint dl_paint;
     dl_paint.setColorFilter(&layer_filter);
     expected_builder.Save();
-    expected_builder.ClipRect(child_path.getBounds(), ClipOp::kIntersect,
-                              /*is_aa=*/false);
+    expected_builder.ClipRect(child_path.getBounds(),
+                              DlCanvas::ClipOp::kIntersect, /*is_aa=*/false);
     expected_builder.SaveLayer(&child_path.getBounds(), &dl_paint);
     /* MockLayer::Paint() */ {
       expected_builder.DrawPath(child_path, DlPaint(0xFF000000));
