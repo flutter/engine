@@ -1648,8 +1648,6 @@ ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc +
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_sdf_atlas.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_sdf_atlas.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/font.cc + ../../../flutter/LICENSE
@@ -4245,8 +4243,6 @@ FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.h
-FILE: ../../../flutter/impeller/typographer/backends/skia/text_sdf_atlas.cc
-FILE: ../../../flutter/impeller/typographer/backends/skia/text_sdf_atlas.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h
 FILE: ../../../flutter/impeller/typographer/font.cc
