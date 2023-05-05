@@ -60,6 +60,14 @@ class PlatformViewManager {
     return _contents.containsKey(viewId);
   }
 
+  /// Returns the HTML element created by a registered factory for [viewId].
+  ///
+  /// Throws an [AssertionError] if [viewId] hasn't been rendered before.
+  DomElement getViewById(int viewId) {
+    assert(knowsViewId(viewId), 'No view has been rendered for viewId: $viewId');
+    return _contents[viewId]!.firstElementChild!;
+  }
+
   /// Registers a `factoryFunction` that knows how to render a Platform View of `viewType`.
   ///
   /// `viewType` is selected by the programmer, but it can't be overridden once
@@ -68,8 +76,13 @@ class PlatformViewManager {
   /// `factoryFunction` needs to be a [PlatformViewFactory].
   bool registerFactory(String viewType, Function factoryFunction,
       {bool isVisible = true}) {
-    assert(factoryFunction is PlatformViewFactory ||
-        factoryFunction is ParameterizedPlatformViewFactory);
+    assert(
+      factoryFunction is PlatformViewFactory ||
+          factoryFunction is ParameterizedPlatformViewFactory,
+      'Factory signature is invalid. Expected either '
+      '{$PlatformViewFactory} or {$ParameterizedPlatformViewFactory} '
+      'but got: {${factoryFunction.runtimeType}}',
+    );
 
     if (_factories.containsKey(viewType)) {
       return false;
@@ -119,12 +132,13 @@ class PlatformViewManager {
             ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;
-      late DomElement content;
+      final DomElement content;
 
       if (factoryFunction is ParameterizedPlatformViewFactory) {
         content = factoryFunction(viewId, params: params);
       } else {
-        content = (factoryFunction as PlatformViewFactory).call(viewId);
+        factoryFunction as PlatformViewFactory;
+        content = factoryFunction(viewId);
       }
 
       _ensureContentCorrectlySized(content, viewType);
