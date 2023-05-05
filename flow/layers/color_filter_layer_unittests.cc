@@ -470,8 +470,7 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
   color_filter_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
-  color_filter_layer->Preroll(preroll_context(), SkMatrix::I());
+  color_filter_layer->Preroll(preroll_context());
 
   DisplayListBuilder expected_builder;
   /* ColorFilterLayer::Paint() */ {
