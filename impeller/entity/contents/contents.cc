@@ -45,6 +45,10 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+bool Contents::IsOpaque() const {
+  return false;
+}
+
 Contents::StencilCoverage Contents::GetStencilCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_stencil_coverage) const {
@@ -104,9 +108,6 @@ bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
     return false;
-  }
-  if (Entity::IsBlendModeDestructive(entity.GetBlendMode())) {
-    return true;
   }
 
   auto coverage = GetCoverage(entity);

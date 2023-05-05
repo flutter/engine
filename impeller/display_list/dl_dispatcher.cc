@@ -43,6 +43,10 @@ namespace impeller {
 
 DlDispatcher::DlDispatcher() = default;
 
+DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
+
+DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
+
 DlDispatcher::~DlDispatcher() = default;
 
 static BlendMode ToBlendMode(flutter::DlBlendMode mode) {
@@ -889,7 +893,20 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
-  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  SkRect rect;
+  SkRRect rrect;
+  SkRect oval;
+  if (path.isRect(&rect)) {
+    canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
+  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
+                      rrect.getSimpleRadii().fX, paint_);
+  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
+    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
+                       oval.width() * 0.5, paint_);
+  } else {
+    canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  }
 }
 
 // |flutter::DlOpReceiver|
@@ -1053,7 +1070,24 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  display_list->Dispatch(*this);
+  if (display_list->has_rtree()) {
+    // The canvas remembers the screen-space culling bounds clipped by
+    // the surface and the history of clip calls. DisplayList can cull
+    // the ops based on a rectangle expressed in its "destination bounds"
+    // so we need the canvas to transform those into the current local
+    // coordinate space into which the DisplayList will be rendered.
+    auto cull_bounds = canvas_.GetCurrentLocalCullingBounds();
+    if (cull_bounds.has_value()) {
+      Rect cull_rect = cull_bounds.value();
+      display_list->Dispatch(
+          *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
+                                  cull_rect.GetRight(), cull_rect.GetBottom()));
+    } else {
+      display_list->Dispatch(*this);
+    }
+  } else {
+    display_list->Dispatch(*this);
+  }
 
   // Restore all saved state back to what it was before we interpreted
   // the display_list

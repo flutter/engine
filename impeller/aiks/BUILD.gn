@@ -47,7 +47,10 @@ impeller_component("aiks_playground") {
 
 impeller_component("aiks_unittests") {
   testonly = true
-  sources = [ "aiks_unittests.cc" ]
+  sources = [
+    "aiks_unittests.cc",
+    "canvas_unittests.cc",
+  ]
   deps = [
     ":aiks",
     ":aiks_playground",
@@ -61,7 +64,10 @@ impeller_component("aiks_unittests") {
 impeller_component("aiks_unittests_golden") {
   testonly = true
 
-  defines = [ "IMPELLER_GOLDEN_TESTS" ]
+  defines = [
+    "IMPELLER_GOLDEN_TESTS",
+    "IMPELLER_ENABLE_VALIDATION=1",
+  ]
 
   sources = [ "aiks_unittests.cc" ]
   deps = [
