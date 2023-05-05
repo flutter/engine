@@ -107,7 +107,7 @@ void testMain() {
       );
       throw ArgumentError('Vertices.raw did not throw the expected error.');
     } on ArgumentError catch (e) {
-      expect('$e', '"indices" values must be valid indices in the positions list.');
+      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
     }
     ui.Vertices.raw( // This one does not throw.
       ui.VertexMode.triangles,
