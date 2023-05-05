@@ -6,7 +6,6 @@ package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -31,12 +30,9 @@ public class KeyboardChannel {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (keyboardMethodHandler == null) {
-            Log.v(TAG, "No KeyboardMethodHandler registered, call not forwarded to keyboard API.");
             return;
           }
-          String method = call.method;
-          Log.v(TAG, "Received '" + method + "' message.");
-          switch (method) {
+          switch (call.method) {
             case "getKeyboardState":
               Map<Long, Long> pressedState = new HashMap<>();
               try {
