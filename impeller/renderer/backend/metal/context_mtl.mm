@@ -58,7 +58,8 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-      .SetSupportsCompute(true, DeviceSupportsComputeSubgroups(device))
+      .SetSupportsCompute(true)
+      .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
       .Build();
@@ -286,6 +287,10 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   device_capabilities_ = InferMetalCapabilities(device_, format);
   return true;
+}
+
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
+  return [command_queue_ commandBuffer];
 }
 
 }  // namespace impeller

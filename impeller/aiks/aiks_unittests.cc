@@ -1818,18 +1818,6 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 }
 
-TEST_P(AiksTest, DrawPaintAbsorbsClears) {
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawPaint(
-      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-
-  ASSERT_EQ(picture.pass->GetElementCount(), 0u);
-  ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
-}
-
 TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
   Canvas canvas;
 
@@ -1955,7 +1943,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendColorFilterDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterAndDrawsCorrectly) {
+TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterDrawsCorrectly) {
   Canvas canvas;
 
   canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
@@ -1976,7 +1964,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterAndDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, TranslucentSaveLayerWithColorImageFilterAndDrawsCorrectly) {
+TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
   Canvas canvas;
 
   canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300), {.color = Color::Blue()});
@@ -2060,6 +2048,38 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest,
+       TranslucentSaveLayerWithColorFilterAndImageFilterDrawsCorrectly) {
+  Canvas canvas;
+
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {100, 100}, {});
+
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .image_filter =
+          [](FilterInput::Ref input, const Matrix& effect_transform,
+             bool is_subpass) {
+            return ColorFilterContents::MakeColorMatrix(
+                {std::move(input)}, {.array = {
+                                         1, 0,   0, 0,   0,  //
+                                         0, 1,   0, 0,   0,  //
+                                         0, 0.2, 1, 0,   0,  //
+                                         0, 0,   0, 0.5, 0   //
+                                     }});
+          },
+      .color_filter =
+          [](FilterInput::Ref input) {
+            return ColorFilterContents::MakeBlend(
+                BlendMode::kModulate, {std::move(input)}, Color::Green());
+          },
+  });
+  canvas.DrawImage(image, {100, 500}, {});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 /// This is a regression check for https://github.com/flutter/engine/pull/41129
 /// The entire screen is green if successful. If failing, no frames will render,
 /// or the entire screen will be transparent black.
@@ -2099,6 +2119,47 @@ TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
                       {.color = Color::LightCoral().WithAlpha(0.75),
                        .blend_mode = BlendMode::kLuminosity});
   }
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
+  Canvas canvas;
+  canvas.Scale(Vector2(1.618, 1.618));
+  canvas.DrawCircle(Point(), 10,
+                    {
+                        .color = Color::CornflowerBlue(),
+                        .blend_mode = BlendMode::kSourceOver,
+                    });
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  // Extract the SolidColorSource.
+  Entity entity;
+  std::shared_ptr<SolidColorContents> contents;
+  picture.pass->IterateAllEntities([&e = entity, &contents](Entity& entity) {
+    if (ScalarNearlyEqual(entity.GetTransformation().GetScale().x, 1.618f)) {
+      e = entity;
+      contents =
+          std::static_pointer_cast<SolidColorContents>(entity.GetContents());
+      return false;
+    }
+    return true;
+  });
+
+  ASSERT_TRUE(contents->IsOpaque());
+  ASSERT_EQ(entity.GetBlendMode(), BlendMode::kSource);
+}
+
+TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
+  Canvas canvas;
+
+  canvas.DrawPaint({.color = Color::Red()});
+  // Draw an empty savelayer with a destructive blend mode, which will replace
+  // the entire red screen with fully transparent black, except for the green
+  // circle drawn within the layer.
+  canvas.SaveLayer({.blend_mode = BlendMode::kSource});
+  canvas.DrawCircle({300, 300}, 100, {.color = Color::Green()});
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

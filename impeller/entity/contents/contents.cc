@@ -45,6 +45,10 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+bool Contents::IsOpaque() const {
+  return false;
+}
+
 Contents::StencilCoverage Contents::GetStencilCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_stencil_coverage) const {
@@ -56,14 +60,15 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
   }
 
   auto texture = renderer.MakeSubpass(
-      "Snapshot", ISize::Ceil(coverage->size),
+      label, ISize::Ceil(coverage->size),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
@@ -103,9 +108,6 @@ bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
     return false;
-  }
-  if (Entity::IsBlendModeDestructive(entity.GetBlendMode())) {
-    return true;
   }
 
   auto coverage = GetCoverage(entity);

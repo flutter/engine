@@ -54,7 +54,7 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 14a5294e # xcode 14.0 beta 5
+      xcode: 14e222b
     dimensions:
       mac_model: "Macmini8,1|Macmini9,1"
   windows:
@@ -81,6 +81,7 @@ platform_properties:
 targets:
   - name: Linux Android AOT Engine
     recipe: engine/engine
+    bringup: true
     properties:
       add_recipes_cq: "true"
       build_android_aot: "true"
@@ -90,6 +91,7 @@ targets:
 
   - name: Linux Android Debug Engine
     recipe: engine/engine
+    bringup: true
     properties:
       add_recipes_cq: "true"
       build_android_debug: "true"
@@ -181,6 +183,7 @@ targets:
 
   - name: Linux Host Engine
     recipe: engine/engine
+    bringup: true
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
@@ -243,6 +246,7 @@ targets:
       - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
+    bringup: true
     recipe: engine/engine_arm
     properties:
       add_recipes_cq: "true"
@@ -291,6 +295,14 @@ targets:
       release_build: "true"
       config_name: linux_web_engine
 
+  - name: Linux linux_unopt
+    bringup: true
+    recipe: engine_v2/engine_v2
+    timeout: 60
+    properties:
+      release_build: "true"
+      config_name: linux_unopt
+
   - name: Linux Web Framework tests
     recipe: engine/web_engine_framework
     enabled_branches:
@@ -309,7 +321,7 @@ targets:
       framework: "true"
       no_goma: "true"
       drone_dimensions: >
-        ["device_type=none"]
+        ["device_type=none", "os=Linux"]
       shard: web_tests
       subshards: >-
               ["0", "1", "2", "3", "4", "5", "6", "7_last"]
@@ -333,13 +345,13 @@ targets:
     timeout: 60
 
   - name: Mac Host Engine
+    bringup: true
     recipe: engine/engine
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
-      mac_model: "Macmini8,1"
     timeout: 75
 
   - name: Linux mac_android_aot_engine
@@ -360,7 +372,7 @@ targets:
           {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
       $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
+        { "sdk_version": "14e222b" }
 
   - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
@@ -376,9 +388,9 @@ targets:
       add_recipes_cq: "true"
       runtime_versions: >-
         [
-          "ios-16-0_14a5294e"
+          "ios-16-4_14e222b",
+          "ios-16-2_14c18"
         ]
-      mac_model: "Macmini8,1"
     timeout: 75
 
   - name: Mac Host clang-tidy
@@ -387,7 +399,7 @@ targets:
       cpu: arm64
       lint_host: "true"
       lint_ios: "false"
-    timeout: 75
+    timeout: 120
     runIf:
       - DEPS
       - .ci.yaml
@@ -408,7 +420,7 @@ targets:
       cpu: arm64
       lint_host: "false"
       lint_ios: "true"
-    timeout: 75
+    timeout: 120
     runIf:
       - DEPS
       - .ci.yaml
@@ -439,7 +451,7 @@ targets:
       release_build: "true"
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14a5294e" }
+        { "sdk_version": "14e222b" }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -455,6 +467,7 @@ targets:
       config_name: mac_impeller_cmake_example
 
   - name: Windows Android AOT Engine
+    bringup: true
     recipe: engine/engine
     properties:
       build_android_aot: "true"
@@ -463,6 +476,7 @@ targets:
     timeout: 60
 
   - name: Windows Host Engine
+    bringup: true
     recipe: engine/engine
     timeout: 60
     properties:
