@@ -46,6 +46,7 @@ struct _FlPlatformPlugin {
   FlMethodChannel* channel;
   FlMethodCall* exit_application_method_call;
   GCancellable* cancellable;
+  bool app_initialization_complete;
 };
 
 G_DEFINE_TYPE(FlPlatformPlugin, fl_platform_plugin, G_TYPE_OBJECT)
@@ -245,6 +246,16 @@ static void request_app_exit(FlPlatformPlugin* self, const char* type) {
                                   request_app_exit_response_cb, self);
 }
 
+// Called when the Dart app has finished initialization and is ready to handle
+// requests. For the Flutter framework, this means after the ServicesBinding has
+// been intialized and it sends a System.initializationComplete message.
+static FlMethodResponse* system_intitialization_complete(
+    FlPlatformPlugin* self,
+    FlMethodCall* method_call) {
+  self->app_initialization_complete = TRUE;
+  return nullptr;
+}
+
 // Called when Flutter wants to exit the application.
 static FlMethodResponse* system_exit_application(FlPlatformPlugin* self,
                                                  FlMethodCall* method_call) {
@@ -270,8 +281,10 @@ static FlMethodResponse* system_exit_application(FlPlatformPlugin* self,
   self->exit_application_method_call =
       FL_METHOD_CALL(g_object_ref(method_call));
 
-  // Requested to immediately quit.
-  if (g_str_equal(type, kExitTypeRequired)) {
+  // Requested to immediately quit if the app hasn't yet signaled that it is
+  // ready to handle requests, or if the type of exit requested is "required".
+  if (!self->app_initialization_complete ||
+      g_str_equal(type, kExitTypeRequired)) {
     quit_application();
     g_autoptr(FlValue) exit_result = fl_value_new_map();
     fl_value_set_string_take(exit_result, kExitResponseKey,
@@ -333,6 +346,8 @@ static void method_call_cb(FlMethodChannel* channel,
     response = clipboard_has_strings_async(self, method_call);
   } else if (strcmp(method, kExitApplicationMethod) == 0) {
     response = system_exit_application(self, method_call);
+  } else if (strcmp(method, kInitializationComplete) == 0) {
+    response = system_intitialization_complete(self, method_call);
   } else if (strcmp(method, kPlaySoundMethod) == 0) {
     response = system_sound_play(self, args);
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {

@@ -38,7 +38,9 @@ FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger);
  * @plugin: an #FlPlatformPlugin
  *
  * Request the application exits (i.e. due to the window being requested to be
- * closed).
+ * closed). Will only actually send a request to the framework to ask if it
+ * should exit if the framework has indicated that it is ready to receive
+ * requests.
  */
 void fl_platform_plugin_request_app_exit(FlPlatformPlugin* plugin);
 
