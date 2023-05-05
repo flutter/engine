@@ -237,9 +237,15 @@ static void request_app_exit_response_cb(GObject* object,
   }
 }
 
-// Send a request to Flutter to exit the application.
+// Send a request to Flutter to exit the application, but only if it's ready for
+// a request.
 static void request_app_exit(FlPlatformPlugin* self, const char* type) {
   g_autoptr(FlValue) args = fl_value_new_map();
+  if (!self->app_initialization_complete ||
+      g_str_equal(type, kExitTypeRequired)) {
+    quit_application();
+  }
+
   fl_value_set_string_take(args, kExitTypeKey, fl_value_new_string(type));
   fl_method_channel_invoke_method(self->channel, kRequestAppExitMethod, args,
                                   self->cancellable,
