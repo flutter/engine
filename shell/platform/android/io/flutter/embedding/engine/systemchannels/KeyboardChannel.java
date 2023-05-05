@@ -65,8 +65,8 @@ public class KeyboardChannel {
     /**
      * Returns the keyboard pressed states.
      *
-     * @return A map which keys are physical keyboard key ID and values the corresponding logical
-     *     keyboard key ID.
+     * @return A map whose keys are physical keyboard key IDs and values are the corresponding
+     *     logical keyboard key IDs.
      */
     Map<Long, Long> getKeyboardState();
   }

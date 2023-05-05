@@ -257,8 +257,8 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
   /**
    * Returns an unmodifiable view of the pressed state.
    *
-   * @return A map which keys are physical keyboard key ID and values the corresponding logical
-   *     keyboard key ID.
+   * @return A map whose keys are physical keyboard key IDs and values are the corresponding logical
+   *     keyboard key IDs.
    */
   public Map<Long, Long> getPressedState() {
     KeyEmbedderResponder embedderResponder = (KeyEmbedderResponder) responders[0];

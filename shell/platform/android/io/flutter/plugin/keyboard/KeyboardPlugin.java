@@ -47,8 +47,8 @@ public class KeyboardPlugin implements KeyboardChannel.KeyboardMethodHandler {
   /**
    * Returns the keyboard pressed state.
    *
-   * @return A map which keys are physical keyboard key ID and values the corresponding logical
-   *     keyboard key ID.
+   * @return A map whose keys are physical keyboard key IDs and values are the corresponding logical
+   *     keyboard key IDs.
    */
   @Override
   public Map<Long, Long> getKeyboardState() {
