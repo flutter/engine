@@ -66,6 +66,60 @@ void testMain() {
         .draw(builder.build().layerTree);
     await matchGoldenFile('canvaskit_vertices_antialiased.png', region: region);
   }, skip: isSafari);
+
+  test('Vertices checks', () {
+    try {
+      ui.Vertices(
+        ui.VertexMode.triangles,
+        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+        indices: Uint16List.fromList(const <int>[0, 2, 5]),
+      );
+      throw 'Vertices did not throw the expected error.';
+    } on ArgumentError catch (e) {
+      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
+    }
+    ui.Vertices( // This one does not throw.
+      ui.VertexMode.triangles,
+      const <ui.Offset>[ui.Offset.zero],
+    ).dispose();
+    ui.Vertices( // This one should not throw.
+      ui.VertexMode.triangles,
+      const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+      indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]), // Uint16List implements List<int> so this is ok.
+    ).dispose();
+  });
+
+  test('Vertices.raw checks', () {
+    try {
+      ui.Vertices.raw(
+        ui.VertexMode.triangles,
+        Float32List.fromList(const <double>[0.0]),
+      );
+      throw 'Vertices.raw did not throw the expected error.';
+    } on ArgumentError catch (e) {
+      expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
+    }
+    try {
+      ui.Vertices.raw(
+        ui.VertexMode.triangles,
+        Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        indices: Uint16List.fromList(const <int>[0, 2, 5]),
+      );
+      throw 'Vertices.raw did not throw the expected error.';
+    } on ArgumentError catch (e) {
+      expect('$e', '"indices" values must be valid indices in the positions list.');
+    }
+    ui.Vertices.raw( // This one does not throw.
+      ui.VertexMode.triangles,
+      Float32List.fromList(const <double>[0.0, 0.0]),
+    ).dispose();
+    ui.Vertices.raw( // This one should not throw.
+      ui.VertexMode.triangles,
+      Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+      indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]),
+    ).dispose();
+  });
+
 }
 
 CkVertices _testVertices() {
