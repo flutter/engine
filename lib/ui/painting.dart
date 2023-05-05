@@ -4714,8 +4714,10 @@ class Vertices extends NativeFieldWrapperClass1 {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
     if (indices != null) {
+      final int halfPositions = positions.length>>1;  // len/2 - we already checked that positions.length is even
       for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] * 2 >= positions.length) {
+        // we need to check that `indices[index] * 2 >= positions.length`, so do it without multiplying
+        if (indices[index] >= halfPositions) {
           throw ArgumentError(
             '"indices" values must be valid indices in the positions list '
             '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
