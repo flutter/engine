@@ -18,7 +18,7 @@
         "--unoptimized",
         "--prebuilt-dart-sdk"
     ],
-    "name": "host_debug",
+    "name": "host_debug_unopt",
     "ninja": {
         "config": "host_debug_unopt"
     },
