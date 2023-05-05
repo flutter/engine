@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -117,7 +118,7 @@ public class FlutterEngineGroup {
   public FlutterEngine createAndRunEngine(
       @NonNull Context context,
       @Nullable DartEntrypoint dartEntrypoint,
-      @Nullable String initialRoute) {
+      @Nullable Uri initialRoute) {
     return createAndRunEngine(
         new Options(context).setDartEntrypoint(dartEntrypoint).setInitialRoute(initialRoute));
   }
@@ -141,7 +142,7 @@ public class FlutterEngineGroup {
 
     Context context = options.getContext();
     DartEntrypoint dartEntrypoint = options.getDartEntrypoint();
-    String initialRoute = options.getInitialRoute();
+    Uri initialRoute = options.getInitialRoute();
     List<String> dartEntrypointArgs = options.getDartEntrypointArgs();
     PlatformViewsController platformViewsController = options.getPlatformViewsController();
     platformViewsController =
@@ -218,7 +219,7 @@ public class FlutterEngineGroup {
   public static class Options {
     @NonNull private Context context;
     @Nullable private DartEntrypoint dartEntrypoint;
-    @Nullable private String initialRoute;
+    @Nullable private Uri initialRoute;
     @Nullable private List<String> dartEntrypointArgs;
     @NonNull private PlatformViewsController platformViewsController;
     private boolean automaticallyRegisterPlugins = true;
@@ -245,7 +246,7 @@ public class FlutterEngineGroup {
      * The name of the initial Flutter `Navigator` `Route` to load. If this is null, it will default
      * to the "/" route.
      */
-    public String getInitialRoute() {
+    public Uri getInitialRoute() {
       return initialRoute;
     }
 
@@ -294,7 +295,7 @@ public class FlutterEngineGroup {
      * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
      *     null, it will default to the "/" route.
      */
-    public Options setInitialRoute(String initialRoute) {
+    public Options setInitialRoute(Uri initialRoute) {
       this.initialRoute = initialRoute;
       return this;
     }

@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
@@ -35,20 +36,15 @@ public class NavigationChannel {
         }
       };
 
-  public void setInitialRoute(@NonNull String initialRoute) {
+  public void setInitialRoute(@NonNull Uri initialRoute) {
     Log.v(TAG, "Sending message to set initial route to '" + initialRoute + "'");
-    channel.invokeMethod("setInitialRoute", initialRoute);
+    channel.invokeMethod("setInitialRoute", initialRoute.toString());
   }
 
-  public void pushRoute(@NonNull String route) {
-    Log.v(TAG, "Sending message to push route '" + route + "'");
-    channel.invokeMethod("pushRoute", route);
-  }
-
-  public void pushRouteInformation(@NonNull String route) {
+  public void pushRouteInformation(@NonNull Uri route) {
     Log.v(TAG, "Sending message to push route information '" + route + "'");
     Map<String, String> message = new HashMap<>();
-    message.put("location", route);
+    message.put("location", route.toString());
     channel.invokeMethod("pushRouteInformation", message);
   }
 

@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.ColorSpace;
 import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
 import android.util.Size;
@@ -429,7 +430,7 @@ public class FlutterJNI {
   public FlutterJNI spawn(
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
-      @Nullable String initialRoute,
+      @Nullable Uri initialRoute,
       @Nullable List<String> entrypointArgs) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
@@ -438,7 +439,7 @@ public class FlutterJNI {
             nativeShellHolderId,
             entrypointFunctionName,
             pathToEntrypointFunction,
-            initialRoute,
+            initialRoute.toString(),
             entrypointArgs);
     Preconditions.checkState(
         spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId != 0,
@@ -461,7 +462,7 @@ public class FlutterJNI {
    * <p>This method must not be invoked if {@code FlutterJNI} is not already attached to native.
    *
    * <p>Invoking this method will result in the release of all native-side resources that were set
-   * up during {@link #attachToNative()} or {@link #spawn(String, String, String, List)}, or
+   * up during {@link #attachToNative()} or {@link #spawn(String, String, Uri, List)}, or
    * accumulated thereafter.
    *
    * <p>It is permissible to re-attach this instance to native after detaching it from native.

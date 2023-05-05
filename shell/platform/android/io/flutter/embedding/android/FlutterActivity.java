@@ -32,6 +32,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -1149,16 +1150,16 @@ public class FlutterActivity extends Activity
    * <p>If this method returns null and the {@code shouldHandleDeeplinking} returns true, the
    * initial route is derived from the {@code Intent} through the Intent.getData() instead.
    */
-  public String getInitialRoute() {
+  public Uri getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
-      return getIntent().getStringExtra(EXTRA_INITIAL_ROUTE);
+      return Uri.parse(getIntent().getStringExtra(EXTRA_INITIAL_ROUTE));
     }
 
     try {
       Bundle metaData = getMetaData();
       String desiredInitialRoute =
           metaData != null ? metaData.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
-      return desiredInitialRoute;
+      return desiredInitialRoute == null ? null : Uri.parse(desiredInitialRoute);
     } catch (PackageManager.NameNotFoundException e) {
       return null;
     }

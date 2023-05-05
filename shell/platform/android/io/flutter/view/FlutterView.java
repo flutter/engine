@@ -14,6 +14,7 @@ import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.text.format.DateFormat;
@@ -356,12 +357,8 @@ public class FlutterView extends SurfaceView
     getHolder().setFormat(PixelFormat.OPAQUE);
   }
 
-  public void setInitialRoute(String route) {
+  public void setInitialRoute(Uri route) {
     navigationChannel.setInitialRoute(route);
-  }
-
-  public void pushRoute(String route) {
-    navigationChannel.pushRoute(route);
   }
 
   public void popRoute() {

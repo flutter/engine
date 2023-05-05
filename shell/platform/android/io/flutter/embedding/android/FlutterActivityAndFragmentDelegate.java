@@ -235,11 +235,11 @@ import java.util.List;
     DartExecutor.DartEntrypoint dartEntrypoint =
         new DartExecutor.DartEntrypoint(
             appBundlePathOverride, host.getDartEntrypointFunctionName());
-    String initialRoute = host.getInitialRoute();
+    Uri initialRoute = host.getInitialRoute();
     if (initialRoute == null) {
       initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
       if (initialRoute == null) {
-        initialRoute = DEFAULT_INITIAL_ROUTE;
+        initialRoute = Uri.parse(DEFAULT_INITIAL_ROUTE);
       }
     }
     return options
@@ -484,11 +484,11 @@ import java.util.List;
       // So this is expected behavior in many cases.
       return;
     }
-    String initialRoute = host.getInitialRoute();
+    Uri initialRoute = host.getInitialRoute();
     if (initialRoute == null) {
       initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
       if (initialRoute == null) {
-        initialRoute = DEFAULT_INITIAL_ROUTE;
+        initialRoute = Uri.parse(DEFAULT_INITIAL_ROUTE);
       }
     }
     @Nullable String libraryUri = host.getDartEntrypointLibraryUri();
@@ -521,21 +521,9 @@ import java.util.List;
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint, host.getDartEntrypointArgs());
   }
 
-  private String maybeGetInitialRouteFromIntent(Intent intent) {
+  private Uri maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
-      Uri data = intent.getData();
-      if (data != null) {
-        String fullRoute = data.getPath();
-        if (fullRoute != null && !fullRoute.isEmpty()) {
-          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-            fullRoute += "?" + data.getQuery();
-          }
-          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-            fullRoute += "#" + data.getFragment();
-          }
-          return fullRoute;
-        }
-      }
+      return intent.getData();
     }
     return null;
   }
@@ -845,8 +833,8 @@ import java.util.List;
           TAG,
           "Forwarding onNewIntent() to FlutterEngine and sending pushRouteInformation message.");
       flutterEngine.getActivityControlSurface().onNewIntent(intent);
-      String initialRoute = maybeGetInitialRouteFromIntent(intent);
-      if (initialRoute != null && !initialRoute.isEmpty()) {
+      Uri initialRoute = maybeGetInitialRouteFromIntent(intent);
+      if (initialRoute != null) {
         flutterEngine.getNavigationChannel().pushRouteInformation(initialRoute);
       }
     } else {
@@ -1049,7 +1037,7 @@ import java.util.List;
 
     /** Returns the initial route that Flutter renders. */
     @Nullable
-    String getInitialRoute();
+    Uri getInitialRoute();
 
     /**
      * Returns the {@link RenderMode} used by the {@link FlutterView} that displays the {@link

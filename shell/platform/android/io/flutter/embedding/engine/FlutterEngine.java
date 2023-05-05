@@ -7,6 +7,7 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -415,7 +416,7 @@ public class FlutterEngine {
   /*package*/ FlutterEngine spawn(
       @NonNull Context context,
       @NonNull DartEntrypoint dartEntrypoint,
-      @Nullable String initialRoute,
+      @Nullable Uri initialRoute,
       @Nullable List<String> dartEntrypointArgs,
       @Nullable PlatformViewsController platformViewsController,
       boolean automaticallyRegisterPlugins,

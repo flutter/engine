@@ -810,13 +810,13 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(ctx);
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route?query=test"));
+    Uri expected = Uri.parse("http://myApp/custom/route?query=test");
+    when(mockIntent.getData()).thenReturn(expected);
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route?query=test");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -830,16 +830,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(ctx);
 
     Intent mockIntent = mock(Intent.class);
-
+    Uri expected = Uri.parse("mailto:test@test.com");
     // mailto: URIs are non-hierarchical
-    when(mockIntent.getData()).thenReturn(Uri.parse("mailto:test@test.com"));
+    when(mockIntent.getData()).thenReturn(expected);
 
     // Emulate the host and call the method
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was not given a push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(0))
-        .pushRouteInformation("mailto:test@test.com");
+    verify(mockFlutterEngine.getNavigationChannel(), times(0)).pushRouteInformation(expected);
   }
 
   @Test
@@ -852,15 +851,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
 
+    Uri expected = Uri.parse("http://myApp/custom/route?query=test#fragment");
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData())
-        .thenReturn(Uri.parse("http://myApp/custom/route?query=test#fragment"));
+    when(mockIntent.getData()).thenReturn(expected);
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route?query=test#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -873,14 +871,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
 
+    Uri expected = Uri.parse("http://myApp/custom/route#fragment");
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route#fragment"));
+    when(mockIntent.getData()).thenReturn(expected);
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -893,14 +891,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
 
+    Uri expected = Uri.parse("http://myApp/custom/route");
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test

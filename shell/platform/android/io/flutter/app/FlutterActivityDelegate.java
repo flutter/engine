@@ -17,6 +17,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -356,7 +357,7 @@ public final class FlutterActivityDelegate
   private boolean loadIntent(Intent intent) {
     String action = intent.getAction();
     if (Intent.ACTION_RUN.equals(action)) {
-      String route = intent.getStringExtra("route");
+      Uri route = Uri.parse(intent.getStringExtra("route"));
       String appBundlePath = intent.getDataString();
       if (appBundlePath == null) {
         // Fall back to the installation path if no bundle path was specified.
