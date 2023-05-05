@@ -946,7 +946,7 @@ class PlatformDispatcher {
     return _initialLifecycleState;
   }
 
-  String _initialLifecycleState = 'AppLifecycleState.detached';
+  late String _initialLifecycleState;
 
   /// Tracks if the initial state has been accessed. Once accessed, we will stop
   /// updating the [initialLifecycleState], as it is not the preferred way to

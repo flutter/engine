@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h"
 
 #include <AppKit/AppKit.h>
 #include <AppKit/NSApplication.h>
@@ -77,18 +76,6 @@
 
 static BOOL IsPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
-}
-
-- (BOOL)hasDelegateThatRespondsToSelector:(SEL)selector {
-  for (NSObject<FlutterAppLifecycleDelegate>* delegate in [_delegates allObjects]) {
-    if (!delegate) {
-      continue;
-    }
-    if ([delegate respondsToSelector:selector]) {
-      return YES;
-    }
-  }
-  return NO;
 }
 
 - (void)addDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {

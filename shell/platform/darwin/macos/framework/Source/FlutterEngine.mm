@@ -444,7 +444,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
   FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
+      reinterpret_cast<FlutterAppDelegate*>([[NSApplication sharedApplication] delegate]);
   [appDelegate addApplicationLifecycleDelegate:self];
 
   return self;
@@ -452,7 +452,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)dealloc {
   FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
+      reinterpret_cast<FlutterAppDelegate*>([[NSApplication sharedApplication] delegate]);
   if (appDelegate != nil) {
     [appDelegate removeApplicationLifecycleDelegate:self];
   }
