@@ -84,6 +84,15 @@ static bool CommonRender(
     std::shared_ptr<GlyphAtlas>
         atlas,  // NOLINT(performance-unnecessary-value-param)
     Command& cmd) {
+  using VS = GlyphAtlasPipeline::VertexShader;
+  using FS = GlyphAtlasPipeline::FragmentShader;
+
+  // Common vertex uniforms for all glyphs.
+  VS::FrameInfo frame_info;
+
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+
   SamplerDescriptor sampler_desc;
   if (entity.GetTransformation().IsTranslationScaleOnly()) {
     sampler_desc.min_filter = MinMagFilter::kNearest;
@@ -99,12 +108,6 @@ static bool CommonRender(
   }
   sampler_desc.mip_filter = MipFilter::kNearest;
 
-  using VS = GlyphAtlasPipeline::VertexShader;
-  using FS = GlyphAtlasPipeline::FragmentShader;
-
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());
