@@ -19,7 +19,7 @@
 namespace impeller {
 
 PipelineLibraryVK::PipelineLibraryVK(
-    std::weak_ptr<DeviceHolder> device_holder,
+    const std::weak_ptr<DeviceHolder>& device_holder,
     const vk::Device* device,
     std::shared_ptr<const Capabilities> caps,
     fml::UniqueFD cache_directory,
