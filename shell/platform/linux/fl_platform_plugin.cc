@@ -338,7 +338,7 @@ static void method_call_cb(FlMethodChannel* channel,
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
   } else if (strcmp(method, kEnableApplicationLifecycleMethod) == 0) {
-    // TODO: Handle this message to enable exit message listening.
+    // TODO(gspencergoog): Handle this message to enable exit message listening.
     // https://github.com/flutter/flutter/issues/126033
     response =
         FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_null()));
