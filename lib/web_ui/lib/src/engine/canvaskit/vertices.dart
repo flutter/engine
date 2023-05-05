@@ -55,8 +55,11 @@ class CkVertices implements ui.Vertices {
     if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
     }
+    // see ui.Vertices.raw() - all indices must be <(positions.length/2) because they refer to
+    // pairs in the positions array.
+    final halfPositions = positions.length>>1;
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length)) {
+        indices.any((int i) => i < 0 || i >= halfPositions)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
     }
