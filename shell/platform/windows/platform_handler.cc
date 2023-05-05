@@ -24,7 +24,7 @@ static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
 static constexpr char kEnableApplicationLifecycleMethod[] =
-    "System.enableApplicationLifecycle";
+    "System.initializationComplete";
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 
 static constexpr char kExitCodeKey[] = "exitCode";
