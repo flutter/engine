@@ -1032,6 +1032,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
     [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
   } else if ([call.method isEqualToString:@"System.enableApplicationLifecycle"]) {
+    // TODO: Handle this message to enable exit message listening.
+    // https://github.com/flutter/flutter/issues/126033
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);

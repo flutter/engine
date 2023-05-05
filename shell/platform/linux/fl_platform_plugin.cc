@@ -20,7 +20,7 @@ static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kClipboardHasStringsMethod[] = "Clipboard.hasStrings";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
-static constexpr char kRegisterBindingMethod[] =
+static constexpr char kEnableApplicationLifecycleMethod[] =
     "System.enableApplicationLifecycle";
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 static constexpr char kSystemNavigatorPopMethod[] = "SystemNavigator.pop";
@@ -338,6 +338,8 @@ static void method_call_cb(FlMethodChannel* channel,
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
   } else if (strcmp(method, kRegisterBindingMethod) == 0) {
+    // TODO: Handle this message to enable exit message listening.
+    // https://github.com/flutter/flutter/issues/126033
     response =
         FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_null()));
   } else {
