@@ -201,13 +201,13 @@ static bool CommonRender(
         vtx.has_color =
             glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
 
-        vertex_builder.AppendVertex(std::move(vtx));
+        vertex_builder.AppendVertex(vtx);
       }
     }
   }
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer());
-  cmd.BindVertices(std::move(vertex_buffer));
+  cmd.BindVertices(vertex_buffer);
 
   if (!pass.AddCommand(cmd)) {
     return false;
