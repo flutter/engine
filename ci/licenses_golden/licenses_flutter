@@ -2463,7 +2463,6 @@ ORIGIN: ../../../flutter/shell/platform/common/accessibility_bridge.cc + ../../.
 ORIGIN: ../../../flutter/shell/platform/common/accessibility_bridge.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/alert_platform_node_delegate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/alert_platform_node_delegate.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/common/application_lifecycle.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/application_lifecycle.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/client_wrapper/byte_buffer_streams.h + ../../../flutter/LICENSE
@@ -2696,7 +2695,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApp
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegateTest.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h + ../../../flutter/LICENSE
@@ -5136,7 +5134,6 @@ FILE: ../../../flutter/shell/platform/common/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/common/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/common/alert_platform_node_delegate.cc
 FILE: ../../../flutter/shell/platform/common/alert_platform_node_delegate.h
-FILE: ../../../flutter/shell/platform/common/application_lifecycle.cc
 FILE: ../../../flutter/shell/platform/common/application_lifecycle.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/byte_buffer_streams.h
@@ -5372,7 +5369,6 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDe
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegateTest.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
