@@ -74,7 +74,7 @@ void testMain() {
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw 'Vertices did not throw the expected error.';
+      throw ArgumentError('Vertices did not throw the expected error.');
     } on ArgumentError catch (e) {
       expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
     }
@@ -95,7 +95,7 @@ void testMain() {
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw 'Vertices.raw did not throw the expected error.';
+      throw ArgumentError('Vertices.raw did not throw the expected error.');
     } on ArgumentError catch (e) {
       expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
     }
@@ -105,7 +105,7 @@ void testMain() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw 'Vertices.raw did not throw the expected error.';
+      throw ArgumentError('Vertices.raw did not throw the expected error.');
     } on ArgumentError catch (e) {
       expect('$e', '"indices" values must be valid indices in the positions list.');
     }
