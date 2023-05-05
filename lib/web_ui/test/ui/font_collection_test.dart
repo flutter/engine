@@ -153,4 +153,33 @@ Future<void> testMain() async {
       expect(result.fontFailures[invalidFontUrl], isA<FontInvalidDataError>());
     }
   });
+
+  test('Font manifest with numeric and string descriptor values parses correctly', () async {
+    testScope.setAsset('FontManifest.json', stringAsUtf8Data(r'''
+[
+  {
+    "family": "FakeFont",
+    "fonts": [
+      {
+        "asset": "fonts/FakeFont.ttf",
+        "style": "italic",
+        "weight": 400
+      }
+    ]
+  }
+]
+'''));
+    final FontManifest manifest = await fetchFontManifest(fakeAssetManager);
+    expect(manifest.families.length, 1);
+
+    final FontFamily family = manifest.families.single;
+    expect(family.name, 'FakeFont');
+    expect(family.fontAssets.length, 1);
+
+    final FontAsset fontAsset = family.fontAssets.single;
+    expect(fontAsset.asset, 'fonts/FakeFont.ttf');
+    expect(fontAsset.descriptors.length, 2);
+    expect(fontAsset.descriptors['style'], 'italic');
+    expect(fontAsset.descriptors['weight'], '400');
+  });
 }

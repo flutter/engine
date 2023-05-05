@@ -64,7 +64,8 @@ Future<FontManifest> fetchFontManifest(AssetManager assetManager) async {
           if (descriptor.key == 'asset') {
             asset = descriptor.value as String;
           } else {
-            descriptors[descriptor.key] = descriptor.value as String;
+            // Sometimes these descriptors are strings, and sometimes numbers, so we stringify them here.
+            descriptors[descriptor.key] = '${descriptor.value}';
           }
         }
         if (asset == null) {
