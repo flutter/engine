@@ -255,7 +255,7 @@ static void request_app_exit(FlPlatformPlugin* self, const char* type) {
 
 // Called when the Dart app has finished initialization and is ready to handle
 // requests. For the Flutter framework, this means after the ServicesBinding has
-// been intialized and it sends a System.initializationComplete message.
+// been initialized and it sends a System.initializationComplete message.
 static FlMethodResponse* system_intitialization_complete(
     FlPlatformPlugin* self,
     FlMethodCall* method_call) {
