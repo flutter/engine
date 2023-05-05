@@ -337,7 +337,7 @@ static void method_call_cb(FlMethodChannel* channel,
     response = system_sound_play(self, args);
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
-  } else if (strcmp(method, kRegisterBindingMethod) == 0) {
+  } else if (strcmp(method, kEnableApplicationLifecycleMethod) == 0) {
     // TODO: Handle this message to enable exit message listening.
     // https://github.com/flutter/flutter/issues/126033
     response =
