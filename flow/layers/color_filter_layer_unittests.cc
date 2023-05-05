@@ -469,7 +469,6 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
       std::make_shared<DlMatrixColorFilter>(matrix));
   color_filter_layer->Add(mock_layer);
 
-  PrerollContext* context = preroll_context();
   color_filter_layer->Preroll(preroll_context());
 
   DisplayListBuilder expected_builder;
