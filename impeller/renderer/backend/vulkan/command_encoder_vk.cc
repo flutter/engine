@@ -157,10 +157,12 @@ bool CommandEncoderVK::Submit() {
     return false;
   }
 
-  return fence_waiter_->AddFence(
-      std::move(fence), [tracked_objects = std::move(tracked_objects_)] {
-        // Nothing to do, we just drop the tracked objects on the floor.
-      });
+  return fence_waiter_->AddFence(std::move(fence),
+                                 [tracked_objects = std::move(tracked_objects_),
+                                  strong_device = std::move(strong_device)] {
+                                   // Nothing to do, we just drop the tracked
+                                   // objects on the floor.
+                                 });
 }
 
 vk::CommandBuffer CommandEncoderVK::GetCommandBuffer() const {
