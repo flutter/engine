@@ -23,25 +23,6 @@ Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
   await renderer.renderScene(sb.build());
 }
 
-Future<void> waitForFallbackFontsToStabilize() async {
-  if (!isCanvasKit) {
-    return;
-  }
-
-  // Fallback fonts start downloading as a post-frame callback.
-  CanvasKitRenderer.instance.rasterizer.debugRunPostFrameCallbacks();
-  // Font downloading begins asynchronously so we inject a timer before checking the download queue.
-  await Future<void>.delayed(Duration.zero);
-  while (notoDownloadQueue.isPending ||
-      notoDownloadQueue.downloader.debugActiveDownloadCount > 0) {
-    await notoDownloadQueue.debugWhenIdle();
-    await notoDownloadQueue.downloader.debugWhenIdle();
-    CanvasKitRenderer.instance.rasterizer.debugRunPostFrameCallbacks();
-    // Dummy timer for the same reason as above.
-    await Future<void>.delayed(Duration.zero);
-  }
-}
-
 /// Returns [true] if this test is running in the CanvasKit renderer.
 bool get isCanvasKit => renderer is CanvasKitRenderer;
 

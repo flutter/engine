@@ -25,6 +25,10 @@ class SkwasmFontCollection implements FlutterFontCollection {
   FontCollectionHandle handle;
 
   @override
+  late final FontFallbackManager fontFallbackManager =
+    FontFallbackManager(SkwasmFallbackRegistry(this));
+
+  @override
   void clear() {
     fontCollectionDispose(handle);
     handle = fontCollectionCreate();
@@ -104,6 +108,28 @@ class SkwasmFontCollection implements FlutterFontCollection {
     return null;
   }
 
+  Future<bool> loadFontFromUrl(String familyName, String url) async {
+    final HttpFetchResponse response = await httpFetch(url);
+    int length = 0;
+    final List<JSUint8Array1> chunks = <JSUint8Array1>[];
+    await response.read((JSUint8Array1 chunk) {
+      length += chunk.length.toDart.toInt();
+      chunks.add(chunk);
+    });
+    final SkDataHandle fontData = skDataCreate(length);
+    int dataAddress = skDataGetPointer(fontData).cast<Int8>().address;
+    final JSUint8Array1 wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
+    for (final JSUint8Array1 chunk in chunks) {
+      wasmMemory.set(chunk, dataAddress.toJS);
+      dataAddress += chunk.length.toDart.toInt();
+    }
+    final SkStringHandle familyNameHandle = skStringFromDartString(familyName);
+    final bool result = fontCollectionRegisterFont(handle, fontData, familyNameHandle);
+    skStringFree(familyNameHandle);
+    skDataDispose(fontData);
+    return result;
+  }
+
   @override
   Future<bool> loadFontFromList(Uint8List list, {String? fontFamily}) async {
     final SkDataHandle dataHandle = skDataCreate(list.length);
@@ -121,5 +147,30 @@ class SkwasmFontCollection implements FlutterFontCollection {
     }
     skDataDispose(dataHandle);
     return success;
+  }
+  
+  @override
+  void debugResetFallbackFonts() {
+    // TODO: implement debugResetFallbackFonts
+  }
+}
+
+class SkwasmFallbackRegistry implements FallbackFontRegistry {
+  SkwasmFallbackRegistry(this.fontCollection);
+
+  final SkwasmFontCollection fontCollection;
+  @override
+  List<int> getMissingCodePoints(List<int> codePoints, List<String> fontFamilies) {
+    // TODO: implement getMissingCodePoints
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> loadFallbackFont(String familyName, String url) =>
+    fontCollection.loadFontFromUrl(familyName, url);
+
+  @override
+  void updateFallbackFontFamilies(List<String> families) {
+    // TODO: implement updateFallbackFontFamilies
   }
 }

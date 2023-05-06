@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -539,7 +540,7 @@ Future<void> testTextStyle(
 
   // Render once to trigger font downloads.
   renderPicture();
-  await waitForFallbackFontsToStabilize();
+  await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();
   final ui.Picture picture = renderPicture();
   await drawPictureUsingCurrentRenderer(picture);
 
