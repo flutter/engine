@@ -22,6 +22,9 @@ class Display {
   final int id;
 
   /// The device pixel ratio of this display.
+  ///
+  /// This value is the same as the value of [FlutterView.devicePixelRatio] for
+  /// all view objects attached to this display.
   final double devicePixelRatio;
 
   /// The physical size of this display.
@@ -129,6 +132,8 @@ class FlutterView {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
+  ///  * [Display.devicePixelRatio], which reports the DPR of the display.
+  ///    The value here is equal to the value on the [display.devicePixelRatio].
   double get devicePixelRatio => _viewConfiguration.devicePixelRatio;
 
   /// The dimensions and location of the rectangle into which the scene rendered
