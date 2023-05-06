@@ -315,6 +315,11 @@ typedef CanvasPath Path;
   V(SceneShader, SetCameraTransform, 2) \
   V(SceneShader, Dispose, 1)
 
+#define FFI_FUNCTION_LIST_GPU(V) \
+  V(GpuContext::InitializeDefault, 1)
+
+#define FFI_METHOD_LIST_GPU(V)
+
 #endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \

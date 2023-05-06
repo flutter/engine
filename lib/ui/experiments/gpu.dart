@@ -4,9 +4,7 @@
 
 // ignore_for_file: public_member_api_docs
 
-library dart.gpu;
-
-import 'dart:nativewrappers';
+part of dart.ui;
 
 enum BlendOperation { add, subtract, reverseSubtract }
 
@@ -132,26 +130,25 @@ class UniformSlot {
   final int binding;
 }
 
-class Shader {}
+class GpuShader {}
 
 class RasterPipeline {}
 
-/// A handle to a graphics context.
+/// A handle to a graphics context. Used to create and manage GPU resources.
 ///
-/// This class is created by the engine, and should not be instantiated
-/// or extended directly.
-///
-/// To obtain the default graphics context, use [getContext].
-@pragma('vm:entry-point')
-class Context extends NativeFieldWrapperClass1 {
-  @pragma('vm:entry-point')
-  Context._();
+/// To obtain the default graphics context, use [getGpuContext].
+class GpuContext extends NativeFieldWrapperClass1 {
+  /// Creates a new graphics context that corresponds to the default Impeller
+  /// context.
+  GpuContext._createDefault() {
+    _initializeDefault();
+  }
 
   //registerShaderLibrary() async
 
   Future<RasterPipeline> createRasterPipeline({
-    required Shader vertex,
-    required Shader fragment,
+    required GpuShader vertex,
+    required GpuShader fragment,
     BlendOptions blendOptions = const BlendOptions(),
     StencilOptions stencilOptions = const StencilOptions(),
     List<VertexAttribute> vertexLayout = const <VertexAttribute>[],
@@ -159,8 +156,16 @@ class Context extends NativeFieldWrapperClass1 {
   }) async {
     return RasterPipeline();
   }
+
+  /// Links this GpuContext to the default Impeller context.
+  @Native<Void Function(Handle)>(symbol: 'GpuContext::InitializeDefault')
+  external void _initializeDefault();
 }
 
-Context getContext() {
-  return Context._();
+GpuContext? _defaultGpuContext;
+
+/// Returns the default graphics context.
+GpuContext getGpuContext() {
+  _defaultGpuContext ??= GpuContext._createDefault();
+  return _defaultGpuContext!;
 }
