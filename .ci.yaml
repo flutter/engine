@@ -290,6 +290,7 @@ targets:
       config_name: linux_android_debug_engine
 
   - name: Linux linux_license
+    bringup: true
     recipe: engine_v2/builder
     timeout: 60
     properties:
