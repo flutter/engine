@@ -1469,7 +1469,7 @@ bool DisplayListBuilder::paint_nops_on_transparency() {
 DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
                                               DisplayListAttributeFlags flags) {
   DlColor color;
-  if (flags.applies_alpha_or_color()) {
+  if (flags.applies_color()) {
     const DlColorSource* source = paint.getColorSourcePtr();
     if (source) {
       if (source->asColor()) {
@@ -1480,6 +1480,10 @@ DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
     } else {
       color = paint.getColor();
     }
+  } else if (flags.applies_alpha()) {
+    color = kAnyColor.withAlpha(paint.getAlpha());
+  } else {
+    color = kAnyColor;
   }
   if (flags.applies_image_filter()) {
     auto filter = paint.getImageFilterPtr();

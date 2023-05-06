@@ -47,7 +47,7 @@ struct DlColor {
   constexpr float getGreenF() const { return toF(getGreen()); }
   constexpr float getBlueF() const { return toF(getBlue()); }
 
-  uint32_t premultipliedArgb() const {
+  constexpr uint32_t premultipliedArgb() const {
     if (isOpaque()) {
       return argb;
     }
@@ -58,20 +58,20 @@ struct DlColor {
            toC(getBlueF() * f);
   }
 
-  DlColor withAlpha(uint8_t alpha) const {  //
+  constexpr DlColor withAlpha(uint8_t alpha) const {  //
     return (argb & 0x00FFFFFF) | (alpha << 24);
   }
-  DlColor withRed(uint8_t red) const {  //
+  constexpr DlColor withRed(uint8_t red) const {  //
     return (argb & 0xFF00FFFF) | (red << 16);
   }
-  DlColor withGreen(uint8_t green) const {  //
+  constexpr DlColor withGreen(uint8_t green) const {  //
     return (argb & 0xFFFF00FF) | (green << 8);
   }
-  DlColor withBlue(uint8_t blue) const {  //
+  constexpr DlColor withBlue(uint8_t blue) const {  //
     return (argb & 0xFFFFFF00) | (blue << 0);
   }
 
-  DlColor modulateOpacity(float opacity) const {
+  constexpr DlColor modulateOpacity(float opacity) const {
     return opacity <= 0   ? withAlpha(0)
            : opacity >= 1 ? *this
                           : withAlpha(round(getAlpha() * opacity));
