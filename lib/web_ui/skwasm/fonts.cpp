@@ -8,6 +8,8 @@
 #include "third_party/skia/modules/skparagraph/include/FontCollection.h"
 #include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
 
+#include <memory>
+
 using namespace skia::textlayout;
 using namespace Skwasm;
 
@@ -26,21 +28,74 @@ SKWASM_EXPORT void fontCollection_dispose(FlutterFontCollection* collection) {
   delete collection;
 }
 
-SKWASM_EXPORT bool fontCollection_registerFont(
-    FlutterFontCollection* collection,
-    SkData* fontData,
-    SkString* fontName) {
+SKWASM_EXPORT SkTypeface* typeface_create(SkData* fontData) {
   fontData->ref();
-  auto typeFace =
+  auto typeface =
       SkFontMgr::RefDefault()->makeFromData(sk_sp<SkData>(fontData));
-  if (!typeFace) {
-    return false;
+  return typeface.release();
+}
+
+SKWASM_EXPORT void typeface_dispose(SkTypeface *typeface) {
+  typeface->unref();
+}
+
+// Calculates the code points that are not covered by the specified typefaces.
+// This function mutates the `codePoints` buffer in place and returns the count
+// of code points that are not covered by the fonts.
+SKWASM_EXPORT int typefaces_filterCoveredCodePoints(
+  SkTypeface **typefaces,
+  int typefaceCount,
+  SkUnichar* codePoints,
+  int codePointCount
+) {
+  std::unique_ptr<SkGlyphID[]> glyphBuffer = std::make_unique<SkGlyphID[]>(codePointCount);
+  SkGlyphID* glyphPointer = glyphBuffer.get();
+  int remainingCodePointCount = codePointCount;
+  for (int typefaceIndex = 0; typefaceIndex < typefaceCount; typefaceIndex++) {
+    typefaces[typefaceIndex]->unicharsToGlyphs(codePoints, remainingCodePointCount, glyphPointer);
+    int outputIndex = 0;
+    for (int inputIndex = 0; inputIndex < remainingCodePointCount; inputIndex++) {
+      if (glyphPointer[inputIndex] == 0) {
+        if (outputIndex != inputIndex) {
+          codePoints[outputIndex] = codePoints[inputIndex];
+        }
+        outputIndex++;
+      }
+    }
+    if (outputIndex == 0) {
+      return 0;
+    } else {
+      remainingCodePointCount = outputIndex;
+    }
   }
+  return remainingCodePointCount;
+}
+
+SKWASM_EXPORT void fontCollection_registerTypeface(
+    FlutterFontCollection* collection,
+    SkTypeface* typeface,
+    SkString* fontName) {
+  typeface->ref();
   if (fontName) {
     SkString alias = *fontName;
-    collection->provider->registerTypeface(std::move(typeFace), alias);
+    collection->provider->registerTypeface(sk_sp<SkTypeface>(typeface), alias);
   } else {
-    collection->provider->registerTypeface(std::move(typeFace));
+    collection->provider->registerTypeface(sk_sp<SkTypeface>(typeface));
   }
-  return true;
+}
+
+SKWASM_EXPORT void fontCollection_setDefaultFontFamilies(
+  FlutterFontCollection* collection,
+  SkString **familyNames,
+  int familyCount
+) {
+  std::vector<SkString> families;
+  families.reserve(familyCount);
+  for (int i = 0; i < familyCount; i++) {
+    families.push_back(*familyNames[i]);
+  }
+  collection->collection->setDefaultFontManager(
+    collection->provider,
+    std::move(families)
+  );
 }
