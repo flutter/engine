@@ -108,7 +108,6 @@ static bool CommonRender(
   }
   sampler_desc.mip_filter = MipFilter::kNearest;
 
-
   FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
