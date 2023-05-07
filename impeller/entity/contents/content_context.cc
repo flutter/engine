@@ -144,6 +144,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetPrimitiveType(primitive_type);
 
   desc.SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
+  desc.SetEnableRasterization(enable_rasterization);
 }
 
 template <typename PipelineT>
@@ -157,6 +158,22 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   const auto default_color_fmt =
       context.GetCapabilities()->GetDefaultColorFormat();
   ContentContextOptions{.color_attachment_pixel_format = default_color_fmt}
+      .ApplyToPipelineDescriptor(*desc);
+  return std::make_unique<PipelineT>(context, desc);
+}
+
+template <typename PipelineT>
+static std::unique_ptr<PipelineT> CreateDefaultNonRenderingPipeline(
+    const Context& context) {
+  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+  if (!desc.has_value()) {
+    return nullptr;
+  }
+  // Apply default ContentContextOptions to the descriptor.
+  const auto default_color_fmt =
+      context.GetCapabilities()->GetDefaultColorFormat();
+  ContentContextOptions{.color_attachment_pixel_format = default_color_fmt,
+                        .enable_rasterization = false}
       .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
@@ -294,6 +311,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
   porter_duff_blend_pipelines_[{}] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
+  point_field_geometry_pipelines_[{}] =
+      CreateDefaultNonRenderingPipeline<PointFieldGeometryPipeline>(*context_);
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =

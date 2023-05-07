@@ -40,6 +40,7 @@
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.vert.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
@@ -275,6 +276,9 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
+/// Geometry Pipelines
+using PointFieldGeometryPipeline =
+    RenderPipelineT<PointsVertexShader, NonRenderingFragment>;
 
 /// Pipeline state configuration.
 ///
@@ -295,13 +299,14 @@ struct ContentContextOptions {
   std::optional<PixelFormat> color_attachment_pixel_format;
   bool has_stencil_attachment = true;
   bool wireframe = false;
+  bool enable_rasterization = true;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
-                              o.stencil_operation, o.primitive_type,
-                              o.color_attachment_pixel_format,
-                              o.has_stencil_attachment, o.wireframe);
+      return fml::HashCombine(
+          o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
+          o.primitive_type, o.color_attachment_pixel_format,
+          o.has_stencil_attachment, o.wireframe, o.enable_rasterization);
     }
   };
 
@@ -316,7 +321,8 @@ struct ContentContextOptions {
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
              lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
-             lhs.wireframe == rhs.wireframe;
+             lhs.wireframe == rhs.wireframe &&
+             lhs.enable_rasterization == rhs.enable_rasterization;
     }
   };
 
@@ -661,6 +667,11 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPointFieldGeometryPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(point_field_geometry_pipelines_, opts);
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
@@ -782,6 +793,8 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+
+  mutable Variants<PointFieldGeometryPipeline> point_field_geometry_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

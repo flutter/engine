@@ -16,6 +16,15 @@
 
 namespace impeller {
 
+class NonRenderingFragment {
+ public:
+  static constexpr std::string_view kLabel = "NonRendering";
+  static constexpr std::string_view kEntrypointName = "non_rendering_main";
+  static constexpr ShaderStage kShaderStage = ShaderStage::kFragment;
+  static constexpr std::string_view kGeneratorName = "";
+  static constexpr std::array<DescriptorSetLayout, 0> kDescriptorSetLayouts{};
+};
+
 //------------------------------------------------------------------------------
 /// @brief      An optional (but highly recommended) utility for creating
 ///             pipelines from reflected shader information.
@@ -52,35 +61,44 @@ struct PipelineBuilder {
     PipelineDescriptor desc;
     if (InitializePipelineDescriptorDefaults(context, desc)) {
       return {std::move(desc)};
-    } else {
-      return std::nullopt;
     }
+    return std::nullopt;
   }
 
   [[nodiscard]] static bool InitializePipelineDescriptorDefaults(
       const Context& context,
       PipelineDescriptor& desc) {
     // Setup debug instrumentation.
-    desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
+    if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
+      desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
+    }
 
     // Resolve pipeline entrypoints.
     {
       auto vertex_function = context.GetShaderLibrary()->GetFunction(
           VertexShader::kEntrypointName, ShaderStage::kVertex);
-      auto fragment_function = context.GetShaderLibrary()->GetFunction(
-          FragmentShader::kEntrypointName, ShaderStage::kFragment);
 
-      if (!vertex_function || !fragment_function) {
-        VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
-                       << VertexShader::kEntrypointName << "' and '"
-                       << FragmentShader::kEntrypointName
-                       << "' for pipeline named '" << VertexShader::kLabel
-                       << "'.";
-        return false;
+      std::shared_ptr<const ShaderFunction> fragment_function;
+      if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
+        fragment_function = context.GetShaderLibrary()->GetFunction(
+            FragmentShader::kEntrypointName, ShaderStage::kFragment);
+      }
+
+      if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
+        if (!vertex_function || !fragment_function) {
+          VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
+                         << VertexShader::kEntrypointName << "' and '"
+                         << FragmentShader::kEntrypointName
+                         << "' for pipeline named '" << VertexShader::kLabel
+                         << "'.";
+          return false;
+        }
       }
 
       desc.AddStageEntrypoint(std::move(vertex_function));
-      desc.AddStageEntrypoint(std::move(fragment_function));
+      if (fragment_function != nullptr) {
+        desc.AddStageEntrypoint(std::move(fragment_function));
+      }
     }
 
     // Setup the vertex descriptor from reflected information.

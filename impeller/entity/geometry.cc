@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry.h"
 
+#include <iostream>
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -38,6 +39,13 @@ std::unique_ptr<Geometry> Geometry::MakeRRect(Rect rect, Scalar corner_radius) {
   return std::make_unique<RRectGeometry>(rect, corner_radius);
 }
 
+// static
+std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
+                                                   Scalar radius) {
+  return std::make_unique<PointFieldGeometry>(std::move(points), radius);
+}
+
+// static
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
                                                    Scalar stroke_width,
                                                    Scalar miter_limit,
@@ -881,6 +889,116 @@ GeometryVertexType RRectGeometry::GetVertexType() const {
 
 std::optional<Rect> RRectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
+}
+
+/////// PointFieldGeometry Geometry ///////
+
+PointFieldGeometry::PointFieldGeometry(std::vector<Point> points, Scalar radius)
+    : points_(std::move(points)), radius_(radius) {}
+
+PointFieldGeometry::~PointFieldGeometry() = default;
+
+GeometryResult PointFieldGeometry::GetPositionBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  auto divisions_per_circle = ComputeResultSize(
+      entity.GetTransformation().GetMaxBasisLength() * radius_, points_.size());
+  auto total = divisions_per_circle * points_.size() * 3;
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  using VS = PointFieldGeometryPipeline::VertexShader;
+  VertexBufferBuilder<VS::PerVertexData, uint32_t> vertex_builder;
+  for (auto i = 0u; i < points_.size(); i++) {
+    vertex_builder.AppendVertex(
+        {.center = points_[i], .offset = static_cast<int32_t>(i)});
+  }
+
+  DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total * sizeof(Point);
+  buffer_desc.storage_mode = StorageMode::kDevicePrivate;
+
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
+
+  // Create Dummy index buffer.
+  auto index_count = divisions_per_circle * points_.size() * 3;
+  std::vector<uint32_t> dummy_index(index_count);
+  for (auto i = 0u; i < index_count; i++) {
+    dummy_index[i] = i;
+  }
+  auto index_buffer = host_buffer.Emplace(
+      dummy_index.data(), index_count * sizeof(uint32_t), alignof(uint32_t));
+
+  Command cmd;
+  cmd.label = "Points Geometry";
+
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kSource;
+  options.stencil_compare = CompareFunction::kAlways;
+  options.stencil_operation = StencilOperation::kKeep;
+  options.enable_rasterization = false;
+  cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
+
+  VS::FrameInfo frame_info;
+  frame_info.radius = radius_;
+  frame_info.radian_step = k2Pi / divisions_per_circle;
+  frame_info.points_per_circle = divisions_per_circle * 3;
+  frame_info.divisions_per_circle = divisions_per_circle;
+  frame_info.total_length = total;
+
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  VS::BindGeometryData(
+      cmd, {.buffer = buffer, .range = Range{0, total * sizeof(Point)}});
+
+  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+
+  if (!pass.AddCommand(std::move(cmd))) {
+    return {};
+  }
+
+  return {
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
+                                          .range =
+                                              Range{0, total * sizeof(Point)}},
+
+                        .index_buffer = index_buffer,
+                        .index_count = index_count,
+                        .index_type = IndexType::k32bit},
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
+}
+
+GeometryResult PointFieldGeometry::GetPositionUVBuffer(
+    Rect texture_coverage,
+    Matrix effect_transform,
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  return {};
+}
+
+/// @brief Compute the exact storage size needed to store the resulting buffer.
+/// @return
+size_t PointFieldGeometry::ComputeResultSize(Scalar scaled_radius,
+                                             size_t point_count) {
+  // note: this formula is completely arbitrary, we should find a reasonable
+  // curve based on experimental data.
+  return 8;
+}
+
+// |Geometry|
+GeometryVertexType PointFieldGeometry::GetVertexType() const {
+  return GeometryVertexType::kPosition;
+}
+
+// |Geometry|
+std::optional<Rect> PointFieldGeometry::GetCoverage(
+    const Matrix& transform) const {
+  return Rect::MakeMaximum();
 }
 
 }  // namespace impeller

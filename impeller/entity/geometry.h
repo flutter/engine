@@ -54,6 +54,9 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeRect(Rect rect);
 
+  static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
+                                                  Scalar radius);
+
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
                                            RenderPass& pass) = 0;
@@ -288,6 +291,39 @@ class RRectGeometry : public Geometry {
   Scalar corner_radius_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RRectGeometry);
+};
+
+class PointFieldGeometry : public Geometry {
+ public:
+  explicit PointFieldGeometry(std::vector<Point> points, Scalar radius);
+
+  ~PointFieldGeometry();
+
+ private:
+  // |Geometry|
+  GeometryResult GetPositionBuffer(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryVertexType GetVertexType() const override;
+
+  // |Geometry|
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  static size_t ComputeResultSize(Scalar scaled_radius, size_t point_count);
+
+  std::vector<Point> points_;
+  Scalar radius_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PointFieldGeometry);
 };
 
 }  // namespace impeller

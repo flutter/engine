@@ -918,6 +918,11 @@ void DlDispatcher::drawPoints(PointMode mode,
       if (paint.stroke_cap == Cap::kButt) {
         paint.stroke_cap = Cap::kSquare;
       }
+      if (paint.stroke_cap == Cap::kRound) {
+        canvas_.DrawPoints(skia_conversions::ToPoints(points, count),
+                           paint.stroke_width, paint);
+        break;
+      }
       for (uint32_t i = 0; i < count; i++) {
         Point p0 = skia_conversions::ToPoint(points[i]);
         auto path = PathBuilder{}.AddLine(p0, p0).TakePath();
