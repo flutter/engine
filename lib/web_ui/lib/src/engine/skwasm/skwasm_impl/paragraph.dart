@@ -6,6 +6,7 @@
 
 import 'dart:ffi';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -227,7 +228,9 @@ class SkwasmTextStyle implements ui.TextStyle {
     List<ui.FontFeature>? fontFeatures,
     List<ui.FontVariation>? fontVariations,
   }) {
-    final TextStyleHandle handle = textStyleCreate();
+    final TextStyleHandle handle = textStyleCreate(
+      (renderer.fontCollection as SkwasmFontCollection).handle
+    );
     if (color != null) {
       textStyleSetColor(handle, color.value);
     }
@@ -259,7 +262,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       if (fontFamilies.isNotEmpty) {
         withScopedFontList(fontFamilies,
           (Pointer<SkStringHandle> families, int count) =>
-            textStyleSetFontFamilies(handle, families, count));
+            textStyleAddFontFamilies(handle, families, count));
       }
     }
     if (fontSize != null) {
@@ -390,7 +393,9 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
     String? ellipsis,
     ui.Locale? locale,
   }) {
-    final ParagraphStyleHandle handle = paragraphStyleCreate();
+    final ParagraphStyleHandle handle = paragraphStyleCreate(
+      (renderer.fontCollection as SkwasmFontCollection).handle,
+    );
     if (textAlign != null) {
       paragraphStyleSetTextAlign(handle, textAlign.index);
     }
@@ -425,11 +430,13 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
       fontStyle != null ||
       textHeightBehavior != null ||
       locale != null) {
-      final TextStyleHandle textStyleHandle = textStyleCreate();
+      final TextStyleHandle textStyleHandle = textStyleCreate(
+        (renderer.fontCollection as SkwasmFontCollection).handle,
+      );
       if (fontFamily != null) {
         withScopedFontList(<String>[fontFamily], 
           (Pointer<SkStringHandle> families, int count) =>
-            textStyleSetFontFamilies(textStyleHandle, families, count));
+            textStyleAddFontFamilies(textStyleHandle, families, count));
       }
       if (fontSize != null) {
         textStyleSetFontSize(textStyleHandle, fontSize);
@@ -499,6 +506,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
+    renderer.fontCollection.fontFallbackManager?.ensureFontsSupportText(text, <String>['Roboto']);
     final SkString16Handle stringHandle = skString16FromDartString(text);
     paragraphBuilderAddText(handle, stringHandle);
     skString16Free(stringHandle);

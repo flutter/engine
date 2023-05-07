@@ -3,15 +3,20 @@
 // found in the LICENSE file.
 
 #include "../export.h"
+#include "../wrappers.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 using namespace skia::textlayout;
+using namespace Skwasm;
 
-SKWASM_EXPORT TextStyle* textStyle_create() {
+SKWASM_EXPORT TextStyle* textStyle_create(FlutterFontCollection* collection) {
   auto style = new TextStyle();
 
   // Default color in flutter is black.
   style->setColor(SK_ColorBLACK);
+
+  // Add fallback fonts
+  style->setFontFamilies(collection->fallbackFontFamilies);
   return style;
 }
 
@@ -55,11 +60,11 @@ SKWASM_EXPORT void textStyle_setTextBaseline(TextStyle* style,
   style->setTextBaseline(baseline);
 }
 
-SKWASM_EXPORT void textStyle_setFontFamilies(TextStyle* style,
+SKWASM_EXPORT void textStyle_addFontFamilies(TextStyle* style,
                                              SkString** fontFamilies,
                                              int count) {
-  std::vector<SkString> families;
-  families.reserve(count);
+  std::vector<SkString> families = style->getFontFamilies();
+  families.reserve(families.size() + count);
   for (int i = 0; i < count; i++) {
     families.push_back(*fontFamilies[i]);
   }

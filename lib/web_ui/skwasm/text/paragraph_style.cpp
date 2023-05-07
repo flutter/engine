@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include "../export.h"
+#include "../wrappers.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 using namespace skia::textlayout;
+using namespace Skwasm;
 
-SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
+SKWASM_EXPORT ParagraphStyle* paragraphStyle_create(FlutterFontCollection *collection) {
   auto style = new ParagraphStyle();
 
   // This is the default behavior in Flutter
@@ -16,6 +18,7 @@ SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
   // Default text style has a black color
   TextStyle textStyle;
   textStyle.setColor(SK_ColorBLACK);
+  textStyle.setFontFamilies(collection->fallbackFontFamilies);
   style->setTextStyle(textStyle);
 
   return style;

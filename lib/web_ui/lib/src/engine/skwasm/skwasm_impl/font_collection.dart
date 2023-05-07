@@ -179,6 +179,7 @@ class SkwasmFallbackRegistry implements FallbackFontRegistry {
   SkwasmFallbackRegistry(this.fontCollection);
 
   final SkwasmFontCollection fontCollection;
+
   @override
   List<int> getMissingCodePoints(List<int> codePoints, List<String> fontFamilies)
     => withStackScope((StackScope scope) {

@@ -385,6 +385,131 @@ Future<void> testMain() async {
       innerText: '',
     );
   });
+
+  test('sample Chinese text', () async {
+    await testSampleText(
+      'chinese',
+      '也称乱数假文或者哑元文本， '
+          '是印刷及排版领域所常用的虚拟文字。'
+          '由于曾经一台匿名的打印机刻意打乱了'
+          '一盒印刷字体从而造出一本字体样品书',
+    );
+  });
+
+  test('sample Armenian text', () async {
+    await testSampleText(
+      'armenian',
+      'տպագրության և տպագրական արդյունաբերության համար նախատեսված մոդելային տեքստ է',
+    );
+  });
+
+  test('sample Albanian text', () async {
+    await testSampleText(
+      'albanian',
+      'është një tekst shabllon i industrisë së printimit dhe shtypshkronjave Lorem Ipsum ka qenë teksti shabllon',
+    );
+  });
+
+  test('sample Arabic text', () async {
+    await testSampleText(
+      'arabic',
+      'هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى المقروء لصفحة ما سيلهي',
+      textDirection: ui.TextDirection.rtl,
+    );
+  });
+
+  test('sample Bulgarian text', () async {
+    await testSampleText(
+      'bulgarian',
+      'е елементарен примерен текст използван в печатарската и типографската индустрия',
+    );
+  });
+
+  test('sample Catalan text', () async {
+    await testSampleText(
+      'catalan',
+      'és un text de farciment usat per la indústria de la tipografia i la impremta',
+    );
+  });
+
+  test('sample English text', () async {
+    await testSampleText(
+      'english',
+      'Lorem Ipsum is simply dummy text of the printing and typesetting industry',
+    );
+  });
+
+  test('sample Greek text', () async {
+    await testSampleText(
+      'greek',
+      'είναι απλά ένα κείμενο χωρίς νόημα για τους επαγγελματίες της τυπογραφίας και στοιχειοθεσίας',
+    );
+  });
+
+  test('sample Hebrew text', () async {
+    await testSampleText(
+      'hebrew',
+      'זוהי עובדה מבוססת שדעתו של הקורא תהיה מוסחת על ידי טקטס קריא כאשר הוא יביט בפריסתו',
+      textDirection: ui.TextDirection.rtl,
+    );
+  });
+
+  test('sample Hindi text', () async {
+    await testSampleText(
+      'hindi',
+      'छपाई और अक्षर योजन उद्योग का एक साधारण डमी पाठ है सन १५०० के बाद से अभी तक इस उद्योग का मानक डमी पाठ मन गया जब एक अज्ञात मुद्रक ने नमूना लेकर एक नमूना किताब बनाई',
+    );
+  });
+
+  test('sample Thai text', () async {
+    await testSampleText(
+      'thai',
+      'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ มันได้กลายมาเป็นเนื้อหาจำลองมาตรฐานของธุรกิจดังกล่าวมาตั้งแต่ศตวรรษที่',
+    );
+  });
+
+  test('sample Georgian text', () async {
+    await testSampleText(
+      'georgian',
+      'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია. იგი სტანდარტად',
+    );
+  });
+
+  test('sample Bengali text', () async {
+    await testSampleText(
+      'bengali',
+      'ঈদের জামাত মসজিদে, মানতে হবে স্বাস্থ্যবিধি: ধর্ম মন্ত্রণালয়',
+    );
+  });
+
+  test('hindi svayan test', () async {
+    await testSampleText('hindi_svayan', 'स्वयं');
+  });
+
+  // We've seen text break when we load many fonts simultaneously. This test
+  // combines text in multiple languages into one long paragraph to make sure
+  // we can handle it.
+  test('sample multilingual text', () async {
+    await testSampleText(
+      'multilingual',
+      '也称乱数假文或者哑元文本， 是印刷及排版领域所常用的虚拟文字。 '
+          'տպագրության և տպագրական արդյունաբերության համար '
+          'është një tekst shabllon i industrisë së printimit '
+          ' زمن طويل وهي أن المحتوى المقروء لصفحة ما سيلهي '
+          'е елементарен примерен текст използван в печатарската '
+          'és un text de farciment usat per la indústria de la '
+          'Lorem Ipsum is simply dummy text of the printing '
+          'είναι απλά ένα κείμενο χωρίς νόημα για τους επαγγελματίες '
+          ' זוהי עובדה מבוססת שדעתו של הקורא תהיה מוסחת על ידי טקטס קריא '
+          'छपाई और अक्षर योजन उद्योग का एक साधारण डमी पाठ है सन '
+          'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ '
+          'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია ',
+    );
+  });
+
+  test('emoji text with skin tone', () async {
+    await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻');
+  }, timeout: const Timeout.factor(2));
 }
 
 /// A convenience function for testing paragraph and text styles.
@@ -547,5 +672,34 @@ Future<void> testTextStyle(
   await matchGoldenFile(
     'ui_text_styles_${name.replaceAll(' ', '_')}.png',
     region: region,
+  );
+}
+
+Future<void> testSampleText(String language, String text,
+    {ui.TextDirection textDirection = ui.TextDirection.ltr}) async {
+  const double testWidth = 300;
+  double paragraphHeight = 0;
+  ui.Picture renderPicture() {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+    final ui.ParagraphBuilder paragraphBuilder =
+        ui.ParagraphBuilder(ui.ParagraphStyle(
+      textDirection: textDirection,
+    ));
+    paragraphBuilder.addText(text);
+    final ui.Paragraph paragraph = paragraphBuilder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: testWidth - 20));
+    canvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+    paragraphHeight = paragraph.height;
+    return recorder.endRecording();
+  }
+  // Render once to trigger font downloads.
+  renderPicture();
+  await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();
+  final ui.Picture picture = renderPicture();
+  await drawPictureUsingCurrentRenderer(picture);
+  await matchGoldenFile(
+    'ui_sample_text_$language.png',
+    region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
   );
 }

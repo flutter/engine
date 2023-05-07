@@ -36,6 +36,7 @@ inline void makeCurrent(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle) {
 struct FlutterFontCollection {
   sk_sp<skia::textlayout::FontCollection> collection;
   sk_sp<skia::textlayout::TypefaceFontProvider> provider;
+  std::vector<SkString> fallbackFontFamilies;
 };
 
 }  // namespace Skwasm
