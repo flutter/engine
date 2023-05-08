@@ -425,8 +425,13 @@ FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() =>
 /// Creates a node to host text editing elements and applies a stylesheet
 /// to Flutter nodes that exist outside of the shadowDOM.
 DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
+  // Text editing host needs to disable pointer events due to
+  // https://github.com/flutter/flutter/issues/125948. 
+  // This can be removed once https://github.com/flutter/flutter/issues/117091
+  // is resolved.
   final DomElement domElement =
-      domDocument.createElement('flt-text-editing-host');
+      domDocument.createElement('flt-text-editing-host')
+      ..style.pointerEvents = 'none';
   final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
 
   styleElement.id = 'flt-text-editing-stylesheet';

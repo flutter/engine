@@ -24,6 +24,8 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
     return _computeOffsetForTalkbackEvent(event, actualTarget);
   }
 
+  // For targets outside of the shadowDOM, except the text editing tree.
+  // See: https://github.com/flutter/flutter/issues/125948.
   final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
   if (isTargetOutsideOfShadowDOM) {
     return _computeOffsetRelativeToActualTarget(event, actualTarget);
