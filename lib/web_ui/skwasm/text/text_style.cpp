@@ -129,4 +129,22 @@ SKWASM_EXPORT void textStyle_addFontFeature(TextStyle* style,
   style->addFontFeature(*featureName, value);
 }
 
-// TODO(jacksongardner): implement font variations
+SKWASM_EXPORT void textStyle_setFontVariations(
+  TextStyle* style,
+  SkFourByteTag* axes,
+  float* values,
+  int count
+) {
+  std::vector<SkFontArguments::VariationPosition::Coordinate> coordinates;
+  for (int i = 0; i < count; i++) {
+      coordinates.push_back({
+          axes[i],
+          values[i]
+      });
+  }
+  SkFontArguments::VariationPosition position = {
+      coordinates.data(),
+      static_cast<int>(coordinates.size())
+  };
+  style->setFontArguments(SkFontArguments().setVariationDesignPosition(position));
+}

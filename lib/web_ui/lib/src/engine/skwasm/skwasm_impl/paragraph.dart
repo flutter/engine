@@ -308,6 +308,27 @@ class SkwasmTextStyle implements ui.TextStyle {
         skStringFree(featureName);
       }
     }
+
+    if (fontVariations != null && fontVariations!.isNotEmpty) {
+      final int variationCount = fontVariations!.length;
+      withStackScope((StackScope scope) {
+        final Pointer<Uint32> axisBuffer = scope.allocUint32Array(variationCount);
+        final Pointer<Float> valueBuffer = scope.allocFloatArray(variationCount);
+        for (int i = 0; i < variationCount; i++) {
+          final ui.FontVariation variation = fontVariations![i];
+          final String axis = variation.axis;
+          assert(axis.length == 4); // 4 byte code
+          final int axisNumber = 
+            axis.codeUnitAt(0) << 24 |
+            axis.codeUnitAt(1) << 16 |
+            axis.codeUnitAt(2) << 8 |
+            axis.codeUnitAt(3);
+          axisBuffer[i] = axisNumber;
+          valueBuffer[i] = variation.value;
+        }
+        textStyleSetFontVariations(handle, axisBuffer, valueBuffer, variationCount);
+      });
+    }
   }
 
   List<String> get fontFamilies => <String>[

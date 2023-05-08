@@ -114,3 +114,16 @@ external void textStyleAddFontFeature(
   SkStringHandle featureName,
   int value,
 );
+
+@Native<Void Function(
+  TextStyleHandle,
+  Pointer<Uint32>,
+  Pointer<Float>,
+  Int
+)>(symbol: 'textStyle_setFontVariations', isLeaf: true)
+external void textStyleSetFontVariations(
+  TextStyleHandle handle,
+  Pointer<Uint32> axes,
+  Pointer<Float> values,
+  int count,
+);

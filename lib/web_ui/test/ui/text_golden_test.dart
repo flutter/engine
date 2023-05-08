@@ -510,6 +510,48 @@ Future<void> testMain() async {
   test('emoji text with skin tone', () async {
     await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻');
   }, timeout: const Timeout.factor(2));
+
+  test('font variations are correctly rendered', () async {
+    const double testWidth = 300;
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+    final ui.ParagraphBuilder builder =
+      ui.ParagraphBuilder(ui.ParagraphStyle(
+        fontSize: 40.0,
+        textDirection: ui.TextDirection.ltr,
+      ));
+
+    builder.pushStyle(ui.TextStyle(
+        fontFamily: 'RobotoVariable',
+    ));
+    builder.addText('Normal\n');
+    builder.pop();
+
+    ui.FontVariation weight(double w) => ui.FontVariation('wght', w);
+    builder.pushStyle(ui.TextStyle(
+        fontFamily: 'RobotoVariable',
+        fontVariations: <ui.FontVariation>[weight(900)],
+    ));
+    builder.addText('Heavy\n');
+    builder.pop();
+
+    builder.pushStyle(ui.TextStyle(
+        fontFamily: 'RobotoVariable',
+        fontVariations: <ui.FontVariation>[weight(100)],
+    ));
+    builder.addText('Light\n');
+    builder.pop();
+
+    final ui.Paragraph paragraph = builder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: testWidth - 20));
+    canvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+    final ui.Picture picture = recorder.endRecording();
+    await drawPictureUsingCurrentRenderer(picture);
+    await matchGoldenFile(
+      'ui_text_font_variation.png',
+      region: ui.Rect.fromLTRB(0, 0, testWidth, paragraph.height + 20),
+    );
+  });
 }
 
 /// A convenience function for testing paragraph and text styles.
