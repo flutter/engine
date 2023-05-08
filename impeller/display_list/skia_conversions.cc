@@ -110,14 +110,16 @@ Path ToPath(const SkPath& path) {
       break;
   }
   auto result_path = builder.TakePath(fill_type);
-  result_path.SetConvexity(path.isConvex() ? Convexity::kConvex : Convexity::kUnknown);
+  result_path.SetConvexity(path.isConvex() ? Convexity::kConvex
+                                           : Convexity::kUnknown);
   return result_path;
 }
 
 Path ToPath(const SkRRect& rrect) {
-  auto result_path = PathBuilder{}
-      .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
-      .TakePath();
+  auto result_path =
+      PathBuilder{}
+          .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+          .TakePath();
   result_path.SetConvexity(Convexity::kConvex);
   return result_path;
 }

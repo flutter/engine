@@ -9,7 +9,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/texture_fill.vert.h"
-#include "impeller/geometry/convex_tessellator.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
@@ -42,6 +41,9 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
       output.emplace_back(point_b);
       output.emplace_back(Point(center_x, center_y));
     }
+    output.emplace_back(polyline.points[end - 1]);
+    output.emplace_back(polyline.points[start]);
+    output.emplace_back(Point(center_x, center_y));
   }
 
   std::vector<uint16_t> index(output.size());
@@ -138,11 +140,12 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  auto& host_buffer = pass.GetTransientsBuffer();
+  VertexBuffer vertex_buffer;
+
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.GetConvexity() == Convexity::kConvex) {
-    VertexBuffer vertex_buffer;
-    auto& host_buffer = pass.GetTransientsBuffer();
-    auto [points, indicies] = TessellateConvexHull(
+    auto [points, indicies] = TessellateConvex(
         path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
 
     vertex_buffer.vertex_buffer = host_buffer.Emplace(
@@ -154,8 +157,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
     return GeometryResult{
         .type = PrimitiveType::kTriangle,
-        .vertex_buffer =
-            vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+        .vertex_buffer = vertex_buffer,
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransformation(),
         .prevent_overdraw = false,

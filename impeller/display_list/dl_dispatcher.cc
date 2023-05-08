@@ -6,12 +6,12 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -896,7 +896,6 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
-  std::cerr << "DRAW PATH" << path.isConvex() << std::endl;
   canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
 }
 
