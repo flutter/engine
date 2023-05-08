@@ -12,7 +12,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
@@ -21,6 +20,7 @@ import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
 
 import '../common/spy.dart';
+import '../common/test_initialization.dart';
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -60,7 +60,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await initializeEngine();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false
+  );
 
   tearDown(() {
     lastEditingState = null;
@@ -1892,6 +1895,60 @@ Future<void> testMain() async {
 
       showKeyboard(inputType: 'none');
       expect(getEditingInputMode(), 'none');
+
+      hideKeyboard();
+    });
+
+    test('prevent mouse events on Android', () {
+      // Regression test for https://github.com/flutter/flutter/issues/124483.
+      debugOperatingSystemOverride = OperatingSystem.android;
+      debugBrowserEngineOverride = BrowserEngine.blink;
+
+      /// During initialization [HybridTextEditing] will pick the correct
+      /// text editing strategy for [OperatingSystem.android].
+      textEditing = HybridTextEditing();
+
+      final MethodCall setClient = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[123, flutterMultilineConfig],
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      // Editing shouldn't have started yet.
+      expect(defaultTextEditingRoot.ownerDocument?.activeElement, domDocument.body);
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The "setSizeAndTransform" message has to be here before we call
+      // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
+      // we don't put the input element into the DOM until we get its correct
+      // dimensions from the framework.
+      final List<double> transform = Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList();
+      final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(150, 50, transform);
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      final DomHTMLTextAreaElement textarea = textEditing!.strategy.domElement! as DomHTMLTextAreaElement;
+      checkTextAreaEditingState(textarea, '', 0, 0);
+
+      // Can set editing state and preserve new lines.
+      const MethodCall setEditingState = MethodCall(
+        'TextInput.setEditingState',
+        <String, dynamic>{
+          'text': '1\n2\n3\n4\n',
+          'selectionBase': 8,
+          'selectionExtent': 8,
+          'composingBase': null,
+          'composingExtent': null,
+        },
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      checkTextAreaEditingState(textarea, '1\n2\n3\n4\n', 8, 8);
+
+      // 'mousedown' event should be prevented.
+      final DomEvent event = createDomEvent('Event', 'mousedown');
+      textarea.dispatchEvent(event);
+      expect(event.defaultPrevented, isTrue);
 
       hideKeyboard();
     });

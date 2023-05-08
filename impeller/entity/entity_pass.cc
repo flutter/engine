@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
@@ -23,10 +24,15 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
+
+#ifdef IMPELLER_DEBUG
+#include "impeller/entity/contents/checkerboard_contents.h"
+#endif  // IMPELLER_DEBUG
 
 namespace impeller {
 
@@ -42,6 +48,11 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 }
 
 void EntityPass::AddEntity(Entity entity) {
+  if (entity.GetBlendMode() == BlendMode::kSourceOver &&
+      entity.GetContents()->IsOpaque()) {
+    entity.SetBlendMode(BlendMode::kSource);
+  }
+
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     advanced_blend_reads_from_pass_texture_ += 1;
   }
@@ -142,6 +153,15 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   return subpass_pointer;
 }
 
+static RenderTarget::AttachmentConfig GetDefaultStencilConfig(bool readable) {
+  return RenderTarget::AttachmentConfig{
+      .storage_mode = readable ? StorageMode::kDevicePrivate
+                               : StorageMode::kDeviceTransient,
+      .load_action = LoadAction::kDontCare,
+      .store_action = StoreAction::kDontCare,
+  };
+}
+
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
                                            bool readable,
@@ -164,13 +184,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},  // color_attachment_config
-        RenderTarget::AttachmentConfig{
-            .storage_mode = readable ? StorageMode::kDevicePrivate
-                                     : StorageMode::kDeviceTransient,
-            .load_action = LoadAction::kDontCare,
-            .store_action = StoreAction::kDontCare,
-        }  // stencil_attachment_config
+            .clear_color = clear_color},   // color_attachment_config
+        GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   } else {
     target = RenderTarget::CreateOffscreen(
@@ -181,13 +196,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
-        },  // color_attachment_config
-        RenderTarget::AttachmentConfig{
-            .storage_mode = readable ? StorageMode::kDevicePrivate
-                                     : StorageMode::kDeviceTransient,
-            .load_action = LoadAction::kDontCare,
-            .store_action = StoreAction::kDontCare,
-        }  // stencil_attachment_config
+        },                                 // color_attachment_config
+        GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   }
 
@@ -204,25 +214,30 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
-  if (render_target.GetColorAttachments().empty()) {
+  auto root_render_target = render_target;
+
+  if (root_render_target.GetColorAttachments().empty()) {
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
     return false;
   }
 
   StencilCoverageStack stencil_coverage_stack = {StencilCoverageLayer{
-      .coverage = Rect::MakeSize(render_target.GetRenderTargetSize()),
+      .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
       .stencil_depth = 0}};
 
-  //
-  bool supports_root_pass_reads =
+  bool supports_onscreen_backdrop_reads =
       renderer.GetDeviceCapabilities().SupportsReadFromOnscreenTexture() &&
       // If the backend doesn't have `SupportsReadFromResolve`, we need to flip
       // between two textures when restoring a previous MSAA pass.
       renderer.GetDeviceCapabilities().SupportsReadFromResolve();
-  if (!supports_root_pass_reads && GetTotalPassReads(renderer) > 0) {
+  bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
+  // In this branch path, we need to render everything to an offscreen texture
+  // and then blit the results onto the onscreen texture. If using this branch,
+  // there's no need to set up a stencil attachment on the root render target.
+  if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
     auto offscreen_target =
-        CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true,
-                           clear_color_.Premultiply());
+        CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
+                           true, clear_color_.Premultiply());
 
     if (!OnRender(renderer,  // renderer
                   offscreen_target.GetRenderTarget()
@@ -233,12 +248,17 @@ bool EntityPass::Render(ContentContext& renderer,
                   0,                           // pass_depth
                   stencil_coverage_stack       // stencil_coverage_stack
                   )) {
+      // Validation error messages are triggered for all `OnRender()` failure
+      // cases.
       return false;
     }
 
     auto command_buffer = renderer.GetContext()->CreateCommandBuffer();
     command_buffer->SetLabel("EntityPass Root Command Buffer");
 
+    // If the context supports blitting, blit the offscreen texture to the
+    // onscreen texture. Otherwise, draw it to the parent texture using a
+    // pipeline (slower).
     if (renderer.GetContext()
             ->GetCapabilities()
             ->SupportsTextureToTextureBlits()) {
@@ -246,14 +266,15 @@ bool EntityPass::Render(ContentContext& renderer,
 
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
-          render_target.GetRenderTargetTexture());
+          root_render_target.GetRenderTargetTexture());
 
       if (!blit_pass->EncodeCommands(
               renderer.GetContext()->GetResourceAllocator())) {
+        VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
     } else {
-      auto render_pass = command_buffer->CreateRenderPass(render_target);
+      auto render_pass = command_buffer->CreateRenderPass(root_render_target);
       render_pass->SetLabel("EntityPass Root Render Pass");
 
       {
@@ -272,21 +293,55 @@ bool EntityPass::Render(ContentContext& renderer,
       }
 
       if (!render_pass->EncodeCommands()) {
+        VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }
     }
     if (!command_buffer->SubmitCommands()) {
+      VALIDATION_LOG << "Failed to submit root pass command buffer.";
       return false;
     }
 
     return true;
   }
 
-  // Set up the clear color of the root pass.
-  auto color0 = render_target.GetColorAttachments().find(0)->second;
-  color0.clear_color = clear_color_.Premultiply();
+  // If we make it this far, that means the context is capable of rendering
+  // everything directly to the onscreen texture.
 
-  auto root_render_target = render_target;
+  // The safety check for fetching this color attachment is at the beginning of
+  // this method.
+  auto color0 = root_render_target.GetColorAttachments().find(0)->second;
+
+  // If a root stencil was provided by the caller, then verify that it has a
+  // configuration which can be used to render this pass.
+  if (root_render_target.GetStencilAttachment().has_value()) {
+    auto stencil_texture = root_render_target.GetStencilAttachment()->texture;
+    if (!stencil_texture) {
+      VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
+      return false;
+    }
+
+    auto stencil_storage_mode =
+        stencil_texture->GetTextureDescriptor().storage_mode;
+    if (reads_from_onscreen_backdrop &&
+        stencil_storage_mode == StorageMode::kDeviceTransient) {
+      VALIDATION_LOG << "The given root RenderTarget stencil needs to be read, "
+                        "but it's marked as transient.";
+      return false;
+    }
+  }
+  // Setup a new root stencil with an optimal configuration if one wasn't
+  // provided by the caller.
+  else {
+    root_render_target.SetupStencilAttachment(
+        *renderer.GetContext(), color0.texture->GetSize(),
+        renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
+        "ImpellerOnscreen",
+        GetDefaultStencilConfig(reads_from_onscreen_backdrop));
+  }
+
+  // Set up the clear color of the root pass.
+  color0.clear_color = clear_color_.Premultiply();
   root_render_target.SetColorAttachment(color0, 0);
 
   EntityPassTarget pass_target(
@@ -357,6 +412,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
               nullptr,                       // backdrop_filter_contents
               pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
               )) {
+        // Validation error messages are triggered for all `OnRender()` failure
+        // cases.
         return EntityPass::EntityResult::Failure();
       }
       return EntityPass::EntityResult::Skip();
@@ -416,7 +473,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
                            subpass->GetTotalPassReads(renderer) > 0,  //
                            clear_color_.Premultiply());
 
-    if (!subpass_target.GetRenderTarget().GetRenderTargetTexture()) {
+    if (!subpass_target.IsValid()) {
+      VALIDATION_LOG << "Subpass render target is invalid.";
       return EntityPass::EntityResult::Failure();
     }
 
@@ -433,6 +491,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
                            subpass->stencil_depth_,   // stencil_depth_floor
                            backdrop_filter_contents  // backdrop_filter_contents
                            )) {
+      // Validation error messages are triggered for all `OnRender()` failure
+      // cases.
       return EntityPass::EntityResult::Failure();
     }
 
@@ -470,24 +530,25 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   return EntityPass::EntityResult::Success(element_entity);
 }
 
-bool EntityPass::OnRender(ContentContext& renderer,
-                          ISize root_pass_size,
-                          EntityPassTarget& pass_target,
-                          Point global_pass_position,
-                          Point local_pass_position,
-                          uint32_t pass_depth,
-                          StencilCoverageStack& stencil_coverage_stack,
-                          size_t stencil_depth_floor,
-                          std::shared_ptr<Contents> backdrop_filter_contents,
-                          std::optional<InlinePassContext::RenderPassResult>
-                              collapsed_parent_pass) const {
+bool EntityPass::OnRender(
+    ContentContext& renderer,
+    ISize root_pass_size,
+    EntityPassTarget& pass_target,
+    Point global_pass_position,
+    Point local_pass_position,
+    uint32_t pass_depth,
+    StencilCoverageStack& stencil_coverage_stack,
+    size_t stencil_depth_floor,
+    std::shared_ptr<Contents> backdrop_filter_contents,
+    const std::optional<InlinePassContext::RenderPassResult>&
+        collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, pass_target,
-                                 GetTotalPassReads(renderer),
-                                 std::move(collapsed_parent_pass));
+  InlinePassContext pass_context(
+      context, pass_target, GetTotalPassReads(renderer), collapsed_parent_pass);
   if (!pass_context.IsValid()) {
+    VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
   }
 
@@ -506,6 +567,9 @@ bool EntityPass::OnRender(ContentContext& renderer,
     auto result = pass_context.GetRenderPass(pass_depth);
 
     if (!result.pass) {
+      // Failure to produce a render pass should be explained by specific errors
+      // in `InlinePassContext::GetRenderPass()`, so avoid log spam and don't
+      // append a validation log here.
       return false;
     }
 
@@ -526,6 +590,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
       msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
       msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
       if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
+        VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
         return false;
       }
     }
@@ -601,6 +666,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
     element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
                                    stencil_depth_floor);
     if (!element_entity.Render(renderer, *result.pass)) {
+      VALIDATION_LOG << "Failed to render entity.";
       return false;
     }
     return true;
@@ -608,6 +674,11 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   if (backdrop_filter_proc_.has_value()) {
     if (!backdrop_filter_contents) {
+      VALIDATION_LOG
+          << "EntityPass contains a backdrop filter, but no backdrop filter "
+             "contents was supplied by the parent pass at render time. This is "
+             "a bug in EntityPass. Parent passes are responsible for setting "
+             "up backdrop filters for their children.";
       return false;
     }
 
@@ -635,6 +706,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
       case EntityResult::kSuccess:
         break;
       case EntityResult::kFailure:
+        // All failure cases should be covered by specific validation messages
+        // in `GetEntityForElement()`.
         return false;
       case EntityResult::kSkip:
         continue;
@@ -664,6 +737,9 @@ bool EntityPass::OnRender(ContentContext& renderer,
         // all the previous commands in the active pass).
 
         if (!pass_context.EndPass()) {
+          VALIDATION_LOG
+              << "Failed to end the current render pass in order to read from "
+                 "the backdrop texture and apply an advanced blend.";
           return false;
         }
 
@@ -671,6 +747,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
         // texture.
         auto texture = pass_context.GetTexture();
         if (!texture) {
+          VALIDATION_LOG << "Failed to fetch the color texture in order to "
+                            "apply an advanced blend.";
           return false;
         }
 
@@ -691,9 +769,35 @@ bool EntityPass::OnRender(ContentContext& renderer,
     ///
 
     if (!render_element(result.entity)) {
+      // Specific validation logs are handled in `render_element()`.
       return false;
     }
   }
+
+#ifdef IMPELLER_DEBUG
+  //--------------------------------------------------------------------------
+  /// Draw debug checkerboard over offscreen textures.
+  ///
+
+  // When the pass depth is > 0, this EntityPass is being rendered to an
+  // offscreen texture.
+  if (enable_offscreen_debug_checkerboard_ &&
+      !collapsed_parent_pass.has_value() && pass_depth > 0) {
+    auto result = pass_context.GetRenderPass(pass_depth);
+    if (!result.pass) {
+      // Failure to produce a render pass should be explained by specific errors
+      // in `InlinePassContext::GetRenderPass()`.
+      return false;
+    }
+    auto checkerboard = CheckerboardContents();
+    auto color = ColorHSB(0,                                    // hue
+                          1,                                    // saturation
+                          std::max(0.0, 0.6 - pass_depth / 5),  // brightness
+                          0.25);                                // alpha
+    checkerboard.SetColor(Color(color));
+    checkerboard.Render(renderer, {}, *result.pass);
+  }
+#endif
 
   return true;
 }
@@ -790,6 +894,10 @@ void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
   }
 
   backdrop_filter_proc_ = std::move(proc);
+}
+
+void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
+  enable_offscreen_debug_checkerboard_ = enabled;
 }
 
 }  // namespace impeller

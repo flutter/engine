@@ -3,22 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../html_image_codec.dart';
-import '../safe_browser_api.dart';
-import '../util.dart';
-import 'canvas.dart';
-import 'canvaskit_api.dart';
-import 'image_wasm_codecs.dart';
-import 'image_web_codecs.dart';
-import 'native_memory.dart';
-import 'painting.dart';
-import 'picture.dart';
-import 'picture_recorder.dart';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
@@ -137,12 +126,14 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
 
+    final CkPaint paint = CkPaint();
     canvas.drawImageRect(
       CkImage(image),
       ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
       ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
-      CkPaint()
+      paint,
     );
+    paint.dispose();
 
     final CkPicture picture = recorder.endRecording();
     final ui.Image finalImage = picture.toImageSync(
@@ -212,16 +203,16 @@ Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCa
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
 Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
-  final Uint8List result = Uint8List(contentLength);
+  final JSUint8Array1 result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
-  await payload.read<Uint8List>((Uint8List chunk) {
-    cumulativeBytesLoaded += chunk.lengthInBytes;
+  await payload.read<JSUint8Array1>((JSUint8Array1 chunk) {
+    cumulativeBytesLoaded += chunk.length.toDart.toInt();
     chunkCallback(cumulativeBytesLoaded, contentLength);
-    result.setAll(position, chunk);
-    position += chunk.lengthInBytes;
+    result.set(chunk, position.toJS);
+    position += chunk.length.toDart.toInt();
   });
-  return result;
+  return (result as JSUint8Array).toDart;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
