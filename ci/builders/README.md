@@ -97,7 +97,7 @@ Build configuration files have to be checked into the
 [engine_checkout/ci/builder](https://github.com/flutter/engine/tree/main/ci/builders)
 directory where engine v2 recipes will be reading them from.  
 
-A configuration file defines a top level builder that will show up as a column
+A configuration file defines a top-level builder that will show up as a column
 in the
 [Flutter Dashboard](https://flutter-dashboard.appspot.com/#/build?repo=engine&branch=master).
 
