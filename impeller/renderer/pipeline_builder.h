@@ -21,7 +21,7 @@ class NonRenderingFragment {
   static constexpr std::string_view kLabel = "NonRendering";
   static constexpr std::string_view kEntrypointName = "non_rendering_main";
   static constexpr ShaderStage kShaderStage = ShaderStage::kFragment;
-  static constexpr std::string_view kGeneratorName = "";
+  static constexpr std::string_view kGeneratorName = "NonRendering";
   static constexpr std::array<DescriptorSetLayout, 0> kDescriptorSetLayouts{};
 };
 

@@ -902,6 +902,8 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  FML_DCHECK(renderer.GetDeviceCapabilities().SupportsDisabledRasterization());
+
   auto divisions_per_circle = ComputeResultSize(
       entity.GetTransformation().GetMaxBasisLength() * radius_, points_.size());
   auto total = divisions_per_circle * points_.size() * 3;
@@ -951,7 +953,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   frame_info.radian_step = k2Pi / divisions_per_circle;
   frame_info.points_per_circle = divisions_per_circle * 3;
   frame_info.divisions_per_circle = divisions_per_circle;
-  frame_info.total_length = total;
 
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   VS::BindGeometryData(
@@ -968,7 +969,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
                                           .range =
                                               Range{0, total * sizeof(Point)}},
-
                         .index_buffer = index_buffer,
                         .index_count = index_count,
                         .index_type = IndexType::k32bit},
@@ -984,7 +984,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  return {};
+  FML_UNREACHABLE();
 }
 
 /// @brief Compute the exact storage size needed to store the resulting buffer.

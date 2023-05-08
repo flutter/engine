@@ -13,7 +13,6 @@ uniform FrameInfo {
   float16_t radian_step;
   int points_per_circle;
   int divisions_per_circle;
-  int total_length;
 }
 frame_info;
 

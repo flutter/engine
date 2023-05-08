@@ -311,8 +311,12 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
   porter_duff_blend_pipelines_[{}] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
-  point_field_geometry_pipelines_[{}] =
-      CreateDefaultNonRenderingPipeline<PointFieldGeometryPipeline>(*context_);
+
+  if (context_->GetCapabilities()->SupportsDisabledRasterization()) {
+    point_field_geometry_pipelines_[{}] =
+        CreateDefaultNonRenderingPipeline<PointFieldGeometryPipeline>(
+            *context_);
+  }
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =

@@ -62,6 +62,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
+      .SetSupportsDisabledRasterization(true)
       .Build();
 }
 

@@ -276,6 +276,7 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
+
 /// Geometry Pipelines
 using PointFieldGeometryPipeline =
     RenderPipelineT<PointsVertexShader, NonRenderingFragment>;
@@ -669,6 +670,7 @@ class ContentContext {
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPointFieldGeometryPipeline(
       ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsDisabledRasterization());
     return GetPipeline(point_field_geometry_pipelines_, opts);
   }
 
