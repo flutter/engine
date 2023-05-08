@@ -252,11 +252,11 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return nullptr;
   }
 
-  atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
-                                          const Rect& location) -> bool {
-    DrawGlyph(canvas, font_glyph, location);
-    return true;
-  });
+  atlas.IterateGlyphs(
+      [canvas](const FontGlyphPair& font_glyph, const Rect& location) -> bool {
+        DrawGlyph(canvas, font_glyph, location);
+        return true;
+      });
 
   return bitmap;
 }
