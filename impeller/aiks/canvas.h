@@ -37,9 +37,11 @@ struct CanvasStackEntry {
   bool contains_clips = false;
 };
 
-enum PointStyle {
+enum class PointStyle {
+  /// @brief Points are drawn as squares.
   kRound,
 
+  /// @brief Points are drawn as circles.
   kSquare,
 };
 
