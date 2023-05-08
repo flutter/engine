@@ -80,6 +80,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsDecalTileMode() const override;
 
   // |Capabilities|
+  bool SupportsDisabledRasterization() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
