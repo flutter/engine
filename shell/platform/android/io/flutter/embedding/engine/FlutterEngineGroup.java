@@ -165,17 +165,32 @@ public class FlutterEngineGroup {
       }
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
     } else {
-      engine =
-          activeEngines
-              .get(0)
-              .spawn(
-                  context,
-                  dartEntrypoint,
-                  initialRoute,
-                  dartEntrypointArgs,
-                  platformViewsController,
-                  automaticallyRegisterPlugins,
-                  waitForRestorationData);
+      if (engine =
+              activeEngines
+                      .get(0) != null) {
+        engine =
+                activeEngines
+                        .get(0)
+                        .spawn(
+                                context,
+                                dartEntrypoint,
+                                initialRoute,
+                                dartEntrypointArgs,
+                                platformViewsController,
+                                automaticallyRegisterPlugins,
+                                waitForRestorationData);
+      } else {
+        engine =
+                createEngine(
+                        context,
+                        platformViewsController,
+                        automaticallyRegisterPlugins,
+                        waitForRestorationData);
+        if (initialRoute != null) {
+          engine.getNavigationChannel().setInitialRoute(initialRoute);
+        }
+        engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
+      }
     }
 
     activeEngines.add(engine);
