@@ -170,8 +170,7 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
 
 static void DrawGlyph(SkCanvas* canvas,
                       const FontGlyphPair& font_glyph,
-                      const Rect& location,
-                      bool has_color) {
+                      const Rect& location) {
   const auto& metrics = font_glyph.font.GetMetrics();
   const auto position = SkPoint::Make(location.origin.x / metrics.scale,
                                       location.origin.y / metrics.scale);
@@ -184,10 +183,8 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
 
-  auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorBLACK;
-
   SkPaint glyph_paint;
-  glyph_paint.setColor(glyph_color);
+  glyph_paint.setColor(SK_ColorWHITE);
   canvas->resetMatrix();
   canvas->scale(metrics.scale, metrics.scale);
   canvas->drawGlyphs(
@@ -216,14 +213,12 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     return false;
   }
 
-  bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
-
   for (const FontGlyphPair& pair : new_pairs) {
     auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(canvas, pair, pos.value(), has_color);
+    DrawGlyph(canvas, pair, pos.value());
   }
   return true;
 }
@@ -257,11 +252,9 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return nullptr;
   }
 
-  bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
-
-  atlas.IterateGlyphs([canvas, has_color](const FontGlyphPair& font_glyph,
+  atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
                                           const Rect& location) -> bool {
-    DrawGlyph(canvas, font_glyph, location, has_color);
+    DrawGlyph(canvas, font_glyph, location);
     return true;
   });
 
