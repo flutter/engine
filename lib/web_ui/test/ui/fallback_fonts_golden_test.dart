@@ -9,8 +9,10 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:web_engine_tester/golden_tester.dart';
 
-import 'common.dart';
+import '../common/test_initialization.dart';
+import 'utils.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -20,9 +22,12 @@ const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 100);
 
 void testMain() {
   group('Font fallbacks', () {
-    setUpCanvasKitTest();
+    setUpUnitTests(
+      emulateTesterEnvironment: false,
+      setUpTestViewDimensions: false,
+    );
 
-    setUpAll(() {
+    setUp(() {
       debugDisableFontFallbacks = false;
     });
 
@@ -53,8 +58,8 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      CkParagraphBuilder pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.addText('مرحبا');
 
@@ -63,27 +68,27 @@ void testMain() {
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           contains('Noto Sans Arabic'));
 
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
 
-      pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.pushStyle(ui.TextStyle(fontSize: 32));
       pb.addText('مرحبا');
       pb.pop();
-      final CkParagraph paragraph = pb.build();
+      final ui.Paragraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       canvas.drawParagraph(paragraph, ui.Offset.zero);
+      await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchPictureGolden(
-        'canvaskit_font_fallback_arabic.png',
-        recorder.endRecording(),
+      await matchGoldenFile(
+        'ui_font_fallback_arabic.png',
         region: kDefaultRegion,
       );
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-    }, skip: isSafari || isFirefox);
+    });
 
     test('will put the Noto Color Emoji font before other fallback fonts in the list',
         () async {
@@ -91,8 +96,8 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // Arabic fallback font.
-      CkParagraphBuilder pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.addText('مرحبا');
 
@@ -101,13 +106,13 @@ void testMain() {
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           <String>['Roboto', 'Noto Sans Arabic']);
 
-      pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.pushStyle(ui.TextStyle(fontSize: 26));
       pb.addText('Hello 😊 مرحبا');
       pb.pop();
-      final CkParagraph paragraph = pb.build();
+      final ui.Paragraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
@@ -125,8 +130,8 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      CkParagraphBuilder pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.addText('Hello 😊');
 
@@ -135,27 +140,27 @@ void testMain() {
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           contains('Noto Color Emoji'));
 
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
 
-      pb = CkParagraphBuilder(
-        CkParagraphStyle(),
+      pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
       );
       pb.pushStyle(ui.TextStyle(fontSize: 26));
       pb.addText('Hello 😊');
       pb.pop();
-      final CkParagraph paragraph = pb.build();
+      final ui.Paragraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       canvas.drawParagraph(paragraph, ui.Offset.zero);
+      await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchPictureGolden(
-        'canvaskit_font_fallback_emoji.png',
-        recorder.endRecording(),
+      await matchGoldenFile(
+        'ui_font_fallback_emoji.png',
         region: kDefaultRegion,
       );
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-    }, skip: isSafari || isFirefox);
+    });
 
     // Regression test for https://github.com/flutter/flutter/issues/75836
     // When we had this bug our font fallback resolution logic would end up in an
@@ -165,7 +170,7 @@ void testMain() {
         () async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
 
-      CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
+      ui.ParagraphBuilder(ui.ParagraphStyle()).addText('ヽಠ');
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
       expect(
         downloadedFontFamilies,
@@ -177,7 +182,7 @@ void testMain() {
 
       // Do the same thing but this time with loaded fonts.
       downloadedFontFamilies.clear();
-      CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
+      ui.ParagraphBuilder(ui.ParagraphStyle()).addText('ヽಠ');
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
       expect(downloadedFontFamilies, isEmpty);
     });
@@ -185,7 +190,7 @@ void testMain() {
     test('can find glyph for 2/3 symbol', () async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
 
-      CkParagraphBuilder(CkParagraphStyle()).addText('⅔');
+      ui.ParagraphBuilder(ui.ParagraphStyle()).addText('⅔');
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
       expect(
         downloadedFontFamilies,
@@ -196,7 +201,7 @@ void testMain() {
 
       // Do the same thing but this time with loaded fonts.
       downloadedFontFamilies.clear();
-      CkParagraphBuilder(CkParagraphStyle()).addText('⅔');
+      ui.ParagraphBuilder(ui.ParagraphStyle()).addText('⅔');
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
       expect(downloadedFontFamilies, isEmpty);
     });
@@ -404,6 +409,7 @@ void testMain() {
       }
     });
   },
-  skip: isSafari,
+  // HTML renderer doesn't use the fallback font manager.
+  skip: isHtml,
   timeout: const Timeout.factor(4));
 }

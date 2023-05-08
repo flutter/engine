@@ -21,7 +21,6 @@ SKWASM_EXPORT FlutterFontCollection* fontCollection_create() {
   return new FlutterFontCollection{
       std::move(collection),
       std::move(provider),
-      { SkString("Roboto") },
   };
 }
 
@@ -83,17 +82,4 @@ SKWASM_EXPORT void fontCollection_registerTypeface(
   } else {
     collection->provider->registerTypeface(sk_sp<SkTypeface>(typeface));
   }
-}
-
-SKWASM_EXPORT void fontCollection_setDefaultFontFamilies(
-  FlutterFontCollection* collection,
-  SkString **familyNames,
-  int familyCount
-) {
-  std::vector<SkString> families;
-  families.reserve(familyCount);
-  for (int i = 0; i < familyCount; i++) {
-    families.push_back(*familyNames[i]);
-  }
-  collection->fallbackFontFamilies = families;
 }

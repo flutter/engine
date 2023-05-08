@@ -50,14 +50,3 @@ external void fontCollectionRegisterTypeface(
   TypefaceHandle typeface,
   SkStringHandle fontName,
 );
-
-@Native<Void Function(
-  FontCollectionHandle,
-  Pointer<SkStringHandle>,
-  Int,
-)>(symbol: 'fontCollection_setDefaultFontFamilies', isLeaf: true)
-external void fontCollectionSetDefaultFontFamilies(
-  FontCollectionHandle handle,
-  Pointer<SkStringHandle> families,
-  int familyCount,
-);

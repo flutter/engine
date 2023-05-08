@@ -57,7 +57,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
   });
 
   @override
-  late final FontFallbackManager fontFallbackManager =
+  late FontFallbackManager fontFallbackManager =
     FontFallbackManager(SkwasmFallbackRegistry(this));
 
   @override
@@ -187,6 +187,8 @@ class SkwasmFontCollection implements FlutterFontCollection {
   
   @override
   void debugResetFallbackFonts() {
+    setDefaultFontFamilies(<String>[]);
+    fontFallbackManager = FontFallbackManager(SkwasmFallbackRegistry(this));
   }
 }
 
