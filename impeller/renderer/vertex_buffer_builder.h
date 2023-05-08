@@ -128,9 +128,9 @@ class VertexBufferBuilder {
 
     // So dumb! We don't actually need an index buffer right now. But we will
     // once de-duplication is done. So assume this is always done.
-    std::vector<IndexType> index_buffer;
+    std::vector<IndexType> index_buffer(vertices_.size());
     for (size_t i = 0; i < vertices_.size(); i++) {
-      index_buffer.push_back(i);
+      index_buffer[i] = i;
     }
     return index_buffer;
   }

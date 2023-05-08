@@ -908,11 +908,23 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   auto& host_buffer = pass.GetTransientsBuffer();
 
   using VS = PointFieldGeometryPipeline::VertexShader;
-  VertexBufferBuilder<VS::PerVertexData, uint32_t> vertex_builder;
-  for (auto i = 0u; i < points_.size(); i++) {
-    vertex_builder.AppendVertex(
-        {.center = points_[i], .offset = static_cast<int32_t>(i)});
+
+  // Create Dummy index buffer.
+  auto index_count = divisions_per_circle * points_.size() * 3;
+  std::vector<uint32_t> dummy_index(index_count);
+  for (auto i = 0u; i < index_count; i++) {
+    dummy_index[i] = i;
   }
+
+  auto vtx_buffer = VertexBuffer{
+      .vertex_buffer = host_buffer.Emplace(
+          points_.data(), points_.size() * sizeof(Point), alignof(Point)),
+      .index_buffer = host_buffer.Emplace(dummy_index.data(),
+                                          points_.size() * sizeof(uint32_t),
+                                          alignof(uint32_t)),
+      .index_count = points_.size(),
+      .index_type = IndexType::k32bit,
+  };
 
   DeviceBufferDescriptor buffer_desc;
   buffer_desc.size = total * sizeof(Point);
@@ -921,12 +933,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   auto buffer =
       renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
-  // Create Dummy index buffer.
-  auto index_count = divisions_per_circle * points_.size() * 3;
-  std::vector<uint32_t> dummy_index(index_count);
-  for (auto i = 0u; i < index_count; i++) {
-    dummy_index[i] = i;
-  }
   auto index_buffer = host_buffer.Emplace(
       dummy_index.data(), index_count * sizeof(uint32_t), alignof(uint32_t));
 
@@ -951,7 +957,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   VS::BindGeometryData(
       cmd, {.buffer = buffer, .range = Range{0, total * sizeof(Point)}});
 
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+  cmd.BindVertices(vtx_buffer);
 
   if (!pass.AddCommand(std::move(cmd))) {
     return {};
@@ -987,7 +993,16 @@ size_t PointFieldGeometry::ComputeResultSize(Scalar scaled_radius,
                                              size_t point_count) {
   // note: this formula is completely arbitrary, we should find a reasonable
   // curve based on experimental data.
-  return 8;
+  if (scaled_radius < 4.0) {
+    return 8;
+  }
+  if (scaled_radius < 16) {
+    return 16;
+  }
+  if (scaled_radius < 32) {
+    return 32;
+  }
+  return 64;
 }
 
 // |Geometry|
