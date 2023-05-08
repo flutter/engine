@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../text/unicode_range.dart';
+import 'text/unicode_range.dart';
 
 class NotoFont {
   NotoFont(this.name, this.url, this._packedRanges);
