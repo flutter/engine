@@ -208,12 +208,10 @@ SKWASM_EXPORT void canvas_drawShadow(CanvasWrapper* wrapper,
       devicePixelRatio * kShadowLightRadius, outAmbient, outSpot, flags);
 }
 
-SKWASM_EXPORT void canvas_drawParagraph(
-  CanvasWrapper *wrapper,
-  Paragraph *paragraph,
-  SkScalar x,
-  SkScalar y
-) {
+SKWASM_EXPORT void canvas_drawParagraph(CanvasWrapper* wrapper,
+                                        Paragraph* paragraph,
+                                        SkScalar x,
+                                        SkScalar y) {
   paragraph->paint(wrapper->canvas, x, y);
 }
 

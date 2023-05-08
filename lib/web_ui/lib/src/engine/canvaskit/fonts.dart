@@ -220,7 +220,7 @@ class SkiaFontCollection implements FlutterFontCollection {
 
   @override
   void clear() {}
-  
+
   @override
   void debugResetFallbackFonts() {
     fontFallbackManager = FontFallbackManager(SkiaFallbackRegistry(this));

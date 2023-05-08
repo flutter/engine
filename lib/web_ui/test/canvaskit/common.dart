@@ -27,10 +27,10 @@ void setUpCanvasKitTest() {
     SurfaceFactory.instance.debugClear();
   });
 
-  setUp(() => 
+  setUp(() =>
     renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride
       = 'assets/fallback_fonts/');
-  tearDown(() => 
+  tearDown(() =>
     renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride
       = null);
 }

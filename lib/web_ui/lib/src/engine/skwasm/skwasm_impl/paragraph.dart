@@ -80,7 +80,7 @@ class SkwasmParagraph implements ui.Paragraph {
   bool get didExceedMaxLines => paragraphGetDidExceedMaxLines(handle);
 
   @override
-  void layout(ui.ParagraphConstraints constraints) => 
+  void layout(ui.ParagraphConstraints constraints) =>
     paragraphLayout(handle, constraints.width);
 
   List<ui.TextBox> _convertTextBoxList(TextBoxListHandle listHandle) {
@@ -88,7 +88,7 @@ class SkwasmParagraph implements ui.Paragraph {
     return withStackScope((StackScope scope) {
       final RawRect tempRect = scope.allocFloatArray(4);
       return List<ui.TextBox>.generate(length, (int index) {
-        final int textDirectionIndex = 
+        final int textDirectionIndex =
           textBoxListGetBoxAtIndex(listHandle, index, tempRect);
         return ui.TextBox.fromLTRBD(
           tempRect[0],
@@ -145,7 +145,7 @@ class SkwasmParagraph implements ui.Paragraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final int lineNumber = paragraphGetLineNumberAt(handle, position.offset);
-    final LineMetricsHandle metricsHandle = 
+    final LineMetricsHandle metricsHandle =
       paragraphGetLineMetricsAtIndex(handle, lineNumber);
     final ui.TextRange range = ui.TextRange(
       start: lineMetricsGetStartIndex(metricsHandle),
@@ -166,7 +166,7 @@ class SkwasmParagraph implements ui.Paragraph {
   @override
   List<SkwasmLineMetrics> computeLineMetrics() {
     final int lineCount = paragraphGetLineCount(handle);
-    return List<SkwasmLineMetrics>.generate(lineCount, 
+    return List<SkwasmLineMetrics>.generate(lineCount,
       (int index) => SkwasmLineMetrics._(paragraphGetLineMetricsAtIndex(handle, index))
     );
   }
@@ -318,7 +318,7 @@ class SkwasmTextStyle implements ui.TextStyle {
           final ui.FontVariation variation = fontVariations![i];
           final String axis = variation.axis;
           assert(axis.length == 4); // 4 byte code
-          final int axisNumber = 
+          final int axisNumber =
             axis.codeUnitAt(0) << 24 |
             axis.codeUnitAt(1) << 16 |
             axis.codeUnitAt(2) << 8 |
@@ -461,7 +461,7 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
       (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle,
     );
     if (fontFamily != null) {
-      withScopedFontList(<String>[fontFamily], 
+      withScopedFontList(<String>[fontFamily],
         (Pointer<SkStringHandle> families, int count) =>
           textStyleAddFontFamilies(textStyleHandle, families, count));
     }
@@ -595,7 +595,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
       sourceStyleHandle = style.textStyleHandle;
     }
     if (sourceStyleHandle == nullptr) {
-      sourceStyleHandle = 
+      sourceStyleHandle =
         (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle;
     }
     final TextStyleHandle styleHandle = textStyleCopy(sourceStyleHandle);

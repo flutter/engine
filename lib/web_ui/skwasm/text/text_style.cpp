@@ -17,7 +17,7 @@ SKWASM_EXPORT TextStyle* textStyle_create() {
   return style;
 }
 
-SKWASM_EXPORT TextStyle* textStyle_copy(TextStyle *style) {
+SKWASM_EXPORT TextStyle* textStyle_copy(TextStyle* style) {
   return new TextStyle(*style);
 }
 
@@ -68,7 +68,7 @@ SKWASM_EXPORT void textStyle_clearFontFamilies(TextStyle* style) {
 SKWASM_EXPORT void textStyle_addFontFamilies(TextStyle* style,
                                              SkString** fontFamilies,
                                              int count) {
-  const std::vector<SkString> &currentFamilies = style->getFontFamilies();
+  const std::vector<SkString>& currentFamilies = style->getFontFamilies();
   std::vector<SkString> newFamilies;
   newFamilies.reserve(currentFamilies.size() + count);
   for (int i = 0; i < count; i++) {
@@ -129,22 +129,16 @@ SKWASM_EXPORT void textStyle_addFontFeature(TextStyle* style,
   style->addFontFeature(*featureName, value);
 }
 
-SKWASM_EXPORT void textStyle_setFontVariations(
-  TextStyle* style,
-  SkFourByteTag* axes,
-  float* values,
-  int count
-) {
+SKWASM_EXPORT void textStyle_setFontVariations(TextStyle* style,
+                                               SkFourByteTag* axes,
+                                               float* values,
+                                               int count) {
   std::vector<SkFontArguments::VariationPosition::Coordinate> coordinates;
   for (int i = 0; i < count; i++) {
-      coordinates.push_back({
-          axes[i],
-          values[i]
-      });
+    coordinates.push_back({axes[i], values[i]});
   }
   SkFontArguments::VariationPosition position = {
-      coordinates.data(),
-      static_cast<int>(coordinates.size())
-  };
-  style->setFontArguments(SkFontArguments().setVariationDesignPosition(position));
+      coordinates.data(), static_cast<int>(coordinates.size())};
+  style->setFontArguments(
+      SkFontArguments().setVariationDesignPosition(position));
 }

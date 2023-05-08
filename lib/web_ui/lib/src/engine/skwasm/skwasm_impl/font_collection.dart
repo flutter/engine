@@ -184,7 +184,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
     }
     return true;
   }
-  
+
   @override
   void debugResetFallbackFonts() {
     setDefaultFontFamilies(<String>[]);
@@ -202,7 +202,7 @@ class SkwasmFallbackRegistry implements FallbackFontRegistry {
     => withStackScope((StackScope scope) {
     final List<SkwasmTypeface> typefaces = fontFamilies
       .map((String family) => fontCollection.registeredTypefaces[family])
-      .fold(const Iterable<SkwasmTypeface>.empty(), 
+      .fold(const Iterable<SkwasmTypeface>.empty(),
         (Iterable<SkwasmTypeface> accumulated, List<SkwasmTypeface>? typefaces) =>
           typefaces == null ? accumulated : accumulated.followedBy(typefaces)).toList();
     final Pointer<TypefaceHandle> typefaceBuffer = scope.allocPointerArray(typefaces.length).cast<TypefaceHandle>();
@@ -227,6 +227,6 @@ class SkwasmFallbackRegistry implements FallbackFontRegistry {
     fontCollection.loadFontFromUrl(familyName, url);
 
   @override
-  void updateFallbackFontFamilies(List<String> families) => 
+  void updateFallbackFontFamilies(List<String> families) =>
     fontCollection.setDefaultFontFamilies(families);
 }

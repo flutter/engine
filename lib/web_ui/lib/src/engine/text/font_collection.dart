@@ -174,7 +174,7 @@ class HtmlFontCollection implements FlutterFontCollection {
     }
     return true;
   }
-  
+
   @override
   void debugResetFallbackFonts() {
   }
