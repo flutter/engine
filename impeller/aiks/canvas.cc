@@ -251,10 +251,8 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
 
     GetCurrentPass().AddEntity(entity);
     return;
-  } else {
-    DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
-             paint);
   }
+  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(), paint);
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
@@ -263,7 +261,9 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
                               paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(), paint);
+  auto circle_path = PathBuilder{}.AddCircle(center, radius).TakePath();
+  circle_path.SetConvexity(Convexity::kConvex);
+  DrawPath(circle_path, paint);
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
