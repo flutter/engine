@@ -182,7 +182,7 @@ Debian or Ubuntu.
 #### Gclient\_variables
 
 A dictionary with variables passed to gclient during a gclient sync operation.
-They are usually used add/remove gclient dependencies.
+They are usually used to add or remove gclient dependencies.
 
 ```yaml
 "gclient_variables": {
