@@ -5,11 +5,8 @@
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
-// TODO(jonahwilliams): with some adjustments to start and end angles,
-// this could draw squars and closed arcs too.
-
 uniform FrameInfo {
-  float radius;
+  float16_t radius;
   float16_t radian_start;
   float16_t radian_step;
   int points_per_circle;
@@ -22,7 +19,7 @@ layout(std430) writeonly buffer GeometryData {
 }
 geometry_data;
 
-in vec2 center;
+in f16vec2 center;
 
 void main() {
   // The buffer offset we start writing to is the number of data per circle *

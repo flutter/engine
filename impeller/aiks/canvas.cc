@@ -382,7 +382,8 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
-      Geometry::MakePointField(std::move(points), radius, /*round=*/point_style == PointStyle::kRound))));
+      Geometry::MakePointField(std::move(points), radius,
+                               /*round=*/point_style == PointStyle::kRound))));
 
   GetCurrentPass().AddEntity(entity);
 }
