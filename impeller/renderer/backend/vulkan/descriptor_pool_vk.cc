@@ -17,7 +17,7 @@ DescriptorPoolVK::DescriptorPoolVK(
 
 DescriptorPoolVK::~DescriptorPoolVK() = default;
 
-static vk::UniqueDescriptorPool CreatePool(const vk::Device* device,
+static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
                                            uint32_t pool_count) {
   TRACE_EVENT0("impeller", "CreateDescriptorPool");
   std::vector<vk::DescriptorPoolSize> pools = {
@@ -32,7 +32,7 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device* device,
   pool_info.setMaxSets(pools.size() * pool_count);
   pool_info.setPoolSizes(pools);
 
-  auto [result, pool] = device->createDescriptorPoolUnique(pool_info);
+  auto [result, pool] = device.createDescriptorPoolUnique(pool_info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to create a descriptor pool";
   }
@@ -53,7 +53,7 @@ std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
     return std::nullopt;
   }
   auto [result, sets] =
-      strong_device->GetDevice()->allocateDescriptorSets(set_info);
+      strong_device->GetDevice().allocateDescriptorSets(set_info);
   if (result == vk::Result::eErrorOutOfPoolMemory) {
     return GrowPool() ? AllocateDescriptorSet(layout) : std::nullopt;
   }

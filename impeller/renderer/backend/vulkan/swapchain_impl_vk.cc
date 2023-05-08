@@ -21,11 +21,11 @@ struct FrameSynchronizer {
   vk::UniqueSemaphore present_ready;
   bool is_valid = false;
 
-  explicit FrameSynchronizer(const vk::Device* device) {
-    auto acquire_res = device->createFenceUnique(
+  explicit FrameSynchronizer(const vk::Device& device) {
+    auto acquire_res = device.createFenceUnique(
         vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
-    auto render_res = device->createSemaphoreUnique({});
-    auto present_res = device->createSemaphoreUnique({});
+    auto render_res = device.createSemaphoreUnique({});
+    auto present_res = device.createSemaphoreUnique({});
     if (acquire_res.result != vk::Result::eSuccess ||
         render_res.result != vk::Result::eSuccess ||
         present_res.result != vk::Result::eSuccess) {
@@ -40,8 +40,8 @@ struct FrameSynchronizer {
 
   ~FrameSynchronizer() = default;
 
-  bool WaitForFence(const vk::Device* device) {
-    if (auto result = device->waitForFences(
+  bool WaitForFence(const vk::Device& device) {
+    if (auto result = device.waitForFences(
             *acquire,                             // fence
             true,                                 // wait all
             std::numeric_limits<uint64_t>::max()  // timeout (ns)
@@ -50,7 +50,7 @@ struct FrameSynchronizer {
       VALIDATION_LOG << "Fence wait failed: " << vk::to_string(result);
       return false;
     }
-    if (auto result = device->resetFences(*acquire);
+    if (auto result = device.resetFences(*acquire);
         result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not reset fence: " << vk::to_string(result);
       return false;
@@ -106,7 +106,7 @@ static std::optional<vk::CompositeAlphaFlagBitsKHR> ChooseAlphaCompositionMode(
 
 static std::optional<vk::Queue> ChoosePresentQueue(
     const vk::PhysicalDevice& physical_device,
-    const vk::Device* device,
+    const vk::Device& device,
     const vk::SurfaceKHR& surface) {
   const auto families = physical_device.getQueueFamilyProperties();
   for (size_t family_index = 0u; family_index < families.size();
@@ -114,7 +114,7 @@ static std::optional<vk::Queue> ChoosePresentQueue(
     auto [result, supported] =
         physical_device.getSurfaceSupportKHR(family_index, surface);
     if (result == vk::Result::eSuccess && supported) {
-      return device->getQueue(family_index, 0u);
+      return device.getQueue(family_index, 0u);
     }
   }
   return std::nullopt;
@@ -207,7 +207,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   swapchain_info.oldSwapchain = old_swapchain;
 
   auto [swapchain_result, swapchain] =
-      vk_context.GetDevice()->createSwapchainKHRUnique(swapchain_info);
+      vk_context.GetDevice().createSwapchainKHRUnique(swapchain_info);
   if (swapchain_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create swapchain: "
                    << vk::to_string(swapchain_result);
@@ -215,7 +215,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   }
 
   auto [images_result, images] =
-      vk_context.GetDevice()->getSwapchainImagesKHR(*swapchain);
+      vk_context.GetDevice().getSwapchainImagesKHR(*swapchain);
   if (images_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not get swapchain images.";
     return;
@@ -284,7 +284,7 @@ bool SwapchainImplVK::IsValid() const {
 void SwapchainImplVK::WaitIdle() const {
   if (auto context = context_.lock()) {
     [[maybe_unused]] auto result =
-        ContextVK::Cast(*context).GetDevice()->waitIdle();
+        ContextVK::Cast(*context).GetDevice().waitIdle();
   }
 }
 
@@ -329,7 +329,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   //----------------------------------------------------------------------------
   /// Get the next image index.
   ///
-  auto [acq_result, index] = context.GetDevice()->acquireNextImageKHR(
+  auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
       *swapchain_,                           // swapchain
       std::numeric_limits<uint64_t>::max(),  // timeout (nanoseconds)
       *sync->render_ready,                   // signal semaphore

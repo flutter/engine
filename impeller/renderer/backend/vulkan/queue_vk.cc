@@ -45,14 +45,14 @@ QueuesVK::QueuesVK(const vk::Device& device,
 
   // Always setup the graphics queue.
   graphics_queue = std::make_shared<QueueVK>(graphics, vk_graphics);
-  ContextVK::SetDebugName(&device, vk_graphics, "ImpellerGraphicsQ");
+  ContextVK::SetDebugName(device, vk_graphics, "ImpellerGraphicsQ");
 
   // Setup the compute queue if its different from the graphics queue.
   if (compute == graphics) {
     compute_queue = graphics_queue;
   } else {
     compute_queue = std::make_shared<QueueVK>(compute, vk_compute);
-    ContextVK::SetDebugName(&device, vk_compute, "ImpellerComputeQ");
+    ContextVK::SetDebugName(device, vk_compute, "ImpellerComputeQ");
   }
 
   // Setup the transfer queue if its different from the graphics or compute
@@ -63,7 +63,7 @@ QueuesVK::QueuesVK(const vk::Device& device,
     transfer_queue = compute_queue;
   } else {
     transfer_queue = std::make_shared<QueueVK>(transfer, vk_transfer);
-    ContextVK::SetDebugName(&device, vk_transfer, "ImpellerTransferQ");
+    ContextVK::SetDebugName(device, vk_transfer, "ImpellerTransferQ");
   }
 }
 

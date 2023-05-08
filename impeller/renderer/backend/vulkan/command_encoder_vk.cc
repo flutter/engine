@@ -143,8 +143,7 @@ bool CommandEncoderVK::Submit() {
   if (!strong_device) {
     return false;
   }
-  auto [fence_result, fence] =
-      strong_device->GetDevice()->createFenceUnique({});
+  auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
     return false;
   }

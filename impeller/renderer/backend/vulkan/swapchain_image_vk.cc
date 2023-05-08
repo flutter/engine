@@ -7,7 +7,7 @@
 namespace impeller {
 
 SwapchainImageVK::SwapchainImageVK(TextureDescriptor desc,
-                                   const vk::Device* device,
+                                   const vk::Device& device,
                                    vk::Image image)
     : TextureSourceVK(desc), image_(image) {
   vk::ImageViewCreateInfo view_info;
@@ -20,7 +20,7 @@ SwapchainImageVK::SwapchainImageVK(TextureDescriptor desc,
   view_info.subresourceRange.levelCount = desc.mip_count;
   view_info.subresourceRange.layerCount = ToArrayLayerCount(desc.type);
 
-  auto [view_result, view] = device->createImageViewUnique(view_info);
+  auto [view_result, view] = device.createImageViewUnique(view_info);
   if (view_result != vk::Result::eSuccess) {
     return;
   }

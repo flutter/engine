@@ -56,8 +56,7 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
   }
 
   if (!desc.label.empty()) {
-    ContextVK::SetDebugName(&device_, sampler->GetSampler(),
-                            desc.label.c_str());
+    ContextVK::SetDebugName(device_, sampler->GetSampler(), desc.label.c_str());
   }
 
   samplers_[desc] = sampler;

@@ -44,7 +44,7 @@ class PipelineLibraryVK final
 
   PipelineLibraryVK(
       const std::weak_ptr<DeviceHolder>& device_holder,
-      const vk::Device* device,
+      const vk::Device& device,
       std::shared_ptr<const Capabilities> caps,
       fml::UniqueFD cache_directory,
       std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);

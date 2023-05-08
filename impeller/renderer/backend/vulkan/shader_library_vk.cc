@@ -156,7 +156,7 @@ bool ShaderLibraryVK::RegisterFunction(
   const auto key_name = VKShaderNameToShaderKeyName(name, stage);
 
   vk::UniqueShaderModule shader_module = std::move(module.value);
-  ContextVK::SetDebugName(&device_, *shader_module, "Shader " + name);
+  ContextVK::SetDebugName(device_, *shader_module, "Shader " + name);
 
   WriterLock lock(functions_mutex_);
   functions_[ShaderKey{key_name, stage}] = std::shared_ptr<ShaderFunctionVK>(

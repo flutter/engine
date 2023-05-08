@@ -308,7 +308,7 @@ void ContextVK::Setup(Settings settings) {
   ///
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
       new PipelineLibraryVK(weak_from_this(),                     //
-                            &device.get(),                        //
+                            device.get(),                         //
                             caps,                                 //
                             std::move(settings.cache_directory),  //
                             settings.worker_task_runner           //
@@ -423,8 +423,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-const vk::Device* ContextVK::GetDevice() const {
-  return &device_.get();
+const vk::Device& ContextVK::GetDevice() const {
+  return device_.get();
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {

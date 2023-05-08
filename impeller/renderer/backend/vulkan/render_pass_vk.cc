@@ -127,7 +127,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   render_pass_desc.setSubpassCount(1u);
 
   auto [result, pass] =
-      context.GetDevice()->createRenderPassUnique(render_pass_desc);
+      context.GetDevice().createRenderPassUnique(render_pass_desc);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create render pass: " << vk::to_string(result);
     return {};
@@ -232,7 +232,7 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   fb_info.setAttachments(attachments);
 
   auto [result, framebuffer] =
-      context.GetDevice()->createFramebufferUnique(fb_info);
+      context.GetDevice().createFramebufferUnique(fb_info);
 
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create framebuffer: " << vk::to_string(result);
@@ -390,7 +390,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return false;
   }
 
-  context.GetDevice()->updateDescriptorSets(writes, {});
+  context.GetDevice().updateDescriptorSets(writes, {});
 
   encoder.GetCommandBuffer().bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics,  // bind point

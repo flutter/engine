@@ -20,7 +20,7 @@ namespace impeller {
 
 PipelineLibraryVK::PipelineLibraryVK(
     const std::weak_ptr<DeviceHolder>& device_holder,
-    const vk::Device* device,
+    const vk::Device& device,
     std::shared_ptr<const Capabilities> caps,
     fml::UniqueFD cache_directory,
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
@@ -73,7 +73,7 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 /// spec:
 /// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/chap8.html#renderpass-compatibility
 ///
-static vk::UniqueRenderPass CreateRenderPass(const vk::Device* device,
+static vk::UniqueRenderPass CreateRenderPass(const vk::Device& device,
                                              const PipelineDescriptor& desc) {
   std::vector<vk::AttachmentDescription> attachments;
 
@@ -119,7 +119,7 @@ static vk::UniqueRenderPass CreateRenderPass(const vk::Device* device,
   render_pass_desc.setPSubpasses(&subpass_desc);
   render_pass_desc.setSubpassCount(1u);
 
-  auto [result, pass] = device->createRenderPassUnique(render_pass_desc);
+  auto [result, pass] = device.createRenderPassUnique(render_pass_desc);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create render pass for pipeline '"
                    << desc.GetLabel() << "'. Error: " << vk::to_string(result);
@@ -286,7 +286,7 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   descs_layout_info.setBindings(desc_bindings);
 
   auto [descs_result, descs_layout] =
-      strong_device->GetDevice()->createDescriptorSetLayoutUnique(
+      strong_device->GetDevice().createDescriptorSetLayoutUnique(
           descs_layout_info);
   if (descs_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "unable to create uniform descriptors";
@@ -301,7 +301,7 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   ///
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
   pipeline_layout_info.setSetLayouts(descs_layout.get());
-  auto pipeline_layout = strong_device->GetDevice()->createPipelineLayoutUnique(
+  auto pipeline_layout = strong_device->GetDevice().createPipelineLayoutUnique(
       pipeline_layout_info);
   if (pipeline_layout.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create pipeline layout for pipeline "

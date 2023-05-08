@@ -15,9 +15,13 @@ namespace impeller {
 
 class PipelineCacheVK {
  public:
+  // The [device] is passed in directly so that it can be used in the
+  // constructor directly. The [device_holder] isn't guaranteed to be valid
+  // at the time of executing `PipelineCacheVK` because of how `ContextVK` does
+  // initialization.
   explicit PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
                            std::weak_ptr<DeviceHolder> device_holder,
-                           const vk::Device* device,
+                           const vk::Device& device,
                            fml::UniqueFD cache_directory);
 
   ~PipelineCacheVK();

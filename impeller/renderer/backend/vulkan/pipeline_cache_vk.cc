@@ -54,12 +54,12 @@ static std::unique_ptr<fml::Mapping> OpenCacheFile(
 
 PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
                                  std::weak_ptr<DeviceHolder> device_holder,
-                                 const vk::Device* device,
+                                 const vk::Device& device,
                                  fml::UniqueFD cache_directory)
     : caps_(std::move(caps)),
       device_holder_(device_holder),
       cache_directory_(std::move(cache_directory)) {
-  if (!caps_ || !device || !*device) {
+  if (!caps_ || !device) {
     return;
   }
 
@@ -81,7 +81,7 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
     cache_info.pInitialData = existing_cache_data->GetMapping();
   }
 
-  auto [result, existing_cache] = device->createPipelineCacheUnique(cache_info);
+  auto [result, existing_cache] = device.createPipelineCacheUnique(cache_info);
 
   if (result == vk::Result::eSuccess) {
     cache_ = std::move(existing_cache);
@@ -93,7 +93,7 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
                   << vk::to_string(result) << ". Starting with a fresh cache.";
     cache_info.pInitialData = nullptr;
     cache_info.initialDataSize = 0u;
-    auto [result2, new_cache] = device->createPipelineCacheUnique(cache_info);
+    auto [result2, new_cache] = device.createPipelineCacheUnique(cache_info);
     if (result2 == vk::Result::eSuccess) {
       cache_ = std::move(new_cache);
     } else {
@@ -120,7 +120,7 @@ vk::UniquePipeline PipelineCacheVK::CreatePipeline(
 
   Lock lock(cache_mutex_);
   auto [result, pipeline] =
-      strong_device->GetDevice()->createGraphicsPipelineUnique(*cache_, info);
+      strong_device->GetDevice().createGraphicsPipelineUnique(*cache_, info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create graphics pipeline: "
                    << vk::to_string(result);
@@ -139,7 +139,7 @@ std::shared_ptr<fml::Mapping> PipelineCacheVK::CopyPipelineCacheData() const {
   }
   Lock lock(cache_mutex_);
   auto [result, data] =
-      strong_device->GetDevice()->getPipelineCacheData(*cache_);
+      strong_device->GetDevice().getPipelineCacheData(*cache_);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not get pipeline cache data to persist.";
     return nullptr;

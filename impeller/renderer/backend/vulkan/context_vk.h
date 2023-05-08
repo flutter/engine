@@ -85,7 +85,7 @@ class ContextVK final : public Context,
   }
 
   template <typename T>
-  static bool SetDebugName(const vk::Device* device,
+  static bool SetDebugName(const vk::Device& device,
                            T handle,
                            std::string_view label) {
     if (!HasValidationLayers()) {
@@ -100,7 +100,7 @@ class ContextVK final : public Context,
     info.pObjectName = label.data();
     info.objectHandle = reinterpret_cast<decltype(info.objectHandle)>(c_handle);
 
-    if (device->setDebugUtilsObjectNameEXT(info) != vk::Result::eSuccess) {
+    if (device.setDebugUtilsObjectNameEXT(info) != vk::Result::eSuccess) {
       VALIDATION_LOG << "Unable to set debug name: " << label;
       return false;
     }
@@ -111,7 +111,7 @@ class ContextVK final : public Context,
   vk::Instance GetInstance() const;
 
   // |DeviceHolder|
-  const vk::Device* GetDevice() const override;
+  const vk::Device& GetDevice() const override;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 

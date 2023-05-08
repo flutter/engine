@@ -11,7 +11,7 @@ namespace impeller {
 class DeviceHolder {
  public:
   virtual ~DeviceHolder() = default;
-  virtual const vk::Device* GetDevice() const = 0;
+  virtual const vk::Device& GetDevice() const = 0;
 };
 
 }  // namespace impeller
