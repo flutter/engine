@@ -42,11 +42,6 @@ else
   fix_flag="--fix"
 fi
 
-COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
-if [ ! -f "$COMPILE_COMMANDS" ]; then
-  (cd "$SRC_DIR"; ./flutter/tools/gn)
-fi
-
 echo "$(date +%T) Running clang_tidy"
 
 cd "$SCRIPT_DIR"
