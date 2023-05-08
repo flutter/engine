@@ -104,9 +104,9 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const Entity& entity,
     RenderPass& pass) {
   if (path_.GetFillType() == FillType::kNonZero &&  //
-      path.GetConvexity() == Convexity::kConvex &&  //
-      renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
-    auto polyline = path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+      path_.GetConvexity() == Convexity::kConvex) {
+    auto polyline =
+        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
     for (auto i = 0u; i < polyline.contours.size(); i++) {
       auto [start, end] = polyline.GetContourPointBounds(i);
     }
