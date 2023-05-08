@@ -202,78 +202,75 @@ void withScopedFontList(
 }
 
 class SkwasmTextStyle implements ui.TextStyle {
-  factory SkwasmTextStyle({
-    ui.Color? color,
-    ui.TextDecoration? decoration,
-    ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
-    ui.TextBaseline? textBaseline,
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    ui.TextLeadingDistribution? leadingDistribution,
-    ui.Locale? locale,
-    ui.Paint? background,
-    ui.Paint? foreground,
-    List<ui.Shadow>? shadows,
-    List<ui.FontFeature>? fontFeatures,
-    List<ui.FontVariation>? fontVariations,
-  }) {
-    final TextStyleHandle handle = textStyleCreate(
-      (renderer.fontCollection as SkwasmFontCollection).handle
-    );
+  SkwasmTextStyle({
+    this.color,
+    this.decoration,
+    this.decorationColor,
+    this.decorationStyle,
+    this.decorationThickness,
+    this.fontWeight,
+    this.fontStyle,
+    this.textBaseline,
+    this.fontFamily,
+    this.fontFamilyFallback,
+    this.fontSize,
+    this.letterSpacing,
+    this.wordSpacing,
+    this.height,
+    this.leadingDistribution,
+    this.locale,
+    this.background,
+    this.foreground,
+    this.shadows,
+    this.fontFeatures,
+    this.fontVariations,
+  });
+
+  void applyToHandle(TextStyleHandle handle) {
     if (color != null) {
-      textStyleSetColor(handle, color.value);
+      textStyleSetColor(handle, color!.value);
     }
     if (decoration != null) {
-      textStyleSetDecoration(handle, decoration.maskValue);
+      textStyleSetDecoration(handle, decoration!.maskValue);
     }
     if (decorationColor != null) {
-      textStyleSetDecorationColor(handle, decorationColor.value);
+      textStyleSetDecorationColor(handle, decorationColor!.value);
     }
     if (decorationStyle != null) {
-      textStyleSetDecorationStyle(handle, decorationStyle.index);
+      textStyleSetDecorationStyle(handle, decorationStyle!.index);
     }
     if (decorationThickness != null) {
-      textStyleSetDecorationThickness(handle, decorationThickness);
+      textStyleSetDecorationThickness(handle, decorationThickness!);
     }
     if (fontWeight != null || fontStyle != null) {
-      fontWeight ??= ui.FontWeight.normal;
-      fontStyle ??= ui.FontStyle.normal;
-      textStyleSetFontStyle(handle, fontWeight.value, fontStyle.index);
+      textStyleSetFontStyle(
+        handle,
+        (fontWeight ?? ui.FontWeight.normal).value,
+        (fontStyle ?? ui.FontStyle.normal).index
+      );
     }
     if (textBaseline != null) {
-      textStyleSetTextBaseline(handle, textBaseline.index);
+      textStyleSetTextBaseline(handle, textBaseline!.index);
     }
-    List<String>? fontFamilies;
-    if (fontFamily != null || fontFamilyFallback != null) {
-      fontFamilies = <String>[
-        if (fontFamily != null) fontFamily,
-        if (fontFamilyFallback != null) ...fontFamilyFallback,
-      ];
-      if (fontFamilies.isNotEmpty) {
-        withScopedFontList(fontFamilies,
-          (Pointer<SkStringHandle> families, int count) =>
-            textStyleAddFontFamilies(handle, families, count));
-      }
+
+    final List<String> effectiveFontFamilies = fontFamilies;
+    if (effectiveFontFamilies.isNotEmpty) {
+      withScopedFontList(effectiveFontFamilies,
+        (Pointer<SkStringHandle> families, int count) =>
+          textStyleAddFontFamilies(handle, families, count));
     }
+
     if (fontSize != null) {
-      textStyleSetFontSize(handle, fontSize);
+      textStyleSetFontSize(handle, fontSize!);
     }
     if (letterSpacing != null) {
-      textStyleSetLetterSpacing(handle, letterSpacing);
+      textStyleSetLetterSpacing(handle, letterSpacing!);
     }
     if (wordSpacing != null) {
-      textStyleSetWordSpacing(handle, wordSpacing);
+      textStyleSetWordSpacing(handle, wordSpacing!);
     }
     if (height != null) {
-      textStyleSetHeight(handle, height);
+      textStyleSetHeight(handle, height!);
     }
     if (leadingDistribution != null) {
       textStyleSetHalfLeading(
@@ -283,20 +280,18 @@ class SkwasmTextStyle implements ui.TextStyle {
     }
     if (locale != null) {
       final SkStringHandle localeHandle =
-        skStringFromDartString(locale.toLanguageTag());
+        skStringFromDartString(locale!.toLanguageTag());
       textStyleSetLocale(handle, localeHandle);
       skStringFree(localeHandle);
     }
     if (background != null) {
-      background as SkwasmPaint;
-      textStyleSetBackground(handle, background.handle);
+      textStyleSetBackground(handle, (background! as SkwasmPaint).handle);
     }
     if (foreground != null) {
-      foreground as SkwasmPaint;
-      textStyleSetForeground(handle, foreground.handle);
+      textStyleSetForeground(handle, (foreground! as SkwasmPaint).handle);
     }
     if (shadows != null) {
-      for (final ui.Shadow shadow in shadows) {
+      for (final ui.Shadow shadow in shadows!) {
         textStyleAddShadow(
           handle,
           shadow.color.value,
@@ -307,20 +302,40 @@ class SkwasmTextStyle implements ui.TextStyle {
       }
     }
     if (fontFeatures != null) {
-      for (final ui.FontFeature feature in fontFeatures) {
+      for (final ui.FontFeature feature in fontFeatures!) {
         final SkStringHandle featureName = skStringFromDartString(feature.feature);
         textStyleAddFontFeature(handle, featureName, feature.value);
         skStringFree(featureName);
       }
     }
-    // TODO(jacksongardner): Set font variations
-    return SkwasmTextStyle._(handle, fontFamilies);
   }
 
-  SkwasmTextStyle._(this.handle, this.fontFamilies);
+  List<String> get fontFamilies => <String>[
+    if (fontFamily != null) fontFamily!,
+    if (fontFamilyFallback != null) ...fontFamilyFallback!,
+  ];
 
-  final TextStyleHandle handle;
-  final List<String>? fontFamilies;
+  final ui.Color? color;
+  final ui.TextDecoration? decoration;
+  final ui.Color? decorationColor;
+  final ui.TextDecorationStyle? decorationStyle;
+  final double? decorationThickness;
+  final ui.FontWeight? fontWeight;
+  final ui.FontStyle? fontStyle;
+  final ui.TextBaseline? textBaseline;
+  final String? fontFamily;
+  final List<String>? fontFamilyFallback;
+  final double? fontSize;
+  final double? letterSpacing;
+  final double? wordSpacing;
+  final double? height;
+  final ui.TextLeadingDistribution? leadingDistribution;
+  final ui.Locale? locale;
+  final ui.Paint? background;
+  final ui.Paint? foreground;
+  final List<ui.Shadow>? shadows;
+  final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
 }
 
 class SkwasmStrutStyle implements ui.StrutStyle {
@@ -392,9 +407,7 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
     String? ellipsis,
     ui.Locale? locale,
   }) {
-    final ParagraphStyleHandle handle = paragraphStyleCreate(
-      (renderer.fontCollection as SkwasmFontCollection).handle,
-    );
+    final ParagraphStyleHandle handle = paragraphStyleCreate();
     if (textAlign != null) {
       paragraphStyleSetTextAlign(handle, textAlign.index);
     }
@@ -423,49 +436,50 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
       strutStyle as SkwasmStrutStyle;
       paragraphStyleSetStrutStyle(handle, strutStyle.handle);
     }
-    if (fontFamily != null ||
-      fontSize != null ||
-      fontWeight != null ||
-      fontStyle != null ||
-      textHeightBehavior != null ||
-      locale != null) {
-      final TextStyleHandle textStyleHandle = textStyleCreate(
-        (renderer.fontCollection as SkwasmFontCollection).handle,
-      );
-      if (fontFamily != null) {
-        withScopedFontList(<String>[fontFamily], 
-          (Pointer<SkStringHandle> families, int count) =>
-            textStyleAddFontFamilies(textStyleHandle, families, count));
-      }
-      if (fontSize != null) {
-        textStyleSetFontSize(textStyleHandle, fontSize);
-      }
-      if (fontWeight != null || fontStyle != null) {
-        fontWeight ??= ui.FontWeight.normal;
-        fontStyle ??= ui.FontStyle.normal;
-        textStyleSetFontStyle(textStyleHandle, fontWeight.value, fontStyle.index);
-      }
-      if (textHeightBehavior != null) {
-        textStyleSetHalfLeading(
-          textStyleHandle,
-          textHeightBehavior.leadingDistribution == ui.TextLeadingDistribution.even,
-        );
-      }
-      if (locale != null) {
-        final SkStringHandle localeHandle =
-        skStringFromDartString(locale.toLanguageTag());
-        textStyleSetLocale(textStyleHandle, localeHandle);
-        skStringFree(localeHandle);
-      }
-      paragraphStyleSetTextStyle(handle, textStyleHandle);
+    final TextStyleHandle textStyleHandle = textStyleCopy(
+      (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle,
+    );
+    if (fontFamily != null) {
+      withScopedFontList(<String>[fontFamily], 
+        (Pointer<SkStringHandle> families, int count) =>
+          textStyleAddFontFamilies(textStyleHandle, families, count));
     }
-    return SkwasmParagraphStyle._(handle, fontFamily);
+    if (fontSize != null) {
+      textStyleSetFontSize(textStyleHandle, fontSize);
+    }
+    if (fontWeight != null || fontStyle != null) {
+      fontWeight ??= ui.FontWeight.normal;
+      fontStyle ??= ui.FontStyle.normal;
+      textStyleSetFontStyle(textStyleHandle, fontWeight.value, fontStyle.index);
+    }
+    if (textHeightBehavior != null) {
+      textStyleSetHalfLeading(
+        textStyleHandle,
+        textHeightBehavior.leadingDistribution == ui.TextLeadingDistribution.even,
+      );
+    }
+    if (locale != null) {
+      final SkStringHandle localeHandle =
+      skStringFromDartString(locale.toLanguageTag());
+      textStyleSetLocale(textStyleHandle, localeHandle);
+      skStringFree(localeHandle);
+    }
+    paragraphStyleSetTextStyle(handle, textStyleHandle);
+    return SkwasmParagraphStyle._(handle, textStyleHandle, fontFamily);
   }
 
-  SkwasmParagraphStyle._(this.handle, this.defaultFontFamily);
+  SkwasmParagraphStyle._(this.handle, this.textStyleHandle, this.defaultFontFamily);
 
   final ParagraphStyleHandle handle;
+  final TextStyleHandle textStyleHandle;
   final String? defaultFontFamily;
+}
+
+class _TextStyleStackEntry {
+  _TextStyleStackEntry(this.style, this.handle);
+
+  SkwasmTextStyle style;
+  TextStyleHandle handle;
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
@@ -480,7 +494,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
   SkwasmParagraphBuilder._(this.handle, this.style);
   final ParagraphBuilderHandle handle;
   final SkwasmParagraphStyle style;
-  final List<SkwasmTextStyle> textStyleStack = <SkwasmTextStyle>[];
+  final List<_TextStyleStackEntry> textStyleStack = <_TextStyleStackEntry>[];
 
   @override
   List<double> placeholderScales = <double>[];
@@ -508,7 +522,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
   List<String> _getEffectiveFonts() {
     final List<String> fallbackFonts = renderer.fontCollection.fontFallbackManager!.globalFontFallbacks;
     final List<String>? currentFonts =
-      textStyleStack.isEmpty ? null : textStyleStack.last.fontFamilies;
+      textStyleStack.isEmpty ? null : textStyleStack.last.style.fontFamilies;
     if (currentFonts != null) {
       return <String>[
         ...currentFonts,
@@ -526,7 +540,9 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(text, _getEffectiveFonts());
+    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(
+      text, _getEffectiveFonts()
+    );
     final SkString16Handle stringHandle = skString16FromDartString(text);
     paragraphBuilderAddText(handle, stringHandle);
     skString16Free(stringHandle);
@@ -542,14 +558,28 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pop() {
-    textStyleStack.removeLast();
+    final TextStyleHandle textStyleHandle = textStyleStack.removeLast().handle;
+    textStyleDispose(textStyleHandle);
     paragraphBuilderPop(handle);
   }
 
   @override
-  void pushStyle(ui.TextStyle style) {
-    style as SkwasmTextStyle;
-    textStyleStack.add(style);
-    paragraphBuilderPushStyle(handle, style.handle);
+  void pushStyle(ui.TextStyle textStyle) {
+    textStyle as SkwasmTextStyle;
+    TextStyleHandle sourceStyleHandle = nullptr;
+    if (textStyleStack.isNotEmpty) {
+      sourceStyleHandle = textStyleStack.last.handle;
+    }
+    if (sourceStyleHandle == nullptr) {
+      sourceStyleHandle = style.textStyleHandle;
+    }
+    if (sourceStyleHandle == nullptr) {
+      sourceStyleHandle = 
+        (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle;
+    }
+    final TextStyleHandle styleHandle = textStyleCopy(sourceStyleHandle);
+    textStyle.applyToHandle(styleHandle);
+    textStyleStack.add(_TextStyleStackEntry(textStyle, styleHandle));
+    paragraphBuilderPushStyle(handle, styleHandle);
   }
 }

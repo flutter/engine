@@ -13,8 +13,11 @@ final class RawTextStyle extends Opaque {}
 
 typedef TextStyleHandle = Pointer<RawTextStyle>;
 
-@Native<TextStyleHandle Function(FontCollectionHandle)>(symbol: 'textStyle_create', isLeaf: true)
-external TextStyleHandle textStyleCreate(FontCollectionHandle handle);
+@Native<TextStyleHandle Function()>(symbol: 'textStyle_create', isLeaf: true)
+external TextStyleHandle textStyleCreate();
+
+@Native<TextStyleHandle Function(TextStyleHandle)>(symbol: 'textStyle_copy', isLeaf: true)
+external TextStyleHandle textStyleCopy(TextStyleHandle handle);
 
 @Native<Void Function(TextStyleHandle)>(symbol: 'textStyle_dispose', isLeaf: true)
 external void textStyleDispose(TextStyleHandle handle);
@@ -47,6 +50,9 @@ external void textStyleSetFontStyle(
 
 @Native<Void Function(TextStyleHandle, Int)>(symbol: 'textStyle_setTextBaseline', isLeaf: true)
 external void textStyleSetTextBaseline(TextStyleHandle handle, int baseline);
+
+@Native<Void Function(TextStyleHandle)>(symbol: 'textStyle_clearFontFamilies', isLeaf: true)
+external void textStyleClearFontFamilies(TextStyleHandle handle);
 
 @Native<Void Function(
   TextStyleHandle,

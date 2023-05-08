@@ -9,7 +9,7 @@
 using namespace skia::textlayout;
 using namespace Skwasm;
 
-SKWASM_EXPORT ParagraphStyle* paragraphStyle_create(FlutterFontCollection *collection) {
+SKWASM_EXPORT ParagraphStyle* paragraphStyle_create() {
   auto style = new ParagraphStyle();
 
   // This is the default behavior in Flutter
@@ -18,7 +18,6 @@ SKWASM_EXPORT ParagraphStyle* paragraphStyle_create(FlutterFontCollection *colle
   // Default text style has a black color
   TextStyle textStyle;
   textStyle.setColor(SK_ColorBLACK);
-  textStyle.setFontFamilies(collection->fallbackFontFamilies);
   style->setTextStyle(textStyle);
 
   return style;

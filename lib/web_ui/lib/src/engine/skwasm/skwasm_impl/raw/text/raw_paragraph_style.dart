@@ -12,8 +12,8 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 final class RawParagraphStyle extends Opaque {}
 typedef ParagraphStyleHandle = Pointer<RawParagraphStyle>;
 
-@Native<ParagraphStyleHandle Function(FontCollectionHandle)>(symbol: 'paragraphStyle_create', isLeaf: true)
-external ParagraphStyleHandle paragraphStyleCreate(FontCollectionHandle fontCollection);
+@Native<ParagraphStyleHandle Function()>(symbol: 'paragraphStyle_create', isLeaf: true)
+external ParagraphStyleHandle paragraphStyleCreate();
 
 @Native<Void Function(ParagraphStyleHandle)>(symbol: 'paragraphStyle_dispose', isLeaf: true)
 external void paragraphStyleDispose(ParagraphStyleHandle handle);

@@ -35,11 +35,26 @@ class SkwasmTypeface {
 }
 
 class SkwasmFontCollection implements FlutterFontCollection {
-  SkwasmFontCollection() : handle = fontCollectionCreate();
+  SkwasmFontCollection() {
+    setDefaultFontFamilies(<String>['Roboto']);
+  }
 
-  FontCollectionHandle handle;
-
+  FontCollectionHandle handle = fontCollectionCreate();
+  TextStyleHandle defaultTextStyle = textStyleCreate();
   final Map<String, List<SkwasmTypeface>> registeredTypefaces = <String, List<SkwasmTypeface>>{};
+
+  void setDefaultFontFamilies(List<String> families) => withStackScope((StackScope scope) {
+    final Pointer<SkStringHandle> familyPointers =
+      scope.allocPointerArray(families.length).cast<SkStringHandle>();
+    for (int i = 0; i < families.length; i++) {
+      familyPointers[i] = skStringFromDartString(families[i]);
+    }
+    textStyleClearFontFamilies(defaultTextStyle);
+    textStyleAddFontFamilies(defaultTextStyle, familyPointers, families.length);
+    for (int i = 0; i < families.length; i++) {
+      skStringFree(familyPointers[i]);
+    }
+  });
 
   @override
   late final FontFallbackManager fontFallbackManager =
@@ -210,18 +225,6 @@ class SkwasmFallbackRegistry implements FallbackFontRegistry {
     fontCollection.loadFontFromUrl(familyName, url);
 
   @override
-  void updateFallbackFontFamilies(List<String> families) => withStackScope((StackScope scope) {
-    final Pointer<SkStringHandle> familyPointers =
-      scope.allocPointerArray(families.length).cast<SkStringHandle>();
-    for (int i = 0; i < families.length; i++) {
-      familyPointers[i] = skStringFromDartString(families[i]);
-    }
-    fontCollectionSetDefaultFontFamilies(
-      fontCollection.handle,
-      familyPointers,
-      families.length);
-    for (int i = 0; i < families.length; i++) {
-      skStringFree(familyPointers[i]);
-    }
-  });
+  void updateFallbackFontFamilies(List<String> families) => 
+    fontCollection.setDefaultFontFamilies(families);
 }

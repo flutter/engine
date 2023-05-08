@@ -9,15 +9,16 @@
 using namespace skia::textlayout;
 using namespace Skwasm;
 
-SKWASM_EXPORT TextStyle* textStyle_create(FlutterFontCollection* collection) {
+SKWASM_EXPORT TextStyle* textStyle_create() {
   auto style = new TextStyle();
 
   // Default color in flutter is black.
   style->setColor(SK_ColorBLACK);
-
-  // Add fallback fonts
-  style->setFontFamilies(collection->fallbackFontFamilies);
   return style;
+}
+
+SKWASM_EXPORT TextStyle* textStyle_copy(TextStyle *style) {
+  return new TextStyle(*style);
 }
 
 SKWASM_EXPORT void textStyle_dispose(TextStyle* style) {
@@ -58,6 +59,10 @@ SKWASM_EXPORT void textStyle_setFontStyle(TextStyle* style,
 SKWASM_EXPORT void textStyle_setTextBaseline(TextStyle* style,
                                              TextBaseline baseline) {
   style->setTextBaseline(baseline);
+}
+
+SKWASM_EXPORT void textStyle_clearFontFamilies(TextStyle* style) {
+  style->setFontFamilies({});
 }
 
 SKWASM_EXPORT void textStyle_addFontFamilies(TextStyle* style,
