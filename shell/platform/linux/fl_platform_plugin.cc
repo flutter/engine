@@ -260,7 +260,7 @@ static FlMethodResponse* system_intitialization_complete(
     FlPlatformPlugin* self,
     FlMethodCall* method_call) {
   self->app_initialization_complete = TRUE;
-  return nullptr;
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
 // Called when Flutter wants to exit the application.
