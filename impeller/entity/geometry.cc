@@ -9,12 +9,47 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/convex_tessellator.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
+
+/// Given a convex polyline, create a triangle fan structure.
+std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
+    Path::Polyline polyline) {
+  std::vector<Point> output;
+  output.reserve(polyline.points.size() * 3);
+
+  for (auto j = 0u; j < polyline.contours.size(); j++) {
+    Scalar center_x = 0;
+    Scalar center_y = 0;
+    auto [start, end] = polyline.GetContourPointBounds(j);
+    for (auto i = start; i < end; i++) {
+      const auto& point = polyline.points[i];
+      center_x += point.x;
+      center_y += point.y;
+    }
+    center_x /= end - start;
+    center_y /= end - start;
+
+    for (auto i = start + 1; i < end; i++) {
+      const auto& point_a = polyline.points[i - 1];
+      const auto& point_b = polyline.points[i];
+      output.emplace_back(point_a);
+      output.emplace_back(point_b);
+      output.emplace_back(Point(center_x, center_y));
+    }
+  }
+
+  std::vector<uint16_t> index(output.size());
+  for (auto i = 0u; i < output.size(); i++) {
+    index[i] = i;
+  }
+  return std::make_pair(output, index);
+}
 
 Geometry::Geometry() = default;
 
@@ -105,15 +140,28 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     RenderPass& pass) {
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.GetConvexity() == Convexity::kConvex) {
-    auto polyline =
-        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-    for (auto i = 0u; i < polyline.contours.size(); i++) {
-      auto [start, end] = polyline.GetContourPointBounds(i);
-    }
+    VertexBuffer vertex_buffer;
+    auto& host_buffer = pass.GetTransientsBuffer();
+    auto [points, indicies] = TessellateConvexHull(
+        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+
+    vertex_buffer.vertex_buffer = host_buffer.Emplace(
+        points.data(), points.size() * sizeof(Point), alignof(Point));
+    vertex_buffer.index_buffer = host_buffer.Emplace(
+        indicies.data(), indicies.size() * sizeof(uint16_t), alignof(uint16_t));
+    vertex_buffer.index_count = indicies.size();
+    vertex_buffer.index_type = IndexType::k16bit;
+
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation(),
+        .prevent_overdraw = false,
+    };
   }
 
-  VertexBuffer vertex_buffer;
-  auto& host_buffer = pass.GetTransientsBuffer();
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
       path_.GetFillType(),
       path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()),
