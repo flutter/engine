@@ -179,6 +179,14 @@ class RuntimeController : public PlatformConfigurationClient {
   bool SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
+  /// @brief      Forward the specified display metrics to the running isolate.
+  ///             If the isolate is not running, these metrics will be saved and
+  ///             flushed to the isolate when it starts.
+  ///
+  /// @param[in]  displays  The available displays.
+  bool SetDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
   ///             the isolate is not running, this data will be saved and
   ///             flushed to the isolate when it starts running.

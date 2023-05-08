@@ -1462,7 +1462,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22, 0});
   fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
@@ -1603,7 +1603,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   RunEngine(shell.get(), std::move(configuration));
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
     shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                 {1.0, 100, 100, 22});
+                                                 {1.0, 100, 100, 22, 0});
   });
 
   // first cache bytes
@@ -1632,7 +1632,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 kDefaultViewId, {1.0, 100, 100, 22});
+                 kDefaultViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1641,7 +1641,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 kDefaultViewId, {1.0, 100, 300, 22});
+                 kDefaultViewId, {1.0, 100, 300, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1652,7 +1652,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 kDefaultViewId, {1.0, 400, 100, 22});
+                 kDefaultViewId, {1.0, 400, 100, 22, 0});
            });
   // first cache bytes + second cache bytes + third cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1661,7 +1661,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 kDefaultViewId, {1.0, 800, 100, 22});
+                 kDefaultViewId, {1.0, 800, 100, 22, 0});
            });
   // max bytes threshold
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1674,7 +1674,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 kDefaultViewId, {1.0, 100, 100, 22});
+                 kDefaultViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1719,7 +1719,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                     {1.0, 400, 200, 22});
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1740,7 +1740,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                     {1.0, 800, 400, 22});
+                                                     {1.0, 800, 400, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1758,7 +1758,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                     {1.0, 400, 200, 22});
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1786,7 +1786,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                     {1.0, 400, 200, 22});
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -2649,8 +2649,9 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            kDefaultViewId, {1.0, static_cast<double>(expected_size.width()),
-                             static_cast<double>(expected_size.height()), 22});
+            kDefaultViewId,
+            {1.0, static_cast<double>(expected_size.width()),
+             static_cast<double>(expected_size.height()), 22, 0});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2723,7 +2724,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       [&shell, &origin_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
             kDefaultViewId, {1.0, static_cast<double>(origin_size.width()),
-                             static_cast<double>(origin_size.height()), 22});
+                             static_cast<double>(origin_size.height()), 22, 0});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2742,7 +2743,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       [&shell, &new_size, &resize_latch]() {
         shell->GetPlatformView()->SetViewportMetrics(
             kDefaultViewId, {1.0, static_cast<double>(new_size.width()),
-                             static_cast<double>(new_size.height()), 22});
+                             static_cast<double>(new_size.height()), 22, 0});
         resize_latch.Signal();
       });
 
@@ -2806,16 +2807,16 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
 
   task_runner->PostTask([&]() {
     shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                 {0.0, 400, 200, 22});
+                                                 {0.0, 400, 200, 22, 0});
     task_runner->PostTask([&]() {
       shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                   {0.8, 0.0, 200, 22});
+                                                   {0.8, 0.0, 200, 22, 0});
       task_runner->PostTask([&]() {
         shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                     {0.8, 400, 0.0, 22});
+                                                     {0.8, 400, 0.0, 22, 0});
         task_runner->PostTask([&]() {
-          shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                       {0.8, 400, 200.0, 22});
+          shell->GetPlatformView()->SetViewportMetrics(
+              kDefaultViewId, {0.8, 400, 200.0, 22, 0});
         });
       });
     });
@@ -2828,7 +2829,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
 
   task_runner->PostTask([&]() {
     shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId,
-                                                 {1.2, 600, 300, 22});
+                                                 {1.2, 600, 300, 22, 0});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);

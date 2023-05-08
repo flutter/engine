@@ -131,7 +131,8 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
       22,                     // physical touch slop
       std::vector<double>(),  // display features bounds
       std::vector<int>(),     // display features type
-      std::vector<int>()      // display features state
+      std::vector<int>(),     // display features state
+      0                       // Display ID
   };
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
@@ -170,7 +171,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder));
+  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
@@ -205,12 +206,14 @@ void ShellTest::PumpOneFrame(Shell* shell,
         auto layer_tree = std::make_unique<LayerTree>(
             LayerTree::Config{.root_layer = root_layer},
             SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
+                          viewport_metrics.physical_height));
+        float device_pixel_ratio =
+            static_cast<float>(viewport_metrics.device_pixel_ratio);
         if (builder) {
           builder(root_layer);
         }
-        runtime_delegate->Render(kDefaultViewId, std::move(layer_tree));
+        runtime_delegate->Render(kDefaultViewId, std::move(layer_tree),
+                                 device_pixel_ratio);
         latch.Signal();
       });
   latch.Wait();

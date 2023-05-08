@@ -2832,6 +2832,9 @@ class DomScreen {}
 
 extension DomScreenExtension on DomScreen {
   external DomScreenOrientation? get orientation;
+
+  external double get width;
+  external double get height;
 }
 
 @JS()

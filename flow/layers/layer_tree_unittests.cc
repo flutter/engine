@@ -34,7 +34,7 @@ class LayerTreeTest : public CanvasTest {
   const SkMatrix& root_transform() { return root_transform_; }
 
   std::unique_ptr<LayerTree> BuildLayerTree(const LayerTree::Config& config) {
-    return std::make_unique<LayerTree>(config, SkISize::Make(64, 64), 1.0f);
+    return std::make_unique<LayerTree>(config, SkISize::Make(64, 64));
   }
 
  private:

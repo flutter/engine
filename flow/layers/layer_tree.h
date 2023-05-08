@@ -30,9 +30,7 @@ class LayerTree {
     bool checkerboard_offscreen_layers = false;
   };
 
-  LayerTree(const Config& config,
-            const SkISize& frame_size,
-            float device_pixel_ratio);
+  LayerTree(const Config& config, const SkISize& frame_size);
 
   // Perform a preroll pass on the tree and return information about
   // the tree that affects rendering this frame.
@@ -60,7 +58,6 @@ class LayerTree {
 
   Layer* root_layer() const { return root_layer_.get(); }
   const SkISize& frame_size() const { return frame_size_; }
-  float device_pixel_ratio() const { return device_pixel_ratio_; }
 
   const PaintRegionMap& paint_region_map() const { return paint_region_map_; }
   PaintRegionMap& paint_region_map() { return paint_region_map_; }
@@ -87,7 +84,6 @@ class LayerTree {
  private:
   std::shared_ptr<Layer> root_layer_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
-  const float device_pixel_ratio_;  // Logical / Physical pixels ratio.
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
