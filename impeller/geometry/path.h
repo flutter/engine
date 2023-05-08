@@ -34,6 +34,13 @@ enum class FillType {
   kAbsGeqTwo,
 };
 
+enum class Convexity {
+  kUnknown,
+  kConvex,
+  kConcave,
+  kComplex,
+};
+
 //------------------------------------------------------------------------------
 /// @brief      Paths are lightweight objects that describe a collection of
 ///             linear, quadratic, or cubic segments. These segments may be
@@ -93,6 +100,10 @@ class Path {
   void SetFillType(FillType fill);
 
   FillType GetFillType() const;
+
+  void SetConvexity(Convexity value);
+
+  Convexity GetConvexity() const;
 
   Path& AddLinearComponent(Point p1, Point p2);
 
@@ -159,6 +170,7 @@ class Path {
   };
 
   FillType fill_ = FillType::kNonZero;
+  Convexity convexity_ = Convexity::kUnknown;
   std::vector<ComponentIndexPair> components_;
   std::vector<LinearPathComponent> linears_;
   std::vector<QuadraticPathComponent> quads_;

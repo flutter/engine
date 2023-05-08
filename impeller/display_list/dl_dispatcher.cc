@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -846,6 +847,7 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
           .TakePath();
+  path.SetConvexity(Convexity::kConvex);
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   canvas_.DrawPath(path, paint);
@@ -864,6 +866,7 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
   } else {
     auto path =
         PathBuilder{}.AddOval(skia_conversions::ToRect(bounds)).TakePath();
+    path.SetConvexity(Convexity::kConvex);
     canvas_.DrawPath(path, paint_);
   }
 }
@@ -893,6 +896,7 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
+  std::cerr << "DRAW PATH" << path.isConvex() << std::endl;
   canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
 }
 

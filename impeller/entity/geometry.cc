@@ -103,6 +103,15 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  if (path_.GetFillType() == FillType::kNonZero &&  //
+      path.GetConvexity() == Convexity::kConvex &&  //
+      renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
+    auto polyline = path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+    for (auto i = 0u; i < polyline.contours.size(); i++) {
+      auto [start, end] = polyline.GetContourPointBounds(i);
+    }
+  }
+
   VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
   auto tesselation_result = renderer.GetTessellator()->Tessellate(

@@ -53,6 +53,14 @@ FillType Path::GetFillType() const {
   return fill_;
 }
 
+void Path::SetConvexity(Convexity value) {
+  convexity_ = value;
+}
+
+Convexity Path::GetConvexity() const {
+  return convexity_;
+}
+
 Path& Path::AddLinearComponent(Point p1, Point p2) {
   linears_.emplace_back(p1, p2);
   components_.emplace_back(ComponentType::kLinear, linears_.size() - 1);
