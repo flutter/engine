@@ -41,8 +41,9 @@ std::unique_ptr<Geometry> Geometry::MakeRRect(Rect rect, Scalar corner_radius) {
 
 // static
 std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
-                                                   Scalar radius) {
-  return std::make_unique<PointFieldGeometry>(std::move(points), radius);
+                                                   Scalar radius,
+                                                   bool round) {
+  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
 }
 
 // static
@@ -893,8 +894,10 @@ std::optional<Rect> RRectGeometry::GetCoverage(const Matrix& transform) const {
 
 /////// PointFieldGeometry Geometry ///////
 
-PointFieldGeometry::PointFieldGeometry(std::vector<Point> points, Scalar radius)
-    : points_(std::move(points)), radius_(radius) {}
+PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
+                                       Scalar radius,
+                                       bool round)
+    : points_(std::move(points)), radius_(radius), round_(round) {}
 
 PointFieldGeometry::~PointFieldGeometry() = default;
 
@@ -904,8 +907,8 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     RenderPass& pass) {
   FML_DCHECK(renderer.GetDeviceCapabilities().SupportsDisabledRasterization());
 
-  auto divisions_per_circle = ComputeResultSize(
-      entity.GetTransformation().GetMaxBasisLength() * radius_, points_.size());
+  auto divisions_per_circle = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
   auto total = divisions_per_circle * points_.size() * 3;
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -950,6 +953,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   VS::FrameInfo frame_info;
   frame_info.radius = radius_;
+  frame_info.radian_start = round_ ? 0 : 0.785398;
   frame_info.radian_step = k2Pi / divisions_per_circle;
   frame_info.points_per_circle = divisions_per_circle * 3;
   frame_info.divisions_per_circle = divisions_per_circle;
@@ -989,8 +993,11 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
 
 /// @brief Compute the exact storage size needed to store the resulting buffer.
 /// @return
-size_t PointFieldGeometry::ComputeResultSize(Scalar scaled_radius,
-                                             size_t point_count) {
+size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
+                                                  bool round) {
+  if (!round) {
+    return 4;
+  }
   // note: this formula is completely arbitrary, we should find a reasonable
   // curve based on experimental data.
   if (scaled_radius < 4.0) {

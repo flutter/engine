@@ -10,6 +10,7 @@
 
 uniform FrameInfo {
   float radius;
+  float16_t radian_start;
   float16_t radian_step;
   int points_per_circle;
   int divisions_per_circle;
@@ -28,10 +29,11 @@ void main() {
   // number of previous circles.
   int bufer_offset = gl_VertexIndex * frame_info.points_per_circle;
 
-  float16_t elapsed_angle = 0.0hf;
+  float16_t elapsed_angle = frame_info.radian_start;
   geometry_data.geometry[bufer_offset++] = center;
 
-  vec2 pt1 = center + vec2(1, 0) * frame_info.radius;
+  vec2 pt1 =
+      center + vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
   geometry_data.geometry[bufer_offset++] = pt1;
 
   elapsed_angle += frame_info.radian_step;

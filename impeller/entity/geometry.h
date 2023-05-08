@@ -55,7 +55,8 @@ class Geometry {
   static std::unique_ptr<Geometry> MakeRect(Rect rect);
 
   static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
-                                                  Scalar radius);
+                                                  Scalar radius,
+                                                  bool round);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
@@ -295,7 +296,7 @@ class RRectGeometry : public Geometry {
 
 class PointFieldGeometry : public Geometry {
  public:
-  explicit PointFieldGeometry(std::vector<Point> points, Scalar radius);
+  PointFieldGeometry(std::vector<Point> points, Scalar radius, bool round);
 
   ~PointFieldGeometry();
 
@@ -318,10 +319,11 @@ class PointFieldGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
-  static size_t ComputeResultSize(Scalar scaled_radius, size_t point_count);
+  static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 
   std::vector<Point> points_;
   Scalar radius_;
+  bool round_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PointFieldGeometry);
 };
