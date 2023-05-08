@@ -63,12 +63,16 @@ SKWASM_EXPORT void textStyle_setTextBaseline(TextStyle* style,
 SKWASM_EXPORT void textStyle_addFontFamilies(TextStyle* style,
                                              SkString** fontFamilies,
                                              int count) {
-  std::vector<SkString> families = style->getFontFamilies();
-  families.reserve(families.size() + count);
+  const std::vector<SkString> &currentFamilies = style->getFontFamilies();
+  std::vector<SkString> newFamilies;
+  newFamilies.reserve(currentFamilies.size() + count);
   for (int i = 0; i < count; i++) {
-    families.push_back(*fontFamilies[i]);
+    newFamilies.push_back(*fontFamilies[i]);
   }
-  style->setFontFamilies(std::move(families));
+  for (const auto& family : currentFamilies) {
+    newFamilies.push_back(family);
+  }
+  style->setFontFamilies(std::move(newFamilies));
 }
 
 SKWASM_EXPORT void textStyle_setFontSize(TextStyle* style, SkScalar size) {

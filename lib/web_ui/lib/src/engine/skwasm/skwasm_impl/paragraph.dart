@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: avoid_unused_constructor_parameters
-
 import 'dart:ffi';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-// TODO(jacksongardner): implement everything in this file
 class SkwasmLineMetrics implements ui.LineMetrics {
   SkwasmLineMetrics._(this.handle);
 
@@ -254,8 +251,9 @@ class SkwasmTextStyle implements ui.TextStyle {
     if (textBaseline != null) {
       textStyleSetTextBaseline(handle, textBaseline.index);
     }
+    List<String>? fontFamilies;
     if (fontFamily != null || fontFamilyFallback != null) {
-      final List<String> fontFamilies = <String>[
+      fontFamilies = <String>[
         if (fontFamily != null) fontFamily,
         if (fontFamilyFallback != null) ...fontFamilyFallback,
       ];
@@ -316,12 +314,13 @@ class SkwasmTextStyle implements ui.TextStyle {
       }
     }
     // TODO(jacksongardner): Set font variations
-    return SkwasmTextStyle._(handle);
+    return SkwasmTextStyle._(handle, fontFamilies);
   }
 
-  SkwasmTextStyle._(this.handle);
+  SkwasmTextStyle._(this.handle, this.fontFamilies);
 
   final TextStyleHandle handle;
+  final List<String>? fontFamilies;
 }
 
 class SkwasmStrutStyle implements ui.StrutStyle {
@@ -459,14 +458,14 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
         skStringFree(localeHandle);
       }
       paragraphStyleSetTextStyle(handle, textStyleHandle);
-      textStyleDispose(textStyleHandle);
     }
-    return SkwasmParagraphStyle._(handle);
+    return SkwasmParagraphStyle._(handle, fontFamily);
   }
 
-  SkwasmParagraphStyle._(this.handle);
+  SkwasmParagraphStyle._(this.handle, this.defaultFontFamily);
 
   final ParagraphStyleHandle handle;
+  final String? defaultFontFamily;
 }
 
 class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
@@ -476,10 +475,12 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
   ) => SkwasmParagraphBuilder._(paragraphBuilderCreate(
       style.handle,
       collection.handle,
-    ));
+    ), style);
 
-  SkwasmParagraphBuilder._(this.handle);
+  SkwasmParagraphBuilder._(this.handle, this.style);
   final ParagraphBuilderHandle handle;
+  final SkwasmParagraphStyle style;
+  final List<SkwasmTextStyle> textStyleStack = <SkwasmTextStyle>[];
 
   @override
   List<double> placeholderScales = <double>[];
@@ -504,9 +505,28 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
     placeholderScales.add(scale);
   }
 
+  List<String> _getEffectiveFonts() {
+    final List<String> fallbackFonts = renderer.fontCollection.fontFallbackManager!.globalFontFallbacks;
+    final List<String>? currentFonts =
+      textStyleStack.isEmpty ? null : textStyleStack.last.fontFamilies;
+    if (currentFonts != null) {
+      return <String>[
+        ...currentFonts,
+        ...fallbackFonts,
+      ];
+    } else if (style.defaultFontFamily != null) {
+      return <String>[
+        style.defaultFontFamily!,
+        ...fallbackFonts,
+      ];
+    } else {
+      return fallbackFonts;
+    }
+  }
+
   @override
   void addText(String text) {
-    renderer.fontCollection.fontFallbackManager?.ensureFontsSupportText(text, <String>['Roboto']);
+    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(text, _getEffectiveFonts());
     final SkString16Handle stringHandle = skString16FromDartString(text);
     paragraphBuilderAddText(handle, stringHandle);
     skString16Free(stringHandle);
@@ -522,12 +542,14 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pop() {
+    textStyleStack.removeLast();
     paragraphBuilderPop(handle);
   }
 
   @override
   void pushStyle(ui.TextStyle style) {
     style as SkwasmTextStyle;
+    textStyleStack.add(style);
     paragraphBuilderPushStyle(handle, style.handle);
   }
 }
