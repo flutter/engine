@@ -41,9 +41,12 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
       output.emplace_back(point_b);
       output.emplace_back(Point(center_x, center_y));
     }
-    output.emplace_back(polyline.points[end - 1]);
-    output.emplace_back(polyline.points[start]);
-    output.emplace_back(Point(center_x, center_y));
+    // Some shapes don't seem to self close?
+    if (polyline.points[end - 1] != polyline.points[start]) {
+      output.emplace_back(polyline.points[end - 1]);
+      output.emplace_back(polyline.points[start]);
+      output.emplace_back(Point(center_x, center_y));
+    }
   }
 
   std::vector<uint16_t> index(output.size());

@@ -2600,5 +2600,28 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                            .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                            .TakePath()
+                            .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+      {0, 0},   {10, 0},  {4, 4}, //
+      {10, 0},  {10, 10}, {4, 4}, //
+      {10, 10}, {0, 10},  {4, 4}, //
+      {0, 10},  {0, 0},   {4, 4}, //
+    };
+    std::vector<uint16_t> expected_indices = {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+    };
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
