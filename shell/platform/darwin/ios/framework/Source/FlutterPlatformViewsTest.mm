@@ -219,7 +219,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                          arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
       result);
 
-  XCTAsserNottNil(gMockPlatformView);
+  XCTAsserNotNil(gMockPlatformView);
 }
 
 - (void)testChildClippingViewHitTests {
