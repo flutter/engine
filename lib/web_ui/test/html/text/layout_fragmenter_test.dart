@@ -7,10 +7,9 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../html/paragraph/helper.dart';
+import '../paragraph/helper.dart';
 
 final EngineTextStyle defaultStyle = EngineTextStyle.only(
-  color: const Color(0xFFFF0000),
   fontFamily: FlutterViewEmbedder.defaultFontFamily,
   fontSize: FlutterViewEmbedder.defaultFontSize,
 );
