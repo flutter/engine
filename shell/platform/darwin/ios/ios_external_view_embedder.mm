@@ -73,9 +73,7 @@ void IOSExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
                                           int64_t window_view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFrame");
   FML_CHECK(platform_views_controller_);
-  // TODO(dkwingsmt)
-  platform_views_controller_->SubmitFrame(context, ios_context_, kFlutterDefaultViewId,
-                                          std::move(frame));
+  platform_views_controller_->SubmitFrame(context, ios_context_, window_view_id, std::move(frame));
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");
 }
 

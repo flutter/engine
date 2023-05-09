@@ -2863,8 +2863,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
-    XCTAssertTrue(
-        flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+    XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
+                                                              std::move(mock_surface)));
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
@@ -2890,8 +2890,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
-    XCTAssertTrue(
-        flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+    XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
+                                                              std::move(mock_surface)));
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
