@@ -95,7 +95,8 @@ TEST(FlutterCompositorTest, TestCreate) {
   config.struct_size = sizeof(FlutterBackingStoreConfig);
   config.size.width = 800;
   config.size.height = 600;
-  macos_compositor->CreateBackingStore(&config, &backing_store);
+  config.view_id = 0;
+  ASSERT_TRUE(macos_compositor->CreateBackingStore(&config, &backing_store));
 
   ASSERT_EQ(backing_store.type, kFlutterBackingStoreTypeMetal);
   ASSERT_NE(backing_store.metal.texture.texture, nil);
