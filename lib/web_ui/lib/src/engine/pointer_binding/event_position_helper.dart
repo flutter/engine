@@ -44,15 +44,15 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
 }
 
 /// Computes the offsets for input nodes, which live outside of the shadowDOM.
-/// Since inputs can be transformed (scaled, translated, etc), we can't rely on 
-/// `event.offset` to be accurate. `_computeOffsetRelativeToActualTarget` only 
+/// Since inputs can be transformed (scaled, translated, etc), we can't rely on
+/// `event.offset` to be accurate. `_computeOffsetRelativeToActualTarget` only
 /// handles the case where inputs are translated, but will have issues for scaled
 /// inputs (see: https://github.com/flutter/flutter/issues/125948).
-/// 
-/// We compute the offsets here by using the text input geometry data that is 
-/// sent from the framework, which includes information on how to transform the 
-/// underlying input element. We transform the `event.offset` points we receive 
-/// using the values from the input's transform matrix. 
+///
+/// We compute the offsets here by using the text input geometry data that is
+/// sent from the framework, which includes information on how to transform the
+/// underlying input element. We transform the `event.offset` points we receive
+/// using the values from the input's transform matrix.
 ui.Offset _computeOffsetForInputs(DomMouseEvent event) {
   final Float32List matrix = textEditing.strategy.geometry!.globalTransform;
   final FastMatrix32 fastMatrix = FastMatrix32(matrix);
