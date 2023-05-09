@@ -138,7 +138,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   VertexBuffer vertex_buffer;
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
-      path_.GetIsConvex()) {
+      path_.IsConvex()) {
     auto [points, indicies] = TessellateConvex(
         path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
 

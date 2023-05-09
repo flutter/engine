@@ -99,7 +99,7 @@ class Path {
 
   FillType GetFillType() const;
 
-  bool GetIsConvex() const;
+  bool IsConvex() const;
 
   Path& AddLinearComponent(Point p1, Point p2);
 

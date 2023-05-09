@@ -53,7 +53,7 @@ FillType Path::GetFillType() const {
   return fill_;
 }
 
-bool Path::GetIsConvex() const {
+bool Path::IsConvex() const {
   return convexity_ == Convexity::kConvex;
 }
 
