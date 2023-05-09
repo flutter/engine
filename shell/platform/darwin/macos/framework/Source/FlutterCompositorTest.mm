@@ -121,6 +121,7 @@ TEST(FlutterCompositorTest, TestPresent) {
   config.struct_size = sizeof(FlutterBackingStoreConfig);
   config.size.width = 800;
   config.size.height = 600;
+  config.view_id = 0;
   macos_compositor->CreateBackingStore(&config, &backing_store);
 
   FlutterLayer layers[] = {{
