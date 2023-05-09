@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
+import 'package:ui/src/engine/text_editing/text_editing.dart';
+import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui show Offset;
 
 import '../dom.dart';
@@ -25,12 +29,36 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
   }
 
   final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
+  final bool isInput = event.target.toString() == 'input';
+
+  if(isInput) {
+    return _computeOffsetForInputs(event);
+  }
+
   if (isTargetOutsideOfShadowDOM) {
     return _computeOffsetRelativeToActualTarget(event, actualTarget);
   }
   // Return the offsetX/Y in the normal case.
   // (This works with 3D translations of the parent element.)
   return ui.Offset(event.offsetX, event.offsetY);
+}
+
+/// Computes the offsets for input nodes, which live outside of the shadowDOM.
+/// Since inputs can be transformed (scaled, translated, etc), we can't rely on 
+/// `event.offset` to be accurate. `_computeOffsetRelativeToActualTarget` only 
+/// handles the case where inputs are translated, but will have issues for scaled
+/// inputs (see: https://github.com/flutter/flutter/issues/125948).
+/// 
+/// We compute the offsets here by using the text input geometry data that is 
+/// sent from the framework, which includes information on how to transform the 
+/// underlying input element. We transform the `event.offset` points we receive 
+/// using the values from the input's transform matrix. 
+ui.Offset _computeOffsetForInputs(DomMouseEvent event) {
+  final Float32List matrix = textEditing.strategy.geometry!.globalTransform;
+  final FastMatrix32 fastMatrix = FastMatrix32(matrix);
+  fastMatrix.transform(event.offsetX, event.offsetY);
+
+  return ui.Offset(fastMatrix.transformedX, fastMatrix.transformedY);
 }
 
 /// Computes the event offset when hovering over any nodes that don't exist in
