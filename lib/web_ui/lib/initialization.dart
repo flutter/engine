@@ -125,19 +125,5 @@ void webOnlySetPluginHandler(Future<void> Function(String, ByteData?, PlatformMe
   engine.pluginMessageCallHandler = handler;
 }
 
-/// A registry for factories that create platform views.
-class PlatformViewRegistry {
-  /// Register [viewTypeId] as being creating by the given [viewFactory].
-  /// [viewFactory] can be any function that takes an integer and returns an
-  /// `HTMLElement` DOM object.
-  bool registerViewFactory(String viewTypeId,
-      Object Function(int viewId) viewFactory,
-      {bool isVisible = true}) {
-    // TODO(web): Deprecate this once there's another way of calling `registerFactory` (js interop?)
-    return engine.platformViewManager
-        .registerFactory(viewTypeId, viewFactory, isVisible: isVisible);
-  }
-}
-
-/// The platform view registry for this app.
-final PlatformViewRegistry platformViewRegistry = PlatformViewRegistry();
+// TODO(mdebbar): Deprecate this and remove it.
+ui_web.PlatformViewRegistry get platformViewRegistry => ui_web.platformViewRegistry;

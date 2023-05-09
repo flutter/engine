@@ -8,6 +8,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
 
@@ -25,11 +26,11 @@ Future<void> testMain() async {
 
   group('PersistedPlatformView', () {
     setUp(() async {
-      platformViewRegistry.registerViewFactory(
+      ui_web.platformViewRegistry.registerViewFactory(
         'test-0',
         (int viewId) => createDomHTMLDivElement(),
       );
-      platformViewRegistry.registerViewFactory(
+      ui_web.platformViewRegistry.registerViewFactory(
         'test-1',
         (int viewId) => createDomHTMLDivElement(),
       );
