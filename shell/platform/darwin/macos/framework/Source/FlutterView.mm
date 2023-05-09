@@ -13,6 +13,7 @@
   int64_t _viewId;
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterSurfaceManager* _surfaceManager;
+  FlutterThreadSynchronizer* _synchronizer;
 }
 
 @end
@@ -22,6 +23,7 @@
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
                   reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener
+                     synchronizer:(FlutterThreadSynchronizer*)synchronizer
                            viewId:(int64_t)viewId {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
@@ -30,34 +32,31 @@
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _viewId = viewId;
     _reshapeListener = reshapeListener;
+    _synchronizer = synchronizer;
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
                                                        commandQueue:commandQueue
                                                               layer:self.layer
                                                            delegate:self];
-    [[FlutterView sharedThreadSynchronizer] registerView:viewId];
+    [_synchronizer registerView:viewId];
   }
   return self;
 }
 
 - (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
-  [[FlutterView sharedThreadSynchronizer] performCommitForView:_viewId size:frameSize notify:block];
+  [_synchronizer performCommitForView:_viewId size:frameSize notify:block];
 }
 
 - (FlutterSurfaceManager*)surfaceManager {
   return _surfaceManager;
 }
 
-- (FlutterThreadSynchronizer*)threadSynchronizer {
-  return [FlutterView sharedThreadSynchronizer];
-}
-
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [[FlutterView sharedThreadSynchronizer] beginResizeForView:_viewId
-                                                        size:scaledSize
-                                                      notify:^{
-                                                        [_reshapeListener viewDidReshape:self];
-                                                      }];
+  [_synchronizer beginResizeForView:_viewId
+                               size:scaledSize
+                             notify:^{
+                               [_reshapeListener viewDidReshape:self];
+                             }];
 }
 
 - (void)setBackgroundColor:(NSColor*)color {
@@ -137,14 +136,6 @@
     applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
   }
   return applicationName;
-}
-
-static FlutterThreadSynchronizer* _synchronizer;
-+ (FlutterThreadSynchronizer*)sharedThreadSynchronizer {
-  if (_synchronizer == nil) {
-    _synchronizer = [[FlutterThreadSynchronizer alloc] init];
-  }
-  return _synchronizer;
 }
 
 @end

@@ -25,9 +25,11 @@ TEST(FlutterView, ShouldInheritContentsScaleReturnsYes) {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
   id<MTLCommandQueue> queue = [device newCommandQueue];
   TestReshapeListener* listener = [[TestReshapeListener alloc] init];
+  FlutterThreadSynchronizer* synchronizer = [[FlutterThreadSynchronizer alloc] init];
   FlutterView* view = [[FlutterView alloc] initWithMTLDevice:device
                                                 commandQueue:queue
                                              reshapeListener:listener
+                                                synchronizer:synchronizer
                                                       viewId:kDefaultViewId];
   EXPECT_EQ([view layer:view.layer shouldInheritContentsScale:3.0 fromWindow:view.window], YES);
 }

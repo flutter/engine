@@ -437,7 +437,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                 result:^(id result){
                 }];
 
-  [viewController.flutterView.threadSynchronizer blockUntilFrameAvailable];
+  [engine.synchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 

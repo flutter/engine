@@ -214,14 +214,20 @@ void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
+  printf("SceneBuilder::addPicture start\n");
+  fflush(stdout);
   if (!picture) {
     // Picture::dispose was called and it has been collected.
+    printf("SceneBuilder::addPicture ret 1\n");
+    fflush(stdout);
     return;
   }
 
   // Explicitly check for display_list, since the picture object might have
   // been disposed but not collected yet, but the display list is null.
   if (picture->display_list()) {
+    printf("SceneBuilder::addPicture actual\n");
+    fflush(stdout);
     auto layer = std::make_unique<flutter::DisplayListLayer>(
         SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)), picture->display_list(),
         !!(hints & 1), !!(hints & 2));
@@ -294,6 +300,8 @@ void SceneBuilder::AddLayer(std::shared_ptr<Layer> layer) {
   FML_DCHECK(layer);
 
   if (!layer_stack_.empty()) {
+    printf("SceneBuilder::AddLayer actual\n");
+    fflush(stdout);
     layer_stack_.back()->Add(std::move(layer));
   }
 }

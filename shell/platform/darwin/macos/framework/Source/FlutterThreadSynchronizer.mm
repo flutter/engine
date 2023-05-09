@@ -21,7 +21,19 @@
   std::condition_variable _condBlockBeginResize;
 }
 
+/**
+ * Returns true if all existing views have a non-zero size.
+ *
+ * If there are no views, still returns true.
+ */
 - (BOOL)allViewsHaveFrame;
+
+/**
+ * Returns true if there are any views that have a non-zero size.
+ *
+ * If there are no views, returns false.
+ */
+- (BOOL)someViewsHaveFrame;
 
 @end
 
@@ -34,6 +46,15 @@
     }
   }
   return YES;
+}
+
+- (BOOL)someViewsHaveFrame {
+  for (auto const& [viewId, contentSize] : _contentSizes) {
+    if (!CGSizeEqualToSize(contentSize, CGSizeZero)) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
 - (void)drain {
@@ -53,7 +74,7 @@
 
   _beginResizeWaiting = YES;
 
-  while (![self allViewsHaveFrame] && !_shuttingDown) {
+  while (![self someViewsHaveFrame] && !_shuttingDown) {
     _condBlockBeginResize.wait(lock);
     [self drain];
   }

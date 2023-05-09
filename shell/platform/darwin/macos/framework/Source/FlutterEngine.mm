@@ -382,6 +382,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
+  FlutterThreadSynchronizer* _synchronizer;
+
   int _nextViewId;
 }
 
@@ -421,6 +423,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
+  _synchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
@@ -897,7 +900,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  [[FlutterView sharedThreadSynchronizer] shutdown];
+  [_synchronizer shutdown];
+  _synchronizer = nil;
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
     [nextViewController.flutterView shutdown];
@@ -1063,6 +1067,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (std::vector<std::string>)switches {
   return flutter::GetSwitchesFromEnvironment();
+}
+
+- (FlutterThreadSynchronizer*)synchronizer {
+  return _synchronizer;
 }
 
 #pragma mark - FlutterBinaryMessenger

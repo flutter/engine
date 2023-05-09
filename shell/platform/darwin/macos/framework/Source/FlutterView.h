@@ -44,6 +44,7 @@ constexpr FlutterViewId kFlutterDefaultViewId = 0ll;
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
                               commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
                            reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
+                              synchronizer:(nonnull FlutterThreadSynchronizer*)synchronizer
                                     viewId:(int64_t)viewId NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
@@ -72,17 +73,5 @@ constexpr FlutterViewId kFlutterDefaultViewId = 0ll;
  * with.
  */
 - (void)setBackgroundColor:(nonnull NSColor*)color;
-
-+ (nonnull FlutterThreadSynchronizer*)sharedThreadSynchronizer;
-
-@end
-
-@interface FlutterView (FlutterViewPrivate)
-
-/**
- * Returns FlutterThreadSynchronizer for this view.
- * Used for FlutterEngineTest.
- */
-- (nonnull FlutterThreadSynchronizer*)threadSynchronizer;
 
 @end
