@@ -61,7 +61,8 @@ class FontFallbackManager {
         <NotoFont, List<CodePointRange>>{};
 
     for (final NotoFont font in fallbackFonts) {
-      final fontRanges = ranges.putIfAbsent(font, () => <CodePointRange>[]);
+      final List<CodePointRange> fontRanges =
+        ranges.putIfAbsent(font, () => <CodePointRange>[]);
       fontRanges.addAll(font.computeUnicodeRanges());
     }
 
