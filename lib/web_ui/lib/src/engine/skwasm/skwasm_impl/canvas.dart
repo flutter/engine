@@ -210,7 +210,8 @@ class SkwasmCanvas implements ui.Canvas {
       _handle,
       (paragraph as SkwasmParagraph).handle,
       offset.dx,
-      offset.dy,);
+      offset.dy,
+    );
   }
 
   @override

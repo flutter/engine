@@ -61,10 +61,8 @@ class FontFallbackManager {
         <NotoFont, List<CodePointRange>>{};
 
     for (final NotoFont font in fallbackFonts) {
-      // ignore: prefer_foreach
-      for (final CodePointRange range in font.computeUnicodeRanges()) {
-        ranges.putIfAbsent(font, () => <CodePointRange>[]).add(range);
-      }
+      final fontRanges = ranges.putIfAbsent(font, () => <CodePointRange>[]);
+      fontRanges.addAll(font.computeUnicodeRanges());
     }
 
     return IntervalTree<NotoFont>.createFromRanges(ranges);
