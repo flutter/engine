@@ -1366,6 +1366,8 @@ FLUTTER_ASSERT_ARC
   ]];
   CGPoint point = CGPointMake(150, 150);
   XCTAssertEqual(2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionBackward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
 
   // Then, if the point is above the bottom of the closest rects vertically, get the closest x
   // origin
@@ -1378,6 +1380,8 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(125, 150);
   XCTAssertEqual(2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionForward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
 
   // However, if the point is below the bottom of the closest rects vertically, get the position
   // farthest to the right
@@ -1390,6 +1394,8 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(125, 201);
   XCTAssertEqual(4U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionBackward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
 
   // Also check a point at the right edge of the last selection rect
   [inputView setSelectionRects:@[
@@ -1400,6 +1406,8 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(125, 250);
   XCTAssertEqual(4U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionBackward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
 
   // Minimize vertical distance if the difference is more than 1 point.
   [inputView setSelectionRects:@[
@@ -1409,11 +1417,15 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(110, 50);
   XCTAssertEqual(2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionForward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
 
   // In floating cursor mode, the vertical difference is allowed to be 10 points.
   // The closest horizontal position will now win.
   [inputView beginFloatingCursorAtPoint:CGPointZero];
   XCTAssertEqual(1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(UITextStorageDirectionForward,
+                 ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).affinity);
   [inputView endFloatingCursor];
 }
 
@@ -1435,20 +1447,28 @@ FLUTTER_ASSERT_ARC
                                            position:3U
                                    writingDirection:NSWritingDirectionRightToLeft],
   ]];
-  XCTAssertEqual(
-      0U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(275, 50)]).index);
-  XCTAssertEqual(
-      1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(225, 50)]).index);
-  XCTAssertEqual(
-      1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(175, 50)]).index);
-  XCTAssertEqual(
-      2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(125, 50)]).index);
-  XCTAssertEqual(
-      2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(75, 50)]).index);
-  XCTAssertEqual(
-      3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(25, 50)]).index);
-  XCTAssertEqual(
-      3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(-25, 50)]).index);
+  FlutterTextPosition* position =
+      (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(275, 50)];
+  XCTAssertEqual(0U, position.index);
+  XCTAssertEqual(UITextStorageDirectionForward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(225, 50)];
+  XCTAssertEqual(1U, position.index);
+  XCTAssertEqual(UITextStorageDirectionBackward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(175, 50)];
+  XCTAssertEqual(1U, position.index);
+  XCTAssertEqual(UITextStorageDirectionForward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(125, 50)];
+  XCTAssertEqual(2U, position.index);
+  XCTAssertEqual(UITextStorageDirectionBackward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(75, 50)];
+  XCTAssertEqual(2U, position.index);
+  XCTAssertEqual(UITextStorageDirectionForward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(25, 50)];
+  XCTAssertEqual(3U, position.index);
+  XCTAssertEqual(UITextStorageDirectionBackward, position.affinity);
+  position = (FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(-25, 50)];
+  XCTAssertEqual(3U, position.index);
+  XCTAssertEqual(UITextStorageDirectionBackward, position.affinity);
 }
 
 - (void)testSelectionRectsForRange {
@@ -1494,6 +1514,9 @@ FLUTTER_ASSERT_ARC
   FlutterTextRange* range = [[FlutterTextRange rangeWithNSRange:NSMakeRange(3, 2)] copy];
   XCTAssertEqual(
       3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point withinRange:range]).index);
+  XCTAssertEqual(
+      UITextStorageDirectionForward,
+      ((FlutterTextPosition*)[inputView closestPositionToPoint:point withinRange:range]).affinity);
 
   // Do not return a position after the end of the range
   [inputView setSelectionRects:@[
@@ -1507,6 +1530,9 @@ FLUTTER_ASSERT_ARC
   range = [[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)] copy];
   XCTAssertEqual(
       1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point withinRange:range]).index);
+  XCTAssertEqual(
+      UITextStorageDirectionForward,
+      ((FlutterTextPosition*)[inputView closestPositionToPoint:point withinRange:range]).affinity);
 }
 
 #pragma mark - Floating Cursor - Tests
