@@ -130,7 +130,7 @@ static BOOL _preparedOnce = NO;
           break;
         }
       }
-    } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+    } else if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
       _indexOfVisualEffectSubview = i;
     }
   }

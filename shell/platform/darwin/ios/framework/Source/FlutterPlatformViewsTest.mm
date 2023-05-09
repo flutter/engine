@@ -1265,7 +1265,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                visualEffectView:visualEffectView];
   CGColorRef visualEffectSubviewBackgroundColor;
   for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
-    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+    if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
       visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
     }
   }
