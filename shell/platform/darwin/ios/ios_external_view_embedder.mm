@@ -6,8 +6,6 @@
 
 namespace flutter {
 
-constexpr int64_t kFlutterDefaultViewId = 0ll;
-
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
     std::shared_ptr<IOSContext> context)
