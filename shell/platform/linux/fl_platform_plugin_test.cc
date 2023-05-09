@@ -114,9 +114,10 @@ TEST(FlPlatformPluginTest, ExitApplication) {
   EXPECT_NE(plugin, nullptr);
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
 
+  g_autoptr(FlValue) null = fl_value_new_null();
   ON_CALL(messenger, fl_binary_messenger_send_response(
                          ::testing::Eq<FlBinaryMessenger*>(messenger),
-                         ::testing::_, ::testing::_, ::testing::_))
+                         ::testing::_, SuccessResponse(null), ::testing::_))
       .WillByDefault(testing::Return(TRUE));
 
   // Indicate that the binding is initialized.

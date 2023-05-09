@@ -353,16 +353,12 @@ static void method_call_cb(FlMethodChannel* channel,
     response = clipboard_has_strings_async(self, method_call);
   } else if (strcmp(method, kExitApplicationMethod) == 0) {
     response = system_exit_application(self, method_call);
-  } else if (strcmp(method, kInitializationComplete) == 0) {
+  } else if (strcmp(method, kInitializationCompleteMethod) == 0) {
     response = system_intitialization_complete(self, method_call);
   } else if (strcmp(method, kPlaySoundMethod) == 0) {
     response = system_sound_play(self, args);
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
-  } else if (strcmp(method, kInitializationCompleteMethod) == 0) {
-    // TODO(gspencergoog): Handle this message to enable exit message listening.
-    // https://github.com/flutter/flutter/issues/126033
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
@@ -403,6 +399,7 @@ FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger) {
       fl_method_channel_new(messenger, kChannelName, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(self->channel, method_call_cb, self,
                                             nullptr);
+  self->app_initialization_complete = FALSE;
 
   return self;
 }
