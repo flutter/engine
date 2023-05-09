@@ -15,7 +15,7 @@ SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
                                                int32_t height) {
   picture->ref();
   return DeferredFromPicture(sk_sp<SkPicture>(picture), {width, height},
-                             nullptr, nullptr, BitDepth::kU8, nullptr)
+                             nullptr, nullptr, BitDepth::kU8, SkColorSpace::MakeSRGB())
       .release();
 }
 
