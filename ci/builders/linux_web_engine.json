@@ -216,7 +216,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32,"
+                "cores=32",
                 "caches=engine_main_builder"
             ],
             "generators": {
