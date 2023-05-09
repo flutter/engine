@@ -353,4 +353,27 @@ class SkwasmRenderer implements Renderer {
       return SkwasmFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => SkwasmLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }

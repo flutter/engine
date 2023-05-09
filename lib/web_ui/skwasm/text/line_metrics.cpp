@@ -7,6 +7,28 @@
 
 using namespace skia::textlayout;
 
+SKWASM_EXPORT LineMetrics* lineMetrics_create(bool hardBreak,
+                                              double ascent,
+                                              double descent,
+                                              double unscaledAscent,
+                                              double height,
+                                              double width,
+                                              double left,
+                                              double baseline,
+                                              size_t lineNumber) {
+  auto metrics = new LineMetrics();
+  metrics->fHardBreak = hardBreak;
+  metrics->fAscent = ascent;
+  metrics->fDescent = descent;
+  metrics->fUnscaledAscent = unscaledAscent;
+  metrics->fHeight = height;
+  metrics->fWidth = width;
+  metrics->fLeft = left;
+  metrics->fBaseline = baseline;
+  metrics->fLineNumber = lineNumber;
+  return metrics;
+}
+
 SKWASM_EXPORT void lineMetrics_dispose(LineMetrics* metrics) {
   delete metrics;
 }

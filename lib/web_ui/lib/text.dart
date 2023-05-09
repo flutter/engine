@@ -627,6 +627,28 @@ enum BoxWidthStyle {
 }
 
 abstract class LineMetrics {
+  factory LineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  }) => engine.renderer.createLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber,
+  );
+
   bool get hardBreak;
   double get ascent;
   double get descent;

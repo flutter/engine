@@ -9,6 +9,28 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmLineMetrics implements ui.LineMetrics {
+  factory SkwasmLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  }) => SkwasmLineMetrics._(lineMetricsCreate(
+    hardBreak,
+    ascent,
+    descent,
+    unscaledAscent,
+    height,
+    width,
+    left,
+    baseline,
+    lineNumber,
+  ));
+
   SkwasmLineMetrics._(this.handle);
 
   final LineMetricsHandle handle;

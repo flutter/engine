@@ -10,6 +10,29 @@ import 'dart:ffi';
 final class RawLineMetrics extends Opaque {}
 typedef LineMetricsHandle = Pointer<RawLineMetrics>;
 
+@Native<LineMetricsHandle Function(
+  Bool,
+  Double,
+  Double,
+  Double,
+  Double,
+  Double,
+  Double,
+  Double,
+  Size,
+)>(symbol: 'lineMetrics_create', isLeaf: true)
+external LineMetricsHandle lineMetricsCreate(
+  bool hardBreak,
+  double ascent,
+  double descent,
+  double unscaledAscent,
+  double height,
+  double width,
+  double left,
+  double baseline,
+  int lineNumber
+);
+
 @Native<Void Function(LineMetricsHandle)>(symbol: 'lineMetrics_dispose', isLeaf: true)
 external void lineMetricsDispose(LineMetricsHandle handle);
 
