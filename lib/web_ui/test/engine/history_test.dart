@@ -653,6 +653,23 @@ void testMain() {
       expect(strategy.getPath(), '/');
     });
 
+    test('prepareExternalUrl', () {
+      const String internalUrl = '/menu?foo=bar';
+      final HashUrlStrategy strategy = HashUrlStrategy(location);
+
+      location.pathname = '/';
+      expect(strategy.prepareExternalUrl(internalUrl), '/#/menu?foo=bar');
+
+      location.pathname = '/main';
+      expect(strategy.prepareExternalUrl(internalUrl), '/main#/menu?foo=bar');
+
+      location.search = '?foo=bar';
+      expect(
+        strategy.prepareExternalUrl(internalUrl),
+        '/main?foo=bar#/menu?foo=bar',
+      );
+    });
+
     test('addPopStateListener fn unwraps DomPopStateEvent state', () {
       final HashUrlStrategy strategy = HashUrlStrategy(location);
       const String expected = 'expected value';
@@ -727,10 +744,10 @@ class TestPlatformLocation extends PlatformLocation {
   List<DomEventListener> popStateListeners = <DomEventListener>[];
 
   @override
-  String get pathname => throw UnimplementedError();
+  String pathname = '';
 
   @override
-  String get search => throw UnimplementedError();
+  String search = '';
 
   /// Calls all the registered `popStateListeners` with a 'popstate'
   /// event with value `state`
