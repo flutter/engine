@@ -20,38 +20,29 @@ namespace impeller {
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
     Path::Polyline polyline) {
   std::vector<Point> output;
-  output.reserve(polyline.points.size() * 3);
+  std::vector<uint16_t> index;
 
   for (auto j = 0u; j < polyline.contours.size(); j++) {
-    Scalar center_x = 0;
-    Scalar center_y = 0;
     auto [start, end] = polyline.GetContourPointBounds(j);
-    for (auto i = start; i < end; i++) {
-      const auto& point = polyline.points[i];
-      center_x += point.x;
-      center_y += point.y;
-    }
-    center_x /= end - start;
-    center_y /= end - start;
+    auto center = polyline.points[start];
 
-    for (auto i = start + 1; i < end; i++) {
-      const auto& point_a = polyline.points[i - 1];
+    // Some polygons will not self close and an additional triangle
+    // must be inserted, others will self close and we need to avoid
+    // inserting an extra triangle.
+    if (polyline.points[end - 1] == polyline.points[start]) {
+      end--;
+    }
+    output.emplace_back(center);
+    output.emplace_back(polyline.points[start + 1]);
+
+    for (auto i = start + 2; i < end; i++) {
       const auto& point_b = polyline.points[i];
-      output.emplace_back(point_a);
       output.emplace_back(point_b);
-      output.emplace_back(Point(center_x, center_y));
-    }
-    // Some shapes don't seem to self close?
-    if (polyline.points[end - 1] != polyline.points[start]) {
-      output.emplace_back(polyline.points[end - 1]);
-      output.emplace_back(polyline.points[start]);
-      output.emplace_back(Point(center_x, center_y));
-    }
-  }
 
-  std::vector<uint16_t> index(output.size());
-  for (auto i = 0u; i < output.size(); i++) {
-    index[i] = i;
+      index.emplace_back(0);
+      index.emplace_back(i - 1);
+      index.emplace_back(i);
+    }
   }
   return std::make_pair(output, index);
 }
@@ -147,7 +138,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   VertexBuffer vertex_buffer;
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
-      path_.GetConvexity() == Convexity::kConvex) {
+      path_.GetIsConvex()) {
     auto [points, indicies] = TessellateConvex(
         path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
 

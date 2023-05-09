@@ -109,19 +109,16 @@ Path ToPath(const SkPath& path) {
       fill_type = FillType::kNonZero;
       break;
   }
-  auto result_path = builder.TakePath(fill_type);
-  result_path.SetConvexity(path.isConvex() ? Convexity::kConvex
-                                           : Convexity::kUnknown);
-  return result_path;
+  builder.SetConvexity(path.isConvex() ? Convexity::kConvex
+                                       : Convexity::kUnknown);
+  return builder.TakePath(fill_type);
 }
 
 Path ToPath(const SkRRect& rrect) {
-  auto result_path =
-      PathBuilder{}
-          .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
-          .TakePath();
-  result_path.SetConvexity(Convexity::kConvex);
-  return result_path;
+  return PathBuilder{}
+      .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+      .SetConvexity(Convexity::kConvex)
+      .TakePath();
 }
 
 Point ToPoint(const SkPoint& point) {

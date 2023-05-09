@@ -37,8 +37,6 @@ enum class FillType {
 enum class Convexity {
   kUnknown,
   kConvex,
-  kConcave,
-  kComplex,
 };
 
 //------------------------------------------------------------------------------
@@ -101,9 +99,7 @@ class Path {
 
   FillType GetFillType() const;
 
-  void SetConvexity(Convexity value);
-
-  Convexity GetConvexity() const;
+  bool GetIsConvex() const;
 
   Path& AddLinearComponent(Point p1, Point p2);
 
@@ -159,6 +155,10 @@ class Path {
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
  private:
+  friend class PathBuilder;
+
+  void SetConvexity(Convexity value);
+
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
     size_t index = 0;

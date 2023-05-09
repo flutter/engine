@@ -261,8 +261,10 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
                               paint)) {
     return;
   }
-  auto circle_path = PathBuilder{}.AddCircle(center, radius).TakePath();
-  circle_path.SetConvexity(Convexity::kConvex);
+  auto circle_path = PathBuilder{}
+                         .AddCircle(center, radius)
+                         .SetConvexity(Convexity::kConvex)
+                         .TakePath();
   DrawPath(circle_path, paint);
 }
 

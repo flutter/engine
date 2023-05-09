@@ -845,8 +845,8 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
+          .SetConvexity(Convexity::kConvex)
           .TakePath();
-  path.SetConvexity(Convexity::kConvex);
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   canvas_.DrawPath(path, paint);
@@ -863,9 +863,10 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
     canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
                        bounds.width() * 0.5, paint_);
   } else {
-    auto path =
-        PathBuilder{}.AddOval(skia_conversions::ToRect(bounds)).TakePath();
-    path.SetConvexity(Convexity::kConvex);
+    auto path = PathBuilder{}
+                    .AddOval(skia_conversions::ToRect(bounds))
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
     canvas_.DrawPath(path, paint_);
   }
 }
