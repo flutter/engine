@@ -28,7 +28,7 @@
                 "host_debug",
                 "--lint-all",
                 "--shard-id=1",
-                "--shard-variants=ios_debug_sim"
+                "--shard-variants=host_debug"
             ],
             "script": "flutter/ci/lint.sh"
         }
