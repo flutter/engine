@@ -75,5 +75,9 @@ if (is_mac) {
       "//flutter/impeller/fixtures",
       "//third_party/googletest:gtest",
     ]
+
+    if (impeller_enable_vulkan) {
+      deps += [ "//third_party/swiftshader" ]
+    }
   }
 }
