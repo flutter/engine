@@ -341,7 +341,7 @@ static void method_call_cb(FlMethodChannel* channel,
     // TODO(gspencergoog): Handle this message to enable exit message listening.
     // https://github.com/flutter/flutter/issues/126033
     response =
-        FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_null()));
+        FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
