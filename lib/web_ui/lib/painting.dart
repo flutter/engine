@@ -398,6 +398,7 @@ class MaskFilter {
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
 
+// This needs to be kept in sync with the "_FilterQuality" enum in skwasm's canvas.cpp
 enum FilterQuality {
   none,
   low,

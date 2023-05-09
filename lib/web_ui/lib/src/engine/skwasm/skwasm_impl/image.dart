@@ -4,18 +4,20 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmImage implements ui.Image {
-  @override
-  int get width {
-    throw UnimplementedError();
-  }
+  SkwasmImage(this.handle);
+
+  final ImageHandle handle;
+  bool _isDisposed = false;
 
   @override
-  int get height {
-    throw UnimplementedError();
-  }
+  int get width => imageGetWidth(handle);
+
+  @override
+  int get height => imageGetHeight(handle);
 
   @override
   Future<ByteData?> toByteData(
@@ -28,13 +30,14 @@ class SkwasmImage implements ui.Image {
 
   @override
   void dispose() {
-    throw UnimplementedError();
+    if (!_isDisposed) {
+      imageDispose(handle);
+      _isDisposed = true;
+    }
   }
 
   @override
-  bool get debugDisposed {
-    throw UnimplementedError();
-  }
+  bool get debugDisposed => _isDisposed;
 
   @override
   SkwasmImage clone() => this;
