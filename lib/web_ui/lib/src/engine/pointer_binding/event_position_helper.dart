@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui show Offset;
@@ -29,10 +30,13 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
   }
 
   final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
-  final bool isInput = event.target.toString() == 'input';
+  final bool isInput = flutterViewEmbedder.textEditingHostNode.contains(event.target! as DomNode);
 
-  if(isInput) {
-    return _computeOffsetForInputs(event);
+  if (isInput) {
+    final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
+    if (inputGeometry != null) {
+      return _computeOffsetForInputs(event, inputGeometry);
+    }
   }
 
   if (isTargetOutsideOfShadowDOM) {
@@ -45,16 +49,16 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
 
 /// Computes the offsets for input nodes, which live outside of the shadowDOM.
 /// Since inputs can be transformed (scaled, translated, etc), we can't rely on
-/// `event.offset` to be accurate. `_computeOffsetRelativeToActualTarget` only
-/// handles the case where inputs are translated, but will have issues for scaled
-/// inputs (see: https://github.com/flutter/flutter/issues/125948).
+/// `_computeOffsetRelativeToActualTarget` to calculate accurate coordinates, as
+/// it only handles the case where inputs are translated, but will have issues
+/// for scaled inputs (see: https://github.com/flutter/flutter/issues/125948).
 ///
 /// We compute the offsets here by using the text input geometry data that is
 /// sent from the framework, which includes information on how to transform the
 /// underlying input element. We transform the `event.offset` points we receive
 /// using the values from the input's transform matrix.
-ui.Offset _computeOffsetForInputs(DomMouseEvent event) {
-  final Float32List matrix = textEditing.strategy.geometry!.globalTransform;
+ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inputGeometry) {
+  final Float32List matrix = inputGeometry.globalTransform;
   final FastMatrix32 fastMatrix = FastMatrix32(matrix);
   fastMatrix.transform(event.offsetX, event.offsetY);
 
