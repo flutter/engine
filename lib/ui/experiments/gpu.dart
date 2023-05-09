@@ -6,6 +6,16 @@
 
 part of dart.ui;
 
+class GpuContextException implements Exception {
+  GpuContextException(this.message);
+  String message;
+
+  @override
+  String toString() {
+    return 'GpuContextException: $message';
+  }
+}
+
 enum BlendOperation { add, subtract, reverseSubtract }
 
 enum BlendFactor {
@@ -141,7 +151,10 @@ class GpuContext extends NativeFieldWrapperClass1 {
   /// Creates a new graphics context that corresponds to the default Impeller
   /// context.
   GpuContext._createDefault() {
-    _initializeDefault();
+    final String error = _initializeDefault();
+    if (error.isNotEmpty) {
+      throw GpuContextException(error);
+    }
   }
 
   //registerShaderLibrary() async
@@ -157,9 +170,9 @@ class GpuContext extends NativeFieldWrapperClass1 {
     return RasterPipeline();
   }
 
-  /// Links this GpuContext to the default Impeller context.
-  @Native<Void Function(Handle)>(symbol: 'GpuContext::InitializeDefault')
-  external void _initializeDefault();
+  /// Associates the default Impeller context with this GpuContext.
+  @Native<Handle Function(Handle)>(symbol: 'GpuContext::InitializeDefault')
+  external String _initializeDefault();
 }
 
 GpuContext? _defaultGpuContext;
