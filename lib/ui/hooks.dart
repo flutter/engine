@@ -18,6 +18,7 @@ void _removeView(
   PlatformDispatcher.instance._removeView(id);
 }
 
+@pragma('vm:entry-point')
 void _updateDisplays(
   List<int> ids,
   List<double> widths,

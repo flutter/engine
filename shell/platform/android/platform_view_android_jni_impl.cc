@@ -340,7 +340,8 @@ static void SetViewportMetrics(JNIEnv* env,
       0,  // Display ID
   };
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(
+      kFlutterDefaultViewId, metrics);
 }
 
 static void UpdateDisplayMetrics(JNIEnv* env,
