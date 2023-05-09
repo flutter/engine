@@ -19,7 +19,7 @@ layout(std430) writeonly buffer GeometryData {
 }
 geometry_data;
 
-in f16vec2 center;
+in vec2 center;
 
 void main() {
   // The buffer offset we start writing to is the number of data per circle *

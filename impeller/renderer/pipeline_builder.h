@@ -18,10 +18,10 @@ namespace impeller {
 
 class NonRenderingFragment {
  public:
-  static constexpr std::string_view kLabel = "NonRendering";
-  static constexpr std::string_view kEntrypointName = "non_rendering_main";
+  static constexpr std::string_view kLabel = "";
+  static constexpr std::string_view kEntrypointName = "";
   static constexpr ShaderStage kShaderStage = ShaderStage::kFragment;
-  static constexpr std::string_view kGeneratorName = "NonRendering";
+  static constexpr std::string_view kGeneratorName = "";
   static constexpr std::array<DescriptorSetLayout, 0> kDescriptorSetLayouts{};
 };
 
@@ -71,6 +71,8 @@ struct PipelineBuilder {
     // Setup debug instrumentation.
     if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
       desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
+    } else {
+      desc.SetLabel(SPrintF("%s Pipeline", VertexShader::kLabel.data()));
     }
 
     // Resolve pipeline entrypoints.
@@ -88,6 +90,14 @@ struct PipelineBuilder {
         if (!vertex_function || !fragment_function) {
           VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
                          << VertexShader::kEntrypointName << "' and '"
+                         << FragmentShader::kEntrypointName
+                         << "' for pipeline named '" << VertexShader::kLabel
+                         << "'.";
+          return false;
+        }
+      } else {
+        if (!vertex_function) {
+          VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
                          << FragmentShader::kEntrypointName
                          << "' for pipeline named '" << VertexShader::kLabel
                          << "'.";
