@@ -307,7 +307,7 @@ targets:
 
   - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 70
     properties:
       release_build: "true"
       config_name: linux_web_engine
@@ -526,13 +526,13 @@ targets:
       config_name: windows_arm_host_engine
 
   - name: Windows windows_unopt
-    bringup: true
     recipe: engine_v2/builder
     timeout: 60
     properties:
       config_name: windows_unopt
 
   - name: Windows Unopt
+    bringup: true
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
