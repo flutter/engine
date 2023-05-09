@@ -44,28 +44,30 @@
             }
         }
     ],
-    "tests": [
-        {
-            "name": "test: lint host_debug",
-            "parameters": [
-                "--variant",
-                "host_debug",
-                "--lint-all",
-                "--shard-id=1",
-                "--shard-variants=ios_debug_sim"
-            ],
-            "script": "flutter/ci/lint.sh"
-        },
-        {
-            "name": "test: lint ios_debug_sim",
-            "parameters": [
-                "--variant",
-                "ios_debug_sim",
-                "--lint-all",
-                "--shard-id=0",
-                "--shard-variants=host_debug"
-            ],
-            "script": "flutter/ci/lint.sh"
-        }
-    ]
+    "generators": {
+        "tasks": [
+            {
+                "name": "test: lint host_debug",
+                "parameters": [
+                    "--variant",
+                    "host_debug",
+                    "--lint-all",
+                    "--shard-id=1",
+                    "--shard-variants=ios_debug_sim"
+                ],
+                "script": "flutter/ci/lint.sh"
+            },
+            {
+                "name": "test: lint ios_debug_sim",
+                "parameters": [
+                    "--variant",
+                    "ios_debug_sim",
+                    "--lint-all",
+                    "--shard-id=0",
+                    "--shard-variants=host_debug"
+                ],
+                "script": "flutter/ci/lint.sh"
+            }
+        ]
+    }
 }
