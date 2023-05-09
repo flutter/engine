@@ -19,7 +19,10 @@ shell_gpu_configuration("macos_gpu_configuration") {
 }
 
 group("macos") {
-  deps = [ ":flutter_framework" ]
+  deps = [
+    ":flutter_framework",
+    ":flutter_mac_framework",
+  ]
   if (build_glfw_shell) {
     deps += [
       ":flutter_macos_glfw",
@@ -29,7 +32,9 @@ group("macos") {
   }
 }
 
-_flutter_framework_name = "FlutterMacOS"
+# Generate Flutter.framework and Flutter.xcframework
+
+_flutter_framework_name = "Flutter"
 _flutter_framework_filename = "$_flutter_framework_name.framework"
 _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 _framework_binary_subpath = "Versions/A/$_flutter_framework_name"
@@ -39,7 +44,7 @@ _framework_binary_subpath = "Versions/A/$_flutter_framework_name"
 _flutter_framework_headers = [
   "framework/Headers/FlutterAppDelegate.h",
   "framework/Headers/FlutterEngine.h",
-  "framework/Headers/FlutterMacOS.h",
+  "framework/Headers/Flutter.h",
   "framework/Headers/FlutterPlatformViews.h",
   "framework/Headers/FlutterPluginMacOS.h",
   "framework/Headers/FlutterPluginRegistrarMacOS.h",
@@ -294,12 +299,27 @@ action("_generate_symlinks") {
   ]
   metadata = {
     macos_framework_without_entitlement =
-        [ "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" ]
+        [ "Flutter.framework.zip/Versions/A/Flutter" ]
   }
 }
 
-group("flutter_framework") {
+group("universal_flutter_framework") {
+  visibility = [ ":*" ]
   deps = [ ":_generate_symlinks_and_verify_framework_module" ]
+}
+
+action("flutter_framework") {
+  script = "//flutter/sky/tools/create_xcframework.py"
+  outputs = [ "$root_out_dir/Flutter.xcframework" ]
+  args = [
+    "--frameworks",
+    rebase_path("$_flutter_framework_dir"),
+    "--name",
+    "Flutter",
+    "--location",
+    rebase_path("$root_out_dir"),
+  ]
+  deps = [ ":universal_flutter_framework" ]
 }
 
 if (build_glfw_shell) {
@@ -319,12 +339,12 @@ zip_bundle("zip_macos_flutter_framework") {
   if (flutter_runtime_mode == "debug") {
     prefix = "$full_platform_name/"
   }
-  output = "${prefix}FlutterMacOS.framework.zip"
+  output = "${prefix}Flutter.framework.zip"
   visibility = [ ":*" ]
   files = [
     {
-      source = "$root_out_dir/FlutterMacOS.framework"
-      destination = "FlutterMacOS.framework"
+      source = "$root_out_dir/Flutter.framework"
+      destination = "Flutter.framework"
     },
   ]
 }
@@ -348,9 +368,167 @@ shared_library("_generate_symlinks_and_verify_framework_module") {
     "-Xlinker",
     "-fatal_warnings",
   ]
-  frameworks = [ "FlutterMacOS.framework" ]
+  frameworks = [ "Flutter.framework" ]
 
   sources = [ "framework/Source/FlutterUmbrellaImportTests.m" ]
 
   deps = [ ":_generate_symlinks" ]
+}
+
+# Generate FlutterMacOS.framework and FlutterMacOS.xcframework
+
+_flutter_mac_framework_name = "FlutterMacOS"
+_flutter_mac_framework_filename = "$_flutter_mac_framework_name.framework"
+_flutter_mac_framework_dir = "$root_out_dir/$_flutter_mac_framework_filename"
+_framework_mac_binary_subpath = "Versions/A/$_flutter_mac_framework_name"
+
+# The headers that will be copied to the framework and be accessed from outside
+# the Flutter engine source root.
+_flutter_mac_framework_headers = [ "wrapper_framework/Headers/FlutterMacOS.h" ]
+
+_flutter_mac_framework_headers_copy_dir =
+    "$_flutter_mac_framework_dir/Versions/A/Headers"
+
+source_set("flutter_mac_framework_source") {
+  visibility = [ ":*" ]
+
+  sources = _flutter_mac_framework_headers
+
+  public_configs = [ "//flutter:config" ]
+
+  defines = [
+    "FLUTTER_FRAMEWORK",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
+
+  cflags_objcc = flutter_cflags_objcc_arc
+}
+
+shared_library("flutter_mac_framework_dylib") {
+  visibility = [ ":*" ]
+  output_name = "$_flutter_mac_framework_name"
+
+  ldflags = [
+    "-Wl,-install_name,@rpath/$_flutter_mac_framework_filename/$_framework_mac_binary_subpath",
+    "-fapplication-extension",
+  ]
+
+  deps = [ ":flutter_mac_framework_source" ]
+}
+
+copy("copy_mac_dylib") {
+  visibility = [ ":*" ]
+
+  sources = [ "$root_out_dir/lib$_flutter_mac_framework_name.dylib" ]
+  outputs = [ "$_flutter_mac_framework_dir/$_framework_mac_binary_subpath" ]
+
+  deps = [ ":flutter_mac_framework_dylib" ]
+}
+
+copy("copy_mac_framework_info_plist") {
+  visibility = [ ":*" ]
+  sources = [ "wrapper_framework/Info.plist" ]
+  outputs = [ "$_flutter_mac_framework_dir/Versions/A/Resources/Info.plist" ]
+}
+
+copy("copy_mac_framework_module_map") {
+  visibility = [ ":*" ]
+  sources = [ "wrapper_framework/module.modulemap" ]
+  outputs =
+      [ "$_flutter_mac_framework_dir/Versions/A/Modules/module.modulemap" ]
+}
+
+action("copy_mac_framework_headers") {
+  script = "//flutter/sky/tools/install_framework_headers.py"
+  visibility = [ ":*" ]
+  sources = get_path_info(_flutter_mac_framework_headers, "abspath")
+  outputs = []
+  foreach(header, sources) {
+    header_basename = get_path_info(header, "file")
+    outputs += [ "$_flutter_mac_framework_headers_copy_dir/$header_basename" ]
+  }
+  args = [
+           "--location",
+           rebase_path("$_flutter_mac_framework_headers_copy_dir"),
+           "--headers",
+         ] + rebase_path(sources, "", "//")
+}
+
+copy("copy_mac_framework_icu") {
+  visibility = [ ":*" ]
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  outputs = [
+    "$_flutter_mac_framework_dir/Versions/A/Resources/{{source_file_part}}",
+  ]
+}
+
+action("_generate_mac_symlinks") {
+  visibility = [ ":*" ]
+  script = "//build/config/mac/package_framework.py"
+  outputs = [
+    "$root_build_dir/$_flutter_mac_framework_name.stamp",
+    "$root_out_dir/$_flutter_mac_framework_filename",
+  ]
+  args = [
+    "--framework",
+    "$_flutter_mac_framework_filename",
+    "--version",
+    "A",
+    "--contents",
+    "$_flutter_mac_framework_name",
+    "Resources",
+    "Headers",
+    "Modules",
+    "--stamp",
+    "$_flutter_mac_framework_name.stamp",
+  ]
+  deps = [
+    ":copy_license",
+    ":copy_mac_dylib",
+    ":copy_mac_framework_headers",
+    ":copy_mac_framework_icu",
+    ":copy_mac_framework_info_plist",
+    ":copy_mac_framework_module_map",
+  ]
+  metadata = {
+    macos_framework_without_entitlement =
+        [ "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" ]
+  }
+}
+
+shared_library("_generate_mac_symlinks_and_verify_framework_module") {
+  framework_search_path = rebase_path("$root_out_dir")
+  visibility = [ ":*" ]
+  cflags_objc = [ "-F$framework_search_path" ]
+
+  ldflags = [
+    "-F$framework_search_path",
+    "-fapplication-extension",
+    "-Xlinker",
+    "-fatal_warnings",
+  ]
+  frameworks = [ "FlutterMacOS.framework" ]
+
+  sources = [ "wrapper_framework/Source/FlutterUmbrellaImportTests.m" ]
+
+  deps = [ ":_generate_mac_symlinks" ]
+}
+
+group("universal_mac_flutter_framework") {
+  visibility = [ ":*" ]
+  deps = [ ":_generate_mac_symlinks_and_verify_framework_module" ]
+}
+
+action("flutter_mac_framework") {
+  script = "//flutter/sky/tools/create_xcframework.py"
+  outputs = [ "$root_out_dir/FlutterMacOS.xcframework" ]
+  args = [
+    "--frameworks",
+    rebase_path("$_flutter_mac_framework_dir"),
+    "--name",
+    "FlutterMacOS",
+    "--location",
+    rebase_path("$root_out_dir"),
+  ]
+  deps = [ ":universal_mac_flutter_framework" ]
 }
