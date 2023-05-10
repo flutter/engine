@@ -7,7 +7,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../html/paragraph/helper.dart';
+import '../../common/test_initialization.dart';
+import '../paragraph/helper.dart';
 
 /// Some text measurements are sensitive to browser implementations. Position
 /// info in the following tests only pass in Chrome, they are slightly different
@@ -31,7 +32,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await initializeTestFlutterViewEmbedder();
+  setUpUnitTests();
 
   test('empty paragraph', () {
     final CanvasParagraph paragraph1 = rich(
@@ -513,7 +514,6 @@ String spanStyle({
   num? letterSpacing,
 }) {
   return <String>[
-    'color: rgb(255, 0, 0);',
     'font-size: ${fontSize}px;',
     if (fontWeight != null) 'font-weight: $fontWeight;',
     if (fontStyle != null) 'font-style: $fontStyle;',
@@ -528,7 +528,6 @@ String spanStyle({
 }
 
 TextStyle styleWithDefaults({
-  Color color = const Color(0xFFFF0000),
   String fontFamily = FlutterViewEmbedder.defaultFontFamily,
   double fontSize = FlutterViewEmbedder.defaultFontSize,
   FontWeight? fontWeight,
@@ -537,7 +536,6 @@ TextStyle styleWithDefaults({
   double? letterSpacing,
 }) {
   return TextStyle(
-    color: color,
     fontFamily: fontFamily,
     fontSize: fontSize,
     fontWeight: fontWeight,
