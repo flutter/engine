@@ -824,8 +824,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   }
   [newVisualEffectViews removeAllObjects];
 
-  // Simulate editing 1 backdrop filter in the beginning of the stack (replace the mutators
-  stack)
+  // Simulate editing 1 backdrop filter in the beginning of the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
   for (int i = 0; i < 5; i++) {
     stack2.Pop();
@@ -1474,13 +1473,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                                                  toView:mockFlutterView];
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
-  // The childclippingview's frame is set based on flow, but the platform view's frame is set
-  based
-      // on quartz. Although they should be the same, but we should tolerate small floating point
-      // errors.
-      XCTAssertLessThan(
-          fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x),
-          kFloatCompareEpsilon);
+  // The childclippingview's frame is set based on flow, but the platform view's frame is set based
+  // on quartz. Although they should be the same, but we should tolerate small floating point
+  // errors.
+  XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x),
+                    kFloatCompareEpsilon);
   XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.y - childClippingView.frame.origin.y),
                     kFloatCompareEpsilon);
   XCTAssertLessThan(
@@ -1536,8 +1533,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   SkRect rect = SkRect::MakeXYWH(0, 0, 25, 25);
   stack.PushClipRect(rect);
   // Push a clip rrect, big enough to contain the entire platform view bound without clipping it.
-  // Make the origin (-1, -1) so that the top left rounded corner isn't clipping the
-  PlatformView.SkRect rect_for_rrect = SkRect::MakeXYWH(-1, -1, 25, 25);
+  // Make the origin (-1, -1) so that the top left rounded corner isn't clipping the PlatformView.
+  SkRect rect_for_rrect = SkRect::MakeXYWH(-1, -1, 25, 25);
   SkRRect rrect = SkRRect::MakeRectXY(rect_for_rrect, 1, 1);
   stack.PushClipRRect(rrect);
 
@@ -1598,10 +1595,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // The platform view's rect for this test will be (5, 5, 10, 10).
   stack.PushTransform(translateMatrix);
 
-  // Push a clip rrect, the rect of the rrect is the same as the PlatformView of the corner
-  should.
-      // clip the PlatformView.
-      SkRect rect_for_rrect = SkRect::MakeXYWH(0, 0, 10, 10);
+  // Push a clip rrect, the rect of the rrect is the same as the PlatformView of the corner should.
+  // clip the PlatformView.
+  SkRect rect_for_rrect = SkRect::MakeXYWH(0, 0, 10, 10);
   SkRRect rrect = SkRRect::MakeRectXY(rect_for_rrect, 1, 1);
   stack.PushClipRRect(rrect);
 
@@ -2066,8 +2062,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
 
-  // The touches in this sequence requires 1 touch object, we always create the NSSet with one
-  item.NSSet* touches1 = [NSSet setWithObject:@1];
+  // The touches in this sequence requires 1 touch object, we always create the NSSet with one item.
+  NSSet* touches1 = [NSSet setWithObject:@1];
   id event1 = OCMClassMock([UIEvent class]);
   [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
   OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
@@ -2284,11 +2280,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
     flutterPlatformViewsController->CompositeEmbeddedView(2);
-    // Not calling |flutterPlatformViewsController::SubmitFrame| so that the platform views are
-    not
-        // added to flutter_view_.
+    // Not calling |flutterPlatformViewsController::SubmitFrame| so that the platform views are not
+    // added to flutter_view_.
 
-        XCTAssertNotNil(gMockPlatformView);
+    XCTAssertNotNil(gMockPlatformView);
     flutterPlatformViewsController->Reset();
   }
   XCTAssertNil(gMockPlatformView);
@@ -2768,14 +2763,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNil(childClippingView1.maskView);
 }
 
-// Return true if a correct visual effect view is found. It also implies all the validation in
-this
-    // method passes.
-    //
-    // There are two fail states for this method. 1. One of the XCTAssert method failed; or 2. No
-    // correct visual effect view found.
-    - (BOOL)validateOneVisualEffectView : (UIView*)visualEffectView expectedFrame
-    : (CGRect)frame inputRadius : (CGFloat)inputRadius {
+// Return true if a correct visual effect view is found. It also implies all the validation in this
+// method passes.
+//
+// There are two fail states for this method. 1. One of the XCTAssert method failed; or 2. No
+// correct visual effect view found.
+- (BOOL)validateOneVisualEffectView:(UIView*)visualEffectView
+                      expectedFrame:(CGRect)frame
+                        inputRadius:(CGFloat)inputRadius {
   XCTAssertTrue(CGRectEqualToRect(visualEffectView.frame, frame));
   for (UIView* view in visualEffectView.subviews) {
     if (![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
@@ -2833,8 +2828,7 @@ this
       result);
 
   {
-    // **** First frame, view id 0, 1 in the composition_order_, disposing view 0 is called. ****
-    //
+    // **** First frame, view id 0, 1 in the composition_order_, disposing view 0 is called. **** //
     // No view should be disposed, or removed from the composition order.
     flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
     flutter::MutatorsStack stack;
@@ -2869,15 +2863,14 @@ this
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-    // Disposing won't remove embedded views until the view is removed from the
-    composition_order_ XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
+    // Disposing won't remove embedded views until the view is removed from the composition_order_
+    XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
     XCTAssertNotNil(flutterPlatformViewsController->GetPlatformViewByID(0));
     XCTAssertNotNil(flutterPlatformViewsController->GetPlatformViewByID(1));
   }
 
   {
-    // **** Second frame, view id 1 in the composition_order_, no disposing view is called,  ****
-    //
+    // **** Second frame, view id 1 in the composition_order_, no disposing view is called,  **** //
     // View 0 is removed from the composition order in this frame, hence also disposed.
     flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
     flutter::MutatorsStack stack;
@@ -2897,8 +2890,8 @@ this
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-    // Disposing won't remove embedded views until the view is removed from the
-    composition_order_ XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
+    // Disposing won't remove embedded views until the view is removed from the composition_order_
+    XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
     XCTAssertNil(flutterPlatformViewsController->GetPlatformViewByID(0));
     XCTAssertNotNil(flutterPlatformViewsController->GetPlatformViewByID(1));
   }
