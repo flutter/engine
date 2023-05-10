@@ -71,19 +71,32 @@ else
   # So use relative directory instead.
   zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
   mv -f ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
-  exit 1
+  # exit 1
 fi
 
-# echo "Running simulator tests with Impeller"
-# echo ""
+echo "Running simulator tests with Impeller"
+echo ""
 
-# # Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
-# if set -o pipefail && xcodebuild -sdk iphonesimulator \
-#   -scheme Scenarios \
-#   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
-#   clean test \
-#   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-#   -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
-#   INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
-#   echo "cyanglaz scenario test failed"
-# fi
+# Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
+  -scheme Scenarios \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario_impeller.xcresult" \
+  -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
+  clean test \
+  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
+  echo "test success."
+else
+  echo "test failed."
+
+  LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
+  echo "LUCI_TEST_OUTPUTS_PATH ${LUCI_TEST_OUTPUTS_PATH}"
+  # DUMP_PATH=$LUCI_TEST_OUTPUTS_PATH
+  echo "Zip"
+  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
+  # So use relative directory instead.
+  zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
+  mv -f ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
+  exit 1
+fi
