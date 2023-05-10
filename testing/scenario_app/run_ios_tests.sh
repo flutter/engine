@@ -69,8 +69,8 @@ else
   echo "Zip"
   # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
   # So use relative directory instead.
-  zip -q ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
-  mv ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
+  zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
+  mv ios_scenario_xcresult.zip $DUMP_PATH
 fi
 
 # echo "Running simulator tests with Impeller"
