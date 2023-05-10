@@ -6,7 +6,6 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/testing/display_list_testing.h"
-#include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -29,7 +28,6 @@ TEST(MockTextureTest, Callbacks) {
 }
 
 TEST(MockTextureTest, PaintCalls) {
-  MockCanvas canvas;
   DisplayListBuilder builder;
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
@@ -54,7 +52,6 @@ TEST(MockTextureTest, PaintCalls) {
 }
 
 TEST(MockTextureTest, PaintCallsWithLinearSampling) {
-  MockCanvas canvas;
   DisplayListBuilder builder;
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
