@@ -9,7 +9,7 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import 'screenshot.dart';
+import '../common/test_initialization.dart';
 
 const Color _kShadowColor = Color.fromARGB(255, 0, 0, 0);
 
@@ -22,7 +22,10 @@ Future<void> testMain() async {
 
   late SurfaceSceneBuilder builder;
 
-  setUpStableTestFonts();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUp(() {
     builder = SurfaceSceneBuilder();
@@ -54,22 +57,6 @@ Future<void> testMain() async {
         ..strokeWidth = 1.0,
     );
     builder.addPicture(Offset.zero, recorder.endRecording());
-  }
-
-  void paintPhysicalShapeShadow(double elevation, Offset offset) {
-    final SurfacePath path = SurfacePath()
-      ..addRect(const Rect.fromLTRB(0, 0, 20, 20));
-    builder.pushOffset(offset.dx, offset.dy);
-    builder.pushPhysicalShape(
-      path: path,
-      elevation: elevation,
-      shadowColor: _kShadowColor,
-      color: const Color.fromARGB(255, 255, 255, 255),
-    );
-    builder.pop(); // physical shape
-    paintShapeOutline();
-    paintShadowBounds(path, elevation);
-    builder.pop(); // offset
   }
 
   void paintBitmapCanvasShadow(
@@ -134,10 +121,6 @@ Future<void> testMain() async {
       debugShowClipLayers = false;
 
       builder.pushOffset(10, 20);
-
-      for (int i = 0; i < 10; i++) {
-        paintPhysicalShapeShadow(i.toDouble(), Offset(50.0 * i, 0));
-      }
 
       for (int i = 0; i < 10; i++) {
         paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 60), false);

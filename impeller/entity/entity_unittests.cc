@@ -224,7 +224,11 @@ TEST_P(EntityTest, CanDrawRect) {
 
 TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  auto path = PathBuilder{}
+                  .SetConvexity(Convexity::kConvex)
+                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .TakePath();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -2151,34 +2155,6 @@ TEST_P(EntityTest, TTTBlendColor) {
   }
 }
 
-TEST_P(EntityTest, SdfText) {
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    SkFont font;
-    font.setSize(30);
-    auto blob = SkTextBlob::MakeFromString(
-        "the quick brown fox jumped over the lazy dog (but with sdf).", font);
-    auto frame = TextFrameFromTextBlob(blob);
-    auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-    lazy_glyph_atlas->AddTextFrame(frame);
-
-    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
-
-    auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(frame);
-    text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
-    text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
-    Entity entity;
-    entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3{200.0, 200.0, 0.0}) *
-        Matrix::MakeScale(GetContentScale()));
-    entity.SetContents(text_contents);
-
-    // Force SDF rendering.
-    return text_contents->RenderSdf(context, entity, pass);
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
 TEST_P(EntityTest, AtlasContentsSubAtlas) {
   auto boston = CreateTextureForFixture("boston.jpg");
 
@@ -2598,6 +2574,42 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   // (whether in Flutter or the playground), and so this should currently always
   // return false in practice.
   ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+
+  {
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
+        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
+                                              0, 6, 7, 0, 7, 8};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
 }
 
 }  // namespace testing
