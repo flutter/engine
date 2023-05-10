@@ -947,8 +947,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
       elapsed_angle += radian_step;
       vtx_builder.AppendVertex({pt1});
 
-      pt2 = center +
-            Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+      pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
       vtx_builder.AppendVertex({pt2});
     }
   }
