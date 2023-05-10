@@ -70,20 +70,22 @@ bool isMultiLicenseNotice(Reader reader) {
 }
 
 FileType identifyFile(String name, Reader reader) {
+  final List<String> pathComponents = path.split(name);
   List<int>? bytes;
-  if ((path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
-      (path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
-      (path.split(name).reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
-      (path.split(name).reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) {
+  if ((pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
+      (pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
+      (pathComponents.reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
+      (pathComponents.reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) {
     return FileType.latin1Text;
   }
-  if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot') { // Not any particular format
+  if (pathComponents.reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot') { // Not any particular format
     return FileType.binary;
   }
-  if (path.split(name).reversed.take(9).toList().reversed.join('/') == 'fuchsia/sdk/linux/dart/zircon/lib/src/fakes/handle_disposition.dart' || // has bogus but benign "authors" reference, reported to jamesr@
-      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c' || // has bogus but benign "authors" reference, reported to author and legal team
-      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h' || // has bogus but benign "authors" reference, reported to author and legal team
-      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h') { // has bogus but benign "authors" reference, reported to author and legal team
+  if (pathComponents.reversed.take(9).toList().reversed.join('/') == 'fuchsia/sdk/linux/dart/zircon/lib/src/fakes/handle_disposition.dart' || // has bogus but benign "authors" reference, reported to jamesr@
+      (pathComponents.join('/').contains('fuchsia/sdk') && path.extension(name) == '.rom') ||
+      pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c' || // has bogus but benign "authors" reference, reported to author and legal team
+      pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h' || // has bogus but benign "authors" reference, reported to author and legal team
+      pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h') { // has bogus but benign "authors" reference, reported to author and legal team
     return FileType.binary;
   }
   final String base = path.basename(name);
@@ -93,7 +95,7 @@ FileType identifyFile(String name, Reader reader) {
       return FileType.notPartOfBuild;
     } // The ._* files in Mac OS X archives that gives icons and stuff
   }
-  if (path.split(name).contains('cairo')) {
+  if (pathComponents.contains('cairo')) {
     bytes ??= reader();
     // "Copyright <latin1 copyright symbol> "
     if (hasSubsequence(bytes, <int>[0x43, 0x6f, 0x70, 0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20, 0xA9, 0x20], kMaxSize)) {
