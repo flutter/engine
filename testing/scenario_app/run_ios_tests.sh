@@ -71,7 +71,7 @@ else
   # So use relative directory instead.
   zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
   mv -f ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
-  # exit 1
+  exit 1
 fi
 
 echo "Running simulator tests with Impeller"
