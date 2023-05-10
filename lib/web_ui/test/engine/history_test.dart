@@ -734,7 +734,7 @@ Future<void> systemNavigatorPop() {
 }
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
-class TestPlatformLocation extends PlatformLocation {
+class TestPlatformLocation implements PlatformLocation {
   @override
   String? hash;
 
