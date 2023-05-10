@@ -19,15 +19,16 @@ namespace testing {
 // later verify them against expected data.
 class MockTexture : public Texture {
  public:
-  explicit MockTexture(int64_t textureId);
+  static sk_sp<DlImage> MakeTestTexture(int w, int h, int checker_size);
+
+  explicit MockTexture(int64_t textureId,
+                       const sk_sp<DlImage>& texture = nullptr);
 
   // Called from raster thread.
   void Paint(PaintContext& context,
              const SkRect& bounds,
              bool freeze,
              DlImageSampling sampling) override;
-
-  DlColor mockColor(uint8_t alpha, bool freeze, DlImageSampling sampling) const;
 
   void OnGrContextCreated() override { gr_context_created_ = true; }
   void OnGrContextDestroyed() override { gr_context_destroyed_ = true; }
@@ -39,6 +40,7 @@ class MockTexture : public Texture {
   bool unregistered() { return unregistered_; }
 
  private:
+  sk_sp<DlImage> texture_;
   bool gr_context_created_ = false;
   bool gr_context_destroyed_ = false;
   bool unregistered_ = false;

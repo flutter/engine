@@ -34,9 +34,8 @@ TEST(MockTextureTest, PaintCalls) {
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
   const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  auto texture = std::make_shared<MockTexture>(0);
-  DlPaint paint1 = DlPaint(texture->mockColor(0xff, false, sampling));
-  DlPaint paint2 = DlPaint(texture->mockColor(0xff, true, sampling));
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto texture = std::make_shared<MockTexture>(0, texture_image);
 
   Texture::PaintContext context{
       .canvas = &builder,
@@ -44,9 +43,12 @@ TEST(MockTextureTest, PaintCalls) {
   texture->Paint(context, paint_bounds1, false, sampling);
   texture->Paint(context, paint_bounds2, true, sampling);
 
+  SkRect src1 = SkRect::Make(texture_image->bounds());
+  SkRect src2 = src1.makeInset(1.0, 1.0f);
+
   DisplayListBuilder expected_builder;
-  expected_builder.DrawRect(paint_bounds1, paint1);
-  expected_builder.DrawRect(paint_bounds2, paint2);
+  expected_builder.DrawImageRect(texture_image, src1, paint_bounds1, sampling);
+  expected_builder.DrawImageRect(texture_image, src2, paint_bounds2, sampling);
   EXPECT_TRUE(
       DisplayListsEQ_Verbose(builder.Build(), expected_builder.Build()));
 }
@@ -57,9 +59,8 @@ TEST(MockTextureTest, PaintCallsWithLinearSampling) {
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
   const auto sampling = DlImageSampling::kLinear;
-  auto texture = std::make_shared<MockTexture>(0);
-  DlPaint paint1 = DlPaint(texture->mockColor(0xff, false, sampling));
-  DlPaint paint2 = DlPaint(texture->mockColor(0xff, true, sampling));
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto texture = std::make_shared<MockTexture>(0, texture_image);
 
   Texture::PaintContext context{
       .canvas = &builder,
@@ -67,9 +68,12 @@ TEST(MockTextureTest, PaintCallsWithLinearSampling) {
   texture->Paint(context, paint_bounds1, false, sampling);
   texture->Paint(context, paint_bounds2, true, sampling);
 
+  SkRect src1 = SkRect::Make(texture_image->bounds());
+  SkRect src2 = src1.makeInset(1.0, 1.0f);
+
   DisplayListBuilder expected_builder;
-  expected_builder.DrawRect(paint_bounds1, paint1);
-  expected_builder.DrawRect(paint_bounds2, paint2);
+  expected_builder.DrawImageRect(texture_image, src1, paint_bounds1, sampling);
+  expected_builder.DrawImageRect(texture_image, src2, paint_bounds2, sampling);
   EXPECT_TRUE(
       DisplayListsEQ_Verbose(builder.Build(), expected_builder.Build()));
 }

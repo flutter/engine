@@ -75,7 +75,8 @@ TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   const SkRect layer_bounds =
       SkRect::MakeSize(layer_size).makeOffset(layer_offset.fX, layer_offset.fY);
   const int64_t texture_id = 0;
-  auto mock_texture = std::make_shared<MockTexture>(texture_id);
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto mock_texture = std::make_shared<MockTexture>(texture_id, texture_image);
   auto layer = std::make_shared<TextureLayer>(
       layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
@@ -86,13 +87,11 @@ TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   EXPECT_EQ(layer->paint_bounds(), layer_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  DlPaint mock_paint(
-      mock_texture->mockColor(0xff, false, DlImageSampling::kLinear));
-
   layer->Paint(display_list_paint_context());
   DisplayListBuilder expected_builder;
   /* (Texture)layer::Paint */ {
-    expected_builder.DrawRect(layer_bounds, mock_paint);
+    expected_builder.DrawImageRect(texture_image, layer_bounds,
+                                   DlImageSampling::kLinear);
   }
   EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
@@ -124,7 +123,8 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
   const SkRect layer_bounds =
       SkRect::MakeSize(layer_size).makeOffset(layer_offset.fX, layer_offset.fY);
   const int64_t texture_id = 0;
-  auto mock_texture = std::make_shared<MockTexture>(texture_id);
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto mock_texture = std::make_shared<MockTexture>(texture_id, texture_image);
   SkAlpha alpha = 0x7f;
   auto texture_layer = std::make_shared<TextureLayer>(
       layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
@@ -147,8 +147,8 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::kCallerCanApplyOpacity);
 
-  DlPaint mock_paint(
-      mock_texture->mockColor(alpha, false, DlImageSampling::kLinear));
+  DlPaint texture_paint;
+  texture_paint.setAlpha(alpha);
 
   layer->Paint(display_list_paint_context());
   DisplayListBuilder expected_builder;
@@ -156,7 +156,9 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
     expected_builder.Save();
     {
       /* texture_layer::Paint */ {
-        expected_builder.DrawRect(layer_bounds, mock_paint);
+        expected_builder.DrawImageRect(texture_image, layer_bounds,
+                                       DlImageSampling::kLinear,
+                                       &texture_paint);
       }
     }
     expected_builder.Restore();
