@@ -27,40 +27,6 @@ constexpr SkScalar kShadowLightRadius = 1.1;
 constexpr SkScalar kShadowLightHeight = 600.0;
 constexpr SkScalar kShadowLightXOffset = 0;
 constexpr SkScalar kShadowLightYOffset = -450;
-
-// This needs to be kept in sync with the "FilterQuality" enum in dart:ui
-enum class _FilterQuality {
-  none,
-  low,
-  medium,
-  high,
-};
-
-SkFilterMode _filterModeForQuality(_FilterQuality quality) {
-  switch (quality) {
-    case _FilterQuality::none:
-    case _FilterQuality::low:
-      return SkFilterMode::kNearest;
-    case _FilterQuality::medium:
-    case _FilterQuality::high:
-      return SkFilterMode::kLinear;
-  }
-}
-
-SkSamplingOptions _samplingOptionsForQuality(_FilterQuality quality) {
-  switch (quality) {
-    case _FilterQuality::none:
-      return SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
-    case _FilterQuality::low:
-      return SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNearest);
-    case _FilterQuality::medium:
-      return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
-    case _FilterQuality::high:
-      // Cubic equation coefficients recommended by Mitchell & Netravali
-      // in their paper on cubic interpolation.
-      return SkSamplingOptions(SkCubicResampler::Mitchell());
-  }
-}
 }  // namespace
 
 SKWASM_EXPORT void canvas_saveLayer(SkCanvas* canvas,
@@ -234,9 +200,9 @@ SKWASM_EXPORT void canvas_drawImage(SkCanvas* canvas,
                                     SkScalar offsetX,
                                     SkScalar offsetY,
                                     SkPaint* paint,
-                                    _FilterQuality quality) {
+                                    FilterQuality quality) {
   canvas->drawImage(image, offsetX, offsetY,
-                    _samplingOptionsForQuality(quality), paint);
+                    samplingOptionsForQuality(quality), paint);
 }
 
 SKWASM_EXPORT void canvas_drawImageRect(SkCanvas* canvas,
@@ -244,9 +210,9 @@ SKWASM_EXPORT void canvas_drawImageRect(SkCanvas* canvas,
                                         SkRect* sourceRect,
                                         SkRect* destRect,
                                         SkPaint* paint,
-                                        _FilterQuality quality) {
+                                        FilterQuality quality) {
   canvas->drawImageRect(image, *sourceRect, *destRect,
-                        _samplingOptionsForQuality(quality), paint,
+                        samplingOptionsForQuality(quality), paint,
                         SkCanvas::kStrict_SrcRectConstraint);
 }
 
@@ -255,9 +221,9 @@ SKWASM_EXPORT void canvas_drawImageNine(SkCanvas* canvas,
                                         SkIRect* centerRect,
                                         SkRect* destinationRect,
                                         SkPaint* paint,
-                                        _FilterQuality quality) {
+                                        FilterQuality quality) {
   canvas->drawImageNine(image, *centerRect, *destinationRect,
-                        _filterModeForQuality(quality), paint);
+                        filterModeForQuality(quality), paint);
 }
 
 SKWASM_EXPORT void canvas_getTransform(SkCanvas* canvas, SkM44* outTransform) {

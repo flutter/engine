@@ -75,9 +75,19 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.ImageShader createImageShader(ui.Image image, ui.TileMode tmx, ui.TileMode tmy, Float64List matrix4, ui.FilterQuality? filterQuality) {
-    throw UnimplementedError('createImageShader not yet implemented');
-  }
+  ui.ImageShader createImageShader(
+    ui.Image image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
+    Float64List matrix4,
+    ui.FilterQuality? filterQuality
+  ) => SkwasmImageShader.imageShader(
+    image as SkwasmImage,
+    tmx,
+    tmy,
+    matrix4,
+    filterQuality
+  );
 
   @override
   ui.Gradient createLinearGradient(
