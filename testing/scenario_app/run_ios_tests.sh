@@ -65,12 +65,12 @@ else
 
   LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
   echo "LUCI_TEST_OUTPUTS_PATH ${LUCI_TEST_OUTPUTS_PATH}"
-  DUMP_PATH=$LUCI_TEST_OUTPUTS_PATH/ios_scenario_xcresult
+  # DUMP_PATH=$LUCI_TEST_OUTPUTS_PATH
   echo "Zip"
   # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
   # So use relative directory instead.
   zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
-  mv ios_scenario_xcresult.zip $DUMP_PATH
+  mv -f ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
   exit 1
 fi
 
