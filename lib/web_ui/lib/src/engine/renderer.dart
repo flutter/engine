@@ -29,21 +29,22 @@ abstract class Renderer {
   factory Renderer._internal() {
     if (FlutterConfiguration.flutterWebUseSkwasm) {
       return SkwasmRenderer();
-    }
-    bool useCanvasKit;
-    if (FlutterConfiguration.flutterWebAutoDetect) {
-      if (configuration.requestedRendererType != null) {
-        useCanvasKit = configuration.requestedRendererType == 'canvaskit';
-      } else {
-        // If requestedRendererType is not specified, use CanvasKit for desktop and
-        // html for mobile.
-        useCanvasKit = isDesktop;
-      }
     } else {
-      useCanvasKit = FlutterConfiguration.useSkia;
-    }
+      bool useCanvasKit;
+      if (FlutterConfiguration.flutterWebAutoDetect) {
+        if (configuration.requestedRendererType != null) {
+          useCanvasKit = configuration.requestedRendererType == 'canvaskit';
+        } else {
+          // If requestedRendererType is not specified, use CanvasKit for desktop and
+          // html for mobile.
+          useCanvasKit = isDesktop;
+        }
+      } else {
+        useCanvasKit = FlutterConfiguration.useSkia;
+      }
 
-    return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+      return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+    }
   }
 
   String get rendererTag;
@@ -159,6 +160,18 @@ abstract class Renderer {
   ui.Path createPath();
   ui.Path copyPath(ui.Path src);
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2);
+
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  });
 
   ui.TextStyle createTextStyle({
     required ui.Color? color,

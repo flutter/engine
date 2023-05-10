@@ -845,6 +845,7 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
+          .SetConvexity(Convexity::kConvex)
           .TakePath();
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
@@ -862,8 +863,10 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
     canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
                        bounds.width() * 0.5, paint_);
   } else {
-    auto path =
-        PathBuilder{}.AddOval(skia_conversions::ToRect(bounds)).TakePath();
+    auto path = PathBuilder{}
+                    .AddOval(skia_conversions::ToRect(bounds))
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
     canvas_.DrawPath(path, paint_);
   }
 }
@@ -893,7 +896,20 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
-  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  SkRect rect;
+  SkRRect rrect;
+  SkRect oval;
+  if (path.isRect(&rect)) {
+    canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
+  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
+                      rrect.getSimpleRadii().fX, paint_);
+  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
+    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
+                       oval.width() * 0.5, paint_);
+  } else {
+    canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  }
 }
 
 // |flutter::DlOpReceiver|
