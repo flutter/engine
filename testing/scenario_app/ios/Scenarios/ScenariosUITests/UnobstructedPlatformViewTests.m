@@ -68,9 +68,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 }
 
@@ -104,9 +103,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 }
 
@@ -177,9 +175,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView0.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 
   XCUIElement* overlayView1 = app.otherElements[@"platform_view[0].overlay_view[1]"];
@@ -187,9 +184,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView1.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView1.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView1.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView1.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView1.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView1.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 }
 
@@ -270,9 +266,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView0.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 
   XCUIElement* overlayView1 = app.otherElements[@"platform_view[1].overlay_view[0]"];
@@ -280,9 +275,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView1.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView1.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView1.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView1.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView1.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView1.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 }
 
@@ -316,9 +310,8 @@ static const CGFloat kCompareAccuracy = 0.001;
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width,
-  kCompareAccuracy); XCTAssertEqualWithAccuracy(overlayView0.frame.size.height,
-  app.frame.size.height,
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width, kCompareAccuracy);
+  XCTAssertEqualWithAccuracy(overlayView0.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 
   XCUIElement* overlayView1 = app.otherElements[@"platform_view[0].overlay_view[1]"];
