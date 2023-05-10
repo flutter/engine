@@ -11,9 +11,11 @@ import 'canvaskit_api.dart';
 
 /// Collects native objects that weren't explicitly disposed of using
 /// [UniqueRef.dispose] or [CountedRef.unref].
-SkObjectFinalizationRegistry _finalizationRegistry = SkObjectFinalizationRegistry((UniqueRef<Object> uniq) {
-  uniq.collect();
-}.toJS);
+SkObjectFinalizationRegistry _finalizationRegistry = createSkObjectFinalizationRegistry(
+  (UniqueRef<Object> uniq) {
+    uniq.collect();
+  }.toJS
+);
 
 NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
 
@@ -21,7 +23,9 @@ NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemory
 /// mock implementation of a finalization registry.
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
-    _finalizationRegistry.register(owner, ref);
+    if (browserSupportsFinalizationRegistry) {
+      _finalizationRegistry.register(owner, ref);
+    }
   }
 }
 
@@ -50,7 +54,7 @@ class UniqueRef<T extends Object> {
   /// The returned reference must not be stored. I should only be borrowed
   /// temporarily. Storing this reference may result in dangling pointer errors.
   T get nativeObject {
-    assert(!isDisposed, 'Native object was disposed.');
+    assert(!isDisposed, 'The native object of $_debugOwnerLabel was disposed.');
     return _nativeObject!;
   }
 

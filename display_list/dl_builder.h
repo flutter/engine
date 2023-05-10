@@ -113,11 +113,17 @@ class DisplayListBuilder final : public virtual DlCanvas,
   SkMatrix GetTransform() const override { return tracker_.matrix_3x3(); }
 
   // |DlCanvas|
-  void ClipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void ClipRect(const SkRect& rect,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
   // |DlCanvas|
-  void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void ClipRRect(const SkRRect& rrect,
+                 ClipOp clip_op = ClipOp::kIntersect,
+                 bool is_aa = false) override;
   // |DlCanvas|
-  void ClipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void ClipPath(const SkPath& path,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
 
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
@@ -479,6 +485,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
   int nested_op_count_ = 0;
+
+  bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);

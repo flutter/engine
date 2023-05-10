@@ -6,11 +6,12 @@
 library window;
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'dom.dart';
@@ -37,11 +38,29 @@ const int kImplicitViewId = 0;
 bool _isUrlStrategySet = false;
 
 /// A custom URL strategy set by the app before running.
-UrlStrategy? _customUrlStrategy;
-set customUrlStrategy(UrlStrategy? strategy) {
+ui_web.UrlStrategy? _customUrlStrategy;
+set customUrlStrategy(ui_web.UrlStrategy? strategy) {
   assert(!_isUrlStrategySet, 'Cannot set URL strategy more than once.');
   _isUrlStrategySet = true;
   _customUrlStrategy = strategy;
+}
+
+class EngineFlutterDisplay extends ui.Display {
+  EngineFlutterDisplay({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  @override
+  final int id;
+  @override
+  final double devicePixelRatio;
+  @override
+  final ui.Size size;
+  @override
+  final double refreshRate;
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -62,6 +81,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   @override
+  ui.Display get display {
+    return EngineFlutterDisplay(
+      id: 0,
+      size: ui.Size(domWindow.screen?.width ?? 0, domWindow.screen?.height ?? 0),
+      devicePixelRatio: domWindow.devicePixelRatio,
+      refreshRate: 60,
+    );
+  }
+
+  @override
   final Object viewId;
 
   @override
@@ -74,8 +103,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         createHistoryForExistingState(_urlStrategyForInitialization);
   }
 
-  UrlStrategy? get _urlStrategyForInitialization {
-    final UrlStrategy? urlStrategy =
+  ui_web.UrlStrategy? get _urlStrategyForInitialization {
+    final ui_web.UrlStrategy? urlStrategy =
         _isUrlStrategySet ? _customUrlStrategy : _createDefaultUrlStrategy();
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
@@ -104,7 +133,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     // At this point, we know that `_browserHistory` is a non-null
     // `MultiEntriesBrowserHistory` instance.
-    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
   }
@@ -128,14 +157,14 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     // At this point, we know that `_browserHistory` is a non-null
     // `SingleEntryBrowserHistory` instance.
-    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
 
   @visibleForTesting
   Future<void> debugInitializeHistory(
-    UrlStrategy? strategy, {
+    ui_web.UrlStrategy? strategy, {
     required bool useSingle,
   }) async {
     // Prevent any further customization of URL strategy.
@@ -349,7 +378,7 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 @JS('_flutter_web_set_location_strategy')
 external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
-UrlStrategy? _createDefaultUrlStrategy() {
+ui_web.UrlStrategy? _createDefaultUrlStrategy() {
   return ui.debugEmulateFlutterTesterEnvironment
       ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
       : const HashUrlStrategy();

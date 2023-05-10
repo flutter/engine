@@ -15,15 +15,18 @@
 #include "gtest/gtest.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
+#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -34,7 +37,7 @@
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
@@ -221,7 +224,11 @@ TEST_P(EntityTest, CanDrawRect) {
 
 TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  auto path = PathBuilder{}
+                  .SetConvexity(Convexity::kConvex)
+                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .TakePath();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -2148,34 +2155,6 @@ TEST_P(EntityTest, TTTBlendColor) {
   }
 }
 
-TEST_P(EntityTest, SdfText) {
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    SkFont font;
-    font.setSize(30);
-    auto blob = SkTextBlob::MakeFromString(
-        "the quick brown fox jumped over the lazy dog (but with sdf).", font);
-    auto frame = TextFrameFromTextBlob(blob);
-    auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-    lazy_glyph_atlas->AddTextFrame(frame);
-
-    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
-
-    auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(frame);
-    text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
-    text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
-    Entity entity;
-    entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3{200.0, 200.0, 0.0}) *
-        Matrix::MakeScale(GetContentScale()));
-    entity.SetContents(text_contents);
-
-    // Force SDF rendering.
-    return text_contents->RenderSdf(context, entity, pass);
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
 TEST_P(EntityTest, AtlasContentsSubAtlas) {
   auto boston = CreateTextureForFixture("boston.jpg");
 
@@ -2449,6 +2428,188 @@ TEST_P(EntityTest, InheritOpacityTest) {
   // Runtime effect contents can't accept opacity.
   auto runtime_effect = std::make_shared<RuntimeEffectContents>();
   ASSERT_FALSE(runtime_effect->CanInheritOpacity(entity));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kColorBurn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorClearBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kClear, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorSrcBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kSource, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorDstBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kDestination, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorFilterWithForegroundColorSrcInBlend) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  auto filter = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceIn, FilterInput::Make({image}), Color::Red());
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
+  auto arrow_head = PathBuilder{}
+                        .MoveTo({50, 120})
+                        .LineTo({120, 190})
+                        .LineTo({190, 120})
+                        .TakePath();
+  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
+                                           Join::kRound);
+
+  auto transform = Matrix::MakeTranslation({300, 300}) *
+                   Matrix::MakeRotationZ(Radians(kPiOver2));
+  EXPECT_LT(transform.e[0][0], 0.f);
+  auto coverage = geometry->GetCoverage(transform);
+  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
+}
+
+TEST_P(EntityTest, SolidColorContentsIsOpaque) {
+  SolidColorContents contents;
+  contents.SetColor(Color::CornflowerBlue());
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColor(Color::CornflowerBlue().WithAlpha(0.5));
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, ConicalGradientContentsIsOpaque) {
+  ConicalGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, LinearGradientContentsIsOpaque) {
+  LinearGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
+  RadialGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
+  RadialGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
+  auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
+  TiledTextureContents contents;
+  contents.SetTexture(bay_bridge);
+  // This is a placeholder test. Images currently never decompress as opaque
+  // (whether in Flutter or the playground), and so this should currently always
+  // return false in practice.
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+
+  {
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
+        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
+                                              0, 6, 7, 0, 7, 8};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
 }
 
 }  // namespace testing

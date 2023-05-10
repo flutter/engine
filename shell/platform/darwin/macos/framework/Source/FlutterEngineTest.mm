@@ -14,7 +14,6 @@
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -647,7 +646,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -664,7 +663,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -678,7 +677,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -686,7 +685,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -695,7 +694,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
@@ -764,6 +763,29 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "");
   EXPECT_TRUE(triedToTerminate);
+}
+
+TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
+  __block BOOL announced = FALSE;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
+                                      withPriority:NSAccessibilityPriorityMedium])
+      .andDo((^(NSInvocation* invocation) {
+        announced = TRUE;
+        [invocation retainArguments];
+        NSString* message;
+        [invocation getArgument:&message atIndex:2];
+        EXPECT_EQ(message, @"error message");
+      }));
+
+  NSDictionary<NSString*, id>* annotatedEvent =
+      @{@"type" : @"announce",
+        @"data" : @{@"message" : @"error message"}};
+
+  [engineMock handleAccessibilityEvent:annotatedEvent];
+
+  EXPECT_TRUE(announced);
 }
 
 }  // namespace flutter::testing

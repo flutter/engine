@@ -32,7 +32,7 @@ vec2 IPRemapCoords(vec2 coords, float y_coord_scale) {
 /// If `y_coord_scale` < 0.0, the Y coordinate is flipped. This is useful
 /// for Impeller graphics backends that use a flipped framebuffer coordinate
 /// space.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinear(sampler2D texture_sampler,
                     vec2 coords,
@@ -100,13 +100,11 @@ const float16_t kTileModeDecalHf = 3.0hf;
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
 f16vec4 IPHalfSampleWithTileMode(f16sampler2D tex,
-                                 f16vec2 coords,
+                                 vec2 coords,
                                  float16_t x_tile_mode,
                                  float16_t y_tile_mode) {
-  if (x_tile_mode == kTileModeDecalHf &&
-          (coords.x < 0.0hf || coords.x >= 1.0hf) ||
-      y_tile_mode == kTileModeDecalHf &&
-          (coords.y < 0.0hf || coords.y >= 1.0hf)) {
+  if (x_tile_mode == kTileModeDecalHf && (coords.x < 0.0 || coords.x >= 1.0) ||
+      y_tile_mode == kTileModeDecalHf && (coords.y < 0.0 || coords.y >= 1.0)) {
     return f16vec4(0.0hf);
   }
 
@@ -117,7 +115,7 @@ f16vec4 IPHalfSampleWithTileMode(f16sampler2D tex,
 ///
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 vec2 coords,
@@ -143,11 +141,20 @@ vec4 IPSampleDecal(sampler2D texture_sampler, vec2 coords) {
   return texture(texture_sampler, coords);
 }
 
+/// Sample a texture with decal tile mode.
+f16vec4 IPHalfSampleDecal(f16sampler2D texture_sampler, vec2 coords) {
+  if (any(lessThan(coords, vec2(0))) ||
+      any(greaterThanEqual(coords, vec2(1)))) {
+    return f16vec4(0.0);
+  }
+  return texture(texture_sampler, coords);
+}
+
 /// Sample a texture, emulating a specific tile mode.
 ///
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 vec2 coords,

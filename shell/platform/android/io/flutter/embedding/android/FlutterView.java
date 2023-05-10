@@ -392,7 +392,7 @@ public class FlutterView extends FrameLayout
     setFocusable(true);
     setFocusableInTouchMode(true);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
+      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
     }
   }
 
@@ -455,6 +455,8 @@ public class FlutterView extends FrameLayout
       Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
       localizationPlugin.sendLocalesToFlutter(newConfig);
       sendUserSettingsToFlutter();
+
+      ViewUtils.calculateMaximumDisplayMetrics(getContext(), flutterEngine);
     }
   }
 

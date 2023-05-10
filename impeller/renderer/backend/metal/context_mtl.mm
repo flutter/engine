@@ -9,9 +9,9 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
-#include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
 
@@ -52,12 +52,16 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetHasThreadingRestrictions(false)
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
+      .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
+      .SetSupportsDecalTileMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-      .SetSupportsCompute(true, DeviceSupportsComputeSubgroups(device))
+      .SetSupportsCompute(true)
+      .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
+      .SetSupportsReadFromOnscreenTexture(true)
       .Build();
 }
 
@@ -118,12 +122,6 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
       return;
     }
   }
-
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
-    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
-  // Setup the gpu tracer.
-  { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
-#endif
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
@@ -230,6 +228,11 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 ContextMTL::~ContextMTL() = default;
 
 // |Context|
+std::string ContextMTL::DescribeGpuModel() const {
+  return std::string([[device_ name] UTF8String]);
+}
+
+// |Context|
 bool ContextMTL::IsValid() const {
   return is_valid_;
 }
@@ -252,10 +255,6 @@ std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
 // |Context|
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
-}
-
-std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {
-  return gpu_tracer_;
 }
 
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
@@ -288,6 +287,10 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   device_capabilities_ = InferMetalCapabilities(device_, format);
   return true;
+}
+
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
+  return [command_queue_ commandBuffer];
 }
 
 }  // namespace impeller

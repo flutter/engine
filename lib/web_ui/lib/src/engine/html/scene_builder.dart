@@ -19,7 +19,6 @@ import 'color_filter.dart';
 import 'image_filter.dart';
 import 'offset.dart';
 import 'opacity.dart';
-import 'path/path.dart';
 import 'path_to_svg_clip.dart';
 import 'picture.dart';
 import 'platform_view.dart';
@@ -106,8 +105,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
 
-    // TODO(yjbanov): make this final after NNBD ships definite assignment.
-    /*final*/ Float32List? matrix;
+    final Float32List matrix;
     if (_surfaceStack.length == 1) {
       // Top level transform contains view configuration to scale
       // scene to devicepixelratio. Use identity instead since CSS uses
@@ -263,37 +261,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
         oldLayer as PersistedShaderMask?,
         shader, maskRect, blendMode, filterQuality));
-  }
-
-  /// Pushes a physical layer operation for an arbitrary shape onto the
-  /// operation stack.
-  ///
-  /// By default, the layer's content will not be clipped (clip = [Clip.none]).
-  /// If clip equals [Clip.hardEdge], [Clip.antiAlias], or [Clip.antiAliasWithSaveLayer],
-  /// then the content is clipped to the given shape defined by [path].
-  ///
-  /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
-  /// [shadowColor] defines the color of the shadow if present and [color] defines the
-  /// color of the layer background.
-  ///
-  /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  @override
-  ui.PhysicalShapeEngineLayer pushPhysicalShape({
-    required ui.Path path,
-    required double elevation,
-    required ui.Color color,
-    ui.Color? shadowColor,
-    ui.Clip clipBehavior = ui.Clip.none,
-    ui.PhysicalShapeEngineLayer? oldLayer,
-  }) {
-    return _pushSurface<PersistedPhysicalShape>(PersistedPhysicalShape(
-      oldLayer as PersistedPhysicalShape?,
-      path as SurfacePath,
-      elevation,
-      color.value,
-      shadowColor?.value ?? 0xFF000000,
-      clipBehavior,
-    ));
   }
 
   /// Add a retained engine layer subtree from previous frames.

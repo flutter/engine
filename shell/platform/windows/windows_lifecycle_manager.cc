@@ -14,12 +14,28 @@
 namespace flutter {
 
 WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
-    : engine_(engine) {}
+    : engine_(engine), process_close_(false) {}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
-void WindowsLifecycleManager::Quit(UINT exit_code) const {
-  ::PostQuitMessage(exit_code);
+void WindowsLifecycleManager::Quit(std::optional<HWND> hwnd,
+                                   std::optional<WPARAM> wparam,
+                                   std::optional<LPARAM> lparam,
+                                   UINT exit_code) {
+  if (!hwnd.has_value()) {
+    ::PostQuitMessage(exit_code);
+  } else {
+    BASE_CHECK(wparam.has_value() && lparam.has_value());
+    sent_close_messages_[std::make_tuple(*hwnd, *wparam, *lparam)]++;
+    DispatchMessage(*hwnd, WM_CLOSE, *wparam, *lparam);
+  }
+}
+
+void WindowsLifecycleManager::DispatchMessage(HWND hwnd,
+                                              UINT message,
+                                              WPARAM wparam,
+                                              LPARAM lparam) {
+  PostMessage(hwnd, message, wparam, lparam);
 }
 
 bool WindowsLifecycleManager::WindowProc(HWND hwnd,
@@ -28,11 +44,37 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                          LPARAM lpar,
                                          LRESULT* result) {
   switch (msg) {
-    case WM_CLOSE:
-      if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(ExitType::cancelable, 0);
+    // When WM_CLOSE is received from the final window of an application, we
+    // send a request to the framework to see if the app should exit. If it
+    // is, we re-dispatch a new WM_CLOSE message. In order to allow the new
+    // message to reach other delegates, we ignore it here.
+    case WM_CLOSE: {
+      if (!process_close_) {
+        return false;
       }
-      return true;
+      auto key = std::make_tuple(hwnd, wpar, lpar);
+      auto itr = sent_close_messages_.find(key);
+      if (itr != sent_close_messages_.end()) {
+        if (itr->second == 1) {
+          sent_close_messages_.erase(itr);
+        } else {
+          sent_close_messages_[key]--;
+        }
+        return false;
+      }
+      if (IsLastWindowOfProcess()) {
+        engine_->RequestApplicationQuit(hwnd, wpar, lpar,
+                                        AppExitType::cancelable);
+        return true;
+      }
+      break;
+    }
+
+    // DWM composition can be disabled on Windows 7.
+    // Notify the engine as this can result in screen tearing.
+    case WM_DWMCOMPOSITIONCHANGED:
+      engine_->OnDwmCompositionChanged();
+      break;
   }
   return false;
 }
@@ -115,6 +157,10 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   } while (thread_snapshot.GetNextThread(thread));
 
   return num_windows <= 1;
+}
+
+void WindowsLifecycleManager::BeginProcessingClose() {
+  process_close_ = true;
 }
 
 }  // namespace flutter

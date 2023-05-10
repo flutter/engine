@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#pragma once
+
 #include <functional>
 #include <memory>
 #include <vector>
 
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/color_source_contents.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {

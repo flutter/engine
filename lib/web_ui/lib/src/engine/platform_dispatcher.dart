@@ -43,8 +43,8 @@ class HighContrastSupport {
 
   /// Reference to css media query that indicates whether high contrast is on.
   final DomMediaQueryList _highContrastMediaQuery = domWindow.matchMedia(_highContrastMediaQueryString);
-  late final JSFunction _onHighContrastChangeListener =
-      _onHighContrastChange.toJS;
+  late final DomEventListener _onHighContrastChangeListener =
+      createDomEventListener(_onHighContrastChange);
 
   bool get isHighContrastEnabled => _highContrastMediaQuery.matches;
 
@@ -133,6 +133,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     invoke(
         _onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
+
+  @override
+  Iterable<ui.Display> get displays => <ui.Display>[];
 
   /// The current list of windows.
   @override
@@ -514,12 +517,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
-            final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
-            // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
+            final Map<String, Object?> arguments = decoded.arguments as Map<String, Object?>;
             final String label = arguments['label'] as String? ?? '';
+            // TODO(web): Stop setting the color from here, https://github.com/flutter/flutter/issues/123365
             final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
             domDocument.title = label;
             setThemeColor(ui.Color(primaryColor));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            return;
+          case 'SystemChrome.setSystemUIOverlayStyle':
+            final Map<String, Object?> arguments = decoded.arguments as Map<String, Object?>;
+            final int? statusBarColor = arguments['statusBarColor'] as int?;
+            setThemeColor(statusBarColor == null ? null : ui.Color(statusBarColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
@@ -799,11 +808,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
     updateLocales(); // First time, for good measure.
     _onLocaleChangedSubscription =
-      DomSubscription(domWindow, 'languagechange', allowInterop((DomEvent _) {
+      DomSubscription(domWindow, 'languagechange', (DomEvent _) {
         // Update internal config, then propagate the changes.
         updateLocales();
         invokeOnLocaleChanged();
-      }));
+      });
   }
 
   /// Removes the [_onLocaleChangedSubscription].
@@ -1029,7 +1038,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
   ///
   /// Updates the [_platformBrightness] with the new user preference.
-  JSFunction? _brightnessMediaQueryListener;
+  DomEventListener? _brightnessMediaQueryListener;
 
   /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
   void _addBrightnessMediaQueryListener() {
@@ -1037,12 +1046,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         ? ui.Brightness.dark
         : ui.Brightness.light);
 
-    _brightnessMediaQueryListener = (DomEvent event) {
+    _brightnessMediaQueryListener = createDomEventListener((DomEvent event) {
       final DomMediaQueryListEvent mqEvent =
           event as DomMediaQueryListEvent;
       _updatePlatformBrightness(
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
-    }.toJS;
+    });
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
   }
 

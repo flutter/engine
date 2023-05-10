@@ -32,6 +32,8 @@ class Environment {
         io.Directory(pathlib.join(outDir.path, 'wasm_release'));
     final io.Directory wasmProfileOutDir =
         io.Directory(pathlib.join(outDir.path, 'wasm_profile'));
+    final io.Directory wasmDebugUnoptOutDir =
+        io.Directory(pathlib.join(outDir.path, 'wasm_debug_unopt'));
     final io.Directory hostDebugUnoptDir =
         io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory dartSdkDir = dartExecutable.parent.parent;
@@ -57,6 +59,7 @@ class Environment {
       outDir: outDir,
       wasmReleaseOutDir: wasmReleaseOutDir,
       wasmProfileOutDir: wasmProfileOutDir,
+      wasmDebugUnoptOutDir: wasmDebugUnoptOutDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
       dartSdkDir: dartSdkDir,
     );
@@ -71,6 +74,7 @@ class Environment {
     required this.outDir,
     required this.wasmReleaseOutDir,
     required this.wasmProfileOutDir,
+    required this.wasmDebugUnoptOutDir,
     required this.hostDebugUnoptDir,
     required this.dartSdkDir,
   });
@@ -102,6 +106,9 @@ class Environment {
 
   /// The output directory for the wasm_profile build.
   final io.Directory wasmProfileOutDir;
+
+  /// The output directory for the wasm_debug build.
+  final io.Directory wasmDebugUnoptOutDir;
 
   /// The output directory for the host_debug_unopt build.
   final io.Directory hostDebugUnoptDir;

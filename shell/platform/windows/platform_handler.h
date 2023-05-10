@@ -24,7 +24,7 @@ class ScopedClipboardInterface;
 
 // Indicates whether an exit request may be canceled by the framework.
 // These values must be kept in sync with kExitTypeNames in platform_handler.cc
-enum class ExitType {
+enum class AppExitType {
   required,
   cancelable,
 };
@@ -45,8 +45,14 @@ class PlatformHandler {
   static constexpr char kExitTypeRequired[] = "required";
 
   // Send a request to the framework to test if a cancelable exit request
-  // should be canceled or honored.
-  virtual void RequestAppExit(ExitType exit_type, UINT exit_code);
+  // should be canceled or honored. hwnd is std::nullopt for a request to quit
+  // the process, otherwise it holds the HWND of the window that initiated the
+  // quit request.
+  virtual void RequestAppExit(std::optional<HWND> hwnd,
+                              std::optional<WPARAM> wparam,
+                              std::optional<LPARAM> lparam,
+                              AppExitType exit_type,
+                              UINT exit_code);
 
  protected:
   // Gets plain text from the clipboard and provides it to |result| as the
@@ -72,16 +78,26 @@ class PlatformHandler {
 
   // Handle a request from the framework to exit the application.
   virtual void SystemExitApplication(
-      ExitType exit_type,
+      AppExitType exit_type,
       UINT exit_code,
       std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
-  // Actually quit the application with the provided exit code.
-  virtual void QuitApplication(UINT exit_code);
+  // Actually quit the application with the provided exit code. hwnd is
+  // std::nullopt for a request to quit the process, otherwise it holds the HWND
+  // of the window that initiated the quit request.
+  virtual void QuitApplication(std::optional<HWND> hwnd,
+                               std::optional<WPARAM> wparam,
+                               std::optional<LPARAM> lparam,
+                               UINT exit_code);
 
   // Callback from when the cancelable exit request response request is
-  // answered by the framework.
-  virtual void RequestAppExitSuccess(const rapidjson::Document* result,
+  // answered by the framework. hwnd is std::nullopt for a request to quit the
+  // process, otherwise it holds the HWND of the window that initiated the quit
+  // request.
+  virtual void RequestAppExitSuccess(std::optional<HWND> hwnd,
+                                     std::optional<WPARAM> wparam,
+                                     std::optional<LPARAM> lparam,
+                                     const rapidjson::Document* result,
                                      UINT exit_code);
 
   // A error type to use for error responses.

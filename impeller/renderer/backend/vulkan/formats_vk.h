@@ -6,8 +6,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
@@ -240,6 +240,8 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
       return vk::SamplerAddressMode::eMirroredRepeat;
     case SamplerAddressMode::kClampToEdge:
       return vk::SamplerAddressMode::eClampToEdge;
+    case SamplerAddressMode::kDecal:
+      return vk::SamplerAddressMode::eClampToBorder;
   }
 
   FML_UNREACHABLE();
@@ -276,6 +278,15 @@ constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
       break;
     case DescriptorType::kUniformBuffer:
       desc_type = vk::DescriptorType::eUniformBuffer;
+      break;
+    case DescriptorType::kStorageBuffer:
+      desc_type = vk::DescriptorType::eStorageBuffer;
+      break;
+    case DescriptorType::kImage:
+      desc_type = vk::DescriptorType::eSampledImage;
+      break;
+    case DescriptorType::kSampler:
+      desc_type = vk::DescriptorType::eSampler;
       break;
   }
   binding.descriptorType = desc_type;

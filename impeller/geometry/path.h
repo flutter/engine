@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "impeller/geometry/path_component.h"
-#include "path_component.h"
 
 namespace impeller {
 
@@ -33,6 +32,11 @@ enum class FillType {
   kPositive,
   kNegative,
   kAbsGeqTwo,
+};
+
+enum class Convexity {
+  kUnknown,
+  kConvex,
 };
 
 //------------------------------------------------------------------------------
@@ -95,6 +99,8 @@ class Path {
 
   FillType GetFillType() const;
 
+  bool IsConvex() const;
+
   Path& AddLinearComponent(Point p1, Point p2);
 
   Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
@@ -149,6 +155,10 @@ class Path {
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
  private:
+  friend class PathBuilder;
+
+  void SetConvexity(Convexity value);
+
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
     size_t index = 0;
@@ -160,6 +170,7 @@ class Path {
   };
 
   FillType fill_ = FillType::kNonZero;
+  Convexity convexity_ = Convexity::kUnknown;
   std::vector<ComponentIndexPair> components_;
   std::vector<LinearPathComponent> linears_;
   std::vector<QuadraticPathComponent> quads_;

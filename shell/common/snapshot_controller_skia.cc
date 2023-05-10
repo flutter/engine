@@ -26,7 +26,7 @@ sk_sp<SkImage> DrawSnapshot(
 
   sk_sp<SkImage> device_snapshot;
   {
-    TRACE_EVENT0("flutter", "MakeDeviceSnpashot");
+    TRACE_EVENT0("flutter", "MakeDeviceSnapshot");
     device_snapshot = surface->makeImageSnapshot();
   }
 
@@ -120,6 +120,8 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
             }));
   }
 
+  // It is up to the caller to create a DlImageGPU version of this image
+  // if the result will interact with the UI thread.
   return DlImage::Make(result);
 }
 

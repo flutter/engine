@@ -109,7 +109,7 @@ class FlutterWindowsEngine {
   // Stops the engine. This invalidates the pointer returned by engine().
   //
   // Returns false if stopping the engine fails, or if it was not running.
-  bool Stop();
+  virtual bool Stop();
 
   // Sets the view that is displaying this engine's content.
   void SetView(FlutterWindowsView* view);
@@ -145,9 +145,8 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
-  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
-    return accessibility_bridge_;
-  }
+  // Return the AccessibilityBridgeWindows for this engine's view.
+  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge();
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -256,10 +255,23 @@ class FlutterWindowsEngine {
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
   // Called when the application quits in response to a quit request.
-  void OnQuit(UINT exit_code);
+  void OnQuit(std::optional<HWND> hwnd,
+              std::optional<WPARAM> wparam,
+              std::optional<LPARAM> lparam,
+              UINT exit_code);
 
   // Called when a WM_CLOSE message is received.
-  void RequestApplicationQuit(ExitType exit_type, UINT exit_code);
+  void RequestApplicationQuit(HWND hwnd,
+                              WPARAM wparam,
+                              LPARAM lparam,
+                              AppExitType exit_type);
+
+  // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
+  void OnDwmCompositionChanged();
+
+  // Called in response to the framework registering a ServiceBindings.
+  // Registers the top level handler for the WM_CLOSE window message.
+  void OnApplicationLifecycleEnabled();
 
  protected:
   // Creates the keyboard key handler.
@@ -277,14 +289,6 @@ class FlutterWindowsEngine {
   // capture information.
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
-
-  // Creates an accessibility bridge with the provided parameters.
-  //
-  // By default this method calls AccessibilityBridge's constructor. Exposing
-  // this method allows unit tests to override in order to capture information.
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
-      FlutterWindowsEngine* engine,
-      FlutterWindowsView* view);
 
   // Invoked by the engine right before the engine is restarted.
   //
@@ -387,8 +391,6 @@ class FlutterWindowsEngine {
   bool semantics_enabled_ = false;
 
   bool high_contrast_enabled_ = false;
-
-  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;

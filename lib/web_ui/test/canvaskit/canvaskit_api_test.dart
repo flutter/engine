@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -1437,10 +1437,6 @@ void _canvasTests() {
   });
 
   test('toImage.toByteData', () async {
-    // Pretend that FinalizationRegistry is supported, so we can run this
-    // test in older browsers (the test will use a TestCollector instead of
-    // ProductionCollector)
-    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
@@ -1449,7 +1445,7 @@ void _canvasTests() {
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData();
@@ -1531,11 +1527,6 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
-  setUpAll(() async {
-    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
-    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
-  });
-
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that
@@ -1865,9 +1856,11 @@ void _paragraphTests() {
 
       v8BreakIterator = Object();
       browserSupportsImageDecoder = false;
+      // TODO(mdebbar): we don't check image codecs for now.
+      // https://github.com/flutter/flutter/issues/122331
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;
@@ -1890,6 +1883,15 @@ void _paragraphTests() {
       canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/foo/'),
       'http://localhost:1234/foo/canvaskit.wasm',
     );
+  });
+
+  test('SkObjectFinalizationRegistry', () {
+    // There's no reliable way to test the actual functionality of
+    // FinalizationRegistry because it depends on GC, which cannot be controlled,
+    // So the test simply tests that a FinalizationRegistry can be constructed
+    // and its `register` method can be called.
+    final SkObjectFinalizationRegistry registry = createSkObjectFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object(), Object());
   });
 }
 

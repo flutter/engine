@@ -7,6 +7,7 @@
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -45,7 +46,21 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
       context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
                                 TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
-  OpenPlaygroundHere([](RenderTarget&) { return true; });
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+  ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kAlphaBitmap);
+  ASSERT_EQ(atlas->GetGlyphCount(), 4llu);
+
+  std::optional<FontGlyphPair> first_pair;
+  Rect first_rect;
+  atlas->IterateGlyphs(
+      [&](const FontGlyphPair& pair, const Rect& rect) -> bool {
+        first_pair = pair;
+        first_rect = rect;
+        return false;
+      });
+
+  ASSERT_TRUE(first_pair.has_value());
+  ASSERT_TRUE(atlas->FindFontGlyphBounds(first_pair.value()).has_value());
 }
 
 static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
@@ -77,22 +92,28 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   ASSERT_TRUE(blob);
   auto frame = TextFrameFromTextBlob(blob);
 
-  ASSERT_FALSE(frame.HasColor());
+  ASSERT_FALSE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
   LazyGlyphAtlas lazy_atlas;
-  ASSERT_FALSE(lazy_atlas.HasColor());
 
   lazy_atlas.AddTextFrame(frame);
-
-  ASSERT_FALSE(lazy_atlas.HasColor());
 
   frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("😀 ", emoji_font));
 
-  ASSERT_TRUE(frame.HasColor());
+  ASSERT_TRUE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
   lazy_atlas.AddTextFrame(frame);
 
-  ASSERT_TRUE(lazy_atlas.HasColor());
+  // Creates different atlases for color and alpha bitmap.
+  auto color_context = std::make_shared<GlyphAtlasContext>();
+  auto bitmap_context = std::make_shared<GlyphAtlasContext>();
+  auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
+      GlyphAtlas::Type::kColorBitmap, color_context, GetContext());
+
+  auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
+      GlyphAtlas::Type::kAlphaBitmap, bitmap_context, GetContext());
+
+  ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
 
 TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
@@ -168,9 +189,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
             atlas->GetTexture()->GetSize().height);
 }
 
-// TODO(jonahwilliams): Re-enable
-// https://github.com/flutter/flutter/issues/122839
-TEST_P(TypographerTest, DISABLED_GlyphAtlasTextureIsRecycledIfUnchanged) {
+TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());

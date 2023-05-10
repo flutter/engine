@@ -11,6 +11,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/geometry/rect.h"
@@ -18,7 +19,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
@@ -100,7 +100,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   // Input 0 snapshot.
 
-  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  auto input_snapshot =
+      inputs[0]->GetSnapshot("GaussianBlur", renderer, entity);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -148,7 +149,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   // Source override snapshot.
 
   auto source = source_override_ ? source_override_ : inputs[0];
-  auto source_snapshot = source->GetSnapshot(renderer, entity);
+  auto source_snapshot =
+      source->GetSnapshot("GaussianBlur(Override)", renderer, entity);
   if (!source_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -195,13 +197,12 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+    frag_info.blur_radius = std::round(r.radius);
 
     // The blur direction is in input UV space.
-    frag_info.blur_direction =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
-
-    frag_info.texture_size = Point(input_snapshot->GetCoverage().value().size);
+    frag_info.blur_uv_offset =
+        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
+        Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
     cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
@@ -214,6 +215,12 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto source_descriptor = source_snapshot->sampler_descriptor;
     switch (tile_mode_) {
       case Entity::TileMode::kDecal:
+        if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+          input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+        }
         break;
       case Entity::TileMode::kClamp:
         input_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
@@ -235,9 +242,13 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
         break;
     }
+    input_descriptor.mag_filter = MinMagFilter::kLinear;
+    input_descriptor.min_filter = MinMagFilter::kLinear;
 
     bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
-    bool has_decal_specialization = tile_mode_ == Entity::TileMode::kDecal;
+    bool has_decal_specialization =
+        tile_mode_ == Entity::TileMode::kDecal &&
+        !renderer.GetDeviceCapabilities().SupportsDecalTileMode();
 
     if (has_alpha_mask && has_decal_specialization) {
       cmd.pipeline = renderer.GetGaussianBlurAlphaDecalPipeline(options);

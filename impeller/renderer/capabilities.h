@@ -21,6 +21,8 @@ class Capabilities {
 
   virtual bool SupportsSSBO() const = 0;
 
+  virtual bool SupportsBufferToTextureBlits() const = 0;
+
   virtual bool SupportsTextureToTextureBlits() const = 0;
 
   virtual bool SupportsFramebufferFetch() const = 0;
@@ -29,7 +31,11 @@ class Capabilities {
 
   virtual bool SupportsComputeSubgroups() const = 0;
 
+  virtual bool SupportsReadFromOnscreenTexture() const = 0;
+
   virtual bool SupportsReadFromResolve() const = 0;
+
+  virtual bool SupportsDecalTileMode() const = 0;
 
   virtual PixelFormat GetDefaultColorFormat() const = 0;
 
@@ -53,17 +59,25 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsSSBO(bool value);
 
+  CapabilitiesBuilder& SetSupportsBufferToTextureBlits(bool value);
+
   CapabilitiesBuilder& SetSupportsTextureToTextureBlits(bool value);
 
   CapabilitiesBuilder& SetSupportsFramebufferFetch(bool value);
 
-  CapabilitiesBuilder& SetSupportsCompute(bool compute, bool subgroups);
+  CapabilitiesBuilder& SetSupportsCompute(bool value);
 
-  CapabilitiesBuilder& SetSupportsReadFromResolve(bool read_from_resolve);
+  CapabilitiesBuilder& SetSupportsComputeSubgroups(bool value);
+
+  CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(bool value);
+
+  CapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
 
   CapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
 
   CapabilitiesBuilder& SetDefaultStencilFormat(PixelFormat value);
+
+  CapabilitiesBuilder& SetSupportsDecalTileMode(bool value);
 
   std::unique_ptr<Capabilities> Build();
 
@@ -71,11 +85,14 @@ class CapabilitiesBuilder {
   bool has_threading_restrictions_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
+  bool supports_buffer_to_texture_blits_ = false;
   bool supports_texture_to_texture_blits_ = false;
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
+  bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
+  bool supports_decal_tile_mode_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
 

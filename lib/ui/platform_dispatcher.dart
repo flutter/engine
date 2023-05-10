@@ -149,6 +149,26 @@ class PlatformDispatcher {
     _onPlatformConfigurationChangedZone = Zone.current;
   }
 
+  /// The current list of displays.
+  ///
+  /// If any of their configurations change, [onMetricsChanged] will be called.
+  ///
+  /// To get the display for a [FlutterView], use [FlutterView.display].
+  ///
+  /// Platforms may limit what information is available to the application with
+  /// regard to secondary displays and/or displays that do not have an active
+  /// application window.
+  ///
+  /// Presently, on Android and Web this collection will only contain the
+  /// display that the current window is on. On iOS, it will only contains the
+  /// main display on the phone or tablet. On Desktop, it will contain only
+  /// a main display with a valid refresh rate but invalid size and device
+  /// pixel ratio values.
+  // TODO(dnfield): Update these docs when https://github.com/flutter/flutter/issues/125939
+  // and https://github.com/flutter/flutter/issues/125938 are resolved.
+  Iterable<Display> get displays => _displays.values;
+  final Map<int, Display> _displays = <int, Display>{};
+
   /// The current list of views, including top level platform windows used by
   /// the application.
   ///
@@ -215,6 +235,17 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
+  // Called from the engine, via hooks.dart.
+  //
+  // Updates the available displays.
+  void _updateDisplays(List<Display> displays) {
+    _displays.clear();
+    for (final Display display in displays) {
+      _displays[display.id] = display;
+    }
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
@@ -239,6 +270,7 @@ class PlatformDispatcher {
     List<double> displayFeaturesBounds,
     List<int> displayFeaturesType,
     List<int> displayFeaturesState,
+    int displayId,
   ) {
     final _ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const _ViewConfiguration();
@@ -283,6 +315,7 @@ class PlatformDispatcher {
         state: displayFeaturesState,
         devicePixelRatio: devicePixelRatio,
       ),
+      displayId: displayId,
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
@@ -392,7 +425,7 @@ class PlatformDispatcher {
   //  * pointer_data.cc
   //  * pointer.dart
   //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 36;
+  static const int _kPointerDataFieldCount = 35;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -438,7 +471,6 @@ class PlatformDispatcher {
         panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-        preferredStylusAuxiliaryAction: PointerPreferredStylusAuxiliaryAction.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
@@ -1155,7 +1187,7 @@ class PlatformDispatcher {
       onSemanticsAction,
       _onSemanticsActionZone,
       nodeId,
-      SemanticsAction.values[action]!,
+      SemanticsAction.fromIndex(action)!,
       args,
     );
   }
@@ -1319,6 +1351,7 @@ class _ViewConfiguration {
     this.padding = ViewPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
+    this.displayId = 0,
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1333,6 +1366,7 @@ class _ViewConfiguration {
     ViewPadding? padding,
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
+    int? displayId,
   }) {
     return _ViewConfiguration(
       view: view ?? this.view,
@@ -1345,10 +1379,15 @@ class _ViewConfiguration {
       padding: padding ?? this.padding,
       gestureSettings: gestureSettings ?? this.gestureSettings,
       displayFeatures: displayFeatures ?? this.displayFeatures,
+      displayId: displayId ?? this.displayId,
     );
   }
 
   final FlutterView?  view;
+
+  /// The identifier for a display for this view, in
+  /// [PlatformDispatcher._displays].
+  final int displayId;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
@@ -1643,31 +1682,61 @@ class FrameTiming {
 /// States that an application can be in.
 ///
 /// The values below describe notifications from the operating system.
-/// Applications should not expect to always receive all possible
-/// notifications. For example, if the users pulls out the battery from the
-/// device, no notification will be sent before the application is suddenly
-/// terminated, along with the rest of the operating system.
+/// Applications should not expect to always receive all possible notifications.
+/// For example, if the users pulls out the battery from the device, no
+/// notification will be sent before the application is suddenly terminated,
+/// along with the rest of the operating system.
+///
+/// For historical and name collision reasons, Flutter's application state names
+/// do not correspond one to one with the state names on all platforms. On
+/// Android, for instance, when the OS calls
+/// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause()),
+/// Flutter will enter the [inactive] state, but when Android calls
+/// [`Activity.onStop`](https://developer.android.com/reference/android/app/Activity#onStop()),
+/// Flutter enters the [paused] state. See the individual state's documentation
+/// for descriptions of what they mean on each platform.
 ///
 /// See also:
 ///
-///  * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
-///    from the widgets layer.
+/// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
+///   from the widgets layer.
+/// * iOS's [IOKit activity lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc) documentation.
+/// * Android's [activity lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle) documentation.
+/// * macOS's [AppKit activity lifecycle](https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc) documentation.
 enum AppLifecycleState {
-  /// The application is visible and responding to user input.
+  /// The application is visible and responsive to user input.
+  ///
+  /// On Android, this state corresponds to the Flutter host view having focus
+  /// ([`Activity.onWindowFocusChanged`](https://developer.android.com/reference/android/app/Activity#onWindowFocusChanged(boolean))
+  /// was called with true) while in Android's "resumed" state. It is possible
+  /// for the Flutter app to be in the [inactive] state while still being in
+  /// Android's
+  /// ["onResume"](https://developer.android.com/guide/components/activities/activity-lifecycle)
+  /// state if the app has lost focus
+  /// ([`Activity.onWindowFocusChanged`](https://developer.android.com/reference/android/app/Activity#onWindowFocusChanged(boolean))
+  /// was called with false), but hasn't had
+  /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
+  /// called on it.
   resumed,
 
   /// The application is in an inactive state and is not receiving user input.
   ///
   /// On iOS, this state corresponds to an app or the Flutter host view running
-  /// in the foreground inactive state. Apps transition to this state when in
-  /// a phone call, responding to a TouchID request, when entering the app
+  /// in the foreground inactive state. Apps transition to this state when in a
+  /// phone call, responding to a TouchID request, when entering the app
   /// switcher or the control center, or when the UIViewController hosting the
   /// Flutter app is transitioning.
   ///
-  /// On Android, this corresponds to an app or the Flutter host view running
-  /// in the foreground inactive state.  Apps transition to this state when
-  /// another activity is focused, such as a split-screen app, a phone call,
-  /// a picture-in-picture app, a system dialog, or another view.
+  /// On Android, this corresponds to an app or the Flutter host view running in
+  /// Android's paused state (i.e.
+  /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
+  /// has been called), or in Android's "resumed" state (i.e.
+  /// [`Activity.onResume`](https://developer.android.com/reference/android/app/Activity#onResume())
+  /// has been called) but it has lost window focus. Examples of when apps
+  /// transition to this state include when the app is partially obscured or
+  /// another activity is focused, such as: a split-screen app, a phone call, a
+  /// picture-in-picture app, a system dialog, another view, when the
+  /// notification window shade is down, or the application switcher is visible.
   ///
   /// Apps in this state should assume that they may be [paused] at any time.
   inactive,

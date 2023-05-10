@@ -19,6 +19,9 @@ declare_args() {
 
   # Whether to build host-side development artifacts.
   flutter_build_engine_artifacts = true
+
+  # Whether to include backtrace support.
+  enable_backtrace = true
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -58,6 +61,10 @@ if (is_ios || is_mac) {
     "-Werror=overriding-method-mismatch",
     "-Werror=undeclared-selector",
   ]
+  if (is_mac) {
+    flutter_cflags_objc += [ "-fapplication-extension" ]
+  }
+
   flutter_cflags_objcc = flutter_cflags_objc
   flutter_cflags_objc_arc = flutter_cflags_objc + [ "-fobjc-arc" ]
   flutter_cflags_objcc_arc = flutter_cflags_objc_arc

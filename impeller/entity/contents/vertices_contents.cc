@@ -68,10 +68,16 @@ bool VerticesContents::Render(const ContentContext& renderer,
 
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
-  auto contents = ColorFilterContents::MakeBlend(
-      blend_mode_, {FilterInput::Make(dst_contents, false),
-                    FilterInput::Make(src_contents, false)});
-  contents->SetAlpha(alpha_);
+  std::shared_ptr<Contents> contents;
+  if (blend_mode_ == BlendMode::kDestination) {
+    contents = dst_contents;
+  } else {
+    auto color_filter_contents = ColorFilterContents::MakeBlend(
+        blend_mode_, {FilterInput::Make(dst_contents, false),
+                      FilterInput::Make(src_contents, false)});
+    color_filter_contents->SetAlpha(alpha_);
+    contents = color_filter_contents;
+  }
 
   return contents->Render(renderer, entity, pass);
 }
@@ -101,7 +107,8 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
 
   auto src_contents = parent_.GetSourceContents();
 
-  auto snapshot = src_contents->RenderToSnapshot(renderer, entity);
+  auto snapshot = src_contents->RenderToSnapshot(
+      renderer, entity, std::nullopt, true, "VerticesUVContents Snapshot");
   if (!snapshot.has_value()) {
     return false;
   }

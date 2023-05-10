@@ -9,11 +9,11 @@
 #include <utility>
 
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -62,8 +62,8 @@ void TextContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
 }
 
-void TextContents::SetInverseMatrix(Matrix matrix) {
-  inverse_matrix_ = matrix;
+void TextContents::SetOffset(Vector2 offset) {
+  offset_ = offset;
 }
 
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
@@ -74,30 +74,23 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   return bounds->TransformBounds(entity.GetTransformation());
 }
 
-static Vector4 PositionForGlyphPosition(const Matrix& translation,
-                                        Point unit_position,
-                                        Size destination_size) {
-  return translation * (unit_position * destination_size);
-}
-
-template <class TPipeline>
 static bool CommonRender(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass,
     const Color& color,
     const TextFrame& frame,
-    const Matrix& inverse_matrix,
+    Vector2 offset,
     std::shared_ptr<GlyphAtlas>
         atlas,  // NOLINT(performance-unnecessary-value-param)
     Command& cmd) {
-  using VS = typename TPipeline::VertexShader;
-  using FS = typename TPipeline::FragmentShader;
+  using VS = GlyphAtlasPipeline::VertexShader;
+  using FS = GlyphAtlasPipeline::FragmentShader;
 
   // Common vertex uniforms for all glyphs.
-  typename VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  VS::FrameInfo frame_info;
+
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   SamplerDescriptor sampler_desc;
@@ -115,11 +108,10 @@ static bool CommonRender(
   }
   sampler_desc.mip_filter = MipFilter::kNearest;
 
-  typename FS::FragInfo frag_info;
+  FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  // Common fragment uniforms for all glyphs.
   FS::BindGlyphAtlasSampler(
       cmd,                  // command
       atlas->GetTexture(),  // texture
@@ -148,88 +140,76 @@ static bool CommonRender(
   vertex_builder.Reserve(count * 4);
   vertex_builder.ReserveIndices(count * 6);
 
-  uint32_t offset = 0u;
+  uint32_t index_offset = 0u;
   for (auto i = 0u; i < count; i++) {
     for (const auto& index : indices) {
-      vertex_builder.AppendIndex(index + offset);
+      vertex_builder.AppendIndex(index + index_offset);
     }
-    offset += 4;
+    index_offset += 4;
   }
 
   auto atlas_size =
       Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
             static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
 
+  Vector2 screen_offset = (entity.GetTransformation() * offset).Round();
+
   for (const auto& run : frame.GetRuns()) {
-    auto font = run.GetFont();
+    const Font& font = run.GetFont();
 
     for (const auto& glyph_position : run.GetGlyphPositions()) {
       FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
-      auto atlas_glyph_pos = atlas->FindFontGlyphPosition(font_glyph_pair);
-      if (!atlas_glyph_pos.has_value()) {
+      auto atlas_glyph_bounds = atlas->FindFontGlyphBounds(font_glyph_pair);
+      if (!atlas_glyph_bounds.has_value()) {
         VALIDATION_LOG << "Could not find glyph position in the atlas.";
         return false;
       }
 
-      auto offset_glyph_position =
-          glyph_position.position + glyph_position.glyph.bounds.origin;
+      // For each glyph, we compute two rectangles. One for the vertex positions
+      // and one for the texture coordinates (UVs).
 
-      auto uv_scaler_a = atlas_glyph_pos->size / atlas_size;
-      auto uv_scaler_b = (Point::Round(atlas_glyph_pos->origin) / atlas_size);
-      auto translation =
-          Matrix::MakeTranslation(
-              Vector3(offset_glyph_position.x, offset_glyph_position.y, 0)) *
-          inverse_matrix;
+      auto uv_origin =
+          (atlas_glyph_bounds->origin - Point(0.5, 0.5)) / atlas_size;
+      auto uv_size = (atlas_glyph_bounds->size + Size(1, 1)) / atlas_size;
+
+      // Rounding here prevents most jitter between glyphs in the run when
+      // nearest sampling.
+      auto screen_glyph_position =
+          screen_offset +
+          (entity.GetTransformation().Basis() *
+           (glyph_position.position + glyph_position.glyph.bounds.origin))
+              .Round();
 
       for (const auto& point : unit_points) {
-        typename VS::PerVertexData vtx;
-        auto position = PositionForGlyphPosition(
-            translation, point, glyph_position.glyph.bounds.size);
-        vtx.uv = point * uv_scaler_a + uv_scaler_b;
-        vtx.position = position;
+        VS::PerVertexData vtx;
 
-        if constexpr (std::is_same_v<TPipeline, GlyphAtlasPipeline>) {
-          vtx.has_color =
-              glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
+        if (entity.GetTransformation().IsTranslationScaleOnly()) {
+          // Rouding up here prevents the bounds from becoming 1 pixel too small
+          // when nearest sampling. This path breaks down for projections.
+          vtx.position =
+              screen_glyph_position + (entity.GetTransformation().Basis() *
+                                       point * glyph_position.glyph.bounds.size)
+                                          .Ceil();
+        } else {
+          vtx.position = entity.GetTransformation() *
+                         Vector4(offset + glyph_position.position +
+                                 glyph_position.glyph.bounds.origin +
+                                 point * glyph_position.glyph.bounds.size);
         }
-
-        vertex_builder.AppendVertex(std::move(vtx));
+        vtx.uv = uv_origin + point * uv_size;
+        vertex_builder.AppendVertex(vtx);
       }
     }
   }
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer());
-  cmd.BindVertices(std::move(vertex_buffer));
+  cmd.BindVertices(vertex_buffer);
 
   if (!pass.AddCommand(cmd)) {
     return false;
   }
 
   return true;
-}
-
-bool TextContents::RenderSdf(const ContentContext& renderer,
-                             const Entity& entity,
-                             RenderPass& pass) const {
-  auto atlas =
-      ResolveAtlas(GlyphAtlas::Type::kSignedDistanceField,
-                   renderer.GetGlyphAtlasContext(), renderer.GetContext());
-
-  if (!atlas || !atlas->IsValid()) {
-    VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
-    return false;
-  }
-
-  // Information shared by all glyph draw calls.
-  Command cmd;
-  cmd.label = "TextFrameSDF";
-  auto opts = OptionsFromPassAndEntity(pass, entity);
-  opts.primitive_type = PrimitiveType::kTriangle;
-  cmd.pipeline = renderer.GetGlyphAtlasSdfPipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
-
-  return CommonRender<GlyphAtlasSdfPipeline>(
-      renderer, entity, pass, GetColor(), frame_, inverse_matrix_, atlas, cmd);
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -240,16 +220,9 @@ bool TextContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  // This TextContents may be for a frame that doesn't have color, but the
-  // lazy atlas for this scene already does have color.
-  // Benchmarks currently show that creating two atlases per pass regresses
-  // render time. This should get re-evaluated if we start caching atlases
-  // between frames or get significantly faster at creating atlases, because
-  // we're potentially trading memory for time here.
-  auto atlas =
-      ResolveAtlas(lazy_atlas_->HasColor() ? GlyphAtlas::Type::kColorBitmap
-                                           : GlyphAtlas::Type::kAlphaBitmap,
-                   renderer.GetGlyphAtlasContext(), renderer.GetContext());
+  auto type = frame_.GetAtlasType();
+  auto atlas = ResolveAtlas(type, renderer.GetGlyphAtlasContext(type),
+                            renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -261,11 +234,15 @@ bool TextContents::Render(const ContentContext& renderer,
   cmd.label = "TextFrame";
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
-  cmd.pipeline = renderer.GetGlyphAtlasPipeline(opts);
+  if (type == GlyphAtlas::Type::kAlphaBitmap) {
+    cmd.pipeline = renderer.GetGlyphAtlasPipeline(opts);
+  } else {
+    cmd.pipeline = renderer.GetGlyphAtlasColorPipeline(opts);
+  }
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color, frame_,
-                                          inverse_matrix_, atlas, cmd);
+  return CommonRender(renderer, entity, pass, color, frame_, offset_, atlas,
+                      cmd);
 }
 
 }  // namespace impeller

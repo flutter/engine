@@ -12,6 +12,9 @@
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
+#include "impeller/geometry/point.h"
+#include "impeller/geometry/scalar.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -30,6 +33,11 @@ enum GeometryVertexType {
   kUV,
 };
 
+/// @brief Given a polyline created from a convex filled path, perform a
+/// tessellation.
+std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
+    Path::Polyline polyline);
+
 class Geometry {
  public:
   Geometry();
@@ -37,8 +45,6 @@ class Geometry {
   virtual ~Geometry();
 
   static std::unique_ptr<Geometry> MakeFillPath(const Path& path);
-
-  static std::unique_ptr<Geometry> MakeRRect(Rect rect, Scalar corner_radius);
 
   static std::unique_ptr<Geometry> MakeStrokePath(
       const Path& path,
@@ -252,39 +258,6 @@ class RectGeometry : public Geometry {
   Rect rect_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RectGeometry);
-};
-
-class RRectGeometry : public Geometry {
- public:
-  explicit RRectGeometry(Rect rect, Scalar corner_radius);
-
-  ~RRectGeometry();
-
- private:
-  // |Geometry|
-  GeometryResult GetPositionBuffer(const ContentContext& renderer,
-                                   const Entity& entity,
-                                   RenderPass& pass) override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                     Matrix effect_transform,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
-
-  // |Geometry|
-  GeometryVertexType GetVertexType() const override;
-
-  // |Geometry|
-  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
-  VertexBufferBuilder<Point> CreatePositionBuffer(const Entity& entity) const;
-
-  Rect rect_;
-  Scalar corner_radius_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(RRectGeometry);
 };
 
 }  // namespace impeller

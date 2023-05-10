@@ -7,7 +7,6 @@ import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
 
@@ -39,7 +38,7 @@ import 'browser_detection.dart';
 /// `JSUndefined`.
 extension ObjectToJSAnyExtension on Object {
   JSAny get toJSAnyShallow {
-    if (isWasm)  {
+    if (isWasm) {
       return toJSAnyDeep;
     } else {
       // TODO(joshualitt): remove this cast when we reify JS types on JS
@@ -334,6 +333,13 @@ extension DomEventTargetExtension on DomEventTarget {
     }
   }
 
+  @JS('addEventListener')
+  external JSVoid _addEventListener3(
+      JSString type, DomEventListener listener, JSAny options);
+  void addEventListenerWithOptions(String type, DomEventListener listener,
+          Map<String, Object> options) =>
+      _addEventListener3(type.toJS, listener, options.toJSAnyDeep);
+
   @JS('removeEventListener')
   external JSVoid _removeEventListener1(
       JSString type, DomEventListener listener);
@@ -356,7 +362,14 @@ extension DomEventTargetExtension on DomEventTarget {
   bool dispatchEvent(DomEvent event) => _dispatchEvent(event).toDart;
 }
 
-typedef DomEventListener = void Function(DomEvent event);
+typedef DartDomEventListener = JSVoid Function(DomEvent event);
+
+@JS()
+@staticInterop
+class DomEventListener {}
+
+DomEventListener createDomEventListener(DartDomEventListener listener) =>
+    listener.toJS as DomEventListener;
 
 @JS()
 @staticInterop
@@ -1384,7 +1397,7 @@ class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 Future<_DomResponse> _rawHttpGet(String url) =>
     js_util.promiseToFuture<_DomResponse>(domWindow._fetch1(url.toJS));
 
-typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse> Function(
+typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse?> Function(
     String url);
 
 MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
@@ -1404,7 +1417,10 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    return mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    if (response != null) {
+      return response;
+    }
   }
   try {
     final _DomResponse domResponse = await _rawHttpGet(url);
@@ -1643,31 +1659,36 @@ typedef MockOnRead = Future<void> Function<T>(HttpFetchReader<T> callback);
 
 class MockHttpFetchPayload implements HttpFetchPayload {
   MockHttpFetchPayload({
-    ByteBuffer? byteBuffer,
-    Object? json,
-    String? text,
-    MockOnRead? onRead,
+    required ByteBuffer byteBuffer,
+    int? chunkSize,
   })  : _byteBuffer = byteBuffer,
-        _json = json,
-        _text = text,
-        _onRead = onRead;
+        _chunkSize = chunkSize ?? 64;
 
-  final ByteBuffer? _byteBuffer;
-  final Object? _json;
-  final String? _text;
-  final MockOnRead? _onRead;
+  final ByteBuffer _byteBuffer;
+  final int _chunkSize;
 
   @override
-  Future<void> read<T>(HttpFetchReader<T> callback) => _onRead!(callback);
+  Future<void> read<T>(HttpFetchReader<T> callback) async {
+    final int totalLength = _byteBuffer.lengthInBytes;
+    int currentIndex = 0;
+    while (currentIndex < totalLength) {
+      final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
+      final Uint8List chunk = Uint8List.sublistView(
+        _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize
+      );
+      callback(chunk.toJS as T);
+      currentIndex += chunkSize;
+    }
+  }
 
   @override
-  Future<ByteBuffer> asByteBuffer() async => _byteBuffer!;
+  Future<ByteBuffer> asByteBuffer() async => _byteBuffer;
 
   @override
-  Future<dynamic> json() async => _json!;
+  Future<dynamic> json() async => throw AssertionError('json not supported by mock');
 
   @override
-  Future<String> text() async => _text!;
+  Future<String> text() async => throw AssertionError('text not supported by mock');
 }
 
 /// Indicates a missing HTTP payload when one was expected, such as when
@@ -1781,9 +1802,7 @@ extension _DomStreamReaderExtension on _DomStreamReader {
 class _DomStreamChunk {}
 
 extension _DomStreamChunkExtension on _DomStreamChunk {
-  @JS('value')
-  external JSAny? get _value;
-  Object? get value => _value?.toObjectShallow;
+  external JSAny? get value;
 
   @JS('done')
   external JSBoolean get _done;
@@ -1905,6 +1924,10 @@ extension DomFontFaceExtension on DomFontFace {
   @JS('weight')
   external JSString? get _weight;
   String? get weight => _weight?.toDart;
+
+  @JS('status')
+  external JSString? get _status;
+  String? get status => _status?.toDart;
 }
 
 @JS()
@@ -2260,10 +2283,10 @@ extension DomMediaQueryListExtension on DomMediaQueryList {
   bool get matches => _matches.toDart;
 
   @JS('addListener')
-  external JSVoid addListener(JSFunction? listener);
+  external JSVoid addListener(DomEventListener? listener);
 
   @JS('removeListener')
-  external JSVoid removeListener(JSFunction? listener);
+  external JSVoid removeListener(DomEventListener? listener);
 }
 
 @JS()
@@ -2809,6 +2832,9 @@ class DomScreen {}
 
 extension DomScreenExtension on DomScreen {
   external DomScreenOrientation? get orientation;
+
+  external double get width;
+  external double get height;
 }
 
 @JS()
@@ -2829,8 +2855,10 @@ extension DomScreenOrientationExtension on DomScreenOrientation {
 // remove the listener. Caller is still responsible for calling [allowInterop]
 // on the listener before creating the subscription.
 class DomSubscription {
-  DomSubscription(this.target, String typeString, this.listener)
-      : type = typeString.toJS {
+  DomSubscription(
+      this.target, String typeString, DartDomEventListener dartListener)
+      : type = typeString.toJS,
+        listener = createDomEventListener(dartListener) {
     target._addEventListener1(type, listener);
   }
 
