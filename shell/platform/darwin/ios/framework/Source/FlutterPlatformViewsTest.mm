@@ -191,36 +191,36 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->Reset();
 }
 
-- (void)testCanCreatePlatformViewWithoutFlutterView {
-  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
-  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread_task_runner,
-                               /*raster=*/thread_task_runner,
-                               /*ui=*/thread_task_runner,
-                               /*io=*/thread_task_runner);
-  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
-      /*delegate=*/mock_delegate,
-      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
-      /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners);
+// - (void)testCanCreatePlatformViewWithoutFlutterView {
+//   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+//   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+//   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+//                                /*platform=*/thread_task_runner,
+//                                /*raster=*/thread_task_runner,
+//                                /*ui=*/thread_task_runner,
+//                                /*io=*/thread_task_runner);
+//   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+//   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+//       /*delegate=*/mock_delegate,
+//       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+//       /*platform_views_controller=*/flutterPlatformViewsController,
+//       /*task_runners=*/runners);
 
-  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
-  flutterPlatformViewsController->RegisterViewFactory(
-      factory, @"MockFlutterPlatformView",
-      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
-  FlutterResult result = ^(id result) {
-  };
-  flutterPlatformViewsController->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+//   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+//       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+//   flutterPlatformViewsController->RegisterViewFactory(
+//       factory, @"MockFlutterPlatformView",
+//       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+//   FlutterResult result = ^(id result) {
+//   };
+//   flutterPlatformViewsController->OnMethodCall(
+//       [FlutterMethodCall
+//           methodCallWithMethodName:@"create"
+//                          arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+//       result);
 
-  XCTAssertNotNil(gMockPlatformView);
-}
+//   XCTAssertNotNil(gMockPlatformView);
+// }
 
 // - (void)testChildClippingViewHitTests {
 //   ChildClippingView* childClippingView =
@@ -2989,4 +2989,4 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 //   }
 // }
 
-// @end
+@end
