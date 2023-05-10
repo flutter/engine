@@ -825,7 +825,9 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  FML_DCHECK(renderer.GetDeviceCapabilities().SupportsDisabledRasterization());
+  if (!renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
+    return GetPositionBufferCPU(renderer, entity, pass);
+  }
 
   auto divisions_per_circle = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
@@ -906,6 +908,54 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
                         .index_buffer = index_buffer,
                         .index_count = index_count,
                         .index_type = IndexType::k16bit},
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
+}
+
+GeometryResult PointFieldGeometry::GetPositionBufferCPU(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  auto divisions_per_circle = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
+  auto total = divisions_per_circle * points_.size() * 3;
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto radian_start = round_ ? 0.0f : 0.785398f;
+  auto radian_step = k2Pi / divisions_per_circle;
+
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+  vtx_builder.Reserve(total);
+  vtx_builder.ReserveIndices(total);
+  for (auto i = 0u; i < points_.size(); i++) {
+    auto elapsed_angle = radian_start;
+    auto center = points_[i];
+    vtx_builder.AppendVertex({center});
+
+    auto pt1 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+    vtx_builder.AppendVertex({pt1});
+
+    elapsed_angle += radian_step;
+    auto pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+    vtx_builder.AppendVertex({pt2});
+
+    for (auto j = 0u; j < divisions_per_circle; j++) {
+      vtx_builder.AppendVertex({center});
+
+      pt1 = pt2;
+      elapsed_angle += radian_step;
+      vtx_builder.AppendVertex({pt1});
+
+      pt2 = center +
+            Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+      vtx_builder.AppendVertex({pt2});
+    }
+  }
+
+  return {
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,

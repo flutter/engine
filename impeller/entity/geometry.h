@@ -291,6 +291,10 @@ class PointFieldGeometry : public Geometry {
 
   static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 
+  GeometryResult GetPositionBufferCPU(const ContentContext& renderer,
+                                      const Entity& entity,
+                                      RenderPass& pass);
+
   std::vector<Point> points_;
   Scalar radius_;
   bool round_;
