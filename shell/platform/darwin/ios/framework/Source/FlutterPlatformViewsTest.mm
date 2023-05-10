@@ -17,7 +17,7 @@
 FLUTTER_ASSERT_NOT_ARC
 @class FlutterPlatformViewsTestMockPlatformView;
 static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
-const float kFloatCompareEpsilon = 0.001;
+// const float kFloatCompareEpsilon = 0.001;
 
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
 @end
