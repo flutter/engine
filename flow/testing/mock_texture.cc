@@ -34,7 +34,7 @@ MockTexture::MockTexture(int64_t textureId, const sk_sp<DlImage>& texture)
 void MockTexture::Paint(PaintContext& context,
                         const SkRect& bounds,
                         bool freeze,
-                        DlImageSampling sampling) {
+                        const DlImageSampling sampling) {
   // MockTexture objects that are not painted are allowed to have a null
   // texture, but when we get to this method we must have a non-null texture.
   FML_DCHECK(texture_ != nullptr);

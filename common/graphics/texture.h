@@ -60,7 +60,7 @@ class Texture : public ContextListener {
   // Called on raster thread.
   virtual void OnTextureUnregistered() = 0;
 
-  int64_t Id() const { return id_; }
+  int64_t Id() { return id_; }
 
  private:
   int64_t id_;

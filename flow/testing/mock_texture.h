@@ -28,7 +28,7 @@ class MockTexture : public Texture {
   void Paint(PaintContext& context,
              const SkRect& bounds,
              bool freeze,
-             DlImageSampling sampling) override;
+             const DlImageSampling sampling) override;
 
   void OnGrContextCreated() override { gr_context_created_ = true; }
   void OnGrContextDestroyed() override { gr_context_destroyed_ = true; }
