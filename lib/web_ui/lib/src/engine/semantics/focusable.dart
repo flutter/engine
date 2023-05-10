@@ -68,7 +68,7 @@ typedef _FocusTarget = ({
 /// whose [SemanticsObject.element] is directly focusable, this class can help
 /// implementing focus features on custom elements. For example, [Incrementable]
 /// uses a custom `<input>` tag internally while its root-level element is not
-/// focusable. However, it can still use this class to managing the focus of the
+/// focusable. However, it can still use this class to manage the focus of the
 /// internal element.
 class AccessibilityFocusManager {
   /// Creates a focus manager tied to a specific [EngineSemanticsOwner].
