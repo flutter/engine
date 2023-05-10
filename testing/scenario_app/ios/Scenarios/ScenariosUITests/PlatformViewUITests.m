@@ -406,11 +406,9 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
   // Wait and let the scenario app scroll a bit.
   XCTWaiterResult waitResult = [XCTWaiter
-      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5
-      seconds"] ]
+      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5 seconds"] ]
                   timeout:5];
   // If the waiter is not interrupted, we know the app is in a valid state after timeout, thus the
-  // test passes.
   XCTAssert(waitResult != XCTWaiterResultInterrupted);
 }
 
