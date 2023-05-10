@@ -893,7 +893,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
     if (!vertex_render_pass->AddCommand(std::move(cmd)) ||
         !vertex_render_pass->EncodeCommands() ||
-        !vertex_render_pass->SubmitCommands()) {
+        !cmd_buffer->SubmitCommands()) {
       return {};
     }
   }
