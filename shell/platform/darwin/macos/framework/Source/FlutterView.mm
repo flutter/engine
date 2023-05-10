@@ -10,6 +10,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 @interface FlutterView () <FlutterSurfaceManagerDelegate> {
+  int64_t _viewId;
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterThreadSynchronizer* _threadSynchronizer;
   FlutterSurfaceManager* _surfaceManager;
@@ -21,40 +22,41 @@
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
-                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener
+               threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer
+                           viewId:(int64_t)viewId {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
     [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    _viewId = viewId;
     _reshapeListener = reshapeListener;
-    _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
+    _threadSynchronizer = threadSynchronizer;
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
                                                        commandQueue:commandQueue
                                                               layer:self.layer
                                                            delegate:self];
+    [_threadSynchronizer registerView:viewId];
   }
   return self;
 }
 
 - (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
-  [_threadSynchronizer performCommit:frameSize notify:block];
+  [_threadSynchronizer performCommitForView:_viewId size:frameSize notify:block];
 }
 
 - (FlutterSurfaceManager*)surfaceManager {
   return _surfaceManager;
 }
 
-- (FlutterThreadSynchronizer*)threadSynchronizer {
-  return _threadSynchronizer;
-}
-
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_threadSynchronizer beginResize:scaledSize
-                            notify:^{
-                              [_reshapeListener viewDidReshape:self];
-                            }];
+  [_threadSynchronizer beginResizeForView:_viewId
+                                     size:scaledSize
+                                   notify:^{
+                                     [_reshapeListener viewDidReshape:self];
+                                   }];
 }
 
 - (void)setBackgroundColor:(NSColor*)color {
@@ -113,7 +115,6 @@
 }
 
 - (void)shutdown {
-  [_threadSynchronizer shutdown];
 }
 #pragma mark - NSAccessibility overrides
 

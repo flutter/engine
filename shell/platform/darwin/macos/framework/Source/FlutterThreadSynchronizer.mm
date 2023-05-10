@@ -3,6 +3,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #import "flutter/fml/logging.h"
@@ -11,7 +12,7 @@
 @interface FlutterThreadSynchronizer () {
   std::mutex _mutex;
   BOOL _shuttingDown;
-  CGSize _contentSize;
+  std::unordered_map<int64_t, CGSize> _contentSizes;
   std::vector<dispatch_block_t> _scheduledBlocks;
 
   BOOL _beginResizeWaiting;
@@ -20,9 +21,41 @@
   std::condition_variable _condBlockBeginResize;
 }
 
+/**
+ * Returns true if all existing views have a non-zero size.
+ *
+ * If there are no views, still returns true.
+ */
+- (BOOL)allViewsHaveFrame;
+
+/**
+ * Returns true if there are any views that have a non-zero size.
+ *
+ * If there are no views, returns false.
+ */
+- (BOOL)someViewsHaveFrame;
+
 @end
 
 @implementation FlutterThreadSynchronizer
+
+- (BOOL)allViewsHaveFrame {
+  for (auto const& [viewId, contentSize] : _contentSizes) {
+    if (CGSizeEqualToSize(contentSize, CGSizeZero)) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
+- (BOOL)someViewsHaveFrame {
+  for (auto const& [viewId, contentSize] : _contentSizes) {
+    if (!CGSizeEqualToSize(contentSize, CGSizeZero)) {
+      return YES;
+    }
+  }
+  return NO;
+}
 
 - (void)drain {
   FML_DCHECK([NSThread isMainThread]);
@@ -41,7 +74,7 @@
 
   _beginResizeWaiting = YES;
 
-  while (CGSizeEqualToSize(_contentSize, CGSizeZero) && !_shuttingDown) {
+  while (![self someViewsHaveFrame] && !_shuttingDown) {
     _condBlockBeginResize.wait(lock);
     [self drain];
   }
@@ -49,10 +82,12 @@
   _beginResizeWaiting = NO;
 }
 
-- (void)beginResize:(CGSize)size notify:(nonnull dispatch_block_t)notify {
+- (void)beginResizeForView:(int64_t)viewId
+                      size:(CGSize)size
+                    notify:(nonnull dispatch_block_t)notify {
   std::unique_lock<std::mutex> lock(_mutex);
 
-  if (CGSizeEqualToSize(_contentSize, CGSizeZero) || _shuttingDown) {
+  if (![self allViewsHaveFrame] || _shuttingDown) {
     // No blocking until framework produces at least one frame
     notify();
     return;
@@ -62,12 +97,18 @@
 
   notify();
 
-  _contentSize = CGSizeMake(-1, -1);
+  _contentSizes[viewId] = CGSizeMake(-1, -1);
 
   _beginResizeWaiting = YES;
 
-  while (!CGSizeEqualToSize(_contentSize, size) &&  //
-         !CGSizeEqualToSize(_contentSize, CGSizeZero) && !_shuttingDown) {
+  while (true) {
+    if (_shuttingDown) {
+      break;
+    }
+    const CGSize& contentSize = _contentSizes[viewId];
+    if (CGSizeEqualToSize(contentSize, size) || CGSizeEqualToSize(contentSize, CGSizeZero)) {
+      break;
+    }
     _condBlockBeginResize.wait(lock);
     [self drain];
   }
@@ -75,7 +116,9 @@
   _beginResizeWaiting = NO;
 }
 
-- (void)performCommit:(CGSize)size notify:(nonnull dispatch_block_t)notify {
+- (void)performCommitForView:(int64_t)viewId
+                        size:(CGSize)size
+                      notify:(nonnull dispatch_block_t)notify {
   fml::AutoResetWaitableEvent event;
   {
     std::unique_lock<std::mutex> lock(_mutex);
@@ -87,7 +130,7 @@
     fml::AutoResetWaitableEvent& e = event;
     _scheduledBlocks.push_back(^{
       notify();
-      _contentSize = size;
+      _contentSizes[viewId] = size;
       e.Signal();
     });
     if (_beginResizeWaiting) {
@@ -100,6 +143,14 @@
     }
   }
   event.Wait();
+}
+
+- (void)registerView:(int64_t)viewId {
+  _contentSizes[viewId] = CGSizeZero;
+}
+
+- (void)deregisterView:(int64_t)viewId {
+  _contentSizes.erase(viewId);
 }
 
 - (void)shutdown {

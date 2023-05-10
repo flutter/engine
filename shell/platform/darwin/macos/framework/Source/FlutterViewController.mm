@@ -372,6 +372,10 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
 
   FlutterViewId _id;
+
+  // FlutterViewController does not actually uses the synchronizer, but only
+  // passes it to FlutterView.
+  __weak FlutterThreadSynchronizer* _weakViewThreadSynchronizer;
 }
 
 @synthesize viewId = _viewId;
@@ -398,6 +402,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             controller.engine, controller.viewId);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
+  controller->_weakViewThreadSynchronizer = engine.threadSynchronizer;
   [controller initializeKeyboard];
   [controller notifySemanticsEnabledChanged];
   // macOS fires this message when changing IMEs.
@@ -858,7 +863,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                           commandQueue:(id<MTLCommandQueue>)commandQueue {
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
-                                reshapeListener:self];
+                                reshapeListener:self
+                             threadSynchronizer:_weakViewThreadSynchronizer
+                                         viewId:_viewId];
 }
 
 - (void)onKeyboardLayoutChanged {
