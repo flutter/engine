@@ -4,7 +4,6 @@
 
 #include "impeller/entity/geometry.h"
 
-#include <iostream>
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -12,6 +11,7 @@
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/tessellator/tessellator.h"
 
@@ -969,7 +969,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   // Create Dummy index buffer.
   auto index_count = divisions_per_circle * points_.size() * 3;
-  std::vector<uint32_t> dummy_index(index_count);
+  std::vector<uint16_t> dummy_index(index_count);
   for (auto i = 0u; i < index_count; i++) {
     dummy_index[i] = i;
   }
@@ -978,10 +978,10 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .vertex_buffer = host_buffer.Emplace(
           points_.data(), points_.size() * sizeof(Point), alignof(Point)),
       .index_buffer = host_buffer.Emplace(dummy_index.data(),
-                                          points_.size() * sizeof(uint32_t),
-                                          alignof(uint32_t)),
+                                          points_.size() * sizeof(uint16_t),
+                                          alignof(uint16_t)),
       .index_count = points_.size(),
-      .index_type = IndexType::k32bit,
+      .index_type = IndexType::k16bit,
   };
 
   DeviceBufferDescriptor buffer_desc;
@@ -992,7 +992,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
   auto index_buffer = host_buffer.Emplace(
-      dummy_index.data(), index_count * sizeof(uint32_t), alignof(uint32_t));
+      dummy_index.data(), index_count * sizeof(uint16_t), alignof(uint16_t));
 
   Command cmd;
   cmd.label = "Points Geometry";
@@ -1006,7 +1006,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   VS::FrameInfo frame_info;
   frame_info.radius = radius_;
-  frame_info.radian_start = round_ ? 0 : 0.785398;
+  frame_info.radian_start = round_ ? 0.0f : 0.785398f;
   frame_info.radian_step = k2Pi / divisions_per_circle;
   frame_info.points_per_circle = divisions_per_circle * 3;
   frame_info.divisions_per_circle = divisions_per_circle;
@@ -1017,8 +1017,18 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   cmd.BindVertices(vtx_buffer);
 
-  if (!pass.AddCommand(std::move(cmd))) {
-    return {};
+  // Ensure correct synchronization by submitting vertex computation into
+  // a different render pass.
+  {
+    auto render_target = pass.GetRenderTarget();
+    auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
+    auto vertex_render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+    if (!vertex_render_pass->AddCommand(std::move(cmd)) ||
+        !vertex_render_pass->EncodeCommands() ||
+        !vertex_render_pass->SubmitCommands()) {
+      return {};
+    }
   }
 
   return {
@@ -1028,7 +1038,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
                                               Range{0, total * sizeof(Point)}},
                         .index_buffer = index_buffer,
                         .index_count = index_count,
-                        .index_type = IndexType::k32bit},
+                        .index_type = IndexType::k16bit},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,
@@ -1044,7 +1054,8 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   FML_UNREACHABLE();
 }
 
-/// @brief Compute the exact storage size needed to store the resulting buffer.
+/// @brief Compute the exact storage size needed to store the resulting
+/// buffer.
 /// @return
 size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
                                                   bool round) {
