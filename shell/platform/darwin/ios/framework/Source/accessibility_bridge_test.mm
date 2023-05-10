@@ -1327,9 +1327,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   bridge->HandleEvent(annotatedEvent);
 
   XCTAssertEqual([accessibility_notifications count], 1ul);
-  // id focusObject = accessibility_notifications[0][@"argument"];
-  // XCTAssertTrue([focusObject isKindOfClass:[NSString class]]);
-  // XCTAssertEqualObjects(focusObject, @"node1");
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityLayoutChangedNotification);
 }
