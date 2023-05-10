@@ -563,12 +563,10 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
       this);
 }
 
-void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
-  const std::string& state_str = flutter::AppLifecycleStateToString(state);
-
+void FlutterWindowsEngine::SetLifecycleState(const char* state) {
   SendPlatformMessage("flutter/lifecycle",
-                      reinterpret_cast<const uint8_t*>(state_str.c_str()),
-                      state_str.size(), nullptr, nullptr);
+                      reinterpret_cast<const uint8_t*>(state), strlen(state),
+                      nullptr, nullptr);
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
