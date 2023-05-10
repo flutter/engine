@@ -20,18 +20,25 @@
 
 using namespace Skwasm;
 
-using OnRenderCompleteCallback = void(uint32_t);
-
 namespace {
 class Surface;
 void fDispose(Surface* surface);
 void fSetCanvasSize(Surface* surface, int width, int height);
 void fRenderPicture(Surface* surface, SkPicture* picture);
-void fNotifyRenderComplete(Surface* surface, uint32_t renderId);
-void fOnRenderComplete(Surface* surface, uint32_t renderId);
+void fNotifyRenderComplete(Surface* surface, uint32_t callbackId);
+void fOnRenderComplete(Surface* surface, uint32_t callbackId);
+void fRasterizeImage(
+  Surface *surface,
+  SkImage* image,
+  int width,
+  int height,
+  SkColorType colorType,
+  uint32_t callbackId);
 
 class Surface {
  public:
+  using CallbackHandler = void(uint32_t, void*);
+
   // Main thread only
   Surface(const char* canvasID) : _canvasID(canvasID) {
     pthread_attr_t attr;
@@ -64,7 +71,7 @@ class Surface {
 
   // Main thread only
   uint32_t renderPicture(SkPicture* picture) {
-    uint32_t renderId = ++_currentRenderId;
+    uint32_t callbackId = ++_currentCallbackId;
     picture->ref();
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
                                   reinterpret_cast<void*>(fRenderPicture),
@@ -77,13 +84,22 @@ class Surface {
     emscripten_dispatch_to_thread(
         _thread, EM_FUNC_SIG_VII,
         reinterpret_cast<void*>(fNotifyRenderComplete), nullptr, this,
-        renderId);
-    return renderId;
+        callbackId);
+    return callbackId;
+  }
+
+  uint32_t rasterizeImage(SkImage *image) {
+    uint32_t callbackId = ++_currentCallbackId;
+    image->ref();
+
+    emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
+                                 reinterpret_cast<void*>(fRasterizeImage),
+                                 nullptr, this, image);
   }
 
   // Main thread only
-  void setOnRenderCallback(OnRenderCompleteCallback* callback) {
-    _onRenderCompleteCallback = callback;
+  void setCallbackHandler(CallbackHandler* callbackHandler) {
+    _callbackHandler = callbackHandler;
   }
 
  private:
@@ -176,20 +192,26 @@ class Surface {
     _surface->flush();
   }
 
+  void _rasterizeImage(SkImage *image, uint32_t callbackId) {
+    image->readPixels(
+      _grContext.get(),
+    );
+  }
+
   // Worker thread only
-  void _notifyRenderComplete(uint32_t renderId) {
+  void _notifyRenderComplete(uint32_t callbackId) {
     emscripten_sync_run_in_main_runtime_thread(
-        EM_FUNC_SIG_VII, fOnRenderComplete, this, renderId);
+        EM_FUNC_SIG_VII, fOnRenderComplete, this, callbackId);
   }
 
   // Main thread only
-  void _onRenderComplete(uint32_t renderId) {
-    _onRenderCompleteCallback(renderId);
+  void _onRenderComplete(uint32_t callbackId) {
+    _callbackHandler(callbackId, nullptr);
   }
 
   std::string _canvasID;
-  OnRenderCompleteCallback* _onRenderCompleteCallback = nullptr;
-  uint32_t _currentRenderId = 0;
+  CallbackHandler* _callbackHandler = nullptr;
+  uint32_t _currentCallbackId = 0;
 
   int _canvasWidth = 0;
   int _canvasHeight = 0;
@@ -206,8 +228,9 @@ class Surface {
   friend void fDispose(Surface* surface);
   friend void fSetCanvasSize(Surface* surface, int width, int height);
   friend void fRenderPicture(Surface* surface, SkPicture* picture);
-  friend void fNotifyRenderComplete(Surface* surface, uint32_t renderId);
-  friend void fOnRenderComplete(Surface* surface, uint32_t renderId);
+  friend void fNotifyRenderComplete(Surface* surface, uint32_t callbackId);
+  friend void fOnRenderComplete(Surface* surface, uint32_t callbackId);
+  friend void fRasterizeImage(Surface *surface, SkImage* image, uint32_t callbackId);
 };
 
 void fDispose(Surface* surface) {
@@ -223,12 +246,17 @@ void fRenderPicture(Surface* surface, SkPicture* picture) {
   picture->unref();
 }
 
-void fNotifyRenderComplete(Surface* surface, uint32_t renderId) {
-  surface->_notifyRenderComplete(renderId);
+void fNotifyRenderComplete(Surface* surface, uint32_t callbackId) {
+  surface->_notifyRenderComplete(callbackId);
 }
 
-void fOnRenderComplete(Surface* surface, uint32_t renderId) {
-  surface->_onRenderComplete(renderId);
+void fOnRenderComplete(Surface* surface, uint32_t callbackId) {
+  surface->_onRenderComplete(callbackId);
+}
+
+void fRasterizeImage(Surface *surface, SkImage* image, uint32_t callbackId) {
+  surface->_rasterizeImage(image, callbackId);
+  image->unref();
 }
 }  // namespace
 
@@ -236,10 +264,10 @@ SKWASM_EXPORT Surface* surface_createFromCanvas(const char* canvasID) {
   return new Surface(canvasID);
 }
 
-SKWASM_EXPORT void surface_setOnRenderCallback(
+SKWASM_EXPORT void surface_setCallbackHandler(
     Surface* surface,
-    OnRenderCompleteCallback* callback) {
-  surface->setOnRenderCallback(callback);
+    Surface::CallbackHandler* callbackHandler) {
+  surface->setCallbackHandler(callbackHandler);
 }
 
 SKWASM_EXPORT void surface_destroy(Surface* surface) {

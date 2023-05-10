@@ -22,7 +22,7 @@ class SkwasmSurface {
   SkwasmSurface._fromHandle(this._handle);
   final SurfaceHandle _handle;
   OnRenderCallbackHandle _callbackHandle = nullptr;
-  final Map<int, Completer<void>> _pendingRenders = <int, Completer<void>>{};
+  final Map<int, Completer<void>> _pendingCallbacks = <int, Completer<void>>{};
 
   void _initialize() {
     _callbackHandle =
@@ -39,15 +39,15 @@ class SkwasmSurface {
     surfaceSetCanvasSize(_handle, width, height);
 
   Future<void> renderPicture(SkwasmPicture picture) {
-    final int renderId = surfaceRenderPicture(_handle, picture.handle);
+    final int callbackId = surfaceRenderPicture(_handle, picture.handle);
     final Completer<void> completer = Completer<void>();
-    _pendingRenders[renderId] = completer;
+    _pendingCallbacks[callbackId] = completer;
     return completer.future;
   }
 
-  void _onRender(JSNumber jsRenderId) {
-    final int renderId = jsRenderId.toDart.toInt();
-    final Completer<void> completer = _pendingRenders.remove(renderId)!;
+  void _onRender(JSNumber jsCallbackId) {
+    final int callbackId = jsCallbackId.toDart.toInt();
+    final Completer<void> completer = _pendingCallbacks.remove(callbackId)!;
     completer.complete();
   }
 
