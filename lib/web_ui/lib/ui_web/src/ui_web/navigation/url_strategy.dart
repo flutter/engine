@@ -9,9 +9,17 @@ import 'package:ui/ui.dart' as ui;
 
 import 'platform_location.dart';
 
+/// Sets a custom URL strategy instead of the default one.
+///
+/// Passing null disables browser history integration altogether.
+///
+/// This setter can only be called once. Subsequent calls will throw an error
+/// in debug mode.
+set urlStrategy(UrlStrategy? strategy) {
+  customUrlStrategy = strategy;
+}
 
-set urlStrategy(UrlStrategy? strategy) => customUrlStrategy = strategy;
-
+/// Callback that receives the new state of the browser history entry.
 typedef PopStateListener = void Function(Object? state);
 
 /// Represents and reads route state from the browser's URL.
@@ -79,7 +87,7 @@ class HashUrlStrategy extends UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
-  /// interations.
+  /// interactions.
   const HashUrlStrategy(
       [this._platformLocation = const BrowserPlatformLocation()]);
 

@@ -11,11 +11,7 @@ import 'url_strategy.dart';
 ///
 /// For convenience, the [PlatformLocation] class can be used by implementations
 /// of [UrlStrategy] to interact with DOM apis like pushState, popState, etc.
-abstract class PlatformLocation {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const PlatformLocation();
-
+abstract interface class PlatformLocation {
   /// Registers an event listener for the `popstate` event.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
@@ -77,7 +73,7 @@ abstract class PlatformLocation {
 }
 
 /// Delegates to real browser APIs to provide platform location functionality.
-class BrowserPlatformLocation extends PlatformLocation {
+class BrowserPlatformLocation implements PlatformLocation {
   /// Default constructor for [BrowserPlatformLocation].
   const BrowserPlatformLocation();
 
