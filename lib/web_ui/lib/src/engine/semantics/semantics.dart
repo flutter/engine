@@ -1529,8 +1529,8 @@ class EngineSemanticsOwner {
   /// The object will be detached permanently unless it is reattached via the
   /// [_attachObject] method.
   void _detachObject(int id) {
-    assert(_semanticsTree.containsKey(id));
     final SemanticsObject? object = _semanticsTree[id];
+    assert(object != null);
     if (object != null) {
       _detachments.add(object);
     }
@@ -1885,13 +1885,12 @@ class EngineSemanticsOwner {
       root.visitDepthFirst((SemanticsObject child) {
         liveIds.add(child.id);
       });
-      if (!_semanticsTree.keys.every(liveIds.contains)) {
-        throw AssertionError(
-          'The semantics node map is inconsistent:\n'
-          '  Nodes in tree: [${liveIds.join(', ')}]\n'
-          '  Nodes in map : [${_semanticsTree.keys.join(', ')}]'
-        );
-      }
+      assert(
+        _semanticsTree.keys.every(liveIds.contains),
+        'The semantics node map is inconsistent:\n'
+        '  Nodes in tree: [${liveIds.join(', ')}]\n'
+        '  Nodes in map : [${_semanticsTree.keys.join(', ')}]'
+      );
 
       // Validate that each node in the final tree is self-consistent.
       _semanticsTree.forEach((int? id, SemanticsObject object) {

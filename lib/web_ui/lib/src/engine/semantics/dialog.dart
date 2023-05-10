@@ -20,8 +20,8 @@ class Dialog extends RoleManager {
 
   @override
   void update() {
+    final String? label = semanticsObject.label;
     assert(() {
-      final String? label = semanticsObject.label;
       if (label == null || label.trim().isEmpty) {
         printWarning(
           'Semantic node ${semanticsObject.id} was assigned dialog role, but '
@@ -32,7 +32,7 @@ class Dialog extends RoleManager {
       }
       return true;
     }());
-    semanticsObject.element.setAttribute('aria-label', semanticsObject.label ?? '');
+    semanticsObject.element.setAttribute('aria-label', label ?? '');
     semanticsObject.setAriaRole('dialog', true);
   }
 }

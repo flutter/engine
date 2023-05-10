@@ -2203,6 +2203,11 @@ void _testDialog() {
 <sem role="dialog" aria-label="this is a dialog label" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
 ''');
 
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
+      isA<Dialog>(),
+    );
+
     semantics().semanticsEnabled = false;
   });
 
@@ -2236,6 +2241,16 @@ void _testDialog() {
       <String>[
         'Semantic node 0 was assigned dialog role, but is missing a label. A dialog should contain a label so that a screen reader can communicate to the user that a dialog appeared and a user action is requested.',
       ],
+    );
+
+    // But still sets the dialog role.
+    expectSemanticsTree('''
+<sem role="dialog" aria-label="" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
+''');
+
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
+      isA<Dialog>(),
     );
 
     semantics().semanticsEnabled = false;
