@@ -59,9 +59,9 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
-  echo "success"
+  echo "test success."
 else
-  echo "cyanglaz scenario test failed"
+  echo "test failed."
 
   LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
   echo "LUCI_TEST_OUTPUTS_PATH ${LUCI_TEST_OUTPUTS_PATH}"
@@ -71,6 +71,7 @@ else
   # So use relative directory instead.
   zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
   mv ios_scenario_xcresult.zip $DUMP_PATH
+  exit 1
 fi
 
 # echo "Running simulator tests with Impeller"
