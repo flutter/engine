@@ -75,7 +75,7 @@
             ]
         },
         {
-            "name": "test: lint host_debug",
+            "name": "test: lint ios_debug_sim",
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
