@@ -5282,6 +5282,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
 
+  // RadiusX and radiusY values, on every corner, must be finite.
+  // NaN values and infinities are not valid.
+  // Negative radii are interpreted as 0.
+  // Positive radii are interpreted as 0 < radii < float32.
   @Native<Void Function(Pointer<Void>, Handle, Handle, Handle)>(symbol: 'Canvas::drawRRect')
   external void _drawRRect(Float32List rrect, List<Object?>? paintObjects, ByteData paintData);
 
@@ -5296,6 +5300,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawDRRect(outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
   }
 
+  // RadiusX and radiusY values, on every corner, must be finite.
+  // NaN values and infinities are not valid.
+  // Negative radii are interpreted as 0.
+  // Positive radii are interpreted as 0 < radii < float32.
   @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>(symbol: 'Canvas::drawDRRect')
   external void _drawDRRect(Float32List outer, Float32List inner, List<Object?>? paintObjects, ByteData paintData);
 

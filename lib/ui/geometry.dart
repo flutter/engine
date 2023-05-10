@@ -1266,14 +1266,6 @@ class RRect {
        assert(brRadiusY >= 0),
        assert(blRadiusX >= 0),
        assert(blRadiusY >= 0);
-
-  // Right now, double values are passed from Flutter to native via a
-  // Float32List. When a double overflows the maximum Float32 value,
-  // `inf` is passed to the list.
-  // This might cause unintended consequences. For example,
-  // Skia draws rounded rectangles with an `inf` radius as rectangles.
-  // If a large radius value produces a stadium shape, users might
-  // expect that double.infinity would always work as a generic max value. 
   
   Float32List _getValue32()  {
     final Float32List result = Float32List(12);
