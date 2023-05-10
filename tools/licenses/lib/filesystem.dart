@@ -82,7 +82,6 @@ FileType identifyFile(String name, Reader reader) {
     return FileType.binary;
   }
   if (pathComponents.reversed.take(9).toList().reversed.join('/') == 'fuchsia/sdk/linux/dart/zircon/lib/src/fakes/handle_disposition.dart' || // has bogus but benign "authors" reference, reported to jamesr@
-      (pathComponents.join('/').contains('fuchsia/sdk') && path.extension(name) == '.rom') ||
       pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c' || // has bogus but benign "authors" reference, reported to author and legal team
       pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h' || // has bogus but benign "authors" reference, reported to author and legal team
       pathComponents.reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h') { // has bogus but benign "authors" reference, reported to author and legal team
@@ -243,6 +242,7 @@ FileType identifyFile(String name, Reader reader) {
     case '.icc': return FileType.binary; // Color profile
     case '.swp': return FileType.binary; // Vim swap file
     case '.bfbs': return FileType.binary; // Flatbuffers Binary Schema
+    case '.rom': return FileType.binary;
     // Archives
     case '.zip': return FileType.zip; // ZIP
     case '.tar': return FileType.tar; // Tar
