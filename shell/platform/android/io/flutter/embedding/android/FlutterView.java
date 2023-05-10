@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
@@ -708,7 +709,7 @@ public class FlutterView extends FrameLayout
       // apps content.
       if (navigationBarVisible) {
         navigationBarVisible =
-            (controller.getSystemBarsBehavior()
+            (windowInsetsControllerCompat.getSystemBarsBehavior()
                     & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
                 == 0;
       }
