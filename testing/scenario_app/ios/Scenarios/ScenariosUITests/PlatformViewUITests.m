@@ -31,8 +31,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
-      [[GoldenTestManager alloc]
-      initWithLaunchArg:@"--non-full-screen-flutter-view-platform-view"];
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--non-full-screen-flutter-view-platform-view"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -299,8 +298,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
-      [[GoldenTestManager alloc]
-      initWithLaunchArg:@"--platform-view-with-other-backdrop-filter"];
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-with-other-backdrop-filter"];
   return [super initWithManager:manager invocation:invocation];
 }
 
