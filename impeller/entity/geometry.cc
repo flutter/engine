@@ -927,7 +927,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
 
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
   vtx_builder.Reserve(total);
-  vtx_builder.ReserveIndices(total);
+
   for (auto i = 0u; i < points_.size(); i++) {
     auto elapsed_angle = radian_start;
     auto center = points_[i];
@@ -940,7 +940,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
     auto pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
     vtx_builder.AppendVertex({pt2});
 
-    for (auto j = 0u; j < divisions_per_circle; j++) {
+    for (auto j = 1u; j < divisions_per_circle; j++) {
       vtx_builder.AppendVertex({center});
 
       pt1 = pt2;
