@@ -14,22 +14,22 @@ MockTexture::MockTexture(int64_t textureId) : Texture(textureId) {}
 void MockTexture::Paint(PaintContext& context,
                         const SkRect& bounds,
                         bool freeze,
-                        const DlImageSampling sampling) {
-  paint_calls_.emplace_back(PaintCall{*(context.canvas), bounds, freeze,
-                                      context.gr_context, sampling,
-                                      context.paint});
+                        DlImageSampling sampling) {
+  DlPaint paint;
+  if (context.paint) {
+    paint = *context.paint;
+  }
+  paint.setColor(mockColor(paint.getAlpha(), freeze, sampling));
+  context.canvas->DrawRect(bounds, paint);
 }
 
-bool operator==(const MockTexture::PaintCall& a,
-                const MockTexture::PaintCall& b) {
-  return &a.canvas == &b.canvas && a.bounds == b.bounds &&
-         a.context == b.context && a.freeze == b.freeze &&
-         a.sampling == b.sampling && a.paint == b.paint;
-}
-
-std::ostream& operator<<(std::ostream& os, const MockTexture::PaintCall& data) {
-  return os << &data.canvas << " " << data.bounds << " " << data.context << " "
-            << data.freeze << " " << data.sampling << " " << data.paint;
+DlColor MockTexture::mockColor(uint8_t alpha,
+                               bool freeze,
+                               DlImageSampling sampling) const {
+  uint8_t red = Id() & 0xff;
+  uint8_t green = freeze ? 1 : 0;
+  uint8_t blue = static_cast<uint8_t>(sampling);
+  return DlColor(alpha << 24 | red << 16 | green << 8 | blue);
 }
 
 }  // namespace testing

@@ -4,6 +4,8 @@
 
 #include "flutter/flow/testing/mock_texture.h"
 
+#include "flutter/display_list/dl_builder.h"
+#include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
 
@@ -28,36 +30,48 @@ TEST(MockTextureTest, Callbacks) {
 
 TEST(MockTextureTest, PaintCalls) {
   MockCanvas canvas;
+  DisplayListBuilder builder;
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
   const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  const auto expected_paint_calls = std::vector{
-      MockTexture::PaintCall{canvas, paint_bounds1, false, nullptr, sampling},
-      MockTexture::PaintCall{canvas, paint_bounds2, true, nullptr, sampling}};
   auto texture = std::make_shared<MockTexture>(0);
+  DlPaint paint1 = DlPaint(texture->mockColor(0xff, false, sampling));
+  DlPaint paint2 = DlPaint(texture->mockColor(0xff, true, sampling));
+
   Texture::PaintContext context{
-      .canvas = &canvas,
+      .canvas = &builder,
   };
   texture->Paint(context, paint_bounds1, false, sampling);
   texture->Paint(context, paint_bounds2, true, sampling);
-  EXPECT_EQ(texture->paint_calls(), expected_paint_calls);
+
+  DisplayListBuilder expected_builder;
+  expected_builder.DrawRect(paint_bounds1, paint1);
+  expected_builder.DrawRect(paint_bounds2, paint2);
+  EXPECT_TRUE(
+      DisplayListsEQ_Verbose(builder.Build(), expected_builder.Build()));
 }
 
 TEST(MockTextureTest, PaintCallsWithLinearSampling) {
   MockCanvas canvas;
+  DisplayListBuilder builder;
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
   const auto sampling = DlImageSampling::kLinear;
-  const auto expected_paint_calls = std::vector{
-      MockTexture::PaintCall{canvas, paint_bounds1, false, nullptr, sampling},
-      MockTexture::PaintCall{canvas, paint_bounds2, true, nullptr, sampling}};
   auto texture = std::make_shared<MockTexture>(0);
+  DlPaint paint1 = DlPaint(texture->mockColor(0xff, false, sampling));
+  DlPaint paint2 = DlPaint(texture->mockColor(0xff, true, sampling));
+
   Texture::PaintContext context{
-      .canvas = &canvas,
+      .canvas = &builder,
   };
   texture->Paint(context, paint_bounds1, false, sampling);
   texture->Paint(context, paint_bounds2, true, sampling);
-  EXPECT_EQ(texture->paint_calls(), expected_paint_calls);
+
+  DisplayListBuilder expected_builder;
+  expected_builder.DrawRect(paint_bounds1, paint1);
+  expected_builder.DrawRect(paint_bounds2, paint2);
+  EXPECT_TRUE(
+      DisplayListsEQ_Verbose(builder.Build(), expected_builder.Build()));
 }
 
 }  // namespace testing

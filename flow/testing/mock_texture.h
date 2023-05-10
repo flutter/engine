@@ -19,44 +19,30 @@ namespace testing {
 // later verify them against expected data.
 class MockTexture : public Texture {
  public:
-  struct PaintCall {
-    DlCanvas& canvas;
-    SkRect bounds;
-    bool freeze;
-    GrDirectContext* context;
-    DlImageSampling sampling;
-    const DlPaint* paint;
-  };
-
   explicit MockTexture(int64_t textureId);
 
   // Called from raster thread.
   void Paint(PaintContext& context,
              const SkRect& bounds,
              bool freeze,
-             const DlImageSampling sampling) override;
+             DlImageSampling sampling) override;
+
+  DlColor mockColor(uint8_t alpha, bool freeze, DlImageSampling sampling) const;
 
   void OnGrContextCreated() override { gr_context_created_ = true; }
   void OnGrContextDestroyed() override { gr_context_destroyed_ = true; }
   void MarkNewFrameAvailable() override {}
   void OnTextureUnregistered() override { unregistered_ = true; }
 
-  const std::vector<PaintCall>& paint_calls() { return paint_calls_; }
   bool gr_context_created() { return gr_context_created_; }
   bool gr_context_destroyed() { return gr_context_destroyed_; }
   bool unregistered() { return unregistered_; }
 
  private:
-  std::vector<PaintCall> paint_calls_;
   bool gr_context_created_ = false;
   bool gr_context_destroyed_ = false;
   bool unregistered_ = false;
 };
-
-extern bool operator==(const MockTexture::PaintCall& a,
-                       const MockTexture::PaintCall& b);
-extern std::ostream& operator<<(std::ostream& os,
-                                const MockTexture::PaintCall& data);
 
 }  // namespace testing
 }  // namespace flutter
