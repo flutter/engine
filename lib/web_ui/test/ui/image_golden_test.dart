@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -134,7 +135,35 @@ Future<void> testMain() async {
         await matchGoldenFile('${name}_canvas_drawImageNine.png', region: drawRegion);
       });
 
+      test('image_shader_cubic_rotated', () async {
+        final ui.Image image = await imageGenerator();
+        expect(image.width, 150);
+        expect(image.height, 150);
+
+        final Float64List matrix = Matrix4.rotationZ(pi / 6).toFloat64();
+        final ui.ImageShader shader = ui.ImageShader(
+          image,
+          ui.TileMode.repeated,
+          ui.TileMode.repeated,
+          matrix,
+          filterQuality: ui.FilterQuality.high,
+        );
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
+        canvas.drawOval(
+          const ui.Rect.fromLTRB(0, 50, 300, 250),
+          ui.Paint()..shader = shader
+        );
+
+        await drawPictureUsingCurrentRenderer(recorder.endRecording());
+        await matchGoldenFile('${name}_image_shader_cubic_rotated.png', region: drawRegion);
+      });
+
       test('fragment_shader_sampler', () async {
+        final ui.Image image = await imageGenerator();
+        expect(image.width, 150);
+        expect(image.height, 150);
+
         final ui.FragmentProgram program = await renderer.createFragmentProgram('glitch_shader');
         final ui.FragmentShader shader = program.fragmentShader();
 
@@ -146,7 +175,7 @@ Future<void> testMain() async {
         shader.setFloat(2, 2);
 
         // Image
-        shader.setImageSampler(0, await imageGenerator());
+        shader.setImageSampler(0, image);
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
