@@ -55,6 +55,7 @@ ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
   echo $1
   zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
   mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
+  rm -rf $RESULT_BUNDLE_PATH
   exit 1
 }
 
@@ -62,7 +63,6 @@ echo "Running simulator tests with Skia"
 echo ""
 
 mktemp -d $RESULT_BUNDLE_PATH
-trap 'rm -rf $RESULT_BUNDLE_PATH' EXIT
 
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
