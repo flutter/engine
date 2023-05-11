@@ -23,6 +23,21 @@ external ImageHandle imageCreateFromPicture(
   int height,
 );
 
+@Native<ImageHandle Function(
+  SkDataHandle,
+  Int,
+  Int,
+  Bool,
+  Size
+)>(symbol: 'image_createFromPixels', isLeaf: true)
+external ImageHandle imageCreateFromPixels(
+  SkDataHandle pixelData,
+  int width,
+  int height,
+  bool isBgra,
+  int rowByteCount,
+);
+
 @Native<Void Function(ImageHandle)>(symbol: 'image_dispose', isLeaf: true)
 external void imageDispose(ImageHandle handle);
 

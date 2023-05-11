@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -185,9 +186,8 @@ Future<void> testMain() async {
 
         await matchGoldenFile('${name}_fragment_shader_sampler.png', region: drawRegion);
       }, skip: isHtml); // HTML doesn't support fragment shaders
-    });
 
-    test('toByteData', () async {
+      test('toByteData_rgba', () async {
         final ui.Image image = await imageGenerator();
         expect(image.width, 150);
         expect(image.height, 150);
@@ -195,10 +195,17 @@ Future<void> testMain() async {
         final ByteData? rgbaData = await image.toByteData();
         expect(rgbaData, isNotNull);
         expect(rgbaData!.lengthInBytes, isNonZero);
+      });
+
+      test('toByteData_rgba', () async {
+        final ui.Image image = await imageGenerator();
+        expect(image.width, 150);
+        expect(image.height, 150);
 
         final ByteData? pngData = await image.toByteData(format: ui.ImageByteFormat.png);
         expect(pngData, isNotNull);
         expect(pngData!.lengthInBytes, isNonZero);
+      }, skip: isHtml); // https://github.com/flutter/flutter/issues/126611
     });
   }
 
@@ -216,4 +223,69 @@ Future<void> testMain() async {
     }
     return recorder.endRecording().toImage(150, 150);
   });
+
+  Uint8List generatePixelData(
+    int width,
+    int height,
+    ui.Color Function(double, double) generator
+  ) {
+    final Uint8List data = Uint8List(width * height * 4);
+    int outputIndex = 0;
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final ui.Color pixelColor = generator(
+          (2.0 * x / width) - 1.0,
+          (2.0 * y / height) - 1.0,
+        );
+        data[outputIndex++] = pixelColor.red;
+        data[outputIndex++] = pixelColor.green;
+        data[outputIndex++] = pixelColor.blue;
+        data[outputIndex++] = pixelColor.alpha;
+      }
+    }
+    return data;
+  }
+
+  emitImageTests('decodeImageFromPixels_unscaled', () {
+    final Uint8List pixels = generatePixelData(150, 150, (double x, double y) {
+      final double r = sqrt(x * x + y * y);
+      final double theta = atan2(x, y);
+      return ui.Color.fromRGBO(
+        (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
+        (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
+        0,
+        1,
+      );
+    });
+    final Completer<ui.Image> completer = Completer<ui.Image>();
+    ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
+    return completer.future;
+  });
+
+  // https://github.com/flutter/flutter/issues/126603
+  if (!isHtml) {
+    emitImageTests('decodeImageFromPixels_scaled', () {
+      final Uint8List pixels = generatePixelData(50, 50, (double x, double y) {
+        final double r = sqrt(x * x + y * y);
+        final double theta = atan2(x, y);
+        return ui.Color.fromRGBO(
+          (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
+          (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
+          0,
+          1,
+        );
+      });
+      final Completer<ui.Image> completer = Completer<ui.Image>();
+      ui.decodeImageFromPixels(
+        pixels,
+        50,
+        50,
+        ui.PixelFormat.rgba8888,
+        completer.complete,
+        targetWidth: 150,
+        targetHeight: 150,
+      );
+      return completer.future;
+    });
+  }
 }
