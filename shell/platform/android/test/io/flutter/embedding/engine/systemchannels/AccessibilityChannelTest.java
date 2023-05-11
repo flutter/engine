@@ -38,7 +38,7 @@ public class AccessibilityChannelTest {
         new AccessibilityChannel(mock(DartExecutor.class), mock(FlutterJNI.class));
     HashMap<String, Object> arguments = new HashMap<>();
     arguments.put("type", "focus");
-    arguments.put("nodeId", "123");
+    arguments.put("nodeId", 123);
     AccessibilityChannel.AccessibilityMessageHandler handler =
         mock(AccessibilityChannel.AccessibilityMessageHandler.class);
     accessibilityChannel.setAccessibilityMessageHandler(handler);
