@@ -38,10 +38,23 @@ public interface BinaryMessenger {
 
   /** Options that control how a TaskQueue should operate and be created. */
   public static class TaskQueueOptions {
+    private boolean isSynchronous = false;
     private boolean isSerial = true;
+
+    TaskQueueOptions(boolean isSynchronous) {
+      this.isSynchronous = isSynchronous;
+    }
+
+    public TaskQueueOptions() {
+      this(false);
+    }
 
     public boolean getIsSerial() {
       return isSerial;
+    }
+
+    public boolean getIsSynchronous() {
+      return isSynchronous;
     }
 
     /**
@@ -54,6 +67,8 @@ public interface BinaryMessenger {
       this.isSerial = isSerial;
       return this;
     }
+
+    public static final TaskQueueOptions synchronous = new TaskQueueOptions(true);
   }
 
   /**

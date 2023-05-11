@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.BinaryMessenger.TaskQueueOptions;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -28,22 +29,39 @@ public class PlatformChannel {
   private static final String TAG = "PlatformChannel";
 
   @NonNull public final MethodChannel channel;
+  @VisibleForTesting
+  @NonNull public final MethodChannel synchronousChannel;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private SynchronousPlatformMessageHandler synchronousPlatformMessageHandler;
 
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodCallHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+          String method = call.method;
+          Object arguments = call.arguments;
+          Log.v(TAG, "Received '" + method + "' message.");
+
+          if (method == "TextScale.apply") {
+            if (synchronousPlatformMessageHandler == null) {
+              result.error("error", "handler isn't set.", null);
+            } else {
+              try {
+                result.success(synchronousPlatformMessageHandler.applyTextScale((float) arguments));
+              } catch (Exception exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+            }
+            return;
+          }
+
           if (platformMessageHandler == null) {
             // If no explicit PlatformMessageHandler has been registered then we don't
             // need to forward this call to an API. Return.
             return;
           }
 
-          String method = call.method;
-          Object arguments = call.arguments;
-          Log.v(TAG, "Received '" + method + "' message.");
           try {
             switch (method) {
               case "SystemSound.play":
@@ -201,14 +219,28 @@ public class PlatformChannel {
   public PlatformChannel(@NonNull DartExecutor dartExecutor) {
     channel = new MethodChannel(dartExecutor, "flutter/platform", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodCallHandler);
+    synchronousChannel = new MethodChannel(dartExecutor, "flutter/platformSynchronous", JSONMethodCodec.INSTANCE, dartExecutor.makeBackgroundTaskQueue(TaskQueueOptions.synchronous));
+    synchronousChannel.setMethodCallHandler(parsingMethodCallHandler);
   }
 
   /**
-   * Sets the {@link PlatformMessageHandler} which receives all events and requests that are parsed
-   * from the underlying platform channel.
+   * Sets the {@link PlatformMessageHandler} which receives events and
+   * requests from the underlying platform channel.
+   *
+   * <p>The handler will be called on the platform thread.
    */
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
+  }
+
+  /**
+   * Sets the {@link SynchronousPlatformMessageHandler} which receives events and
+   * requests from the underlying platform channel.
+   *
+   * <p>The handler will be called synchronously on the thread they are sent.
+   */
+  public void setSynchronousPlatformMessageHandler(@Nullable SynchronousPlatformMessageHandler synchronousPlatformMessageHandler) {
+    this.synchronousPlatformMessageHandler = synchronousPlatformMessageHandler;
   }
 
   /** Informs Flutter of a change in the SystemUI overlays. */
@@ -533,6 +565,29 @@ public class PlatformChannel {
      * can be pasted.
      */
     boolean clipboardHasStrings();
+  }
+
+  /**
+   * Handler that receives platform messages sent from Flutter to Android through a given {@link
+   * PlatformChannel} and responds synchronously.
+   *
+   * <p>To register a {@code PlatformMessageHandler} with a {@link PlatformChannel}, see {@link
+   * PlatformChannel#setSynchronousPlatformMessageHandler(SynchronousPlatformMessageHandler)}.
+   */
+  public interface SynchronousPlatformMessageHandler {
+    /**
+     * Applies the user's font size preference on the given {@code fontSize}.
+     *
+     * <p> This method is typically called by the Flutter application when it's
+     * ready to render text, and expects a synchronous response so the
+     * implementer must guarantee it's safe to call this method on the dart UI
+     * thread.
+     *
+     * @param fontSize the unscaled font size specified by app developers in
+     *     their Flutter application, in logical pixels.
+     * @return the scaled font size.
+     */
+    float applyTextScale(float fontSize);
   }
 
   /** Types of sounds the Android OS can play on behalf of an application. */

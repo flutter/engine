@@ -42,4 +42,24 @@ public class PlatformChannelTest {
     }
     verify(mockResult).success(refEq(expected));
   }
+
+  @Test
+  public void synchronousChannelHandlerIsCalledSynchronously() {
+    final DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
+    final PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
+
+    platformChannel.setSynchronousPlatformMessageHandler(new SynchronousePlatformMessageHandler() {
+      @Override
+      float applyTextScale(float fontSize) {
+        return fontSize * 2;
+      }
+    });
+
+    float scaledFontSize = 0;
+
+    final MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
+    platformChannel.synchronousChannel.invokeMethod("TextScale.apply", 42.0, mockResult);
+
+    verify(mockResult.success(42.0 * 2));
+  }
 }
