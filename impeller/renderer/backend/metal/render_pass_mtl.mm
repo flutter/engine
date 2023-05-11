@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
-
+#include <iostream>
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -486,6 +486,15 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                               ShaderStage::kFragment)) {
       return false;
     }
+    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
+
+    if (command.index_type == IndexType::kNone) {
+      [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+            vertexStart:command.base_vertex
+            vertexCount:command.index_count];
+      return true;
+    }
+
     if (command.index_type == IndexType::kUnknown) {
       return false;
     }
@@ -502,8 +511,6 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (!mtl_index_buffer) {
       return false;
     }
-
-    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
 
     FML_DCHECK(command.index_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==

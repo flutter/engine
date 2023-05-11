@@ -935,7 +935,7 @@ void DlDispatcher::drawPoints(PointMode mode,
       auto point_style = paint.stroke_cap == Cap::kRound ? PointStyle::kRound
                                                          : PointStyle::kSquare;
       canvas_.DrawPoints(skia_conversions::ToPoints(points, count),
-                         paint.stroke_width, paint, point_style);
+                         paint.stroke_width / 2.0, paint, point_style);
     } break;
     case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {

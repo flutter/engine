@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry.h"
+#include <iostream>
 
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
@@ -825,6 +826,10 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  if (radius_ <= 0) {
+    return {};
+  }
+
   if (!renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
     return GetPositionBufferCPU(renderer, entity, pass);
   }
@@ -836,21 +841,11 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   using VS = PointFieldGeometryPipeline::VertexShader;
 
-  // Create Dummy index buffer.
-  auto index_count = divisions_per_circle * points_.size() * 3;
-  std::vector<uint16_t> dummy_index(index_count);
-  for (auto i = 0u; i < index_count; i++) {
-    dummy_index[i] = i;
-  }
-
   auto vtx_buffer = VertexBuffer{
       .vertex_buffer = host_buffer.Emplace(
           points_.data(), points_.size() * sizeof(Point), alignof(Point)),
-      .index_buffer = host_buffer.Emplace(dummy_index.data(),
-                                          points_.size() * sizeof(uint16_t),
-                                          alignof(uint16_t)),
       .index_count = points_.size(),
-      .index_type = IndexType::k16bit,
+      .index_type = IndexType::kNone,
   };
 
   DeviceBufferDescriptor buffer_desc;
@@ -859,9 +854,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   auto buffer =
       renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  auto index_buffer = host_buffer.Emplace(
-      dummy_index.data(), index_count * sizeof(uint16_t), alignof(uint16_t));
 
   Command cmd;
   cmd.label = "Points Geometry";
@@ -905,9 +897,8 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
                                           .range =
                                               Range{0, total * sizeof(Point)}},
-                        .index_buffer = index_buffer,
-                        .index_count = index_count,
-                        .index_type = IndexType::k16bit},
+                        .index_count = divisions_per_circle * points_.size() * 3,
+                        .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,
@@ -925,7 +916,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
   auto radian_start = round_ ? 0.0f : 0.785398f;
   auto radian_step = k2Pi / divisions_per_circle;
 
-  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData, uint32_t>
+      vtx_builder;
   vtx_builder.Reserve(total);
 
   for (auto i = 0u; i < points_.size(); i++) {
@@ -940,7 +932,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
     auto pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
     vtx_builder.AppendVertex({pt2});
 
-    for (auto j = 1u; j < divisions_per_circle; j++) {
+    for (auto j = 0u; j < divisions_per_circle - 1; j++) {
       vtx_builder.AppendVertex({center});
 
       pt1 = pt2;
@@ -978,18 +970,22 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
   if (!round) {
     return 4;
   }
-  // note: this formula is completely arbitrary, we should find a reasonable
-  // curve based on experimental data.
-  if (scaled_radius < 4.0) {
+
+  // Note: these values are approximated based on the values returned from
+  // the decomposition of 4 cubics performed by Path::CreatePolyline.
+  if (scaled_radius < 1.0) {
+    return 4;
+  }
+  if (scaled_radius < 2.0) {
     return 8;
   }
-  if (scaled_radius < 16) {
-    return 16;
+  if (scaled_radius < 12.0) {
+    return 24;
   }
-  if (scaled_radius < 32) {
-    return 32;
+  if (scaled_radius < 22.0) {
+    return 34;
   }
-  return 64;
+  return std::min(scaled_radius, 140.0f);
 }
 
 // |Geometry|
@@ -1000,7 +996,11 @@ GeometryVertexType PointFieldGeometry::GetVertexType() const {
 // |Geometry|
 std::optional<Rect> PointFieldGeometry::GetCoverage(
     const Matrix& transform) const {
-  return Rect::MakeMaximum();
+  auto pt_bounds = Rect::MakePointBounds(points_.begin(), points_.end());
+  if (pt_bounds.has_value()) {
+    return pt_bounds->TransformBounds(transform);
+  }
+  return std::nullopt;
 }
 
 }  // namespace impeller
