@@ -44,11 +44,22 @@ defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
 cd $SCENARIO_PATH
 
-echo "Running simulator tests with Skia"
-echo ""
-
 RESULT_BUNDLE_FOLDER="ios_scenario_xcresult"
 RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
+
+# Zip and upload xcresult to luci.
+# First parameter ($1) is the zip output name.
+ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
+  LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
+  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
+  # So use relative directory instead.
+  zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
+  mv -f $1 $LUCI_TEST_OUTPUTS_PATH
+  exit 1
+}
+
+echo "Running simulator tests with Skia"
+echo ""
 
 mktemp -d $RESULT_BUNDLE_PATH
 trap 'rm -rf $RESULT_BUNDLE_PATH' EXIT
@@ -62,16 +73,7 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   echo "test success."
 else
   echo "test failed."
-
-  LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
-  echo "LUCI_TEST_OUTPUTS_PATH ${LUCI_TEST_OUTPUTS_PATH}"
-  # DUMP_PATH=$LUCI_TEST_OUTPUTS_PATH
-  echo "Zip"
-  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
-  # So use relative directory instead.
-  zip -q -r ios_scenario_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
-  mv -f ios_scenario_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
-  exit 1
+  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI ios_scenario_xcresult.zip
 fi
 
 echo "Running simulator tests with Impeller"
@@ -89,14 +91,5 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   echo "test success."
 else
   echo "test failed."
-
-  LUCI_TEST_OUTPUTS_PATH="${FLUTTER_TEST_OUTPUTS_DIR:-NULL}"
-  echo "LUCI_TEST_OUTPUTS_PATH ${LUCI_TEST_OUTPUTS_PATH}"
-  # DUMP_PATH=$LUCI_TEST_OUTPUTS_PATH
-  echo "Zip"
-  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
-  # So use relative directory instead.
-  zip -q -r ios_scenario_impeller_xcresult.zip "./$RESULT_BUNDLE_FOLDER"
-  mv -f ios_scenario_impeller_xcresult.zip $LUCI_TEST_OUTPUTS_PATH
-  exit 1
+  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI ios_scenario_impeller_xcresult.zip
 fi
