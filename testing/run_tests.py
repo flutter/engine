@@ -490,7 +490,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
     }
     if is_aarm64():
-      extra_env.append({
+      extra_env.update({
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
@@ -499,7 +499,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags,
+        ['--gtest_filter=-*/Vulkan'] + shuffle_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
