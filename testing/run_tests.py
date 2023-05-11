@@ -487,6 +487,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '1',  # Validates accesses to threadgroup memory.
         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
             '1',  # Validates that texture references are not nil.
+        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
     }
     if is_aarm64():
       extra_env.append({
