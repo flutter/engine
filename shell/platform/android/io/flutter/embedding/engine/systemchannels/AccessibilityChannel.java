@@ -178,10 +178,10 @@ public class AccessibilityChannel {
     /** The Dart application would like the given {@code message} to be announced. */
     void announce(@NonNull String message);
 
-    /** The user has tapped on the widget with the given {@code nodeId}. */
+    /** The user has tapped on the semantics node with the given {@code nodeId}. */
     void onTap(int nodeId);
 
-    /** The user has long pressed on the widget with the given {@code nodeId}. */
+    /** The user has long pressed on the semantics node with the given {@code nodeId}. */
     void onLongPress(int nodeId);
 
     /** The framework has requested focus on the semantics node with the given {@code nodeId}. */
