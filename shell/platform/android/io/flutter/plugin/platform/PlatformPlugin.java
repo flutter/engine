@@ -132,11 +132,13 @@ public class PlatformPlugin {
         }
       };
 
-  final PlatformChannel.SynchronousPlatformMessageHandler synchronousPlatformMessageHandler = new PlatformChannel.SynchronousPlatformMessageHandler() {
-    public float applyTextScale(float fontSize) {
-      return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, activity.getResources().getDisplayMetrics());
-    }
-  };
+  final PlatformChannel.SynchronousPlatformMessageHandler synchronousPlatformMessageHandler =
+      new PlatformChannel.SynchronousPlatformMessageHandler() {
+        public float applyTextScale(float fontSize) {
+          return TypedValue.applyDimension(
+              TypedValue.COMPLEX_UNIT_SP, fontSize, activity.getResources().getDisplayMetrics());
+        }
+      };
 
   public PlatformPlugin(@NonNull Activity activity, @NonNull PlatformChannel platformChannel) {
     this(activity, platformChannel, null);

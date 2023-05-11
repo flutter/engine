@@ -29,8 +29,7 @@ public class PlatformChannel {
   private static final String TAG = "PlatformChannel";
 
   @NonNull public final MethodChannel channel;
-  @VisibleForTesting
-  @NonNull public final MethodChannel synchronousChannel;
+  @VisibleForTesting @NonNull public final MethodChannel synchronousChannel;
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private SynchronousPlatformMessageHandler synchronousPlatformMessageHandler;
 
@@ -219,13 +218,18 @@ public class PlatformChannel {
   public PlatformChannel(@NonNull DartExecutor dartExecutor) {
     channel = new MethodChannel(dartExecutor, "flutter/platform", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodCallHandler);
-    synchronousChannel = new MethodChannel(dartExecutor, "flutter/platformSynchronous", JSONMethodCodec.INSTANCE, dartExecutor.makeBackgroundTaskQueue(TaskQueueOptions.synchronous));
+    synchronousChannel =
+        new MethodChannel(
+            dartExecutor,
+            "flutter/platformSynchronous",
+            JSONMethodCodec.INSTANCE,
+            dartExecutor.makeBackgroundTaskQueue(TaskQueueOptions.synchronous));
     synchronousChannel.setMethodCallHandler(parsingMethodCallHandler);
   }
 
   /**
-   * Sets the {@link PlatformMessageHandler} which receives events and
-   * requests from the underlying platform channel.
+   * Sets the {@link PlatformMessageHandler} which receives events and requests from the underlying
+   * platform channel.
    *
    * <p>The handler will be called on the platform thread.
    */
@@ -234,12 +238,13 @@ public class PlatformChannel {
   }
 
   /**
-   * Sets the {@link SynchronousPlatformMessageHandler} which receives events and
-   * requests from the underlying platform channel.
+   * Sets the {@link SynchronousPlatformMessageHandler} which receives events and requests from the
+   * underlying platform channel.
    *
    * <p>The handler will be called synchronously on the thread they are sent.
    */
-  public void setSynchronousPlatformMessageHandler(@Nullable SynchronousPlatformMessageHandler synchronousPlatformMessageHandler) {
+  public void setSynchronousPlatformMessageHandler(
+      @Nullable SynchronousPlatformMessageHandler synchronousPlatformMessageHandler) {
     this.synchronousPlatformMessageHandler = synchronousPlatformMessageHandler;
   }
 
@@ -578,13 +583,12 @@ public class PlatformChannel {
     /**
      * Applies the user's font size preference on the given {@code fontSize}.
      *
-     * <p> This method is typically called by the Flutter application when it's
-     * ready to render text, and expects a synchronous response so the
-     * implementer must guarantee it's safe to call this method on the dart UI
-     * thread.
+     * <p>This method is typically called by the Flutter application when it's ready to render text,
+     * and expects a synchronous response so the implementer must guarantee it's safe to call this
+     * method on the dart UI thread.
      *
-     * @param fontSize the unscaled font size specified by app developers in
-     *     their Flutter application, in logical pixels.
+     * @param fontSize the unscaled font size specified by app developers in their Flutter
+     *     application, in logical pixels.
      * @return the scaled font size.
      */
     float applyTextScale(float fontSize);

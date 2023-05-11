@@ -251,7 +251,6 @@ public class MethodChannel {
     }
 
     @Override
-    @UiThread
     public void onMessage(ByteBuffer message, final BinaryReply reply) {
       final MethodCall call = codec.decodeMethodCall(message);
       try {
