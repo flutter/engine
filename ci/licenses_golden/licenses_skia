@@ -1,4 +1,4 @@
-Signature: c1a7900efb8168daba3202f2d5a25f58
+Signature: 41a891121d77cca1e1b6e1903d864aa0
 
 ====================================================================================================
 LIBRARY: etc1
@@ -384,6 +384,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
+FILE: ../../../third_party/skia/relnotes/skdrawable_picturesnapshot.md
 FILE: ../../../third_party/skia/relnotes/skgraphics_methods.md
 FILE: ../../../third_party/skia/relnotes/skimage_methods.md
 FILE: ../../../third_party/skia/relnotes/skimage_subset.md
@@ -9002,6 +9003,10 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/ComputeStep.cpp + ../
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/ComputeStep.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/DispatchGroup.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/DispatchGroup.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/VelloComputeSteps.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/VelloComputeSteps.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/VelloRenderer.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/compute/VelloRenderer.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/geom/EdgeAAQuad.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h + ../../../third_party/skia/LICENSE
@@ -9108,6 +9113,10 @@ FILE: ../../../third_party/skia/src/gpu/graphite/compute/ComputeStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/compute/ComputeStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/compute/DispatchGroup.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/compute/DispatchGroup.h
+FILE: ../../../third_party/skia/src/gpu/graphite/compute/VelloComputeSteps.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/compute/VelloComputeSteps.h
+FILE: ../../../third_party/skia/src/gpu/graphite/compute/VelloRenderer.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/compute/VelloRenderer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/EdgeAAQuad.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h
