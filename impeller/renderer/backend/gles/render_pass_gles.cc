@@ -358,7 +358,8 @@ struct RenderPassData {
     auto vertex_buffer_view = command.GetVertexBuffer();
     auto index_buffer_view = command.index_buffer;
 
-    if (!vertex_buffer_view || !index_buffer_view) {
+    if (!vertex_buffer_view ||
+        (command.index_type != IndexType::kNone && !index_buffer_view)) {
       return false;
     }
 
@@ -423,12 +424,17 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    gl.DrawElements(mode,                             // mode
-                    command.index_count,              // count
-                    ToIndexType(command.index_type),  // type
-                    reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                        index_buffer_view.range.offset))  // indices
-    );
+
+    if (command.index_type == IndexType::kNone) {
+      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+    } else {
+      gl.DrawElements(mode,                             // mode
+                      command.vertex_count,             // count
+                      ToIndexType(command.index_type),  // type
+                      reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
+                          index_buffer_view.range.offset))  // indices
+      );
+    }
 
     //--------------------------------------------------------------------------
     /// Unbind vertex attribs.

@@ -429,7 +429,7 @@ static bool EncodeCommand(const Context& context,
                           const Command& command,
                           CommandEncoderVK& encoder,
                           const ISize& target_size) {
-  if (command.index_count == 0u || command.instance_count == 0u) {
+  if (command.vertex_count == 0u || command.instance_count == 0u) {
     return true;
   }
 
@@ -500,7 +500,7 @@ static bool EncodeCommand(const Context& context,
                              ToVKIndexType(command.index_type));
 
   // Engage!
-  cmd_buffer.drawIndexed(command.index_count,     // index count
+  cmd_buffer.drawIndexed(command.vertex_count,    // index count
                          command.instance_count,  // instance count
                          0u,                      // first index
                          command.base_vertex,     // vertex offset
