@@ -181,6 +181,7 @@ targets:
 
   - name: Linux Host Engine
     recipe: engine/engine
+    bringup: true
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
