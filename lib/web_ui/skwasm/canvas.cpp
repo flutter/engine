@@ -201,8 +201,8 @@ SKWASM_EXPORT void canvas_drawImage(SkCanvas* canvas,
                                     SkScalar offsetY,
                                     SkPaint* paint,
                                     FilterQuality quality) {
-  canvas->drawImage(image, offsetX, offsetY,
-                    samplingOptionsForQuality(quality), paint);
+  canvas->drawImage(image, offsetX, offsetY, samplingOptionsForQuality(quality),
+                    paint);
 }
 
 SKWASM_EXPORT void canvas_drawImageRect(SkCanvas* canvas,

@@ -439,6 +439,7 @@ enum ColorSpace {
   extendedSRGB,
 }
 
+// This must be kept in sync with the `ImageByteFormat` enum in Skwasm's surface.cpp.
 enum ImageByteFormat {
   rawRgba,
   rawStraightRgba,

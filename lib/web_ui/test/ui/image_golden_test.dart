@@ -186,6 +186,20 @@ Future<void> testMain() async {
         await matchGoldenFile('${name}_fragment_shader_sampler.png', region: drawRegion);
       }, skip: isHtml); // HTML doesn't support fragment shaders
     });
+
+    test('toByteData', () async {
+        final ui.Image image = await imageGenerator();
+        expect(image.width, 150);
+        expect(image.height, 150);
+
+        final ByteData? rgbaData = await image.toByteData();
+        expect(rgbaData, isNotNull);
+        expect(rgbaData!.lengthInBytes, isNonZero);
+
+        final ByteData? pngData = await image.toByteData(format: ui.ImageByteFormat.png);
+        expect(pngData, isNotNull);
+        expect(pngData!.lengthInBytes, isNonZero);
+    });
   }
 
   emitImageTests('picture_toImage', () {

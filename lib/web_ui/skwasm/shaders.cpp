@@ -138,26 +138,20 @@ SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
       .release();
 }
 
-SKWASM_EXPORT SkShader* shader_createFromImage(
-  SkImage *image,
-  SkTileMode tileModeX,
-  SkTileMode tileModeY,
-  FilterQuality quality,
-  SkScalar* matrix33
-) {
+SKWASM_EXPORT SkShader* shader_createFromImage(SkImage* image,
+                                               SkTileMode tileModeX,
+                                               SkTileMode tileModeY,
+                                               FilterQuality quality,
+                                               SkScalar* matrix33) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
-    return image->makeShader(
-      tileModeX,
-      tileModeY,
-      samplingOptionsForQuality(quality),
-      &localMatrix
-    ).release();
+    return image
+        ->makeShader(tileModeX, tileModeY, samplingOptionsForQuality(quality),
+                     &localMatrix)
+        .release();
   } else {
-    return image->makeShader(
-      tileModeX,
-      tileModeY,
-      samplingOptionsForQuality(quality)
-    ).release();
+    return image
+        ->makeShader(tileModeX, tileModeY, samplingOptionsForQuality(quality))
+        .release();
   }
 }

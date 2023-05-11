@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -22,7 +23,7 @@ class SkwasmImage implements ui.Image {
   @override
   Future<ByteData?> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    throw UnimplementedError();
+    return (renderer as SkwasmRenderer).surface.rasterizeImage(this, format);
   }
 
   @override
