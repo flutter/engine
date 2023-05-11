@@ -30,6 +30,7 @@ import android.view.ViewGroup;
 import android.view.ViewStructure;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
@@ -46,7 +47,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Consumer;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter;
 import androidx.window.layout.DisplayFeature;
 import androidx.window.layout.FoldingFeature;
@@ -139,7 +139,7 @@ public class FlutterView extends FrameLayout
   @Nullable private AccessibilityBridge accessibilityBridge;
   @Nullable private TextServicesManager textServicesManager;
 
-  @Nullable @VisibleForTesting WindowInsetsControllerCompat windowInsetsControllerCompat;
+  @Nullable @VisibleForTesting WindowInsetsController windowInsetsController;
 
   // Provides access to foldable/hinge information
   @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
@@ -699,18 +699,16 @@ public class FlutterView extends FrameLayout
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      if (windowInsetsControllerCompat == null) {
-        Window window = ((Activity) getContext()).getWindow();
-        View view = window.getDecorView();
-        windowInsetsControllerCompat = WindowCompat.getInsetsController(window, view);
+      if (windowInsetsController == null) {
+        windowInsetsController = getWindowInsetsController();
       }
 
       // Override navigation bar visibility to false in this case as the transient bars overlay the
       // apps content.
       if (navigationBarVisible) {
         navigationBarVisible =
-            (windowInsetsControllerCompat.getSystemBarsBehavior()
-                    & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
+            (windowInsetsController.getSystemBarsBehavior()
+                    & WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
                 == 0;
       }
 
