@@ -184,7 +184,7 @@ public class AccessibilityChannel {
     /** The user has long pressed on the widget with the given {@code nodeId}. */
     void onLongPress(int nodeId);
 
-    /** Focus on the widget with the given {@code nodeId}. */
+    /** The framework has requested focus on the semantics node with the given {@code nodeId}. */
     void onFocus(int nodeId);
 
     /** The user has opened a tooltip. */

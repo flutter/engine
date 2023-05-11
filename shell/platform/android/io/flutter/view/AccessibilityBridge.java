@@ -309,7 +309,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
         }
 
-        /** The user has requested focus on the given {@code nodeId}. */
+        /** The framework has requested focus on the given {@code nodeId}. */
         @Override
         public void onFocus(int nodeId) {
           sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_FOCUSED);
