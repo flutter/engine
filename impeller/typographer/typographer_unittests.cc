@@ -7,6 +7,7 @@
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -91,22 +92,28 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   ASSERT_TRUE(blob);
   auto frame = TextFrameFromTextBlob(blob);
 
-  ASSERT_FALSE(frame.HasColor());
+  ASSERT_FALSE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
   LazyGlyphAtlas lazy_atlas;
-  ASSERT_FALSE(lazy_atlas.HasColor());
 
   lazy_atlas.AddTextFrame(frame);
-
-  ASSERT_FALSE(lazy_atlas.HasColor());
 
   frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("😀 ", emoji_font));
 
-  ASSERT_TRUE(frame.HasColor());
+  ASSERT_TRUE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
   lazy_atlas.AddTextFrame(frame);
 
-  ASSERT_TRUE(lazy_atlas.HasColor());
+  // Creates different atlases for color and alpha bitmap.
+  auto color_context = std::make_shared<GlyphAtlasContext>();
+  auto bitmap_context = std::make_shared<GlyphAtlasContext>();
+  auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
+      GlyphAtlas::Type::kColorBitmap, color_context, GetContext());
+
+  auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
+      GlyphAtlas::Type::kAlphaBitmap, bitmap_context, GetContext());
+
+  ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
 
 TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
@@ -182,9 +189,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
             atlas->GetTexture()->GetSize().height);
 }
 
-// TODO(jonahwilliams): Re-enable
-// https://github.com/flutter/flutter/issues/122839
-TEST_P(TypographerTest, DISABLED_GlyphAtlasTextureIsRecycledIfUnchanged) {
+TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
