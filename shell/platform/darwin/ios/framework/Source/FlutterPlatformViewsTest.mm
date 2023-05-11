@@ -1550,7 +1550,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
-  XCTAssertNil(childClippingView.maskView);
+  XCTAssertNotNil(childClippingView.maskView);
 }
 
 - (void)testClipRRectOnlyHasCornersInterceptWithPlatformViewShouldAddMaskView {
