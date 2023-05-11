@@ -356,30 +356,21 @@ struct RenderPassData {
     /// Bind vertex and index buffers.
     ///
     auto vertex_buffer_view = command.GetVertexBuffer();
-    auto index_buffer_view = command.index_buffer;
 
-    if (!vertex_buffer_view ||
-        (command.index_type != IndexType::kNone && !index_buffer_view)) {
+    if (!vertex_buffer_view) {
       return false;
     }
 
     auto vertex_buffer =
         vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
-    auto index_buffer =
-        index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
 
-    if (!vertex_buffer || !index_buffer) {
+    if (!vertex_buffer) {
       return false;
     }
 
     const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
     if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
             DeviceBufferGLES::BindingType::kArrayBuffer)) {
-      return false;
-    }
-    const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
-    if (!index_buffer_gles.BindAndUploadDataIfNecessary(
-            DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
       return false;
     }
 
@@ -424,10 +415,18 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-
     if (command.index_type == IndexType::kNone) {
       gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
     } else {
+      // Bind the index buffer if necessary.
+      auto index_buffer_view = command.index_buffer;
+      auto index_buffer =
+          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
+      if (!index_buffer_gles.BindAndUploadDataIfNecessary(
+              DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
+        return false;
+      }
       gl.DrawElements(mode,                             // mode
                       command.vertex_count,             // count
                       ToIndexType(command.index_type),  // type
