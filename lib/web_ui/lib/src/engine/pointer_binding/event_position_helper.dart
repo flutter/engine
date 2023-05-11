@@ -58,6 +58,9 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
 /// underlying input element. We transform the `event.offset` points we receive
 /// using the values from the input's transform matrix.
 ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inputGeometry) {
+  final DomElement targetElement = event.target! as DomHTMLElement;
+  final DomHTMLElement domElement = textEditing.strategy.activeDomElement;
+  assert(targetElement == domElement, 'The targeted input element must be the active input element');
   final Float32List matrix = inputGeometry.globalTransform;
   final FastMatrix32 fastMatrix = FastMatrix32(matrix);
   fastMatrix.transform(event.offsetX, event.offsetY);
