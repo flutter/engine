@@ -364,8 +364,7 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   }
   if ([type isEqualToString:@"focus"]) {
     SemanticsObject* node = objects_.get()[@([annotatedEvent[@"nodeId"] intValue])];
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
-                                                 node);
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, node);
   }
 }
 
