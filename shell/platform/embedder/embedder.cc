@@ -20,6 +20,7 @@
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -738,7 +739,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendRenderTarget(
+  auto surface = SkSurfaces::WrapBackendRenderTarget(
       context,                      //  context
       backend_render_target,        // backend render target
       kBottomLeft_GrSurfaceOrigin,  // surface origin

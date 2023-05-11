@@ -83,7 +83,7 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
   const auto image_info =
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurface::MakeRenderTarget(
+  auto surface = SkSurfaces::RenderTarget(
       context_.get(),               // context
       skgpu::Budgeted::kNo,         // budgeted
       image_info,                   // image info
@@ -136,7 +136,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
   const auto image_info =
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurface::MakeRenderTarget(
+  auto surface = SkSurfaces::RenderTarget(
       context_.get(),               // context
       skgpu::Budgeted::kNo,         // budgeted
       image_info,                   // image info
@@ -261,7 +261,7 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_METAL
-  // TODO(gw280): Use SkSurface::MakeRenderTarget instead of generating our
+  // TODO(gw280): Use SkSurfaces::RenderTarget instead of generating our
   // own MTLTexture and wrapping it.
   auto surface_size = SkISize::Make(config->size.width, config->size.height);
   auto texture_info = test_metal_context_->CreateMetalTexture(surface_size);

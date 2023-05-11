@@ -10,6 +10,7 @@
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
@@ -105,7 +106,7 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
               sk_sp<SkSurface> sk_surface =
-                  SkSurface::MakeRenderTarget(context,               // context
+                  SkSurfaces::RenderTarget(context,               // context
                                               skgpu::Budgeted::kNo,  // budgeted
                                               image_info  // image info
                   );

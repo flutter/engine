@@ -10,6 +10,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 namespace testing {
@@ -29,7 +30,7 @@ bool EmbedderTestCompositorVulkan::UpdateOffscrenComposition(
   const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
 
   sk_sp<SkSurface> surface =
-      SkSurface::MakeRenderTarget(context_.get(),            // context
+      SkSurfaces::RenderTarget(context_.get(),            // context
                                   skgpu::Budgeted::kNo,      // budgeted
                                   image_info,                // image info
                                   1,                         // sample count

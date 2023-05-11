@@ -16,6 +16,7 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #include "gmock/gmock.h"
 
@@ -981,7 +982,7 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
 
   auto image_info =
       SkImageInfo::MakeN32Premul(500, 500, SkColorSpace::MakeSRGB());
-  auto sk_surface = SkSurface::MakeRenderTarget(
+  auto sk_surface = SkSurfaces::RenderTarget(
       context.get(), skgpu::Budgeted::kYes, image_info);
   EXPECT_TRUE(sk_surface);
 

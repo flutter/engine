@@ -9,6 +9,7 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
@@ -27,7 +28,7 @@ sk_sp<SkImage> ConvertToRasterUsingResourceContext(
           })
           .SetIfFalse([&surface, &surface_info, resource_context] {
             if (resource_context) {
-              surface = SkSurface::MakeRenderTarget(
+              surface = SkSurfaces::RenderTarget(
                   resource_context.get(), skgpu::Budgeted::kNo, surface_info);
             } else {
               surface = SkSurfaces::Raster(surface_info);
