@@ -50,13 +50,11 @@ RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
 # Zip and upload xcresult to luci.
 # First parameter ($1) is the zip output name.
 ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
-  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
-  # So use relative directory instead.
+  # Using absolute directory causes the zip containing all the sub directories.
+  # So use relative directory (./$RESULT_BUNDLE_FOLDER) instead.
   echo $1
   zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
-  if ( -z "$FLUTTER_TEST_OUTPUTS_DIR") then
-    mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
-  fi
+  mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
   exit 1
 }
 
@@ -95,3 +93,4 @@ else
   echo "test failed."
   ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_impeller_xcresult.zip"
 fi
+
