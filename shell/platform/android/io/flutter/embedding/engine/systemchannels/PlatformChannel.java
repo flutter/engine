@@ -29,7 +29,7 @@ public class PlatformChannel {
   private static final String TAG = "PlatformChannel";
 
   @NonNull public final MethodChannel channel;
-  @VisibleForTesting @NonNull public final MethodChannel synchronousChannel;
+  @NonNull public final MethodChannel synchronousChannel;
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private SynchronousPlatformMessageHandler synchronousPlatformMessageHandler;
 
@@ -38,16 +38,17 @@ public class PlatformChannel {
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          String method = call.method;
-          Object arguments = call.arguments;
+          final String method = call.method;
+          final Object arguments = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
 
-          if (method == "TextScale.apply") {
+          if (method.equals("TextScale.apply")) {
             if (synchronousPlatformMessageHandler == null) {
               result.error("error", "handler isn't set.", null);
             } else {
               try {
-                result.success(synchronousPlatformMessageHandler.applyTextScale((float) arguments));
+                final float fontSize = ((Number) arguments).floatValue();
+                result.success(synchronousPlatformMessageHandler.applyTextScale(fontSize));
               } catch (Exception exception) {
                 result.error("error", exception.getMessage(), null);
               }
