@@ -506,7 +506,7 @@ deps = {
   'src/flutter/prebuilts/linux-x64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/linux-amd64',
+        'package': 'dart/dart-sdk/linux-amd64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],
@@ -516,7 +516,7 @@ deps = {
   'src/flutter/prebuilts/linux-arm64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/linux-arm64',
+        'package': 'dart/dart-sdk/linux-arm64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],
@@ -526,7 +526,7 @@ deps = {
   'src/flutter/prebuilts/macos-x64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/mac-amd64',
+        'package': 'dart/dart-sdk/mac-amd64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],
@@ -536,7 +536,7 @@ deps = {
   'src/flutter/prebuilts/macos-arm64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/mac-arm64',
+        'package': 'dart/dart-sdk/mac-arm64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],
@@ -546,7 +546,7 @@ deps = {
   'src/flutter/prebuilts/windows-x64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/windows-amd64',
+        'package': 'dart/dart-sdk/windows-amd64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],
@@ -556,7 +556,7 @@ deps = {
   'src/flutter/prebuilts/windows-arm64/dart-sdk': {
     'packages': [
       {
-        'package': 'flutter/dart-sdk/windows-arm64',
+        'package': 'dart/dart-sdk/windows-arm64',
         'version': 'git_revision:'+Var('dart_revision')
       }
     ],

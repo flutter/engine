@@ -164,26 +164,11 @@ zip_bundle("flutter_patched_sdk") {
   ]
 }
 
-generated_file("dart_sdk_entitlement_config") {
-  outputs = [ "$target_gen_dir/dart_sdk_entitlements.txt" ]
-
-  # Dart SDK is a prebuilt archive. The rule for building
-  # Dart SDK is https://github.com/flutter/engine/blob/main/BUILD.gn#L61
-  contents = [
-    "dart-sdk/bin/dart",
-    "dart-sdk/bin/dartaotruntime",
-    "dart-sdk/bin/utils/gen_snapshot",
-    "dart-sdk/bin/utils/wasm-opt",
-  ]
-
-  deps = []
-}
-
 # Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
 # the zip file we are just copying the original file to the artifacts location.
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   zip_bundle("dart_sdk_archive") {
-    deps = [ ":dart_sdk_entitlement_config" ]
+    deps = []
     output = "dart-sdk-$full_target_platform_name.zip"
     files = [
       {
@@ -195,12 +180,6 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
       # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
       # names will require changes in the list of artifacts the tool is downloading.
       output = "dart-sdk-darwin-$target_cpu.zip"
-      files += [
-        {
-          source = "$target_gen_dir/dart_sdk_entitlements.txt"
-          destination = "entitlements.txt"
-        },
-      ]
     }
   }
 }
@@ -218,13 +197,6 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
     ]
     if (is_mac) {
       output = "dart-sdk-darwin-$target_cpu.zip"
-      deps += [ ":dart_sdk_entitlement_config" ]
-      files += [
-        {
-          source = "$target_gen_dir/dart_sdk_entitlements.txt"
-          destination = "entitlements.txt"
-        },
-      ]
     }
   }
 }
