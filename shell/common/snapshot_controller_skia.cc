@@ -69,13 +69,13 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   if (!snapshot_surface) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
-    sk_sp<SkSurface> sk_surface = SkSurface::MakeRaster(image_info);
+    sk_sp<SkSurface> sk_surface = SkSurfaces::Raster(image_info);
     result = DrawSnapshot(sk_surface, draw_callback);
   } else {
     delegate.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
-              sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+              sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
               result = DrawSnapshot(surface, draw_callback);
             })
             .SetIfFalse([&] {

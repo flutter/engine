@@ -30,7 +30,7 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
 
   // There is no rendering surface, assume no GPU textures are present and
   // create a raster surface.
-  return SkSurface::MakeRaster(image_info);
+  return SkSurfaces::Raster(image_info);
 }
 
 /// Returns a buffer containing a snapshot of the surface.

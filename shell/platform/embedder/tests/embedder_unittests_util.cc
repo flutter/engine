@@ -31,7 +31,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                false                      // mipmaps
 
                                )
-                         : SkSurface::MakeRaster(image_info);
+                         : SkSurfaces::Raster(image_info);
   FML_CHECK(surface != nullptr);
   return surface;
 }

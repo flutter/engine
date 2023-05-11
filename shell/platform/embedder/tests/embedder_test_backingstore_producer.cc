@@ -186,7 +186,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
 bool EmbedderTestBackingStoreProducer::CreateSoftware(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
-  auto surface = SkSurface::MakeRaster(
+  auto surface = SkSurfaces::Raster(
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height));
 
   if (!surface) {
@@ -224,7 +224,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
     return false;
   }
 
-  auto surface = SkSurface::MakeRaster(SkImageInfo::Make(
+  auto surface = SkSurfaces::Raster(SkImageInfo::Make(
       SkISize::Make(config->size.width, config->size.height), *color_info));
   if (!surface) {
     FML_LOG(ERROR)

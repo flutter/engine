@@ -782,7 +782,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     delete captures;
   };
 
-  auto surface = SkSurface::MakeRasterDirectReleaseProc(
+  auto surface = SkSurfaces::WrapPixels(
       image_info,                               // image info
       const_cast<void*>(software->allocation),  // pixels
       software->row_bytes,                      // row bytes
@@ -830,7 +830,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     }
   };
 
-  auto surface = SkSurface::MakeRasterDirectReleaseProc(
+  auto surface = SkSurfaces::WrapPixels(
       image_info,                               // image info
       const_cast<void*>(software->allocation),  // pixels
       software->row_bytes,                      // row bytes

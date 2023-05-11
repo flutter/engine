@@ -23,14 +23,14 @@ sk_sp<SkImage> ConvertToRasterUsingResourceContext(
   is_gpu_disabled_sync_switch->Execute(
       typename SyncSwitch::Handlers()
           .SetIfTrue([&surface, &surface_info] {
-            surface = SkSurface::MakeRaster(surface_info);
+            surface = SkSurfaces::Raster(surface_info);
           })
           .SetIfFalse([&surface, &surface_info, resource_context] {
             if (resource_context) {
               surface = SkSurface::MakeRenderTarget(
                   resource_context.get(), skgpu::Budgeted::kNo, surface_info);
             } else {
-              surface = SkSurface::MakeRaster(surface_info);
+              surface = SkSurfaces::Raster(surface_info);
             }
           }));
 

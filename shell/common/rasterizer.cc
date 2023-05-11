@@ -280,7 +280,7 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
             std::to_string(image_info.height()));
   };
 
-  sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
   canvas.Clear(DlColor::kTransparent());
   canvas.DrawDisplayList(display_list);
