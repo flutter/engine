@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
-@TestOn('!safari')
-library;
-
 import 'dart:async';
 import 'dart:js_interop'
     show JSExportedDartFunction, JSExportedDartFunctionToFunction;
@@ -14,12 +10,12 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart'
     show DomEvent, DomEventListener, createDomPopStateEvent;
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
+import 'package:ui/ui_web/src/ui_web.dart';
 
 import '../common/spy.dart';
 
@@ -285,7 +281,7 @@ void testMain() {
       // 3. The active entry doesn't belong to our history anymore because we
       // navigated past it.
       expect(originalStrategy.currentEntryIndex, -1);
-    }, skip: browserEngine == BrowserEngine.webkit);
+    });
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -522,7 +518,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 0);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-    }, skip: browserEngine == BrowserEngine.webkit);
+    });
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -652,6 +648,23 @@ void testMain() {
       expect(strategy.getPath(), '/');
     });
 
+    test('prepareExternalUrl', () {
+      const String internalUrl = '/menu?foo=bar';
+      final HashUrlStrategy strategy = HashUrlStrategy(location);
+
+      location.pathname = '/';
+      expect(strategy.prepareExternalUrl(internalUrl), '/#/menu?foo=bar');
+
+      location.pathname = '/main';
+      expect(strategy.prepareExternalUrl(internalUrl), '/main#/menu?foo=bar');
+
+      location.search = '?foo=bar';
+      expect(
+        strategy.prepareExternalUrl(internalUrl),
+        '/main?foo=bar#/menu?foo=bar',
+      );
+    });
+
     test('addPopStateListener fn unwraps DomPopStateEvent state', () {
       final HashUrlStrategy strategy = HashUrlStrategy(location);
       const String expected = 'expected value';
@@ -716,7 +729,7 @@ Future<void> systemNavigatorPop() {
 }
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
-class TestPlatformLocation extends PlatformLocation {
+class TestPlatformLocation implements PlatformLocation {
   @override
   String? hash;
 
@@ -726,10 +739,10 @@ class TestPlatformLocation extends PlatformLocation {
   List<DomEventListener> popStateListeners = <DomEventListener>[];
 
   @override
-  String get pathname => throw UnimplementedError();
+  String pathname = '';
 
   @override
-  String get search => throw UnimplementedError();
+  String search = '';
 
   /// Calls all the registered `popStateListeners` with a 'popstate'
   /// event with value `state`
