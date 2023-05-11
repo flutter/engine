@@ -55,7 +55,6 @@ ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
   echo $1
   zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
   mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
-  rm -rf $RESULT_BUNDLE_PATH
   exit 1
 }
 
@@ -75,6 +74,7 @@ else
   echo "test failed."
   ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_xcresult.zip"
 fi
+rm -rf $RESULT_BUNDLE_PATH
 
 echo "Running simulator tests with Impeller"
 echo ""
@@ -93,4 +93,5 @@ else
   echo "test failed."
   ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_impeller_xcresult.zip"
 fi
+rm -rf $RESULT_BUNDLE_PATH
 
