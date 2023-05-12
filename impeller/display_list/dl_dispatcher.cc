@@ -934,8 +934,12 @@ void DlDispatcher::drawPoints(PointMode mode,
       // Cap::kButt is also treated as a square.
       auto point_style = paint.stroke_cap == Cap::kRound ? PointStyle::kRound
                                                          : PointStyle::kSquare;
-      canvas_.DrawPoints(skia_conversions::ToPoints(points, count),
-                         paint.stroke_width / 2.0, paint, point_style);
+      auto radius = paint.stroke_width;
+      if (radius > 0) {
+        radius /= 2.0;
+      }
+      canvas_.DrawPoints(skia_conversions::ToPoints(points, count), radius,
+                         paint, point_style);
     } break;
     case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {

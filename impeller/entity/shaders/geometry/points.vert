@@ -42,7 +42,7 @@ void main() {
       center + vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
   geometry_data.geometry[bufer_offset++] = pt2;
 
-  for (int i = 0; i < frame_info.divisions_per_circle - 2; i++) {
+  for (int i = 0; i < frame_info.divisions_per_circle - 3; i++) {
     geometry_data.geometry[bufer_offset++] = origin;
     geometry_data.geometry[bufer_offset++] = pt2;
 

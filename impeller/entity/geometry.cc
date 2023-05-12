@@ -820,17 +820,24 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  if (radius_ <= 0) {
+  if (radius_ < 0.0) {
+    return {};
+  }
+  auto determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
     return {};
   }
 
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar radius = std::max(radius_, min_size);
+
   if (!renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
-    return GetPositionBufferCPU(renderer, entity, pass);
+    return GetPositionBufferCPU(renderer, entity, pass, radius);
   }
 
-  auto divisions_per_circle = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
-  auto points_per_circle = (divisions_per_circle - 2) * 3;
+  auto vertices_per_geom = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -862,11 +869,11 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
 
   VS::FrameInfo frame_info;
-  frame_info.radius = radius_;
+  frame_info.radius = radius;
   frame_info.radian_start = round_ ? 0.0f : 0.785398f;
-  frame_info.radian_step = k2Pi / divisions_per_circle;
+  frame_info.radian_step = k2Pi / vertices_per_geom;
   frame_info.points_per_circle = points_per_circle;
-  frame_info.divisions_per_circle = divisions_per_circle;
+  frame_info.divisions_per_circle = vertices_per_geom;
 
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   VS::BindGeometryData(
@@ -911,44 +918,44 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 GeometryResult PointFieldGeometry::GetPositionBufferCPU(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
-  auto divisions_per_circle = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
-  auto points_per_circle = (divisions_per_circle - 2) * 3;
+    RenderPass& pass,
+    Scalar radius) {
+  auto vertices_per_geom = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
   auto& host_buffer = pass.GetTransientsBuffer();
   auto radian_start = round_ ? 0.0f : 0.785398f;
-  auto radian_step = k2Pi / divisions_per_circle;
+  auto radian_step = k2Pi / vertices_per_geom;
 
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
   vtx_builder.Reserve(total);
 
   /// Precompute all relative points and angles for a fixed geometry size.
   auto elapsed_angle = radian_start;
-  std::vector<Point> angle_table(divisions_per_circle + 1);
-  for (auto i = 0u; i < divisions_per_circle + 1; i++) {
-    angle_table[i] = Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+  std::vector<Point> angle_table(vertices_per_geom);
+  for (auto i = 0u; i < vertices_per_geom; i++) {
+    angle_table[i] = Point(cos(elapsed_angle), sin(elapsed_angle)) * radius;
     elapsed_angle += radian_step;
   }
 
   for (auto i = 0u; i < points_.size(); i++) {
     auto center = points_[i];
-    auto j = 0u;
 
-    auto origin = center + angle_table[j++];
+    auto origin = center + angle_table[0];
     vtx_builder.AppendVertex({origin});
 
-    auto pt1 = center + angle_table[j++];
+    auto pt1 = center + angle_table[1];
     vtx_builder.AppendVertex({pt1});
 
-    auto pt2 = center + angle_table[j++];
+    auto pt2 = center + angle_table[2];
     vtx_builder.AppendVertex({pt2});
 
-    for (auto j = 0u; j < divisions_per_circle - 2; j++) {
+    for (auto j = 0u; j < vertices_per_geom - 3; j++) {
       vtx_builder.AppendVertex({origin});
       vtx_builder.AppendVertex({pt2});
 
-      pt2 = center + angle_table[j++];
+      pt2 = center + angle_table[j + 3];
       vtx_builder.AppendVertex({pt2});
     }
   }

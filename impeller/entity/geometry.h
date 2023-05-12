@@ -293,7 +293,8 @@ class PointFieldGeometry : public Geometry {
 
   GeometryResult GetPositionBufferCPU(const ContentContext& renderer,
                                       const Entity& entity,
-                                      RenderPass& pass);
+                                      RenderPass& pass,
+                                      Scalar radius);
 
   std::vector<Point> points_;
   Scalar radius_;
