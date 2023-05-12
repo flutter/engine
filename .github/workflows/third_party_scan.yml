@@ -25,4 +25,4 @@ jobs:
       - name: "extract and flatten deps"
         run: python ci/deps_parser.py
       - name: "scan deps for vulnerabilities"
-        run: python ci/scan_flatten_deps.py
+        run: python ci/scan_flattened_deps.py
