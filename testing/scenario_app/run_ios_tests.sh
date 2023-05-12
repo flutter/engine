@@ -42,6 +42,7 @@ fi
 defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
 SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+pushd .
 cd $SCENARIO_PATH
 
 RESULT_BUNDLE_FOLDER="ios_scenario_xcresult"
@@ -49,10 +50,9 @@ RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
 
 # Zip and upload xcresult to luci.
 # First parameter ($1) is the zip output name.
-ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
-  # Using absolute directory causes the zip containing all the sub directories.
-  # So use relative directory (./$RESULT_BUNDLE_FOLDER) instead.
-  echo $1
+zip_and_upload_xcresult_to_luci () {
+  # We don't want the zip to contain the abusolute path,
+  # so use relative path (./$RESULT_BUNDLE_FOLDER) instead.
   zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
   mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
   exit 1
@@ -72,7 +72,7 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   echo "test success."
 else
   echo "test failed."
-  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_xcresult.zip"
+  zip_and_upload_xcresult_to_luci "ios_scenario_xcresult.zip"
 fi
 rm -rf $RESULT_BUNDLE_PATH
 
@@ -91,6 +91,8 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   echo "test success."
 else
   echo "test failed."
-  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_impeller_xcresult.zip"
+  zip_and_upload_xcresult_to_luci "ios_scenario_impeller_xcresult.zip"
 fi
 rm -rf $RESULT_BUNDLE_PATH
+
+popd
