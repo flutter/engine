@@ -830,7 +830,8 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   auto divisions_per_circle = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
-  auto total = divisions_per_circle * points_.size() * 3;
+  auto points_per_circle = (divisions_per_circle - 2) * 3;
+  auto total = points_per_circle * points_.size();
   auto& host_buffer = pass.GetTransientsBuffer();
 
   using VS = PointFieldGeometryPipeline::VertexShader;
@@ -857,13 +858,14 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   options.stencil_compare = CompareFunction::kAlways;
   options.stencil_operation = StencilOperation::kKeep;
   options.enable_rasterization = false;
+  options.sample_count = SampleCount::kCount1;
   cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
 
   VS::FrameInfo frame_info;
   frame_info.radius = radius_;
   frame_info.radian_start = round_ ? 0.0f : 0.785398f;
   frame_info.radian_step = k2Pi / divisions_per_circle;
-  frame_info.points_per_circle = divisions_per_circle * 3;
+  frame_info.points_per_circle = points_per_circle;
   frame_info.divisions_per_circle = divisions_per_circle;
 
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
@@ -912,35 +914,41 @@ GeometryResult PointFieldGeometry::GetPositionBufferCPU(
     RenderPass& pass) {
   auto divisions_per_circle = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius_, round_);
-  auto total = divisions_per_circle * points_.size() * 3;
+  auto points_per_circle = (divisions_per_circle - 2) * 3;
+  auto total = points_per_circle * points_.size();
   auto& host_buffer = pass.GetTransientsBuffer();
   auto radian_start = round_ ? 0.0f : 0.785398f;
   auto radian_step = k2Pi / divisions_per_circle;
 
-  VertexBufferBuilder<SolidFillVertexShader::PerVertexData, uint32_t>
-      vtx_builder;
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
   vtx_builder.Reserve(total);
 
-  for (auto i = 0u; i < points_.size(); i++) {
-    auto elapsed_angle = radian_start;
-    auto center = points_[i];
-    vtx_builder.AppendVertex({center});
+  /// Precompute all relative points and angles for a fixed geometry size.
+  auto elapsed_angle = radian_start;
+  std::vector<Point> angle_table(divisions_per_circle + 1);
+  for (auto i = 0u; i < divisions_per_circle + 1; i++) {
+    angle_table[i] = Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+    elapsed_angle += radian_step;
+  }
 
-    auto pt1 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+  for (auto i = 0u; i < points_.size(); i++) {
+    auto center = points_[i];
+    auto j = 0u;
+
+    auto origin = center + angle_table[j++];
+    vtx_builder.AppendVertex({origin});
+
+    auto pt1 = center + angle_table[j++];
     vtx_builder.AppendVertex({pt1});
 
-    elapsed_angle += radian_step;
-    auto pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+    auto pt2 = center + angle_table[j++];
     vtx_builder.AppendVertex({pt2});
 
-    for (auto j = 0u; j < divisions_per_circle - 1; j++) {
-      vtx_builder.AppendVertex({center});
+    for (auto j = 0u; j < divisions_per_circle - 2; j++) {
+      vtx_builder.AppendVertex({origin});
+      vtx_builder.AppendVertex({pt2});
 
-      pt1 = pt2;
-      elapsed_angle += radian_step;
-      vtx_builder.AppendVertex({pt1});
-
-      pt2 = center + Point(cos(elapsed_angle), sin(elapsed_angle)) * radius_;
+      pt2 = center + angle_table[j++];
       vtx_builder.AppendVertex({pt2});
     }
   }

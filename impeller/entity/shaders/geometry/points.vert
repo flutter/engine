@@ -27,8 +27,12 @@ void main() {
   int bufer_offset = gl_VertexIndex * frame_info.points_per_circle;
 
   float16_t elapsed_angle = frame_info.radian_start;
-  geometry_data.geometry[bufer_offset++] = center;
 
+  vec2 origin =
+      center + vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
+  geometry_data.geometry[bufer_offset++] = origin;
+
+  elapsed_angle += frame_info.radian_step;
   vec2 pt1 =
       center + vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
   geometry_data.geometry[bufer_offset++] = pt1;
@@ -38,13 +42,11 @@ void main() {
       center + vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
   geometry_data.geometry[bufer_offset++] = pt2;
 
-  for (int i = 1; i < frame_info.divisions_per_circle; i++) {
-    geometry_data.geometry[bufer_offset++] = center;
+  for (int i = 0; i < frame_info.divisions_per_circle - 2; i++) {
+    geometry_data.geometry[bufer_offset++] = origin;
+    geometry_data.geometry[bufer_offset++] = pt2;
 
-    pt1 = pt2;
     elapsed_angle += frame_info.radian_step;
-    geometry_data.geometry[bufer_offset++] = pt1;
-
     pt2 = center +
           vec2(cos(elapsed_angle), sin(elapsed_angle)) * frame_info.radius;
     geometry_data.geometry[bufer_offset++] = pt2;
