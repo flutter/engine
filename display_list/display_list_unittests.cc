@@ -2691,7 +2691,8 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
           builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
                             &paint);
-          builder.DrawImageRect(TestImage1, {0, 0, 10, 10}, {10, 10, 25, 25},
+          builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
+                                SkRect{10.0f, 10.0f, 25.0f, 25.0f},
                                 DlImageSampling::kLinear, &paint);
           builder.DrawImageNine(TestImage1, {10, 10, 20, 20},
                                 {10, 10, 100, 100}, DlFilterMode::kLinear,
