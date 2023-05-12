@@ -492,7 +492,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
                   vertexStart:command.base_vertex
                   vertexCount:command.vertex_count];
-      return true;
+      continue;
     }
 
     if (command.index_type == IndexType::kUnknown) {
