@@ -49,7 +49,7 @@
             },
             "dependencies": [
                 "host_debug",
-                "ios_debug_sim"
+                "android_debug_arm64"
             ],
             "tasks": [
                 {
