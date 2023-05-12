@@ -897,7 +897,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
                                           .range =
                                               Range{0, total * sizeof(Point)}},
-                        .index_count = divisions_per_circle * points_.size() * 3,
+                        .index_count = total,
                         .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),

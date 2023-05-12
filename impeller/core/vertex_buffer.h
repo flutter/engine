@@ -16,7 +16,8 @@ struct VertexBuffer {
   IndexType index_type = IndexType::kUnknown;
 
   constexpr operator bool() const {
-    return static_cast<bool>(vertex_buffer); // && static_cast<bool>(index_buffer);
+    return static_cast<bool>(vertex_buffer) &&
+           (index_type == IndexType::kNone || static_cast<bool>(index_buffer));
   }
 };
 

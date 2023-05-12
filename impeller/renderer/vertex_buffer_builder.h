@@ -75,9 +75,14 @@ class VertexBufferBuilder {
   VertexBuffer CreateVertexBuffer(HostBuffer& host_buffer) const {
     VertexBuffer buffer;
     buffer.vertex_buffer = CreateVertexBufferView(host_buffer);
-    buffer.index_buffer = CreateIndexBufferView(host_buffer);
-    buffer.index_count = GetIndexCount();
-    buffer.index_type = GetIndexType();
+    if (indices_.size() == 0) {
+      buffer.index_count = GetVertexCount();
+      buffer.index_type = impeller::IndexType::kNone;
+    } else {
+      buffer.index_buffer = CreateIndexBufferView(host_buffer);
+      buffer.index_count = GetIndexCount();
+      buffer.index_type = GetIndexType();
+    }
     return buffer;
   };
 

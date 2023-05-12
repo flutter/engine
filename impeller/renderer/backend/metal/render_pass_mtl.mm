@@ -489,10 +489,11 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
 
     if (command.index_type == IndexType::kNone) {
+      auto vtx_buffer = command.GetVertexBuffer();
       [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
             vertexStart:command.base_vertex
             vertexCount:command.index_count];
-      return true;
+      continue;
     }
 
     if (command.index_type == IndexType::kUnknown) {
