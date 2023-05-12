@@ -1842,12 +1842,12 @@ public class AccessibilityBridgeTest {
     Context context = mock(Context.class);
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
-    AccessibilityBridge accessibilityBridge =
-        setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null, null);
-
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
     when(mockManager.isEnabled()).thenReturn(true);
+
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null, null);
 
     HashMap<String, Object> arguments = new HashMap<>();
     arguments.put("type", "focus");
