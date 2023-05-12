@@ -1855,13 +1855,10 @@ public class AccessibilityBridgeTest {
     BasicMessageChannel.Reply reply = mock(BasicMessageChannel.Reply.class);
     accessibilityChannel.parsingMessageHandler.onMessage(arguments, reply);
 
-
-
-        // Check that focus event was sent.
-        ArgumentCaptor<AccessibilityEvent> eventCaptor =
+    // Check that focus event was sent.
+    ArgumentCaptor<AccessibilityEvent> eventCaptor =
         ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent)
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
+    verify(mockParent).requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
     AccessibilityEvent event = eventCaptor.getAllValues().get(0);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_VIEW_FOCUSED);
   }
