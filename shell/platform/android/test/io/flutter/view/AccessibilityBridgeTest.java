@@ -1843,7 +1843,7 @@ public class AccessibilityBridgeTest {
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
-        setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null);
+        setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null, null);
 
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
