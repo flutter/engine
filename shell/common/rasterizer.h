@@ -502,7 +502,7 @@ class Rasterizer final : public SnapshotDelegate,
  private:
   // The result of `DoDraw`.
   //
-  // Normally `DrDraw` returns simply a raster status. However, sometimes we
+  // Normally `DoDraw` returns simply a raster status. However, sometimes we
   // need to attempt to rasterize the layer tree again. This happens when
   // layer_tree has not successfully rasterized due to changes in the thread
   // configuration, in which case the resubmitted task will be inserted to the
