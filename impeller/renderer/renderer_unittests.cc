@@ -163,7 +163,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     vertex_buffer.index_buffer = {
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
-    vertex_buffer.index_count = 36;
+    vertex_buffer.vertex_count = 36;
     vertex_buffer.index_type = IndexType::k16bit;
   }
 
@@ -1007,7 +1007,16 @@ TEST_P(RendererTest, DefaultIndexSize) {
   // Default to 16bit index buffer size, as this is a reasonable default and
   // supported on all backends without extensions.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.AppendIndex(0u);
   ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, DefaultIndexBehavior) {
+  using VS = BoxFadeVertexShader;
+
+  // Do not create any index buffer if no indices were provided.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::kNone);
 }
 
 TEST_P(RendererTest, VertexBufferBuilder) {
