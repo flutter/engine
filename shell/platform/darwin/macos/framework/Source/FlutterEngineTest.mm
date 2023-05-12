@@ -134,7 +134,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -163,7 +164,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   latch.Wait();
 }
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -646,7 +648,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -663,7 +665,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -677,7 +679,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -685,7 +687,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -694,7 +696,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {

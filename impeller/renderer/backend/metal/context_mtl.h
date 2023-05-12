@@ -14,7 +14,6 @@
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
-#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
@@ -23,7 +22,8 @@
 namespace impeller {
 
 class ContextMTL final : public Context,
-                         public BackendCast<ContextMTL, Context> {
+                         public BackendCast<ContextMTL, Context>,
+                         public std::enable_shared_from_this<ContextMTL> {
  public:
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::string>& shader_library_paths);
@@ -36,6 +36,9 @@ class ContextMTL final : public Context,
   ~ContextMTL() override;
 
   id<MTLDevice> GetMTLDevice() const;
+
+  // |Context|
+  std::string DescribeGpuModel() const override;
 
   // |Context|
   bool IsValid() const override;
@@ -56,13 +59,12 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  std::shared_ptr<GPUTracer> GetGPUTracer() const override;
-
-  // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
   bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
+
+  id<MTLCommandBuffer> CreateMTLCommandBuffer() const;
 
  private:
   id<MTLDevice> device_ = nullptr;
@@ -71,7 +73,6 @@ class ContextMTL final : public Context,
   std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
-  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   bool is_valid_ = false;
 

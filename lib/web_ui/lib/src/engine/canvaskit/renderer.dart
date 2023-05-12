@@ -6,27 +6,8 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../embedder.dart';
-import '../html_image_codec.dart';
-import '../initialization.dart';
-import '../profiler.dart';
-import '../renderer.dart';
-import 'canvaskit_api.dart';
-import 'canvaskit_canvas.dart';
-import 'fonts.dart';
-import 'image.dart';
-import 'image_filter.dart';
-import 'layer_scene_builder.dart';
-import 'painting.dart';
-import 'path.dart';
-import 'picture_recorder.dart';
-import 'rasterizer.dart';
-import 'shader.dart';
-import 'text.dart';
-import 'vertices.dart';
 
 enum CanvasKitVariant {
   /// The appropriate variant is chosen based on the browser.
@@ -48,6 +29,8 @@ class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;
 
+  Future<void>? _initialized;
+
   @override
   String get rendererTag => 'canvaskit';
 
@@ -66,14 +49,16 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   Future<void> initialize() async {
-    if (windowFlutterCanvasKit != null) {
-      canvasKit = windowFlutterCanvasKit!;
-    } else {
-      canvasKit = await downloadCanvasKit();
-      windowFlutterCanvasKit = canvasKit;
-    }
-
-    _instance = this;
+    _initialized ??= () async {
+      if (windowFlutterCanvasKit != null) {
+        canvasKit = windowFlutterCanvasKit!;
+      } else {
+        canvasKit = await downloadCanvasKit();
+        windowFlutterCanvasKit = canvasKit;
+      }
+      _instance = this;
+    }();
+    return _initialized;
   }
 
   @override
@@ -138,8 +123,6 @@ class CanvasKitRenderer implements Renderer {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-    ui.Offset? focal,
-    double focalRadius = 0.0,
   ]) => CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
 
   @override
@@ -404,4 +387,27 @@ class CanvasKitRenderer implements Renderer {
       return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => EngineLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }

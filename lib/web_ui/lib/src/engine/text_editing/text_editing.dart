@@ -12,7 +12,6 @@ import 'package:ui/ui.dart' as ui;
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
-import '../host_node.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
 import '../semantics.dart';
@@ -51,7 +50,8 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow;
+DomElement get defaultTextEditingRoot =>
+    flutterViewEmbedder.textEditingHostNode;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -1415,9 +1415,12 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Prevent default behavior for mouse down, up and move.
   ///
-  /// When normal mouse events are not prevented, in desktop browsers, mouse
-  /// selection conflicts with selection sent from the framework, which creates
+  /// When normal mouse events are not prevented, mouse selection
+  /// conflicts with selection sent from the framework, which creates
   /// flickering during selection by mouse.
+  ///
+  /// On mobile browsers, mouse events are sent after a touch event,
+  /// see: https://bugs.chromium.org/p/chromium/issues/detail?id=119216#c11.
   void preventDefaultForMouseEvents() {
     subscriptions.add(
         DomSubscription(activeDomElement, 'mousedown', (_) {
@@ -1704,6 +1707,8 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
             }));
+
+    preventDefaultForMouseEvents();
   }
 
   @override

@@ -10,11 +10,18 @@
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
+
+namespace testing {
+class BlitCommandVkTest_BlitCopyTextureToTextureCommandVK_Test;
+class BlitCommandVkTest_BlitCopyTextureToBufferCommandVK_Test;
+class BlitCommandVkTest_BlitGenerateMipmapCommandVK_Test;
+}  // namespace testing
 
 class ContextVK;
 class DeviceBuffer;
@@ -35,7 +42,11 @@ class CommandEncoderVK {
 
   bool Track(std::shared_ptr<const DeviceBuffer> buffer);
 
+  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
+
   bool Track(const std::shared_ptr<const Texture>& texture);
+
+  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
 
   bool Track(std::shared_ptr<const TextureSourceVK> texture);
 
@@ -52,14 +63,20 @@ class CommandEncoderVK {
 
  private:
   friend class ContextVK;
+  friend class ::impeller::testing::
+      BlitCommandVkTest_BlitCopyTextureToTextureCommandVK_Test;
+  friend class ::impeller::testing::
+      BlitCommandVkTest_BlitCopyTextureToBufferCommandVK_Test;
+  friend class ::impeller::testing::
+      BlitCommandVkTest_BlitGenerateMipmapCommandVK_Test;
 
-  vk::Device device_ = {};
+  std::weak_ptr<const DeviceHolder> device_holder_;
   std::shared_ptr<QueueVK> queue_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   bool is_valid_ = false;
 
-  CommandEncoderVK(vk::Device device,
+  CommandEncoderVK(std::weak_ptr<const DeviceHolder> device_holder,
                    const std::shared_ptr<QueueVK>& queue,
                    const std::shared_ptr<CommandPoolVK>& pool,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);

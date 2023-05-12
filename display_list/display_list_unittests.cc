@@ -92,6 +92,22 @@ class DisplayListTestBase : public BaseT {
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
 
+TEST_F(DisplayListTest, EmptyBuild) {
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->op_count(), 0u);
+  EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+}
+
+TEST_F(DisplayListTest, EmptyRebuild) {
+  DisplayListBuilder builder;
+  auto dl1 = builder.Build();
+  auto dl2 = builder.Build();
+  auto dl3 = builder.Build();
+  ASSERT_TRUE(dl1->Equals(dl2));
+  ASSERT_TRUE(dl2->Equals(dl3));
+}
+
 TEST_F(DisplayListTest, BuilderCanBeReused) {
   DisplayListBuilder builder(kTestBounds);
   builder.DrawRect(kTestBounds, DlPaint());
@@ -2532,81 +2548,79 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
   main_receiver.drawRect({20, 20, 30, 30});
   auto main = main_builder.Build();
 
+  auto test = [main](SkIRect cull_rect, const sk_sp<DisplayList>& expected) {
+    {  // Test SkIRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), cull_rect);
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+
+    {  // Test SkRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), SkRect::Make(cull_rect));
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+  };
+
   {  // No rects
-    SkRect cull_rect = {11, 11, 19, 19};
+    SkIRect cull_rect = {11, 11, 19, 19};
 
     DisplayListBuilder expected_builder;
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 1
-    SkRect cull_rect = {9, 9, 19, 19};
+    SkIRect cull_rect = {9, 9, 19, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 0, 10, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 2
-    SkRect cull_rect = {11, 9, 21, 19};
+    SkIRect cull_rect = {11, 9, 21, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 0, 30, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 3
-    SkRect cull_rect = {9, 11, 19, 21};
+    SkIRect cull_rect = {9, 11, 19, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 20, 10, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 4
-    SkRect cull_rect = {11, 11, 21, 21};
+    SkIRect cull_rect = {11, 11, 21, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 20, 30, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // All 4 rects
-    SkRect cull_rect = {9, 9, 21, 21};
+    SkIRect cull_rect = {9, 9, 21, 21};
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
+    test(cull_rect, main);
   }
 }
 

@@ -163,6 +163,7 @@ source_set("ui") {
 
   public_deps = [
     "//flutter/flow",
+    "//flutter/shell/common:display",
     "//flutter/shell/common:platform_message_handler",
     "//flutter/third_party/txt",
   ]
@@ -193,7 +194,10 @@ source_set("ui") {
       "painting/image_encoding_impeller.h",
     ]
 
-    deps += [ "//flutter/impeller" ]
+    deps += [
+      "//flutter/impeller",
+      "//flutter/impeller/display_list:skia_conversions",
+    ]
   }
 
   if (!defined(defines)) {
@@ -227,6 +231,7 @@ if (enable_unittests) {
       "fixtures/DisplayP3Logo.png",
       "fixtures/Horizontal.jpg",
       "fixtures/Horizontal.png",
+      "fixtures/heart_end.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",

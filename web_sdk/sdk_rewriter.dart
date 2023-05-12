@@ -49,6 +49,7 @@ import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
 import 'dart:js_interop' hide JS;
+import 'dart:js_interop_unsafe';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -76,6 +77,7 @@ List<Replacer> generatePartsPatterns(String libraryName, bool isPublic) {
     // Remove imports/exports from all part files.
     AllReplacer(RegExp(r'\nimport\s*.*'), ''),
     AllReplacer(RegExp(r'\nexport\s*.*'), ''),
+    AllReplacer(RegExp(r'\n@DefaultAsset(.*)'), ''),
   ];
 }
 
@@ -175,10 +177,6 @@ List<String> getExtraImportsForLibrary(String libraryName) {
       extraImports.add(entry.value);
     }
   }
-
-  if (libraryName == 'skwasm_impl') {
-    extraImports.add("import 'dart:ffi';");
-  }
   return extraImports;
 }
 
@@ -237,6 +235,17 @@ String validateApiFile(String apiFilePath, String apiFileCode, String libraryNam
 
     if (line.startsWith('export')) {
       // Exports are OK
+      continue;
+    }
+
+    if (line.startsWith('@DefaultAsset')) {
+      // Default asset annotations are OK
+      continue;
+    }
+
+    if (line.startsWith("import 'dart:ffi';")) {
+      // dart:ffi import is an exception to the import rule, since the
+      // @DefaultAsset annotation comes from dart:ffi.
       continue;
     }
 

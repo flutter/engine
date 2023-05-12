@@ -230,7 +230,7 @@ final Float32List _tempRectData = Float32List(4);
 /// The resulting rect is aligned to the pixel grid, i.e. two of
 /// its sides are vertical and two are horizontal. In the presence of rotations
 /// the rectangle is inflated such that it fits the rotated rectangle.
-ui.Rect transformRect(Matrix4 transform, ui.Rect rect) {
+ui.Rect transformRectWithMatrix(Matrix4 transform, ui.Rect rect) {
   _tempRectData[0] = rect.left;
   _tempRectData[1] = rect.top;
   _tempRectData[2] = rect.right;
@@ -339,20 +339,15 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.bottom >= other.bottom;
 }
 
-/// Converts color to a css compatible attribute value.
-String? colorToCssString(ui.Color? color) {
-  if (color == null) {
-    return null;
+extension CssColor on ui.Color {
+  /// Converts color to a css compatible attribute value.
+  String toCssString() {
+    return colorValueToCssString(value);
   }
-  final int value = color.value;
-  return colorValueToCssString(value);
 }
 
 // Converts a color value (as an int) into a CSS-compatible value.
-String? colorValueToCssString(int? value) {
-  if (value == null) {
-    return null;
-  }
+String colorValueToCssString(int value) {
   if (value == 0xFF000000) {
     return '#000000';
   }
@@ -679,16 +674,21 @@ void setClipPath(DomElement element, String? value) {
   }
 }
 
-void setThemeColor(ui.Color color) {
+void setThemeColor(ui.Color? color) {
   DomHTMLMetaElement? theme =
       domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
-  if (theme == null) {
-    theme = createDomHTMLMetaElement()
-      ..id = 'flutterweb-theme'
-      ..name = 'theme-color';
-    domDocument.head!.append(theme);
+
+  if (color != null) {
+    if (theme == null) {
+      theme = createDomHTMLMetaElement()
+        ..id = 'flutterweb-theme'
+        ..name = 'theme-color';
+      domDocument.head!.append(theme);
+    }
+    theme.content = color.toCssString();
+  } else {
+    theme?.remove();
   }
-  theme.content = colorToCssString(color)!;
 }
 
 bool? _ellipseFeatureDetected;

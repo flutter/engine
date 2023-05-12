@@ -13,8 +13,13 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
 FLUTTER_ASSERT_ARC
+
+@interface FlutterEngine () <FlutterTextInputDelegate>
+
+@end
 
 @interface FlutterEngineTest : XCTestCase
 @end
@@ -311,6 +316,29 @@ FLUTTER_ASSERT_ARC
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
     XCTAssertTrue(engine.enableEmbedderAPI);
   }
+}
+
+- (void)testFlutterTextInputViewDidResignFirstResponderWillCallTextInputClientConnectionClosed {
+  id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine setBinaryMessenger:mockBinaryMessenger];
+  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
+  [engine flutterTextInputView:nil didResignFirstResponderWithTextInputClient:1];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.onConnectionClosed"
+                                        arguments:@[ @(1) ]];
+  NSData* encodedMethodCall = [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:methodCall];
+  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/textinput" message:encodedMethodCall]);
+}
+
+- (void)testFlutterEngineUpdatesDisplays {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  id mockEngine = OCMPartialMock(engine);
+
+  [engine run];
+  OCMVerify(times(1), [mockEngine updateDisplays]);
+  engine.viewController = nil;
+  OCMVerify(times(2), [mockEngine updateDisplays]);
 }
 
 @end
