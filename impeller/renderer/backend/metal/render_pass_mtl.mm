@@ -491,8 +491,8 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (command.index_type == IndexType::kNone) {
       auto vtx_buffer = command.GetVertexBuffer();
       [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
-            vertexStart:command.base_vertex
-            vertexCount:command.index_count];
+                  vertexStart:command.base_vertex
+                  vertexCount:command.index_count];
       continue;
     }
 
