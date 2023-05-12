@@ -26,3 +26,10 @@ jobs:
         run: python ci/deps_parser.py
       - name: "scan deps for vulnerabilities"
         run: python ci/scan_flattened_deps.py
+      # Upload the results as artifacts.
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: SARIF file
+          path: osvReport.sarif
+          retention-days: 5
