@@ -75,7 +75,8 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 #if false
     return std::make_unique<AndroidContextVulkanImpeller>(enable_vulkan_validation);
 #else
-    return std::make_unique<AndroidContextGLImpeller>();
+    return std::make_unique<AndroidContextGLImpeller>(
+        std::make_unique<impeller::egl::Display>());
 #endif
   }
   return std::make_unique<AndroidContextGLSkia>(

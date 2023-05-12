@@ -13,7 +13,8 @@ namespace flutter {
 
 class AndroidContextGLImpeller : public AndroidContext {
  public:
-  AndroidContextGLImpeller();
+  explicit AndroidContextGLImpeller(
+      std::unique_ptr<impeller::egl::Display> display);
 
   ~AndroidContextGLImpeller();
 

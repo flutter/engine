@@ -79,12 +79,13 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
   return context;
 }
 
-AndroidContextGLImpeller::AndroidContextGLImpeller()
+AndroidContextGLImpeller::AndroidContextGLImpeller(
+    std::unique_ptr<impeller::egl::Display> display)
     : AndroidContext(AndroidRenderingAPI::kOpenGLES),
-      reactor_worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())) {
-  auto display = std::make_unique<impeller::egl::Display>();
-  if (!display->IsValid()) {
-    FML_DLOG(ERROR) << "Could not create EGL display.";
+      reactor_worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
+      display_(std::move(display)) {
+  if (!display_->IsValid()) {
+    FML_DLOG(ERROR) << "Could not create context with invalid EGL display.";
     return;
   }
 
@@ -97,7 +98,7 @@ AndroidContextGLImpeller::AndroidContextGLImpeller()
 
   desc.surface_type = impeller::egl::SurfaceType::kWindow;
   std::unique_ptr<impeller::egl::Config> onscreen_config =
-      display->ChooseConfig(desc);
+      display_->ChooseConfig(desc);
   if (!onscreen_config) {
     // Fallback for Android emulator.
     desc.samples = impeller::egl::Samples::kOne;
@@ -169,7 +170,6 @@ AndroidContextGLImpeller::AndroidContextGLImpeller()
     FML_DLOG(ERROR) << "Could not add lifecycle listeners";
   }
 
-  display_ = std::move(display);
   onscreen_config_ = std::move(onscreen_config);
   offscreen_config_ = std::move(offscreen_config);
   onscreen_context_ = std::move(onscreen_context);
