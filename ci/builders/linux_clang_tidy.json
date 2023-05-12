@@ -41,8 +41,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
-                "cpu=arm64"
+                "os=Linux"
             ],
             "gclient_variables": {
                 "download_android_deps": false
@@ -66,19 +65,18 @@
             ]
         },
         {
-            "name": "test: lint ios_debug_sim",
+            "name": "test: lint android_debug_arm64",
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
-                "cpu=arm64"
+                "os=Linux"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
                 "host_debug",
-                "ios_debug_sim"
+                "android_debug_arm64"
             ],
             "tasks": [
                 {
