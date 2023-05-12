@@ -45,6 +45,17 @@ static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
   return supports_subgroups;
 }
 
+static bool SupportsDisabledRasterization() {
+  // TOOD(jonahwilliams): on macOS playgrounds there seems to be some alignment
+  // issues with the device buffers but I haven't been able to trigger any sort
+  // of validation warnings. Disabling there for now.
+#if FML_OS_IOS
+  return true;
+#else
+  return false;
+#endif  // FML_OS_IOS
+}
+
 static std::unique_ptr<Capabilities> InferMetalCapabilities(
     id<MTLDevice> device,
     PixelFormat color_format) {
@@ -62,7 +73,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
-      .SetSupportsDisabledRasterization(true)
+      .SetSupportsDisabledRasterization(SupportsDisabledRasterization())
       .Build();
 }
 
