@@ -16,9 +16,9 @@
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just

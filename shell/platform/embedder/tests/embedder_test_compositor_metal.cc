@@ -30,12 +30,12 @@ bool EmbedderTestCompositorMetal::UpdateOffscrenComposition(
 
   auto surface =
       SkSurfaces::RenderTarget(context_.get(),            // context
-                                  skgpu::Budgeted::kNo,      // budgeted
-                                  image_info,                // image info
-                                  1,                         // sample count
-                                  kTopLeft_GrSurfaceOrigin,  // surface origin
-                                  nullptr,  // surface properties
-                                  false     // create mipmaps
+                               skgpu::Budgeted::kNo,      // budgeted
+                               image_info,                // image info
+                               1,                         // sample count
+                               kTopLeft_GrSurfaceOrigin,  // surface origin
+                               nullptr,                   // surface properties
+                               false                      // create mipmaps
       );
 
   if (!surface) {

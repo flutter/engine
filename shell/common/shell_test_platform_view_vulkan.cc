@@ -197,8 +197,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     const SkISize& size) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
-  auto surface = SkSurfaces::RenderTarget(
-      context_.get(), skgpu::Budgeted::kNo, image_info, 0, nullptr);
+  auto surface = SkSurfaces::RenderTarget(context_.get(), skgpu::Budgeted::kNo,
+                                          image_info, 0, nullptr);
   SurfaceFrame::SubmitCallback callback = [](const SurfaceFrame&,
                                              DlCanvas* canvas) -> bool {
     canvas->Flush();

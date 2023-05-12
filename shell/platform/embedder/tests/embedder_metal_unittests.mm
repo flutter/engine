@@ -66,8 +66,8 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
                                    info);
 
   return SkSurfaces::WrapBackendTexture(skia_context.get(), backend_texture,
-                                           kTopLeft_GrSurfaceOrigin, 1, kBGRA_8888_SkColorType,
-                                           nullptr, nullptr);
+                                        kTopLeft_GrSurfaceOrigin, 1, kBGRA_8888_SkColorType,
+                                        nullptr, nullptr);
 }
 
 TEST_F(EmbedderTest, ExternalTextureMetal) {

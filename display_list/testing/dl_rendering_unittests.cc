@@ -2381,8 +2381,8 @@ class CanvasCompareTester {
 
   static const sk_sp<SkImage> kTestImage;
   static const sk_sp<SkImage> makeTestImage() {
-    sk_sp<SkSurface> surface =
-        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(kRenderWidth, kRenderHeight));
+    sk_sp<SkSurface> surface = SkSurfaces::Raster(
+        SkImageInfo::MakeN32Premul(kRenderWidth, kRenderHeight));
     SkCanvas* canvas = surface->getCanvas();
     SkPaint p0, p1;
     p0.setStyle(SkPaint::kFill_Style);

@@ -783,13 +783,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     delete captures;
   };
 
-  auto surface = SkSurfaces::WrapPixels(
-      image_info,                               // image info
-      const_cast<void*>(software->allocation),  // pixels
-      software->row_bytes,                      // row bytes
-      release_proc,                             // release proc
-      captures.get()                            // get context
-  );
+  auto surface =
+      SkSurfaces::WrapPixels(image_info,  // image info
+                             const_cast<void*>(software->allocation),  // pixels
+                             software->row_bytes,  // row bytes
+                             release_proc,         // release proc
+                             captures.get()        // get context
+      );
 
   if (!surface) {
     FML_LOG(ERROR)
@@ -831,13 +831,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     }
   };
 
-  auto surface = SkSurfaces::WrapPixels(
-      image_info,                               // image info
-      const_cast<void*>(software->allocation),  // pixels
-      software->row_bytes,                      // row bytes
-      release_proc,                             // release proc
-      captures.release()                        // release context
-  );
+  auto surface =
+      SkSurfaces::WrapPixels(image_info,  // image info
+                             const_cast<void*>(software->allocation),  // pixels
+                             software->row_bytes,  // row bytes
+                             release_proc,         // release proc
+                             captures.release()    // release context
+      );
 
   if (!surface) {
     FML_LOG(ERROR)

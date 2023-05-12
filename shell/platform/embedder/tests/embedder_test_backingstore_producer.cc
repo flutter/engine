@@ -83,15 +83,15 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
   const auto image_info =
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurfaces::RenderTarget(
-      context_.get(),               // context
-      skgpu::Budgeted::kNo,         // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kBottomLeft_GrSurfaceOrigin,  // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
-  );
+  auto surface =
+      SkSurfaces::RenderTarget(context_.get(),               // context
+                               skgpu::Budgeted::kNo,         // budgeted
+                               image_info,                   // image info
+                               1,                            // sample count
+                               kBottomLeft_GrSurfaceOrigin,  // surface origin
+                               nullptr,  // surface properties
+                               false     // mipmaps
+      );
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not create render target for compositor layer.";
@@ -136,15 +136,15 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
   const auto image_info =
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurfaces::RenderTarget(
-      context_.get(),               // context
-      skgpu::Budgeted::kNo,         // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kBottomLeft_GrSurfaceOrigin,  // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
-  );
+  auto surface =
+      SkSurfaces::RenderTarget(context_.get(),               // context
+                               skgpu::Budgeted::kNo,         // budgeted
+                               image_info,                   // image info
+                               1,                            // sample count
+                               kBottomLeft_GrSurfaceOrigin,  // surface origin
+                               nullptr,  // surface properties
+                               false     // mipmaps
+      );
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not create render target for compositor layer.";

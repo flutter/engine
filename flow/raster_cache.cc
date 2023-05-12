@@ -65,8 +65,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   sk_sp<SkSurface> surface =
       context.gr_context
-          ? SkSurfaces::RenderTarget(context.gr_context,
-                                        skgpu::Budgeted::kYes, image_info)
+          ? SkSurfaces::RenderTarget(context.gr_context, skgpu::Budgeted::kYes,
+                                     image_info)
           : SkSurfaces::Raster(image_info);
 
   if (!surface) {

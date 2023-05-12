@@ -434,11 +434,11 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
 
   auto sk_surface =
       SkSurfaces::WrapBackendRenderTarget(context.get(),             //
-                                             sk_render_target,          //
-                                             kTopLeft_GrSurfaceOrigin,  //
-                                             color_type,                //
-                                             SkColorSpace::MakeSRGB(),  //
-                                             &sk_surface_props          //
+                                          sk_render_target,          //
+                                          kTopLeft_GrSurfaceOrigin,  //
+                                          color_type,                //
+                                          SkColorSpace::MakeSRGB(),  //
+                                          &sk_surface_props          //
       );
 
   if (!sk_surface || sk_surface->getCanvas() == nullptr) {
