@@ -93,4 +93,3 @@ else
   zip_and_upload_xcresult_to_luci "ios_scenario_impeller_xcresult.zip"
 fi
 rm -rf $RESULT_BUNDLE_PATH
-
