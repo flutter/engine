@@ -308,7 +308,7 @@ enum class IndexType {
   kUnknown,
   k16bit,
   k32bit,
-  // Do not use the index buffer.
+  /// Does not use the index buffer.
   kNone,
 };
 

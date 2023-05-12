@@ -12,7 +12,9 @@ namespace impeller {
 struct VertexBuffer {
   BufferView vertex_buffer;
   BufferView index_buffer;
-  size_t index_count = 0u;
+  // The total count of vertices, either in the vertex_buffer if the
+  // index_type is IndexType::kNone or in the index_buffer otherwise.
+  size_t vertex_count = 0u;
   IndexType index_type = IndexType::kUnknown;
 
   constexpr operator bool() const {
