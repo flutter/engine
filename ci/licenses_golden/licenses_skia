@@ -1,4 +1,4 @@
-Signature: 7a9c900c7b174e2304a215673ad5dc1d
+Signature: 5aaa9c8cf40b7197667445f3cb2df0c2
 
 ====================================================================================================
 LIBRARY: etc1
@@ -4041,8 +4041,8 @@ ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLDoStatement.h + ../../../third
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLExpression.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLExpressionStatement.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLExtension.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLField.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLFieldAccess.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLFieldSymbol.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLForStatement.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLFunctionCall.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.h + ../../../third_party/skia/LICENSE
@@ -4355,8 +4355,8 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLDoStatement.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpressionStatement.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExtension.h
-FILE: ../../../third_party/skia/src/sksl/ir/SkSLField.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFieldAccess.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLFieldSymbol.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLForStatement.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionCall.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.h
