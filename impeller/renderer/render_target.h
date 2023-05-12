@@ -53,6 +53,12 @@ class RenderTarget final {
       .store_action = StoreAction::kDontCare,
       .clear_color = Color::BlackTransparent()};
 
+  static constexpr AttachmentConfig kDefaultColorAttachmentConfigNonRendering = {
+      .storage_mode = StorageMode::kDevicePrivate,
+      .load_action = LoadAction::kDontCare,
+      .store_action = StoreAction::kDontCare,
+      .clear_color = Color::BlackTransparent()};
+
   static RenderTarget CreateOffscreen(
       const Context& context,
       ISize size,

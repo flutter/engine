@@ -875,7 +875,14 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   // Ensure correct synchronization by submitting vertex computation into
   // a different render pass.
   {
-    auto render_target = pass.GetRenderTarget();
+    auto render_target = RenderTarget::CreateOffscreen(
+        *renderer.GetContext(),  // context
+        {1, 1},                  // size
+        "Geometry Snapshot",     // label
+        RenderTarget::
+            kDefaultColorAttachmentConfigNonRendering,  // color_attachment_config
+        std::nullopt  // stencil_attachment_config
+    );
     auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
     auto vertex_render_pass = cmd_buffer->CreateRenderPass(render_target);
 
