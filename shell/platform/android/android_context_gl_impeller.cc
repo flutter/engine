@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 
-#include "android_context_gl_impeller.h"
 #include "flutter/impeller/renderer/backend/gles/context_gles.h"
 #include "flutter/impeller/renderer/backend/gles/proc_table_gles.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
@@ -84,7 +83,7 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
     : AndroidContext(AndroidRenderingAPI::kOpenGLES),
       reactor_worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
       display_(std::move(display)) {
-  if (!display_->IsValid()) {
+  if (!display_ || !display_->IsValid()) {
     FML_DLOG(ERROR) << "Could not create context with invalid EGL display.";
     return;
   }
@@ -102,7 +101,7 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
   if (!onscreen_config) {
     // Fallback for Android emulator.
     desc.samples = impeller::egl::Samples::kOne;
-    onscreen_config = display->ChooseConfig(desc);
+    onscreen_config = display_->ChooseConfig(desc);
     if (onscreen_config) {
       FML_LOG(INFO) << "Warning: This device doesn't support MSAA for onscreen "
                        "framebuffers. Falling back to a single sample.";
@@ -113,20 +112,20 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
   }
 
   desc.surface_type = impeller::egl::SurfaceType::kPBuffer;
-  auto offscreen_config = display->ChooseConfig(desc);
+  auto offscreen_config = display_->ChooseConfig(desc);
   if (!offscreen_config) {
     FML_DLOG(ERROR) << "Could not choose offscreen config.";
     return;
   }
 
-  auto onscreen_context = display->CreateContext(*onscreen_config, nullptr);
+  auto onscreen_context = display_->CreateContext(*onscreen_config, nullptr);
   if (!onscreen_context) {
     FML_DLOG(ERROR) << "Could not create onscreen context.";
     return;
   }
 
   auto offscreen_context =
-      display->CreateContext(*offscreen_config, onscreen_context.get());
+      display_->CreateContext(*offscreen_config, onscreen_context.get());
   if (!offscreen_context) {
     FML_DLOG(ERROR) << "Could not create offscreen context.";
     return;
@@ -135,7 +134,7 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
   // Creating the impeller::Context requires a current context, which requires
   // some surface.
   auto offscreen_surface =
-      display->CreatePixelBufferSurface(*offscreen_config, 1u, 1u);
+      display_->CreatePixelBufferSurface(*offscreen_config, 1u, 1u);
   if (!offscreen_context->MakeCurrent(*offscreen_surface)) {
     FML_DLOG(ERROR) << "Could not make offscreen context current.";
     return;
