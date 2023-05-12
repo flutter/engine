@@ -57,6 +57,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.robolectric.annotation.Config;
 
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.BasicMessageChannel;
+import java.util.HashMap;
+
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
 @TargetApi(19)
