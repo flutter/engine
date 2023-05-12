@@ -50,9 +50,9 @@ RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
 # Zip and upload xcresult to luci.
 # First parameter ($1) is the zip output name.
 zip_and_upload_xcresult_to_luci () {
-  # Using absolute directory causes the zip containing all the sub directories.
-  # So use relative directory (./$RESULT_BUNDLE_FOLDER) instead.
-  zip -q -r $1 $RESULT_BUNDLE_PATH
+  # We don't want the zip to contain the abusolute path,
+  # so use relative path (./$RESULT_BUNDLE_FOLDER) instead.
+  zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
   mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
   exit 1
 }
