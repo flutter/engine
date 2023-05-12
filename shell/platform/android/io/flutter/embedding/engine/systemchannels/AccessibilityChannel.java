@@ -24,8 +24,7 @@ public class AccessibilityChannel {
   @NonNull public final FlutterJNI flutterJNI;
   @Nullable private AccessibilityMessageHandler handler;
 
-  @VisibleForTesting
-  final BasicMessageChannel.MessageHandler<Object> parsingMessageHandler =
+  public final BasicMessageChannel.MessageHandler<Object> parsingMessageHandler =
       new BasicMessageChannel.MessageHandler<Object>() {
         @Override
         public void onMessage(
