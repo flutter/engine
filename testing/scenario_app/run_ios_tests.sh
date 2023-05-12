@@ -62,7 +62,6 @@ echo "Running simulator tests with Skia"
 echo ""
 
 mktemp -d $RESULT_BUNDLE_PATH
-trap 'rm -rf $RESULT_BUNDLE_PATH' EXIT
 
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
@@ -75,6 +74,7 @@ else
   echo "test failed."
   ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_xcresult.zip"
 fi
+rm -rf $RESULT_BUNDLE_PATH
 
 echo "Running simulator tests with Impeller"
 echo ""
@@ -93,3 +93,4 @@ else
   echo "test failed."
   ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_impeller_xcresult.zip"
 fi
+rm -rf $RESULT_BUNDLE_PATH
