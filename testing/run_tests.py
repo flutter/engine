@@ -754,9 +754,8 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
         BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
 
-    with tempfile.TemporaryDirectory(
-        suffix='ios_embedding_xcresult'
-    ) as result_bundle_temp:
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
+                                    ) as result_bundle_temp:
       result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
 
       # Avoid using xcpretty unless the following can be addressed:
@@ -781,9 +780,13 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
       # for additional output files that will be uploaded to cloud storage.
       # Upload the xcresult when the tests fail.
       luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
-      xcresult_bundle = os.path.join(result_bundle_temp, 'ios_embedding.xcresult')
+      xcresult_bundle = os.path.join(
+          result_bundle_temp, 'ios_embedding.xcresult'
+      )
       if luci_test_outputs_path and os.path.exists(xcresult_bundle):
-        dump_path = os.path.join(luci_test_outputs_path, 'ios_embedding.xcresult')
+        dump_path = os.path.join(
+            luci_test_outputs_path, 'ios_embedding.xcresult'
+        )
         # xcresults contain many little files. Archive the bundle before upload.
         shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
 
