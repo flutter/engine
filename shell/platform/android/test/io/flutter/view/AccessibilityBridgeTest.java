@@ -1831,7 +1831,7 @@ public class AccessibilityBridgeTest {
   public void sendFocusAccessibilityEvent() {
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     AccessibilityChannel accessibilityChannel =
-    new AccessibilityChannel(mock(DartExecutor.class), mock(FlutterJNI.class));
+        new AccessibilityChannel(mock(DartExecutor.class), mock(FlutterJNI.class));
 
     ContentResolver mockContentResolver = mock(ContentResolver.class);
     View mockRootView = mock(View.class);
@@ -1839,7 +1839,7 @@ public class AccessibilityBridgeTest {
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
-        setUpBridge(mockRootView, accessibilityChannel, mockManager, null,null);
+        setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null);
 
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
@@ -1851,12 +1851,11 @@ public class AccessibilityBridgeTest {
     BasicMessageChannel.Reply reply = mock(BasicMessageChannel.Reply.class);
     accessibilityChannel.parsingMessageHandler.onMessage(arguments, reply);
 
-
     AccessibilityEvent event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_VIEW_FOCUSED);
     event.setPackageName("test");
     event.setSource(mockRootView, 123);
 
-    verify(mockParent).requestSendAccessibilityEvent(mockRootView,event);
+    verify(mockParent).requestSendAccessibilityEvent(mockRootView, event);
   }
 
   AccessibilityBridge setUpBridge() {
