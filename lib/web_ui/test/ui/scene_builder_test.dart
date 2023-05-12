@@ -10,6 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/test_initialization.dart';
 import 'utils.dart';
 
 void main() {
@@ -17,7 +18,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   group('${ui.SceneBuilder}', () {
     const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
@@ -33,7 +37,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_centered_circle.png', region: region);
     });
 
@@ -58,7 +61,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_rotated_rounded_square.png', region: region);
     });
 
@@ -74,7 +76,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_circle_clip_rect.png', region: region);
     });
 
@@ -93,7 +94,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_circle_clip_rrect.png', region: region);
     });
 
@@ -110,7 +110,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_rectangle_clip_circular_path.png', region: region);
     });
 
@@ -139,9 +138,48 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_opacity_circles_on_square.png', region: region);
     });
+
+    test('shader mask layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        final ui.Paint paint = ui.Paint()..color = const ui.Color(0xFFFF0000);
+        canvas.drawCircle(
+          const ui.Offset(125, 150),
+          50,
+          paint
+        );
+        canvas.drawCircle(
+          const ui.Offset(175, 150),
+          50,
+          paint
+        );
+      }));
+
+      final ui.Shader shader = ui.Gradient.linear(
+        ui.Offset.zero,
+        const ui.Offset(50, 50), <ui.Color>[
+          const ui.Color(0xFFFFFFFF),
+          const ui.Color(0x00000000),
+        ]);
+      sceneBuilder.pushShaderMask(
+        shader,
+        const ui.Rect.fromLTRB(125, 125, 175, 175),
+        ui.BlendMode.srcATop
+      );
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawRect(
+          ui.Rect.fromCircle(center: const ui.Offset(150, 150), radius: 50),
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+
+      await renderer.renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_shader_mask.png', region: region);
+    }, skip: isFirefox && isHtml); // https://github.com/flutter/flutter/issues/86623
   });
 }
 

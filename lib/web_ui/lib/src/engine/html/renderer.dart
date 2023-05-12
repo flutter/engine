@@ -91,8 +91,6 @@ class HtmlRenderer implements Renderer {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-    ui.Offset? focal,
-    double focalRadius = 0.0,
   ]) => GradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
 
   @override
@@ -341,4 +339,27 @@ class HtmlRenderer implements Renderer {
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     return Future<HtmlFragmentProgram>.value(HtmlFragmentProgram());
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => EngineLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }

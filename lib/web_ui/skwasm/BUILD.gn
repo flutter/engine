@@ -8,12 +8,22 @@ wasm_lib("skwasm") {
   sources = [
     "canvas.cpp",
     "contour_measure.cpp",
+    "data.cpp",
     "export.h",
+    "fonts.cpp",
     "helpers.h",
     "paint.cpp",
     "path.cpp",
     "picture.cpp",
+    "shaders.cpp",
+    "string.cpp",
     "surface.cpp",
+    "text/line_metrics.cpp",
+    "text/paragraph.cpp",
+    "text/paragraph_builder.cpp",
+    "text/paragraph_style.cpp",
+    "text/strut_style.cpp",
+    "text/text_style.cpp",
     "wrappers.h",
   ]
 
@@ -28,25 +38,26 @@ wasm_lib("skwasm") {
     "-sALLOW_TABLE_GROWTH",
     "-sUSE_PTHREADS=1",
     "-lexports.js",
+    "-sEXPORTED_FUNCTIONS=[stackAlloc]",
+    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
+    "-Wno-pthreads-mem-growth",
   ]
-
-  cflags = [ "-pthread" ]
 
   if (is_debug) {
     ldflags += [
       "-sDEMANGLE_SUPPORT=1",
       "-sASSERTIONS=1",
       "-sGL_ASSERTIONS=1",
-      "-g3",
     ]
   } else {
     ldflags += [
       "-Oz",
       "--closure=1",
-      "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-      "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
     ]
   }
 
-  deps = [ "//third_party/skia" ]
+  deps = [
+    "//third_party/skia",
+    "//third_party/skia/modules/skparagraph",
+  ]
 }

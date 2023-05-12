@@ -6,9 +6,9 @@
 library window;
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
@@ -17,7 +17,6 @@ import '../engine.dart' show DimensionsProvider, registerHotRestartListener, ren
 import 'dom.dart';
 import 'navigation/history.dart';
 import 'navigation/js_url_strategy.dart';
-import 'navigation/url_strategy.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
 import 'test_embedding.dart';
@@ -45,6 +44,24 @@ set customUrlStrategy(ui_web.UrlStrategy? strategy) {
   _customUrlStrategy = strategy;
 }
 
+class EngineFlutterDisplay extends ui.Display {
+  EngineFlutterDisplay({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  @override
+  final int id;
+  @override
+  final double devicePixelRatio;
+  @override
+  final ui.Size size;
+  @override
+  final double refreshRate;
+}
+
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   EngineFlutterWindow(this.viewId, this.platformDispatcher) {
@@ -60,6 +77,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       renderer.clearFragmentProgramCache();
       _dimensionsProvider.close();
     });
+  }
+
+  @override
+  ui.Display get display {
+    return EngineFlutterDisplay(
+      id: 0,
+      size: ui.Size(domWindow.screen?.width ?? 0, domWindow.screen?.height ?? 0),
+      devicePixelRatio: domWindow.devicePixelRatio,
+      refreshRate: 60,
+    );
   }
 
   @override
@@ -353,7 +380,7 @@ external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 ui_web.UrlStrategy? _createDefaultUrlStrategy() {
   return ui.debugEmulateFlutterTesterEnvironment
       ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
-      : const HashUrlStrategy();
+      : const ui_web.HashUrlStrategy();
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].

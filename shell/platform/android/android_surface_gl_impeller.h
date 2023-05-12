@@ -17,8 +17,10 @@ namespace flutter {
 class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
                                        public AndroidSurface {
  public:
-  explicit AndroidSurfaceGLImpeller(
-      const std::shared_ptr<AndroidContextGLImpeller>& android_context);
+  AndroidSurfaceGLImpeller(
+      const std::shared_ptr<AndroidContext>& android_context,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      std::unique_ptr<impeller::egl::Display> display);
 
   // |AndroidSurface|
   ~AndroidSurfaceGLImpeller() override;

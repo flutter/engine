@@ -56,6 +56,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsSSBO() const override;
 
   // |Capabilities|
+  bool SupportsBufferToTextureBlits() const override;
+
+  // |Capabilities|
   bool SupportsTextureToTextureBlits() const override;
 
   // |Capabilities|
@@ -69,6 +72,9 @@ class CapabilitiesVK final : public Capabilities,
 
   // |Capabilities|
   bool SupportsReadFromResolve() const override;
+
+  // |Capabilities|
+  bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
   bool SupportsDecalTileMode() const override;
