@@ -42,6 +42,7 @@ fi
 defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
 SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+pushd .
 cd $SCENARIO_PATH
 
 RESULT_BUNDLE_FOLDER="ios_scenario_xcresult"
@@ -93,3 +94,5 @@ else
   zip_and_upload_xcresult_to_luci "ios_scenario_impeller_xcresult.zip"
 fi
 rm -rf $RESULT_BUNDLE_PATH
+
+popd
