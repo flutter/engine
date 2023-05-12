@@ -838,7 +838,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   auto vtx_buffer = VertexBuffer{
       .vertex_buffer = host_buffer.Emplace(
           points_.data(), points_.size() * sizeof(Point), alignof(Point)),
-      .index_count = points_.size(),
+      .vertex_count = points_.size(),
       .index_type = IndexType::kNone,
   };
 
@@ -891,7 +891,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
                                           .range =
                                               Range{0, total * sizeof(Point)}},
-                        .index_count = total,
+                        .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
