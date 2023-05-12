@@ -499,57 +499,58 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                     vertexCount:command.vertex_count
                   instanceCount:command.instance_count
                    baseInstance:0u];
+
+      } else {
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                    vertexStart:command.base_vertex
+                    vertexCount:command.vertex_count];
       }
-    } else {
-      [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
-                  vertexStart:command.base_vertex
-                  vertexCount:command.vertex_count];
+      continue;
     }
-    continue;
-  }
 
-  if (command.index_type == IndexType::kUnknown) {
-    return false;
-  }
-  auto index_buffer = command.index_buffer.buffer;
-  if (!index_buffer) {
-    return false;
-  }
-  auto device_buffer = index_buffer->GetDeviceBuffer(*allocator);
-  if (!device_buffer) {
-    return false;
-  }
-  auto mtl_index_buffer = DeviceBufferMTL::Cast(*device_buffer).GetMTLBuffer();
-  if (!mtl_index_buffer) {
-    return false;
-  }
+    if (command.index_type == IndexType::kUnknown) {
+      return false;
+    }
+    auto index_buffer = command.index_buffer.buffer;
+    if (!index_buffer) {
+      return false;
+    }
+    auto device_buffer = index_buffer->GetDeviceBuffer(*allocator);
+    if (!device_buffer) {
+      return false;
+    }
+    auto mtl_index_buffer =
+        DeviceBufferMTL::Cast(*device_buffer).GetMTLBuffer();
+    if (!mtl_index_buffer) {
+      return false;
+    }
 
-  FML_DCHECK(command.vertex_count *
-                 (command.index_type == IndexType::k16bit ? 2 : 4) ==
-             command.index_buffer.range.length);
+    FML_DCHECK(command.vertex_count *
+                   (command.index_type == IndexType::k16bit ? 2 : 4) ==
+               command.index_buffer.range.length);
 
-  if (command.instance_count != 1u) {
+    if (command.instance_count != 1u) {
 #if TARGET_OS_SIMULATOR
-    VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
-    return false;
+      VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+      return false;
 #endif
-    [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
-                        indexCount:command.vertex_count
-                         indexType:ToMTLIndexType(command.index_type)
-                       indexBuffer:mtl_index_buffer
-                 indexBufferOffset:command.index_buffer.range.offset
-                     instanceCount:command.instance_count
-                        baseVertex:command.base_vertex
-                      baseInstance:0u];
-  } else {
-    [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
-                        indexCount:command.vertex_count
-                         indexType:ToMTLIndexType(command.index_type)
-                       indexBuffer:mtl_index_buffer
-                 indexBufferOffset:command.index_buffer.range.offset];
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
+                          indexCount:command.vertex_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset
+                       instanceCount:command.instance_count
+                          baseVertex:command.base_vertex
+                        baseInstance:0u];
+    } else {
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
+                          indexCount:command.vertex_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset];
+    }
   }
-}
-return true;
+  return true;
 }
 
 }  // namespace impeller
