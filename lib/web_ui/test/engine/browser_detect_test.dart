@@ -157,8 +157,8 @@ void testMain() {
   });
 
   group('browserSupportsCanvasKitChromium', () {
-    late dynamic oldV8BreakIterator = v8BreakIterator;
-    late dynamic oldIntlSegmenter = intlSegmenter;
+    dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldIntlSegmenter = intlSegmenter;
 
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
