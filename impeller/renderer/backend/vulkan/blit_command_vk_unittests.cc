@@ -49,8 +49,8 @@ TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
 TEST(BlitCommandVkTest, BlitCopyBufferToTextureCommandVK) {
   auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context->GetDevice(), context->GetGraphicsQueue(),
-                           pool, context->GetFenceWaiter());
+  CommandEncoderVK encoder(context, context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
   BlitCopyBufferToTextureCommandVK cmd;
   cmd.destination = context->GetResourceAllocator()->CreateTexture({
       .size = ISize(100, 100),
