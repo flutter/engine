@@ -271,7 +271,7 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
                                    GrMipmapped::kNo, skia_texture_info);
 
-  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+  sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,
       kBGRA_8888_SkColorType, nullptr, nullptr);
 
@@ -326,11 +326,11 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  SkSurface::TextureReleaseProc release_vktexture = [](void* user_data) {
+  SkSurfaces::TextureReleaseProc release_vktexture = [](void* user_data) {
     delete reinterpret_cast<TestVulkanImage*>(user_data);
   };
 
-  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+  sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       context_.get(),            // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin

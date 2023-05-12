@@ -696,7 +696,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                      // context
       backend_texture,              // back-end texture
       kBottomLeft_GrSurfaceOrigin,  // surface origin
@@ -704,7 +704,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kN32_SkColorType,             // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           texture->destruction_callback),  // release proc
       texture->user_data                   // release context
   );
@@ -871,7 +871,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
@@ -881,7 +881,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kBGRA_8888_SkColorType,  // color type
       nullptr,                 // color space
       &surface_properties,     // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
       metal->texture.user_data                   // release context
   );
@@ -925,7 +925,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
@@ -934,7 +934,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
           static_cast<VkFormat>(vulkan->image->format)),  // color type
       SkColorSpace::MakeSRGB(),                           // color space
       &surface_properties,                                // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           vulkan->destruction_callback),  // release proc
       vulkan->user_data                   // release context
   );
