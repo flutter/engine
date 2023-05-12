@@ -11,9 +11,8 @@ import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.Locale;
 
 /**
  * A named channel for communicating with the Flutter application using basic, asynchronous message
@@ -145,10 +144,15 @@ public final class BasicMessageChannel<T> {
 
   static void resizeChannelBuffer(
       @NonNull BinaryMessenger messenger, @NonNull String channel, int newSize) {
-    Charset charset = Charset.forName("UTF-8");
-    String messageString = String.format(Locale.US, "resize\r%s\r%d", channel, newSize);
-    ByteBuffer message = ByteBuffer.wrap(messageString.getBytes(charset));
-    messenger.send(CHANNEL_BUFFERS_CHANNEL, message);
+    try {
+      final String content = String.format("resize\r%s\r%d", channel, newSize);
+      final byte[] bytes = content.getBytes("UTF-8");
+      ByteBuffer packet = ByteBuffer.allocateDirect(bytes.length);
+      packet.put(bytes);
+      messenger.send(BasicMessageChannel.CHANNEL_BUFFERS_CHANNEL, packet);
+    } catch (UnsupportedEncodingException e) {
+      Log.e(TAG, "Failed to resize channel buffer named " + channel, e);
+    }
   }
 
   /** A handler of incoming messages. */
