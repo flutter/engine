@@ -44,23 +44,22 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.view.AccessibilityBridge.Flag;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.robolectric.annotation.Config;
-
-import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.plugin.common.BasicMessageChannel;
-import java.util.HashMap;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
