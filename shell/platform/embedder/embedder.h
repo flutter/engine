@@ -826,6 +826,8 @@ typedef struct {
   double physical_view_inset_bottom;
   /// Left inset of window.
   double physical_view_inset_left;
+  /// The identifier of the display the view is rendering on.
+  size_t display_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -1673,6 +1675,16 @@ typedef struct {
   /// This represents the refresh period in frames per second. This value may be
   /// zero if the device is not running or unavailable or unknown.
   double refresh_rate;
+
+  /// The width of the display, in physical pixels.
+  double width;
+
+  /// The height of the display, in physical pixels.
+  double height;
+
+  /// The pixel ratio of the display, which is used to convert physical pixels
+  /// to logical pixels.
+  double device_pixel_ratio;
 } FlutterEngineDisplay;
 
 /// The update type parameter that is passed to
