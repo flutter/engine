@@ -754,29 +754,28 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
         BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
 
-    result_bundle_temp = tempfile.TemporaryDirectory(
-        suffix='ios_embedding_xcresult'
-    ).name
-    result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
+                                    ) as result_bundle_temp:
+      result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
 
-    # Avoid using xcpretty unless the following can be addressed:
-    # - Make sure all relevant failure output is printed on a failure.
-    # - Make sure that a failing exit code is set for CI.
-    # See https://github.com/flutter/flutter/issues/63742
-    test_command = [
-        'xcodebuild '
-        '-sdk iphonesimulator '
-        '-scheme IosUnitTests '
-        '-resultBundlePath ' + result_bundle_path + " -destination name='" +
-        new_simulator_name + "' "
-        'test '
-        'FLUTTER_ENGINE=' + ios_variant
-    ]
-    if test_filter is not None:
-      test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
-    try:
+      # Avoid using xcpretty unless the following can be addressed:
+      # - Make sure all relevant failure output is printed on a failure.
+      # - Make sure that a failing exit code is set for CI.
+      # See https://github.com/flutter/flutter/issues/63742
+      test_command = [
+          'xcodebuild '
+          '-sdk iphonesimulator '
+          '-scheme IosUnitTests '
+          '-resultBundlePath ' + result_bundle_path + ' '
+          '-destination name=' + new_simulator_name + ' '
+          'test '
+          'FLUTTER_ENGINE=' + ios_variant
+      ]
+      if test_filter is not None:
+        test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
       run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
-    except:
+
+      # except:
       # The LUCI environment may provide a variable containing a directory path
       # for additional output files that will be uploaded to cloud storage.
       # Upload the xcresult when the tests fail.
@@ -790,7 +789,6 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
         )
         # xcresults contain many little files. Archive the bundle before upload.
         shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
-      raise
 
   finally:
     delete_simulator(new_simulator_name)
