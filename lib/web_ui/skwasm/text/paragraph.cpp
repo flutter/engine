@@ -118,3 +118,21 @@ SKWASM_EXPORT TextBoxList* paragraph_getBoxesForPlaceholders(
     Paragraph* paragraph) {
   return new TextBoxList{paragraph->getRectsForPlaceholders()};
 }
+
+SKWASM_EXPORT int paragraph_getUnresolvedCodePoints(Paragraph* paragraph,
+                                                    SkUnichar* outCodePoints,
+                                                    int outLength) {
+  if (!outCodePoints) {
+    return paragraph->unresolvedCodepoints().size();
+  }
+  int outIndex = 0;
+  for (SkUnichar character : paragraph->unresolvedCodepoints()) {
+    if (outIndex < outLength) {
+      outCodePoints[outIndex] = character;
+      outIndex++;
+    } else {
+      break;
+    }
+  }
+  return outIndex;
+}

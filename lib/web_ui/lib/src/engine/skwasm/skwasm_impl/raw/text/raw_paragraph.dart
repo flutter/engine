@@ -119,3 +119,14 @@ external TextBoxListHandle paragraphGetBoxesForRange(
 @Native<TextBoxListHandle Function(ParagraphHandle)>(
   symbol: 'paragraph_getBoxesForPlaceholders', isLeaf: true)
 external TextBoxListHandle paragraphGetBoxesForPlaceholders(ParagraphHandle handle);
+
+@Native<Int Function(
+  ParagraphHandle,
+  Pointer<Uint32>,
+  Int,
+)>(symbol: 'paragraph_getUnresolvedCodePoints', isLeaf: true)
+external int paragraphGetUnresolvedCodePoints(
+  ParagraphHandle handle,
+  Pointer<Uint32> outCodePoints,
+  int outLength,
+);
