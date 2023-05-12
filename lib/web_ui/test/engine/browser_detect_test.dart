@@ -158,11 +158,15 @@ void testMain() {
 
   group('browserSupportsCanvasKitChromium', () {
     late dynamic oldV8BreakIterator = v8BreakIterator;
+    late dynamic oldIntlSegmenter = intlSegmenter;
+
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
+      oldIntlSegmenter = intlSegmenter;
     });
     tearDown(() {
       v8BreakIterator = oldV8BreakIterator;
+      intlSegmenter = oldIntlSegmenter;
       debugResetBrowserSupportsImageDecoder();
     });
 
@@ -195,6 +199,13 @@ void testMain() {
 
       expect(browserSupportsCanvaskitChromium, isFalse);
     });
+
+    test('Detect browsers that support v8BreakIterator but no Intl.Segmenter', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = null;
+
+      expect(browserSupportsCanvaskitChromium, isFalse);
+    });
   });
 
   group('OffscreenCanvas', () {
@@ -211,3 +222,9 @@ external dynamic get v8BreakIterator;
 
 @JS('window.Intl.v8BreakIterator')
 external set v8BreakIterator(dynamic x);
+
+@JS('window.Intl.Segmenter')
+external dynamic get intlSegmenter;
+
+@JS('window.Intl.Segmenter')
+external set intlSegmenter(dynamic x);
