@@ -510,9 +510,7 @@ class Rasterizer final : public SnapshotDelegate,
   struct DoDrawResult {
     RasterStatus raster_status = RasterStatus::kFailed;
 
-    std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree;
-    std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder;
-    float resubmitted_pixel_ratio;
+    std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
 
   // |SnapshotDelegate|
