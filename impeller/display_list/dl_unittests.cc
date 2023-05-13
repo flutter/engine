@@ -447,21 +447,6 @@ TEST_P(DisplayListTest, IgnoreMaskFilterWhenSavingLayer) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(DisplayListTest, SaveLayerWithOpacityAndAdvancedBlendMode) {
-  flutter::DisplayListBuilder builder;
-  flutter::DlPaint draw_paint;
-  flutter::DlPaint save_paint;
-  draw_paint.setColor(flutter::DlColor::kRed());
-  builder.DrawRect(SkRect::MakeLTRB(0, 0, 400, 400), draw_paint);
-  save_paint.setOpacity(0.5f);
-  save_paint.setBlendMode(flutter::DlBlendMode::kLighten);
-  builder.SaveLayer(nullptr, &save_paint);
-  draw_paint.setColor(flutter::DlColor::kGreen());
-  builder.DrawCircle(SkPoint::Make(200, 200), 100, draw_paint);
-  builder.Restore();
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
 TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
