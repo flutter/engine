@@ -723,22 +723,25 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     display.struct_size = sizeof(display);
     display.display_id = displayID;
     display.single_display = false;
-    display.width = screen.frame.size.width;
-    display.height = screen.frame.size.height;
+    display.width = static_cast<size_t>(screen.frame.size.width);
+    display.height = static_cast<size_t>(screen.frame.size.height);
     display.device_pixel_ratio = screen.backingScaleFactor;
 
-    CVDisplayLinkRef displayLinkRef;
-    CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
-    CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
+    CVDisplayLinkRef displayLinkRef = nil;
+    CVReturn error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
 
-    if (!(nominal.flags & kCVTimeIsIndefinite)) {
-      double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
-      display.refresh_rate = round(refreshRate);
+    if (error == 0) {
+      CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
+      if (!(nominal.flags & kCVTimeIsIndefinite)) {
+        double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
+        display.refresh_rate = round(refreshRate);
+      }
+      CVDisplayLinkRelease(displayLinkRef);
+    } else {
+      display.refresh_rate = 0;
     }
 
-    CVDisplayLinkRelease(displayLinkRef);
-
-    displays.push_back(std::move(display));
+    displays.push_back(display);
   }
   _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
                                    displays.data(), displays.size());
@@ -798,7 +801,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .pixel_ratio = pixelRatio,
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
-      .display_id = static_cast<size_t>(displayId),
+      .display_id = static_cast<uint64_t>(displayId),
   };
   _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }

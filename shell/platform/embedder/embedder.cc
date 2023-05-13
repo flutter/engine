@@ -2998,14 +2998,16 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
   switch (update_type) {
     case kFlutterEngineDisplaysUpdateTypeStartup: {
       std::vector<std::unique_ptr<flutter::Display>> displays;
+      const auto* display = embedder_displays;
       for (size_t i = 0; i < display_count; i++) {
-        const auto* display = &embedder_displays[i];
         displays.push_back(std::make_unique<flutter::Display>(
             SAFE_ACCESS(display, display_id, i),    //
             SAFE_ACCESS(display, refresh_rate, 0),  //
             SAFE_ACCESS(display, width, 0),         //
             SAFE_ACCESS(display, height, 0),        //
             SAFE_ACCESS(display, device_pixel_ratio, 1)));
+        display = reinterpret_cast<const FlutterEngineDisplay*>(
+            reinterpret_cast<const uint8_t*>(display) + display->struct_size);
       }
       engine->GetShell().OnDisplayUpdates(std::move(displays));
       return kSuccess;

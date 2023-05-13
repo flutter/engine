@@ -827,7 +827,7 @@ typedef struct {
   /// Left inset of window.
   double physical_view_inset_left;
   /// The identifier of the display the view is rendering on.
-  size_t display_id;
+  uint64_t display_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -1677,10 +1677,10 @@ typedef struct {
   double refresh_rate;
 
   /// The width of the display, in physical pixels.
-  double width;
+  size_t width;
 
   /// The height of the display, in physical pixels.
-  double height;
+  size_t height;
 
   /// The pixel ratio of the display, which is used to convert physical pixels
   /// to logical pixels.
