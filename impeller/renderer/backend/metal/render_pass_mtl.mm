@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
-#include <iostream>
+
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
