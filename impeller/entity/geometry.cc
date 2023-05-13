@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry.h"
-#include <iostream>
 
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
@@ -1012,9 +1011,23 @@ GeometryVertexType PointFieldGeometry::GetVertexType() const {
 // |Geometry|
 std::optional<Rect> PointFieldGeometry::GetCoverage(
     const Matrix& transform) const {
-  auto pt_bounds = Rect::MakePointBounds(points_.begin(), points_.end());
-  if (pt_bounds.has_value()) {
-    return pt_bounds->TransformBounds(transform);
+  if (points_.size() > 0) {
+    // Doesn't use MakePointBounds as this isn't resilient to points that
+    // lie along the same axis.
+    auto first = points_.begin();
+    auto last = points_.end();
+    auto left = first->x;
+    auto top = first->y;
+    auto right = first->x;
+    auto bottom = first->y;
+    for (auto it = first + 1; it < last; ++it) {
+      left = std::min(left, it->x);
+      top = std::min(top, it->y);
+      right = std::max(right, it->x);
+      bottom = std::max(bottom, it->y);
+    }
+    return Rect::MakeLTRB(left - radius_, top - radius_, right + radius_,
+                          bottom + radius_);
   }
   return std::nullopt;
 }

@@ -390,6 +390,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   if (radius <= 0) {
     return;
   }
+
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
