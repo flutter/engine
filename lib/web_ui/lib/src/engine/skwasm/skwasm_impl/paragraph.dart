@@ -538,7 +538,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
   final ParagraphBuilderHandle handle;
   final SkwasmParagraphStyle style;
   final List<_TextStyleStackEntry> textStyleStack = <_TextStyleStackEntry>[];
-  String _allText = "";
+  String _allText = '';
 
   @override
   List<double> placeholderScales = <double>[];
