@@ -538,6 +538,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
   final ParagraphBuilderHandle handle;
   final SkwasmParagraphStyle style;
   final List<_TextStyleStackEntry> textStyleStack = <_TextStyleStackEntry>[];
+  String _allText = "";
 
   @override
   List<double> placeholderScales = <double>[];
@@ -583,6 +584,7 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
+    _allText += text;
     renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(
       text, _getEffectiveFonts()
     );
@@ -591,8 +593,65 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
     skString16Free(stringHandle);
   }
 
+  static final DomV8BreakIterator _v8BreakIterator = createV8BreakIterator();
+  static final DomSegmenter _graphemeSegmenter = createIntlSegmenter(granularity: 'grapheme');
+  static final DomSegmenter _wordSegmenter = createIntlSegmenter(granularity: 'word');
+
+  void _addSegmenterData(String text) {
+    _addGraphemeBreakData(text);
+    _addWordBreakData(text);
+    _addLineBreakData(text);
+  }
+
+  UnicodePositionBufferHandle _createBreakPositionBuffer(String text, DomSegmenter segmenter) {
+    final DomIteratorWrapper<DomSegment> iterator = segmenter.segment(text).iterator();
+    final List<int> breaks = <int>[];
+    while (iterator.moveNext()) {
+      breaks.add(iterator.current.index);
+    }
+    breaks.add(text.length);
+
+    final UnicodePositionBufferHandle positionBuffer = unicodePositionBufferCreate(breaks.length);
+    final Pointer<Uint32> buffer = unicodePositionBufferGetDataPointer(positionBuffer);
+    for (int i = 0; i < breaks.length; i++) {
+      buffer[i] = breaks[i];
+    }
+    return positionBuffer;
+  }
+
+  void _addGraphemeBreakData(String text) {
+    final UnicodePositionBufferHandle positionBuffer =
+      _createBreakPositionBuffer(text, _graphemeSegmenter);
+    paragraphBuilderSetGraphemeBreaksUtf16(handle, positionBuffer);
+    unicodePositionBufferFree(positionBuffer);
+  }
+
+  void _addWordBreakData(String text) {
+    final UnicodePositionBufferHandle positionBuffer =
+      _createBreakPositionBuffer(text, _wordSegmenter);
+    paragraphBuilderSetWordBreaksUtf16(handle, positionBuffer);
+    unicodePositionBufferFree(positionBuffer);
+  }
+
+  void _addLineBreakData(String text) {
+    final List<LineBreakFragment> lineBreaks = breakLinesUsingV8BreakIterator(text, _v8BreakIterator);
+    final LineBreakBufferHandle lineBreakBuffer = lineBreakBufferCreate(lineBreaks.length + 1);
+    final Pointer<LineBreak> lineBreakPointer = lineBreakBufferGetDataPointer(lineBreakBuffer);
+
+    // First line break is always zero. The buffer is zero initialized, so we can just
+    // skip the first one.
+    for (int i = 0; i < lineBreaks.length; i++) {
+      final LineBreakFragment fragment = lineBreaks[i];
+      lineBreakPointer[i + 1].position = fragment.end;
+      lineBreakPointer[i + 1].lineBreakType = fragment.type == LineBreakType.mandatory ? 100 : 0;
+    }
+    paragraphBuilderSetLineBreaksUtf16(handle, lineBreakBuffer);
+    lineBreakBufferFree(lineBreakBuffer);
+  }
+
   @override
   ui.Paragraph build() {
+    _addSegmenterData(_allText);
     return SkwasmParagraph(paragraphBuilderBuild(handle));
   }
 
