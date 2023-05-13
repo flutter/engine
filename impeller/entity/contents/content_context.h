@@ -39,6 +39,7 @@
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/points.vert.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
@@ -279,6 +280,7 @@ using FramebufferBlendSoftLightPipeline =
 /// Geometry Pipelines
 using PointFieldGeometryPipeline =
     RenderPipelineT<PointsVertexShader, NonRenderingFragment>;
+using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 
 /// Pipeline state configuration.
 ///
@@ -673,6 +675,12 @@ class ContentContext {
     return GetPipeline(point_field_geometry_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return point_field_compute_pipelines_;
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
@@ -795,6 +803,8 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      point_field_compute_pipelines_;
 
   mutable Variants<PointFieldGeometryPipeline> point_field_geometry_pipelines_;
 

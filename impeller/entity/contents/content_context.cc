@@ -14,6 +14,7 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
 
@@ -317,6 +318,12 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     point_field_geometry_pipelines_[{}] =
         CreateDefaultNonRenderingPipeline<PointFieldGeometryPipeline>(
             *context_);
+  }
+  if (context_->GetCapabilities()->SupportsCompute()) {
+    auto pipeline_desc =
+        PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    point_field_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
   }
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {

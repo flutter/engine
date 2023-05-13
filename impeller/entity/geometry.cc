@@ -7,6 +7,7 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
@@ -840,14 +841,12 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   auto total = points_per_circle * points_.size();
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  using VS = PointFieldGeometryPipeline::VertexShader;
+  using PS = PointsComputeShader;
 
-  auto vtx_buffer = VertexBuffer{
-      .vertex_buffer = host_buffer.Emplace(
-          points_.data(), points_.size() * sizeof(Point), alignof(Point)),
-      .vertex_count = points_.size(),
-      .index_type = IndexType::kNone,
-  };
+  // using VS = PointFieldGeometryPipeline::VertexShader;
+
+  auto points_data = host_buffer.Emplace(
+      points_.data(), points_.size() * sizeof(Point), alignof(Point));
 
   DeviceBufferDescriptor buffer_desc;
   buffer_desc.size = total * sizeof(Point);
@@ -856,50 +855,66 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   auto buffer =
       renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
-  Command cmd;
+  ComputeCommand cmd;
   cmd.label = "Points Geometry";
+  cmd.pipeline = renderer.GetPointComputePipeline();
 
-  auto options = OptionsFromPass(pass);
-  options.blend_mode = BlendMode::kSource;
-  options.stencil_compare = CompareFunction::kAlways;
-  options.stencil_operation = StencilOperation::kKeep;
-  options.enable_rasterization = false;
-  options.sample_count = SampleCount::kCount1;
-  cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
+  // auto options = OptionsFromPass(pass);
+  // options.blend_mode = BlendMode::kSource;
+  // options.stencil_compare = CompareFunction::kAlways;
+  // options.stencil_operation = StencilOperation::kKeep;
+  // options.enable_rasterization = false;
+  // options.sample_count = SampleCount::kCount1;
+  // cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
 
-  VS::FrameInfo frame_info;
+  PS::FrameInfo frame_info;
+  frame_info.count = points_.size();
   frame_info.radius = radius;
   frame_info.radian_start = round_ ? 0.0f : 0.785398f;
   frame_info.radian_step = k2Pi / vertices_per_geom;
   frame_info.points_per_circle = points_per_circle;
   frame_info.divisions_per_circle = vertices_per_geom;
 
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  VS::BindGeometryData(
+  PS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  PS::BindGeometryData(
       cmd, {.buffer = buffer, .range = Range{0, total * sizeof(Point)}});
+  PS::BindPointData(cmd, points_data);
 
-  cmd.BindVertices(vtx_buffer);
-
-  // Ensure correct synchronization by submitting vertex computation into
-  // a different render pass.
   {
-    auto render_target = RenderTarget::CreateOffscreen(
-        *renderer.GetContext(),  // context
-        {1, 1},                  // size
-        "Geometry Snapshot",     // label
-        RenderTarget::
-            kDefaultColorAttachmentConfigNonRendering,  // color_attachment_config
-        std::nullopt  // stencil_attachment_config
-    );
     auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
-    auto vertex_render_pass = cmd_buffer->CreateRenderPass(render_target);
+    auto pass = cmd_buffer->CreateComputePass();
+    pass->SetGridSize(ISize(total, 1));
+    pass->SetThreadGroupSize(ISize(total, 1));
 
-    if (!vertex_render_pass->AddCommand(std::move(cmd)) ||
-        !vertex_render_pass->EncodeCommands() ||
+    if (!pass->AddCommand(std::move(cmd)) || !pass->EncodeCommands() ||
         !cmd_buffer->SubmitCommands()) {
       return {};
     }
   }
+
+  // cmd.BindVertices(vtx_buffer);
+
+  // // Ensure correct synchronization by submitting vertex computation into
+  // // a different render pass.
+  // {
+  //   auto render_target = RenderTarget::CreateOffscreen(
+  //       *renderer.GetContext(),  // context
+  //       {1, 1},                  // size
+  //       "Geometry Snapshot",     // label
+  //       RenderTarget::
+  //           kDefaultColorAttachmentConfigNonRendering,  //
+  //           color_attachment_config
+  //       std::nullopt  // stencil_attachment_config
+  //   );
+  //   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
+  //   auto vertex_render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  //   if (!vertex_render_pass->AddCommand(std::move(cmd)) ||
+  //       !vertex_render_pass->EncodeCommands() ||
+  //       !cmd_buffer->SubmitCommands()) {
+  //     return {};
+  //   }
+  // }
 
   return {
       .type = PrimitiveType::kTriangle,
@@ -1013,7 +1028,7 @@ std::optional<Rect> PointFieldGeometry::GetCoverage(
     const Matrix& transform) const {
   if (points_.size() > 0) {
     // Doesn't use MakePointBounds as this isn't resilient to points that
-    // lie along the same axis.
+    // all lie along the same axis.
     auto first = points_.begin();
     auto last = points_.end();
     auto left = first->x;
