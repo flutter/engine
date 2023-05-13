@@ -12075,7 +12075,7 @@
       "type": "Vertex",
       "variants": {
         "Position": {
-          "fp16_arithmetic": 30,
+          "fp16_arithmetic": 35,
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
@@ -12102,7 +12102,7 @@
             ],
             "shortest_path_cycles": [
               0.203125,
-              0.03125,
+              0.046875,
               0.203125,
               0.0625,
               3.0,
@@ -12113,7 +12113,7 @@
             ],
             "total_cycles": [
               0.375,
-              0.203125,
+              0.21875,
               0.375,
               0.1875,
               5.0,
@@ -12122,7 +12122,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
+          "uniform_registers_used": 14,
           "work_registers_used": 17
         }
       }
