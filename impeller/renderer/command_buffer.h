@@ -75,8 +75,7 @@ class CommandBuffer {
   ///             A command buffer may only be committed once.
   ///
   [[nodiscard]] virtual bool SubmitCommandsAsync(
-    std::shared_ptr<RenderPass> render_pass
-  );
+      std::shared_ptr<RenderPass> render_pass);
 
   //----------------------------------------------------------------------------
   /// @brief      Force execution of pending GPU commands.

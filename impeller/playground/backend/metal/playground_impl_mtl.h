@@ -6,9 +6,9 @@
 
 #include <memory>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
-#include "flutter/fml/concurrent_message_loop.h"
 
 namespace impeller {
 

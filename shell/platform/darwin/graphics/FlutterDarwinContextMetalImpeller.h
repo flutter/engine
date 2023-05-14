@@ -39,7 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(nonatomic, readonly) std::shared_ptr<impeller::ContextMTL> context;
 
-
 /**
  * Concurrent message loop.
  */

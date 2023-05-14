@@ -188,7 +188,7 @@ bool SurfaceMTL::Present() const {
       ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
   [command_buffer commit];
   [command_buffer waitUntilScheduled];
-#endif // (FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR) (not iPhone)
+#endif  // (FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR) (not iPhone)
 
   [drawable_ present];
 
