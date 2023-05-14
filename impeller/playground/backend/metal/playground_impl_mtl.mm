@@ -63,7 +63,8 @@ void PlaygroundImplMTL::DestroyWindowHandle(WindowHandle handle) {
 PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
     : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
-      data_(std::make_unique<Data>()) {
+      data_(std::make_unique<Data>()),
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -71,8 +72,9 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
   if (!window) {
     return;
   }
+  auto worker_task_runner = concurrent_loop_->GetTaskRunner();
   auto context = ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
-                                    "Playground Library");
+                                    worker_task_runner, "Playground Library");
   if (!context) {
     return;
   }

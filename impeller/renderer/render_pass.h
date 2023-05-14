@@ -8,6 +8,7 @@
 
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 

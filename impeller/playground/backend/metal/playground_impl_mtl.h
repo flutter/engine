@@ -8,6 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
+#include "flutter/fml/concurrent_message_loop.h"
 
 namespace impeller {
 
@@ -27,6 +28,7 @@ class PlaygroundImplMTL final : public PlaygroundImpl {
   // To ensure that ObjC stuff doesn't leak into C++ TUs.
   std::unique_ptr<Data> data_;
   std::shared_ptr<Context> context_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
 
   // |PlaygroundImpl|
   std::shared_ptr<Context> GetContext() const override;

@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/sampler.h"
@@ -26,10 +27,12 @@ class ContextMTL final : public Context,
                          public std::enable_shared_from_this<ContextMTL> {
  public:
   static std::shared_ptr<ContextMTL> Create(
-      const std::vector<std::string>& shader_library_paths);
+      const std::vector<std::string>& shader_library_paths,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
 
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
       const std::string& label);
 
   // |Context|
@@ -66,6 +69,8 @@ class ContextMTL final : public Context,
 
   id<MTLCommandBuffer> CreateMTLCommandBuffer() const;
 
+  const std::shared_ptr<fml::ConcurrentTaskRunner>& GetWorkerTaskRunner() const;
+
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
@@ -74,9 +79,12 @@ class ContextMTL final : public Context,
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
+  std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   bool is_valid_ = false;
 
-  ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
+  ContextMTL(id<MTLDevice> device,
+             NSArray<id<MTLLibrary>>* shader_libraries,
+             std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

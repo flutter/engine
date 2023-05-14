@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
@@ -34,9 +35,15 @@ NS_ASSUME_NONNULL_BEGIN
                                 texture:(NSObject<FlutterTexture>*)texture;
 
 /**
- * Impeller context;
+ * Impeller context.
  */
 @property(nonatomic, readonly) std::shared_ptr<impeller::ContextMTL> context;
+
+
+/**
+ * Concurrent message loop.
+ */
+@property(nonatomic, readonly) std::shared_ptr<fml::ConcurrentMessageLoop> workers;
 
 /*
  * Texture cache for external textures.
