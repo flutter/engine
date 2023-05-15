@@ -498,7 +498,7 @@ static BOOL _preparedOnce = NO;
 
 - (void)insertViewToPool:(FlutterClippingMaskView*)maskView {
   FML_DCHECK(![self.pool containsObject:maskView]);
-  FML_DCHECK([self.pool.count <= self.capacity]);
+  FML_DCHECK(self.pool.count <= self.capacity);
   if (self.pool.count == self.capacity) {
     return;
   }
