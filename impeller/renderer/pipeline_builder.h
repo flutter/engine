@@ -79,9 +79,7 @@ struct PipelineBuilder {
       }
 
       desc.AddStageEntrypoint(std::move(vertex_function));
-      if (fragment_function != nullptr) {
-        desc.AddStageEntrypoint(std::move(fragment_function));
-      }
+      desc.AddStageEntrypoint(std::move(fragment_function));
     }
 
     // Setup the vertex descriptor from reflected information.
