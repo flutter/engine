@@ -623,7 +623,7 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 
 void FlutterPlatformViewsController::Reset() {
   for (int64_t view_id : active_composition_order_) {
-    UIView *sub_view = root_views_[view_id].get();
+    UIView* sub_view = root_views_[view_id].get();
     [sub_view removeFromSuperview];
   }
   root_views_.clear();
