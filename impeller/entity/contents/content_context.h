@@ -298,14 +298,13 @@ struct ContentContextOptions {
   std::optional<PixelFormat> color_attachment_pixel_format;
   bool has_stencil_attachment = true;
   bool wireframe = false;
-  bool enable_rasterization = true;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
       return fml::HashCombine(
           o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
           o.primitive_type, o.color_attachment_pixel_format,
-          o.has_stencil_attachment, o.wireframe, o.enable_rasterization);
+          o.has_stencil_attachment, o.wireframe);
     }
   };
 
@@ -320,8 +319,7 @@ struct ContentContextOptions {
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
              lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
-             lhs.wireframe == rhs.wireframe &&
-             lhs.enable_rasterization == rhs.enable_rasterization;
+             lhs.wireframe == rhs.wireframe;
     }
   };
 
