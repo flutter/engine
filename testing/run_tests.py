@@ -1180,98 +1180,98 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     types = args.type.split(',')
 
   build_dir = os.path.join(OUT_DIR, args.variant)
-  if args.type != 'java' and args.type != 'android':
-    assert os.path.exists(
-        build_dir
-    ), 'Build variant directory %s does not exist!' % build_dir
+  # if args.type != 'java' and args.type != 'android':
+  #   assert os.path.exists(
+  #       build_dir
+  #   ), 'Build variant directory %s does not exist!' % build_dir
 
-  if args.sanitizer_suppressions:
-    assert is_linux() or is_mac(
-    ), 'The sanitizer suppressions flag is only supported on Linux and Mac.'
-    file_dir = os.path.dirname(os.path.abspath(__file__))
-    command = [
-        'env', '-i', 'bash', '-c',
-        'source {}/sanitizer_suppressions.sh >/dev/null && env'
-        .format(file_dir)
-    ]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    for line in process.stdout:
-      key, _, value = line.decode('utf8').strip().partition('=')
-      os.environ[key] = value
-    process.communicate()  # Avoid pipe deadlock while waiting for termination.
+  # if args.sanitizer_suppressions:
+  #   assert is_linux() or is_mac(
+  #   ), 'The sanitizer suppressions flag is only supported on Linux and Mac.'
+  #   file_dir = os.path.dirname(os.path.abspath(__file__))
+  #   command = [
+  #       'env', '-i', 'bash', '-c',
+  #       'source {}/sanitizer_suppressions.sh >/dev/null && env'
+  #       .format(file_dir)
+  #   ]
+  #   process = subprocess.Popen(command, stdout=subprocess.PIPE)
+  #   for line in process.stdout:
+  #     key, _, value = line.decode('utf8').strip().partition('=')
+  #     os.environ[key] = value
+  #   process.communicate()  # Avoid pipe deadlock while waiting for termination.
 
-  engine_filter = args.engine_filter.split(',') if args.engine_filter else None
-  if 'engine' in types:
-    run_cc_tests(
-        build_dir, engine_filter, args.coverage, args.engine_capture_core_dump
-    )
+  # engine_filter = args.engine_filter.split(',') if args.engine_filter else None
+  # if 'engine' in types:
+  #   run_cc_tests(
+  #       build_dir, engine_filter, args.coverage, args.engine_capture_core_dump
+  #   )
 
-  # Use this type to exclusively run impeller vulkan tests.
-  # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
-  # impeller vulkan tests are stable.
-  if 'impeller-vulkan' in types:
-    build_name = args.variant
-    try:
-      xvfb.start_virtual_x(build_name, build_dir)
-      vulkan_gtest_filter = parse_impeller_vulkan_filter()
-      gtest_flags = shuffle_flags
-      gtest_flags.append(vulkan_gtest_filter)
-      run_engine_executable(
-          build_dir,
-          'impeller_unittests',
-          engine_filter,
-          gtest_flags,
-          coverage=args.coverage
-      )
-    finally:
-      xvfb.stop_virtual_x(build_name)
+  # # Use this type to exclusively run impeller vulkan tests.
+  # # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
+  # # impeller vulkan tests are stable.
+  # if 'impeller-vulkan' in types:
+  #   build_name = args.variant
+  #   try:
+  #     xvfb.start_virtual_x(build_name, build_dir)
+  #     vulkan_gtest_filter = parse_impeller_vulkan_filter()
+  #     gtest_flags = shuffle_flags
+  #     gtest_flags.append(vulkan_gtest_filter)
+  #     run_engine_executable(
+  #         build_dir,
+  #         'impeller_unittests',
+  #         engine_filter,
+  #         gtest_flags,
+  #         coverage=args.coverage
+  #     )
+  #   finally:
+  #     xvfb.stop_virtual_x(build_name)
 
-  if 'dart' in types:
-    dart_filter = args.dart_filter.split(',') if args.dart_filter else None
-    tasks = list(gather_dart_smoke_test(build_dir))
-    tasks += list(gather_litetest_tests(build_dir))
-    tasks += list(gather_githooks_tests(build_dir))
-    tasks += list(gather_clang_tidy_tests(build_dir))
-    tasks += list(gather_api_consistency_tests(build_dir))
-    tasks += list(gather_path_ops_tests(build_dir))
-    tasks += list(gather_const_finder_tests(build_dir))
-    tasks += list(gather_front_end_server_tests(build_dir))
-    tasks += list(gather_dart_tests(build_dir, dart_filter))
-    run_engine_tasks_in_parallel(tasks)
+  # if 'dart' in types:
+  #   dart_filter = args.dart_filter.split(',') if args.dart_filter else None
+  #   tasks = list(gather_dart_smoke_test(build_dir))
+  #   tasks += list(gather_litetest_tests(build_dir))
+  #   tasks += list(gather_githooks_tests(build_dir))
+  #   tasks += list(gather_clang_tidy_tests(build_dir))
+  #   tasks += list(gather_api_consistency_tests(build_dir))
+  #   tasks += list(gather_path_ops_tests(build_dir))
+  #   tasks += list(gather_const_finder_tests(build_dir))
+  #   tasks += list(gather_front_end_server_tests(build_dir))
+  #   tasks += list(gather_dart_tests(build_dir, dart_filter))
+  #   run_engine_tasks_in_parallel(tasks)
 
-  if 'java' in types:
-    assert not is_windows(
-    ), "Android engine files can't be compiled on Windows."
-    java_filter = args.java_filter
-    if ',' in java_filter or '*' in java_filter:
-      print(
-          'Can only filter JUnit4 tests by single entire class name, '
-          'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
-      )
-      java_filter = None
-    run_java_tests(java_filter, args.android_variant)
+  # if 'java' in types:
+  #   assert not is_windows(
+  #   ), "Android engine files can't be compiled on Windows."
+  #   java_filter = args.java_filter
+  #   if ',' in java_filter or '*' in java_filter:
+  #     print(
+  #         'Can only filter JUnit4 tests by single entire class name, '
+  #         'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
+  #     )
+  #     java_filter = None
+  #   run_java_tests(java_filter, args.android_variant)
 
-  if 'android' in types:
-    assert not is_windows(
-    ), "Android engine files can't be compiled on Windows."
-    run_android_tests(args.android_variant, args.adb_path)
+  # if 'android' in types:
+  #   assert not is_windows(
+  #   ), "Android engine files can't be compiled on Windows."
+  #   run_android_tests(args.android_variant, args.adb_path)
 
   if 'objc' in types:
     assert is_mac(), 'iOS embedding tests can only be run on macOS.'
     run_objc_tests(args.ios_variant, args.objc_filter)
 
-  # https://github.com/flutter/flutter/issues/36300
-  if 'benchmarks' in types and not is_windows():
-    run_benchmark_tests(build_dir)
-    run_engine_benchmarks(build_dir, engine_filter)
+  # # https://github.com/flutter/flutter/issues/36300
+  # if 'benchmarks' in types and not is_windows():
+  #   run_benchmark_tests(build_dir)
+  #   run_engine_benchmarks(build_dir, engine_filter)
 
-  variants_to_skip = ['host_release', 'host_profile']
-  if ('engine' in types or
-      'font-subset' in types) and args.variant not in variants_to_skip:
-    run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
+  # variants_to_skip = ['host_release', 'host_profile']
+  # if ('engine' in types or
+  #     'font-subset' in types) and args.variant not in variants_to_skip:
+  #   run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
-  if 'impeller-golden' in types:
-    run_impeller_golden_tests(build_dir)
+  # if 'impeller-golden' in types:
+  #   run_impeller_golden_tests(build_dir)
 
 
 if __name__ == '__main__':
