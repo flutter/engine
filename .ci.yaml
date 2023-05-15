@@ -259,20 +259,20 @@ targets:
     bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_fuchsia
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_arm_host_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
@@ -286,29 +286,29 @@ targets:
   - name: Linux linux_host_desktop_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_host_desktop_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_android_aot_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_android_debug_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_license
     recipe: engine_v2/builder
@@ -320,11 +320,11 @@ targets:
   - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
     timeout: 70
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_web_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Linux linux_unopt
     recipe: engine_v2/engine_v2
@@ -386,11 +386,11 @@ targets:
   - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: mac_android_aot_engine
+      drone_dimensions: >
+        ["os=Linux"]
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
@@ -414,8 +414,6 @@ targets:
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Mac"]
     properties:
       release_build: "true"
       cpu: arm64
@@ -426,6 +424,8 @@ targets:
         ]
       $flutter/osx_sdk : >-
         { "sdk_version": "14e222b" }
+      drone_dimensions: >
+        ["os=Mac"]
 
   - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
@@ -502,8 +502,6 @@ targets:
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Mac"]
     properties:
       release_build: "true"
       config_name: mac_ios_engine
@@ -513,6 +511,8 @@ targets:
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
+      drone_dimensions: >
+        ["os=Mac"]
 
   - name: Mac impeller-cmake-example
     bringup: true
@@ -544,20 +544,20 @@ targets:
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Windows"]
     properties:
       release_build: "true"
       config_name: windows_android_aot_engine
+      drone_dimensions: >
+        ["os=Windows"]
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    drone_dimensions: >
-      ["os=Windows"]
     properties:
       release_build: "true"
       config_name: windows_host_engine
+      drone_dimensions: >
+        ["os=Windows"]
 
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
