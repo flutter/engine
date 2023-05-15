@@ -18,11 +18,9 @@
 #include "flutter/display_list/effects/dl_mask_filter.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/display_list/display_list_dispatcher.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_playground.h"
-#include "impeller/display_list/dl_dispatcher.h"
-#include "impeller/display_list/dl_image_impeller.h"
-#include "impeller/display_list/dl_playground.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
@@ -947,7 +945,7 @@ TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
   }
   auto dl = builder.Build();
 
-  DlDispatcher dispatcher;
+  DisplayListDispatcher dispatcher;
   dispatcher.drawDisplayList(dl, 1);
   auto picture = dispatcher.EndRecordingAsPicture();
 
