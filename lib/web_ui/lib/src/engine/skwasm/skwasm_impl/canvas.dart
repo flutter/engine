@@ -32,10 +32,21 @@ class SkwasmCanvas implements ui.Canvas {
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle);
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
       });
     } else {
-      canvasSaveLayer(_handle, nullptr, paint.handle);
+      canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
+    }
+  }
+
+  void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
+    paint as SkwasmPaint;
+    if (bounds != null) {
+      withStackScope((StackScope s) {
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
+      });
+    } else {
+      canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
     }
   }
 

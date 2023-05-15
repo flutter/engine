@@ -39,29 +39,24 @@ class SkwasmImageFilter implements ui.ImageFilter {
   factory SkwasmImageFilter.fromColorFilter(SkwasmColorFilter filter) =>
     SkwasmImageFilter._(imageFilterCreateFromColorFilter(filter.handle));
 
+  factory SkwasmImageFilter.fromUiFilter(ui.ImageFilter filter) {
+    if (filter is ui.ColorFilter) {
+      final SkwasmColorFilter colorFilter =
+        SkwasmColorFilter.fromEngineColorFilter(filter as EngineColorFilter);
+      final SkwasmImageFilter outputFilter = SkwasmImageFilter.fromColorFilter(colorFilter);
+      colorFilter.dispose();
+      return outputFilter;
+    } else {
+      return filter as SkwasmImageFilter;
+    }
+  }
+
   factory SkwasmImageFilter.compose(
     ui.ImageFilter outer,
     ui.ImageFilter inner,
   ) {
-    final SkwasmImageFilter nativeOuter;
-    final SkwasmImageFilter nativeInner;
-    if (outer is ui.ColorFilter) {
-      final SkwasmColorFilter colorFilter =
-        SkwasmColorFilter.fromEngineColorFilter(outer as EngineColorFilter);
-      nativeOuter = SkwasmImageFilter.fromColorFilter(colorFilter);
-      colorFilter.dispose();
-    } else {
-      nativeOuter = outer as SkwasmImageFilter;
-    }
-
-    if (inner is ui.ColorFilter) {
-      final SkwasmColorFilter colorFilter =
-        SkwasmColorFilter.fromEngineColorFilter(inner as EngineColorFilter);
-      nativeInner = SkwasmImageFilter.fromColorFilter(colorFilter);
-      colorFilter.dispose();
-    } else {
-      nativeInner = outer as SkwasmImageFilter;
-    }
+    final SkwasmImageFilter nativeOuter = SkwasmImageFilter.fromUiFilter(outer);
+    final SkwasmImageFilter nativeInner = SkwasmImageFilter.fromUiFilter(inner);
     return SkwasmImageFilter._(imageFilterCompose(nativeOuter.handle, nativeInner.handle));
   }
 

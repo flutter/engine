@@ -104,17 +104,9 @@ class SkwasmPaint implements ui.Paint {
   set imageFilter(ui.ImageFilter? filter) {
     _imageFilter = filter;
 
-    final SkwasmImageFilter? nativeImageFilter;
-    if (filter is ui.ColorFilter) {
-      final SkwasmColorFilter colorFilter =
-        SkwasmColorFilter.fromEngineColorFilter(filter as EngineColorFilter);
-      nativeImageFilter = SkwasmImageFilter.fromColorFilter(colorFilter);
-      colorFilter.dispose();
-    } else if (filter is SkwasmImageFilter) {
-      nativeImageFilter = filter;
-    } else {
-      nativeImageFilter = null;
-    }
+    final SkwasmImageFilter? nativeImageFilter = filter != null
+      ? SkwasmImageFilter.fromUiFilter(filter)
+      : null;
     paintSetImageFilter(handle, nativeImageFilter != null ? nativeImageFilter.handle : nullptr);
   }
 
