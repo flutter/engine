@@ -166,7 +166,11 @@ void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
   constexpr auto stroke_width = 64;
   paint.style = Paint::Style::kStroke;
   paint.stroke_width = stroke_width;
-  canvas.DrawRect({stroke_width, stroke_width, 600, 600}, paint);
+  if (tile_mode == Entity::TileMode::kDecal) {
+    canvas.DrawRect({stroke_width, stroke_width, 600, 600}, paint);
+  } else {
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+  }
 
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
