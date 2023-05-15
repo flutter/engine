@@ -34,7 +34,10 @@ sarif_log = {
     '$schema':
         'https://json.schemastore.org/sarif-2.1.0.json', 'version':
             '2.1.0', 'runs': [{
-                'tool': {'driver': {'name': 'OSV Scan', 'rules': []}},
+                'tool': {'driver': {'name': 'OSV Scan',
+                                    'informationUri': 'https://osv.dev/',
+                                    'semanticVersion': '1.0.0',
+                                    'rules': []}},
                 'results': []
             }]
 }
@@ -50,7 +53,7 @@ def sarif_result():
           'N/A', 'message': {'text': 'OSV Scan Finding'}, 'locations': [{
               'physicalLocation': {
                   'artifactLocation': {
-                      'uri': 'No location associated with this finding'
+                      'uri': 'DEPS'
                   },
                   'region': {'startLine': 1, 'startColumn': 1, 'endColumn': 1}
               }
@@ -185,8 +188,8 @@ def get_common_ancestor_commit(dep, deps_list):
     temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
     # clone dependency from mirror
     subprocess.check_output([
-        'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
-    ])
+        'git', 'clone', '--quiet', '--', dep[0], dep_name
+    ], cwd=DEP_CLONE_DIR)
 
     # create branch that will track the upstream dep
     print(
@@ -195,45 +198,38 @@ def get_common_ancestor_commit(dep, deps_list):
         )
     )
     subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add', 'upstream',
+        'git', 'remote', 'add', 'upstream',
         upstream
-    ])
+    ], cwd=temp_dep_dir)
     subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
-        'upstream'
-    ])
+        'git', 'fetch', '--quiet', 'upstream'
+    ], cwd=temp_dep_dir)
     # get name of the default branch for upstream (e.g. main/master/etc.)
     default_branch = subprocess.check_output(
-        'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
-        "| sed -n \'/HEAD branch/s/.*: //p\'",
-        shell=True
-    )
+        'git remote show upstream ' +
+        "| sed -n \'/HEAD branch/s/.*: //p\'", cwd=temp_dep_dir, shell=True)
     default_branch = byte_str_decode(default_branch)
     default_branch = default_branch.strip()
-    print(
-        'default_branch found: {default_branch}'.format(
-            default_branch=default_branch
-        )
-    )
+
     # make upstream branch track the upstream dep
     subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b',
+        'git', 'checkout', '--force', '-b', 
         'upstream', '--track', 'upstream/' + default_branch
-    ])
+    ], cwd=temp_dep_dir)
     # get the most recent commit from default branch of upstream
     commit = subprocess.check_output(
-        'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
+        'git for-each-ref ' + 
         "--format=\'%(objectname:short)\' refs/heads/upstream",
-        shell=True
-    )
+        cwd=temp_dep_dir, shell=True)
     commit = byte_str_decode(commit)
     commit = commit.strip()
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
-        'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
-            temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
+        'git merge-base {commit} {depUrl}'.format(
+            commit=commit, depUrl=dep[1]
         ),
+        cwd=temp_dep_dir,
         shell=True
     )
     ancestor_commit = byte_str_decode(ancestor_commit)
