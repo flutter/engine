@@ -488,9 +488,10 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '1',  # Validates accesses to threadgroup memory.
         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
             '1',  # Validates that texture references are not nil.
+        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
     }
     if is_aarm64():
-      extra_env.append({
+      extra_env.update({
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
@@ -499,7 +500,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags,
+        ['--gtest_filter=-*/Vulkan'] + shuffle_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
@@ -773,6 +774,7 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
       ]
       if test_filter is not None:
         test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
+
       try:
         run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
 

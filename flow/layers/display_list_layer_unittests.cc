@@ -10,7 +10,6 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
 
 namespace flutter {
 namespace testing {
@@ -69,8 +68,6 @@ TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
 
 TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkMatrix layer_offset_matrix =
-      SkMatrix::Translate(layer_offset.fX, layer_offset.fY);
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
@@ -84,15 +81,18 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   EXPECT_EQ(layer->display_list(), display_list.get());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  layer->Paint(paint_context());
-  auto expected_draw_calls = std::vector(
-      {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
-       MockCanvas::DrawCall{1,
-                            MockCanvas::DrawDisplayListData{display_list, 1}},
-       MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
-  EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (DisplayList)layer::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.Translate(layer_offset.fX, layer_offset.fY);
+      expected_builder.DrawDisplayList(display_list);
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(
+      DisplayListsEQ_Verbose(this->display_list(), expected_builder.Build()));
 }
 
 TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
@@ -294,7 +294,7 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
 using DisplayListLayerDiffTest = DiffContextTest;
 
 TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(CreateDisplayListLayer(display_list));
@@ -314,7 +314,7 @@ TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
@@ -327,7 +327,7 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
@@ -341,21 +341,25 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
 
 TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   MockLayerTree tree1;
-  auto display_list1 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list1 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree1.root()->Add(CreateDisplayListLayer(display_list1));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
-  auto display_list2 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  // same DL, same offset
+  auto display_list2 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree2.root()->Add(CreateDisplayListLayer(display_list2));
 
   damage = DiffLayerTree(tree2, tree1);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeEmpty());
 
   MockLayerTree tree3;
-  auto display_list3 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list3 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   // add offset
   tree3.root()->Add(
       CreateDisplayListLayer(display_list3, SkPoint::Make(10, 10)));
@@ -365,7 +369,8 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
 
   MockLayerTree tree4;
   // different color
-  auto display_list4 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 2);
+  auto display_list4 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kRed());
   tree4.root()->Add(
       CreateDisplayListLayer(display_list4, SkPoint::Make(10, 10)));
 
