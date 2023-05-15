@@ -74,7 +74,7 @@ class SkwasmColorFilter {
 
   void dispose() {
     if (!_isDisposed) {
-      colorFilterDispose(handle)
+      colorFilterDispose(handle);
       _isDisposed = true;
     }
   }

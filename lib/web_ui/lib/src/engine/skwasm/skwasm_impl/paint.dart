@@ -4,6 +4,7 @@
 
 import 'dart:ffi';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -20,6 +21,11 @@ class SkwasmPaint implements ui.Paint {
   ui.BlendMode _cachedBlendMode = ui.BlendMode.srcOver;
 
   SkwasmShader? _shader;
+  SkwasmImageFilter? _imageFilter;
+
+  EngineColorFilter? _colorFilter;
+
+  ui.MaskFilter? _maskFilter;
 
   @override
   ui.BlendMode get blendMode {
@@ -91,16 +97,45 @@ class SkwasmPaint implements ui.Paint {
   @override
   ui.FilterQuality filterQuality = ui.FilterQuality.none;
 
-  // Unimplemented stuff below
   @override
-  ui.ColorFilter? colorFilter;
+  ui.ImageFilter? get imageFilter => _imageFilter;
 
   @override
-  ui.ImageFilter? imageFilter;
+  set imageFilter(ui.ImageFilter? filter) {
+    _imageFilter = filter as SkwasmImageFilter?;
+    paintSetImageFilter(handle, filter != null ? filter.handle : nullptr);
+  }
+
+  @override
+  ui.ColorFilter? get colorFilter => _colorFilter;
+
+  @override
+  set colorFilter(ui.ColorFilter? filter) {
+    _colorFilter = filter as EngineColorFilter?;
+    if (filter == null) {
+      paintSetColorFilter(handle, nullptr);
+    } else {
+      final SkwasmColorFilter nativeFilter = SkwasmColorFilter.fromEngineColorFilter(filter);
+      paintSetColorFilter(handle, nativeFilter.handle);
+      nativeFilter.dispose();
+    }
+  }
+
+  @override
+  ui.MaskFilter? get maskFilter => _maskFilter;
+
+  @override
+  set maskFilter(ui.MaskFilter? filter) {
+    _maskFilter = filter;
+    if (filter == null) {
+      paintSetMaskFilter(handle, nullptr);
+    } else {
+      final SkwasmMaskFilter nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(filter);
+      paintSetMaskFilter(handle, nativeFilter.handle);
+      nativeFilter.dispose();
+    }
+  }
 
   @override
   bool invertColors = false;
-
-  @override
-  ui.MaskFilter? maskFilter;
 }
