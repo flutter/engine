@@ -569,6 +569,22 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return [self search:point];
 }
 
+// A private API iOS called when an item is swipe-to-focusd in VoiceOver.
+- (BOOL)accessibilityScrollToVisible {
+  [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
+  // There is no documentation on the return value. It doesn't appear
+  // to make a difference whether it returns YES or NO. Use Yes for now.
+  return YES;
+}
+
+// A private API iOS called when an item is swipe-to-focusd VoiceOver.
+//
+// There isn't a documentation on the input child, and the `child` appears always
+// the same object of `self`.
+- (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
+  return [child accessibilityScrollToVisible];
+}
+
 - (NSAttributedString*)accessibilityAttributedLabel {
   NSString* label = [self accessibilityLabel];
   if (label.length == 0) {
