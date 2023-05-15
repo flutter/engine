@@ -40,7 +40,6 @@
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
-#include "impeller/entity/points.vert.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
