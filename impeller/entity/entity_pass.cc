@@ -481,6 +481,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Failure();
     }
 
+    FML_LOG(ERROR) << "Origin: " << subpass_coverage->origin
+                   << " Size: " << subpass_coverage->size;
+
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
     if (!subpass->OnRender(renderer,                  // renderer
@@ -688,13 +691,18 @@ bool EntityPass::OnRender(
     // Tell the backdrop contents which portion of the rendered output will
     // actually be used. The contents may optionally use this hint to avoid
     // unnecessary rendering work.
-    backdrop_filter_contents->SetCoverageHint(
-        stencil_coverage_stack.back().coverage);
+    if (!stencil_coverage_stack.empty() &&
+        stencil_coverage_stack.back().coverage.has_value()) {
+      auto coverage_hint = Rect(
+          stencil_coverage_stack.back().coverage->origin - global_pass_position,
+          stencil_coverage_stack.back().coverage->size);
+      backdrop_filter_contents->SetCoverageHint(coverage_hint);
+    }
 
     Entity backdrop_entity;
     backdrop_entity.SetContents(std::move(backdrop_filter_contents));
     backdrop_entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3(local_pass_position)));
+        Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetStencilDepth(stencil_depth_floor);
 
     render_element(backdrop_entity);
