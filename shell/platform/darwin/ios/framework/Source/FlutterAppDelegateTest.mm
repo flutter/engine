@@ -68,7 +68,7 @@ FLUTTER_ASSERT_ARC
                             options:@{}];
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"/custom/route?query=test"}]);
+                                           arguments:@{@"location" : @"http://myApp/custom/route?query=testt"}]);
 }
 
 - (void)testLaunchUrlWithDeepLinkingNotSet {
@@ -106,7 +106,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel
       invokeMethod:@"pushRouteInformation"
-         arguments:@{@"location" : @"/custom/route?query=test#fragment"}]);
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test#fragment"}]);
 }
 
 - (void)testLaunchUrlWithFragmentNoQueryParameter {
@@ -119,7 +119,7 @@ FLUTTER_ASSERT_ARC
                             options:@{}];
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"/custom/route#fragment"}]);
+                                           arguments:@{@"location" : @"http://myApp/custom/route#fragment"}]);
 }
 
 - (void)testReleasesWindowOnDealloc {
@@ -153,7 +153,7 @@ FLUTTER_ASSERT_ARC
         }];
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"/custom/route?query=test"}]);
+                                           arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 @end
