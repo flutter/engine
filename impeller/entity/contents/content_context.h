@@ -301,10 +301,10 @@ struct ContentContextOptions {
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(
-          o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
-          o.primitive_type, o.color_attachment_pixel_format,
-          o.has_stencil_attachment, o.wireframe);
+      return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
+                              o.stencil_operation, o.primitive_type,
+                              o.color_attachment_pixel_format,
+                              o.has_stencil_attachment, o.wireframe);
     }
   };
 
