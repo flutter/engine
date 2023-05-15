@@ -561,28 +561,29 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return nil;
 }
 
-// Overrides apple private method to fix https://github.com/flutter/flutter/issues/113377.
-// For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus goes to the smallest
-// object before IOS 16, but to the top-left object in IOS 16.
-// Overrides this method to focus the first eligiable semantics object in hit test order.
+// iOS uses this method to determine the hittest results when users touch
+// explore in VoiceOver.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
   return [self search:point];
 }
 
-// A private API iOS called when an item is swipe-to-focusd in VoiceOver.
-- (BOOL)accessibilityScrollToVisible {
+- (void)showOnScreen {
   [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
-  // There is no documentation on the return value. It doesn't appear
-  // to make a difference whether it returns YES or NO. Use Yes for now.
+}
+
+// iOS calls this method when this item is swipe-to-focusd in VoiceOver.
+- (BOOL)accessibilityScrollToVisible {
+  [self showOnScreen];
   return YES;
 }
 
-// A private API iOS called when an item is swipe-to-focusd VoiceOver.
-//
-// There isn't a documentation on the input child, and the `child` appears always
-// the same object of `self`.
+// iOS calls this method when this item is swipe-to-focusd in VoiceOver.
 - (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
-  return [child accessibilityScrollToVisible];
+  if ([child isKindOfClass:[FlutterSemanticsObject class]]) {
+    [child showOnScreen];
+    return YES;
+  }
+  return NO;
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
