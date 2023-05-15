@@ -54,7 +54,7 @@ class SkwasmRenderer implements Renderer {
       tileMode: tileMode,
       matrix4: matrix,
     );
-  
+
   @override
   ui.ImageFilter createBlurImageFilter({
     double sigmaX = 0.0,

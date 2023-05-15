@@ -54,6 +54,12 @@ external ImageFilterHandle imageFilterCreateMatrix(
   int quality,
 );
 
+@Native<ImageFilterHandle Function(ColorFilterHandle)>(
+  symbol: 'imageFilter_createFromColorFilter', isLeaf: true)
+external ImageFilterHandle imageFilterCreateFromColorFilter(
+  ColorFilterHandle colorFilte
+);
+
 @Native<ImageFilterHandle Function(
   ImageFilterHandle,
   ImageFilterHandle,

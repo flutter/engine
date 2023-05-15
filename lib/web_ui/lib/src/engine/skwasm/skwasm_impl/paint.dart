@@ -21,7 +21,7 @@ class SkwasmPaint implements ui.Paint {
   ui.BlendMode _cachedBlendMode = ui.BlendMode.srcOver;
 
   SkwasmShader? _shader;
-  SkwasmImageFilter? _imageFilter;
+  ui.ImageFilter? _imageFilter;
 
   EngineColorFilter? _colorFilter;
 
@@ -102,8 +102,20 @@ class SkwasmPaint implements ui.Paint {
 
   @override
   set imageFilter(ui.ImageFilter? filter) {
-    _imageFilter = filter as SkwasmImageFilter?;
-    paintSetImageFilter(handle, filter != null ? filter.handle : nullptr);
+    _imageFilter = filter;
+
+    final SkwasmImageFilter? nativeImageFilter;
+    if (filter is ui.ColorFilter) {
+      final SkwasmColorFilter colorFilter =
+        SkwasmColorFilter.fromEngineColorFilter(filter as EngineColorFilter);
+      nativeImageFilter = SkwasmImageFilter.fromColorFilter(colorFilter);
+      colorFilter.dispose();
+    } else if (filter is SkwasmImageFilter) {
+      nativeImageFilter = filter;
+    } else {
+      nativeImageFilter = null;
+    }
+    paintSetImageFilter(handle, nativeImageFilter != null ? nativeImageFilter.handle : nullptr);
   }
 
   @override

@@ -36,10 +36,34 @@ class SkwasmImageFilter implements ui.ImageFilter {
     filterQuality.index
   )));
 
+  factory SkwasmImageFilter.fromColorFilter(SkwasmColorFilter filter) =>
+    SkwasmImageFilter._(imageFilterCreateFromColorFilter(filter.handle));
+
   factory SkwasmImageFilter.compose(
-    SkwasmImageFilter outer,
-    SkwasmImageFilter inner,
-  ) => SkwasmImageFilter._(imageFilterCompose(outer.handle, inner.handle));
+    ui.ImageFilter outer,
+    ui.ImageFilter inner,
+  ) {
+    final SkwasmImageFilter nativeOuter;
+    final SkwasmImageFilter nativeInner;
+    if (outer is ui.ColorFilter) {
+      final SkwasmColorFilter colorFilter =
+        SkwasmColorFilter.fromEngineColorFilter(outer as EngineColorFilter);
+      nativeOuter = SkwasmImageFilter.fromColorFilter(colorFilter);
+      colorFilter.dispose();
+    } else {
+      nativeOuter = outer as SkwasmImageFilter;
+    }
+
+    if (inner is ui.ColorFilter) {
+      final SkwasmColorFilter colorFilter =
+        SkwasmColorFilter.fromEngineColorFilter(inner as EngineColorFilter);
+      nativeInner = SkwasmImageFilter.fromColorFilter(colorFilter);
+      colorFilter.dispose();
+    } else {
+      nativeInner = outer as SkwasmImageFilter;
+    }
+    return SkwasmImageFilter._(imageFilterCompose(nativeOuter.handle, nativeInner.handle));
+  }
 
   void dispose() {
     if (!_isDisposed) {
@@ -56,21 +80,18 @@ class SkwasmColorFilter {
   SkwasmColorFilter._(this.handle);
 
   factory SkwasmColorFilter.fromEngineColorFilter(EngineColorFilter colorFilter) =>
-    switch (colorFilter.type) {        
+    switch (colorFilter.type) {
       ColorFilterType.mode => SkwasmColorFilter._(colorFilterCreateMode(
         colorFilter.color!.value,
         colorFilter.blendMode!.index,
       )),
-      ColorFilterType.linearToSrgbGamma => linearToSrgbGamma,
-      ColorFilterType.srgbToLinearGamma => srgbToLinearGamma,
+      ColorFilterType.linearToSrgbGamma => SkwasmColorFilter._(colorFilterCreateLinearToSRGBGamma()),
+      ColorFilterType.srgbToLinearGamma => SkwasmColorFilter._(colorFilterCreateSRGBToLinearGamma()),
       ColorFilterType.matrix => withStackScope((StackScope scope) {
         final Pointer<Float> nativeMatrix = scope.convertDoublesToNative(colorFilter.matrix!);
         return SkwasmColorFilter._(colorFilterCreateMatrix(nativeMatrix));
       }),
     };
-
-  static SkwasmColorFilter linearToSrgbGamma = SkwasmColorFilter._(colorFilterCreateLinearToSRGBGamma());
-  static SkwasmColorFilter srgbToLinearGamma = SkwasmColorFilter._(colorFilterCreateSRGBToLinearGamma());
 
   void dispose() {
     if (!_isDisposed) {
