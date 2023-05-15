@@ -1283,7 +1283,7 @@ void DisplayListDispatcher::drawDisplayList(
 void DisplayListDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                          SkScalar x,
                                          SkScalar y) {
-  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLength();
+  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
   canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
                         impeller::Point{x, y},               //
                         paint_                               //
