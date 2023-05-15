@@ -791,6 +791,7 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
           )
           # xcresults contain many little files. Archive the bundle before upload.
           shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
+        raise
 
   finally:
     delete_simulator(new_simulator_name)
