@@ -425,7 +425,7 @@ targets:
       $flutter/osx_sdk : >-
         { "sdk_version": "14e222b" }
       drone_dimensions: >
-        ["os=Mac"]
+        ["os=Mac-12"]
 
   - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
@@ -512,7 +512,7 @@ targets:
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
       drone_dimensions: >
-        ["os=Mac"]
+        ["os=Mac-12"]
 
   - name: Mac impeller-cmake-example
     bringup: true
