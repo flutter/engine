@@ -773,7 +773,8 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
       ]
       if test_filter is not None:
         test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
-      run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+      try:
+        run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
 
       except:
         # The LUCI environment may provide a variable containing a directory path
