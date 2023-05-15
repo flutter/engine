@@ -10,6 +10,8 @@ import shutil
 import sys
 import os
 
+from create_xcframework import create_xcframework
+
 buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
 )
@@ -24,7 +26,7 @@ out_dir = os.path.join(buildroot_dir, 'out')
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Creates FlutterMacOS.framework for macOS'
+      description='Creates Flutter.framework, Flutter.xcframework, FlutterMacOS.framework, and FlutterMacOS.xcframework for macOS'
   )
 
   parser.add_argument('--dst', type=str, required=True)
@@ -41,6 +43,17 @@ def main():
       args.dst
       if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   )
+
+  generate_framework(args, dst, 'Flutter')
+  generate_framework(args, dst, 'FlutterMacOS')
+
+  if args.zip:
+    zip_frameworks(dst)
+
+  return 0
+
+
+def generate_framework(args, dst, framework_name):
   arm64_out_dir = (
       args.arm64_out_dir if os.path.isabs(args.arm64_out_dir) else
       os.path.join(buildroot_dir, args.arm64_out_dir)
@@ -50,12 +63,12 @@ def main():
       os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
-  fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
-  arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
-  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
+  fat_framework = os.path.join(dst, f'{framework_name}.framework')
+  arm64_framework = os.path.join(arm64_out_dir, f'{framework_name}.framework')
+  x64_framework = os.path.join(x64_out_dir, f'{framework_name}.framework')
 
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
+  arm64_dylib = os.path.join(arm64_framework, framework_name)
+  x64_dylib = os.path.join(x64_framework, framework_name)
 
   if not os.path.isdir(arm64_framework):
     print('Cannot find macOS arm64 Framework at %s' % arm64_framework)
@@ -79,30 +92,35 @@ def main():
 
   shutil.rmtree(fat_framework, True)
   shutil.copytree(arm64_framework, fat_framework, symlinks=True)
-  regenerate_symlinks(fat_framework)
+  regenerate_symlinks(framework_name, fat_framework)
 
   fat_framework_binary = os.path.join(
-      fat_framework, 'Versions', 'A', 'FlutterMacOS'
+      fat_framework, 'Versions', 'A', framework_name
   )
 
   # Create the arm64/x64 fat framework.
   subprocess.check_call([
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
-  process_framework(dst, args, fat_framework, fat_framework_binary)
 
-  return 0
+  # Create XCFramework from the arm-only fat framework.
+  xcframeworks = [fat_framework]
+  create_xcframework(location=dst, name=framework_name, frameworks=xcframeworks)
+
+  process_framework(
+      dst, args, framework_name, fat_framework, fat_framework_binary
+  )
 
 
-def regenerate_symlinks(fat_framework):
+def regenerate_symlinks(framework_name, fat_framework):
   """Regenerates the symlinks structure.
 
   Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
   This logic regenerates the symlinks in the expected structure.
   """
-  if os.path.islink(os.path.join(fat_framework, 'FlutterMacOS')):
+  if os.path.islink(os.path.join(fat_framework, framework_name)):
     return
-  os.remove(os.path.join(fat_framework, 'FlutterMacOS'))
+  os.remove(os.path.join(fat_framework, framework_name))
   shutil.rmtree(os.path.join(fat_framework, 'Headers'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Modules'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
@@ -110,8 +128,8 @@ def regenerate_symlinks(fat_framework):
   shutil.rmtree(current_version_path, True)
   os.symlink('A', current_version_path)
   os.symlink(
-      os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(fat_framework, 'FlutterMacOS')
+      os.path.join('Versions', 'Current', framework_name),
+      os.path.join(fat_framework, framework_name)
   )
   os.symlink(
       os.path.join('Versions', 'Current', 'Headers'),
@@ -127,83 +145,54 @@ def regenerate_symlinks(fat_framework):
   )
 
 
-def embed_codesign_configuration(config_path, content):
+def embed_codesign_configuration(config_path, contents):
   with open(config_path, 'w') as file:
-    file.write(content)
+    file.write('\n'.join(contents) + '\n')
 
 
-def process_framework(dst, args, fat_framework, fat_framework_binary):
+def process_framework(
+    dst, args, framework_name, fat_framework, fat_framework_binary
+):
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
-      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'],
-                            cwd=dsym_dst)
-      # Double zip to make it consistent with legacy artifacts.
-      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
+      dsym_dst = os.path.join(dst, f'{framework_name}.dSYM')
       subprocess.check_call([
-          'zip',
-          '-y',
-          'FlutterMacOS.dSYM_.zip',
-          'FlutterMacOS.dSYM.zip',
+          'zip', '-r', '-y', f'{framework_name}.dSYM.zip', '.'
       ],
                             cwd=dsym_dst)
-      # Use doubled zipped file.
-      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
-      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
-      shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
   if args.strip:
     # copy unstripped
-    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
+    unstripped_out = os.path.join(dst, f'{framework_name}.unstripped')
     shutil.copyfile(fat_framework_binary, unstripped_out)
 
     subprocess.check_call(['strip', '-x', '-S', fat_framework_binary])
 
-  # Zip FlutterMacOS.framework.
-  if args.zip:
-    filepath_with_entitlements = ''
 
-    framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
-    # TODO(xilaizhang): Remove the zip file from the path when outer zip is removed.
-    filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
+def zip_frameworks(dst):
+  filepath_with_entitlements = ['']
 
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'entitlements.txt'),
-        filepath_with_entitlements
-    )
+  filepath_without_entitlements = [
+      'Flutter.xcframework/macos-arm64_x84_64/Flutter.framework/Flutter',
+      'FlutterMacOS.xcframework/macos-arm64_x84_64/FlutterMacOS.framework/FlutterMacOS'
+  ]
 
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'without_entitlements.txt'),
-        filepath_without_entitlements
-    )
-    subprocess.check_call([
-        'zip',
-        '-r',
-        '-y',
-        'FlutterMacOS.framework.zip',
-        '.',
-    ],
-                          cwd=framework_dst)
-    # Double zip to make it consistent with legacy artifacts.
-    # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-    subprocess.check_call(
-        [
-            'zip',
-            '-y',
-            'FlutterMacOS.framework_.zip',
-            'FlutterMacOS.framework.zip',
-            # TODO(xilaizhang): Move these files to inner zip before removing the outer zip.
-            'entitlements.txt',
-            'without_entitlements.txt',
-        ],
-        cwd=framework_dst
-    )
-    # Use doubled zipped file.
-    final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
-    final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
-    shutil.move(final_src_path, final_dst_path)
+  embed_codesign_configuration(
+      os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements
+  )
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'without_entitlements.txt'),
+      filepath_without_entitlements
+  )
+
+  subprocess.check_call([
+      'zip', '-r', '-y', 'frameworks.zip', 'Flutter.xcframework',
+      'FlutterMacOS.xcframework', 'entitlements.txt', 'without_entitlements.txt'
+  ],
+                        cwd=dst)
 
 
 if __name__ == '__main__':

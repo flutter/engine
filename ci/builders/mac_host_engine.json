@@ -299,7 +299,7 @@
     "generators": {
         "tasks": [
             {
-                "name": "Release-FlutterMacOS.framework",
+                "name": "Release-macos-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/release/framework",
@@ -314,7 +314,7 @@
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
             {
-                "name": "Debug-FlutterMacOS.framework",
+                "name": "Debug-macos-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/debug/framework",
@@ -327,7 +327,7 @@
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
             {
-                "name": "Profile-FlutterMacOS.framework",
+                "name": "Profile-macos-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/profile/framework",
@@ -395,18 +395,23 @@
             "realm": "production"
         },
         {
-            "source": "out/debug/framework/FlutterMacOS.framework.zip",
-            "destination": "darwin-x64/FlutterMacOS.framework.zip",
+            "source": "out/release/framework/Flutter.dSYM.zip",
+            "destination": "darwin-x64-release/Flutter.dSYM.zip",
             "realm": "production"
         },
         {
-            "source": "out/profile/framework/FlutterMacOS.framework.zip",
-            "destination": "darwin-x64-profile/FlutterMacOS.framework.zip",
+            "source": "out/debug/frameworks.zip",
+            "destination": "darwin-x64/frameworks.zip",
             "realm": "production"
         },
         {
-            "source": "out/release/framework/FlutterMacOS.framework.zip",
-            "destination": "darwin-x64-release/FlutterMacOS.framework.zip",
+            "source": "out/profile/frameworks.zip",
+            "destination": "darwin-x64-profile/frameworks.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/release/frameworks.zip",
+            "destination": "darwin-x64-release/frameworks.zip",
             "realm": "production"
         },
         {

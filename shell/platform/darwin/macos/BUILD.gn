@@ -490,10 +490,6 @@ action("_generate_mac_symlinks") {
     ":copy_mac_framework_info_plist",
     ":copy_mac_framework_module_map",
   ]
-  metadata = {
-    macos_framework_without_entitlement =
-        [ "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" ]
-  }
 }
 
 shared_library("_generate_mac_symlinks_and_verify_framework_module") {
@@ -507,11 +503,20 @@ shared_library("_generate_mac_symlinks_and_verify_framework_module") {
     "-Xlinker",
     "-fatal_warnings",
   ]
-  frameworks = [ "FlutterMacOS.framework" ]
+  frameworks = [
+    "Flutter.framework",
+    "FlutterMacOS.framework",
+  ]
 
-  sources = [ "wrapper_framework/Source/FlutterUmbrellaImportTests.m" ]
+  sources = [
+    "wrapper_framework/Source/FlutterReExportTest.m",
+    "wrapper_framework/Source/FlutterUmbrellaImportTests.m",
+  ]
 
-  deps = [ ":_generate_mac_symlinks" ]
+  deps = [
+    ":_generate_mac_symlinks",
+    ":_generate_symlinks",
+  ]
 }
 
 group("universal_mac_flutter_framework") {

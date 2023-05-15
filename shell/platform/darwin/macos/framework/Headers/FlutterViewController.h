@@ -140,7 +140,7 @@ FLUTTER_DARWIN_EXPORT
  * is instantiated in MainFlutterWindow.swift in the Flutter project.
  * ```swift
  * import Cocoa
- * import FlutterMacOS
+ * import Flutter
  *
  * class MainFlutterWindow: NSWindow {
  *   override func awakeFromNib() {
