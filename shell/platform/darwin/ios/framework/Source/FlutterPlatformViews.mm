@@ -622,11 +622,8 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  UIView* flutter_view = flutter_view_.get();
-  for (UIView* sub_view in [flutter_view subviews]) {
-    if (![sub_view isKindOfClass:[ChildClippingView class]]) {
-      continue;
-    }
+  for (int64_t view_id : active_composition_order_) {
+    UIView *sub_view = root_views_[view_id].get();
     [sub_view removeFromSuperview];
   }
   root_views_.clear();
