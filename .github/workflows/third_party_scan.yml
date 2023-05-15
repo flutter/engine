@@ -3,7 +3,7 @@ on:
   # Only the default branch is supported.
   branch_protection_rule:
   push:
-    branches: [ vuln-scan-cwd ]
+    branches: [ main ]
 
 # Declare default permissions as read only.
 permissions: read-all
