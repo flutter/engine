@@ -69,7 +69,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel
       invokeMethod:@"pushRouteInformation"
-         arguments:@{@"location" : @"http://myApp/custom/route?query=testt"}]);
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 - (void)testLaunchUrlWithDeepLinkingNotSet {
