@@ -2165,5 +2165,31 @@ TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanDrawPoints) {
+  std::vector<Point> points = {
+      {0, 0},      //
+      {100, 100},  //
+      {100, 0},    //
+      {0, 100},    //
+      {0, 0},      //
+      {48, 48},    //
+      {52, 52},    //
+  };
+  std::vector<PointStyle> caps = {
+      PointStyle::kRound,
+      PointStyle::kSquare,
+  };
+  Paint paint;
+  paint.color = Color::Yellow().WithAlpha(0.5);
+
+  Canvas canvas;
+  canvas.Translate({200, 200});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kRound);
+  canvas.Translate({150, 0});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kSquare);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
