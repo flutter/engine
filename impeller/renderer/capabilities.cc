@@ -67,11 +67,6 @@ class StandardCapabilities final : public Capabilities {
   }
 
   // |Capabilities|
-  bool SupportsDisabledRasterization() const override {
-    return supports_disabled_rasterization_;
-  }
-
-  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override {
     return default_color_format_;
   }
@@ -93,7 +88,6 @@ class StandardCapabilities final : public Capabilities {
                        bool supports_read_from_onscreen_texture,
                        bool supports_read_from_resolve,
                        bool supports_decal_tile_mode,
-                       bool supports_disabled_rasterization,
                        PixelFormat default_color_format,
                        PixelFormat default_stencil_format)
       : has_threading_restrictions_(has_threading_restrictions),
@@ -108,7 +102,6 @@ class StandardCapabilities final : public Capabilities {
             supports_read_from_onscreen_texture),
         supports_read_from_resolve_(supports_read_from_resolve),
         supports_decal_tile_mode_(supports_decal_tile_mode),
-        supports_disabled_rasterization_(supports_disabled_rasterization),
         default_color_format_(default_color_format),
         default_stencil_format_(default_stencil_format) {}
 
@@ -125,7 +118,6 @@ class StandardCapabilities final : public Capabilities {
   bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
   bool supports_decal_tile_mode_ = false;
-  bool supports_disabled_rasterization_ = false;
   PixelFormat default_color_format_ = PixelFormat::kUnknown;
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
 
@@ -210,12 +202,6 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsDecalTileMode(bool value) {
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsDisabledRasterization(
-    bool value) {
-  supports_disabled_rasterization_ = value;
-  return *this;
-}
-
 std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
   return std::unique_ptr<StandardCapabilities>(new StandardCapabilities(  //
       has_threading_restrictions_,                                        //
@@ -229,7 +215,6 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       supports_read_from_onscreen_texture_,                               //
       supports_read_from_resolve_,                                        //
       supports_decal_tile_mode_,                                          //
-      supports_disabled_rasterization_,                                   //
       *default_color_format_,                                             //
       *default_stencil_format_                                            //
       ));

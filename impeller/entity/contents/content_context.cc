@@ -11,10 +11,10 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
-#include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
 
@@ -145,7 +145,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetPrimitiveType(primitive_type);
 
   desc.SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
-  desc.SetEnableRasterization(enable_rasterization);
 }
 
 template <typename PipelineT>

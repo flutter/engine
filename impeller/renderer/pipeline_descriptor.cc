@@ -42,7 +42,6 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, cull_mode_);
   fml::HashCombineSeed(seed, primitive_type_);
   fml::HashCombineSeed(seed, polygon_mode_);
-  fml::HashCombineSeed(seed, enable_rasterization_);
   return seed;
 }
 
@@ -62,8 +61,7 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          winding_order_ == other.winding_order_ &&
          cull_mode_ == other.cull_mode_ &&
          primitive_type_ == other.primitive_type_ &&
-         polygon_mode_ == other.polygon_mode_ &&
-         enable_rasterization_ == other.enable_rasterization_;
+         polygon_mode_ == other.polygon_mode_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -235,14 +233,6 @@ const std::string& PipelineDescriptor::GetLabel() const {
 
 PixelFormat PipelineDescriptor::GetDepthPixelFormat() const {
   return depth_pixel_format_;
-}
-
-void PipelineDescriptor::SetEnableRasterization(bool value) {
-  enable_rasterization_ = value;
-}
-
-bool PipelineDescriptor::GetRasterizationEnabled() const {
-  return enable_rasterization_;
 }
 
 std::optional<StencilAttachmentDescriptor>

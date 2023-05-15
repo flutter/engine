@@ -831,7 +831,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar radius = std::max(radius_, min_size);
 
-  if (!renderer.GetDeviceCapabilities().SupportsDisabledRasterization()) {
+  if (!renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferCPU(renderer, entity, pass, radius);
   }
 

@@ -131,10 +131,6 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
-  void SetEnableRasterization(bool value);
-
-  bool GetRasterizationEnabled() const;
-
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -153,7 +149,6 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
-  bool enable_rasterization_ = true;
 };
 
 }  // namespace impeller
