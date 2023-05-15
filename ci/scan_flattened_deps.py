@@ -34,7 +34,10 @@ sarif_log = {
     '$schema':
         'https://json.schemastore.org/sarif-2.1.0.json', 'version':
             '2.1.0', 'runs': [{
-                'tool': {'driver': {'name': 'OSV Scan', 'rules': []}},
+                'tool': {'driver': {'name': 'OSV Scan',
+                                    'informationUri': 'https://osv.dev/',
+                                    'semanticVersion': '1.0.0',
+                                    'rules': []}},
                 'results': []
             }]
 }
@@ -50,7 +53,7 @@ def sarif_result():
           'N/A', 'message': {'text': 'OSV Scan Finding'}, 'locations': [{
               'physicalLocation': {
                   'artifactLocation': {
-                      'uri': 'No location associated with this finding'
+                      'uri': 'DEPS'
                   },
                   'region': {'startLine': 1, 'startColumn': 1, 'endColumn': 1}
               }
