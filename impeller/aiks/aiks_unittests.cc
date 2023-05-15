@@ -2293,6 +2293,8 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect{0, 0, 400, 400}, paint);
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing
