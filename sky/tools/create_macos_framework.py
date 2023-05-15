@@ -169,9 +169,10 @@ def process_framework(
     if args.zip:
       dsym_dst = os.path.join(dst, f'{framework_name}.dSYM')
       subprocess.check_call([
-          'zip', '-r', '-y', f'{framework_name}.dSYM.zip', '.'
+          'zip', '-r', '-y', f'{framework_name}.dSYM.zip',
+          f'{framework_name}.dSYM'
       ],
-                            cwd=dsym_dst)
+                            cwd=dst)
 
   if args.strip:
     # copy unstripped
