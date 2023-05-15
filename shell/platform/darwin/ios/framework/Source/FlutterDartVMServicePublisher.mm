@@ -89,7 +89,7 @@
   uint32_t interfaceIndex = 0;
 #endif  // TARGET_IPHONE_SIMULATOR
   const char* registrationType = "_dartVmService._tcp";
-  const char* legacyRegistrationType = "_dartobservatory._tcp";
+  const char* legacyRegistrationType = "_dartVmService._tcp";
 
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] unsignedShortValue];
