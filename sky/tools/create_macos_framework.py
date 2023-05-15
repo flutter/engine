@@ -10,7 +10,7 @@ import shutil
 import sys
 import os
 
-from create_xcframework import create_xcframework
+from create_xcframework import create_xcframework  # pylint: disable=import-error
 
 buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
@@ -26,7 +26,10 @@ out_dir = os.path.join(buildroot_dir, 'out')
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Creates Flutter.framework, Flutter.xcframework, FlutterMacOS.framework, and FlutterMacOS.xcframework for macOS'
+      description=(
+          'Creates Flutter.framework, Flutter.xcframework, '
+          'FlutterMacOS.framework, and FlutterMacOS.xcframework for macOS'
+      )
   )
 
   parser.add_argument('--dst', type=str, required=True)
@@ -44,8 +47,13 @@ def main():
       if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   )
 
-  generate_framework(args, dst, 'Flutter')
-  generate_framework(args, dst, 'FlutterMacOS')
+  flutter_result = generate_framework(args, dst, 'Flutter')
+  if flutter_result == 1:
+    return 1
+
+  flutter_mac_result = generate_framework(args, dst, 'FlutterMacOS')
+  if flutter_mac_result == 1:
+    return 1
 
   if args.zip:
     zip_frameworks(dst)
@@ -110,6 +118,8 @@ def generate_framework(args, dst, framework_name):
   process_framework(
       dst, args, framework_name, fat_framework, fat_framework_binary
   )
+
+  return 0
 
 
 def regenerate_symlinks(framework_name, fat_framework):

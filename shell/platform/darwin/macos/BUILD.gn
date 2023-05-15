@@ -332,6 +332,7 @@ if (build_glfw_shell) {
 
 zip_bundle("zip_macos_flutter_framework") {
   deps = [
+    ":_generate_mac_symlinks",
     ":_generate_symlinks",
     ":macos_framework_without_entitlement_config",
   ]
