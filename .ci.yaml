@@ -259,8 +259,8 @@ targets:
     bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_fuchsia
@@ -268,8 +268,8 @@ targets:
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_arm_host_engine
@@ -286,8 +286,8 @@ targets:
   - name: Linux linux_host_desktop_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_host_desktop_engine
@@ -295,8 +295,8 @@ targets:
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_android_aot_engine
@@ -304,8 +304,8 @@ targets:
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_android_debug_engine
@@ -320,8 +320,8 @@ targets:
   - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
     timeout: 70
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: linux_web_engine
@@ -386,8 +386,8 @@ targets:
   - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Linux"
+    drone_dimensions: >
+      ["os=Linux"]
     properties:
       release_build: "true"
       config_name: mac_android_aot_engine
@@ -414,8 +414,8 @@ targets:
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Mac"
+    drone_dimensions: >
+      ["os=Mac"]
     properties:
       release_build: "true"
       cpu: arm64
@@ -502,8 +502,8 @@ targets:
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Mac"
+    drone_dimensions: >
+      ["os=Mac"]
     properties:
       release_build: "true"
       config_name: mac_ios_engine
@@ -544,8 +544,8 @@ targets:
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Windows"
+    drone_dimensions: >
+      ["os=Windows"]
     properties:
       release_build: "true"
       config_name: windows_android_aot_engine
@@ -553,8 +553,8 @@ targets:
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Windows"
+    drone_dimensions: >
+      ["os=Windows"]
     properties:
       release_build: "true"
       config_name: windows_host_engine
@@ -562,8 +562,8 @@ targets:
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
-    dimensions:
-      os: "Windows"
+    drone_dimensions: >
+      ["os=Windows"]
     enabled_branches:
       # Don't run this on release branches
       - main
