@@ -46,7 +46,9 @@ class TestWindowsApi : public testing::StubFlutterWindowsApi {
 
   bool engine_destroyed() { return engine_destroyed_; }
   bool view_controller_destroyed() { return view_controller_destroyed_; }
-  bool view_controller_force_redrawed() { return view_controller_force_redrawed_; }
+  bool view_controller_force_redrawed() {
+    return view_controller_force_redrawed_;
+  }
 
  private:
   bool engine_destroyed_ = false;
