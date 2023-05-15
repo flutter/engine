@@ -67,8 +67,9 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"http://myApp/custom/route?query=testt"}]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=testt"}]);
 }
 
 - (void)testLaunchUrlWithDeepLinkingNotSet {
@@ -118,8 +119,9 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route#fragment"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"http://myApp/custom/route#fragment"}]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route#fragment"}]);
 }
 
 - (void)testReleasesWindowOnDealloc {
@@ -152,8 +154,9 @@ FLUTTER_ASSERT_ARC
         restorationHandler:^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
         }];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
-                                           arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 @end
