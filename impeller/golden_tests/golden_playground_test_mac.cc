@@ -16,6 +16,8 @@ namespace impeller {
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
 static const std::vector<std::string> kSkipTests = {
+    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Metal",
+    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Vulkan",
     "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_Metal",
     "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_"
     "Vulkan",
@@ -23,6 +25,8 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderRadialGradient_Vulkan",
     "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Metal",
     "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Vulkan",
+    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Metal",
+    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Vulkan",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
     "impeller_Play_AiksTest_ColorWheel_Metal",
