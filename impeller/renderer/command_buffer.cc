@@ -37,7 +37,9 @@ void CommandBuffer::WaitUntilScheduled() {
 }
 
 bool CommandBuffer::SubmitCommandsAsync(
-    std::shared_ptr<RenderPass> render_pass) {
+    std::shared_ptr<RenderPass>
+        render_pass  // NOLINT(performance-unnecessary-value-param)
+) {
   TRACE_EVENT0("impeller", "CommandBuffer::SubmitCommandsAsync");
   if (!render_pass->IsValid() || !IsValid()) {
     return false;
