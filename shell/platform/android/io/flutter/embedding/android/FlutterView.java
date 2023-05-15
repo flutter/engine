@@ -705,7 +705,7 @@ public class FlutterView extends FrameLayout
 
       // Override navigation bar visibility to false in this case as the transient bars overlay the
       // apps content.
-      if (navigationBarVisible) {
+      if (navigationBarVisible && windowInsetsController != null) {
         navigationBarVisible =
             (windowInsetsController.getSystemBarsBehavior()
                     & WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
