@@ -843,8 +843,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   using PS = PointsComputeShader;
 
-  // using VS = PointFieldGeometryPipeline::VertexShader;
-
   auto points_data = host_buffer.Emplace(
       points_.data(), points_.size() * sizeof(Point), alignof(Point));
 
@@ -858,14 +856,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   ComputeCommand cmd;
   cmd.label = "Points Geometry";
   cmd.pipeline = renderer.GetPointComputePipeline();
-
-  // auto options = OptionsFromPass(pass);
-  // options.blend_mode = BlendMode::kSource;
-  // options.stencil_compare = CompareFunction::kAlways;
-  // options.stencil_operation = StencilOperation::kKeep;
-  // options.enable_rasterization = false;
-  // options.sample_count = SampleCount::kCount1;
-  // cmd.pipeline = renderer.GetPointFieldGeometryPipeline(options);
 
   PS::FrameInfo frame_info;
   frame_info.count = points_.size();
@@ -891,30 +881,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       return {};
     }
   }
-
-  // cmd.BindVertices(vtx_buffer);
-
-  // // Ensure correct synchronization by submitting vertex computation into
-  // // a different render pass.
-  // {
-  //   auto render_target = RenderTarget::CreateOffscreen(
-  //       *renderer.GetContext(),  // context
-  //       {1, 1},                  // size
-  //       "Geometry Snapshot",     // label
-  //       RenderTarget::
-  //           kDefaultColorAttachmentConfigNonRendering,  //
-  //           color_attachment_config
-  //       std::nullopt  // stencil_attachment_config
-  //   );
-  //   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
-  //   auto vertex_render_pass = cmd_buffer->CreateRenderPass(render_target);
-
-  //   if (!vertex_render_pass->AddCommand(std::move(cmd)) ||
-  //       !vertex_render_pass->EncodeCommands() ||
-  //       !cmd_buffer->SubmitCommands()) {
-  //     return {};
-  //   }
-  // }
 
   return {
       .type = PrimitiveType::kTriangle,

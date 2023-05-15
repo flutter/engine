@@ -278,8 +278,6 @@ using FramebufferBlendSoftLightPipeline =
                     FramebufferBlendSoftlightFragmentShader>;
 
 /// Geometry Pipelines
-using PointFieldGeometryPipeline =
-    RenderPipelineT<PointsVertexShader, NonRenderingFragment>;
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 
 /// Pipeline state configuration.
@@ -669,12 +667,6 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPointFieldGeometryPipeline(
-      ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsDisabledRasterization());
-    return GetPipeline(point_field_geometry_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
       const {
     FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
@@ -805,8 +797,6 @@ class ContentContext {
       framebuffer_blend_softlight_pipelines_;
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       point_field_compute_pipelines_;
-
-  mutable Variants<PointFieldGeometryPipeline> point_field_geometry_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

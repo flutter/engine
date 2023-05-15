@@ -163,22 +163,6 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   return std::make_unique<PipelineT>(context, desc);
 }
 
-template <typename PipelineT>
-static std::unique_ptr<PipelineT> CreateDefaultNonRenderingPipeline(
-    const Context& context) {
-  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
-  if (!desc.has_value()) {
-    return nullptr;
-  }
-  // Apply default ContentContextOptions to the descriptor.
-  const auto default_color_fmt =
-      context.GetCapabilities()->GetDefaultColorFormat();
-  ContentContextOptions{.color_attachment_pixel_format = default_color_fmt,
-                        .enable_rasterization = false}
-      .ApplyToPipelineDescriptor(*desc);
-  return std::make_unique<PipelineT>(context, desc);
-}
-
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
@@ -314,11 +298,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   porter_duff_blend_pipelines_[{}] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
 
-  if (context_->GetCapabilities()->SupportsDisabledRasterization()) {
-    point_field_geometry_pipelines_[{}] =
-        CreateDefaultNonRenderingPipeline<PointFieldGeometryPipeline>(
-            *context_);
-  }
   if (context_->GetCapabilities()->SupportsCompute()) {
     auto pipeline_desc =
         PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);

@@ -16,15 +16,6 @@
 
 namespace impeller {
 
-class NonRenderingFragment {
- public:
-  static constexpr std::string_view kLabel = "";
-  static constexpr std::string_view kEntrypointName = "";
-  static constexpr ShaderStage kShaderStage = ShaderStage::kFragment;
-  static constexpr std::string_view kGeneratorName = "";
-  static constexpr std::array<DescriptorSetLayout, 0> kDescriptorSetLayouts{};
-};
-
 //------------------------------------------------------------------------------
 /// @brief      An optional (but highly recommended) utility for creating
 ///             pipelines from reflected shader information.
@@ -69,40 +60,22 @@ struct PipelineBuilder {
       const Context& context,
       PipelineDescriptor& desc) {
     // Setup debug instrumentation.
-    if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
-      desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
-    } else {
-      desc.SetLabel(SPrintF("%s Pipeline", VertexShader::kLabel.data()));
-    }
+    desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
 
     // Resolve pipeline entrypoints.
     {
       auto vertex_function = context.GetShaderLibrary()->GetFunction(
           VertexShader::kEntrypointName, ShaderStage::kVertex);
+      auto fragment_function = context.GetShaderLibrary()->GetFunction(
+          FragmentShader::kEntrypointName, ShaderStage::kFragment);
 
-      std::shared_ptr<const ShaderFunction> fragment_function;
-      if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
-        fragment_function = context.GetShaderLibrary()->GetFunction(
-            FragmentShader::kEntrypointName, ShaderStage::kFragment);
-      }
-
-      if (!std::is_same<FragmentShader, NonRenderingFragment>::value) {
-        if (!vertex_function || !fragment_function) {
-          VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
-                         << VertexShader::kEntrypointName << "' and '"
-                         << FragmentShader::kEntrypointName
-                         << "' for pipeline named '" << VertexShader::kLabel
-                         << "'.";
-          return false;
-        }
-      } else {
-        if (!vertex_function) {
-          VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
-                         << FragmentShader::kEntrypointName
-                         << "' for pipeline named '" << VertexShader::kLabel
-                         << "'.";
-          return false;
-        }
+      if (!vertex_function || !fragment_function) {
+        VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"
+                       << VertexShader::kEntrypointName << "' and '"
+                       << FragmentShader::kEntrypointName
+                       << "' for pipeline named '" << VertexShader::kLabel
+                       << "'.";
+        return false;
       }
 
       desc.AddStageEntrypoint(std::move(vertex_function));
