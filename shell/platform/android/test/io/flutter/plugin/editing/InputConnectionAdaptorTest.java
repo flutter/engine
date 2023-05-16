@@ -561,7 +561,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent shiftKeyUp = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT);
     boolean didConsume = adaptor.handleKeyEvent(shiftKeyUp);
 
-    assertTrue(didConsume);
+    assertFalse(didConsume);
     assertEquals(selStart, Selection.getSelectionStart(editable));
     assertEquals(selEnd, Selection.getSelectionEnd(editable));
   }
