@@ -460,6 +460,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return attributedString;
 }
 
+- (void)showOnScreen {
+  [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
+}
+
 #pragma mark - UIAccessibility overrides
 
 - (BOOL)isAccessibilityElement {
@@ -567,10 +571,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return [self search:point];
 }
 
-- (void)showOnScreen {
-  [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
-}
-
 // iOS calls this method when this item is swipe-to-focusd in VoiceOver.
 - (BOOL)accessibilityScrollToVisible {
   [self showOnScreen];
@@ -579,7 +579,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 // iOS calls this method when this item is swipe-to-focusd in VoiceOver.
 - (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
-  if ([child isKindOfClass:[FlutterSemanticsObject class]]) {
+  if ([child isKindOfClass:[SemanticsObject class]]) {
     [child showOnScreen];
     return YES;
   }
@@ -767,7 +767,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [self bridge]->AccessibilityObjectDidBecomeFocused([self uid]);
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
       [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
-    [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
+    [self showOnScreen];
   }
   if ([self node].HasAction(flutter::SemanticsAction::kDidGainAccessibilityFocus)) {
     [self bridge]->DispatchSemanticsAction([self uid],
