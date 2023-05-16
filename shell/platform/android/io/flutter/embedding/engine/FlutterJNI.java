@@ -1293,9 +1293,13 @@ public class FlutterJNI {
 
   @Nullable
   public float getScaledFontSize(float fontSize) {
+    if (Build.VERSION.SDK_INT < 10000) {
+      // Returns unimplemented on anything below Android U.
+      return -1f;
+    }
     if (synchronousPlatformPlugin == null) {
       Log.e(TAG, "synchronousPlatformPlugin was not set when getScaledFontSize was called.");
-      return -1;
+      return -2f;
     }
     return synchronousPlatformPlugin.getScaledFontSize(fontSize);
   }

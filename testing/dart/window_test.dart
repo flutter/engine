@@ -89,4 +89,36 @@ void main() {
     expect(display.refreshRate, 60);
     expect(display.size, implicitView.physicalSize);
   });
+
+  test('TextScaler works', () {
+    final TextScaler scaler = PlatformDispatcher.instance.platformTextScaler;
+    expect(0, scaler.scale(0));
+    for (int i = 0; i < 10; i++) {
+      final double fontSize = (1 << i).toDouble();
+      expect(fontSize, scaler.scale(fontSize));
+    }
+  });
+
+  test('TextScaler.clamp works', () {
+    const TextScaler original = _QuadraticScaler();
+    final TextScaler clamped = original.clamp(2, 1000);
+
+    // Clamped to 2 * fontSize
+    expect(clamped.scale(1), 2);
+    expect(clamped.scale(1.5), 3);
+    // No Clamping
+    expect(clamped.scale(3), 9);
+    expect(clamped.scale(4), 16);
+    expect(clamped.scale(5), 25);
+    // Clamped to 1000 * fontSize
+    expect(clamped.scale(1001), 1001000);
+    expect(clamped.scale(10000), 10000000);
+  });
+}
+
+class _QuadraticScaler extends TextScaler {
+  const _QuadraticScaler();
+
+  @override
+  double scale(double fontSize) => fontSize * fontSize;
 }

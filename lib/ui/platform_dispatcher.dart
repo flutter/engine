@@ -978,18 +978,6 @@ class PlatformDispatcher {
     'Use platformTextScaler instead. '
     'This feature was deprecated after 3.11.0-5.0.pre.',
   )
-  /// The system-reported text scale.
-  ///
-  /// This establishes the text scaling factor to use when rendering text,
-  /// according to the user's platform preferences.
-  ///
-  /// The [onTextScaleFactorChanged] callback is called whenever this value
-  /// changes.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
   double get textScaleFactor => _configuration.textScaleFactor;
 
   /// Deprecated. Will be removed in a future version of Flutter.
@@ -1309,6 +1297,11 @@ class PlatformDispatcher {
   /// `MediaQuery.scaledFontSizeOf` instead to retrive the scaled font size in a
   /// widget tree, so text resizes properly when the text scaling preference
   /// changes.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
   TextScaler get platformTextScaler {
     final double textScaleFactor = _configuration.textScaleFactor;
     if (textScaleFactor == 1) {
@@ -2353,33 +2346,38 @@ enum DartPerformanceMode {
 /// A class that describes how textual contents should be scaled for better
 /// readability.
 ///
-/// ### Implementing a [TextScaler] subclass
-///
-/// TODO:
 /// The [scale] function computes the scaled font size given the original
-/// unscaled font size specified by app developers. The function must be
-/// idempotent and monotonically increasing. Some platforms use single-precision
-/// float to represent font sizes, as a result of truncation two different
-/// unscaled font sizes can be scaled to the same value.
+/// unscaled font size specified by app developers.
 ///
-/// The [==] operator defines the equality of 2 [TextScaler]s It's recommended
-/// to override the [==] operator if applicable.
-///
+/// The [==] operator defines the equality of 2 [TextScaler]s, which the
+/// framework uses to determine whether text widgets need rebuild when their
+/// [TextScaler] changes. Consider overridding the [==] operator if applicable
+/// to avoid unnecessary rebuilds.
 abstract class TextScaler {
   /// Creates a TextScaler.
   const TextScaler();
 
   /// Creates a proportional [TextScaler] that scales the incoming font size by
-  /// multiplying it with `textScaleFactor`.
+  /// multiplying it with the given `textScaleFactor`.
   const factory TextScaler.linear(double textScaleFactor) = _LinearTextScaler;
 
-  /// The identity function.
+  /// A [TextScaler] that doesn't scale the ipnut font size.
+  ///
+  /// This is equivalent to `TextScaler.linear(1.0)`, the [TextScaler.scale]
+  /// implementation always returns the input font size as-is.
   static const TextScaler noScaling = _LinearTextScaler(1.0);
 
   /// Computes the scaled font size (in logical pixels) with the given unscaled
   /// `fontSize` (in logical pixels).
   ///
   /// The input `fontSize` must be finite and non-negative.
+  ///
+  /// When given the same `fontSize` input, this method returns the same value.
+  /// The output of a larger input `fontSize` is typically larger than that of a
+  /// smaller input, but on unusual occasions they may produce the same output.
+  /// For example, some platforms use single-precision floats to represent font
+  /// sizes, as a result of truncation two different unscaled font sizes can be
+  /// scaled to the same value.
   double scale(double fontSize);
 
   /// Returns a new [TextScaler] that restricts the scaled font size to within
@@ -2472,13 +2470,17 @@ final class _SystemTextScaler extends TextScaler {
   double scale(double fontSize) {
     assert(fontSize >= 0);
     assert(fontSize.isFinite);
-    return switch (PlatformDispatcher._getScaledFontSize(fontSize)) {
-      >= 0 && final double x when fontSize >= 0 => x,
-      == -1 when fontSize >= 0                  => throw StateError('GetScaledFontSize is not implemented on the platform. This should not be reached.'),
+    switch (PlatformDispatcher._getScaledFontSize(fontSize)) {
+      case >= 0 && final double x when fontSize >= 0:
+        return x;
+      case == -1 when fontSize >= 0:
+        throw StateError('GetScaledFontSize is not implemented on the platform. This should not be reached.');
       // Fallback to linear scaling when there's an error. Relevant error messages
       // should already be printed to stderr.
-      _                                         => fontSize * textScaleFactor,
-    };
+      case final double errorCode:
+        assert(false, 'GetScaledFontSize failed with $errorCode');
+        return fontSize * textScaleFactor;
+    }
   }
 
   @override

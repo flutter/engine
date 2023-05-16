@@ -2382,6 +2382,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platf
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SynchronousPlatformPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java + ../../../flutter/LICENSE
@@ -5008,6 +5009,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SynchronousPlatformPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java

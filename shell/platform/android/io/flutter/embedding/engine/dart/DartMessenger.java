@@ -90,14 +90,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
 
     public DartMessengerTaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
-      if (options.getIsSynchronous()) {
-        return new DartMessengerTaskQueue() {
-          @Override
-          public void dispatch(Runnable runnable) {
-            runnable.run();
-          }
-        };
-      } else if (options.getIsSerial()) {
+      if (options.getIsSerial()) {
         return new SerialTaskQueue(executorService);
       } else {
         return new ConcurrentTaskQueue(executorService);

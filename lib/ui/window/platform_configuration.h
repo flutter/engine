@@ -225,10 +225,9 @@ class PlatformConfigurationClient {
   ///                                 app developer. The value is guaranteed
   ///                                 to be finite and non-negative.
   ///
-  /// @return     The scaled font size in logical pixels. If the returned value
-  ///             is negative
-  ///             platform. Empty strings mean the value was unassigned. Empty
-  ///             vector represents a null locale.
+  /// @return     The scaled font size in logical pixels. Returns a negative
+  ///             number when an error is encountered. Specifically, returns -1
+  ///             if this method isn't implemented on the current platform.
   ///
   virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
 

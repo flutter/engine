@@ -118,8 +118,18 @@ abstract class PlatformDispatcher {
 
   bool get brieflyShowPassword => true;
 
+  /// Deprecated. Will be removed in a future version of Flutter.
+  ///
+  /// This field is renamed to [onTextScalerChanged].
+  @Deprecated(
+    'Use onTextScalerChanged instead. '
+    'This feature was deprecated after 3.11.0-5.0.pre.',
+  )
   VoidCallback? get onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback);
+
+  VoidCallback? get onTextScalerChanged;
+  set onTextScalerChanged(VoidCallback? callback);
 
   Brightness get platformBrightness;
 

@@ -295,6 +295,18 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
 
+    //--------------------------------------------------------------------------
+    /// @brief      Synchronously invokes platform-specific APIs to apply the
+    ///             system text scaling on the given unscaled font size.
+    ///
+    /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+    ///                                 app developer. The value is guaranteed
+    ///                                 to be finite and non-negative.
+    ///
+    /// @return     The scaled font size in logical pixels. Returns a negative
+    ///             number when an error is encountered. Specifically, returns
+    ///             -1 if this method isn't implemented on the current platform.
+    ///
     virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
   };
 

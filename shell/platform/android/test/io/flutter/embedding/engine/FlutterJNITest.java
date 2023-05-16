@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -11,6 +12,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.LocaleList;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -19,6 +21,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.plugin.platform.SynchronousPlatformPlugin;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -254,5 +257,31 @@ public class FlutterJNITest {
     flutterJNI.setRefreshRateFPS(120.0f);
     // --- Verify Results ---
     verify(flutterJNI, times(1)).updateRefreshRate();
+  }
+
+  @Test
+  public void getScaledFontSizeWorks() {
+    final FlutterJNI flutterJNI = new FlutterJNI();
+
+    if (Build.VERSION.SDK_INT < 10000) {
+      assertEquals(-1f, flutterJNI.getScaledFontSize(1.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(2.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(4.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(8.0f), 0.0f);
+      return;
+    }
+
+    // Returns -2 when the plugin isn't set.
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(14));
+
+    final SynchronousPlatformPlugin mockPlugin = mock(SynchronousPlatformPlugin.class);
+    flutterJNI.setSynchronousPlatformPlugin(mockPlugin);
+
+    when(mockPlugin.getScaledFontSize(any())).thenReturn(42.0f);
+
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(1.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(2.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(4.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(8.0f), 0.0f);
   }
 }

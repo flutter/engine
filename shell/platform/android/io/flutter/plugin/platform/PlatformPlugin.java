@@ -12,8 +12,6 @@ import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
@@ -133,15 +131,6 @@ public class PlatformPlugin {
         }
       };
 
-  final PlatformChannel.SynchronousPlatformMessageHandler synchronousPlatformMessageHandler =
-      new PlatformChannel.SynchronousPlatformMessageHandler() {
-        public float applyTextScale(float fontSize) {
-          final DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
-          return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
-              / TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.0f, metrics);
-        }
-      };
-
   public PlatformPlugin(@NonNull Activity activity, @NonNull PlatformChannel platformChannel) {
     this(activity, platformChannel, null);
   }
@@ -153,7 +142,6 @@ public class PlatformPlugin {
     this.activity = activity;
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
-    this.platformChannel.setSynchronousPlatformMessageHandler(synchronousPlatformMessageHandler);
     this.platformPluginDelegate = delegate;
 
     mEnabledOverlays = DEFAULT_SYSTEM_UI;
@@ -165,7 +153,6 @@ public class PlatformPlugin {
    * <p>Do not invoke any methods on a {@code PlatformPlugin} after invoking this method.
    */
   public void destroy() {
-    this.platformChannel.setSynchronousPlatformMessageHandler(null);
     this.platformChannel.setPlatformMessageHandler(null);
   }
 

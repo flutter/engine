@@ -199,7 +199,7 @@ const Settings& PlatformView::GetSettings() const {
 }
 
 double PlatformView::GetScaledFontSize(double unscaled_font_size) const {
-  return 0;
+  return -1;
 }
 
 }  // namespace flutter
