@@ -47,7 +47,7 @@ class CkVertices implements ui.Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    if (positions.length % 2 != 0) {
+    if (positions.length.isOdd) {
       throw ArgumentError('"positions" must have an even number of entries (each coordinate is an x,y pair).');
     }
     if (textureCoordinates != null &&
