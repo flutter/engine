@@ -655,6 +655,8 @@ class RuntimeController : public PlatformConfigurationClient {
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
+  double GetScaledFontSize(double unscaled_font_size) const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };
 

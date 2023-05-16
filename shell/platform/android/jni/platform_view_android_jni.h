@@ -202,6 +202,8 @@ class PlatformViewAndroidJNI {
   virtual double GetDisplayDensity() = 0;
 
   virtual bool RequestDartDeferredLibrary(int loading_unit_id) = 0;
+
+  virtual double FlutterViewGetScaledFontSize(double fontSize) const = 0;
 };
 
 }  // namespace flutter

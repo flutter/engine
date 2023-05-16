@@ -294,6 +294,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///        Flutter to the host platform (and its responses).
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
+
+    virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -930,6 +932,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override;
+
+  // |RuntimeDelegate|
+  double GetScaledFontSize(double unscaled_font_size) const override;
 
   void SetNeedsReportTimings(bool value) override;
 

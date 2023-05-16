@@ -38,6 +38,7 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.plugin.platform.SynchronousPlatformPlugin;
 import io.flutter.util.ViewUtils;
 import java.util.HashSet;
 import java.util.List;
@@ -85,6 +86,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
   @NonNull private final DartExecutor dartExecutor;
   @NonNull private final FlutterEngineConnectionRegistry pluginRegistry;
   @NonNull private final LocalizationPlugin localizationPlugin;
+  @NonNull private final SynchronousPlatformPlugin synchronousPlatformPlugin;
 
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
@@ -340,6 +342,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
     }
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
+    this.synchronousPlatformPlugin = new SynchronousPlatformPlugin(context);
 
     if (flutterLoader == null) {
       flutterLoader = injector.flutterLoader();
@@ -354,6 +357,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
     flutterJNI.setDeferredComponentManager(injector.deferredComponentManager());
+    flutterJNI.setSynchronousPlatformPlugin(synchronousPlatformPlugin);
 
     // It should typically be a fresh, unattached JNI. But on a spawned engine, the JNI instance
     // is already attached to a native shell. In that case, the Java FlutterEngine is created around

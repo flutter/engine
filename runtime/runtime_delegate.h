@@ -56,6 +56,8 @@ class RuntimeDelegate {
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const = 0;
 
+  virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
+
  protected:
   virtual ~RuntimeDelegate();
 };

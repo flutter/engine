@@ -491,6 +491,10 @@ std::unique_ptr<std::vector<std::string>> Engine::ComputePlatformResolvedLocale(
   return delegate_.ComputePlatformResolvedLocale(supported_locale_data);
 }
 
+double Engine::GetScaledFontSize(double unscaled_font_size) const {
+  return delegate_.GetScaledFontSize(unscaled_font_size);
+}
+
 void Engine::SetNeedsReportTimings(bool needs_reporting) {
   delegate_.SetNeedsReportTimings(needs_reporting);
 }

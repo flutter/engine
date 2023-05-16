@@ -1424,6 +1424,11 @@ void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
       });
 }
 
+// |Engine::Delegate|
+double Shell::GetScaledFontSize(double unscaled_font_size) const {
+  return platform_view_->GetScaledFontSize(unscaled_font_size);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());

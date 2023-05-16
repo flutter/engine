@@ -529,4 +529,11 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
+double PlatformConfigurationNativeApi::GetScaledFontSize(double unscaled_font_size) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->GetScaledFontSize(unscaled_font_size);
+}
 }  // namespace flutter

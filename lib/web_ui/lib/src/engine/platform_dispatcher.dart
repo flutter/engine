@@ -1238,6 +1238,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  ui.TextScaler get platformTextScaler => ui.TextScaler.linear(configuration.textScaleFactor);
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

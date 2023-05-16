@@ -30,6 +30,7 @@ import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.plugin.platform.SynchronousPlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
@@ -379,6 +380,7 @@ public class FlutterJNI {
   @Nullable private Long nativeShellHolderId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private SynchronousPlatformPlugin synchronousPlatformPlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private PlatformViewsController platformViewsController;
 
@@ -1282,6 +1284,20 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+  @UiThread
+  public void setSynchronousPlatformPlugin(@Nullable SynchronousPlatformPlugin synchronousPlatformPlugin) {
+    ensureRunningOnMainThread();
+    this.synchronousPlatformPlugin = synchronousPlatformPlugin;
+  }
+
+  @Nullable
+  public float getScaledFontSize(float fontSize) {
+    if (synchronousPlatformPlugin == null) {
+      Log.e(TAG, "synchronousPlatformPlugin was not set when getScaledFontSize was called.");
+      return -1;
+    }
+    return synchronousPlatformPlugin.getScaledFontSize(fontSize);
+  }
 
   // ----- Start Deferred Components Support ----
 

@@ -831,6 +831,8 @@ class PlatformView {
   ///
   const Settings& GetSettings() const;
 
+  virtual double GetScaledFontSize(double unscaled_font_size) const;
+
  protected:
   // This is the only method called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();

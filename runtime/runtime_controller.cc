@@ -523,6 +523,10 @@ bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
   return false;
 }
 
+double RuntimeController::GetScaledFontSize(double unscaled_font_size) const {
+  return client_.GetScaledFontSize(unscaled_font_size);
+}
+
 RuntimeController::Locale::Locale(std::string language_code_,
                                   std::string country_code_,
                                   std::string script_code_,

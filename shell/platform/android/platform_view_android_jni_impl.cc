@@ -82,6 +82,8 @@ static jmethodID g_update_semantics_method = nullptr;
 
 static jmethodID g_update_custom_accessibility_actions_method = nullptr;
 
+static jmethodID g_get_scaled_font_size_method = nullptr;
+
 static jmethodID g_on_first_frame_method = nullptr;
 
 static jmethodID g_on_engine_restart_method = nullptr;
@@ -856,6 +858,15 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  g_get_scaled_font_size_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "getScaledFontSize",
+      "(F)F");
+
+  if (g_get_scaled_font_size_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI#getScaledFontSize method";
+    return false;
+  }
+
   g_update_semantics_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "updateSemantics",
       "(Ljava/nio/ByteBuffer;[Ljava/lang/String;[Ljava/nio/ByteBuffer;)V");
@@ -1218,6 +1229,21 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
   }
 
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(double fontSize) const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -1;
+  }
+
+  const jfloat scaledSize = env->CallFloatMethod(
+      java_object.obj(), g_get_scaled_font_size_method,
+      (jfloat)fontSize);
+  FML_CHECK(fml::jni::CheckException(env));
+  return (double)scaledSize;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(

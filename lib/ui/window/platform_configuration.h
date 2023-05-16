@@ -217,6 +217,21 @@ class PlatformConfigurationClient {
   ///
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Synchronously invokes platform-specific APIs to apply the
+  ///             system text scaling on the given unscaled font size.
+  ///
+  /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+  ///                                 app developer. The value is guaranteed
+  ///                                 to be finite and non-negative.
+  ///
+  /// @return     The scaled font size in logical pixels. If the returned value
+  ///             is negative
+  ///             platform. Empty strings mean the value was unassigned. Empty
+  ///             vector represents a null locale.
+  ///
+  virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -546,6 +561,8 @@ class PlatformConfigurationNativeApi {
   static int64_t GetRootIsolateToken();
 
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
+
+  static double GetScaledFontSize(double unscaled_font_size);
 
  private:
   static Dart_PerformanceMode current_performance_mode_;

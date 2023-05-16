@@ -407,4 +407,7 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
   jni_facade_->FlutterViewOnFirstFrame();
 }
 
+double PlatformViewAndroid::GetScaledFontSize(double unscaled_font_size) const {
+  return jni_facade_->FlutterViewGetScaledFontSize(unscaled_font_size);
+}
 }  // namespace flutter
