@@ -222,7 +222,7 @@ sk_sp<const GrGLInterface> AndroidSurfaceGLSkia::GetGLInterface() const {
   return GPUSurfaceGLDelegate::GetGLInterface();
 }
 
-std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
+std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateSnapshotStudio() {
   if (!onscreen_surface_ || !onscreen_surface_->IsValid()) {
     onscreen_surface_ = android_context_->CreatePbufferSurface();
   }
