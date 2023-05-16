@@ -40,7 +40,8 @@ std::unique_ptr<Studio> AndroidSurfaceVulkanImpeller::CreateGPUStudio(
   }
 
   std::unique_ptr<GPUStudioVulkanImpeller> studio =
-      std::make_unique<GPUStudioVulkanImpeller>(impeller_context_);
+      std::make_unique<GPUStudioVulkanImpeller>(
+          android_context_->GetImpellerContext());
 
   if (!studio->IsValid()) {
     return nullptr;

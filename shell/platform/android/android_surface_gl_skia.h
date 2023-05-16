@@ -89,6 +89,9 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
 
+  sk_sp<GrDirectContext> UseExistingMainContextOrCreate(
+      GrDirectContext* gr_context);
+
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGLSkia);
 };
 

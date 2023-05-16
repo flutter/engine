@@ -2955,7 +2955,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
-  flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
+  flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
+                                              std::move(mock_surface));
 
   UIView* someView = [[[UIView alloc] init] autorelease];
   [mockFlutterView addSubview:someView];
