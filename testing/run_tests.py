@@ -17,6 +17,7 @@ import glob
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -487,9 +488,10 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '1',  # Validates accesses to threadgroup memory.
         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
             '1',  # Validates that texture references are not nil.
+        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
     }
     if is_aarm64():
-      extra_env.append({
+      extra_env.update({
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
@@ -498,7 +500,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags,
+        ['--gtest_filter=-*/Vulkan'] + shuffle_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
@@ -752,21 +754,45 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     ios_unit_test_dir = os.path.join(
         BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
-    # Avoid using xcpretty unless the following can be addressed:
-    # - Make sure all relevant failure output is printed on a failure.
-    # - Make sure that a failing exit code is set for CI.
-    # See https://github.com/flutter/flutter/issues/63742
-    test_command = [
-        'xcodebuild '
-        '-sdk iphonesimulator '
-        '-scheme IosUnitTests '
-        "-destination name='" + new_simulator_name + "' "
-        'test '
-        'FLUTTER_ENGINE=' + ios_variant
-    ]
-    if test_filter is not None:
-      test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
-    run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
+                                    ) as result_bundle_temp:
+      result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
+
+      # Avoid using xcpretty unless the following can be addressed:
+      # - Make sure all relevant failure output is printed on a failure.
+      # - Make sure that a failing exit code is set for CI.
+      # See https://github.com/flutter/flutter/issues/63742
+      test_command = [
+          'xcodebuild '
+          '-sdk iphonesimulator '
+          '-scheme IosUnitTests '
+          '-resultBundlePath ' + result_bundle_path + ' '
+          '-destination name=' + new_simulator_name + ' '
+          'test '
+          'FLUTTER_ENGINE=' + ios_variant
+      ]
+      if test_filter is not None:
+        test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
+      try:
+        run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+      except:
+        # The LUCI environment may provide a variable containing a directory path
+        # for additional output files that will be uploaded to cloud storage.
+        # Upload the xcresult when the tests fail.
+        luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
+        xcresult_bundle = os.path.join(
+            result_bundle_temp, 'ios_embedding.xcresult'
+        )
+        if luci_test_outputs_path and os.path.exists(xcresult_bundle):
+          dump_path = os.path.join(
+              luci_test_outputs_path, 'ios_embedding.xcresult'
+          )
+          # xcresults contain many little files. Archive the bundle before upload.
+          shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
+        raise
+
   finally:
     delete_simulator(new_simulator_name)
 

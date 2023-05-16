@@ -779,4 +779,8 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
+void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
+  lifecycle_manager_->BeginProcessingClose();
+}
+
 }  // namespace flutter

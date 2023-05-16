@@ -189,6 +189,10 @@ Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
       bytesPerPixel = 4;
       pixel_format = "MTLPixelFormatBGRA8Unorm";
       break;
+    case MTLPixelFormatRGBA16Float:
+      bytesPerPixel = 8;
+      pixel_format = "MTLPixelFormatRGBA16Float";
+      break;
     default:
       return {};
   }
