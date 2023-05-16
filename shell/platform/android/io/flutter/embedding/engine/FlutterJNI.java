@@ -5,8 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.ColorSpace;
@@ -206,7 +206,8 @@ public class FlutterJNI {
     String version = null;
     long versionCode = 0;
     try {
-      PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      PackageInfo packageInfo =
+          context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       version = packageInfo.versionName;
       versionCode = packageInfo.getLongVersionCode();
     } catch (PackageManager.NameNotFoundException e) {
@@ -225,6 +226,7 @@ public class FlutterJNI {
       Log.w(TAG, "shorebird.yaml: " + shorebirdYaml);
     } catch (IOException e) {
       Log.e(TAG, "Failed to load shorebird.yaml", e);
+      Log.e(TAG, "Did you remember to include shorebird.yaml in your pubspec.yaml's assets?");
     }
 
     FlutterJNI.nativeInit(
