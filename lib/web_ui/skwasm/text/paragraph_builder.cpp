@@ -35,6 +35,13 @@ SKWASM_EXPORT void paragraphBuilder_addText(ParagraphBuilder* builder,
   builder->addText(*text);
 }
 
+SKWASM_EXPORT char* paragraphBuilder_getUtf8Text(ParagraphBuilder* builder,
+                                                 uint32_t* outLength) {
+  auto span = builder->getText();
+  *outLength = span.size();
+  return span.data();
+}
+
 SKWASM_EXPORT void paragraphBuilder_pushStyle(ParagraphBuilder* builder,
                                               TextStyle* style) {
   builder->pushStyle(*style);

@@ -50,6 +50,15 @@ external void paragraphBuilderAddText(
   SkString16Handle text,
 );
 
+@Native<Pointer<Uint8> Function(
+  ParagraphBuilderHandle,
+  Pointer<Uint32>
+)>(symbol: 'paragraphBuilder_getUtf8Text', isLeaf: true)
+external Pointer<Uint8> paragraphBuilderGetUtf8Text(
+  ParagraphBuilderHandle handle,
+  Pointer<Uint32> outSize
+);
+
 @Native<Void Function(
   ParagraphBuilderHandle,
   TextStyleHandle,
