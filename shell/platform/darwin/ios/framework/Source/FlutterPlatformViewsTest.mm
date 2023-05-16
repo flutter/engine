@@ -2649,8 +2649,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
   FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
   FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
-  [pool insertViewToPool:view1];
-  [pool insertViewToPool:view2];
+  [pool insertViewToPoolIfNeeded:view1];
+  [pool insertViewToPoolIfNeeded:view2];
   CGRect newRect = CGRectMake(0, 0, 10, 10);
   FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:newRect];
   FlutterClippingMaskView* view4 = [pool getMaskViewWithFrame:newRect];

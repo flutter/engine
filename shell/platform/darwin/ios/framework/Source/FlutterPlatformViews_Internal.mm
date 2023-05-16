@@ -473,7 +473,9 @@ static BOOL _preparedOnce = NO;
 
 - (instancetype)initWithCapacity:(NSInteger)capacity {
   if (self = [super init]) {
-    _pool = [[NSMutableSet alloc] init];
+    // Most of cases, there are only one PlatformView in the scene.
+    // Thus init with the capacity of 1.
+    _pool = [[NSMutableSet alloc] initWithCapacity:1];
     _capacity = capacity;
   }
   return self;
@@ -496,7 +498,7 @@ static BOOL _preparedOnce = NO;
   return maskView;
 }
 
-- (void)insertViewToPool:(FlutterClippingMaskView*)maskView {
+- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskView*)maskView {
   FML_DCHECK(![self.pool containsObject:maskView]);
   FML_DCHECK(self.pool.count <= self.capacity);
   if (self.pool.count == self.capacity) {

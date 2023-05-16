@@ -56,7 +56,7 @@
 // in the pool. If there are none available, a new FlutterClippingMaskView is constructed. If the
 // capacity is reached, the newly constructed FlutterClippingMaskView is not added to the pool.
 //
-// Call |insertViewToPool:| to return a maskView to the pool.
+// Call |insertViewToPoolIfNeeded:| to return a maskView to the pool.
 @interface FlutterClippingMaskViewPool : NSObject
 
 // Initialize the pool with `capacity`. When the `capacity` is reached, a FlutterClippingMaskView is
@@ -67,7 +67,7 @@
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
 
 // Insert the `maskView` into the pool.
-- (void)insertViewToPool:(FlutterClippingMaskView*)maskView;
+- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskView*)maskView;
 
 @end
 
@@ -301,20 +301,10 @@ class FlutterPlatformViewsController {
   // The `bounding_rect` is the final bounding rect of the PlatformView
   // (EmbeddedViewParams::finalBoundingRect). If a clip mutator's rect contains the final bounding
   // rect of the PlatformView, the clip mutator is not applied for performance optimization.
-  //
-  // This method is only called when thew `embedded_view` needs to be re-composited at the current
-  // frame. See: `CompositeWithParams` for details.
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
                      const SkRect& bounding_rect);
 
-  // Composite the PlatformView with `view_id`.
-  // Every frame, during the paint traversal of the layer tree, this method is called for all
-  // the PlatformViews in `views_to_recomposite_`.
-  //
-  // Note that `views_to_recomposite_` does not represent all the views in the view hierarchy,
-  // if a PlatformView does not change its composition parameter from last frame, it is not
-  // included in the `views_to_recomposite_`.
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from

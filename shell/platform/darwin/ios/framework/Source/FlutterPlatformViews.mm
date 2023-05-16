@@ -445,6 +445,8 @@ void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   clipView.maskView = [mask_view_pool_.get() getMaskViewWithFrame:frame];
 }
 
+// This method is only called when the `embedded_view` needs to be re-composited at the current
+// frame. See: `CompositeWithParams` for details.
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
@@ -460,7 +462,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
   if (clipView.maskView) {
-    [mask_view_pool_.get() insertViewToPool:(FlutterClippingMaskView*)(clipView.maskView)];
+    [mask_view_pool_.get() insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
@@ -566,6 +568,14 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
+// Composite the PlatformView with `view_id`.
+//
+// Every frame, during the paint traversal of the layer tree, this method is called for all
+// the PlatformViews in `views_to_recomposite_`.
+//
+// Note that `views_to_recomposite_` does not represent all the views in the view hierarchy,
+// if a PlatformView does not change its composition parameter from last frame, it is not
+// included in the `views_to_recomposite_`.
 void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());

@@ -1651,8 +1651,6 @@ void addPlatformView(
   const int valueString = 7;
   const int valueUint8List = 8;
   const int valueMap = 13;
-  print(_createdPlatformViews);
-  print(platformViewKey);
   final Uint8List message = Uint8List.fromList(<int>[
     valueString,
     ..._encodeString('create'),
