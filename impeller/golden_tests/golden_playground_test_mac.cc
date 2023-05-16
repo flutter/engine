@@ -16,6 +16,8 @@ namespace impeller {
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
 static const std::vector<std::string> kSkipTests = {
+    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Metal",
+    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Vulkan",
     "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_Metal",
     "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_"
     "Vulkan",
@@ -143,6 +145,19 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     result->SetLabel(fixture_name);
   }
   return result;
+}
+
+std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+    const char* asset_name) const {
+  auto fixture = flutter::testing::OpenFixtureAsMapping(asset_name);
+  if (!fixture || fixture->GetSize() == 0) {
+    return nullptr;
+  }
+  auto stage = std::make_unique<RuntimeStage>(std::move(fixture));
+  if (!stage->IsValid()) {
+    return nullptr;
+  }
+  return stage;
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
