@@ -31,8 +31,8 @@ UPSTREAM_PREFIX = 'upstream_'
 failed_deps = []  # deps which fail to be cloned or git-merge based
 
 sarif_log = {
-  '$schema':
-      'https://json.schemastore.org/sarif-2.1.0.json', 'version':
+    '$schema':
+        'https://json.schemastore.org/sarif-2.1.0.json', 'version':
             '2.1.0',
     'runs': [{
         'tool': {
