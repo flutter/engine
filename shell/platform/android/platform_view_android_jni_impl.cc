@@ -858,9 +858,8 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
-  g_get_scaled_font_size_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "getScaledFontSize",
-      "(F)F");
+  g_get_scaled_font_size_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "getScaledFontSize", "(F)F");
 
   if (g_get_scaled_font_size_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate FlutterJNI#getScaledFontSize method";
@@ -1231,7 +1230,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(double fontSize) const {
+double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(
+    double fontSize) const {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1240,8 +1240,7 @@ double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(double fontSize)
   }
 
   const jfloat scaledSize = env->CallFloatMethod(
-      java_object.obj(), g_get_scaled_font_size_method,
-      (jfloat)fontSize);
+      java_object.obj(), g_get_scaled_font_size_method, (jfloat)fontSize);
   FML_CHECK(fml::jni::CheckException(env));
   return (double)scaledSize;
 }

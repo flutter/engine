@@ -4,12 +4,10 @@
 
 package io.flutter.plugin.platform;
 
-import java.nio.ByteBuffer;
-
-import androidx.annotation.NonNull;
 import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import androidx.annotation.NonNull;
 
 /** Android implementation of the platform plugin. */
 public final class SynchronousPlatformPlugin {

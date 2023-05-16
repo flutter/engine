@@ -529,7 +529,8 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
-double PlatformConfigurationNativeApi::GetScaledFontSize(double unscaled_font_size) {
+double PlatformConfigurationNativeApi::GetScaledFontSize(
+    double unscaled_font_size) {
   UIDartState::ThrowIfUIOperationsProhibited();
   return UIDartState::Current()
       ->platform_configuration()

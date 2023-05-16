@@ -1285,7 +1285,8 @@ public class FlutterJNI {
 
   // ----- End Localization Support ----
   @UiThread
-  public void setSynchronousPlatformPlugin(@Nullable SynchronousPlatformPlugin synchronousPlatformPlugin) {
+  public void setSynchronousPlatformPlugin(
+      @Nullable SynchronousPlatformPlugin synchronousPlatformPlugin) {
     ensureRunningOnMainThread();
     this.synchronousPlatformPlugin = synchronousPlatformPlugin;
   }

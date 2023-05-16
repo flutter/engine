@@ -38,6 +38,7 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD0(GetCurrentTimePoint, fml::TimePoint());
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      const std::shared_ptr<PlatformMessageHandler>&());
+  MOCK_CONST_METHOD1(GetScaledFontSize, double(double fontSize));
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -66,6 +67,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      std::weak_ptr<PlatformMessageHandler>());
+  MOCK_CONST_METHOD1(GetScaledFontSize, double(double fontSize));
 };
 
 class MockRuntimeController : public RuntimeController {
