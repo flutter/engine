@@ -332,11 +332,11 @@ class FlutterView {
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
   void render(Scene scene) {
-    _render(viewId as int, scene);
+    _render(viewId as int, scene as _NativeScene);
   }
 
   @Native<Void Function(Int64, Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
-  external static void _render(int viewId, Scene scene);
+  external static void _render(int viewId, _NativeScene scene);
 
   /// Change the retained semantics data about this [FlutterView].
   ///
@@ -346,10 +346,10 @@ class FlutterView {
   ///
   /// This function disposes the given update, which means the semantics update
   /// cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update as _NativeSemanticsUpdate);
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
-  external static void _updateSemantics(SemanticsUpdate update);
+  external static void _updateSemantics(_NativeSemanticsUpdate update);
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
