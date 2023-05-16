@@ -14,8 +14,9 @@ namespace impeller {
 
 class TrackedObjectsVK {
  public:
-  explicit TrackedObjectsVK(std::weak_ptr<const DeviceHolder> device_holder,
-                            const std::shared_ptr<CommandPoolVK>& pool)
+  explicit TrackedObjectsVK(
+      const std::weak_ptr<const DeviceHolder>& device_holder,
+      const std::shared_ptr<CommandPoolVK>& pool)
       : desc_pool_(std::move(device_holder)) {
     if (!pool) {
       return;
