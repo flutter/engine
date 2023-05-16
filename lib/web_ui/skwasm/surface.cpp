@@ -16,6 +16,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 #include "wrappers.h"
@@ -192,7 +193,7 @@ class Surface {
     makeCurrent(_glContext);
     GrBackendRenderTarget target(_canvasWidth, _canvasHeight, _sampleCount,
                                  _stencil, _fbInfo);
-    _surface = SkSurface::MakeFromBackendRenderTarget(
+    _surface = SkSurfaces::WrapBackendRenderTarget(
         _grContext.get(), target, kBottomLeft_GrSurfaceOrigin,
         kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), nullptr);
   }
