@@ -17,7 +17,7 @@ class TrackedObjectsVK {
   explicit TrackedObjectsVK(
       const std::weak_ptr<const DeviceHolder>& device_holder,
       const std::shared_ptr<CommandPoolVK>& pool)
-      : desc_pool_(std::move(device_holder)) {
+      : desc_pool_(device_holder) {
     if (!pool) {
       return;
     }
