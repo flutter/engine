@@ -301,19 +301,16 @@ class SkwasmRenderer implements Renderer {
     int? targetWidth,
     int? targetHeight,
   ) {
-    if (targetWidth == null && targetHeight == null) {
-      return null;
-    }
     if (targetWidth == width && targetHeight == height) {
       // Not scaled
       return null;
     }
     if (targetWidth == null) {
-      if (targetHeight == height) {
+      if (targetHeight == null || targetHeight == height) {
         // Not scaled.
         return null;
       }
-      targetWidth = (width * targetHeight! / height).round();
+      targetWidth = (width * targetHeight / height).round();
     } else if (targetHeight == null) {
       if (targetWidth == targetWidth) {
         // Not scaled.
@@ -336,7 +333,7 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) {
-    final ui.Size? scaledSize = _scaledSize(
+    ui.Size? scaledSize = _scaledSize(
       width,
       height,
       targetWidth,
@@ -344,8 +341,7 @@ class SkwasmRenderer implements Renderer {
     );
     if (!allowUpscaling && scaledSize != null &&
       (scaledSize.width > width || scaledSize.height > height)) {
-        domWindow.console.warn('Cannot apply targetWidth/targetHeight when allowUpscaling is false.');
-        return;
+        scaledSize = null;
     }
     final SkwasmImage pixelImage = SkwasmImage.fromPixels(
       pixels,

@@ -162,18 +162,30 @@ class SkwasmImageShader extends SkwasmShader implements ui.ImageShader {
     SkwasmImage image,
     ui.TileMode tmx,
     ui.TileMode tmy,
-    Float64List matrix4,
+    Float64List? matrix4,
     ui.FilterQuality? filterQuality,
-  ) => withStackScope((StackScope scope) {
-    final RawMatrix33 localMatrix = scope.convertMatrix4toSkMatrix(matrix4);
-    return SkwasmImageShader._(shaderCreateFromImage(
-      image.handle,
-      tmx.index,
-      tmy.index,
-      (filterQuality ?? ui.FilterQuality.medium).index,
-      localMatrix,
-    ));
-  });
+  ) {
+    if (matrix4 != null) {
+      return withStackScope((StackScope scope) {
+        final RawMatrix33 localMatrix = scope.convertMatrix4toSkMatrix(matrix4);
+        return SkwasmImageShader._(shaderCreateFromImage(
+          image.handle,
+          tmx.index,
+          tmy.index,
+          (filterQuality ?? ui.FilterQuality.medium).index,
+          localMatrix,
+        ));
+      });
+    } else {
+      return SkwasmImageShader._(shaderCreateFromImage(
+        image.handle,
+        tmx.index,
+        tmy.index,
+        (filterQuality ?? ui.FilterQuality.medium).index,
+        nullptr,
+      ));
+    }
+  }
 
   @override
   ShaderHandle handle;
@@ -214,10 +226,11 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
     );
   }
 
-  RuntimeEffectHandle handle;
-  String name;
-  int floatUniformCount;
-  int childShaderCount;
+  final RuntimeEffectHandle handle;
+  final String name;
+  final int floatUniformCount;
+  final int childShaderCount;
+  bool _isDisposed = false;
 
   @override
   ui.FragmentShader fragmentShader() => SkwasmFragmentShader(this);
@@ -225,7 +238,10 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
   int get uniformSize => runtimeEffectGetUniformSize(handle);
 
   void dispose() {
-    runtimeEffectDispose(handle);
+    if (!_isDisposed) {
+      runtimeEffectDispose(handle);
+      _isDisposed = true;
+    }
   }
 }
 
@@ -284,7 +300,7 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
       image as SkwasmImage,
       ui.TileMode.clamp,
       ui.TileMode.clamp,
-      toMatrix64(Matrix4.identity().storage),
+      null,
       ui.FilterQuality.none,
     );
     final SkwasmShader? oldShader = _childShaders[index];

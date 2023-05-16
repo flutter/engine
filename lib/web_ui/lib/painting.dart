@@ -743,9 +743,19 @@ class Shadow {
 }
 
 abstract class ImageShader implements Shader {
-  factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
+  factory ImageShader(
+    Image image,
+    TileMode tmx,
+    TileMode tmy,
+    Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
+  }) => engine.renderer.createImageShader(
+    image,
+    tmx,
+    tmy,
+    matrix4,
+    filterQuality
+  );
 
   @override
   void dispose();

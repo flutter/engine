@@ -8,6 +8,7 @@
 #include <emscripten/html5_webgl.h>
 #include <emscripten/threading.h>
 #include <webgl/webgl1.h>
+#include <cassert>
 #include "export.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -51,6 +52,8 @@ class Surface {
 
   // Main thread only
   Surface(const char* canvasID) : _canvasID(canvasID) {
+    assert(emscripten_is_main_browser_thread());
+
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -67,6 +70,7 @@ class Surface {
 
   // Main thread only
   void dispose() {
+    assert(emscripten_is_main_browser_thread());
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VI,
                                   reinterpret_cast<void*>(fDispose), nullptr,
                                   this);
@@ -74,6 +78,7 @@ class Surface {
 
   // Main thread only
   void setCanvasSize(int width, int height) {
+    assert(emscripten_is_main_browser_thread());
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
                                   reinterpret_cast<void*>(fSetCanvasSize),
                                   nullptr, this, width, height);
@@ -81,6 +86,7 @@ class Surface {
 
   // Main thread only
   uint32_t renderPicture(SkPicture* picture) {
+    assert(emscripten_is_main_browser_thread());
     uint32_t callbackId = ++_currentCallbackId;
     picture->ref();
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
@@ -110,6 +116,7 @@ class Surface {
 
   // Main thread only
   void setCallbackHandler(CallbackHandler* callbackHandler) {
+    assert(emscripten_is_main_browser_thread());
     _callbackHandler = callbackHandler;
   }
 
@@ -244,6 +251,7 @@ class Surface {
 
   // Main thread only
   void _onRenderComplete(uint32_t callbackId) {
+    assert(emscripten_is_main_browser_thread());
     _callbackHandler(callbackId, nullptr);
   }
 
