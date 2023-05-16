@@ -400,17 +400,17 @@
             "realm": "production"
         },
         {
-            "source": "out/debug/frameworks.zip",
+            "source": "out/debug/framework/frameworks.zip",
             "destination": "darwin-x64/frameworks.zip",
             "realm": "production"
         },
         {
-            "source": "out/profile/frameworks.zip",
+            "source": "out/profile/framework/frameworks.zip",
             "destination": "darwin-x64-profile/frameworks.zip",
             "realm": "production"
         },
         {
-            "source": "out/release/frameworks.zip",
+            "source": "out/release/framework/frameworks.zip",
             "destination": "darwin-x64-release/frameworks.zip",
             "realm": "production"
         },

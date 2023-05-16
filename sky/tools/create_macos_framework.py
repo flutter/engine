@@ -167,7 +167,6 @@ def process_framework(
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
-      dsym_dst = os.path.join(dst, f'{framework_name}.dSYM')
       subprocess.check_call([
           'zip', '-r', '-y', f'{framework_name}.dSYM.zip',
           f'{framework_name}.dSYM'
