@@ -9,7 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmCanvas implements ui.Canvas {
+class SkwasmCanvas implements SceneCanvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
       SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
           pictureRecorderBeginRecording(
@@ -39,6 +39,7 @@ class SkwasmCanvas implements ui.Canvas {
     }
   }
 
+  @override
   void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
     paint as SkwasmPaint;
     if (bounds != null) {
