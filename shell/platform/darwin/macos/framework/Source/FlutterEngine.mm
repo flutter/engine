@@ -18,6 +18,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -174,11 +175,6 @@ struct MouseState {
  * will return `NO` after the FlutterEngine has been dealloc'd.
  */
 @property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
-
-/**
- * The current state of the mouse and the sent mouse events.
- */
-@property(nonatomic) MouseState mouseState;
 
 - (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
@@ -476,6 +472,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
+  // Converts macOS's mouse events to Flutter's.
+  FlutterMouseState* _mouseState;
+
   int _nextViewId;
 }
 
@@ -487,6 +486,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                      project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
+  __weak FlutterEngine* weakSelf = self;
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project ?: [[FlutterDartProject alloc] init];
@@ -507,6 +507,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _viewControllers = [NSMapTable weakToWeakObjectsMapTable];
   _renderer = [[FlutterRenderer alloc] initWithFlutterEngine:self];
+  _mouseState = [[FlutterMouseState alloc] initWithEngine:weakSelf];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -677,7 +678,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(![controller attached],
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
-  [controller attachToEngine:self withId:viewId];
+  [controller setUpWithEngine:self viewId:viewId mouseState:_mouseState];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }

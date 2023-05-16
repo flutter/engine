@@ -52,6 +52,8 @@ constexpr FlutterViewId kFlutterDefaultViewId = 0ll;
 - (nullable instancetype)initWithCoder:(nonnull NSCoder*)coder NS_UNAVAILABLE;
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
+@property(readonly, nonatomic) FlutterViewId viewId;
+
 /**
  * Returns SurfaceManager for this view. SurfaceManager is responsible for
  * providing and presenting render surfaces.

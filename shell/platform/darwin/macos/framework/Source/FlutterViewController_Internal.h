@@ -10,6 +10,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.h"
 
 @interface FlutterViewController () <FlutterKeyboardViewDelegate>
 
@@ -43,7 +44,8 @@
  *
  * This method is called by FlutterEngine.
  */
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(FlutterViewId)viewId;
+- (void)setUpWithEngine:(nonnull FlutterEngine*)engine viewId:(FlutterViewId)viewId
+    mouseState:(nonnull FlutterMouseState*)mouseState;
 
 /**
  * Reset the `engine` and `id` of this controller.

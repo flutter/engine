@@ -281,10 +281,6 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             @"In unit tests, this is likely because either the FlutterViewController or "
             @"the FlutterEngine is mocked. Please subclass these classes instead.",
             controller.engine, controller.viewId);
-  controller->_mouseState =
-      [[FlutterMouseState alloc] initWithCallback:^(const FlutterPointerEvent& event) {
-        [engine sendPointerEvent:event];
-      }];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
   [controller initializeKeyboard];
@@ -430,10 +426,12 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(FlutterViewId)viewId {
+- (void)setUpWithEngine:(FlutterEngine*)engine viewId:(FlutterViewId)viewId
+    mouseState:(FlutterMouseState*)mouseState {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
+  _mouseState = mouseState;
 }
 
 - (void)detachFromEngine {

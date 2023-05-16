@@ -13,11 +13,14 @@
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterThreadSynchronizer* _threadSynchronizer;
   FlutterSurfaceManager* _surfaceManager;
+  FlutterViewId _viewId;
 }
 
 @end
 
 @implementation FlutterView
+
+@synthesize viewId = _viewId;
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
@@ -27,6 +30,7 @@
     [self setWantsLayer:YES];
     [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    _viewId = 0;
     _reshapeListener = reshapeListener;
     _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device

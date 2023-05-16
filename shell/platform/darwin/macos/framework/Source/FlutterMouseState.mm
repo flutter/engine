@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 namespace {
 
@@ -24,17 +26,17 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
  *
  * mouseState.buttons should be updated before calling this method.
  */
-- (void)dispatchMouseEvent:(nonnull NSEvent*)event inView:(NSView*)flutterView;
+- (void)dispatchMouseEvent:(nonnull NSEvent*)event inView:(FlutterView*)flutterView;
 
 /**
  * Calls dispatchMouseEvent:phase: with a phase determined by event.phase.
  */
-- (void)dispatchGestureEvent:(nonnull NSEvent*)event inView:(NSView*)flutterView;
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event inView:(FlutterView*)flutterView;
 
 /**
  * Converts |event| to a FlutterPointerEvent with the given phase, and sends it to the engine.
  */
-- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(NSView*)flutterView;
+- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(FlutterView*)flutterView;
 
 /**
   * Resets all gesture state to default values.
@@ -49,7 +51,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
 @end
 
 @implementation FlutterMouseState {
-  SendPointerEventCallback _engineDispatchPointerEvent;
+  __weak FlutterEngine* _weakEngine;
 
   /**
    * The currently pressed buttons, as represented in FlutterPointerEvent.
@@ -114,10 +116,10 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   NSTimeInterval last_scroll_momentum_changed_time;
 }
 
-- (instancetype)initWithCallback:(SendPointerEventCallback)callback {
+- (instancetype)initWithEngine:(nonnull __weak FlutterEngine*)weakEngine {
   self = [super init];
   if (self) {
-    _engineDispatchPointerEvent = callback;
+    _weakEngine = weakEngine;
     buttons = 0;
     delta_x = 0;
     delta_y = 0;
@@ -134,7 +136,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   return self;
 }
 
-- (void)mouseEntered:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseEntered:(NSEvent*)event inView:(FlutterView*)flutterView {
   if (has_pending_exit) {
     has_pending_exit = false;
   } else {
@@ -142,7 +144,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   }
 }
 
-- (void)mouseExited:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseExited:(NSEvent*)event inView:(FlutterView*)flutterView {
   if (buttons != 0) {
     has_pending_exit = true;
     return;
@@ -150,65 +152,65 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   [self dispatchMouseEvent:event phase:kRemove inView:flutterView];
 }
 
-- (void)mouseDown:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseDown:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons |= kFlutterPointerButtonMousePrimary;
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)mouseUp:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseUp:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons &= ~static_cast<uint64_t>(kFlutterPointerButtonMousePrimary);
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)mouseDragged:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseDragged:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)rightMouseDown:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)rightMouseDown:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons |= kFlutterPointerButtonMouseSecondary;
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)rightMouseUp:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)rightMouseUp:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons &= ~static_cast<uint64_t>(kFlutterPointerButtonMouseSecondary);
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)rightMouseDragged:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)rightMouseDragged:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)otherMouseDown:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)otherMouseDown:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons |= (1 << event.buttonNumber);
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)otherMouseUp:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)otherMouseUp:(NSEvent*)event inView:(FlutterView*)flutterView {
   buttons &= ~static_cast<uint64_t>(1 << event.buttonNumber);
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)otherMouseDragged:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)otherMouseDragged:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)mouseMoved:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)mouseMoved:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchMouseEvent:event inView:flutterView];
 }
 
-- (void)scrollWheel:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)scrollWheel:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchGestureEvent:event inView:flutterView];
 }
 
-- (void)magnifyWithEvent:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)magnifyWithEvent:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchGestureEvent:event inView:flutterView];
 }
 
-- (void)rotateWithEvent:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)rotateWithEvent:(NSEvent*)event inView:(FlutterView*)flutterView {
   [self dispatchGestureEvent:event inView:flutterView];
 }
 
-- (void)touchesBeganWithEvent:(NSEvent*)event inView:(NSView*)flutterView {
+- (void)touchesBeganWithEvent:(NSEvent*)event inView:(FlutterView*)flutterView {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
     if ((event.timestamp - last_scroll_momentum_changed_time) <
@@ -226,23 +228,24 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
           .device = kPointerPanZoomDeviceId,
           .signal_kind = kFlutterPointerSignalKindScrollInertiaCancel,
           .device_kind = kFlutterPointerDeviceKindTrackpad,
+          // .view_id = static_cast<int64_t>(flutterView.viewId),
       };
 
-      _engineDispatchPointerEvent(flutterEvent);
+      [_weakEngine sendPointerEvent:flutterEvent];
       // Ensure no further scroll inertia cancel event will be sent.
       last_scroll_momentum_changed_time = 0;
     }
   }
 }
 
-- (void)dispatchMouseEvent:(nonnull NSEvent*)event inView:(NSView*)flutterView {
+- (void)dispatchMouseEvent:(nonnull NSEvent*)event inView:(FlutterView*)flutterView {
   FlutterPointerPhase phase = buttons == 0
                                   ? (flutter_state_is_down ? kUp : kHover)
                                   : (flutter_state_is_down ? kMove : kDown);
   [self dispatchMouseEvent:event phase:phase inView:flutterView];
 }
 
-- (void)dispatchGestureEvent:(nonnull NSEvent*)event inView:(NSView*)flutterView {
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event inView:(FlutterView*)flutterView {
   if (event.phase == NSEventPhaseBegan || event.phase == NSEventPhaseMayBegin) {
     [self dispatchMouseEvent:event phase:kPanZoomStart inView:flutterView];
   } else if (event.phase == NSEventPhaseChanged) {
@@ -264,7 +267,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   }
 }
 
-- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(NSView*)flutterView {
+- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(FlutterView*)flutterView {
   // There are edge cases where the system will deliver enter out of order relative to other
   // events (e.g., drag out and back in, release, then click; mouseDown: will be called before
   // mouseEntered:). Discard those events, since the add will already have been synthesized.
@@ -338,13 +341,11 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
       .device_kind = deviceKind,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : buttons,
+      // .view_id = static_cast<int64_t>(flutterView.viewId),
   };
 
   if (phase == kPanZoomUpdate) {
-    NSLog(@"kPanZoomUpdate");
     if (event.type == NSEventTypeScrollWheel) {
-      NSLog(@"NSEventTypeScrollWheel");
-      NSLog(@"%d %d %f", !!flutterView, !!flutterView.layer, flutterView.layer.contentsScale);
       delta_x += event.scrollingDeltaX * flutterView.layer.contentsScale;
       delta_y += event.scrollingDeltaY * flutterView.layer.contentsScale;
     } else if (event.type == NSEventTypeMagnify) {
@@ -392,7 +393,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
     }
   }
 
-  _engineDispatchPointerEvent(flutterEvent);
+  [_weakEngine sendPointerEvent:flutterEvent];
 
   // Update tracking of state as reported to Flutter.
   if (phase == kDown) {
@@ -409,7 +410,6 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
     [self reset];
   }
 }
-
 
 - (void)gestureReset {
   delta_x = 0;
