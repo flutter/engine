@@ -28,7 +28,7 @@ class SkwasmImage implements ui.Image {
       dataHandle,
       width,
       height,
-      format == ui.PixelFormat.bgra8888,
+      format.index,
       rowBytes ?? 4 * width,
     );
     skDataDispose(dataHandle);

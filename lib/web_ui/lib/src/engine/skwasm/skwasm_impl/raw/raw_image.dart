@@ -27,14 +27,14 @@ external ImageHandle imageCreateFromPicture(
   SkDataHandle,
   Int,
   Int,
-  Bool,
+  Int,
   Size
 )>(symbol: 'image_createFromPixels', isLeaf: true)
 external ImageHandle imageCreateFromPixels(
   SkDataHandle pixelData,
   int width,
   int height,
-  bool isBgra,
+  int pixelFormat,
   int rowByteCount,
 );
 

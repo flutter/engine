@@ -447,9 +447,11 @@ enum ImageByteFormat {
   png,
 }
 
+// This must be kept in sync with the `PixelFormat` enum in Skwasm's image.cpp.
 enum PixelFormat {
   rgba8888,
   bgra8888,
+  rgbaFloat32,
 }
 
 typedef ImageDecoderCallback = void Function(Image result);
@@ -563,6 +565,8 @@ Future<Codec> createBmp(
       swapRedBlue = true;
     case PixelFormat.rgba8888:
       swapRedBlue = false;
+    case PixelFormat.rgbaFloat32:
+      throw UnimplementedError('RGB conversion from rgbaFloat32 data is not implemented');
   }
 
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.

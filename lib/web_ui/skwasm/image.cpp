@@ -12,6 +12,33 @@
 
 using namespace SkImages;
 
+enum class PixelFormat {
+  rgba8888,
+  bgra8888,
+  rgbaFloat32,
+};
+
+SkColorType colorTypeForPixelFormat(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::rgba8888:
+      return SkColorType::kRGBA_8888_SkColorType;
+    case PixelFormat::bgra8888:
+      return SkColorType::kBGRA_8888_SkColorType;
+    case PixelFormat::rgbaFloat32:
+      return SkColorType::kRGBA_F32_SkColorType;
+  }
+}
+
+SkAlphaType alphaTypeForPixelFormat(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::rgba8888:
+    case PixelFormat::bgra8888:
+      return SkAlphaType::kPremul_SkAlphaType;
+    case PixelFormat::rgbaFloat32:
+      return SkAlphaType::kUnpremul_SkAlphaType;
+  }
+}
+
 SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
                                                int32_t width,
                                                int32_t height) {
@@ -25,14 +52,13 @@ SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
 SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
                                               int width,
                                               int height,
-                                              bool isBgra,
+                                              PixelFormat pixelFormat,
                                               size_t rowByteCount) {
   data->ref();
   return SkImages::RasterFromData(
              SkImageInfo::Make(width, height,
-                               isBgra ? SkColorType::kBGRA_8888_SkColorType
-                                      : SkColorType::kRGBA_8888_SkColorType,
-                               SkAlphaType::kPremul_SkAlphaType,
+                               colorTypeForPixelFormat(pixelFormat),
+                               alphaTypeForPixelFormat(pixelFormat),
                                SkColorSpace::MakeSRGB()),
              sk_sp(data), rowByteCount)
       .release();
