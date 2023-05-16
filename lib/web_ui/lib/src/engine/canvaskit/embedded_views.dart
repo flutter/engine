@@ -467,8 +467,10 @@ class HtmlViewEmbedder {
         bool isViewInvalid = false;
         assert(() {
           isViewInvalid = !platformViewManager.knowsViewId(viewId);
-          debugInvalidViewIds ??= <int>[];
-          debugInvalidViewIds!.add(viewId);
+          if (isViewInvalid) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds!.add(viewId);
+          }
           return true;
         }());
         if (isViewInvalid) {
@@ -518,8 +520,10 @@ class HtmlViewEmbedder {
         bool isViewInvalid = false;
         assert(() {
           isViewInvalid = !platformViewManager.knowsViewId(viewId);
-          debugInvalidViewIds ??= <int>[];
-          debugInvalidViewIds!.add(viewId);
+          if (isViewInvalid) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds!.add(viewId);
+          }
           return true;
         }());
         if (isViewInvalid) {
@@ -542,7 +546,7 @@ class HtmlViewEmbedder {
     disposeViews(unusedViews);
 
     assert(
-      debugInvalidViewIds != null && debugInvalidViewIds!.isNotEmpty,
+      debugInvalidViewIds == null || debugInvalidViewIds!.isEmpty,
       'Cannot render platform views: ${debugInvalidViewIds!.join(', ')}. '
       'These views have not been created, or they have been deleted.',
     );
