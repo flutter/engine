@@ -16,7 +16,7 @@ class TrackedObjectsVK {
  public:
   explicit TrackedObjectsVK(std::weak_ptr<const DeviceHolder> device_holder,
                             const std::shared_ptr<CommandPoolVK>& pool)
-      : desc_pool_(device_holder) {
+      : desc_pool_(std::move(device_holder)) {
     if (!pool) {
       return;
     }
@@ -96,7 +96,7 @@ class TrackedObjectsVK {
 };
 
 CommandEncoderVK::CommandEncoderVK(
-    std::weak_ptr<const DeviceHolder> device_holder,
+    const std::weak_ptr<const DeviceHolder>& device_holder,
     const std::shared_ptr<QueueVK>& queue,
     const std::shared_ptr<CommandPoolVK>& pool,
     std::shared_ptr<FenceWaiterVK> fence_waiter)

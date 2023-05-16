@@ -60,7 +60,7 @@ sk_sp<GrDirectContext> AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
       main_skia_context = GPUStudioGLSkia::MakeGLContext(this);
       android_context_->SetMainSkiaContext(main_skia_context);
     }
-    FML_DCHECK(GLContextPtr()->GetMainSkiaContext() == main_skia_context);
+    FML_DCHECK(android_context_()->GetMainSkiaContext() == main_skia_context);
     return main_skia_context;
   }
 }
