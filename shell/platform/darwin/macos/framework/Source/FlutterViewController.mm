@@ -426,8 +426,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)setUpWithEngine:(FlutterEngine*)engine viewId:(FlutterViewId)viewId
-    mouseState:(FlutterMouseState*)mouseState {
+- (void)setUpWithEngine:(FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+             mouseState:(FlutterMouseState*)mouseState {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;

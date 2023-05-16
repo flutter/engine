@@ -17,7 +17,7 @@ static constexpr int32_t kPointerPanZoomDeviceId = 1;
 // event to be issued. Use a window of 50 milliseconds after the scroll to account
 // for delays in event propagation observed in macOS Ventura.
 static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
-}
+}  // namespace
 
 @interface FlutterMouseState ()
 
@@ -36,16 +36,18 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
 /**
  * Converts |event| to a FlutterPointerEvent with the given phase, and sends it to the engine.
  */
-- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(FlutterView*)flutterView;
+- (void)dispatchMouseEvent:(NSEvent*)event
+                     phase:(FlutterPointerPhase)phase
+                    inView:(FlutterView*)flutterView;
 
 /**
-  * Resets all gesture state to default values.
-  */
+ * Resets all gesture state to default values.
+ */
 - (void)gestureReset;
 
 /**
-  * Resets all state to default values.
-  */
+ * Resets all state to default values.
+ */
 - (void)reset;
 
 @end
@@ -218,8 +220,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
       // The trackpad has been touched following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [flutterView convertPoint:event.locationInWindow fromView:nil];
-      NSPoint locationInBackingCoordinates =
-          [flutterView convertPointToBacking:locationInView];
+      NSPoint locationInBackingCoordinates = [flutterView convertPointToBacking:locationInView];
       FlutterPointerEvent flutterEvent = {
           .struct_size = sizeof(flutterEvent),
           .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
@@ -228,7 +229,6 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
           .device = kPointerPanZoomDeviceId,
           .signal_kind = kFlutterPointerSignalKindScrollInertiaCancel,
           .device_kind = kFlutterPointerDeviceKindTrackpad,
-          // .view_id = static_cast<int64_t>(flutterView.viewId),
       };
 
       [_weakEngine sendPointerEvent:flutterEvent];
@@ -239,9 +239,8 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
 }
 
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event inView:(FlutterView*)flutterView {
-  FlutterPointerPhase phase = buttons == 0
-                                  ? (flutter_state_is_down ? kUp : kHover)
-                                  : (flutter_state_is_down ? kMove : kDown);
+  FlutterPointerPhase phase = buttons == 0 ? (flutter_state_is_down ? kUp : kHover)
+                                           : (flutter_state_is_down ? kMove : kDown);
   [self dispatchMouseEvent:event phase:phase inView:flutterView];
 }
 
@@ -267,7 +266,9 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   }
 }
 
-- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase inView:(FlutterView*)flutterView {
+- (void)dispatchMouseEvent:(NSEvent*)event
+                     phase:(FlutterPointerPhase)phase
+                    inView:(FlutterView*)flutterView {
   // There are edge cases where the system will deliver enter out of order relative to other
   // events (e.g., drag out and back in, release, then click; mouseDown: will be called before
   // mouseEntered:). Discard those events, since the add will already have been synthesized.
@@ -278,8 +279,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
   // Multiple gesture recognizers could be active at once, we can't send multiple kPanZoomStart.
   // For example: rotation and magnification.
   if (phase == kPanZoomStart) {
-    bool gestureAlreadyDown = pan_gesture_active || scale_gesture_active ||
-                              rotate_gesture_active;
+    bool gestureAlreadyDown = pan_gesture_active || scale_gesture_active || rotate_gesture_active;
     if (event.type == NSEventTypeScrollWheel) {
       pan_gesture_active = true;
       // Ensure scroll inertia cancel event is not sent afterwards.
@@ -301,8 +301,7 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
     } else if (event.type == NSEventTypeRotate) {
       rotate_gesture_active = false;
     }
-    if (pan_gesture_active || scale_gesture_active ||
-        rotate_gesture_active) {
+    if (pan_gesture_active || scale_gesture_active || rotate_gesture_active) {
       return;
     }
   }
@@ -341,7 +340,6 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
       .device_kind = deviceKind,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : buttons,
-      // .view_id = static_cast<int64_t>(flutterView.viewId),
   };
 
   if (phase == kPanZoomUpdate) {
