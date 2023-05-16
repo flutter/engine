@@ -61,11 +61,18 @@ ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inpu
   final DomElement targetElement = event.target! as DomHTMLElement;
   final DomHTMLElement domElement = textEditing.strategy.activeDomElement;
   assert(targetElement == domElement, 'The targeted input element must be the active input element');
-  final Float32List matrix = inputGeometry.globalTransform;
-  final FastMatrix32 fastMatrix = FastMatrix32(matrix);
-  fastMatrix.transform(event.offsetX, event.offsetY);
+  final Float32List transformValues = inputGeometry.globalTransform;
+  assert(transformValues.length == 16);
+  final Matrix4 transform = Matrix4(
+    transformValues[0], transformValues[1], transformValues[2], transformValues[3],
+    transformValues[4], transformValues[5], transformValues[6], transformValues[7],
+    transformValues[8], transformValues[9], transformValues[10], transformValues[11],
+    transformValues[12], transformValues[13], transformValues[14], transformValues[15],
+  );
 
-  return ui.Offset(fastMatrix.transformedX, fastMatrix.transformedY);
+  final Vector3 transformedPoint = transform.perspectiveTransform(Vector3(event.offsetX, event.offsetY, 0));
+
+  return ui.Offset(transformedPoint.x, transformedPoint.y);
 }
 
 /// Computes the event offset when hovering over any nodes that don't exist in
