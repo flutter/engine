@@ -2685,6 +2685,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMen
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorViewTest.mm + ../../../flutter/LICENSE
@@ -5315,6 +5317,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuP
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseState.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorViewTest.mm

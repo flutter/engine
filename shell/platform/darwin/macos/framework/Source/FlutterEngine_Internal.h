@@ -63,6 +63,8 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
                                result:(nullable FlutterResult)result;
 @end
 
+#pragma mark - FlutterEngine
+
 @interface FlutterEngine ()
 
 /**

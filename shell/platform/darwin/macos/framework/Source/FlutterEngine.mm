@@ -47,6 +47,95 @@ static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
 
+/**
+ * State tracking for mouse events, to adapt between the events coming from the system and the
+ * events that the embedding API expects.
+ */
+struct MouseState {
+  /**
+   * The currently pressed buttons, as represented in FlutterPointerEvent.
+   */
+  int64_t buttons = 0;
+
+  /**
+   * The accumulated gesture pan.
+   */
+  CGFloat delta_x = 0;
+  CGFloat delta_y = 0;
+
+  /**
+   * The accumulated gesture zoom scale.
+   */
+  CGFloat scale = 0;
+
+  /**
+   * The accumulated gesture rotation.
+   */
+  CGFloat rotation = 0;
+
+  /**
+   * Whether or not a kAdd event has been sent (or sent again since the last kRemove if tracking is
+   * enabled). Used to determine whether to send a kAdd event before sending an incoming mouse
+   * event, since Flutter expects pointers to be added before events are sent for them.
+   */
+  bool flutter_state_is_added = false;
+
+  /**
+   * Whether or not a kDown has been sent since the last kAdd/kUp.
+   */
+  bool flutter_state_is_down = false;
+
+  /**
+   * Whether or not mouseExited: was received while a button was down. Cocoa's behavior when
+   * dragging out of a tracked area is to send an exit, then keep sending drag events until the last
+   * button is released. Flutter doesn't expect to receive events after a kRemove, so the kRemove
+   * for the exit needs to be delayed until after the last mouse button is released. If cursor
+   * returns back to the window while still dragging, the flag is cleared in mouseEntered:.
+   */
+  bool has_pending_exit = false;
+
+  /**
+   * Pan gesture is currently sending us events.
+   */
+  bool pan_gesture_active = false;
+
+  /**
+   * Scale gesture is currently sending us events.
+   */
+  bool scale_gesture_active = false;
+
+  /**
+   * Rotate gesture is currently sending use events.
+   */
+  bool rotate_gesture_active = false;
+
+  /**
+   * Time of last scroll momentum event.
+   */
+  NSTimeInterval last_scroll_momentum_changed_time = 0;
+
+  /**
+   * Resets all gesture state to default values.
+   */
+  void GestureReset() {
+    delta_x = 0;
+    delta_y = 0;
+    scale = 0;
+    rotation = 0;
+  }
+
+  /**
+   * Resets all state to default values.
+   */
+  void Reset() {
+    flutter_state_is_added = false;
+    flutter_state_is_down = false;
+    has_pending_exit = false;
+    buttons = 0;
+    GestureReset();
+  }
+};
+
 #pragma mark -
 
 // Records an active handler of the messenger (FlutterEngine) that listens to
@@ -85,6 +174,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * will return `NO` after the FlutterEngine has been dealloc'd.
  */
 @property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
+
+/**
+ * The current state of the mouse and the sent mouse events.
+ */
+@property(nonatomic) MouseState mouseState;
 
 - (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
