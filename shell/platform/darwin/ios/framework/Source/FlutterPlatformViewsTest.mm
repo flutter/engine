@@ -1215,7 +1215,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews = editedUIVisualEffectView.subviews;
   for (UIView* view in subviews) {
-    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+    if ([NSStringFromClass([view class]) hasSuffix:@"BackdropView"]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
           [filter setValue:@"notGaussianBlur" forKey:@"name"];
@@ -1238,7 +1238,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews = editedUIVisualEffectView.subviews;
   for (UIView* view in subviews) {
-    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+    if ([NSStringFromClass([view class]) hasSuffix:@"BackdropView"]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
           [filter setValue:@"invalidInputRadius" forKey:@"inputRadius"];
@@ -1265,7 +1265,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                visualEffectView:visualEffectView];
   CGColorRef visualEffectSubviewBackgroundColor;
   for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
-    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+    if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
       visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
     }
   }
@@ -2397,7 +2397,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
-  sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
@@ -2426,7 +2426,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
 
-  mock_sk_surface = SkSurface::MakeRaster(image_info);
+  mock_sk_surface = SkSurfaces::Raster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
@@ -2493,7 +2493,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
-  sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
@@ -2522,7 +2522,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
 
-  mock_sk_surface = SkSurface::MakeRaster(image_info);
+  mock_sk_surface = SkSurfaces::Raster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
@@ -2773,7 +2773,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                         inputRadius:(CGFloat)inputRadius {
   XCTAssertTrue(CGRectEqualToRect(visualEffectView.frame, frame));
   for (UIView* view in visualEffectView.subviews) {
-    if (![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+    if (![NSStringFromClass([view class]) hasSuffix:@"BackdropView"]) {
       continue;
     }
     XCTAssertEqual(view.layer.filters.count, 1u);
@@ -2854,7 +2854,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     [self waitForExpectationsWithTimeout:30 handler:nil];
 
     const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
-    sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+    sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);
     flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
     auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
         std::move(mock_sk_surface), framebuffer_info,
@@ -2881,7 +2881,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     flutterPlatformViewsController->CompositeEmbeddedView(1);
 
     const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
-    sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+    sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);
     flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
     auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
         std::move(mock_sk_surface), framebuffer_info,

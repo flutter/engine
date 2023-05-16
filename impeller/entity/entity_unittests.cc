@@ -202,7 +202,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   // With the crop rect.
   {
     auto expected = Rect::MakeLTRB(50, 50, 100, 100);
-    filter->SetCoverageCrop(expected);
+    filter->SetCoverageHint(expected);
     auto actual = filter->GetCoverage({});
 
     ASSERT_TRUE(actual.has_value());
@@ -224,7 +224,11 @@ TEST_P(EntityTest, CanDrawRect) {
 
 TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  auto path = PathBuilder{}
+                  .SetConvexity(Convexity::kConvex)
+                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .TakePath();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -2570,6 +2574,42 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   // (whether in Flutter or the playground), and so this should currently always
   // return false in practice.
   ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+
+  {
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
+        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
+                                              0, 6, 7, 0, 7, 8};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
 }
 
 }  // namespace testing

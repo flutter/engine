@@ -845,6 +845,7 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
+          .SetConvexity(Convexity::kConvex)
           .TakePath();
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
@@ -862,8 +863,10 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
     canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
                        bounds.width() * 0.5, paint_);
   } else {
-    auto path =
-        PathBuilder{}.AddOval(skia_conversions::ToRect(bounds)).TakePath();
+    auto path = PathBuilder{}
+                    .AddOval(skia_conversions::ToRect(bounds))
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
     canvas_.DrawPath(path, paint_);
   }
 }
@@ -1100,7 +1103,7 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLength();
+  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
   canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
                         impeller::Point{x, y},               //
                         paint_                               //
