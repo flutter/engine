@@ -907,7 +907,14 @@ class CanvasCompareTester {
     };
     DlRenderer dl_safe_restore = [=](DlCanvas* cv, const DlPaint& p) {
       // Draw another primitive to disable peephole optimizations
-      cv->DrawRect(kRenderBounds.makeOffset(500, 500), DlPaint());
+      // As the rendering op rejection in the DisplayList Builder
+      // gets smarter and smarter, this operation has had to get
+      // sneakier and sneakier about specifying an operation that
+      // won't practically show up in the output, but technically
+      // can't be culled.
+      cv->DrawRect(
+          SkRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 0.0001, 0.0001),
+          DlPaint());
       cv->Restore();
     };
     SkRenderer sk_opt_restore = [=](SkCanvas* cv, const SkPaint& p) {
@@ -2381,8 +2388,8 @@ class CanvasCompareTester {
 
   static const sk_sp<SkImage> kTestImage;
   static const sk_sp<SkImage> makeTestImage() {
-    sk_sp<SkSurface> surface =
-        SkSurface::MakeRasterN32Premul(kRenderWidth, kRenderHeight);
+    sk_sp<SkSurface> surface = SkSurfaces::Raster(
+        SkImageInfo::MakeN32Premul(kRenderWidth, kRenderHeight));
     SkCanvas* canvas = surface->getCanvas();
     SkPaint p0, p1;
     p0.setStyle(SkPaint::kFill_Style);
