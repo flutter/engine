@@ -75,6 +75,7 @@ void debugResetCustomUrlStrategy() {
   _customUrlStrategy = null;
 }
 
+/// Callback that receives the new state of the browser history entry.
 typedef PopStateListener = void Function(Object? state);
 
 /// Represents and reads route state from the browser's URL.
