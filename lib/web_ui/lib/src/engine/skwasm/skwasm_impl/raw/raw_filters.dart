@@ -95,6 +95,15 @@ external ColorFilterHandle colorFilterCreateSRGBToLinearGamma();
 @Native<ColorFilterHandle Function()>(symbol: 'colorFilter_createLinearToSRGBGamma', isLeaf: true)
 external ColorFilterHandle colorFilterCreateLinearToSRGBGamma();
 
+@Native<ColorFilterHandle Function(
+  ColorFilterHandle,
+  ColorFilterHandle
+)>(symbol: 'colorFilter_compose', isLeaf: true)
+external ColorFilterHandle colorFilterCompose(
+  ColorFilterHandle outer,
+  ColorFilterHandle inner,
+);
+
 @Native<Void Function(ColorFilterHandle)>(symbol: 'colorFilter_dispose', isLeaf: true)
 external void colorFilterDispose(ColorFilterHandle handle);
 

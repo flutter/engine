@@ -82,6 +82,15 @@ SKWASM_EXPORT SkColorFilter* colorFilter_createLinearToSRGBGamma() {
   return SkColorFilters::LinearToSRGBGamma().release();
 }
 
+SKWASM_EXPORT SkColorFilter* colorFilter_compose(SkColorFilter* outer,
+                                                 SkColorFilter* inner) {
+  outer->ref();
+  inner->ref();
+  return SkColorFilters::Compose(sk_sp<SkColorFilter>(outer),
+                                 sk_sp<SkColorFilter>(inner))
+      .release();
+}
+
 SKWASM_EXPORT void colorFilter_dispose(SkColorFilter* filter) {
   filter->unref();
 }

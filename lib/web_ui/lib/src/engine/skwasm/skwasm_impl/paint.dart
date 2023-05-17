@@ -27,6 +27,17 @@ class SkwasmPaint implements ui.Paint {
 
   ui.MaskFilter? _maskFilter;
 
+  bool _invertColors = false;
+
+  static final SkwasmColorFilter _invertColorFilter = SkwasmColorFilter.fromEngineColorFilter(
+    const EngineColorFilter.matrix(<double>[
+      -1.0, 0, 0, 1.0, 0, // row
+      0, -1.0, 0, 1.0, 0, // row
+      0, 0, -1.0, 1.0, 0, // row
+      1.0, 1.0, 1.0, 1.0, 0
+    ])
+  );
+
   @override
   ui.BlendMode get blendMode {
     return _cachedBlendMode;
@@ -113,16 +124,30 @@ class SkwasmPaint implements ui.Paint {
   @override
   ui.ColorFilter? get colorFilter => _colorFilter;
 
+  void _setEffectiveColorFilter() {
+    final SkwasmColorFilter? nativeFilter = _colorFilter != null
+      ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!) : null;
+    if (_invertColors) {
+      if (nativeFilter != null) {
+        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
+        nativeFilter.dispose();
+        paintSetColorFilter(handle, composedFilter.handle);
+        composedFilter.dispose();
+      } else {
+        paintSetColorFilter(handle, _invertColorFilter.handle);
+      }
+    } else if (nativeFilter != null) {
+      paintSetColorFilter(handle, nativeFilter.handle);
+      nativeFilter.dispose();
+    } else {
+      paintSetColorFilter(handle, nullptr);
+    }
+  }
+
   @override
   set colorFilter(ui.ColorFilter? filter) {
     _colorFilter = filter as EngineColorFilter?;
-    if (filter == null) {
-      paintSetColorFilter(handle, nullptr);
-    } else {
-      final SkwasmColorFilter nativeFilter = SkwasmColorFilter.fromEngineColorFilter(filter);
-      paintSetColorFilter(handle, nativeFilter.handle);
-      nativeFilter.dispose();
-    }
+    _setEffectiveColorFilter();
   }
 
   @override
@@ -141,5 +166,14 @@ class SkwasmPaint implements ui.Paint {
   }
 
   @override
-  bool invertColors = false;
+  bool get invertColors => _invertColors;
+
+  @override
+  set invertColors(bool invertColors) {
+    if (_invertColors == invertColors) {
+      return;
+    }
+    _invertColors = invertColors;
+    _setEffectiveColorFilter();
+  }
 }

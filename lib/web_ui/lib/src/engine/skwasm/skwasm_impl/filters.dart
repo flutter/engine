@@ -95,6 +95,11 @@ class SkwasmColorFilter {
       }),
     };
 
+  factory SkwasmColorFilter.composed(
+    SkwasmColorFilter outer,
+    SkwasmColorFilter inner,
+  ) => SkwasmColorFilter._(colorFilterCompose(outer.handle, inner.handle));
+
   void dispose() {
     if (!_isDisposed) {
       colorFilterDispose(handle);

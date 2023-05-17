@@ -166,6 +166,25 @@ Future<void> testMain() async {
     await matchGoldenFile('ui_filter_matrix_colorfilter.png', region: region);
   });
 
+  test('invert colors', () async {
+    await drawTestImageWithPaint(ui.Paint()..invertColors = true);
+    await matchGoldenFile('ui_filter_invert_colors.png', region: region);
+  });
+
+  test('invert colors with color filter', () async {
+    const ui.ColorFilter sepia = ui.ColorFilter.matrix(<double>[
+      0.393, 0.769, 0.189, 0, 0,
+      0.349, 0.686, 0.168, 0, 0,
+      0.272, 0.534, 0.131, 0, 0,
+      0,     0,     0,     1, 0,
+    ]);
+
+    await drawTestImageWithPaint(ui.Paint()
+      ..invertColors = true
+      ..colorFilter = sepia);
+    await matchGoldenFile('ui_filter_invert_colors_with_colorfilter.png', region: region);
+  });
+
   test('mask filter', () async {
     const ui.MaskFilter maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 25.0);
     await drawTestImageWithPaint(ui.Paint()..maskFilter = maskFilter);
