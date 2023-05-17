@@ -2404,7 +2404,7 @@ void _testDialog() {
     expect(
       warnings,
       <String>[
-        'Semantic node 0 was assigned dialog role, but is missing a label. A dialog should contain a label so that a screen reader can communicate to the user that a dialog appeared and a user action is requested.',
+        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with it content.',
       ],
     );
 
@@ -2416,6 +2416,140 @@ void _testDialog() {
     expect(
       semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
       isA<Dialog>(),
+    );
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('dialog can be described by a descendant', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    void pumpSemantics({ required String label }) {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        scopesRoute: true,
+        transform: Matrix4.identity().toFloat64(),
+        children: <SemanticsNodeUpdate>[
+          tester.updateNode(
+            id: 1,
+            children: <SemanticsNodeUpdate>[
+              tester.updateNode(
+                id: 2,
+                namesRoute: true,
+                label: label,
+              ),
+            ],
+          ),
+        ],
+      );
+      tester.apply();
+
+
+    expectSemanticsTree('''
+<sem aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
+  <sem-c>
+    <sem>
+      <sem-c>
+        <sem aria-label="$label"></sem>
+      </sem-c>
+    </sem>
+  </sem-c>
+</sem>
+''');
+    }
+
+    pumpSemantics(label: 'Dialog label');
+
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
+      isA<Dialog>(),
+    );
+    expect(
+      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
+      isA<RouteName>(),
+    );
+
+    pumpSemantics(label: 'Updated dialog label');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('scopesRoute alone sets the dialog role with no label', () {
+    final List<String> warnings = <String>[];
+    printWarning = warnings.add;
+
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      scopesRoute: true,
+      transform: Matrix4.identity().toFloat64(),
+    );
+    tester.apply();
+
+    expectSemanticsTree('''<sem style="$rootSemanticStyle"></sem>''');
+
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
+      isA<Dialog>(),
+    );
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.routeName),
+      isNull,
+    );
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('namesRoute alone has no effect', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      transform: Matrix4.identity().toFloat64(),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          children: <SemanticsNodeUpdate>[
+            tester.updateNode(
+              id: 2,
+              namesRoute: true,
+              label: 'Hello',
+            ),
+          ],
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem>
+      <sem-c>
+        <sem aria-label="Hello"></sem>
+      </sem-c>
+    </sem>
+  </sem-c>
+</sem>
+''');
+
+    expect(
+      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
+      isNull,
+    );
+    expect(
+      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
+      isA<RouteName>(),
     );
 
     semantics().semanticsEnabled = false;

@@ -365,15 +365,32 @@ enum Role {
 
   /// Adds the "dialog" ARIA role to the node.
   ///
-  /// This corresponds to a semantics node that has both `scopesRoute` and
-  /// `namesRoute` bits set. While in Flutter a named route is not necessarily a
-  /// dialog, this is the closest analog on the web.
+  /// This corresponds to a semantics node that has `scopesRoute` bit set. While
+  /// in Flutter a named route is not necessarily a dialog, this is the closest
+  /// analog on the web.
   ///
-  /// Why is `scopesRoute` alone not sufficient? Because Flutter can create
-  /// routes that are not logically dialogs and there's nothing interesting to
-  /// announce to the user. For example, a modal barrier has `scopesRoute` set
-  /// but marking it as a dialog would be wrong.
+  /// There are 3 possible situations:
+  ///
+  /// * The node also has the `namesRoute` bit set. This means that the node's
+  ///   `label` describes the dialog, which can be expressed by adding the
+  ///   `aria-label` attribute.
+  /// * A descendant node has the `namesRoute` bit set. This means that the
+  ///   child's content describes the dialog. The child may simply be labelled,
+  ///   or it may be a subtree of nodes that describe the dialog together. In
+  ///   this case the nearest HTML equivalent is `aria-labelledby`. In this case
+  ///   the child acquires the [routeName] role.
+  /// * There is no `namesRoute` bit anywhere in the sub-tree rooted at the
+  ///   current node. In this case it's likely not a dialog at all, and the node
+  ///   should not get a label or the "dialog" role. It's just a group of
+  ///   children. For example, a modal barrier has `scopesRoute` set but marking
+  ///   it as a dialog would be wrong.
   dialog,
+
+  /// Provides a description for an ancestor [dialog].
+  ///
+  /// This role is assigned to nodes that have `namesRoute` set but not
+  /// `scopesRoute`.
+  routeName,
 }
 
 /// A function that creates a [RoleManager] for a [SemanticsObject].
@@ -390,6 +407,7 @@ final Map<Role, RoleManagerFactory> _roleFactories = <Role, RoleManagerFactory>{
   Role.image: (SemanticsObject object) => ImageRoleManager(object),
   Role.liveRegion: (SemanticsObject object) => LiveRegion(object),
   Role.dialog: (SemanticsObject object) => Dialog(object),
+  Role.routeName: (SemanticsObject object) => RouteName(object),
 };
 
 /// Provides the functionality associated with the role of the given
@@ -423,7 +441,7 @@ abstract class RoleManager {
   /// DOM. In particular, this method is the appropriate place to call
   /// [EngineSemanticsOwner.removeGestureModeListener] if this role reponds to
   /// gesture mode changes.
-  void dispose();
+  void dispose() {}
 }
 
 /// Instantiation of a framework-side semantics node in the DOM.
@@ -827,6 +845,12 @@ class SemanticsObject {
   DomElement? _childContainerElement;
 
   /// The parent of this semantics object.
+  ///
+  /// This value is not final until the tree is finalized. It is not safe to
+  /// rely on this value in the middle of a semantics tree update. It is safe to
+  /// use this value in post-update callback (see
+  /// [EngineSemanticsOwner.addOneTimePostUpdateCallback]).
+  SemanticsObject? get parent => _parent;
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
@@ -881,14 +905,15 @@ class SemanticsObject {
       !hasAction(ui.SemanticsAction.tap) &&
       !hasFlag(ui.SemanticsFlag.isButton);
 
-  /// Whether this node should be treated as an ARIA dialog.
+  /// Whether this node defines a scope for a route.
   ///
   /// See also [Role.dialog].
-  bool get isDialog {
-    final bool scopesRoute = hasFlag(ui.SemanticsFlag.scopesRoute);
-    final bool namesRoute = hasFlag(ui.SemanticsFlag.namesRoute);
-    return scopesRoute && namesRoute;
-  }
+  bool get scopesRoute => hasFlag(ui.SemanticsFlag.scopesRoute);
+
+  /// Whether this node describes a route.
+  ///
+  /// See also [Role.dialog].
+  bool get namesRoute => hasFlag(ui.SemanticsFlag.namesRoute);
 
   /// Whether this object carry enabled/disabled state (and if so whether it is
   /// enabled).
@@ -1278,6 +1303,14 @@ class SemanticsObject {
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
   final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
 
+  /// Returns if this node has the given [role].
+  bool hasRole(Role role) => _roleManagers.containsKey(role);
+
+  /// Returns the role manager for the given [role] attached to this node.
+  ///
+  /// If [hasRole] is false for the given [role], throws an error.
+  R getRole<R extends RoleManager>(Role role) => _roleManagers[role]! as R;
+
   /// Returns the role manager for the given [role].
   ///
   /// If a role manager does not exist for the given role, returns null.
@@ -1287,10 +1320,11 @@ class SemanticsObject {
   /// the lifecycles of [RoleManager] objects.
   void _updateRoles() {
     // Some role managers manage labels themselves for various role-specific reasons.
-    final bool managesOwnLabel = isTextField || isDialog || isVisualOnly;
+    final bool managesOwnLabel = isTextField || scopesRoute || isVisualOnly;
     _updateRole(Role.labelAndValue, (hasLabel || hasValue || hasTooltip) && !managesOwnLabel);
 
-    _updateRole(Role.dialog, isDialog);
+    _updateRole(Role.dialog, scopesRoute);
+    _updateRole(Role.routeName, namesRoute && !scopesRoute);
     _updateRole(Role.textField, isTextField);
 
     // The generic `Focusable` role manager can be used for everything except
