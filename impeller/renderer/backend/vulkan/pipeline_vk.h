@@ -38,10 +38,10 @@ class PipelineVK final
  private:
   friend class PipelineLibraryVK;
 
-  const vk::UniquePipeline pipeline_;
-  const vk::UniqueRenderPass render_pass_;
-  const vk::UniquePipelineLayout layout_;
-  const vk::UniqueDescriptorSetLayout descriptor_set_layout_;
+  vk::UniquePipeline pipeline_;
+  vk::UniqueRenderPass render_pass_;
+  vk::UniquePipelineLayout layout_;
+  vk::UniqueDescriptorSetLayout descriptor_set_layout_;
   bool is_valid_ = false;
 
   // |Pipeline|

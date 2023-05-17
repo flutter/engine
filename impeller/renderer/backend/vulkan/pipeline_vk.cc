@@ -20,7 +20,14 @@ PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
   is_valid_ = pipeline_ && render_pass_ && layout_ && descriptor_set_layout_;
 }
 
-PipelineVK::~PipelineVK() = default;
+PipelineVK::~PipelineVK() {
+  if (!IsPipelineLive()) {
+    descriptor_set_layout_.release();
+    layout_.release();
+    render_pass_.release();
+    pipeline_.release();
+  }
+}
 
 bool PipelineVK::IsValid() const {
   return is_valid_;

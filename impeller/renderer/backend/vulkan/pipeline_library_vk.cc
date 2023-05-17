@@ -19,15 +19,13 @@
 namespace impeller {
 
 PipelineLibraryVK::PipelineLibraryVK(
-    const std::weak_ptr<DeviceHolder>& device_holder,
-    const vk::Device& device,
+    const std::shared_ptr<DeviceHolder>& device_holder,
     std::shared_ptr<const Capabilities> caps,
     fml::UniqueFD cache_directory,
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
     : device_holder_(device_holder),
       pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
                                                    device_holder,
-                                                   device,
                                                    std::move(cache_directory))),
       worker_task_runner_(std::move(worker_task_runner)) {
   if (!pso_cache_->IsValid() || !worker_task_runner_) {

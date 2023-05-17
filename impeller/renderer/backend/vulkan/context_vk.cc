@@ -29,6 +29,24 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+namespace {
+template <typename T>
+class scoped_reset {
+ public:
+  scoped_reset(T* addr, T&& value) : addr_(addr) { *addr_ = std::move(value); }
+  ~scoped_reset() {
+    if (addr_) {
+      addr_->reset();
+    }
+  }
+  void release() { addr_ = nullptr; }
+  const typename T::element_type& get() const { return addr_->get(); }
+
+ private:
+  T* addr_;
+};
+}  // namespace
+
 namespace impeller {
 
 // TODO(csg): Fix this after caps are reworked.
@@ -278,7 +296,8 @@ void ContextVK::Setup(Settings settings) {
     VALIDATION_LOG << "Could not create logical device.";
     return;
   }
-  vk::UniqueDevice device = std::move(device_result.value);
+  scoped_reset<vk::UniqueDevice> device(&device_,
+                                        std::move(device_result.value));
 
   if (!caps->SetDevice(physical_device.value())) {
     VALIDATION_LOG << "Capabilities could not be updated.";
@@ -307,8 +326,7 @@ void ContextVK::Setup(Settings settings) {
   /// Setup the pipeline library.
   ///
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
-      new PipelineLibraryVK(weak_from_this(),                     //
-                            device.get(),                         //
+      new PipelineLibraryVK(shared_from_this(),                   //
                             caps,                                 //
                             std::move(settings.cache_directory),  //
                             settings.worker_task_runner           //
@@ -323,7 +341,7 @@ void ContextVK::Setup(Settings settings) {
       std::shared_ptr<SamplerLibraryVK>(new SamplerLibraryVK(device.get()));
 
   auto shader_library = std::shared_ptr<ShaderLibraryVK>(
-      new ShaderLibraryVK(device.get(),                    //
+      new ShaderLibraryVK(weak_from_this(),                //
                           settings.shader_libraries_data)  //
   );
 
@@ -365,7 +383,7 @@ void ContextVK::Setup(Settings settings) {
   instance_ = std::move(instance.value);
   debug_report_ = std::move(debug_report);
   physical_device_ = physical_device.value();
-  device_ = std::move(device);
+  device.release();  // Stop automatic reset of device_ ivar.
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
