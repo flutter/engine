@@ -110,6 +110,18 @@ MutationVector MutationsForPlatformView(const FlutterPlatformView* view, float s
   return mutations;
 }
 
+/// Returns the composition of all transformation mutations in the mutations vector.
+CATransform3D CATransformFromMutations(const MutationVector& mutations) {
+  CATransform3D transform = CATransform3DIdentity;
+  for (auto mutation : mutations) {
+    if (mutation.type == kFlutterPlatformViewMutationTypeTransformation) {
+      CATransform3D mutationTransform = ToCATransform3D(mutation.transformation);
+      transform = CATransform3DConcat(mutationTransform, transform);
+    }
+  }
+  return transform;
+}
+
 /// Returns whether the point is inside ellipse with given radius (centered at 0, 0).
 bool PointInsideEllipse(const CGPoint& point, const FlutterSize& radius) {
   return (point.x * point.x) / (radius.width * radius.width) +
@@ -253,26 +265,19 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
 /// If clipping to path is needed, CAShapeLayer(s) will be used as mask.
 /// Clipping to round rect only clips to path if round corners are intersected.
 - (void)applyFlutterLayer:(const FlutterLayer*)layer {
+  // Compute the untransformed bounding rect for the platform view in logical pixels.
+  // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
   CGFloat scale = [self contentsScale];
-  auto mutations = MutationsForPlatformView(layer->platform_view, scale);
+  MutationVector mutations = MutationsForPlatformView(layer->platform_view, scale);
 
-  // Platform view transform after applying all transformation mutations.
-  CATransform3D finalTransform = CATransform3DIdentity;
-  for (auto mutation : mutations) {
-    if (mutation.type == kFlutterPlatformViewMutationTypeTransformation) {
-      CATransform3D mutationTransform = ToCATransform3D(mutation.transformation);
-      finalTransform = CATransform3DConcat(mutationTransform, finalTransform);
-    }
-  }
+  CATransform3D finalTransform = CATransformFromMutations(mutations);
 
   // Compute the untransformed bounding rect for the platform view in logical pixels.
   // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
   CGRect untransformedBoundingRect =
       CGRectMake(0, 0, layer->size.width / scale, layer->size.height / scale);
-
   CGRect finalBoundingRect = CGRectApplyAffineTransform(
       untransformedBoundingRect, CATransform3DGetAffineTransform(finalTransform));
-
   self.frame = finalBoundingRect;
 
   // Master clip in global logical coordinates. This is intersection of all clip rectangles
