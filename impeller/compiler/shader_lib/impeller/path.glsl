@@ -121,7 +121,7 @@ QuadDecomposition DecomposeQuad(QuadData quad, float tolerance) {
   // This should never happen, but if it does happen be more defensive -
   // otherwise we'll get NaNs down the line.
   if (dd == vec2(0.)) {
-    return QuadDecomposition(0., 0., 0., 0., 0, 0.);
+    dd = vec2(1.0, 1.0);
   }
   float c = Cross(quad.p2 - quad.p1, dd);
   float x0 = dot(d01, dd) * 1. / c;

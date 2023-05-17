@@ -65,17 +65,17 @@ void ProcessCubic(uint ident) {
     cubic = cubics.data[ident];
     quad_count = EstimateQuadraticCount(cubic, config.cubic_accuracy);
     scratch_count[ident] = quad_count;
+  } else {
+    scratch_count[ident] = 0;
   }
 
   barrier();
 
   uint offset = 0;
   if (quad_count > 0) {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
     offset = ComputePosition(ident) + quads.count;
-  } else {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   }
+  scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
 
   barrier();
   if (quad_count > 0) {
@@ -103,11 +103,9 @@ void ProcessQuad(uint ident) {
 
   uint offset = 0;
   if (decomposition.line_count > 0) {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
     offset = ComputePosition(ident) + lines.count;
-  } else {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   }
+  scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   barrier();
 
   if (decomposition.line_count > 0) {
