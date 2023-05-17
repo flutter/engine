@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry.h"
 
+#include "flutter/fml/trace_event.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -11,7 +12,9 @@
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/compute_tessellator.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/stroke.comp.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -605,6 +608,13 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   if (stroke_width_ < 0.0) {
     return {};
   }
+
+  if (renderer.GetContext()->GetCapabilities()->SupportsCompute()) {
+    return GetPositionBufferGPU(renderer, entity, pass);
+  }
+
+  TRACE_EVENT0("impeller", "StrokePathGeometry::GetPositionBuffer");
+
   auto determinant = entity.GetTransformation().GetDeterminant();
   if (determinant == 0) {
     return {};
@@ -622,6 +632,67 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = true,
+  };
+}
+
+template <typename T>
+std::shared_ptr<DeviceBuffer> CreateHostVisibleDeviceBuffer(
+    std::shared_ptr<Context> context,
+    const std::string& label) {
+  DeviceBufferDescriptor desc;
+  desc.storage_mode = StorageMode::kDevicePrivate;
+  desc.size = sizeof(T);
+  auto buffer = context->GetResourceAllocator()->CreateBuffer(desc);
+  buffer->SetLabel(label);
+  return buffer;
+}
+
+GeometryResult StrokePathGeometry::GetPositionBufferGPU(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  TRACE_EVENT0("impeller", "StrokePathGeometry::GetPositionBufferGPU");
+  using SS = StrokeComputeShader;
+
+  auto determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
+    return {};
+  }
+
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar stroke_width = std::max(stroke_width_, min_size);
+
+  auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
+      renderer.GetContext(), "VertexBuffer");
+  auto indirect_command_arguments =
+      CreateHostVisibleDeviceBuffer<SS::IndirectCommandArguments>(
+          renderer.GetContext(), "IndirectCommandArguments");
+
+  auto status = ComputeTessellator{}
+                    .SetStrokeWidth(stroke_width)
+                    // .SetStrokeJoin(stroke_join_)
+                    // .SetStrokeCap(stroke_cap_)
+                    .SetMiterLimit(miter_limit_ * stroke_width_ * 0.5)
+                    .Tessellate(path_, renderer.GetContext(),
+                                vertex_buffer->AsBufferView(),
+                                indirect_command_arguments->AsBufferView());
+  if (status != ComputeTessellator::Status::kOk) {
+    return {};
+  }
+
+  return {
+      .type = PrimitiveType::kTriangleStrip,
+      .vertex_buffer =
+          {
+              .vertex_buffer = vertex_buffer->AsBufferView(),
+              .index_buffer = {},
+              .vertex_count = 1,
+              .index_type = IndexType::kNone,
+              .indirect_arguments = indirect_command_arguments->AsBufferView(),
+          },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = true,

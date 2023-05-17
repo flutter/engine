@@ -489,7 +489,22 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
     const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
     if (command.index_type == IndexType::kNone) {
-      if (command.instance_count != 1u) {
+      if (command.indirect) {
+        auto indirect_buffer =
+            command.indirect_arguments.buffer->GetDeviceBuffer(*allocator);
+        if (!indirect_buffer) {
+          return false;
+        }
+        auto mtl_indirect_buffer =
+            DeviceBufferMTL::Cast(*indirect_buffer).GetMTLBuffer();
+        if (!mtl_indirect_buffer) {
+          return false;
+        }
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                  indirectBuffer:mtl_indirect_buffer
+            indirectBufferOffset:command.indirect_arguments.range.offset];
+        continue;
+      } else if (command.instance_count != 1u) {
 #if TARGET_OS_SIMULATOR
         VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
         return false;
@@ -499,7 +514,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                     vertexCount:command.vertex_count
                   instanceCount:command.instance_count
                    baseInstance:0u];
-
+        continue;
       } else {
         [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
                     vertexStart:command.base_vertex

@@ -23,6 +23,10 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
   index_buffer = buffer.index_buffer;
   vertex_count = buffer.vertex_count;
   index_type = buffer.index_type;
+  if (buffer.indirect_arguments) {
+    indirect = true;
+    indirect_arguments = buffer.indirect_arguments;
+  }
   return true;
 }
 

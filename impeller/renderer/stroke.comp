@@ -21,10 +21,17 @@ layout(binding = 1) buffer VertexBuffer {
 }
 vertex_buffer;
 
-layout(binding = 2) buffer VertexBufferCount {
-  uint count;
-}
-vertex_buffer_count;
+// layout(binding = 2) buffer VertexBufferCount {
+//   uint count;
+// }
+// vertex_buffer_count;
+
+layout(binding = 2) buffer IndirectCommandArguments {
+  uint vertex_count;
+  uint instance_count;
+  uint vertex_start;
+  uint base_instance;
+} indirect_command_arguments;
 
 uniform Config {
   float width;
@@ -46,7 +53,7 @@ void main() {
     return;
   }
 
-  atomicAdd(vertex_buffer_count.count, 4);
+  atomicAdd(indirect_command_arguments.vertex_count, 4);
 
   uint index = ident - 1;
   vec2 offset = compute_offset(index);
@@ -59,6 +66,7 @@ void main() {
   if (ident == polyline.count - 1) {
     vertex_buffer.position[index * 4 + 4] = polyline.data[ident] + offset;
     vertex_buffer.position[index * 4 + 5] = polyline.data[ident] - offset;
-    atomicAdd(vertex_buffer_count.count, 2);
+    atomicAdd(indirect_command_arguments.vertex_count, 2);
   }
+  indirect_command_arguments.instance_count = 1;
 }

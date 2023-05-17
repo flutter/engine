@@ -58,11 +58,18 @@ ComputeTessellator& ComputeTessellator::SetQuadraticTolerance(Scalar value) {
   return *this;
 }
 
+// IndirectCommandArguments {
+//   int vertexCount;
+//   int instanceCount;
+//   int vertexStart;
+//   int baseInstance;
+// } indirect_command_arguments;
+
 ComputeTessellator::Status ComputeTessellator::Tessellate(
     const Path& path,
     const std::shared_ptr<Context>& context,
     BufferView vertex_buffer,
-    BufferView vertex_buffer_count,
+    BufferView indirect_command_arguments,
     const CommandBuffer::CompletionCallback& callback) const {
   FML_DCHECK(style_ == Style::kStroke);
   using PS = PathPolylineComputeShader;
@@ -164,7 +171,7 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     SS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
 
     SS::BindPolyline(cmd, polyline_buffer->AsBufferView());
-    SS::BindVertexBufferCount(cmd, std::move(vertex_buffer_count));
+    SS::BindIndirectCommandArguments(cmd, std::move(indirect_command_arguments));
     SS::BindVertexBuffer(cmd, std::move(vertex_buffer));
 
     if (!pass->AddCommand(std::move(cmd))) {

@@ -17,6 +17,11 @@ struct VertexBuffer {
   size_t vertex_count = 0u;
   IndexType index_type = IndexType::kUnknown;
 
+  // Optional. If provided, indicates that a compute shader will populate
+  // the attached buffer with a specific struct layout. On Metal this is
+  // described by the MTLDrawPrimitivesIndirectArguments struct.
+  BufferView indirect_arguments;
+
   constexpr operator bool() const {
     return static_cast<bool>(vertex_buffer) &&
            (index_type == IndexType::kNone || static_cast<bool>(index_buffer));

@@ -104,7 +104,7 @@ def main():
   elif args.platform == 'ios':
     command += [
         '--std=ios-metal%s' % args.metal_version,
-        '-mios-version-min=11.0',
+        '-mios-version-min=15.0',
     ]
   elif args.platform == 'ios-simulator':
     command += [

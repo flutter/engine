@@ -158,6 +158,10 @@ class StrokePathGeometry : public Geometry {
                                    const Entity& entity,
                                    RenderPass& pass) override;
 
+  GeometryResult GetPositionBufferGPU(const ContentContext& renderer,
+                                      const Entity& entity,
+                                      RenderPass& pass);
+
   // |Geometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                      Matrix effect_transform,

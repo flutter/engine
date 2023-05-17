@@ -59,12 +59,12 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
   auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
       context, "VertexBuffer");
   auto vertex_buffer_count =
-      CreateHostVisibleDeviceBuffer<SS::VertexBufferCount>(context,
-                                                           "VertexCount");
+      CreateHostVisibleDeviceBuffer<SS::IndirectCommandArguments>(
+          context, "VertexCount");
 
   auto callback = [&](RenderPass& pass) -> bool {
     ::memset(vertex_buffer_count->AsBufferView().contents, 0,
-             sizeof(SS::VertexBufferCount));
+             sizeof(SS::IndirectCommandArguments));
     ::memset(vertex_buffer->AsBufferView().contents, 0,
              sizeof(SS::VertexBuffer<2048>));
     const auto* main_viewport = ImGui::GetMainViewport();
@@ -87,9 +87,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
                   [vertex_buffer_count,
                    &vertex_count](CommandBuffer::Status status) {
                     vertex_count =
-                        reinterpret_cast<SS::VertexBufferCount*>(
+                        reinterpret_cast<SS::IndirectCommandArguments*>(
                             vertex_buffer_count->AsBufferView().contents)
-                            ->count;
+                            ->vertex_count;
                   });
       if (vertex_count > 0) {
         ImGui::Text("Vertex count: %zu", vertex_count);
@@ -134,9 +134,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
 
     cmd.pipeline = renderer.GetSolidFillPipeline(options);
 
-    auto count = reinterpret_cast<SS::VertexBufferCount*>(
+    auto count = reinterpret_cast<SS::IndirectCommandArguments*>(
                      vertex_buffer_count->AsBufferView().contents)
-                     ->count;
+                     ->vertex_count;
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
@@ -178,8 +178,8 @@ TEST_P(ComputeSubgroupTest, LargePath) {
   auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
       context, "VertexBuffer");
   auto vertex_buffer_count =
-      CreateHostVisibleDeviceBuffer<SS::VertexBufferCount>(context,
-                                                           "VertexCount");
+      CreateHostVisibleDeviceBuffer<SS::IndirectCommandArguments>(
+          context, "VertexCount");
 
   auto complex_path =
       PathBuilder{}
@@ -302,7 +302,7 @@ TEST_P(ComputeSubgroupTest, LargePath) {
 
   auto callback = [&](RenderPass& pass) -> bool {
     ::memset(vertex_buffer_count->AsBufferView().contents, 0,
-             sizeof(SS::VertexBufferCount));
+             sizeof(SS::IndirectCommandArguments));
     ::memset(vertex_buffer->AsBufferView().contents, 0,
              sizeof(SS::VertexBuffer<2048>));
 
@@ -312,9 +312,9 @@ TEST_P(ComputeSubgroupTest, LargePath) {
             complex_path, context, vertex_buffer->AsBufferView(),
             vertex_buffer_count->AsBufferView(),
             [vertex_buffer_count, &vertex_count](CommandBuffer::Status status) {
-              vertex_count = reinterpret_cast<SS::VertexBufferCount*>(
+              vertex_count = reinterpret_cast<SS::IndirectCommandArguments*>(
                                  vertex_buffer_count->AsBufferView().contents)
-                                 ->count;
+                                 ->vertex_count;
             });
 
     ContentContext renderer(context);
@@ -342,9 +342,9 @@ TEST_P(ComputeSubgroupTest, LargePath) {
 
     cmd.pipeline = renderer.GetSolidFillPipeline(options);
 
-    auto count = reinterpret_cast<SS::VertexBufferCount*>(
+    auto count = reinterpret_cast<SS::IndirectCommandArguments*>(
                      vertex_buffer_count->AsBufferView().contents)
-                     ->count;
+                     ->vertex_count;
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
@@ -382,8 +382,8 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
   auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
       context, "VertexBuffer");
   auto vertex_buffer_count =
-      CreateHostVisibleDeviceBuffer<SS::VertexBufferCount>(context,
-                                                           "VertexBufferCount");
+      CreateHostVisibleDeviceBuffer<SS::IndirectCommandArguments>(
+          context, "VertexBufferCount");
 
   auto path = PathBuilder{}
                   .AddCubicCurve({140, 20}, {73, 20}, {20, 74}, {20, 140})
@@ -430,9 +430,9 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
 
     cmd.pipeline = renderer.GetSolidFillPipeline(options);
 
-    auto count = reinterpret_cast<SS::VertexBufferCount*>(
+    auto count = reinterpret_cast<SS::IndirectCommandArguments*>(
                      vertex_buffer_count->AsBufferView().contents)
-                     ->count;
+                     ->vertex_count;
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
@@ -466,9 +466,9 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
   // CPU latch here.
   latch.Wait();
 
-  auto vertex_count = reinterpret_cast<SS::VertexBufferCount*>(
+  auto vertex_count = reinterpret_cast<SS::IndirectCommandArguments*>(
                           vertex_buffer_count->AsBufferView().contents)
-                          ->count;
+                          ->vertex_count;
   EXPECT_EQ(vertex_count, golden_cubic_and_quad_points.size());
   auto vertex_buffer_data = reinterpret_cast<SS::VertexBuffer<2048>*>(
       vertex_buffer->AsBufferView().contents);

@@ -66,7 +66,7 @@ class ComputeTessellator {
       const Path& path,
       const std::shared_ptr<Context>& context,
       BufferView vertex_buffer,
-      BufferView vertex_buffer_count,
+      BufferView indirect_command_arguments,
       const CommandBuffer::CompletionCallback& callback = nullptr) const;
 
  private:

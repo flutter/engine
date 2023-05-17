@@ -12,6 +12,7 @@
 #include "impeller/entity/mtl/entity_shaders.h"
 #include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
+#include "impeller/renderer/mtl/compute_shaders.h"
 #include "impeller/scene/shaders/mtl/scene_shaders.h"
 
 FLUTTER_ASSERT_ARC
@@ -26,6 +27,8 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
                                              impeller_modern_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
                                              impeller_framebuffer_blend_shaders_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_compute_shaders_data,
+                                             impeller_compute_shaders_length),
   };
   auto context = impeller::ContextMTL::Create(shader_mappings, "Impeller Library");
   if (!context) {
