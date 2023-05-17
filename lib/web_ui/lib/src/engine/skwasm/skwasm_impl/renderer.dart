@@ -89,8 +89,8 @@ class SkwasmRenderer implements Renderer {
     required ui.ImageFilter outer,
     required ui.ImageFilter inner
   }) => SkwasmImageFilter.compose(
-    outer as SkwasmImageFilter,
-    inner as SkwasmImageFilter
+    SkwasmImageFilter.fromUiFilter(outer),
+    SkwasmImageFilter.fromUiFilter(inner),
   );
 
   @override
