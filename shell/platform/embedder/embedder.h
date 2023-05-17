@@ -805,6 +805,11 @@ typedef struct {
   };
 } FlutterRendererConfig;
 
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
   size_t struct_size;
@@ -827,7 +832,7 @@ typedef struct {
   /// Left inset of window.
   double physical_view_inset_left;
   /// The identifier of the display the view is rendering on.
-  uint64_t display_id;
+  FlutterEngineDisplayId display_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -1654,11 +1659,6 @@ typedef struct {
 typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     const FlutterLocale** /* supported_locales*/,
     size_t /* Number of locales*/);
-
-/// Display refers to a graphics hardware system consisting of a framebuffer,
-/// typically a monitor or a screen. This ID is unique per display and is
-/// stable until the Flutter application restarts.
-typedef uint64_t FlutterEngineDisplayId;
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterDisplay).
