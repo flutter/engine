@@ -2835,6 +2835,7 @@
 ../../../third_party/skia/src/xps/BUILD.bazel
 ../../../third_party/skia/tests
 ../../../third_party/skia/third_party/README
+../../../third_party/skia/third_party/cityhash/README
 ../../../third_party/skia/third_party/etc1/BUILD.bazel
 ../../../third_party/skia/third_party/etc1/README.google
 ../../../third_party/skia/third_party/freetype2
