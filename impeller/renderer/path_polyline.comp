@@ -72,10 +72,9 @@ void ProcessCubic(uint ident) {
   uint offset = 0;
   if (quad_count > 0) {
     scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
-
     offset = ComputePosition(ident) + quads.count;
   } else {
-    scratch_sum[ident] = 0;
+    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   }
 
   barrier();
