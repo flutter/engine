@@ -61,6 +61,13 @@
 @end
 
 namespace {
+
+/// A rounded rectangle and transform associated with it.
+typedef struct {
+  FlutterRoundedRect rect;
+  CGAffineTransform transform;
+} ClipRoundedRect;
+
 CATransform3D ToCATransform3D(const FlutterTransformation& t) {
   CATransform3D transform = CATransform3DIdentity;
   transform.m11 = t.scaleX;
@@ -299,7 +306,7 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
   CGRect masterClip = finalBoundingRect;
 
   // Gathered pairs of rounded rect in local coordinates + appropriate transform.
-  std::vector<std::pair<FlutterRoundedRect, CGAffineTransform>> roundedRects;
+  std::vector<ClipRoundedRect> roundedRects;
 
   // Create the initial transform.
   CATransform3D transform = CATransform3DIdentity;
@@ -312,7 +319,7 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
       masterClip = CGRectIntersection(rect, masterClip);
     } else if (mutation.type == kFlutterPlatformViewMutationTypeClipRoundedRect) {
       CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
-      roundedRects.push_back(std::make_pair(mutation.clip_rounded_rect, affineTransform));
+      roundedRects.push_back({mutation.clip_rounded_rect, affineTransform});
       CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rounded_rect.rect),
                                                affineTransform);
       masterClip = CGRectIntersection(rect, masterClip);
@@ -330,16 +337,16 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
   NSMutableArray* paths = [NSMutableArray array];
 
   for (const auto& r : roundedRects) {
-    CGAffineTransform inverse = CGAffineTransformInvert(r.second);
+    CGAffineTransform inverse = CGAffineTransformInvert(r.transform);
     // Transform master clip to clip rect coordinates and check if this view intersects one of the
     // corners, which means we need to use path clipping.
     CGRect localMasterClip = CGRectApplyAffineTransform(masterClip, inverse);
 
     // Only clip to rounded rectangle path if the view intersects some of the round corners. If
     // not, clipping to masterClip is enough.
-    if (RoundRectCornerIntersects(r.first, ToFlutterRect(localMasterClip))) {
-      CGPathRef path = PathFromRoundedRect(r.first);
-      CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &r.second);
+    if (RoundRectCornerIntersects(r.rect, ToFlutterRect(localMasterClip))) {
+      CGPathRef path = PathFromRoundedRect(r.rect);
+      CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &r.transform);
       [paths addObject:(__bridge id)transformedPath];
       CGPathRelease(transformedPath);
       CGPathRelease(path);
