@@ -155,66 +155,121 @@ class SkwasmGradient extends SkwasmShader implements ui.Gradient {
   }
 }
 
+class SkwasmImageShader extends SkwasmShader implements ui.ImageShader {
+  SkwasmImageShader._(this.handle);
+
+  factory SkwasmImageShader.imageShader(
+    SkwasmImage image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
+    Float64List? matrix4,
+    ui.FilterQuality? filterQuality,
+  ) {
+    if (matrix4 != null) {
+      return withStackScope((StackScope scope) {
+        final RawMatrix33 localMatrix = scope.convertMatrix4toSkMatrix(matrix4);
+        return SkwasmImageShader._(shaderCreateFromImage(
+          image.handle,
+          tmx.index,
+          tmy.index,
+          (filterQuality ?? ui.FilterQuality.medium).index,
+          localMatrix,
+        ));
+      });
+    } else {
+      return SkwasmImageShader._(shaderCreateFromImage(
+        image.handle,
+        tmx.index,
+        tmy.index,
+        (filterQuality ?? ui.FilterQuality.medium).index,
+        nullptr,
+      ));
+    }
+  }
+
+  @override
+  ShaderHandle handle;
+
+  @override
+  void dispose() {
+    super.dispose();
+    handle = nullptr;
+  }
+}
+
 class SkwasmFragmentProgram implements ui.FragmentProgram {
-  SkwasmFragmentProgram._(this.name, this.handle);
+  SkwasmFragmentProgram._(
+    this.name,
+    this.handle,
+    this.floatUniformCount,
+    this.childShaderCount,
+  );
   factory SkwasmFragmentProgram.fromBytes(String name, Uint8List bytes) {
     final ShaderData shaderData = ShaderData.fromBytes(bytes);
 
     // TODO(jacksongardner): Can we avoid this copy?
     final List<int> sourceData = utf8.encode(shaderData.source);
-    final SkStringHandle sourceString = shaderSourceAllocate(sourceData.length);
-    final Pointer<Int8> sourceBuffer = shaderSourceGetData(sourceString);
+    final SkStringHandle sourceString = skStringAllocate(sourceData.length);
+    final Pointer<Int8> sourceBuffer = skStringGetData(sourceString);
     int i = 0;
     for (final int byte in sourceData) {
       sourceBuffer[i] = byte;
       i++;
     }
     final RuntimeEffectHandle handle = runtimeEffectCreate(sourceString);
-    shaderSourceFree(sourceString);
-    return SkwasmFragmentProgram._(name, handle);
+    skStringFree(sourceString);
+    return SkwasmFragmentProgram._(
+      name,
+      handle,
+      shaderData.floatCount,
+      shaderData.textureCount
+    );
   }
 
-  RuntimeEffectHandle handle;
-  String name;
+  final RuntimeEffectHandle handle;
+  final String name;
+  final int floatUniformCount;
+  final int childShaderCount;
+  bool _isDisposed = false;
 
   @override
-  ui.FragmentShader fragmentShader() =>
-    SkwasmFragmentShader(this);
+  ui.FragmentShader fragmentShader() => SkwasmFragmentShader(this);
 
   int get uniformSize => runtimeEffectGetUniformSize(handle);
 
   void dispose() {
-    runtimeEffectDispose(handle);
+    if (!_isDisposed) {
+      runtimeEffectDispose(handle);
+      _isDisposed = true;
+    }
   }
 }
 
 class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
   SkwasmFragmentShader(
-    SkwasmFragmentProgram program, {
-    List<SkwasmShader>? childShaders,
-  }) : _program = program,
-       _uniformData = dataCreate(program.uniformSize),
-       _childShaders = childShaders;
+    SkwasmFragmentProgram program
+  ) : _program = program,
+       _uniformData = skDataCreate(program.uniformSize),
+       _floatUniformCount = program.floatUniformCount,
+       _childShaders = List<SkwasmShader?>.filled(program.childShaderCount, null);
 
   @override
   ShaderHandle get handle {
     if (_handle == nullptr) {
       _handle = withStackScope((StackScope s) {
         Pointer<ShaderHandle> childShaders = nullptr;
-        final int childCount = _childShaders != null ? _childShaders!.length : 0;
-        if (childCount != 0) {
-          childShaders = s.allocPointerArray(childCount)
+        if (_childShaders.isNotEmpty) {
+          childShaders = s.allocPointerArray(_childShaders.length)
             .cast<ShaderHandle>();
-          final List<SkwasmShader> shaders = _childShaders!;
-          for (int i = 0; i < childCount; i++) {
-            childShaders[i] = shaders[i].handle;
+          for (int i = 0; i < _childShaders.length; i++) {
+            childShaders[i] = _childShaders[i]!.handle;
           }
         }
         return shaderCreateRuntimeEffectShader(
           _program.handle,
           _uniformData,
           childShaders,
-          childCount,
+          _childShaders.length,
         );
       });
     }
@@ -224,7 +279,8 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
   ShaderHandle _handle = nullptr;
   final SkwasmFragmentProgram _program;
   SkDataHandle _uniformData;
-  final List<SkwasmShader>? _childShaders;
+  final int _floatUniformCount;
+  final List<SkwasmShader?> _childShaders;
 
   @override
   void setFloat(int index, double value) {
@@ -234,20 +290,33 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
       shaderDispose(_handle);
       _handle = nullptr;
     }
-    final Pointer<Float> dataPointer = dataGetPointer(_uniformData).cast<Float>();
+    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
     dataPointer[index] = value;
   }
 
   @override
   void setImageSampler(int index, ui.Image image) {
-    // TODO(jacksongardner): implement this when images are implemented
+    final SkwasmImageShader shader = SkwasmImageShader.imageShader(
+      image as SkwasmImage,
+      ui.TileMode.clamp,
+      ui.TileMode.clamp,
+      null,
+      ui.FilterQuality.none,
+    );
+    final SkwasmShader? oldShader = _childShaders[index];
+    _childShaders[index] = shader;
+    oldShader?.dispose();
+
+    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
+    dataPointer[_floatUniformCount + index * 2] = image.width.toDouble();
+    dataPointer[_floatUniformCount + index * 2 + 1] = image.height.toDouble();
   }
 
   @override
   void dispose() {
     super.dispose();
     if (_uniformData != nullptr) {
-      dataDispose(_uniformData);
+      skDataDispose(_uniformData);
       _uniformData = nullptr;
     }
   }

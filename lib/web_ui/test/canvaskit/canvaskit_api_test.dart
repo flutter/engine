@@ -1527,11 +1527,6 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
-  setUpAll(() async {
-    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
-    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
-  });
-
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that
@@ -1831,17 +1826,22 @@ void _paragraphTests() {
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   group('getCanvasKitJsFileNames', () {
-    late dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldIntlSegmenter = intlSegmenter;
+
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
+      oldIntlSegmenter = intlSegmenter;
     });
     tearDown(() {
       v8BreakIterator = oldV8BreakIterator;
+      intlSegmenter = oldIntlSegmenter;
       debugResetBrowserSupportsImageDecoder();
     });
 
     test('in Chromium-based browsers', () {
       v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = Object(); // Any non-null value.
       browserSupportsImageDecoder = true;
 
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
@@ -1852,7 +1852,19 @@ void _paragraphTests() {
       ]);
     });
 
+    test('in older versions of Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = null; // Older versions of Chromium didn't have the Intl.Segmenter API.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+
     test('in other browsers', () {
+      intlSegmenter = Object(); // Any non-null value.
+
       v8BreakIterator = null;
       browserSupportsImageDecoder = true;
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
@@ -1906,3 +1918,9 @@ external dynamic get v8BreakIterator;
 
 @JS('window.Intl.v8BreakIterator')
 external set v8BreakIterator(dynamic x);
+
+@JS('window.Intl.Segmenter')
+external dynamic get intlSegmenter;
+
+@JS('window.Intl.Segmenter')
+external set intlSegmenter(dynamic x);

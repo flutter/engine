@@ -66,7 +66,12 @@ TiledTextureContents::CreateFilterTexture(
   const ColorFilterProc& filter = color_filter_.value();
   auto color_filter_contents = filter(FilterInput::Make(texture_));
   auto snapshot = color_filter_contents->RenderToSnapshot(
-      renderer, Entity(), std::nullopt, true, "TiledTextureContents Snapshot");
+      renderer,                          // renderer
+      Entity(),                          // entity
+      std::nullopt,                      // coverage_limit
+      std::nullopt,                      // sampler_descriptor
+      true,                              // msaa_enabled
+      "TiledTextureContents Snapshot");  // label
   if (snapshot.has_value()) {
     return snapshot.value().texture;
   }
@@ -91,6 +96,17 @@ bool TiledTextureContents::UsesEmulatedTileMode(
     const Capabilities& capabilities) const {
   return !TileModeToAddressMode(x_tile_mode_, capabilities).has_value() ||
          !TileModeToAddressMode(y_tile_mode_, capabilities).has_value();
+}
+
+// |Contents|
+bool TiledTextureContents::IsOpaque() const {
+  if (GetOpacity() < 1) {
+    return false;
+  }
+  if (color_filter_.has_value()) {
+    return false;
+  }
+  return texture_->IsOpaque();
 }
 
 bool TiledTextureContents::Render(const ContentContext& renderer,

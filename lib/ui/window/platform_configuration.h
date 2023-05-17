@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/shell/common/display.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
@@ -268,10 +269,14 @@ class PlatformConfiguration final {
   void DidCreateIsolate();
 
   //----------------------------------------------------------------------------
-  /// @brief      Update the specified locale data in the framework.
+  /// @brief      Update the specified display data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
+  /// @param[in]  displays  The display data to send to Dart.
+  ///
+  void UpdateDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the specified locale data in the framework.
   ///
   /// @param[in]  locale_data  The locale data. This should consist of groups of
   ///             4 strings, each group representing a single locale.
@@ -281,18 +286,12 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Update the user settings data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
-  ///
   /// @param[in]  data  The user settings data.
   ///
   void UpdateUserSettingsData(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the lifecycle state data in the framework.
-  ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
   ///
   /// @param[in]  data  The lifecycle state data.
   ///
@@ -328,6 +327,15 @@ class PlatformConfiguration final {
   ///                      application.
   ///
   void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the PlatformConfiguration that the client has sent
+  ///             it pointer events. This call originates in the platform view
+  ///             and has been forwarded through the engine to here.
+  ///
+  /// @param[in]  packet  The pointer event(s) serialized into a packet.
+  ///
+  void DispatchPointerDataPacket(const PointerDataPacket& packet);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that the embedder encountered an
@@ -434,12 +442,14 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_initial_lifecycle_state_;
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
+  tonic::DartPersistentValue dispatch_pointer_data_packet_;
   tonic::DartPersistentValue dispatch_semantics_action_;
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;

@@ -22,6 +22,7 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
@@ -167,8 +168,8 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  RasterStatus raster_status =
-      DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
+  RasterStatus raster_status = DrawToSurface(
+      *frame_timings_recorder, *last_layer_tree_, last_device_pixel_ratio_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
@@ -195,14 +196,15 @@ RasterStatus Rasterizer::Draw(
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
       [&](std::unique_ptr<LayerTreeItem> item) {
-        std::shared_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
+        float device_pixel_ratio = item->device_pixel_ratio;
         if (discard_callback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
-          raster_status =
-              DoDraw(std::move(frame_timings_recorder), std::move(layer_tree));
+          raster_status = DoDraw(std::move(frame_timings_recorder),
+                                 std::move(layer_tree), device_pixel_ratio);
         }
       };
 
@@ -216,7 +218,8 @@ RasterStatus Rasterizer::Draw(
   bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
     auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_));
+        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_),
+        resubmitted_pixel_ratio_);
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult result =
         front_continuation.Complete(std::move(resubmitted_layer_tree_item));
@@ -278,7 +281,7 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
             std::to_string(image_info.height()));
   };
 
-  sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
   canvas.Clear(DlColor::kTransparent());
   canvas.DrawDisplayList(display_list);
@@ -339,7 +342,7 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
               return;
             }
 
-            sk_sp<SkSurface> sk_surface = SkSurface::MakeFromBackendTexture(
+            sk_sp<SkSurface> sk_surface = SkSurfaces::WrapBackendTexture(
                 context, texture, kTopLeft_GrSurfaceOrigin, /*sampleCnt=*/0,
                 image_info.colorType(), image_info.refColorSpace(), nullptr);
             if (!sk_surface) {
@@ -375,7 +378,8 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
 
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-    std::shared_ptr<flutter::LayerTree> layer_tree) {
+    std::unique_ptr<flutter::LayerTree> layer_tree,
+    float device_pixel_ratio) {
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
                                 "Rasterizer::DoDraw");
   FML_DCHECK(delegate_.GetTaskRunners()
@@ -390,10 +394,12 @@ RasterStatus Rasterizer::DoDraw(
   persistent_cache->ResetStoredNewShaders();
 
   RasterStatus raster_status =
-      DrawToSurface(*frame_timings_recorder, *layer_tree);
+      DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
+    last_device_pixel_ratio_ = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
+    resubmitted_pixel_ratio_ = device_pixel_ratio;
     resubmitted_layer_tree_ = std::move(layer_tree);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
@@ -476,20 +482,22 @@ RasterStatus Rasterizer::DoDraw(
 
 RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
-    flutter::LayerTree& layer_tree) {
+    flutter::LayerTree& layer_tree,
+    float device_pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
   RasterStatus raster_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree,
+                                        device_pixel_ratio);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] { raster_status = RasterStatus::kDiscarded; })
             .SetIfFalse([&] {
-              raster_status =
-                  DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+              raster_status = DrawToSurfaceUnsafe(
+                  frame_timings_recorder, layer_tree, device_pixel_ratio);
             }));
   }
 
@@ -501,7 +509,8 @@ RasterStatus Rasterizer::DrawToSurface(
 /// \see Rasterizer::DrawToSurface
 RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
-    flutter::LayerTree& layer_tree) {
+    flutter::LayerTree& layer_tree,
+    float device_pixel_ratio) {
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
@@ -512,8 +521,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
     external_view_embedder_->SetUsedThisFrame(true);
     external_view_embedder_->BeginFrame(
-        layer_tree.frame_size(), surface_->GetContext(),
-        layer_tree.device_pixel_ratio(), raster_thread_merger_);
+        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
+        raster_thread_merger_);
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 

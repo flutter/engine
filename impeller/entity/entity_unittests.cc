@@ -15,15 +15,18 @@
 #include "gtest/gtest.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
+#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -199,7 +202,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   // With the crop rect.
   {
     auto expected = Rect::MakeLTRB(50, 50, 100, 100);
-    filter->SetCoverageCrop(expected);
+    filter->SetCoverageHint(expected);
     auto actual = filter->GetCoverage({});
 
     ASSERT_TRUE(actual.has_value());
@@ -221,7 +224,11 @@ TEST_P(EntityTest, CanDrawRect) {
 
 TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  auto path = PathBuilder{}
+                  .SetConvexity(Convexity::kConvex)
+                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .TakePath();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -997,7 +1004,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
-    static float blur_amount[2] = {10, 10};
+    static float blur_amount_coarse[2] = {0, 0};
+    static float blur_amount_fine[2] = {10, 10};
     static int selected_blur_style = 0;
     static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
@@ -1027,7 +1035,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", blur_amount, 0, 10);
+      ImGui::SliderFloat2("Sigma (coarse)", blur_amount_coarse, 0, 1000);
+      ImGui::SliderFloat2("Sigma (fine)", blur_amount_fine, 0, 10);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -1043,6 +1052,9 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
     }
     ImGui::End();
+
+    auto blur_sigma_x = Sigma{blur_amount_coarse[0] + blur_amount_fine[0]};
+    auto blur_sigma_y = Sigma{blur_amount_coarse[1] + blur_amount_fine[1]};
 
     std::shared_ptr<Contents> input;
     Size input_size;
@@ -1071,18 +1083,17 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     std::shared_ptr<FilterContents> blur;
     if (selected_pass_variation == 0) {
       blur = FilterContents::MakeGaussianBlur(
-          FilterInput::Make(input), Sigma{blur_amount[0]},
-          Sigma{blur_amount[1]}, blur_styles[selected_blur_style],
-          tile_modes[selected_tile_mode]);
+          FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
+          blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
     } else {
-      Vector2 blur_vector(blur_amount[0], blur_amount[1]);
+      Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
       blur = FilterContents::MakeDirectionalGaussianBlur(
           FilterInput::Make(input), Sigma{blur_vector.GetLength()},
           blur_vector.Normalize());
     }
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
-        FilterInput::Make(input), Sigma{blur_amount[0]}, Sigma{blur_amount[1]},
+        FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
         blur_styles[selected_blur_style]);
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
@@ -2148,34 +2159,6 @@ TEST_P(EntityTest, TTTBlendColor) {
   }
 }
 
-TEST_P(EntityTest, SdfText) {
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    SkFont font;
-    font.setSize(30);
-    auto blob = SkTextBlob::MakeFromString(
-        "the quick brown fox jumped over the lazy dog (but with sdf).", font);
-    auto frame = TextFrameFromTextBlob(blob);
-    auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-    lazy_glyph_atlas->AddTextFrame(frame);
-
-    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
-
-    auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(frame);
-    text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
-    text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
-    Entity entity;
-    entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3{200.0, 200.0, 0.0}) *
-        Matrix::MakeScale(GetContentScale()));
-    entity.SetContents(text_contents);
-
-    // Force SDF rendering.
-    return text_contents->RenderSdf(context, entity, pass);
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
 TEST_P(EntityTest, AtlasContentsSubAtlas) {
   auto boston = CreateTextureForFixture("boston.jpg");
 
@@ -2545,6 +2528,92 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
   EXPECT_LT(transform.e[0][0], 0.f);
   auto coverage = geometry->GetCoverage(transform);
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
+}
+
+TEST_P(EntityTest, SolidColorContentsIsOpaque) {
+  SolidColorContents contents;
+  contents.SetColor(Color::CornflowerBlue());
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColor(Color::CornflowerBlue().WithAlpha(0.5));
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, ConicalGradientContentsIsOpaque) {
+  ConicalGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, LinearGradientContentsIsOpaque) {
+  LinearGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
+  RadialGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
+  RadialGradientContents contents;
+  contents.SetColors({Color::CornflowerBlue()});
+  ASSERT_TRUE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
+  auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
+  TiledTextureContents contents;
+  contents.SetTexture(bay_bridge);
+  // This is a placeholder test. Images currently never decompress as opaque
+  // (whether in Flutter or the playground), and so this should currently always
+  // return false in practice.
+  ASSERT_FALSE(contents.IsOpaque());
+}
+
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+
+  {
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
+        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
+                                              0, 6, 7, 0, 7, 8};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
 }
 
 }  // namespace testing

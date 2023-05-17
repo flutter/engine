@@ -20,7 +20,7 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       bool use_raster_cache) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 
-  DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
+  DiffContext dc(layer_tree.size(), layer_tree.paint_region_map(),
                  old_layer_tree.paint_region_map(), use_raster_cache);
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
@@ -30,7 +30,7 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
 }
 
 sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
-                                                      SkColor color) {
+                                                      DlColor color) {
   DisplayListBuilder builder;
   builder.DrawRect(bounds, DlPaint().setColor(color));
   return builder.Build();

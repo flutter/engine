@@ -22,6 +22,7 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -91,6 +92,22 @@ class DisplayListTestBase : public BaseT {
   FML_DISALLOW_COPY_AND_ASSIGN(DisplayListTestBase);
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
+
+TEST_F(DisplayListTest, EmptyBuild) {
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->op_count(), 0u);
+  EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+}
+
+TEST_F(DisplayListTest, EmptyRebuild) {
+  DisplayListBuilder builder;
+  auto dl1 = builder.Build();
+  auto dl2 = builder.Build();
+  auto dl3 = builder.Build();
+  ASSERT_TRUE(dl1->Equals(dl2));
+  ASSERT_TRUE(dl2->Equals(dl3));
+}
 
 TEST_F(DisplayListTest, BuilderCanBeReused) {
   DisplayListBuilder builder(kTestBounds);
@@ -567,7 +584,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -589,7 +607,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -607,7 +626,8 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   receiver.transformReset();
   auto display_list = builder.Build();
   ASSERT_NE(display_list, nullptr);
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
   SkCanvas* canvas = surface->getCanvas();
   // We can't use DlSkCanvas.DrawDisplayList as that method protects
   // the canvas against mutations from the display list being drawn.
@@ -2532,81 +2552,79 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
   main_receiver.drawRect({20, 20, 30, 30});
   auto main = main_builder.Build();
 
+  auto test = [main](SkIRect cull_rect, const sk_sp<DisplayList>& expected) {
+    {  // Test SkIRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), cull_rect);
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+
+    {  // Test SkRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), SkRect::Make(cull_rect));
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+  };
+
   {  // No rects
-    SkRect cull_rect = {11, 11, 19, 19};
+    SkIRect cull_rect = {11, 11, 19, 19};
 
     DisplayListBuilder expected_builder;
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 1
-    SkRect cull_rect = {9, 9, 19, 19};
+    SkIRect cull_rect = {9, 9, 19, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 0, 10, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 2
-    SkRect cull_rect = {11, 9, 21, 19};
+    SkIRect cull_rect = {11, 9, 21, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 0, 30, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 3
-    SkRect cull_rect = {9, 11, 19, 21};
+    SkIRect cull_rect = {9, 11, 19, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 20, 10, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 4
-    SkRect cull_rect = {11, 11, 21, 21};
+    SkIRect cull_rect = {11, 11, 21, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 20, 30, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // All 4 rects
-    SkRect cull_rect = {9, 9, 21, 21};
+    SkIRect cull_rect = {9, 9, 21, 21};
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
+    test(cull_rect, main);
   }
 }
 
@@ -2620,6 +2638,165 @@ TEST_F(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
   auto display_list = builder.Build();
 
   ASSERT_FALSE(display_list->can_apply_group_opacity());
+}
+
+TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
+  auto run_tests = [](const std::string& name,
+                      void init(DisplayListBuilder & builder, DlPaint & paint),
+                      uint32_t expected_op_count = 0u) {
+    auto run_one_test =
+        [init](const std::string& name,
+               void build(DisplayListBuilder & builder, DlPaint & paint),
+               uint32_t expected_op_count = 0u) {
+          DisplayListBuilder builder;
+          DlPaint paint;
+          init(builder, paint);
+          build(builder, paint);
+          auto list = builder.Build();
+          if (list->op_count() != expected_op_count) {
+            FML_LOG(ERROR) << *list;
+          }
+          ASSERT_EQ(list->op_count(), expected_op_count) << name;
+          ASSERT_TRUE(list->bounds().isEmpty()) << name;
+        };
+    run_one_test(
+        name + " DrawColor",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawColor(paint.getColor(), paint.getBlendMode());
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawPaint",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawPaint(paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawRect",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawRect({10, 10, 20, 20}, paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " Other Draw Ops",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawLine({10, 10}, {20, 20}, paint);
+          builder.DrawOval({10, 10, 20, 20}, paint);
+          builder.DrawCircle({50, 50}, 20, paint);
+          builder.DrawRRect(SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5), paint);
+          builder.DrawDRRect(SkRRect::MakeRectXY({5, 5, 100, 100}, 5, 5),
+                             SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5),
+                             paint);
+          builder.DrawPath(kTestPath1, paint);
+          builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
+          SkPoint pts[] = {{10, 10}, {20, 20}};
+          builder.DrawPoints(PointMode::kLines, 2, pts, paint);
+          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
+                            &paint);
+          builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
+                                SkRect{10.0f, 10.0f, 25.0f, 25.0f},
+                                DlImageSampling::kLinear, &paint);
+          builder.DrawImageNine(TestImage1, {10, 10, 20, 20},
+                                {10, 10, 100, 100}, DlFilterMode::kLinear,
+                                &paint);
+          SkRSXform xforms[] = {{1, 0, 10, 10}, {0, 1, 10, 10}};
+          SkRect rects[] = {{10, 10, 20, 20}, {10, 20, 30, 20}};
+          builder.DrawAtlas(TestImage1, xforms, rects, nullptr, 2,
+                            DlBlendMode::kSrcOver, DlImageSampling::kLinear,
+                            nullptr, &paint);
+          builder.DrawTextBlob(TestBlob1, 10, 10, paint);
+
+          // Dst mode eliminates most rendering ops except for
+          // the following two, so we'll prune those manually...
+          if (paint.getBlendMode() != DlBlendMode::kDst) {
+            builder.DrawDisplayList(TestDisplayList1, paint.getOpacity());
+            builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
+          }
+        },
+        expected_op_count);
+    run_one_test(
+        name + " SaveLayer",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.SaveLayer(nullptr, &paint, nullptr);
+          builder.DrawRect({10, 10, 20, 20}, DlPaint());
+          builder.Restore();
+        },
+        expected_op_count);
+    run_one_test(
+        name + " inside Save",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.Save();
+          builder.DrawRect({10, 10, 20, 20}, paint);
+          builder.Restore();
+        },
+        expected_op_count);
+  };
+  run_tests("transparent color",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setColor(DlColor::kTransparent());
+            });
+  run_tests("0 alpha",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              paint.setColor(DlColor::kWhite());
+              paint.setAlpha(0);
+            });
+  run_tests("BlendMode::kDst",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setBlendMode(DlBlendMode::kDst);
+            });
+  run_tests("Empty rect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRect(SkRect::MakeEmpty(), ClipOp::kIntersect, false);
+            });
+  run_tests("Empty rrect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRRect(SkRRect::MakeEmpty(), ClipOp::kIntersect,
+                                false);
+            });
+  run_tests("Empty path clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipPath(SkPath(), ClipOp::kIntersect, false);
+            });
+  run_tests("Transparent SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("0 alpha SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              save_paint.setColor(DlColor::kWhite());
+              save_paint.setAlpha(0);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("Dst blended SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setBlendMode(DlBlendMode::kDst);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests(
+      "Nop inside SaveLayer",
+      [](DisplayListBuilder& builder, DlPaint& paint) {
+        builder.SaveLayer(nullptr, nullptr);
+        paint.setBlendMode(DlBlendMode::kDst);
+      },
+      2u);
+  run_tests("DrawImage inside Culled SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+              builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear);
+            });
 }
 
 }  // namespace testing

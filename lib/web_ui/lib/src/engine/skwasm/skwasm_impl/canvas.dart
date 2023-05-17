@@ -183,21 +183,51 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawImage(ui.Image uiImage, ui.Offset offset, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+  void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) =>
+    canvasDrawImage(
+      _handle,
+      (image as SkwasmImage).handle,
+      offset.dx,
+      offset.dy,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
 
   @override
   void drawImageRect(
-      ui.Image uiImage, ui.Rect src, ui.Rect dst, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+    ui.Image image,
+    ui.Rect src,
+    ui.Rect dst,
+    ui.Paint paint) => withStackScope((StackScope scope) {
+    final Pointer<Float> sourceRect = scope.convertRectToNative(src);
+    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    canvasDrawImageRect(
+      _handle,
+      (image as SkwasmImage).handle,
+      sourceRect,
+      destRect,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
+  });
 
   @override
   void drawImageNine(
-      ui.Image uiImage, ui.Rect center, ui.Rect dst, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+    ui.Image image,
+    ui.Rect center,
+    ui.Rect dst,
+    ui.Paint paint) => withStackScope((StackScope scope) {
+    final Pointer<Int32> centerRect = scope.convertIRectToNative(center);
+    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    canvasDrawImageNine(
+      _handle,
+      (image as SkwasmImage).handle,
+      centerRect,
+      destRect,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
+  });
 
   @override
   void drawPicture(ui.Picture picture) {
@@ -205,8 +235,13 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawParagraph(ui.Paragraph uiParagraph, ui.Offset offset) {
-    // TODO(jacksongardner): implement this
+  void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
+    canvasDrawParagraph(
+      _handle,
+      (paragraph as SkwasmParagraph).handle,
+      offset.dx,
+      offset.dy,
+    );
   }
 
   @override
