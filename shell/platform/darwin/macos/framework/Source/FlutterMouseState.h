@@ -6,8 +6,6 @@
 
 #import "flutter/shell/platform/embedder/embedder.h"
 
-typedef void (^SendPointerEventCallback)(const FlutterPointerEvent&);
-
 @class FlutterEngine;
 @class FlutterView;
 
