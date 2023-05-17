@@ -26,7 +26,7 @@ Future<Uint8ClampedList> rgbaTestImageData() async {
   final DomHTMLImageElement image = createDomHTMLImageElement();
   image.src = '/test_images/mandrill_128.png';
   await image.decode();
-  final DomOffscreenCanvas canvas = createDomOffscreenCanvas(128, 128);
+  final DomCanvasElement canvas = createDomCanvasElement(width: 128, height: 128);
   final DomCanvasRenderingContext2D context = canvas.getContext('2d')! as DomCanvasRenderingContext2D;
   context.drawImage(image, 0, 0);
   return context.getImageData(0, 0, 128, 128).data;
