@@ -122,6 +122,17 @@ CATransform3D CATransformFromMutations(const MutationVector& mutations) {
   return transform;
 }
 
+/// Returns the opacity for all opacity mutations in the mutations vector.
+float OpacityFromMutations(const MutationVector& mutations) {
+  float opacity = 1.0;
+  for (auto mutation : mutations) {
+    if (mutation.type == kFlutterPlatformViewMutationTypeOpacity) {
+      opacity *= mutation.opacity;
+    }
+  }
+  return opacity;
+}
+
 /// Returns whether the point is inside ellipse with given radius (centered at 0, 0).
 bool PointInsideEllipse(const CGPoint& point, const FlutterSize& radius) {
   return (point.x * point.x) / (radius.width * radius.width) +
@@ -280,11 +291,12 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
       untransformedBoundingRect, CATransform3DGetAffineTransform(finalTransform));
   self.frame = finalBoundingRect;
 
+  // Compute the layer opacity.
+  self.layer.opacity = OpacityFromMutations(mutations);
+
   // Master clip in global logical coordinates. This is intersection of all clip rectangles
   // present in mutators.
   CGRect masterClip = finalBoundingRect;
-
-  self.layer.opacity = 1.0;
 
   // Gathered pairs of rounded rect in local coordinates + appropriate transform.
   std::vector<std::pair<FlutterRoundedRect, CGAffineTransform>> roundedRects;
@@ -304,8 +316,6 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
       CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rounded_rect.rect),
                                                affineTransform);
       masterClip = CGRectIntersection(rect, masterClip);
-    } else if (mutation.type == kFlutterPlatformViewMutationTypeOpacity) {
-      self.layer.opacity *= mutation.opacity;
     }
   }
 
