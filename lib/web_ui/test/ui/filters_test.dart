@@ -20,13 +20,9 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-@JS()
-@staticInterop
-class ImageBitmap {}
-
-@JS()
-external ImageBitmap createImageBitmap(DomHTMLImageElement image);
-
+// TODO(jacksongardner): Skwasm doesn't support image codecs yet. Once it does,
+// we can just replace this roundabout loading mechanism with a normal image
+// load using flutter APIs.
 Future<Uint8ClampedList> rgbaTestImageData() async {
   final DomHTMLImageElement image = createDomHTMLImageElement();
   image.src = '/test_images/mandrill_128.png';

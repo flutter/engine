@@ -41,13 +41,14 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
+    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nativeFilter.handle);
       });
     } else {
-      canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
+      canvasSaveLayer(_handle, nullptr, paint.handle, nativeFilter.handle);
     }
   }
 
