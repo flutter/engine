@@ -31,7 +31,8 @@ layout(binding = 2) buffer IndirectCommandArguments {
   uint instance_count;
   uint vertex_start;
   uint base_instance;
-} indirect_command_arguments;
+}
+indirect_command_arguments;
 
 uniform Config {
   float width;

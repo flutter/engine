@@ -171,7 +171,8 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     SS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
 
     SS::BindPolyline(cmd, polyline_buffer->AsBufferView());
-    SS::BindIndirectCommandArguments(cmd, std::move(indirect_command_arguments));
+    SS::BindIndirectCommandArguments(cmd,
+                                     std::move(indirect_command_arguments));
     SS::BindVertexBuffer(cmd, std::move(vertex_buffer));
 
     if (!pass->AddCommand(std::move(cmd))) {
