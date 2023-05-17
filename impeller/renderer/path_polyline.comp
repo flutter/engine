@@ -72,9 +72,11 @@ void ProcessCubic(uint ident) {
   uint offset = 0;
   if (quad_count > 0) {
     scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
-
     offset = ComputePosition(ident) + quads.count;
+  } else {
+    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   }
+
   barrier();
   if (quad_count > 0) {
     atomicAdd(quads.count, quad_count);
@@ -83,6 +85,8 @@ void ProcessCubic(uint ident) {
     for (uint i = 0; i < quad_count; i++) {
       quads.data[offset + i] = GenerateQuadraticFromCubic(cubic, i, quad_count);
     }
+  } else {
+    cubic_ranges[ident] = uvec2(0, 0);
   }
 }
 
@@ -101,6 +105,8 @@ void ProcessQuad(uint ident) {
   if (decomposition.line_count > 0) {
     scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
     offset = ComputePosition(ident) + lines.count;
+  } else {
+    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
   }
   barrier();
 
@@ -117,6 +123,8 @@ void ProcessQuad(uint ident) {
     }
     lines.data[offset + decomposition.line_count - 1] =
         LineData(last_point, quad.p2);
+  } else {
+    quad_ranges[ident] = uvec2(0, 0);
   }
 }
 
