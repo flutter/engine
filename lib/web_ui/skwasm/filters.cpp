@@ -55,6 +55,14 @@ SKWASM_EXPORT void imageFilter_dispose(SkImageFilter* filter) {
   filter->unref();
 }
 
+SKWASM_EXPORT void imageFilter_getFilterBounds(SkImageFilter* filter,
+                                               SkIRect* inOutBounds) {
+  SkIRect outputRect =
+      filter->filterBounds(*inOutBounds, SkMatrix(),
+                           SkImageFilter::MapDirection::kForward_MapDirection);
+  *inOutBounds = outputRect;
+}
+
 SKWASM_EXPORT SkColorFilter* colorFilter_createMode(SkColor color,
                                                     SkBlendMode mode) {
   return SkColorFilters::Blend(color, mode).release();

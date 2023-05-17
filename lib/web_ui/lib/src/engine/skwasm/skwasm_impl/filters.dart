@@ -9,7 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmImageFilter implements ui.ImageFilter {
+class SkwasmImageFilter implements SceneImageFilter {
   SkwasmImageFilter._(this.handle);
 
   factory SkwasmImageFilter.blur({
@@ -69,6 +69,13 @@ class SkwasmImageFilter implements ui.ImageFilter {
 
   final ImageFilterHandle handle;
   bool _isDisposed = false;
+
+  @override
+  ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
+    final RawIRect rawRect = scope.convertIRectToNative(inputBounds);
+    imageFilterGetFilterBounds(handle, rawRect);
+    return scope.convertIRectFromNative(rawRect);
+  });
 }
 
 class SkwasmColorFilter {

@@ -7,6 +7,8 @@ library skwasm_impl;
 
 import 'dart:ffi';
 
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+
 final class RawImageFilter extends Opaque {}
 typedef ImageFilterHandle = Pointer<RawImageFilter>;
 
@@ -71,6 +73,10 @@ external ImageFilterHandle imageFilterCompose(
 
 @Native<Void Function(ImageFilterHandle)>(symbol: 'imageFilter_dispose', isLeaf: true)
 external void imageFilterDispose(ImageFilterHandle handle);
+
+@Native<Void Function(ImageFilterHandle, RawIRect)>(
+  symbol: 'imageFilter_getFilterBounds', isLeaf: true)
+external void imageFilterGetFilterBounds(ImageFilterHandle handle, RawIRect inOutRect);
 
 @Native<ColorFilterHandle Function(
   Int,

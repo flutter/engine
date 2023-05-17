@@ -14,3 +14,7 @@ abstract class SceneCanvas implements ui.Canvas {
 abstract class ScenePicture implements ui.Picture {
   ui.Rect get cullRect;
 }
+
+abstract class SceneImageFilter implements ui.ImageFilter {
+  ui.Rect filterBounds(ui.Rect inputBounds);
+}
