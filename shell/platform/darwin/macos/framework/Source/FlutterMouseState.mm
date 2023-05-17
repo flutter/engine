@@ -351,7 +351,6 @@ static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
     } else if (event.type == NSEventTypeRotate) {
       rotation += event.rotation * (-M_PI / 180.0);
     }
-    NSLog(@"%lu", event.type);
     flutterEvent.pan_x = delta_x;
     flutterEvent.pan_y = delta_y;
     // Scale value needs to be normalized to range 0->infinity.
