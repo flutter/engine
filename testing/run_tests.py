@@ -500,7 +500,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_unittests',
         executable_filter,
-        ['--gtest_filter=-*/Vulkan'] + shuffle_flags,
+        shuffle_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
