@@ -29,9 +29,8 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
     return _computeOffsetForTalkbackEvent(event, actualTarget);
   }
 
-  final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
+  // On one of our text-editing nodes
   final bool isInput = flutterViewEmbedder.textEditingHostNode.contains(event.target! as DomNode);
-
   if (isInput) {
     final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
     if (inputGeometry != null) {
@@ -39,9 +38,15 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
     }
   }
 
+  // On another DOM Element (normally a platform view)
+  final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
   if (isTargetOutsideOfShadowDOM) {
-    return _computeOffsetRelativeToActualTarget(event, actualTarget);
+    final DomRect origin = actualTarget.getBoundingClientRect();
+    // event.clientX/Y and origin.x/y are relative **to the viewport**.
+    // (This doesn't work with 3D translations of the parent element.)
+    return ui.Offset(event.clientX - origin.x, event.clientY - origin.y);
   }
+
   // Return the offsetX/Y in the normal case.
   // (This works with 3D translations of the parent element.)
   return ui.Offset(event.offsetX, event.offsetY);
@@ -67,41 +72,6 @@ ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inpu
   final Vector3 transformedPoint = transform.perspectiveTransform(Vector3(event.offsetX, event.offsetY, 0));
 
   return ui.Offset(transformedPoint.x, transformedPoint.y);
-}
-
-/// Computes the event offset when hovering over any nodes that don't exist in
-/// the shadowDOM such as platform views or text editing nodes.
-///
-/// This still uses offsetX/Y, but adds the offset from the top/left corner of the
-/// platform view to the Flutter View (`actualTarget`).
-///
-///  ×--FlutterView(actualTarget)--------------+
-///  |\                                        |
-///  | x1,y1                                   |
-///  |                                         |
-///  |                                         |
-///  |     ×-PlatformView(target)---------+    |
-///  |     |\                             |    |
-///  |     | x2,y2                        |    |
-///  |     |                              |    |
-///  |     |      × (event)               |    |
-///  |     |       \                      |    |
-///  |     |        offsetX, offsetY      |    |
-///  |     |  (Relative to PlatformView)  |    |
-///  |     +------------------------------+    |
-///  +-----------------------------------------+
-///
-/// Offset between PlatformView and FlutterView (xP, yP) = (x2 - x1, y2 - y1)
-///
-/// Event offset relative to FlutterView = (offsetX + xP, offsetY + yP)
-// TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
-ui.Offset _computeOffsetRelativeToActualTarget(DomMouseEvent event, DomElement actualTarget) {
-  final DomElement target = event.target! as DomElement;
-  final DomRect targetRect = target.getBoundingClientRect();
-  final DomRect actualTargetRect = actualTarget.getBoundingClientRect();
-  final double offsetTop = targetRect.y - actualTargetRect.y;
-  final double offsetLeft = targetRect.x - actualTargetRect.x;
-  return ui.Offset(event.offsetX + offsetLeft, event.offsetY + offsetTop);
 }
 
 /// Computes the event offset when TalkBack is firing the event.
