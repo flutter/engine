@@ -376,9 +376,9 @@ enum Role {
   ///   `aria-label` attribute.
   /// * A descendant node has the `namesRoute` bit set. This means that the
   ///   child's content describes the dialog. The child may simply be labelled,
-  ///   or it may be a subtree of nodes that describe the dialog together. In
-  ///   this case the nearest HTML equivalent is `aria-labelledby`. In this case
-  ///   the child acquires the [routeName] role.
+  ///   or it may be a subtree of nodes that describe the dialog together. The
+  ///   nearest HTML equivalent is `aria-describedby`. The child acquires the
+  ///   [routeName] role, which manages the relevant ARIA attributes.
   /// * There is no `namesRoute` bit anywhere in the sub-tree rooted at the
   ///   current node. In this case it's likely not a dialog at all, and the node
   ///   should not get a label or the "dialog" role. It's just a group of
@@ -386,10 +386,13 @@ enum Role {
   ///   it as a dialog would be wrong.
   dialog,
 
-  /// Provides a description for an ancestor [dialog].
+  /// Provides a description for an ancestor dialog.
   ///
   /// This role is assigned to nodes that have `namesRoute` set but not
-  /// `scopesRoute`.
+  /// `scopesRoute`. When both flags are set the node only gets the dialog
+  /// role (see [dialog]).
+  ///
+  /// If the ancestor dialog is missing, this role does nothing useful.
   routeName,
 }
 

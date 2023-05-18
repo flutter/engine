@@ -25,7 +25,7 @@ class Dialog extends RoleManager {
             'namesRoute set, indicating a self-labelled dialog, but it is '
             'missing the label. A dialog should be labelled either by setting '
             'namesRoute on itself and providing a label, or by containing a '
-            'child node with namesRoute that can describe it with it content.'
+            'child node with namesRoute that can describe it with its content.'
           );
         }
         return true;

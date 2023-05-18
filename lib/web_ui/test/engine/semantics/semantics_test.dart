@@ -2365,8 +2365,8 @@ void _testDialog() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="dialog" aria-label="this is a dialog label" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
-''');
+      <sem role="dialog" aria-label="this is a dialog label" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
+    ''');
 
     expect(
       semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
@@ -2404,14 +2404,14 @@ void _testDialog() {
     expect(
       warnings,
       <String>[
-        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with it content.',
+        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
       ],
     );
 
     // But still sets the dialog role.
     expectSemanticsTree('''
-<sem role="dialog" aria-label="" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
-''');
+      <sem role="dialog" aria-label="" style="$rootSemanticStyle"><sem-c><sem></sem></sem-c></sem>
+    ''');
 
     expect(
       semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
@@ -2447,18 +2447,17 @@ void _testDialog() {
       );
       tester.apply();
 
-
-    expectSemanticsTree('''
-<sem aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
-  <sem-c>
-    <sem>
-      <sem-c>
-        <sem aria-label="$label"></sem>
-      </sem-c>
-    </sem>
-  </sem-c>
-</sem>
-''');
+      expectSemanticsTree('''
+        <sem aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
+          <sem-c>
+            <sem>
+              <sem-c>
+                <sem aria-label="$label"></sem>
+              </sem-c>
+            </sem>
+          </sem-c>
+        </sem>
+      ''');
     }
 
     pumpSemantics(label: 'Dialog label');
@@ -2493,7 +2492,9 @@ void _testDialog() {
     );
     tester.apply();
 
-    expectSemanticsTree('''<sem style="$rootSemanticStyle"></sem>''');
+    expectSemanticsTree('''
+      <sem style="$rootSemanticStyle"></sem>
+    ''');
 
     expect(
       semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
@@ -2532,16 +2533,16 @@ void _testDialog() {
     tester.apply();
 
     expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem>
-      <sem-c>
-        <sem aria-label="Hello"></sem>
-      </sem-c>
-    </sem>
-  </sem-c>
-</sem>
-''');
+      <sem style="$rootSemanticStyle">
+        <sem-c>
+          <sem>
+            <sem-c>
+              <sem aria-label="Hello"></sem>
+            </sem-c>
+          </sem>
+        </sem-c>
+      </sem>
+    ''');
 
     expect(
       semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
