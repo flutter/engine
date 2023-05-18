@@ -782,8 +782,7 @@ public class FlutterViewTest {
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
   }
 
-  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
-  // set to -1 values, so it is clear if the wrong algorithm is used.
+  // This test uses the API 30+ Algorithm for window insets.
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
