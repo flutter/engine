@@ -860,7 +860,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   PS::FrameInfo frame_info;
   frame_info.count = points_.size();
   frame_info.radius = radius;
-  frame_info.radian_start = round_ ? 0.0f : 0.785398f;
+  frame_info.radian_start = round_ ? 0.0f : kPiOver4;
   frame_info.radian_step = k2Pi / vertices_per_geom;
   frame_info.points_per_circle = points_per_circle;
   frame_info.divisions_per_circle = vertices_per_geom;
@@ -958,9 +958,9 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   FML_UNREACHABLE();
 }
 
-/// @brief Compute the exact storage size needed to store the resulting
-/// buffer.
-/// @return
+/// @brief Compute the number of vertices to divide each circle into.
+///
+/// @return the number of vertices.
 size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
                                                   bool round) {
   if (!round) {

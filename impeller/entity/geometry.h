@@ -270,6 +270,8 @@ class PointFieldGeometry : public Geometry {
 
   ~PointFieldGeometry();
 
+  static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
+
  private:
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -288,8 +290,6 @@ class PointFieldGeometry : public Geometry {
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
-  static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 
   GeometryResult GetPositionBufferCPU(const ContentContext& renderer,
                                       const Entity& entity,
