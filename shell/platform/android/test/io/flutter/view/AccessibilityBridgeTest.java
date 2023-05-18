@@ -1831,6 +1831,7 @@ public class AccessibilityBridgeTest {
     verify(mockChannel, never()).setAccessibilityFeatures(anyInt());
   }
 
+  @TargetApi(31)
   @Test
   public void sendFocusAccessibilityEvent() {
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
