@@ -110,7 +110,7 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
       [](size_t index, const ContourComponent& contour) {});
 
   auto polyline_buffer =
-      CreateDeviceBuffer<PS::Polyline<2048>>(context, "Polyline");
+      CreateDeviceBuffer<PS::Polyline<4096>>(context, "Polyline");
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateComputePass();

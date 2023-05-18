@@ -109,7 +109,8 @@ uint EstimateQuadraticCount(CubicData cubic, float accuracy) {
 
   vec2 err_v = (3.0 * cubic.cp2 - cubic.p2) - (3.0 * cubic.cp1 - cubic.p1);
   float err = dot(err_v, err_v);
-  return uint(max(1., ceil(pow(err * (1.0 / max_hypot2), 1. / 6.0))));
+  float approx = max(1., ceil(pow(err * (1.0 / max_hypot2), 1. / 6.0)));
+  return uint(approx);
 }
 
 QuadDecomposition DecomposeQuad(QuadData quad, float tolerance) {
@@ -121,7 +122,7 @@ QuadDecomposition DecomposeQuad(QuadData quad, float tolerance) {
   // This should never happen, but if it does happen be more defensive -
   // otherwise we'll get NaNs down the line.
   if (dd == vec2(0.)) {
-    dd = vec2(1, 1);
+    dd = vec2(1.0, 1.0);
   }
   float c = Cross(quad.p2 - quad.p1, dd);
   float x0 = dot(d01, dd) * 1. / c;

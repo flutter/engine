@@ -665,7 +665,7 @@ GeometryResult StrokePathGeometry::GetPositionBufferGPU(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
+  auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<4096>>(
       renderer.GetContext(), "VertexBuffer");
   auto indirect_command_arguments =
       CreateHostVisibleDeviceBuffer<SS::IndirectCommandArguments>(
