@@ -859,9 +859,12 @@ class SemanticsObject {
   ///
   /// This value is not final until the tree is finalized. It is not safe to
   /// rely on this value in the middle of a semantics tree update. It is safe to
-  /// use this value in post-update callback (see
+  /// use this value in post-update callback (see [SemanticsUpdatePhase] and
   /// [EngineSemanticsOwner.addOneTimePostUpdateCallback]).
-  SemanticsObject? get parent => _parent;
+  SemanticsObject? get parent {
+    assert(owner.phase == SemanticsUpdatePhase.postUpdate);
+    return _parent;
+  }
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
@@ -1312,7 +1315,12 @@ class SemanticsObject {
   /// spec:
   ///
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
-  final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
+  final Map<Role, RoleManager> _roleManagers = <Role, RoleManager>{};
+
+  /// The mapping of roles to role managers.
+  ///
+  /// This getter is only meant for testing.
+  Map<Role, RoleManager> get debugRoleManagers => _roleManagers;
 
   /// Returns if this node has the given [role].
   bool hasRole(Role role) => _roleManagers.containsKey(role);
@@ -1545,6 +1553,30 @@ enum GestureMode {
   browserGestures,
 }
 
+/// The current phase of the semantic update.
+enum SemanticsUpdatePhase {
+  /// No update is in progress.
+  ///
+  /// The the semantics owner receives an update, it enters the [updating]
+  /// phase from the idle phase.
+  idle,
+
+  /// Updating individual [SemanticsObject] nodes by calling
+  /// [RoleManager.update] and fixing parent-child relationships.
+  ///
+  /// After this phase is done, the owner enters the [postUpdate] phase.
+  updating,
+
+  /// Post-update callbacks are being called.
+  ///
+  /// At this point all nodes have been updated, the parent child hierarchy has
+  /// been established, the DOM tree is in sync with the semantics tree, and
+  /// [RoleManager.dispose] has been called on removed nodes.
+  ///
+  /// After this phase is done, the owner switches back to [idle].
+  postUpdate,
+}
+
 /// The top-level service that manages everything semantics-related.
 class EngineSemanticsOwner {
   EngineSemanticsOwner._() {
@@ -1572,6 +1604,10 @@ class EngineSemanticsOwner {
     _instance!.semanticsEnabled = false;
     _instance = null;
   }
+
+  /// The current update phase of this semantics owner.
+  SemanticsUpdatePhase get phase => _phase;
+  SemanticsUpdatePhase _phase = SemanticsUpdatePhase.idle;
 
   final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
 
@@ -1649,11 +1685,16 @@ class EngineSemanticsOwner {
     _detachments = <SemanticsObject>[];
     _attachments = <int, SemanticsObject>{};
 
-    if (_oneTimePostUpdateCallbacks.isNotEmpty) {
-      for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
-        callback();
+    _phase = SemanticsUpdatePhase.postUpdate;
+    try {
+      if (_oneTimePostUpdateCallbacks.isNotEmpty) {
+        for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
+          callback();
+        }
+        _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
       }
-      _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
+    } finally {
+      _phase = SemanticsUpdatePhase.idle;
     }
   }
 
@@ -1921,6 +1962,7 @@ class EngineSemanticsOwner {
       }
     }
 
+    _phase = SemanticsUpdatePhase.updating;
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
 
     // First, update each object's information about itself. This information is

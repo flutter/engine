@@ -441,6 +441,88 @@ void _testEngineSemanticsOwner() {
     mockSemanticsEnabler.shouldEnableSemanticsReturnValue = true;
     expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
   });
+
+  test('semantics owner update phases', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    expect(
+      reason: 'Should start in idle phase',
+      semantics().phase,
+      SemanticsUpdatePhase.idle,
+    );
+
+    void pumpSemantics({ required String label }) {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        children: <SemanticsNodeUpdate>[
+          tester.updateNode(id: 1, label: label),
+        ],
+      );
+      tester.apply();
+    }
+
+    SemanticsUpdatePhase? capturedPostUpdateCallbackPhase;
+    semantics().addOneTimePostUpdateCallback(() {
+      capturedPostUpdateCallbackPhase = semantics().phase;
+    });
+
+    pumpSemantics(label: 'Hello');
+
+    final SemanticsObject semanticsObject = semantics().debugSemanticsTree![1]!;
+
+    expect(
+      reason: 'Should be in postUpdate phase while calling post-update callbacks',
+      capturedPostUpdateCallbackPhase,
+      SemanticsUpdatePhase.postUpdate,
+    );
+    expect(
+      reason: 'After the update is done, should go back to idle',
+      semantics().phase,
+      SemanticsUpdatePhase.idle,
+    );
+
+    // Rudely replace the role manager with a mock, and trigger an update.
+    final MockRoleManager mockRoleManager = MockRoleManager(Role.labelAndValue, semanticsObject);
+    semanticsObject.debugRoleManagers[Role.labelAndValue] = mockRoleManager;
+
+    pumpSemantics(label: 'World');
+
+    expect(
+      reason: 'While updating must be in SemanticsUpdatePhase.updating phase',
+      mockRoleManager.log,
+      <MockRoleManagerLogEntry>[
+        (method: 'update', phase: SemanticsUpdatePhase.updating),
+      ],
+    );
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+typedef MockRoleManagerLogEntry = ({
+  String method,
+  SemanticsUpdatePhase phase,
+});
+
+class MockRoleManager extends RoleManager {
+  MockRoleManager(super.role, super.semanticsObject);
+
+  final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
+
+  void _log(String method) {
+    log.add((
+      method: method,
+      phase: semanticsObject.owner.phase,
+    ));
+  }
+
+  @override
+  void update() {
+    _log('update');
+  }
 }
 
 class MockSemanticsEnabler implements SemanticsEnabler {
