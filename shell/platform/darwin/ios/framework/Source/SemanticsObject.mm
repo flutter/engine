@@ -567,6 +567,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 // iOS uses this method to determine the hittest results when users touch
 // explore in VoiceOver.
+//
+// For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus
+// goes to the smallest object before IOS 16, but to the top-left object in
+// IOS 16. Overrides this method to focus the first eligiable semantics
+// object in hit test order.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
   return [self search:point];
 }
