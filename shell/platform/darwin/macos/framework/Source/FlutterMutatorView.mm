@@ -262,7 +262,7 @@ CGRect MasterClipFromMutations(CGRect bounds, const MutationVector& mutations) {
 
 /// A rounded rectangle and transform associated with it.
 typedef struct {
-  FlutterRoundedRect rect;
+  FlutterRoundedRect rrect;
   CGAffineTransform transform;
 } ClipRoundedRect;
 
@@ -289,8 +289,8 @@ NSMutableArray* RoundedRectClipsFromMutations(CGRect master_clip, const Mutation
 
     // Only clip to rounded rectangle path if the view intersects some of the round corners. If
     // not, clipping to masterClip is enough.
-    if (RoundRectCornerIntersects(r.rect, ToFlutterRect(localMasterClip))) {
-      CGPathRef path = PathFromRoundedRect(r.rect);
+    if (RoundRectCornerIntersects(r.rrect, ToFlutterRect(localMasterClip))) {
+      CGPathRef path = PathFromRoundedRect(r.rrect);
       CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &r.transform);
       [paths addObject:(__bridge id)transformedPath];
       CGPathRelease(transformedPath);
