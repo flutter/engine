@@ -44,6 +44,7 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
     final DomRect origin = actualTarget.getBoundingClientRect();
     // event.clientX/Y and origin.x/y are relative **to the viewport**.
     // (This doesn't work with 3D translations of the parent element.)
+    // TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
     return ui.Offset(event.clientX - origin.x, event.clientY - origin.y);
   }
 
