@@ -1831,7 +1831,6 @@ public class AccessibilityBridgeTest {
     verify(mockChannel, never()).setAccessibilityFeatures(anyInt());
   }
 
-  @TargetApi(31)
   @Test
   public void sendFocusAccessibilityEvent() {
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
@@ -1862,7 +1861,7 @@ public class AccessibilityBridgeTest {
     verify(mockParent).requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
     AccessibilityEvent event = eventCaptor.getAllValues().get(0);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_VIEW_FOCUSED);
-    assertEquals(event.getSource().getVirtualDescendantId(0L), 123);
+    assertEquals(event.getSourceNodeId(), 123L);
   }
 
   AccessibilityBridge setUpBridge() {
