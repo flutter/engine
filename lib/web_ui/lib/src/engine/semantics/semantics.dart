@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart'  show registerHotRestartListener;
@@ -437,6 +438,10 @@ abstract class RoleManager {
   /// minimum DOM updates.
   void update();
 
+  /// Whether this role manager was disposed of.
+  bool get isDisposed => _isDisposed;
+  bool _isDisposed = false;
+
   /// Called when [semanticsObject] is removed, or when it changes its role such
   /// that this role is no longer relevant.
   ///
@@ -444,7 +449,10 @@ abstract class RoleManager {
   /// DOM. In particular, this method is the appropriate place to call
   /// [EngineSemanticsOwner.removeGestureModeListener] if this role reponds to
   /// gesture mode changes.
-  void dispose() {}
+  @mustCallSuper
+  void dispose() {
+    _isDisposed = true;
+  }
 }
 
 /// Instantiation of a framework-side semantics node in the DOM.

@@ -77,8 +77,10 @@ class RouteName extends RoleManager {
         // Setting the label for the first time. Wait for the DOM tree to be
         // established, then find the nearest dialog and update its label.
         semanticsObject.owner.addOneTimePostUpdateCallback(() {
-          _lookUpNearestAncestorDialog();
-          _dialog?.describeBy(this);
+          if (!isDisposed) {
+            _lookUpNearestAncestorDialog();
+            _dialog?.describeBy(this);
+          }
         });
       }
     }
