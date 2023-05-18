@@ -1845,8 +1845,9 @@ public class AccessibilityBridgeTest {
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
     when(mockManager.isEnabled()).thenReturn(true);
-   
-    AccessibilityBridge spyAccessibilityBridge = spy(setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null, null));
+
+    AccessibilityBridge spyAccessibilityBridge =
+        spy(setUpBridge(mockRootView, accessibilityChannel, mockManager, null, null, null));
 
     HashMap<String, Object> arguments = new HashMap<>();
     arguments.put("type", "focus");
@@ -1854,7 +1855,7 @@ public class AccessibilityBridgeTest {
     BasicMessageChannel.Reply reply = mock(BasicMessageChannel.Reply.class);
     accessibilityChannel.parsingMessageHandler.onMessage(arguments, reply);
 
-    verify(spyAccessibilityBridge).obtainAccessibilityNodeInfo(eq(mockRootView),123);
+    verify(spyAccessibilityBridge).obtainAccessibilityNodeInfo(eq(mockRootView), 123);
 
     // Check that focus event was sent.
     ArgumentCaptor<AccessibilityEvent> eventCaptor =
