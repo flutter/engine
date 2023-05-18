@@ -216,9 +216,16 @@ MutationVector MutationsForPlatformView(const FlutterPlatformView* view, float s
 CATransform3D CATransformFromMutations(const MutationVector& mutations) {
   CATransform3D transform = CATransform3DIdentity;
   for (auto mutation : mutations) {
-    if (mutation.type == kFlutterPlatformViewMutationTypeTransformation) {
-      CATransform3D mutationTransform = ToCATransform3D(mutation.transformation);
-      transform = CATransform3DConcat(mutationTransform, transform);
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeTransformation: {
+        CATransform3D mutationTransform = ToCATransform3D(mutation.transformation);
+        transform = CATransform3DConcat(mutationTransform, transform);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeClipRect:
+      case kFlutterPlatformViewMutationTypeClipRoundedRect:
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
     }
   }
   return transform;
@@ -228,8 +235,14 @@ CATransform3D CATransformFromMutations(const MutationVector& mutations) {
 float OpacityFromMutations(const MutationVector& mutations) {
   float opacity = 1.0;
   for (auto mutation : mutations) {
-    if (mutation.type == kFlutterPlatformViewMutationTypeOpacity) {
-      opacity *= mutation.opacity;
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeOpacity:
+        opacity *= mutation.opacity;
+        break;
+      case kFlutterPlatformViewMutationTypeClipRect:
+      case kFlutterPlatformViewMutationTypeClipRoundedRect:
+      case kFlutterPlatformViewMutationTypeTransformation:
+        break;
     }
   }
   return opacity;
@@ -244,17 +257,25 @@ CGRect MasterClipFromMutations(CGRect bounds, const MutationVector& mutations) {
   // Create the initial transform.
   CATransform3D transform = CATransform3DIdentity;
   for (auto mutation : mutations) {
-    if (mutation.type == kFlutterPlatformViewMutationTypeTransformation) {
-      transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
-    } else if (mutation.type == kFlutterPlatformViewMutationTypeClipRect) {
-      CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rect),
-                                               CATransform3DGetAffineTransform(transform));
-      master_clip = CGRectIntersection(rect, master_clip);
-    } else if (mutation.type == kFlutterPlatformViewMutationTypeClipRoundedRect) {
-      CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
-      CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rounded_rect.rect),
-                                               affineTransform);
-      master_clip = CGRectIntersection(rect, master_clip);
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeClipRect: {
+        CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rect),
+                                                 CATransform3DGetAffineTransform(transform));
+        master_clip = CGRectIntersection(rect, master_clip);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeClipRoundedRect: {
+        CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+        CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rounded_rect.rect),
+                                                 affineTransform);
+        master_clip = CGRectIntersection(rect, master_clip);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeTransformation:
+        transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
+        break;
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
     }
   }
   return master_clip;
@@ -272,11 +293,18 @@ NSMutableArray* RoundedRectClipsFromMutations(CGRect master_clip, const Mutation
 
   CATransform3D transform = CATransform3DIdentity;
   for (auto mutation : mutations) {
-    if (mutation.type == kFlutterPlatformViewMutationTypeTransformation) {
-      transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
-    } else if (mutation.type == kFlutterPlatformViewMutationTypeClipRoundedRect) {
-      CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
-      rounded_rects.push_back({mutation.clip_rounded_rect, affineTransform});
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeClipRoundedRect: {
+        CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+        rounded_rects.push_back({mutation.clip_rounded_rect, affineTransform});
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeTransformation:
+        transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
+        break;
+      case kFlutterPlatformViewMutationTypeClipRect:
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
     }
   }
 
