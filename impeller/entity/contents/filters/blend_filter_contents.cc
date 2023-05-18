@@ -148,6 +148,7 @@ static std::optional<Entity> AdvancedBlend(
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           src_sampler_descriptor);
       blend_info.color_factor = 0;
+      blend_info.src_input_alpha = src_snapshot->opacity;
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
@@ -649,7 +650,8 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   if (inputs.empty()) {
     return std::nullopt;
   }

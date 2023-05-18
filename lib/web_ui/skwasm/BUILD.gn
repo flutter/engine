@@ -12,6 +12,7 @@ wasm_lib("skwasm") {
     "export.h",
     "fonts.cpp",
     "helpers.h",
+    "image.cpp",
     "paint.cpp",
     "path.cpp",
     "picture.cpp",
@@ -48,11 +49,6 @@ wasm_lib("skwasm") {
       "-sDEMANGLE_SUPPORT=1",
       "-sASSERTIONS=1",
       "-sGL_ASSERTIONS=1",
-    ]
-  } else {
-    ldflags += [
-      "-Oz",
-      "--closure=1",
     ]
   }
 

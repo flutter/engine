@@ -24,6 +24,8 @@ class GoldenPlaygroundTest
 
   void SetUp();
 
+  void TearDown();
+
   PlaygroundBackend GetBackend() const;
 
   bool OpenPlaygroundHere(const Picture& picture);
@@ -33,6 +35,9 @@ class GoldenPlaygroundTest
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
       bool enable_mipmapping = false) const;
+
+  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
+      const char* asset_name) const;
 
   std::shared_ptr<Context> GetContext() const;
 
