@@ -2618,7 +2618,6 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
 
-
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
