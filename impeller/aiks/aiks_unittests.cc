@@ -18,6 +18,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
