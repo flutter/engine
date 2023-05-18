@@ -1855,7 +1855,7 @@ public class AccessibilityBridgeTest {
     BasicMessageChannel.Reply reply = mock(BasicMessageChannel.Reply.class);
     accessibilityChannel.parsingMessageHandler.onMessage(arguments, reply);
 
-    verify(spyAccessibilityBridge).obtainAccessibilityNodeInfo(eq(mockRootView), 123);
+    verify(spyAccessibilityBridge).obtainAccessibilityNodeInfo(eq(mockRootView), eq(123));
 
     // Check that focus event was sent.
     ArgumentCaptor<AccessibilityEvent> eventCaptor =
