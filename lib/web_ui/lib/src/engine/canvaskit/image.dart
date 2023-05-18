@@ -62,9 +62,7 @@ void skiaDecodeImageFromPixels(
     }
 
     if (targetWidth != null || targetHeight != null) {
-      if (!validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
-        domWindow.console.warn('Cannot apply targetWidth/targetHeight when allowUpscaling is false.');
-      } else {
+      if (validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
         return callback(scaleImage(skImage, targetWidth, targetHeight));
       }
     }
@@ -203,7 +201,7 @@ Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCa
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
 Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
-  final JSUint8Array1 result = createUint8ArrayFromLength(contentLength);
+  final JSUint8Array result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
   await payload.read<JSUint8Array1>((JSUint8Array1 chunk) {
@@ -212,7 +210,7 @@ Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOn
     result.set(chunk, position.toJS);
     position += chunk.length.toDart.toInt();
   });
-  return (result as JSUint8Array).toDart;
+  return result.toDart;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
