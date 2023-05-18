@@ -2820,6 +2820,7 @@
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
+../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
 ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
@@ -2834,6 +2835,7 @@
 ../../../third_party/skia/src/xps/BUILD.bazel
 ../../../third_party/skia/tests
 ../../../third_party/skia/third_party/README
+../../../third_party/skia/third_party/cityhash/README
 ../../../third_party/skia/third_party/etc1/BUILD.bazel
 ../../../third_party/skia/third_party/etc1/README.google
 ../../../third_party/skia/third_party/freetype2
