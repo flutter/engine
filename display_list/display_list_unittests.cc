@@ -583,7 +583,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -605,7 +606,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -623,7 +625,8 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   receiver.transformReset();
   auto display_list = builder.Build();
   ASSERT_NE(display_list, nullptr);
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
   SkCanvas* canvas = surface->getCanvas();
   // We can't use DlSkCanvas.DrawDisplayList as that method protects
   // the canvas against mutations from the display list being drawn.
