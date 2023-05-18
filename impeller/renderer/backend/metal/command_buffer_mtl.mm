@@ -204,7 +204,12 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   }
 
   auto task = fml::MakeCopyable(
-      [render_pass, buffer, render_command_encoder, context]() {
+      [render_pass, buffer, render_command_encoder, weak_context = context_]() {
+        auto context = weak_context.lock();
+        if (!context) {
+          return;
+        }
+
         auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
         if (!mtl_render_pass->label_.empty()) {
           [render_command_encoder setLabel:@(mtl_render_pass->label_.c_str())];
