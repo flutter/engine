@@ -808,14 +808,8 @@ public class FlutterViewTest {
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets =
         new WindowInsets.Builder()
-            .setInsets(
-                android.view.WindowInsets.Type.navigationBars(),
-                Insets.of(0, 0, 0, 100)
-            )
-            .setInsets(
-                android.view.WindowInsets.Type.statusBars(),
-                Insets.of(0, 100, 0, 0)
-            )
+            .setInsets(android.view.WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 100))
+            .setInsets(android.view.WindowInsets.Type.statusBars(), Insets.of(0, 100, 0, 0))
             .build();
     flutterView.onApplyWindowInsets(windowInsets);
 
