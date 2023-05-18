@@ -1861,7 +1861,7 @@ public class AccessibilityBridgeTest {
     verify(mockParent).requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
     AccessibilityEvent event = eventCaptor.getAllValues().get(0);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_VIEW_FOCUSED);
-    assertEquals(event.getSource().getVirtualDescendantId(0), 123);
+    assertEquals(event.getSource().getVirtualDescendantId(0L), 123);
   }
 
   AccessibilityBridge setUpBridge() {
