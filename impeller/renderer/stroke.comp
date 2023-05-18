@@ -21,10 +21,6 @@ layout(binding = 1) buffer VertexBuffer {
 }
 vertex_buffer;
 
-// layout(binding = 2) buffer VertexBufferCount {
-//   uint count;
-// }
-// vertex_buffer_count;
 
 layout(binding = 2) buffer IndirectCommandArguments {
   uint vertex_count;

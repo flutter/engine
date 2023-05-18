@@ -8,6 +8,8 @@ layout(std430) buffer;
 
 #include <impeller/path.glsl>
 
+uint kOOBSentinel = 0xFFFFFFFF;
+
 layout(binding = 0) readonly buffer Cubics {
   uint count;
   CubicData data[];
@@ -38,22 +40,86 @@ layout(binding = 4) buffer Polyline {
 }
 polyline;
 
+layout(binding = 5) buffer Debug {
+  bool scratch_count_did_read_oob;
+  bool scratch_count_did_write_oob;
+  bool scratch_count_did_read_uninit;
+  bool scratch_sum_did_read_oob;
+  bool scratch_sum_did_write_oob;
+  bool scratch_sum_did_read_uninit;
+
+  uint scratch_sum_last_oob_index;
+  uint scratch_count_last_oob_index;
+
+  uint scratch_sum_did_write_oob_last_index;
+  uint scratch_count_did_write_oob_last_index;
+}
+debug;
+
 uniform Config {
   float cubic_accuracy;
   float quad_tolerance;
 }
 config;
 
-shared uvec2 cubic_ranges[512];
-shared uvec2 quad_ranges[512];
-shared uint scratch_count[512];
-shared uint scratch_sum[512];
+#define MEMORY_SIZE 1024
+
+shared uvec2 cubic_ranges[MEMORY_SIZE];
+shared uvec2 quad_ranges[MEMORY_SIZE];
+shared uint scratch_count[MEMORY_SIZE];
+shared uint scratch_sum[MEMORY_SIZE];
+
+uint SafeReadScratchSum(uint index) {
+  if (index < 0 || index >= MEMORY_SIZE) {
+    debug.scratch_sum_did_read_oob = true;
+    debug.scratch_sum_last_oob_index = index;
+    return 0;
+  }
+  uint value = scratch_sum[index];
+  if (value == kOOBSentinel) {
+    debug.scratch_sum_did_read_uninit = true;
+    return 0;
+  }
+  return value;
+}
+
+uint SafeReadScratchCount(uint index) {
+  if (index < 0 || index >= MEMORY_SIZE) {
+    debug.scratch_count_did_read_oob = true;
+    debug.scratch_count_last_oob_index = index;
+    return 0;
+  }
+  uint value = scratch_count[index];
+  if (value == kOOBSentinel) {
+    debug.scratch_count_did_read_uninit = true;
+    return 0;
+  }
+  return value;
+}
+
+void SafeWriteScratchSum(uint index, uint value) {
+  if (index < 0 || index >= MEMORY_SIZE) {
+    debug.scratch_sum_did_write_oob = true;
+    debug.scratch_sum_did_write_oob_last_index = index;
+    return;
+  }
+  scratch_sum[index] = value;
+}
+
+void SafeWriteScratchCount(uint index, uint value) {
+  if (index < 0 || index >= MEMORY_SIZE) {
+    debug.scratch_count_did_write_oob = true;
+    debug.scratch_count_did_write_oob_last_index = index;
+    return;
+  }
+  scratch_count[index] = value;
+}
 
 uint ComputePosition(uint index) {
-  uint sum = scratch_sum[index];
+  uint sum = SafeReadScratchSum(index);
   for (uint position = gl_SubgroupSize - 1; position < index;
        position += gl_SubgroupSize) {
-    sum += scratch_sum[position] + scratch_count[position];
+    sum += SafeReadScratchSum(position) + SafeReadScratchCount(position);
   }
   return sum;
 }
@@ -64,17 +130,17 @@ void ProcessCubic(uint ident) {
   if (ident < cubics.count) {
     cubic = cubics.data[ident];
     quad_count = EstimateQuadraticCount(cubic, config.cubic_accuracy);
-    scratch_count[ident] = quad_count;
   }
+  SafeWriteScratchCount(ident, quad_count);
 
   barrier();
 
   uint offset = 0;
   if (quad_count > 0) {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
-
     offset = ComputePosition(ident) + quads.count;
   }
+  SafeWriteScratchSum(ident, subgroupExclusiveAdd(SafeReadScratchCount(ident)));
+
   barrier();
   if (quad_count > 0) {
     atomicAdd(quads.count, quad_count);
@@ -92,14 +158,16 @@ void ProcessQuad(uint ident) {
   if (ident < quads.count) {
     quad = quads.data[ident];
     decomposition = DecomposeQuad(quad, config.quad_tolerance);
-    scratch_count[ident] = decomposition.line_count;
+    SafeWriteScratchCount(ident, decomposition.line_count);
+  } else {
+    SafeWriteScratchCount(ident, 0);
   }
 
   barrier();
 
   uint offset = 0;
+  SafeWriteScratchSum(ident, subgroupExclusiveAdd(SafeReadScratchCount(ident)));
   if (decomposition.line_count > 0) {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
     offset = ComputePosition(ident) + lines.count;
   }
   barrier();
@@ -140,13 +208,15 @@ void ProcessLine(uint ident) {
     } else if (component.count == 2) {
       range = uvec2(component.index, 1);
     }
-
-    scratch_count[ident] = range.y;
+    SafeWriteScratchCount(ident, range.y);
+  } else {
+    SafeWriteScratchCount(ident, 0);
   }
   barrier();
 
   if (ident < components.count) {
-    scratch_sum[ident] = subgroupExclusiveAdd(scratch_count[ident]);
+    SafeWriteScratchSum(ident,
+                        subgroupExclusiveAdd(SafeReadScratchCount(ident)));
     uint offset = ComputePosition(ident);
     polyline.data[offset] = lines.data[range.x].p1;
 
@@ -159,10 +229,14 @@ void ProcessLine(uint ident) {
 void main() {
   uint ident = gl_GlobalInvocationID.x;
   // zero threadgroup shared memory.
-  scratch_count[ident] = 0;
-  scratch_sum[ident] = 0;
-  quad_ranges[ident] = uvec2(0, 0);
-  cubic_ranges[ident] = uvec2(0, 0);
+  if (ident == 0) {
+    for (uint i = 0; i < MEMORY_SIZE; i++) {
+      scratch_count[i] = kOOBSentinel;
+      scratch_sum[i] = kOOBSentinel;
+      quad_ranges[i] = uvec2(0, 0);
+      cubic_ranges[i] = uvec2(0, 0);
+    }
+  }
   barrier();
 
   // Turn each cubic into quads.

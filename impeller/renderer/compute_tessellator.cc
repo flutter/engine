@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/compute_tessellator.h"
 
+#include <iostream>
+
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -13,6 +15,7 @@ namespace impeller {
 
 ComputeTessellator::ComputeTessellator() = default;
 ComputeTessellator::~ComputeTessellator() = default;
+
 
 template <typename T>
 static std::shared_ptr<DeviceBuffer> CreateDeviceBuffer(
@@ -58,12 +61,19 @@ ComputeTessellator& ComputeTessellator::SetQuadraticTolerance(Scalar value) {
   return *this;
 }
 
-// IndirectCommandArguments {
-//   int vertexCount;
-//   int instanceCount;
-//   int vertexStart;
-//   int baseInstance;
-// } indirect_command_arguments;
+template <typename T>
+std::shared_ptr<DeviceBuffer> CreateHostVisibleDeviceBuffer(
+    std::shared_ptr<Context> context,
+    const std::string& label) {
+  DeviceBufferDescriptor desc;
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.size = sizeof(T);
+  auto buffer = context->GetResourceAllocator()->CreateBuffer(desc);
+  buffer->SetLabel(label);
+  return buffer;
+}
+
+constexpr size_t kMemorySize = 1024;
 
 ComputeTessellator::Status ComputeTessellator::Tessellate(
     const Path& path,
@@ -81,7 +91,7 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
   auto line_count =
       path.GetComponentCount(Path::ComponentType::kLinear) + (quad_count * 6);
   if (cubic_count > kMaxCubicCount || quad_count > kMaxQuadCount ||
-      line_count > kMaxLineCount) {
+      line_count > kMemorySize) {
     return Status::kTooManyComponents;
   }
   PS::Cubics<kMaxCubicCount> cubics{.count = 0};
@@ -114,6 +124,9 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateComputePass();
+  auto debug_buffer =
+      CreateHostVisibleDeviceBuffer<PS::Debug>(context, "Debug Buffer");
+
   FML_DCHECK(pass && pass->IsValid());
 
   {
@@ -139,6 +152,7 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     PS::BindLines(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(lines));
     PS::BindComponents(
         cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(components));
+    PS::BindDebug(cmd, debug_buffer->AsBufferView());
     PS::BindPolyline(cmd, polyline_buffer->AsBufferView());
 
     if (!pass->AddCommand(std::move(cmd))) {
@@ -184,7 +198,40 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     return Status::kCommandInvalid;
   }
 
-  if (!cmd_buffer->SubmitCommands(callback)) {
+  if (!cmd_buffer->SubmitCommands([callback,
+                                   debug_buffer](CommandBuffer::Status status) {
+        auto view = debug_buffer->AsBufferView();
+        PS::Debug* debug_output = reinterpret_cast<PS::Debug*>(view.contents);
+
+        if (debug_output->scratch_count_did_read_oob) {
+          std::cerr << "scratch_count_did_read_oob: "
+                    << debug_output->scratch_count_last_oob_index << std::endl;
+        }
+        if (debug_output->scratch_count_did_write_oob) {
+          std::cerr << "scratch_count_did_write_oob: "
+                    << debug_output->scratch_count_did_write_oob_last_index
+                    << std::endl;
+        }
+        if (debug_output->scratch_count_did_read_uninit) {
+          std::cerr << "scratch_count_did_read_uninit" << std::endl;
+        }
+        if (debug_output->scratch_sum_did_read_oob) {
+          std::cerr << "scratch_sum_did_read_oob: "
+                    << debug_output->scratch_sum_last_oob_index << std::endl;
+        }
+        if (debug_output->scratch_sum_did_write_oob) {
+          std::cerr << "scratch_sum_did_write_oob: "
+                    << debug_output->scratch_sum_did_write_oob_last_index
+                    << std::endl;
+        }
+        if (debug_output->scratch_sum_did_read_uninit) {
+          std::cerr << "scratch_sum_did_read_uninit" << std::endl;
+        }
+
+        if (callback) {
+          callback(status);
+        }
+      })) {
     return Status::kCommandInvalid;
   }
 
