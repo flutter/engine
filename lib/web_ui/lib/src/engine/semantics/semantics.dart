@@ -1557,7 +1557,7 @@ enum GestureMode {
 enum SemanticsUpdatePhase {
   /// No update is in progress.
   ///
-  /// The the semantics owner receives an update, it enters the [updating]
+  /// When the semantics owner receives an update, it enters the [updating]
   /// phase from the idle phase.
   idle,
 
