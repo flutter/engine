@@ -1942,8 +1942,13 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
   std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
 
   Paint paint;
-  paint.color_source = ColorSource::MakeRuntimeEffect(
-      runtime_stage, uniform_data, texture_inputs);
+  paint.color_source = [runtime_stage, uniform_data, texture_inputs]() {
+    auto contents = std::make_shared<RuntimeEffectContents>();
+    contents->SetRuntimeStage(runtime_stage);
+    contents->SetUniformData(uniform_data);
+    contents->SetTextureInputs(texture_inputs);
+    return contents;
+  };
 
   Canvas canvas;
   canvas.Save();
