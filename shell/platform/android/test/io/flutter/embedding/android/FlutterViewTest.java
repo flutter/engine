@@ -34,6 +34,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
@@ -779,6 +780,50 @@ public class FlutterViewTest {
     validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
+  }
+
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void setPaddingBottomToZeroForBehaviorShowTransparentBarBySwipe() {
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    flutterView.windowInsetsController = mock(WindowInsetsController.class);
+    when(flutterView.windowInsetsController.getSystemBarsBehavior())
+        .thenReturn(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets =
+        new WindowInsets.Builder()
+            .setInsets(
+                android.view.WindowInsets.Type.navigationBars(),
+                Insets.of(0, 0, 0, 100)
+            )
+            .setInsets(
+                android.view.WindowInsets.Type.statusBars(),
+                Insets.of(0, 100, 0, 0)
+            )
+            .build();
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
+    // Bottom should be zero because of WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    // is set.
+    validateViewportMetricPadding(viewportMetricsCaptor, 0, 100, 0, 0);
   }
 
   @Test
