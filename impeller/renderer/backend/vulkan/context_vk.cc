@@ -120,6 +120,12 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
+  if (!settings.worker_task_runner) {
+    VALIDATION_LOG
+        << "Cannot set up a Vulkan context without a worker task runner.";
+  }
+  worker_task_runner_ = settings.worker_task_runner;
+
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
