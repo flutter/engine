@@ -59,7 +59,7 @@ source_set("common_cpp_input") {
 
 source_set("common_cpp_enums") {
   public = [
-    "application_lifecycle.h",
+    "app_lifecycle_state.h",
     "platform_provided_menu.h",
   ]
 

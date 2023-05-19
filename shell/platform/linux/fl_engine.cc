@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "flutter/shell/platform/common/application_lifecycle.h"
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"

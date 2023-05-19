@@ -110,7 +110,7 @@ void checkApiConsistency(String flutterRoot) {
     );
     // C++ values: kFooBar = 1 << N.
     final List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'common', 'application_lifecycle.h'),
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'common', 'app_lifecycle_state.h'),
       enumName: 'AppLifecycleState',
     );
     // Java values: FOO_BAR(1 << N).

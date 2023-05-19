@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_APPLICATION_LIFECYCLE_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_APPLICATION_LIFECYCLE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_APP_LIFECYCLE_STATE_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_APP_LIFECYCLE_STATE_H_
 
 #include <cassert>
 #include <map>
@@ -90,4 +90,4 @@ constexpr const char* AppLifecycleStateToString(AppLifecycleState state) {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_APPLICATION_LIFECYCLE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_APP_LIFECYCLE_STATE_H_
