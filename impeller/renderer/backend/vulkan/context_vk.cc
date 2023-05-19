@@ -281,8 +281,7 @@ void ContextVK::Setup(Settings settings) {
   device_ = std::move(device_result.value);
   // This makes sure that the device is deleted at the proper time if there is
   // an error.
-  std::unique_ptr<vk::UniqueDevice, std::function<void(vk::UniqueDevice*)>>
-      device_resetter(&device_, [](vk::UniqueDevice* ptr) { ptr->reset(); });
+  fml::ScopedCleanupClosure device_resetter([this]() { device_.reset(); });
 
   if (!caps->SetDevice(physical_device.value())) {
     VALIDATION_LOG << "Capabilities could not be updated.";
@@ -368,7 +367,7 @@ void ContextVK::Setup(Settings settings) {
   instance_ = std::move(instance.value);
   debug_report_ = std::move(debug_report);
   physical_device_ = physical_device.value();
-  device_resetter.release();
+  device_resetter.Release();
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
