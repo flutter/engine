@@ -98,6 +98,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  // Limit the kernel size to 1000x1000 pixels, like Skia does.
+  auto radius = std::min(Radius{blur_sigma_}.radius, 500.0f);
   // Input 0 snapshot.
 
   auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
@@ -110,8 +112,6 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         input_snapshot.value(), entity.GetBlendMode(),
         entity.GetStencilDepth());  // No blur to render.
   }
-
-  auto radius = Radius{blur_sigma_}.radius;
 
   auto transform = entity.GetTransformation() * effect_transform.Basis();
   auto transformed_blur_radius =
@@ -337,7 +337,7 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
 
   auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
-      transform.TransformDirection(blur_direction_* Radius{blur_sigma_}.radius)
+      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
           .Abs();
   auto extent = coverage->size + transformed_blur_vector * 2;
   return Rect(coverage->origin - transformed_blur_vector,
