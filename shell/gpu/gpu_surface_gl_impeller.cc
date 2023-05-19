@@ -134,10 +134,4 @@ SkMatrix GPUSurfaceGLImpeller::GetRootTransformation() const {
   return {};
 }
 
-// |Surface|
-GrDirectContext* GPUSurfaceGLImpeller::GetContext() {
-  // Impeller != Skia.
-  return nullptr;
-}
-
 }  // namespace flutter

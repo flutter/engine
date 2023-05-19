@@ -94,10 +94,6 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
   return matrix;
 }
 
-GrDirectContext* GPUSurfaceVulkan::GetContext() {
-  return skia_context_.get();
-}
-
 sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
     const VkImage image,
     const VkFormat format,

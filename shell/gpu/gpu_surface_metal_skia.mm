@@ -96,7 +96,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(int64_t view_id,
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
   }
 
-  sksl_precompiler_->PrecompileKnownSkSLsIfNecessary(GetContext());
+  sksl_precompiler_->PrecompileKnownSkSLsIfNecessary(context_.get());
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
@@ -240,11 +240,6 @@ SkMatrix GPUSurfaceMetalSkia::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
-}
-
-// |Surface|
-GrDirectContext* GPUSurfaceMetalSkia::GetContext() {
-  return context_.get();
 }
 
 }  // namespace flutter

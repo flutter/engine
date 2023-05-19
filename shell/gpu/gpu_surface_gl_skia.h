@@ -39,9 +39,6 @@ class GPUSurfaceGLSkia : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
-  // |Surface|
-  GrDirectContext* GetContext() override;
-
  private:
   bool CreateOrUpdateSurfaces(const SkISize& size);
 

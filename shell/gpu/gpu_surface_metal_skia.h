@@ -53,9 +53,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   SkMatrix GetRootTransformation() const override;
 
   // |Surface|
-  GrDirectContext* GetContext() override;
-
-  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
       const SkISize& frame_info);
 

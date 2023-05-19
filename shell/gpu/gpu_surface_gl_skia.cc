@@ -284,9 +284,4 @@ sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
   return onscreen_surface_;
 }
 
-// |Surface|
-GrDirectContext* GPUSurfaceGLSkia::GetContext() {
-  return context_.get();
-}
-
 }  // namespace flutter

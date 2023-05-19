@@ -163,11 +163,6 @@ SkMatrix GPUSurfaceMetalImpeller::GetRootTransformation() const {
   return {};
 }
 
-// |Surface|
-GrDirectContext* GPUSurfaceMetalImpeller::GetContext() {
-  return nullptr;
-}
-
 Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
   if (!(last_drawable_ && [last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)])) {
     return {};

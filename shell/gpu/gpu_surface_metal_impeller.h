@@ -49,9 +49,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
-  // |Surface|
-  GrDirectContext* GetContext() override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalImpeller);
 };
 

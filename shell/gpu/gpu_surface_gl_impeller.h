@@ -41,9 +41,6 @@ class GPUSurfaceGLImpeller final : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
-  // |Surface|
-  GrDirectContext* GetContext() override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGLImpeller);
 };
 

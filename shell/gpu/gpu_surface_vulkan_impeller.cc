@@ -104,10 +104,4 @@ SkMatrix GPUSurfaceVulkanImpeller::GetRootTransformation() const {
   return {};
 }
 
-// |Surface|
-GrDirectContext* GPUSurfaceVulkanImpeller::GetContext() {
-  // Impeller != Skia.
-  return nullptr;
-}
-
 }  // namespace flutter

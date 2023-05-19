@@ -40,8 +40,6 @@ class Surface {
 
   virtual SkMatrix GetRootTransformation() const = 0;
 
-  virtual GrDirectContext* GetContext() = 0;
-
   /// Capture the `SurfaceData` currently present in the surface.
   ///
   /// Not guaranteed to work on all setups and not intended to be used in
