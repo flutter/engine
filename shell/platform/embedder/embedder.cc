@@ -2085,8 +2085,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
       SAFE_ACCESS(flutter_metrics, physical_view_inset_bottom, 0.0);
   metrics.physical_view_inset_left =
       SAFE_ACCESS(flutter_metrics, physical_view_inset_left, 0.0);
-  metrics.display_id =
-      0;  // TODO(dkwingsmt): Implement display ID on FlutterWindowMetricsEvent
+  metrics.display_id = SAFE_ACCESS(flutter_metrics, display_id, 0);
 
   if (metrics.device_pixel_ratio <= 0.0) {
     return LOG_EMBEDDER_ERROR(
@@ -3022,12 +3021,16 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
   switch (update_type) {
     case kFlutterEngineDisplaysUpdateTypeStartup: {
       std::vector<std::unique_ptr<flutter::Display>> displays;
+      const auto* display = embedder_displays;
       for (size_t i = 0; i < display_count; i++) {
         displays.push_back(std::make_unique<flutter::Display>(
-            embedder_displays[i].display_id, embedder_displays[i].refresh_rate,
-            // TODO(dnfield): Supply real values
-            // https://github.com/flutter/flutter/issues/125939
-            -1, -1, -1));
+            SAFE_ACCESS(display, display_id, i),    //
+            SAFE_ACCESS(display, refresh_rate, 0),  //
+            SAFE_ACCESS(display, width, 0),         //
+            SAFE_ACCESS(display, height, 0),        //
+            SAFE_ACCESS(display, device_pixel_ratio, 1)));
+        display = reinterpret_cast<const FlutterEngineDisplay*>(
+            reinterpret_cast<const uint8_t*>(display) + display->struct_size);
       }
       engine->GetShell().OnDisplayUpdates(std::move(displays));
       return kSuccess;

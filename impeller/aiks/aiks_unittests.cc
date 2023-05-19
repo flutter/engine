@@ -161,6 +161,17 @@ void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
       ColorSource::MakeImage(texture, tile_mode, tile_mode, {}, {});
   paint.color = Color(1, 1, 1, 1);
   canvas.DrawRect({0, 0, 600, 600}, paint);
+
+  // Should not change the image.
+  constexpr auto stroke_width = 64;
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = stroke_width;
+  if (tile_mode == Entity::TileMode::kDecal) {
+    canvas.DrawRect({stroke_width, stroke_width, 600, 600}, paint);
+  } else {
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+  }
+
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 }  // namespace
@@ -2275,6 +2286,22 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
+  Canvas canvas;
+  canvas.DrawCircle({400, 400}, 300, {.color = Color::Green()});
+  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeGaussianBlur(
+                         input, Sigma(999999), Sigma(999999),
+                         FilterContents::BlurStyle::kNormal,
+                         Entity::TileMode::kClamp, effect_transform);
+                   });
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 // Regression test for https://github.com/flutter/flutter/issues/126701 .
 TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
   if (GetParam() != PlaygroundBackend::kMetal) {
@@ -2305,6 +2332,36 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect{0, 0, 400, 400}, paint);
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanDrawPoints) {
+  std::vector<Point> points = {
+      {0, 0},      //
+      {100, 100},  //
+      {100, 0},    //
+      {0, 100},    //
+      {0, 0},      //
+      {48, 48},    //
+      {52, 52},    //
+  };
+  std::vector<PointStyle> caps = {
+      PointStyle::kRound,
+      PointStyle::kSquare,
+  };
+  Paint paint;
+  paint.color = Color::Yellow().WithAlpha(0.5);
+
+  Paint background;
+  background.color = Color::Black();
+
+  Canvas canvas;
+  canvas.DrawPaint(background);
+  canvas.Translate({200, 200});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kRound);
+  canvas.Translate({150, 0});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kSquare);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

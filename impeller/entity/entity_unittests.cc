@@ -1004,7 +1004,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
-    static float blur_amount[2] = {10, 10};
+    static float blur_amount_coarse[2] = {0, 0};
+    static float blur_amount_fine[2] = {10, 10};
     static int selected_blur_style = 0;
     static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
@@ -1034,7 +1035,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", blur_amount, 0, 10);
+      ImGui::SliderFloat2("Sigma (coarse)", blur_amount_coarse, 0, 1000);
+      ImGui::SliderFloat2("Sigma (fine)", blur_amount_fine, 0, 10);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -1050,6 +1052,9 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
     }
     ImGui::End();
+
+    auto blur_sigma_x = Sigma{blur_amount_coarse[0] + blur_amount_fine[0]};
+    auto blur_sigma_y = Sigma{blur_amount_coarse[1] + blur_amount_fine[1]};
 
     std::shared_ptr<Contents> input;
     Size input_size;
@@ -1078,18 +1083,17 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     std::shared_ptr<FilterContents> blur;
     if (selected_pass_variation == 0) {
       blur = FilterContents::MakeGaussianBlur(
-          FilterInput::Make(input), Sigma{blur_amount[0]},
-          Sigma{blur_amount[1]}, blur_styles[selected_blur_style],
-          tile_modes[selected_tile_mode]);
+          FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
+          blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
     } else {
-      Vector2 blur_vector(blur_amount[0], blur_amount[1]);
+      Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
       blur = FilterContents::MakeDirectionalGaussianBlur(
           FilterInput::Make(input), Sigma{blur_vector.GetLength()},
           blur_vector.Normalize());
     }
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
-        FilterInput::Make(input), Sigma{blur_amount[0]}, Sigma{blur_amount[1]},
+        FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
         blur_styles[selected_blur_style]);
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
@@ -2610,6 +2614,24 @@ TEST_P(EntityTest, TessellateConvex) {
     ASSERT_EQ(pts, expected);
     ASSERT_EQ(indices, expected_indices);
   }
+}
+
+TEST_P(EntityTest, PointFieldGeometryDivisions) {
+  // Square always gives 4 divisions.
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
+
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
+  // Caps at 140.
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
 }
 
 }  // namespace testing
