@@ -4,12 +4,14 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl/codecs.dart';
 
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
@@ -288,4 +290,14 @@ Future<void> testMain() async {
       return completer.future;
     });
   }
+
+  emitImageTests('codec', () async {
+    final ui.Codec codec = SkwasmImageDecoder(
+      contentType: 'image/png',
+      dataSource: (await rawHttpGet('/test_images/mandrill_150.png')).body as JSAny,
+      debugSource: 'blah',
+    );
+    final ui.FrameInfo info = await codec.getNextFrame();
+    return info.image;
+  });
 }

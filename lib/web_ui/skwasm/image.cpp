@@ -3,14 +3,30 @@
 // found in the LICENSE file.
 
 #include "export.h"
+#include "skwasm_support.h"
+#include "surface.h"
+#include "wrappers.h"
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTextureGenerator.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <emscripten/html5_webgl.h>
 
 using namespace SkImages;
+
+namespace {
 
 enum class PixelFormat {
   rgba8888,
@@ -39,6 +55,54 @@ SkAlphaType alphaTypeForPixelFormat(PixelFormat format) {
   }
 }
 
+class ExternalWebGLTexture : public GrExternalGLTexture {
+ public:
+  ExternalWebGLTexture(GrGLTextureInfo info,
+                       EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
+      : _textureInfo(info), _webGLContext(context) {}
+
+  GrGLTextureInfo getTextureInfo() override { return _textureInfo; }
+
+  void dispose() override {
+    Skwasm::makeCurrent(_webGLContext);
+    glDeleteTextures(1, &_textureInfo.fID);
+  }
+
+ private:
+  GrGLTextureInfo _textureInfo;
+  EMSCRIPTEN_WEBGL_CONTEXT_HANDLE _webGLContext;
+};
+}  // namespace
+
+class VideoFrameImageGenerator : public GrExternalGLTextureGenerator {
+ public:
+  VideoFrameImageGenerator(SkImageInfo ii,
+                           SkwasmObjectId videoFrameId,
+                           Skwasm::Surface* surface)
+      : GrExternalGLTextureGenerator(ii),
+        _videoFrameId(videoFrameId),
+        _surface(surface) {}
+
+  ~VideoFrameImageGenerator() override {
+    _surface->disposeVideoFrame(_videoFrameId);
+  }
+
+  std::unique_ptr<GrExternalGLTexture> generateExternalTexture() override {
+    GrGLTextureInfo glInfo;
+    glInfo.fID = skwasm_createGlTextureFromVideoFrame(
+        _videoFrameId, fInfo.width(), fInfo.height());
+    glInfo.fFormat = GL_RGBA8_OES;
+    glInfo.fTarget = GL_TEXTURE_2D;
+
+    return std::make_unique<ExternalWebGLTexture>(
+        glInfo, emscripten_webgl_get_current_context());
+  }
+
+ private:
+  SkwasmObjectId _videoFrameId;
+  Skwasm::Surface* _surface;
+};
+
 SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
                                                int32_t width,
                                                int32_t height) {
@@ -61,6 +125,19 @@ SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
                                alphaTypeForPixelFormat(pixelFormat),
                                SkColorSpace::MakeSRGB()),
              sk_sp(data), rowByteCount)
+      .release();
+}
+
+SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObjectId videoFrameId,
+                                                  int width,
+                                                  int height,
+                                                  Skwasm::Surface* surface) {
+  return SkImages::DeferredFromTextureGenerator(
+             std::make_unique<VideoFrameImageGenerator>(
+                 SkImageInfo::Make(width, height,
+                                   SkColorType::kRGBA_8888_SkColorType,
+                                   SkAlphaType::kPremul_SkAlphaType),
+                 videoFrameId, surface))
       .release();
 }
 

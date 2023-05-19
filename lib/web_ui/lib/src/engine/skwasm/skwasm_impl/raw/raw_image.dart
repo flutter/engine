@@ -38,6 +38,19 @@ external ImageHandle imageCreateFromPixels(
   int rowByteCount,
 );
 
+@Native<ImageHandle Function(
+  Uint32,
+  Int,
+  Int,
+  SurfaceHandle,
+)>(symbol: 'image_createFromVideoFrame', isLeaf: true)
+external ImageHandle imageCreateFromVideoFrame(
+  int videoFrameId,
+  int width,
+  int height,
+  SurfaceHandle handle,
+);
+
 @Native<Void Function(ImageHandle)>(symbol: 'image_dispose', isLeaf: true)
 external void imageDispose(ImageHandle handle);
 

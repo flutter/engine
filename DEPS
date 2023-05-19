@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '7202b405f06150a6c788e81f27eb377974aaa977',
+  'skia_revision': '94a17373f0cf28e99340b02731730ebf64e9dbb9', # Don't merge this, this points to a WIP CL
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
