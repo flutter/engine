@@ -35,8 +35,6 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
     ~OffScreenContext();
 
-    sk_sp<GrDirectContext> GetContext() { return context_; }
-
    private:
     fml::RefPtr<vulkan::VulkanProcTable> vk_;
     std::unique_ptr<vulkan::VulkanApplication> application_;
