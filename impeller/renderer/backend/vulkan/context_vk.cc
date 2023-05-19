@@ -31,10 +31,12 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace {
 template <typename T>
-class scoped_reset {
+class scoped_ivar_reset {
  public:
-  scoped_reset(T* addr, T&& value) : addr_(addr) { *addr_ = std::move(value); }
-  ~scoped_reset() {
+  scoped_ivar_reset(T* addr, T&& value) : addr_(addr) {
+    *addr_ = std::move(value);
+  }
+  ~scoped_ivar_reset() {
     if (addr_) {
       addr_->reset();
     }
@@ -296,8 +298,8 @@ void ContextVK::Setup(Settings settings) {
     VALIDATION_LOG << "Could not create logical device.";
     return;
   }
-  scoped_reset<vk::UniqueDevice> device(&device_,
-                                        std::move(device_result.value));
+  scoped_ivar_reset<vk::UniqueDevice> device(&device_,
+                                             std::move(device_result.value));
 
   if (!caps->SetDevice(physical_device.value())) {
     VALIDATION_LOG << "Capabilities could not be updated.";
