@@ -123,6 +123,7 @@ void ContextVK::Setup(Settings settings) {
   if (!settings.worker_task_runner) {
     VALIDATION_LOG
         << "Cannot set up a Vulkan context without a worker task runner.";
+    return;
   }
   worker_task_runner_ = settings.worker_task_runner;
 
