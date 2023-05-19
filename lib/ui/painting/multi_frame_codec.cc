@@ -110,7 +110,16 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   std::optional<unsigned int> prior_frame_index = std::nullopt;
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
-    if (lastRequiredFrame_ == nullptr) {
+    // We are here when the frame said |disposal_method| is
+    // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
+    // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
+    if (requiredFrameIndex == exExRequiredFrameIndex_ && exExRequiredFrame_) {
+      if (exExRequiredFrame_->getPixels() &&
+          CopyToBitmap(&bitmap, exExRequiredFrame_->colorType(),
+                       *exExRequiredFrame_)) {
+        prior_frame_index = requiredFrameIndex;
+      }
+    } else if (lastRequiredFrame_ == nullptr) {
       FML_DLOG(INFO)
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
@@ -134,10 +143,20 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     return nullptr;
   }
 
-  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep) {
-    lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
-    lastRequiredFrameIndex_ = nextFrameIndex_;
-  }
+  // Always keep the last frame to support kRestorePrevious disposal op.
+  //
+  // Example below shows we must keep the frame whatever disposal method is
+  // |kRestoreBGColor| or |kRestorePrevious| or |kKeep|.
+  //
+  // Frame 1          ,   Frame 2           ,  Frame 3          ,  Frame 4
+  // complete decode  ,   complete decode   ,  reuse frame 1    ,  reuse frame 2
+  // OP_BACKGROUND    ,   OP_PREVIOUS       ,  OP_PREVIOUS      ,  OP_KEEP
+  // kRestoreBGColor  ,   kRestorePrevious  ,  kRestorePrevious ,  kKeep
+  exExRequiredFrame_ = std::move(lastRequiredFrame_);
+  exExRequiredFrameIndex_ = lastRequiredFrameIndex_;
+
+  lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
+  lastRequiredFrameIndex_ = nextFrameIndex_;
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
