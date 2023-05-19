@@ -35,9 +35,6 @@ class Surface final : public flutter::Surface {
       const SkISize& size) override;
 
   // |flutter::Surface|
-  GrDirectContext* GetContext() override;
-
-  // |flutter::Surface|
   SkMatrix GetRootTransformation() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

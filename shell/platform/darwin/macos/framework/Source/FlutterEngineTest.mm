@@ -830,8 +830,8 @@ TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
   FlutterEngine* engine = GetFlutterEngine();
   auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
   engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
-      SendWindowMetricsEvent,
-      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
+      SendWindowMetricsEvent, ([&updated, &original_set_viewport_metrics](
+                                   auto engine, int64_t view_id, auto* window_metrics) {
         updated = YES;
         return original_set_viewport_metrics(engine, window_metrics);
       }));

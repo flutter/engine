@@ -35,6 +35,8 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
     ~OffScreenContext();
 
+    sk_sp<GrDirectContext> GetContext() { return context_; }
+
    private:
     fml::RefPtr<vulkan::VulkanProcTable> vk_;
     std::unique_ptr<vulkan::VulkanApplication> application_;
@@ -90,9 +92,6 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
     // |Surface|
     SkMatrix GetRootTransformation() const override;
-
-    // |Surface|
-    GrDirectContext* GetContext() override;
 
    private:
     std::shared_ptr<ShellTestExternalViewEmbedder>

@@ -41,11 +41,6 @@ std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
 }
 
 // |flutter::Surface|
-GrDirectContext* Surface::GetContext() {
-  return gr_context_;
-}
-
-// |flutter::Surface|
 SkMatrix Surface::GetRootTransformation() const {
   // This backend does not support delegating to the underlying platform to
   // query for root surface transformations. Just return identity.
