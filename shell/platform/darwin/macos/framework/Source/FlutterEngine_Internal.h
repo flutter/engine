@@ -180,7 +180,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  * @param state One of the lifecycle constants in application_lifecycle.h,
  *              corresponding to the Dart enum AppLifecycleState.
  */
-- (void)setApplicationState:(const char*)state;
+- (void)setApplicationState:(flutter::AppLifecycleState)state;
 
 // Accessibility API.
 

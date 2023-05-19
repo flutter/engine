@@ -1141,8 +1141,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 #pragma mark - FlutterAppLifecycleDelegate
 
-- (void)setApplicationState:(const char*)state {
-  NSString* nextState = [[NSString alloc] initWithCString:state];
+- (void)setApplicationState:(flutter::AppLifecycleState)state {
+  NSString* nextState =
+      [[NSString alloc] initWithCString:flutter::AppLifecycleStateToString(state)];
   [self sendOnChannel:kFlutterLifecycleChannel
               message:[nextState dataUsingEncoding:NSUTF8StringEncoding]];
 }
@@ -1154,9 +1155,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)handleWillBecomeActive:(NSNotification*)notification {
   _active = YES;
   if (!_visible) {
-    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
   } else {
-    [self setApplicationState:flutter::kAppLifecycleStateResumed];
+    [self setApplicationState:flutter::AppLifecycleState::kResumed];
   }
 }
 
@@ -1167,9 +1168,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)handleWillResignActive:(NSNotification*)notification {
   _active = NO;
   if (!_visible) {
-    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
   } else {
-    [self setApplicationState:flutter::kAppLifecycleStateInactive];
+    [self setApplicationState:flutter::AppLifecycleState::kInactive];
   }
 }
 
@@ -1182,13 +1183,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if (occlusionState & NSApplicationOcclusionStateVisible) {
     _visible = YES;
     if (_active) {
-      [self setApplicationState:flutter::kAppLifecycleStateResumed];
+      [self setApplicationState:flutter::AppLifecycleState::kResumed];
     } else {
-      [self setApplicationState:flutter::kAppLifecycleStateInactive];
+      [self setApplicationState:flutter::AppLifecycleState::kInactive];
     }
   } else {
     _visible = NO;
-    [self setApplicationState:flutter::kAppLifecycleStateHidden];
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
   }
 }
 

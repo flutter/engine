@@ -806,30 +806,30 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
 }
 
 TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
-  __block const char* sentState;
+  __block flutter::AppLifecycleState sentState;
   id engineMock = CreateMockFlutterEngine(nil);
 
   // Have to enumerate all the values because OCMStub can't capture
   // non-Objective-C object arguments.
-  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateDetached])
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kDetached])
       .andDo((^(NSInvocation* invocation) {
-        sentState = kAppLifecycleStateHidden;
+        sentState = flutter::AppLifecycleState::kDetached;
       }));
-  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateResumed])
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kResumed])
       .andDo((^(NSInvocation* invocation) {
-        sentState = kAppLifecycleStateResumed;
+        sentState = flutter::AppLifecycleState::kResumed;
       }));
-  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateInactive])
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kInactive])
       .andDo((^(NSInvocation* invocation) {
-        sentState = kAppLifecycleStateInactive;
+        sentState = flutter::AppLifecycleState::kInactive;
       }));
-  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStateHidden])
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kHidden])
       .andDo((^(NSInvocation* invocation) {
-        sentState = kAppLifecycleStateHidden;
+        sentState = flutter::AppLifecycleState::kHidden;
       }));
-  OCMStub([engineMock setApplicationState:flutter::kAppLifecycleStatePaused])
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kPaused])
       .andDo((^(NSInvocation* invocation) {
-        sentState = kAppLifecycleStatePaused;
+        sentState = flutter::AppLifecycleState::kPaused;
       }));
 
   __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
@@ -855,23 +855,23 @@ TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
                                   userInfo:nil];
 
   [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
 
   [engineMock handleWillBecomeActive:willBecomeActive];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateResumed);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kResumed);
 
   [engineMock handleWillResignActive:willResignActive];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateInactive);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
 
   visibility = 0;
   [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
 
   [engineMock handleWillBecomeActive:willBecomeActive];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
 
   [engineMock handleWillResignActive:willResignActive];
-  EXPECT_EQ(sentState, flutter::kAppLifecycleStateHidden);
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
 
   [mockApplication stopMocking];
 }

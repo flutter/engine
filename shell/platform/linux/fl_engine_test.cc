@@ -430,7 +430,7 @@ TEST(FlEngineTest, SendWindowStateEvent) {
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
   bool called = false;
-  std::string state = flutter::kAppLifecycleStateDetached;
+  std::string state;
   embedder_api->SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage,
       ([&called, &state](auto engine, const FlutterPlatformMessage* message) {
@@ -447,13 +447,17 @@ TEST(FlEngineTest, SendWindowStateEvent) {
         return kSuccess;
       }));
   fl_engine_send_window_state_event(engine, false, false);
-  EXPECT_STREQ(state.c_str(), flutter::kAppLifecycleStateHidden);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kHidden));
   fl_engine_send_window_state_event(engine, false, true);
-  EXPECT_STREQ(state.c_str(), flutter::kAppLifecycleStateHidden);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kHidden));
   fl_engine_send_window_state_event(engine, true, false);
-  EXPECT_STREQ(state.c_str(), flutter::kAppLifecycleStateInactive);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kInactive));
   fl_engine_send_window_state_event(engine, true, true);
-  EXPECT_STREQ(state.c_str(), flutter::kAppLifecycleStateResumed);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kResumed));
   EXPECT_TRUE(called);
 }
 

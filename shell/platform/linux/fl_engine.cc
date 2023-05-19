@@ -126,10 +126,12 @@ static void parse_locale(const gchar* locale,
   }
 }
 
-static void set_app_lifecycle_state(FlEngine* self, const gchar* state) {
+static void set_app_lifecycle_state(FlEngine* self,
+                                    const flutter::AppLifecycleState state) {
   FlBinaryMessenger* binary_messenger = fl_engine_get_binary_messenger(self);
 
-  g_autoptr(FlValue) value = fl_value_new_string(state);
+  g_autoptr(FlValue) value =
+      fl_value_new_string(flutter::AppLifecycleStateToString(state));
   g_autoptr(FlStringCodec) codec = fl_string_codec_new();
   g_autoptr(GBytes) message =
       fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, nullptr);
@@ -746,11 +748,11 @@ void fl_engine_send_window_state_event(FlEngine* self,
                                        gboolean visible,
                                        gboolean focused) {
   if (visible && focused) {
-    set_app_lifecycle_state(self, flutter::kAppLifecycleStateResumed);
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kResumed);
   } else if (visible) {
-    set_app_lifecycle_state(self, flutter::kAppLifecycleStateInactive);
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kInactive);
   } else {
-    set_app_lifecycle_state(self, flutter::kAppLifecycleStateHidden);
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kHidden);
   }
 }
 

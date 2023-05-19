@@ -5,6 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_COMMON_APPLICATION_LIFECYCLE_H_
 #define FLUTTER_SHELL_PLATFORM_COMMON_APPLICATION_LIFECYCLE_H_
 
+#include <cassert>
+#include <map>
+#include <string>
+
 namespace flutter {
 
 /**
@@ -29,44 +33,60 @@ namespace flutter {
  *     | paused    |<------>|    hidden    |<----->|  inactive |
  *     +-----------+        +--------------+       +-----------+
  */
+enum class AppLifecycleState {
+  /**
+   * Corresponds to the Framework's AppLifecycleState.detached: The initial
+   * state of the state machine. On Android and iOS, also the final state of the
+   * state machine when all views are detached. Other platforms do not enter
+   * this state again after initially leaving it.
+   */
+  kDetached,
 
-/**
- * Corresponds to AppLifecycleState.detached: The initial state of the state
- * machine. On Android and iOS, also the final state of the state machine
- * when all views are detached. Other platforms do not enter this state again
- * after initially leaving it.
- */
-constexpr const char* kAppLifecycleStateDetached = "AppLifecycleState.detached";
+  /**
+   * Corresponds to the Framework's AppLifecycleState.resumed: The nominal
+   * "running" state of the application. The application is visible, has input
+   * focus, and is running.
+   */
+  kResumed,
 
-/**
- * Corresponds to AppLifecycleState.resumed: The nominal "running" state of
- * the
- * application. The application is visible, has input focus, and is running.
- */
-constexpr const char* kAppLifecycleStateResumed = "AppLifecycleState.resumed";
+  /**
+   * Corresponds to the Framework's AppLifecycleState.inactive: At least one
+   * view of the application is visible, but none have input focus. The
+   * application is otherwise running normally.
+   */
+  kInactive,
 
-/**
- * Corresponds to AppLifecycleState.inactive: At least one view of the
- * application is visible, but none have input focus. The application is
- * otherwise running normally.
- */
-constexpr const char* kAppLifecycleStateInactive = "AppLifecycleState.inactive";
+  /**
+   * Corresponds to the Framework's AppLifecycleState.hidden: All views of an
+   * application are hidden, either because the application is being stopped (on
+   * iOS and Android), or because it is being minimized or on a desktop that is
+   * no longer visible (on desktop), or on a tab that is no longer visible (on
+   * web).
+   */
+  kHidden,
 
-/**
- * Corresponds to AppLifecycleState.hidden: All views of an application are
- * hidden, either because the application is being stopped (on iOS and
- * Android), or because it is being minimized or on a desktop that is no
- * longer visible (on desktop), or on a tab that is no longer visible (on
- * web).
- */
-constexpr const char* kAppLifecycleStateHidden = "AppLifecycleState.hidden";
+  /**
+   * Corresponds to the Framework's AppLifecycleState.paused: The application is
+   * not running, and can be detached or started again at any time. This state
+   * is typically only entered into on iOS and Android.
+   */
+  kPaused,
+};
 
-/**
- * Corresponds to AppLifecycleState.paused: The application is not running,
- * and can be detached or started again at any time. This state is typically
- * only entered into on iOS and Android.
- */
-constexpr const char* kAppLifecycleStatePaused = "AppLifecycleState.paused";
+constexpr const char* AppLifecycleStateToString(AppLifecycleState state) {
+  switch (state) {
+    case AppLifecycleState::kDetached:
+      return "AppLifecycleState.detached";
+    case AppLifecycleState::kResumed:
+      return "AppLifecycleState.resumed";
+    case AppLifecycleState::kInactive:
+      return "AppLifecycleState.inactive";
+    case AppLifecycleState::kHidden:
+      return "AppLifecycleState.hidden";
+    case AppLifecycleState::kPaused:
+      return "AppLifecycleState.paused";
+  }
+}
 
 }  // namespace flutter
 
