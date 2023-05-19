@@ -18,6 +18,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -1939,6 +1940,45 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   canvas.Restore();
 
   canvas.DrawPaint({.color = Color::Green()});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/126701 .
+TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  auto runtime_stage =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  struct FragUniforms {
+    Vector2 iResolution;
+    Scalar iTime;
+  } frag_uniforms = {.iResolution = Vector2(400, 400), .iTime = 100.0};
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(FragUniforms));
+  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+
+  Paint paint;
+  paint.color_source = [runtime_stage, uniform_data, texture_inputs]() {
+    auto contents = std::make_shared<RuntimeEffectContents>();
+    contents->SetRuntimeStage(runtime_stage);
+    contents->SetUniformData(uniform_data);
+    contents->SetTextureInputs(texture_inputs);
+    return contents;
+  };
+
+  Canvas canvas;
+  canvas.Save();
+  canvas.ClipRRect(Rect{0, 0, 400, 400}, 10.0,
+                   Entity::ClipOperation::kIntersect);
+  canvas.DrawRect(Rect{0, 0, 400, 400}, paint);
+  canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
