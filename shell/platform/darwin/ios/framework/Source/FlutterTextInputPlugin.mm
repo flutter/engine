@@ -1852,6 +1852,30 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return [FlutterTextRange rangeWithNSRange:fml::RangeForCharacterAtIndex(self.text, currentIndex)];
 }
 
+// Overall logic for floating cursor's "move" gesture and "selection" gesture:
+//
+// Floating cursor's "move" gesture takes 1 finger to force press the space bar, and then move the
+// cursor. The process starts with `beginFloatingCursorAtPoint`. When the finger is moved,
+// `updateFloatingCursorAtPoint` will be called. When the finger is released, `endFloatingCursor`
+// will be called. In all cases, we send the relative point to the framework, so that framework
+// can animate the floating cursor.
+//
+// Notice that during the move gesture, the framework only animate the cursor visually. It's only
+// after the gesture is complete, will the framework update the selection to the cursor's
+// new position (with zero selection length). This means during the animation, the selection
+// in framework and the engine can be temporarily out of sync. But it will be in sync again
+// after the animation is complete.
+//
+// Floating cursor's "selection" gesture also starts with 1 finger to force press the space bar,
+// so exactly the same functions as the "move gesture" discussed above will be called. When the
+// second finger is pressed, `setSelectedText` will be called, which indicates the beginning of
+// the selection gesture. (This mechanism requires `closestPositionFromPoint` to be implemented, so
+// that UIKit can determine the selected text range based on points.) When the selection is
+// completed (i.e. when both of the 2 fingers are released), similar to "move" gesture,
+// the `endFloatingCursor` will be called.
+//
+// Whenever a selection is updated, the engine sends the new selection to the framework. So unlike
+// the move gesture, the selections in the framework and the engine are always kept in sync.
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
   // For "beginFloatingCursorAtPoint" and "updateFloatingCursorAtPoint", "point" is roughly:
   //
