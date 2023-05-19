@@ -1132,9 +1132,6 @@ class ContextStateHandle {
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 class _SaveStackTracking {
-  // !Warning: this vector should not be mutated.
-  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
-
   final List<SaveStackEntry> _saveStack = <SaveStackEntry>[];
 
   /// The stack that maintains clipping operations used when text is painted
@@ -1193,7 +1190,7 @@ class _SaveStackTracking {
   /// Rotates the [currentTransform] matrix.
   @mustCallSuper
   void rotate(double radians) {
-    _currentTransform.rotate(_unitZ, radians);
+    _currentTransform.rotate(kUnitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.
