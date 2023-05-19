@@ -457,7 +457,6 @@ typedef struct {
 /// object.
 ///
 /// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback,
-/// \ref FlutterMetalRendererConfig.get_next_drawable_callback,
 /// and \ref FlutterVulkanRendererConfig.get_next_image_callback.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterFrameInfo).
@@ -674,9 +673,6 @@ typedef struct {
   FlutterMetalDeviceHandle device;
   /// Alias for id<MTLCommandQueue>.
   FlutterMetalCommandQueueHandle present_command_queue;
-  /// The callback that gets invoked when the engine requests the embedder for a
-  /// texture to render to.
-  FlutterMetalTextureCallback get_next_drawable_callback;
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
   /// that external texture details can be supplied to the engine for subsequent

@@ -463,11 +463,6 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
       metal_context.GetTestMetalContext()->GetMetalDevice();
   metal_renderer_config_.present_command_queue =
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
-  metal_renderer_config_.get_next_drawable_callback =
-      [](void* user_data, const FlutterFrameInfo* frame_info) {
-        return reinterpret_cast<EmbedderTestContextMetal*>(user_data)
-            ->GetNextDrawable(frame_info);
-      };
   metal_renderer_config_.external_texture_frame_callback =
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
          FlutterMetalExternalTexture* texture_out) -> bool {

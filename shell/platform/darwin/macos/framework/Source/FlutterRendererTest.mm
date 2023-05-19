@@ -69,11 +69,9 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
 
 TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   RendererTestViewController* viewController = CreateTestViewController();
-  FlutterEngine* engine = viewController.engine;
 
   id viewMock = OCMClassMock([FlutterView class]);
   [viewController loadMockFlutterView:viewMock];
-  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
 
   id surfaceManagerMock = OCMClassMock([FlutterSurfaceManager class]);
   OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
@@ -87,7 +85,6 @@ TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
 
   [[surfaceManagerMock expect] surfaceForSize:size];
-  [renderer createTextureForView:kFlutterDefaultViewId size:size];
   [surfaceManagerMock verify];
 }
 

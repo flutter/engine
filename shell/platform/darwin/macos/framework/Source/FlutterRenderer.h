@@ -36,11 +36,6 @@
 - (FlutterRendererConfig)createRendererConfig;
 
 /**
- * Creates a Metal texture for the given view with the given size.
- */
-- (FlutterMetalTexture)createTextureForView:(FlutterViewId)viewId size:(CGSize)size;
-
-/**
  * Populates the texture registry with the provided metalTexture.
  */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID

@@ -12,16 +12,6 @@
 
 #pragma mark - Static callbacks that require the engine.
 
-static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine,
-                                                           const FlutterFrameInfo* frameInfo) {
-  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
-  // operates on the default view. To support multi-view, we need a new callback
-  // that also receives a view ID, or pass the ID via FlutterFrameInfo.
-  FlutterViewId viewId = kFlutterDefaultViewId;
-  CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
-  return [engine.renderer createTextureForView:viewId size:size];
-}
-
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      int64_t textureIdentifier,
                                      size_t width,
@@ -67,24 +57,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .metal.struct_size = sizeof(FlutterMetalRendererConfig),
       .metal.device = (__bridge FlutterMetalDeviceHandle)_device,
       .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_commandQueue,
-      .metal.get_next_drawable_callback =
-          reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawableForDefaultView),
       .metal.external_texture_frame_callback =
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
   return config;
-}
-
-#pragma mark - Embedder callback implementations.
-
-- (FlutterMetalTexture)createTextureForView:(FlutterViewId)viewId size:(CGSize)size {
-  FlutterView* view = [_viewProvider viewForId:viewId];
-  NSAssert(view != nil, @"Can't create texture on a non-existent view 0x%llx.", viewId);
-  if (view == nil) {
-    // FlutterMetalTexture has texture `null`, therefore is discarded.
-    return FlutterMetalTexture{};
-  }
-  return [view.surfaceManager surfaceForSize:size].asFlutterMetalTexture;
 }
 
 #pragma mark - FlutterTextureRegistrar methods.

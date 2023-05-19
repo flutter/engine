@@ -163,10 +163,7 @@ static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
   bool command_queue =
       SAFE_ACCESS(metal_config, present_command_queue, nullptr);
 
-  bool get_texture =
-      SAFE_ACCESS(metal_config, get_next_drawable_callback, nullptr);
-
-  return device && command_queue && get_texture;
+  return device && command_queue;
 }
 
 static bool IsVulkanRendererConfigValid(const FlutterRendererConfig* config) {
