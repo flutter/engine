@@ -134,11 +134,6 @@ bool ShellTestPlatformViewMetal::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(const SkISize& frame_info) const {
-  return metal_context_->offscreen_texture_info();
-}
-
-// |GPUSurfaceMetalDelegate|
 bool ShellTestPlatformViewMetal::PresentTexture(GPUMTLTextureInfo texture) const {
   // The texture resides offscreen. There is nothing to render to.
   return true;

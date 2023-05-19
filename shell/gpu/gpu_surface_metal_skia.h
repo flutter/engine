@@ -31,12 +31,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   const MTLRenderTargetType render_target_type_;
   sk_sp<GrDirectContext> context_;
   GrDirectContext* precompiled_sksl_context_ = nullptr;
-  MsaaSampleCount msaa_samples_ = MsaaSampleCount::kNone;
-  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
-  // external view embedder may want to render to the root surface. This is a
-  // hack to make avoid allocating resources for the root surface when an
-  // external view embedder is present.
-  bool render_to_surface_ = true;
   bool disable_partial_repaint_ = false;
 
   // Accumulated damage for each framebuffer; Key is address of underlying
@@ -57,12 +51,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
 
   // |Surface|
   bool AllowsDrawingWhenGpuDisabled() const override;
-
-  std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
-      const SkISize& frame_info);
-
-  std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
-      const SkISize& frame_info);
 
   void PrecompileKnownSkSLsIfNecessary();
 

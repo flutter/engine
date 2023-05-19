@@ -77,12 +77,6 @@ class GPUSurfaceMetalDelegate {
   virtual bool PresentDrawable(GrMTLHandle drawable) const = 0;
 
   //------------------------------------------------------------------------------
-  /// @brief Returns the handle to the MTLTexture to render to. This is only
-  /// called when the specified render target type is `kMTLTexture`.
-  ///
-  virtual GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const = 0;
-
-  //------------------------------------------------------------------------------
   /// @brief Presents the texture with `texture_id` to the "screen".
   /// `texture_id` corresponds to a texture that has been obtained by an earlier
   /// call to `GetMTLTexture`. This is only called when the specified render
