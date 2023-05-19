@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
@@ -12,6 +13,8 @@ class DeviceHolder {
  public:
   virtual ~DeviceHolder() = default;
   virtual const vk::Device& GetDevice() const = 0;
+  virtual const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const = 0;
 };
 
 }  // namespace impeller
