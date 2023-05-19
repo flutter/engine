@@ -126,11 +126,5 @@ GPUCAMetalLayerHandle ShellTestPlatformViewMetal::GetCAMetalLayer(const SkISize&
   return nullptr;
 }
 
-// |GPUSurfaceMetalDelegate|
-bool ShellTestPlatformViewMetal::PresentTexture(GPUMTLTextureInfo texture) const {
-  // The texture resides offscreen. There is nothing to render to.
-  return true;
-}
-
 }  // namespace testing
 }  // namespace flutter

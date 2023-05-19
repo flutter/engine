@@ -56,9 +56,6 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_info) const override;
 
-  // |GPUSurfaceMetalDelegate|
-  bool PresentTexture(GPUMTLTextureInfo texture) const override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewMetal);
 };
 

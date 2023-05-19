@@ -68,16 +68,6 @@ class GPUSurfaceMetalDelegate {
       const SkISize& frame_info) const = 0;
 
   //------------------------------------------------------------------------------
-  /// @brief Presents the texture with `texture_id` to the "screen".
-  /// `texture_id` corresponds to a texture that has been obtained by an earlier
-  /// call to `GetMTLTexture`. This is only called when the specified render
-  /// target type is `kMTLTexture`.
-  ///
-  /// @see |GPUSurfaceMetalDelegate::GetMTLTexture|
-  ///
-  virtual bool PresentTexture(GPUMTLTextureInfo texture) const = 0;
-
-  //------------------------------------------------------------------------------
   /// @brief Whether to allow drawing to the surface when the GPU is disabled
   ///
   virtual bool AllowsDrawingWhenGpuDisabled() const;

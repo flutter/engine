@@ -53,9 +53,6 @@ class EmbedderSurfaceMetal final : public EmbedderSurface,
   GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_size) const override;
 
-  // |GPUSurfaceMetalDelegate|
-  bool PresentTexture(GPUMTLTextureInfo texture) const override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceMetal);
 };
 

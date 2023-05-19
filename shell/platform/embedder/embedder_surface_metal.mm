@@ -66,8 +66,4 @@ GPUCAMetalLayerHandle EmbedderSurfaceMetal::GetCAMetalLayer(const SkISize& frame
   return nullptr;
 }
 
-bool EmbedderSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
-  return metal_dispatch_table_.present(texture);
-}
-
 }  // namespace flutter
