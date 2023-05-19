@@ -230,7 +230,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
 }
 
 GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
-  return offscreen_context_->GetContext();
+  return offscreen_context_->GetContext().get();
 }
 
 SkMatrix ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
