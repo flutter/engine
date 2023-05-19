@@ -2655,7 +2655,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:newRect];
   FlutterClippingMaskView* view4 = [pool getMaskViewWithFrame:newRect];
   // view3 and view4 should randomly get either of view1 and view2.
-  XCTAssertEqual([NSSet setWithObjects:view1, view2], [NSSet setWithObjects:view3, view4]);
+  NSSet* set1 = [NSSet setWithObjects:view1, view2, nil];
+  NSSet* set2 = [NSSet setWithObjects:view3, view4, nil];
+  XCTAssertEqualObjects(set1, set2);
   XCTAssertTrue(CGRectEqualToRect(view3.frame, newRect));
   XCTAssertTrue(CGRectEqualToRect(view4.frame, newRect));
 }
