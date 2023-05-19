@@ -70,7 +70,7 @@ ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inpu
   final Float32List transformValues = inputGeometry.globalTransform;
   assert(transformValues.length == 16);
   final Matrix4 transform = Matrix4.fromFloat32List(transformValues);
-  final Vector3 transformedPoint = transform.perspectiveTransform(Vector3(event.offsetX, event.offsetY, 0));
+  final Vector3 transformedPoint = transform.perspectiveTransform(x: event.offsetX, y: event.offsetY, z: 0);
 
   return ui.Offset(transformedPoint.x, transformedPoint.y);
 }
