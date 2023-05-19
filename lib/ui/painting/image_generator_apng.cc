@@ -536,6 +536,13 @@ bool APNGImageGenerator::DemuxNextImageInternal() {
           SkCodecAnimation::DisposalMethod::kKeep) {
     // Mark the required frame as the previous frame in all cases.
     image->frame_info->required_frame = images_.size() - 1;
+  } else if (images_.size() > (first_frame_index_ + 1) &&
+      images_.back().frame_info->disposal_method ==
+          SkCodecAnimation::DisposalMethod::kRestorePrevious) {
+    // Mark the required frame as the last previous frame
+    // It is not valid if there are 2 or above frames set |disposal_method| to
+    // |kRestorePrevious|. But it also works in MultiFrameCodec.
+    image->frame_info->required_frame = images_.size() - 2;
   }
 
   // Calling SkCodec::getInfo at least once prior to decoding is mandatory.
