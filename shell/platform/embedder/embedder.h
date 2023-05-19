@@ -677,9 +677,6 @@ typedef struct {
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
   FlutterMetalTextureCallback get_next_drawable_callback;
-  /// The callback presented to the embedder to present a fully populated metal
-  /// texture to the user.
-  FlutterMetalPresentCallback present_drawable_callback;
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
   /// that external texture details can be supplied to the engine for subsequent

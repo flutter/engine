@@ -52,20 +52,11 @@ RendererTestViewController* CreateTestViewController() {
 
 TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   RendererTestViewController* viewController = CreateTestViewController();
-  FlutterEngine* engine = viewController.engine;
-
   id viewMock = OCMClassMock([FlutterView class]);
   [viewController loadMockFlutterView:viewMock];
-  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
 
   id surfaceManagerMock = OCMClassMock([FlutterSurfaceManager class]);
   OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
-
-  id surfaceMock = OCMClassMock([FlutterSurface class]);
-
-  FlutterMetalTexture texture = {
-      .user_data = (__bridge void*)surfaceMock,
-  };
 
   [[surfaceManagerMock expect] present:[OCMArg checkWithBlock:^(id obj) {
                                  NSArray* array = (NSArray*)obj;
@@ -73,7 +64,6 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
                                }]
                                 notify:nil];
 
-  [renderer present:kFlutterDefaultViewId texture:&texture];
   [surfaceManagerMock verify];
 }
 

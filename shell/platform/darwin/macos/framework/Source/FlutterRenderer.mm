@@ -22,15 +22,6 @@ static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine
   return [engine.renderer createTextureForView:viewId size:size];
 }
 
-static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
-                                           const FlutterMetalTexture* texture) {
-  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
-  // operates on the default view. To support multi-view, we need a new callback
-  // that also receives a view ID.
-  FlutterViewId viewId = kFlutterDefaultViewId;
-  return [engine.renderer present:viewId texture:texture];
-}
-
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      int64_t textureIdentifier,
                                      size_t width,
@@ -78,8 +69,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_commandQueue,
       .metal.get_next_drawable_callback =
           reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawableForDefaultView),
-      .metal.present_drawable_callback =
-          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawableOfDefaultView),
       .metal.external_texture_frame_callback =
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
@@ -96,21 +85,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return FlutterMetalTexture{};
   }
   return [view.surfaceManager surfaceForSize:size].asFlutterMetalTexture;
-}
-
-- (BOOL)present:(FlutterViewId)viewId texture:(const FlutterMetalTexture*)texture {
-  FlutterView* view = [_viewProvider viewForId:viewId];
-  if (view == nil) {
-    return NO;
-  }
-  FlutterSurface* surface = [FlutterSurface fromFlutterMetalTexture:texture];
-  if (surface == nil) {
-    return NO;
-  }
-  FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
-  info.surface = surface;
-  [view.surfaceManager present:@[ info ] notify:nil];
-  return YES;
 }
 
 #pragma mark - FlutterTextureRegistrar methods.
