@@ -211,6 +211,10 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                     id<MTLComputeCommandEncoder> encoder,
                                     const ISize& grid_size,
                                     const ISize& thread_group_size) const {
+  if (grid_size.width == 0 || grid_size.height == 0) {
+    return true;
+  }
+
   ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };

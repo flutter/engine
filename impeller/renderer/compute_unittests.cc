@@ -302,7 +302,7 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
 
   static constexpr size_t kCount = 5;
 
-  // Intentionally making the grid size obscenely large. No GPU will tolerate
+  // Intentionally making the grid size zero in one dimension. No GPU will tolerate
   // this.
   pass->SetGridSize(ISize(0, 1));
   pass->SetThreadGroupSize(ISize(0, 1));
