@@ -163,7 +163,6 @@ class ImageFilterOperation implements LayerOperation {
     }
     final ui.Rect adjustedContentRect =
       (filter as SceneImageFilter).filterBounds(contentRect);
-    print('contentRect: $adjustedContentRect');
     canvas.saveLayer(adjustedContentRect, ui.Paint()..imageFilter = filter);
   }
 
