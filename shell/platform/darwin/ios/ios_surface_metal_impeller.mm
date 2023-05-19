@@ -65,27 +65,6 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
 }
 
 // |GPUSurfaceMetalDelegate|
-bool IOSSurfaceMetalImpeller::PresentDrawable(GrMTLHandle drawable) const {
-  FML_DCHECK(false);
-  return false;
-}
-
-// |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const SkISize& frame_info) const {
-  FML_CHECK(false);
-  return GPUMTLTextureInfo{
-      .texture_id = -1,   //
-      .texture = nullptr  //
-  };
-}
-
-// |GPUSurfaceMetalDelegate|
-bool IOSSurfaceMetalImpeller::PresentTexture(GPUMTLTextureInfo texture) const {
-  FML_CHECK(false);
-  return false;
-}
-
-// |GPUSurfaceMetalDelegate|
 bool IOSSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }

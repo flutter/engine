@@ -42,15 +42,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
   GPUCAMetalLayerHandle GetCAMetalLayer(const SkISize& frame_info) const override;
 
   // |GPUSurfaceMetalDelegate|
-  bool PresentDrawable(GrMTLHandle drawable) const override;
-
-  // |GPUSurfaceMetalDelegate|
-  GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const override;
-
-  // |GPUSurfaceMetalDelegate|
-  bool PresentTexture(GPUMTLTextureInfo texture) const override;
-
-  // |GPUSurfaceMetalDelegate|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetalSkia);
