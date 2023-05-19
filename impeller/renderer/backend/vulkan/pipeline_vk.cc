@@ -6,13 +6,15 @@
 
 namespace impeller {
 
-PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
+PipelineVK::PipelineVK(std::weak_ptr<DeviceHolder> device_holder,
+                       std::weak_ptr<PipelineLibrary> library,
                        const PipelineDescriptor& desc,
                        vk::UniquePipeline pipeline,
                        vk::UniqueRenderPass render_pass,
                        vk::UniquePipelineLayout layout,
                        vk::UniqueDescriptorSetLayout descriptor_set_layout)
     : Pipeline(std::move(library), desc),
+      device_holder_(device_holder),
       pipeline_(std::move(pipeline)),
       render_pass_(std::move(render_pass)),
       layout_(std::move(layout)),
@@ -21,7 +23,13 @@ PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
 }
 
 PipelineVK::~PipelineVK() {
-  if (!IsPipelineLive()) {
+  std::shared_ptr<DeviceHolder> device_holder = device_holder_.lock();
+  if (device_holder) {
+    descriptor_set_layout_.reset();
+    layout_.reset();
+    render_pass_.reset();
+    pipeline_.reset();
+  } else {
     descriptor_set_layout_.release();
     layout_.release();
     render_pass_.release();

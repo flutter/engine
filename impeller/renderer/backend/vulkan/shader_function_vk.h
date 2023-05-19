@@ -26,9 +26,9 @@ class ShaderFunctionVK final
   friend class ShaderLibraryVK;
 
   vk::UniqueShaderModule module_;
-  std::weak_ptr<DeviceHolder> device_;
+  std::weak_ptr<DeviceHolder> device_holder_;
 
-  ShaderFunctionVK(const std::weak_ptr<DeviceHolder>& device,
+  ShaderFunctionVK(const std::weak_ptr<DeviceHolder>& device_holder,
                    UniqueID parent_library_id,
                    std::string name,
                    ShaderStage stage,

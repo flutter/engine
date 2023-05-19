@@ -6,17 +6,21 @@
 
 namespace impeller {
 
-ShaderFunctionVK::ShaderFunctionVK(const std::weak_ptr<DeviceHolder>& device,
-                                   UniqueID parent_library_id,
-                                   std::string name,
-                                   ShaderStage stage,
-                                   vk::UniqueShaderModule module)
+ShaderFunctionVK::ShaderFunctionVK(
+    const std::weak_ptr<DeviceHolder>& device_holder,
+    UniqueID parent_library_id,
+    std::string name,
+    ShaderStage stage,
+    vk::UniqueShaderModule module)
     : ShaderFunction(parent_library_id, std::move(name), stage),
       module_(std::move(module)),
-      device_(device) {}
+      device_holder_(device_holder) {}
 
 ShaderFunctionVK::~ShaderFunctionVK() {
-  if (!device_.lock()) {
+  std::shared_ptr<DeviceHolder> device_holder = device_holder_.lock();
+  if (device_holder) {
+    module_.reset();
+  } else {
     module_.release();
   }
 }

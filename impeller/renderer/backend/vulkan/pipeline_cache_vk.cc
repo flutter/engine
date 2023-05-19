@@ -107,7 +107,10 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
 }
 
 PipelineCacheVK::~PipelineCacheVK() {
-  if (!device_holder_.lock()) {
+  std::shared_ptr<DeviceHolder> device_holder = device_holder_.lock();
+  if (device_holder) {
+    cache_.reset();
+  } else {
     cache_.release();
   }
 }

@@ -332,7 +332,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   ContextVK::SetDebugName(strong_device->GetDevice(), *pipeline,
                           "Pipeline " + desc.GetLabel());
 
-  return std::make_unique<PipelineVK>(weak_from_this(),                  //
+  return std::make_unique<PipelineVK>(device_holder_,
+                                      weak_from_this(),                  //
                                       desc,                              //
                                       std::move(pipeline),               //
                                       std::move(render_pass),            //
