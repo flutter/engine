@@ -22,14 +22,15 @@ PipelineLibraryVK::PipelineLibraryVK(
     const std::weak_ptr<DeviceHolder>& device_holder,
     const vk::Device& device,
     std::shared_ptr<const Capabilities> caps,
-    fml::UniqueFD cache_directory)
+    fml::UniqueFD cache_directory,
+    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
     : device_holder_(device_holder),
-      pso_cache_(
-          std::make_shared<PipelineCacheVK>(std::move(caps),
-                                            device_holder,
-                                            device,
-                                            std::move(cache_directory))) {
-  if (!pso_cache_->IsValid()) {
+      pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
+                                                   device_holder,
+                                                   device,
+                                                   std::move(cache_directory))),
+      worker_task_runner_(std::move(worker_task_runner)) {
+  if (!pso_cache_->IsValid() || !worker_task_runner_) {
     return;
   }
 
@@ -362,20 +363,9 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
       PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
   pipelines_[descriptor] = pipeline_future;
 
-  auto device_holder = device_holder_.lock();
-  if (!device_holder) {
-    VALIDATION_LOG
-        << "Pipeine library was requested after the context was collected.";
-    return {
-        descriptor,
-        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
-  }
-
   auto weak_this = weak_from_this();
 
-  device_holder->GetConcurrentWorkerTaskRunner()->PostTask([descriptor,
-                                                            weak_this,
-                                                            promise]() {
+  worker_task_runner_->PostTask([descriptor, weak_this, promise]() {
     auto thiz = weak_this.lock();
     if (!thiz) {
       promise->set_value(nullptr);
@@ -424,11 +414,7 @@ void PipelineLibraryVK::DidAcquireSurfaceFrame() {
 }
 
 void PipelineLibraryVK::PersistPipelineCacheToDisk() {
-  auto device_holder = device_holder_.lock();
-  if (!device_holder) {
-    return;
-  }
-  device_holder->GetConcurrentWorkerTaskRunner()->PostTask(
+  worker_task_runner_->PostTask(
       [weak_cache = decltype(pso_cache_)::weak_type(pso_cache_)]() {
         auto cache = weak_cache.lock();
         if (!cache) {

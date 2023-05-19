@@ -1,5 +1,6 @@
 #include <memory>
 
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
 #include "gmock/gmock.h"
@@ -18,8 +19,12 @@ TEST(AndroidContextVulkanImpeller, DoesNotCreateOwnMessageLoop) {
       context->GetImpellerContext());
   ASSERT_TRUE(impeller_context);
 
-  impeller_context->GetConcurrentWorkerTaskRunner()->PostTask(
-      [loop]() { ASSERT_TRUE(loop->RunsTasksOnCurrentThread()); });
+  fml::AutoResetWaitableEvent latch;
+  impeller_context->GetConcurrentWorkerTaskRunner()->PostTask([loop, &latch]() {
+    ASSERT_TRUE(loop->RunsTasksOnCurrentThread());
+    latch.Signal();
+  });
+  latch.Wait();
 }
 
 }  // namespace testing

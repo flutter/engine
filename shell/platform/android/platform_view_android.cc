@@ -70,7 +70,7 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     uint8_t msaa_samples,
     bool enable_impeller,
     bool enable_vulkan_validation) {
@@ -98,7 +98,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool use_software_rendering,
     uint8_t msaa_samples)
@@ -109,7 +109,7 @@ PlatformViewAndroid::PlatformViewAndroid(
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
-              std::move(worker_task_runner),
+              worker_task_runner,
               msaa_samples,
               delegate.OnPlatformViewGetSettings().enable_impeller,
               delegate.OnPlatformViewGetSettings().enable_vulkan_validation)) {}

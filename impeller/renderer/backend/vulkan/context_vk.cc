@@ -307,10 +307,11 @@ void ContextVK::Setup(Settings settings) {
   /// Setup the pipeline library.
   ///
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
-      new PipelineLibraryVK(weak_from_this(),                    //
-                            device.get(),                        //
-                            caps,                                //
-                            std::move(settings.cache_directory)  //
+      new PipelineLibraryVK(weak_from_this(),                     //
+                            device.get(),                         //
+                            caps,                                 //
+                            std::move(settings.cache_directory),  //
+                            worker_task_runner_                   //
                             ));
 
   if (!pipeline_library->IsValid()) {

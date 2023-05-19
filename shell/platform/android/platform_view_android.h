@@ -45,7 +45,7 @@ class PlatformViewAndroid final : public PlatformView {
   PlatformViewAndroid(
       PlatformView::Delegate& delegate,
       const flutter::TaskRunners& task_runners,
-      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
       bool use_software_rendering,
       uint8_t msaa_samples);

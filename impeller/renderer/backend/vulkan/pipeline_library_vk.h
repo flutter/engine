@@ -36,15 +36,18 @@ class PipelineLibraryVK final
 
   std::weak_ptr<DeviceHolder> device_holder_;
   std::shared_ptr<PipelineCacheVK> pso_cache_;
+  std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   Mutex pipelines_mutex_;
   PipelineMap pipelines_ IPLR_GUARDED_BY(pipelines_mutex_);
   std::atomic_size_t frames_acquired_ = 0u;
   bool is_valid_ = false;
 
-  PipelineLibraryVK(const std::weak_ptr<DeviceHolder>& device_holder,
-                    const vk::Device& device,
-                    std::shared_ptr<const Capabilities> caps,
-                    fml::UniqueFD cache_directory);
+  PipelineLibraryVK(
+      const std::weak_ptr<DeviceHolder>& device_holder,
+      const vk::Device& device,
+      std::shared_ptr<const Capabilities> caps,
+      fml::UniqueFD cache_directory,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
 
   // |PipelineLibrary|
   bool IsValid() const override;
