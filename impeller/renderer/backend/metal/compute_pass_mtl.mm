@@ -246,9 +246,6 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     // TODO(dnfield): use feature detection to support non-uniform threadgroup
     // sizes.
     // https://github.com/flutter/flutter/issues/110619
-
-    // For now, check that the sizes are uniform.
-    // FML_DCHECK(grid_size == thread_group_size);
     auto width = grid_size.width;
     auto height = grid_size.height;
 
