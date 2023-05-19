@@ -70,7 +70,8 @@ static DlImageSampling kNearestSampling = DlImageSampling::kNearestNeighbor;
 static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
 
 static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(w, h));
   SkCanvas* canvas = surface->getCanvas();
   SkPaint p0, p1;
   p0.setStyle(SkPaint::kFill_Style);
@@ -90,7 +91,7 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
 
 static auto TestImage1 = MakeTestImage(40, 40, 5);
 static auto TestImage2 = MakeTestImage(50, 50, 5);
-static auto TestSkImage = MakeTestImage(30, 30, 5) -> skia_image();
+static auto TestSkImage = MakeTestImage(30, 30, 5)->skia_image();
 
 static const DlImageColorSource kTestSource1(TestImage1,
                                              DlTileMode::kClamp,

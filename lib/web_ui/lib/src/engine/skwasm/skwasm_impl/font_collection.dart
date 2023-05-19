@@ -69,7 +69,6 @@ class SkwasmFontCollection implements FlutterFontCollection {
   @override
   Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
     final List<Future<void>> fontFutures = <Future<void>>[];
-    final List<String> loadedFonts = <String>[];
     final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
 
     /// We need a default fallback font for Skwasm, in order to avoid crashing
@@ -81,13 +80,13 @@ class SkwasmFontCollection implements FlutterFontCollection {
       );
     }
 
+    final List<String> loadedFonts = <String>[];
     for (final FontFamily family in manifest.families) {
       for (final FontAsset fontAsset in family.fontAssets) {
+        loadedFonts.add(fontAsset.asset);
         fontFutures.add(() async {
           final FontLoadError? error = await _downloadFontAsset(fontAsset, family.name);
-          if (error == null) {
-            loadedFonts.add(fontAsset.asset);
-          } else {
+          if (error != null) {
             fontFailures[fontAsset.asset] = error;
           }
         }());
@@ -95,6 +94,8 @@ class SkwasmFontCollection implements FlutterFontCollection {
     }
 
     await Future.wait(fontFutures);
+
+    loadedFonts.removeWhere((String assetName) => fontFailures.containsKey(assetName));
     return AssetFontsResult(loadedFonts, fontFailures);
   }
 
@@ -109,15 +110,15 @@ class SkwasmFontCollection implements FlutterFontCollection {
       return FontNotFoundError(assetManager.getAssetUrl(asset.asset));
     }
     int length = 0;
-    final List<JSUint8Array1> chunks = <JSUint8Array1>[];
-    await response.read((JSUint8Array1 chunk) {
+    final List<JSUint8Array> chunks = <JSUint8Array>[];
+    await response.read((JSUint8Array chunk) {
       length += chunk.length.toDart.toInt();
       chunks.add(chunk);
     });
     final SkDataHandle fontData = skDataCreate(length);
     int dataAddress = skDataGetPointer(fontData).cast<Int8>().address;
-    final JSUint8Array1 wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
-    for (final JSUint8Array1 chunk in chunks) {
+    final JSUint8Array wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
+    for (final JSUint8Array chunk in chunks) {
       wasmMemory.set(chunk, dataAddress.toJS);
       dataAddress += chunk.length.toDart.toInt();
     }
@@ -137,15 +138,15 @@ class SkwasmFontCollection implements FlutterFontCollection {
   Future<bool> loadFontFromUrl(String familyName, String url) async {
     final HttpFetchResponse response = await httpFetch(url);
     int length = 0;
-    final List<JSUint8Array1> chunks = <JSUint8Array1>[];
-    await response.read((JSUint8Array1 chunk) {
+    final List<JSUint8Array> chunks = <JSUint8Array>[];
+    await response.read((JSUint8Array chunk) {
       length += chunk.length.toDart.toInt();
       chunks.add(chunk);
     });
     final SkDataHandle fontData = skDataCreate(length);
     int dataAddress = skDataGetPointer(fontData).cast<Int8>().address;
-    final JSUint8Array1 wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
-    for (final JSUint8Array1 chunk in chunks) {
+    final JSUint8Array wasmMemory = createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer);
+    for (final JSUint8Array chunk in chunks) {
       wasmMemory.set(chunk, dataAddress.toJS);
       dataAddress += chunk.length.toDart.toInt();
     }
@@ -187,8 +188,9 @@ class SkwasmFontCollection implements FlutterFontCollection {
 
   @override
   void debugResetFallbackFonts() {
-    setDefaultFontFamilies(<String>[]);
+    setDefaultFontFamilies(<String>['Roboto']);
     fontFallbackManager = FontFallbackManager(SkwasmFallbackRegistry(this));
+    fontCollectionClearCaches(handle);
   }
 }
 

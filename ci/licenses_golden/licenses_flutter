@@ -1977,6 +1977,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics.dart + ../../../flu
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/dialog.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/focusable.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/image.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/incrementable.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/label_and_value.dart + ../../../flutter/LICENSE
@@ -2006,6 +2007,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/picture.da
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_geometry.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_image.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_memory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_paint.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path.dart + ../../../flutter/LICENSE
@@ -2067,7 +2069,8 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/text.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/tile_mode.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/url_strategy.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/window.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/canvas.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp + ../../../flutter/LICENSE
@@ -2075,6 +2078,7 @@ ORIGIN: ../../../flutter/lib/web_ui/skwasm/data.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/export.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/fonts.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/helpers.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/image.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/paint.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/path.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/picture.cpp + ../../../flutter/LICENSE
@@ -2224,6 +2228,8 @@ ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc +
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/android_context_vulkan_impeller.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/android_context_vulkan_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_display.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_display.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_egl_surface.cc + ../../../flutter/LICENSE
@@ -2332,6 +2338,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/rend
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyboardChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java + ../../../flutter/LICENSE
@@ -2365,6 +2372,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/Listen
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/SpellCheckPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextEditingDelta.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/keyboard/KeyboardPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java + ../../../flutter/LICENSE
@@ -4592,6 +4600,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/dialog.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/focusable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/incrementable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/label_and_value.dart
@@ -4621,6 +4630,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_geometry.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_memory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_paint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path.dart
@@ -4682,7 +4692,8 @@ FILE: ../../../flutter/lib/web_ui/lib/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart
-FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/url_strategy.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/window.dart
 FILE: ../../../flutter/lib/web_ui/skwasm/canvas.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp
@@ -4690,6 +4701,7 @@ FILE: ../../../flutter/lib/web_ui/skwasm/data.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/export.h
 FILE: ../../../flutter/lib/web_ui/skwasm/fonts.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/helpers.h
+FILE: ../../../flutter/lib/web_ui/skwasm/image.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/paint.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/path.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/picture.cpp
@@ -4839,6 +4851,8 @@ FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_skia.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl_skia.h
+FILE: ../../../flutter/shell/platform/android/android_context_vulkan_impeller.cc
+FILE: ../../../flutter/shell/platform/android/android_context_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/android_display.cc
 FILE: ../../../flutter/shell/platform/android/android_display.h
 FILE: ../../../flutter/shell/platform/android/android_egl_surface.cc
@@ -4951,6 +4965,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/render
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyboardChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java
@@ -4987,6 +5002,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/Listenab
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/SpellCheckPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextEditingDelta.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/keyboard/KeyboardPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
