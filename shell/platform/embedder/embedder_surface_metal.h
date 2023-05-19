@@ -54,9 +54,6 @@ class EmbedderSurfaceMetal final : public EmbedderSurface,
       const SkISize& frame_size) const override;
 
   // |GPUSurfaceMetalDelegate|
-  bool PresentDrawable(GrMTLHandle drawable) const override;
-
-  // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceMetal);

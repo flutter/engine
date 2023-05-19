@@ -66,11 +66,6 @@ GPUCAMetalLayerHandle EmbedderSurfaceMetal::GetCAMetalLayer(const SkISize& frame
   return nullptr;
 }
 
-bool EmbedderSurfaceMetal::PresentDrawable(GrMTLHandle drawable) const {
-  FML_CHECK(false) << "Only rendering to MTLTexture is supported.";
-  return false;
-}
-
 bool EmbedderSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
   return metal_dispatch_table_.present(texture);
 }

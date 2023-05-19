@@ -68,15 +68,6 @@ class GPUSurfaceMetalDelegate {
       const SkISize& frame_info) const = 0;
 
   //------------------------------------------------------------------------------
-  /// @brief Presents the drawable to the "screen". The drawable is obtained
-  /// from the CAMetalLayer that given by `GetCAMetalLayer` call. This is only
-  /// called when the specified render target type in `kCAMetalLayer`.
-  ///
-  /// @see |GPUSurfaceMetalDelegate::GetCAMetalLayer|
-  ///
-  virtual bool PresentDrawable(GrMTLHandle drawable) const = 0;
-
-  //------------------------------------------------------------------------------
   /// @brief Presents the texture with `texture_id` to the "screen".
   /// `texture_id` corresponds to a texture that has been obtained by an earlier
   /// call to `GetMTLTexture`. This is only called when the specified render

@@ -127,13 +127,6 @@ GPUCAMetalLayerHandle ShellTestPlatformViewMetal::GetCAMetalLayer(const SkISize&
 }
 
 // |GPUSurfaceMetalDelegate|
-bool ShellTestPlatformViewMetal::PresentDrawable(GrMTLHandle drawable) const {
-  FML_CHECK(false) << "A Metal Delegate configured with MTLRenderTargetType::kMTLTexture was asked "
-                      "to present a layer drawable.";
-  return true;
-}
-
-// |GPUSurfaceMetalDelegate|
 bool ShellTestPlatformViewMetal::PresentTexture(GPUMTLTextureInfo texture) const {
   // The texture resides offscreen. There is nothing to render to.
   return true;

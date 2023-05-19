@@ -57,9 +57,6 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
       const SkISize& frame_info) const override;
 
   // |GPUSurfaceMetalDelegate|
-  bool PresentDrawable(GrMTLHandle drawable) const override;
-
-  // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewMetal);
