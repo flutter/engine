@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "flutter/fml/concurrent_message_loop.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
