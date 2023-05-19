@@ -1685,6 +1685,10 @@ class FrameTiming {
 /// transitioning between states which are supported, so that all
 /// implementations share the same state machine.
 ///
+/// The initial value for the state is the [detached] state, updated to the
+/// current state (usually [resumed]) as soon as the first lifecycle update is
+/// received from the platform.
+///
 /// For historical and name collision reasons, Flutter's application state names
 /// do not correspond one to one with the state names on all platforms. On
 /// Android, for instance, when the OS calls
@@ -1709,13 +1713,19 @@ class FrameTiming {
 ///
 /// See also:
 ///
-/// * [AppLifecycleListener], an object used observe the lifecycle state
-///   that provides state transition callbacks.
+/// * [AppLifecycleListener], an object used observe the lifecycle state that
+///   provides state transition callbacks.
 /// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
 ///   from the widgets layer.
-/// * iOS's [IOKit activity lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc) documentation.
-/// * Android's [activity lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle) documentation.
-/// * macOS's [AppKit activity lifecycle](https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc) documentation.
+/// * iOS's [IOKit activity
+///   lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc)
+///   documentation.
+/// * Android's [activity
+///   lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle)
+///   documentation.
+/// * macOS's [AppKit activity
+///   lifecycle](https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc)
+///   documentation.
 enum AppLifecycleState {
   /// The application is still hosted by a Flutter engine but is detached from
   /// any host views.
