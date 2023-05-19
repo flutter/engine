@@ -29,26 +29,6 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-namespace {
-template <typename T>
-class scoped_ivar_reset {
- public:
-  scoped_ivar_reset(T* addr, T&& value) : addr_(addr) {
-    *addr_ = std::move(value);
-  }
-  ~scoped_ivar_reset() {
-    if (addr_) {
-      addr_->reset();
-    }
-  }
-  void release() { addr_ = nullptr; }
-  const typename T::element_type& get() const { return addr_->get(); }
-
- private:
-  T* addr_;
-};
-}  // namespace
-
 namespace impeller {
 
 // TODO(csg): Fix this after caps are reworked.
@@ -298,8 +278,9 @@ void ContextVK::Setup(Settings settings) {
     VALIDATION_LOG << "Could not create logical device.";
     return;
   }
-  scoped_ivar_reset<vk::UniqueDevice> device(&device_,
-                                             std::move(device_result.value));
+  device_ = std::move(device_result.value);
+  std::unique_ptr<vk::UniqueDevice, std::function<void(vk::UniqueDevice*)>>
+      device_resetter(&device_, [](vk::UniqueDevice* ptr) { ptr->reset(); });
 
   if (!caps->SetDevice(physical_device.value())) {
     VALIDATION_LOG << "Capabilities could not be updated.";
@@ -313,7 +294,7 @@ void ContextVK::Setup(Settings settings) {
       weak_from_this(),                  //
       application_info.apiVersion,       //
       physical_device.value(),           //
-      device.get(),                      //
+      device_.get(),                     //
       instance.value.get(),              //
       dispatcher.vkGetInstanceProcAddr,  //
       dispatcher.vkGetDeviceProcAddr     //
@@ -340,7 +321,7 @@ void ContextVK::Setup(Settings settings) {
   }
 
   auto sampler_library =
-      std::shared_ptr<SamplerLibraryVK>(new SamplerLibraryVK(device.get()));
+      std::shared_ptr<SamplerLibraryVK>(new SamplerLibraryVK(device_.get()));
 
   auto shader_library = std::shared_ptr<ShaderLibraryVK>(
       new ShaderLibraryVK(weak_from_this(),                //
@@ -356,7 +337,7 @@ void ContextVK::Setup(Settings settings) {
   /// Create the fence waiter.
   ///
   auto fence_waiter =
-      std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device.get()));
+      std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device_.get()));
   if (!fence_waiter->IsValid()) {
     VALIDATION_LOG << "Could not create fence waiter.";
     return;
@@ -365,7 +346,7 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
-  QueuesVK queues(device.get(),            //
+  QueuesVK queues(device_.get(),           //
                   graphics_queue.value(),  //
                   compute_queue.value(),   //
                   transfer_queue.value()   //
@@ -385,7 +366,7 @@ void ContextVK::Setup(Settings settings) {
   instance_ = std::move(instance.value);
   debug_report_ = std::move(debug_report);
   physical_device_ = physical_device.value();
-  device.release();  // Stop automatic reset of device_ ivar.
+  device_resetter.release();
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
