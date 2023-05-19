@@ -94,6 +94,8 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     SkMatrix GetRootTransformation() const override;
 
    private:
+    GrDirectContext* GetContext();
+
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder_;
     std::shared_ptr<OffScreenContext> offscreen_context_;

@@ -204,7 +204,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
-  return offscreen_context_->GetContext();
+  return GetContext();
 }
 
 std::unique_ptr<SurfaceFrame>
@@ -227,6 +227,10 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
                                         std::move(callback),
                                         /*frame_size=*/SkISize::Make(800, 600));
+}
+
+GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
+  return offscreen_context_->GetContext();
 }
 
 SkMatrix ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()

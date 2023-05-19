@@ -833,7 +833,7 @@ TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
       SendWindowMetricsEvent, ([&updated, &original_set_viewport_metrics](
                                    auto engine, int64_t view_id, auto* window_metrics) {
         updated = YES;
-        return original_set_viewport_metrics(engine, window_metrics);
+        return original_set_viewport_metrics(engine, view_id, window_metrics);
       }));
 
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
