@@ -159,7 +159,7 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
             reinterpret_cast<CS::OutputData<kCount>*>(view.contents);
         EXPECT_TRUE(output);
 
-        constexpr uint32_t expected[kCount + 1] = {0, 1, 3, 6, 10, 15};
+        constexpr uint32_t expected[kCount] = {1, 3, 6, 10, 15};
         for (size_t i = 0; i < kCount; i++) {
           auto computed_sum = output->data[i];
           EXPECT_EQ(computed_sum, expected[i]);

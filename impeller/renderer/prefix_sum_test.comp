@@ -26,16 +26,18 @@ shared uint memory[BLOCK_SIZE];
 void main() {
   uint ident = gl_GlobalInvocationID.x;
 
+  uint value = 0;
   if (ident < input_data.count) {
-    memory[ident] = input_data.data[ident];
-  } else {
-    memory[ident] = 0;
+    value = input_data.data[ident];
   }
+
+  memory[ident] = value;
   barrier();
 
-  PrefixSum(ident, memory, BLOCK_SIZE);
+  ExclusivePrefixSum(ident, memory, BLOCK_SIZE);
 
   if (ident < input_data.count) {
-    output_data.data[ident] = memory[ident];
+    // Convert exclusive to inclusive sum.
+    output_data.data[ident] = memory[ident] + value;
   }
 }
