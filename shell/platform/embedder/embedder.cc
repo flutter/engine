@@ -458,39 +458,6 @@ InferMetalPlatformViewCreationCallback(
   }
 
 #ifdef SHELL_ENABLE_METAL
-  std::function<bool(flutter::GPUMTLTextureInfo texture)> metal_present =
-      [ptr = config->metal.present_drawable_callback,
-       user_data](flutter::GPUMTLTextureInfo texture) {
-        FlutterMetalTexture embedder_texture;
-        embedder_texture.struct_size = sizeof(FlutterMetalTexture);
-        embedder_texture.texture = texture.texture;
-        embedder_texture.texture_id = texture.texture_id;
-        embedder_texture.user_data = texture.destruction_context;
-        embedder_texture.destruction_callback = texture.destruction_callback;
-        return ptr(user_data, &embedder_texture);
-      };
-  auto metal_get_texture =
-      [ptr = config->metal.get_next_drawable_callback,
-       user_data](const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
-    FlutterFrameInfo frame_info = {};
-    frame_info.struct_size = sizeof(FlutterFrameInfo);
-    frame_info.size = {static_cast<uint32_t>(frame_size.width()),
-                       static_cast<uint32_t>(frame_size.height())};
-    flutter::GPUMTLTextureInfo texture_info;
-
-    FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
-    texture_info.texture_id = metal_texture.texture_id;
-    texture_info.texture = metal_texture.texture;
-    texture_info.destruction_callback = metal_texture.destruction_callback;
-    texture_info.destruction_context = metal_texture.user_data;
-    return texture_info;
-  };
-
-  flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
-      .present = metal_present,
-      .get_texture = metal_get_texture,
-  };
-
   std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
       std::move(external_view_embedder);
 
@@ -499,7 +466,7 @@ InferMetalPlatformViewCreationCallback(
           const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
           const_cast<flutter::GPUMTLCommandQueueHandle>(
               config->metal.present_command_queue),
-          metal_dispatch_table, view_embedder);
+          view_embedder);
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)

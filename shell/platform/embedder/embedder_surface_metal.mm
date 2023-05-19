@@ -17,10 +17,8 @@ namespace flutter {
 EmbedderSurfaceMetal::EmbedderSurfaceMetal(
     GPUMTLDeviceHandle device,
     GPUMTLCommandQueueHandle command_queue,
-    MetalDispatchTable metal_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
-      metal_dispatch_table_(std::move(metal_dispatch_table)),
       external_view_embedder_(std::move(external_view_embedder)) {
   main_context_ =
       [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device

@@ -18,23 +18,15 @@ namespace flutter {
 class EmbedderSurfaceMetal final : public EmbedderSurface,
                                    public GPUSurfaceMetalDelegate {
  public:
-  struct MetalDispatchTable {
-    std::function<bool(GPUMTLTextureInfo texture)> present;  // required
-    std::function<GPUMTLTextureInfo(const SkISize& frame_size)>
-        get_texture;  // required
-  };
-
   EmbedderSurfaceMetal(
       GPUMTLDeviceHandle device,
       GPUMTLCommandQueueHandle command_queue,
-      MetalDispatchTable dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceMetal() override;
 
  private:
   bool valid_ = false;
-  MetalDispatchTable metal_dispatch_table_;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   sk_sp<SkSurface> surface_;
   sk_sp<GrDirectContext> main_context_;
