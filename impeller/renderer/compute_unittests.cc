@@ -170,13 +170,12 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
   latch.Wait();
 }
 
-TEST_P(ComputeTest, CanComputePrefixSumLarge) {
+TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
   using CS = PrefixSumTestComputeShader;
 
   auto context = GetContext();
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
-
 
   auto callback = [&](RenderPass& render_pass) -> bool {
     using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
