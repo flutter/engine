@@ -279,6 +279,8 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
   device_ = std::move(device_result.value);
+  // This makes sure that the device is deleted at the proper time if there is
+  // an error.
   std::unique_ptr<vk::UniqueDevice, std::function<void(vk::UniqueDevice*)>>
       device_resetter(&device_, [](vk::UniqueDevice* ptr) { ptr->reset(); });
 
