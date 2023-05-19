@@ -66,8 +66,6 @@ class Pipeline {
  protected:
   Pipeline(std::weak_ptr<PipelineLibrary> library, T desc);
 
-  bool IsPipelineLive() const { return static_cast<bool>(library_.lock()); }
-
  private:
   const std::weak_ptr<PipelineLibrary> library_;
   const T desc_;
