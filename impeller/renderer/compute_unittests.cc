@@ -170,6 +170,52 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
   latch.Wait();
 }
 
+TEST_P(ComputeTest, CanComputePrefixSumLarge) {
+  using CS = PrefixSumTestComputeShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+
+
+  auto callback = [&](RenderPass& render_pass) -> bool {
+    using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+    auto pipeline_desc =
+        SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+    auto compute_pipeline =
+        context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+
+    auto cmd_buffer = context->CreateCommandBuffer();
+    auto pass = cmd_buffer->CreateComputePass();
+
+    static constexpr size_t kCount = 1023;
+
+    pass->SetGridSize(ISize(kCount, 1));
+
+    ComputeCommand cmd;
+    cmd.label = "Compute";
+    cmd.pipeline = compute_pipeline;
+
+    CS::InputData<kCount> input_data;
+    input_data.count = kCount;
+    for (size_t i = 0; i < kCount; i++) {
+      input_data.data[i] = 1 + i;
+    }
+
+    auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
+        context, "Output Buffer");
+
+    CS::BindInputData(
+        cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data));
+    CS::BindOutputData(cmd, output_buffer->AsBufferView());
+
+    pass->AddCommand(std::move(cmd));
+    pass->EncodeCommands();
+    return cmd_buffer->SubmitCommands();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(ComputeTest, MultiStageInputAndOutput) {
   using CS1 = Stage1ComputeShader;
   using Stage1PipelineBuilder = ComputePipelineBuilder<CS1>;
