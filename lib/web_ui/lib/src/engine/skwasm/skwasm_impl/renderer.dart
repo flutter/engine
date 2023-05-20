@@ -410,8 +410,21 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List list, {int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    throw UnimplementedError('instantiateImageCodec not yet implemented');
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List list, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true
+  }) async {
+    final String? contentType = detectContentType(list);
+    if (contentType == null) {
+      throw Exception('Could not determine content type of image from data');
+    }
+    return SkwasmImageDecoder(
+      contentType: contentType,
+      dataSource: list.toJS,
+      debugSource: 'encoded image bytes',
+    );
   }
 
   @override

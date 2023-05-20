@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -85,6 +84,15 @@ Future<void> testMain() async {
   // `imageGenerator` should produce an image that is 150x150 pixels.
   void emitImageTests(String name, Future<ui.Image> Function() imageGenerator) {
     group(name, () {
+      late ui.Image image;
+      setUp(() async {
+        image = await imageGenerator();
+      });
+
+      tearDown(() {
+        image.dispose();
+      });
+
       test('drawImage', () async {
         final ui.Image image = await imageGenerator();
 
@@ -276,10 +284,18 @@ Future<void> testMain() async {
     });
   }
 
-  emitImageTests('codec', () async {
+  emitImageTests('codec_uri', () async {
     final ui.Codec codec = await renderer.instantiateImageCodecFromUrl(
       Uri(path: '/test_images/mandrill_128.png')
     );
+
+    final ui.FrameInfo info = await codec.getNextFrame();
+    return info.image;
+  });
+
+  emitImageTests('codec_list', () async {
+    final ByteBuffer data = await httpFetchByteBuffer('/test_images/mandrill_128.png');
+    final ui.Codec codec = await renderer.instantiateImageCodec(data.asUint8List());
 
     final ui.FrameInfo info = await codec.getNextFrame();
     return info.image;
