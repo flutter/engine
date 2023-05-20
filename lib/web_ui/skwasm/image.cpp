@@ -55,31 +55,33 @@ SkAlphaType alphaTypeForPixelFormat(PixelFormat format) {
   }
 }
 
-class ExternalWebGLTexture : public GrExternalGLTexture {
+class ExternalWebGLTexture : public GrExternalTexture {
  public:
-  ExternalWebGLTexture(GrGLTextureInfo info,
+  ExternalWebGLTexture(GrBackendTexture backendTexture,
+                       GLuint textureId,
                        EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
-      : _textureInfo(info), _webGLContext(context) {}
+      : _backendTexture(backendTexture), _textureId(textureId), _webGLContext(context) {}
 
-  GrGLTextureInfo getTextureInfo() override { return _textureInfo; }
+  GrBackendTexture getBackendTexture() override { return _backendTexture; }
 
   void dispose() override {
     Skwasm::makeCurrent(_webGLContext);
-    glDeleteTextures(1, &_textureInfo.fID);
+    glDeleteTextures(1, &_textureId);
   }
 
  private:
-  GrGLTextureInfo _textureInfo;
+  GrBackendTexture _backendTexture;
+  GLuint _textureId;
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE _webGLContext;
 };
 }  // namespace
 
-class VideoFrameImageGenerator : public GrExternalGLTextureGenerator {
+class VideoFrameImageGenerator : public GrExternalTextureGenerator {
  public:
   VideoFrameImageGenerator(SkImageInfo ii,
                            SkwasmObjectId videoFrameId,
                            Skwasm::Surface* surface)
-      : GrExternalGLTextureGenerator(ii),
+      : GrExternalTextureGenerator(ii),
         _videoFrameId(videoFrameId),
         _surface(surface) {}
 
@@ -87,15 +89,15 @@ class VideoFrameImageGenerator : public GrExternalGLTextureGenerator {
     _surface->disposeVideoFrame(_videoFrameId);
   }
 
-  std::unique_ptr<GrExternalGLTexture> generateExternalTexture() override {
+  std::unique_ptr<GrExternalTexture> generateExternalTexture(GrMipMapped mipmapped) override {
     GrGLTextureInfo glInfo;
     glInfo.fID = skwasm_createGlTextureFromVideoFrame(
         _videoFrameId, fInfo.width(), fInfo.height());
     glInfo.fFormat = GL_RGBA8_OES;
     glInfo.fTarget = GL_TEXTURE_2D;
 
-    return std::make_unique<ExternalWebGLTexture>(
-        glInfo, emscripten_webgl_get_current_context());
+    GrBackendTexture backendTexture(fInfo.width(), fInfo.height(), mipmapped, glInfo);
+    return std::make_unique<ExternalWebGLTexture>(backendTexture, glInfo.fID, emscripten_webgl_get_current_context());
   }
 
  private:

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -414,8 +415,20 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {WebOnlyImageCodecChunkCallback? chunkCallback}) {
-    throw UnimplementedError('instantiateImageCodecFromUrl not yet implemented');
+  Future<ui.Codec> instantiateImageCodecFromUrl(
+    Uri uri, {
+    WebOnlyImageCodecChunkCallback? chunkCallback
+  }) async {
+    final DomResponse response = await rawHttpGet(uri.toString());
+    final String? contentType = response.headers.get('Content-Type');
+    if (contentType == null) {
+      throw Exception('Could not determine content type of image at url $uri');
+    }
+    return SkwasmImageDecoder(
+      contentType: contentType,
+      dataSource: response.body as JSAny,
+      debugSource: uri.toString(),
+    );
   }
 
   @override

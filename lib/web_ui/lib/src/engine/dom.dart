@@ -1750,7 +1750,7 @@ extension DomResponseExtension on DomResponse {
   external JSNumber get _status;
   int get status => _status.toDart.toInt();
 
-  external _DomHeaders get headers;
+  external DomHeaders get headers;
 
   external _DomReadableStream get body;
 
@@ -1770,9 +1770,9 @@ extension DomResponseExtension on DomResponse {
 
 @JS()
 @staticInterop
-class _DomHeaders {}
+class DomHeaders {}
 
-extension _DomHeadersExtension on _DomHeaders {
+extension DomHeadersExtension on DomHeaders {
   @JS('get')
   external JSString? _get(JSString? headerName);
   String? get(String? headerName) => _get(headerName?.toJS)?.toDart;

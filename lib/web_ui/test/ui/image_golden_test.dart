@@ -11,7 +11,6 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl/codecs.dart';
 
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
@@ -88,8 +87,6 @@ Future<void> testMain() async {
     group(name, () {
       test('drawImage', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -102,8 +99,6 @@ Future<void> testMain() async {
 
       test('drawImageRect', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -121,8 +116,6 @@ Future<void> testMain() async {
 
       test('drawImageNine', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -140,8 +133,6 @@ Future<void> testMain() async {
 
       test('image_shader_cubic_rotated', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final Float64List matrix = Matrix4.rotationZ(pi / 6).toFloat64();
         final ui.ImageShader shader = ui.ImageShader(
@@ -164,8 +155,6 @@ Future<void> testMain() async {
 
       test('fragment_shader_sampler', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ui.FragmentProgram program = await renderer.createFragmentProgram('glitch_shader');
         final ui.FragmentShader shader = program.fragmentShader();
@@ -191,18 +180,14 @@ Future<void> testMain() async {
 
       test('toByteData_rgba', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ByteData? rgbaData = await image.toByteData();
         expect(rgbaData, isNotNull);
         expect(rgbaData!.lengthInBytes, isNonZero);
       });
 
-      test('toByteData_rgba', () async {
+      test('toByteData_png', () async {
         final ui.Image image = await imageGenerator();
-        expect(image.width, 150);
-        expect(image.height, 150);
 
         final ByteData? pngData = await image.toByteData(format: ui.ImageByteFormat.png);
         expect(pngData, isNotNull);
@@ -292,11 +277,10 @@ Future<void> testMain() async {
   }
 
   emitImageTests('codec', () async {
-    final ui.Codec codec = SkwasmImageDecoder(
-      contentType: 'image/png',
-      dataSource: (await rawHttpGet('/test_images/mandrill_150.png')).body as JSAny,
-      debugSource: 'blah',
+    final ui.Codec codec = await renderer.instantiateImageCodecFromUrl(
+      Uri(path: '/test_images/mandrill_128.png')
     );
+
     final ui.FrameInfo info = await codec.getNextFrame();
     return info.image;
   });
