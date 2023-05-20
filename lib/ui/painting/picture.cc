@@ -137,6 +137,7 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
+  FML_LOG(ERROR) << "hi RasterizeToImage start";
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
     return tonic::ToDart("Image callback was invalid");
   }
@@ -165,6 +166,8 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
       // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
       fml::MakeCopyable([image_callback = std::move(image_callback),
                          unref_queue](sk_sp<DlImage> image) mutable {
+        FML_LOG(ERROR) << "hi RasterizeToImage::ui_task start";
+
         auto dart_state = image_callback->dart_state().lock();
         if (!dart_state) {
           // The root isolate could have died in the meantime.
@@ -199,6 +202,8 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
       raster_task_runner,
       [ui_task_runner, snapshot_delegate, display_list, picture_bounds, ui_task,
        layer_tree = std::move(layer_tree)] {
+        FML_LOG(ERROR) << "hi RasterizeToImage::raster-task start";
+
         sk_sp<DlImage> image;
         if (layer_tree) {
           auto display_list = layer_tree->Flatten(

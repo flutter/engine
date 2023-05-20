@@ -81,6 +81,7 @@ Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
+  FML_LOG(ERROR) << "hi Scene::toImage start";
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
