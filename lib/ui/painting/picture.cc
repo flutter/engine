@@ -177,12 +177,10 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
           return;
         }
 
-        FML_DLOG(WARNING) << "hack remove DlImageGPU!";
-        // if (image->skia_image()) {
-        //   image =
-        //       DlImageGPU::Make({image->skia_image(),
-        //       std::move(unref_queue)});
-        // }
+        if (image->skia_image()) {
+          image =
+              DlImageGPU::Make({image->skia_image(), std::move(unref_queue)});
+        }
 
         auto dart_image = CanvasImage::Create();
         dart_image->set_image(image);
