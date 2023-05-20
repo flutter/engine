@@ -227,6 +227,14 @@ SKWASM_EXPORT void canvas_drawImageNine(SkCanvas* canvas,
                         filterModeForQuality(quality), paint);
 }
 
+SKWASM_EXPORT void canvas_drawVertices(SkCanvas* canvas,
+                                       SkVertices* vertices,
+                                       SkBlendMode mode,
+                                       SkPaint* paint) {
+  vertices->ref();
+  canvas->drawVertices(sk_sp<SkVertices>(vertices), mode, *paint);
+}
+
 SKWASM_EXPORT void canvas_getTransform(SkCanvas* canvas, SkM44* outTransform) {
   *outTransform = canvas->getLocalToDevice();
 }

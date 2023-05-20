@@ -140,6 +140,22 @@ class StackScope {
     return pointer;
   }
 
+  Pointer<Uint16> convertIntsToUint16Native(List<int> values) {
+    final Pointer<Uint16> pointer = allocUint16Array(values.length);
+    for (int i = 0; i < values.length; i++) {
+      pointer[i] = values[i];
+    }
+    return pointer;
+  }
+
+  Pointer<Uint32> convertIntsToUint32Native(List<int> values) {
+    final Pointer<Uint32> pointer = allocUint32Array(values.length);
+    for (int i = 0; i < values.length; i++) {
+      pointer[i] = values[i];
+    }
+    return pointer;
+  }
+
   Pointer<Float> convertPointArrayToNative(List<ui.Offset> points) {
     final Pointer<Float> pointer = allocFloatArray(points.length * 2);
     for (int i = 0; i < points.length; i++) {
@@ -160,6 +176,11 @@ class StackScope {
   Pointer<Int8> allocInt8Array(int count) {
     final int length = count * sizeOf<Int8>();
     return stackAlloc(length).cast<Int8>();
+  }
+
+  Pointer<Uint16> allocUint16Array(int count) {
+    final int length = count * sizeOf<Uint16>();
+    return stackAlloc(length).cast<Uint16>();
   }
 
   Pointer<Int32> allocInt32Array(int count) {

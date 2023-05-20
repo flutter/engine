@@ -209,6 +209,19 @@ external void canvasDrawParagraph(
   double y,
 );
 
+@Native<Void Function(
+  CanvasHandle,
+  VerticesHandle,
+  Int,
+  PaintHandle,
+)>(symbol: 'canvas_drawVertices', isLeaf: true)
+external void canvasDrawVertices(
+  CanvasHandle handle,
+  VerticesHandle vertices,
+  int blendMode,
+  PaintHandle paint,
+);
+
 @Native<Void Function(CanvasHandle, RawMatrix44)>(
     symbol: 'canvas_getTransform', isLeaf: true)
 external void canvasGetTransform(CanvasHandle canvas, RawMatrix44 outMatrix);

@@ -271,9 +271,15 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.Vertices vertices,
+    ui.BlendMode blendMode,
+    ui.Paint paint,
+  ) => canvasDrawVertices(
+    _handle,
+    (vertices as SkwasmVertices).handle,
+    blendMode.index,
+    (paint as SkwasmPaint).handle,
+  );
 
   @override
   void drawAtlas(
