@@ -259,15 +259,35 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void drawPoints(
-      ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.PointMode pointMode,
+    List<ui.Offset> points,
+    ui.Paint paint
+  ) => withStackScope((StackScope scope) {
+    final RawPointArray rawPoints = scope.convertPointArrayToNative(points);
+    canvasDrawPoints(
+      _handle,
+      pointMode.index,
+      rawPoints,
+      points.length,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawRawPoints(
-      ui.PointMode pointMode, Float32List points, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.PointMode pointMode,
+    Float32List points,
+    ui.Paint paint
+  ) => withStackScope((StackScope scope) {
+    final RawPointArray rawPoints = scope.convertDoublesToNative(points);
+    canvasDrawPoints(
+      _handle,
+      pointMode.index,
+      rawPoints,
+      points.length ~/ 2,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawVertices(

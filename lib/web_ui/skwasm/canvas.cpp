@@ -7,6 +7,7 @@
 #include "wrappers.h"
 
 #include "third_party/skia/include/core/SkPoint3.h"
+#include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
@@ -233,6 +234,14 @@ SKWASM_EXPORT void canvas_drawVertices(SkCanvas* canvas,
                                        SkPaint* paint) {
   vertices->ref();
   canvas->drawVertices(sk_sp<SkVertices>(vertices), mode, *paint);
+}
+
+SKWASM_EXPORT void canvas_drawPoints(SkCanvas* canvas,
+                                     SkCanvas::PointMode mode,
+                                     SkPoint* points,
+                                     int pointCount,
+                                     SkPaint* paint) {
+  canvas->drawPoints(mode, pointCount, points, *paint);
 }
 
 SKWASM_EXPORT void canvas_getTransform(SkCanvas* canvas, SkM44* outTransform) {

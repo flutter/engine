@@ -222,6 +222,21 @@ external void canvasDrawVertices(
   PaintHandle paint,
 );
 
+@Native<Void Function(
+  CanvasHandle,
+  Int,
+  RawPointArray,
+  Int,
+  PaintHandle,
+)>(symbol: 'canvas_drawPoints', isLeaf: true)
+external void canvasDrawPoints(
+  CanvasHandle handle,
+  int pointMode,
+  RawPointArray points,
+  int pointCount,
+  PaintHandle paint,
+);
+
 @Native<Void Function(CanvasHandle, RawMatrix44)>(
     symbol: 'canvas_getTransform', isLeaf: true)
 external void canvasGetTransform(CanvasHandle canvas, RawMatrix44 outMatrix);
