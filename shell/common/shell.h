@@ -374,8 +374,7 @@ class Shell final : public PlatformView::Delegate,
   //----------------------------------------------------------------------------
   /// @brief      Notifies the display manager of the updates.
   ///
-  void OnDisplayUpdates(DisplayUpdateType update_type,
-                        std::vector<std::unique_ptr<Display>> displays);
+  void OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays);
 
   //----------------------------------------------------------------------------
   /// @brief Queries the `DisplayManager` for the main display refresh rate.
@@ -402,6 +401,9 @@ class Shell final : public PlatformView::Delegate,
       const override;
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const;
 
  private:
   using ServiceProtocolHandler =

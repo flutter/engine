@@ -56,6 +56,14 @@ class Contents {
   /// @brief Get the screen space bounding rectangle that this contents affects.
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 
+  /// @brief  Hint that specifies the coverage area of this Contents that will
+  ///         actually be used during rendering. This is for optimization
+  ///         purposes only and can not be relied on as a clip. May optionally
+  ///         affect the result of `GetCoverage()`.
+  void SetCoverageHint(std::optional<Rect> coverage_hint);
+
+  const std::optional<Rect>& GetCoverageHint() const;
+
   /// @brief Whether this Contents only emits opaque source colors from the
   ///        fragment stage. This value does not account for any entity
   ///        properties (e.g. the blend mode), clips/visibility culling, or
@@ -77,6 +85,7 @@ class Contents {
   virtual std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
       const std::string& label = "Snapshot") const;
@@ -109,6 +118,7 @@ class Contents {
   virtual void SetInheritedOpacity(Scalar opacity);
 
  private:
+  std::optional<Rect> coverage_hint_;
   std::optional<Size> color_source_size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Contents);

@@ -53,6 +53,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @interface FlutterEngineTerminationHandler : NSObject
 
 @property(nonatomic, readonly) BOOL shouldTerminate;
+@property(nonatomic, readwrite) BOOL acceptingRequests;
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                     terminator:(nullable FlutterTerminationCallback)terminator;
@@ -135,7 +136,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 /**
  * The |FlutterViewController| associated with the given view ID, if any.
  */
-- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.

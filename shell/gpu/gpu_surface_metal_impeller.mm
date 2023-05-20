@@ -118,8 +118,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
           return surface->Present();
         }
 
-        impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
+        impeller::IRect cull_rect = surface->coverage();
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        impeller::DlDispatcher impeller_dispatcher(cull_rect);
+        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
@@ -205,6 +207,10 @@ Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
     case MTLPixelFormatBGRA8Unorm:
       bytesPerPixel = 4;
       pixel_format = "MTLPixelFormatBGRA8Unorm";
+      break;
+    case MTLPixelFormatRGBA16Float:
+      bytesPerPixel = 8;
+      pixel_format = "MTLPixelFormatRGBA16Float";
       break;
     default:
       return {};

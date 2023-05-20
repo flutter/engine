@@ -59,10 +59,14 @@ Contents::StencilCoverage Contents::GetStencilCoverage(
 std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
+    std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     const std::string& label) const {
   auto coverage = GetCoverage(entity);
+  if (coverage_limit.has_value()) {
+    coverage = coverage->Intersection(*coverage_limit);
+  }
   if (!coverage.has_value()) {
     return std::nullopt;
   }
@@ -118,6 +122,14 @@ bool Contents::ShouldRender(const Entity& entity,
     return true;
   }
   return stencil_coverage->IntersectsWithRect(coverage.value());
+}
+
+void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {
+  coverage_hint_ = coverage_hint;
+}
+
+const std::optional<Rect>& Contents::GetCoverageHint() const {
+  return coverage_hint_;
 }
 
 std::optional<Size> Contents::GetColorSourceSize() const {

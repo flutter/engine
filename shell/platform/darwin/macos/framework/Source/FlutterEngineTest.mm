@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <objc/objc.h>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #include "gtest/gtest.h"
@@ -134,7 +135,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -163,7 +165,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   latch.Wait();
 }
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -646,7 +649,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -663,7 +666,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -677,7 +680,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -685,7 +688,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -694,13 +697,13 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   id engineMock = CreateMockFlutterEngine(nil);
   __block NSString* nextResponse = @"exit";
-  __block BOOL triedToTerminate = FALSE;
+  __block BOOL triedToTerminate = NO;
   FlutterEngineTerminationHandler* terminationHandler =
       [[FlutterEngineTerminationHandler alloc] initWithEngine:engineMock
                                                    terminator:^(id sender) {
@@ -742,14 +745,24 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
                                         arguments:@{@"type" : @"cancelable"}];
 
-  triedToTerminate = FALSE;
+  // Always terminate when the binding isn't ready (which is the default).
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+
+  // Once the binding is ready, handle the request.
+  terminationHandler.acceptingRequests = YES;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"exit";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
   EXPECT_TRUE(triedToTerminate);
 
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"cancel";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -757,7 +770,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   EXPECT_FALSE(triedToTerminate);
 
   // Check that it doesn't crash on error.
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"error";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -766,7 +779,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
 }
 
 TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
-  __block BOOL announced = FALSE;
+  __block BOOL announced = NO;
   id engineMock = CreateMockFlutterEngine(nil);
 
   OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
@@ -786,6 +799,57 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   [engineMock handleAccessibilityEvent:annotatedEvent];
 
   EXPECT_TRUE(announced);
+}
+
+TEST_F(FlutterEngineTest, RunWithEntrypointUpdatesDisplayConfig) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:NSApplicationDidChangeScreenParametersNotification
+                    object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
+  engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
+        updated = YES;
+        return original_set_viewport_metrics(engine, window_metrics);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  // No VC.
+  EXPECT_FALSE(updated);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  EXPECT_TRUE(updated);
 }
 
 }  // namespace flutter::testing

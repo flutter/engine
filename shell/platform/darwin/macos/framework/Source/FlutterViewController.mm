@@ -370,6 +370,8 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
+
+  FlutterViewId _id;
 }
 
 @synthesize viewId = _viewId;
@@ -510,7 +512,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)viewId {
+- (FlutterViewId)viewId {
   NSAssert([self attached], @"This view controller is not attched.");
   return _viewId;
 }
@@ -539,7 +541,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
+- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(FlutterViewId)viewId {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
@@ -864,6 +866,14 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   if (_keyboardLayoutNotifier != nil) {
     _keyboardLayoutNotifier();
   }
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 #pragma mark - FlutterViewReshapeListener

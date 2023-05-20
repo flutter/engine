@@ -8,6 +8,8 @@ namespace impeller {
 
 GoldenPlaygroundTest::GoldenPlaygroundTest() {}
 
+void GoldenPlaygroundTest::TearDown() {}
+
 void GoldenPlaygroundTest::SetUp() {
   GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
 }
@@ -28,6 +30,11 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
+  return nullptr;
+}
+
+std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+    const char* asset_name) const {
   return nullptr;
 }
 

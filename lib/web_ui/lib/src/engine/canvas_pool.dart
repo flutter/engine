@@ -541,7 +541,7 @@ class CanvasPool extends _SaveStackTracking {
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     final DomCanvasRenderingContext2D ctx = context;
     contextHandle.blendMode = blendMode;
-    contextHandle.fillStyle = colorToCssString(color);
+    contextHandle.fillStyle = color.toCssString();
     contextHandle.strokeStyle = '';
     ctx.beginPath();
     // Fill a virtually infinite rect with the color.
@@ -997,7 +997,7 @@ class ContextStateHandle {
         }
       }
     } else {
-      final String? colorString = colorValueToCssString(paint.color);
+      final String colorString = colorValueToCssString(paint.color);
       fillStyle = colorString;
       strokeStyle = colorString;
     }
@@ -1019,7 +1019,7 @@ class ContextStateHandle {
         context.save();
         context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
         // Shadow color must be fully opaque.
-        context.shadowColor = colorToCssString(ui.Color(paint.color).withAlpha(255));
+        context.shadowColor = ui.Color(paint.color).withAlpha(255).toCssString();
 
         // On the web a shadow must always be painted together with the shape
         // that casts it. In order to paint just the shadow, we offset the shape
@@ -1128,9 +1128,6 @@ class ContextStateHandle {
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 class _SaveStackTracking {
-  // !Warning: this vector should not be mutated.
-  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
-
   final List<SaveStackEntry> _saveStack = <SaveStackEntry>[];
 
   /// The stack that maintains clipping operations used when text is painted
@@ -1189,7 +1186,7 @@ class _SaveStackTracking {
   /// Rotates the [currentTransform] matrix.
   @mustCallSuper
   void rotate(double radians) {
-    _currentTransform.rotate(_unitZ, radians);
+    _currentTransform.rotate(kUnitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.

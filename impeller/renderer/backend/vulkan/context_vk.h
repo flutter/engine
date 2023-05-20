@@ -12,6 +12,7 @@
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
+#include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -30,7 +31,10 @@ class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
 
-class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
+class ContextVK final : public Context,
+                        public BackendCast<ContextVK, Context>,
+                        public DeviceHolder,
+                        public std::enable_shared_from_this<ContextVK> {
  public:
   struct Settings {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
@@ -77,11 +81,11 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
-    return SetDebugName(*device_, handle, label);
+    return SetDebugName(GetDevice(), handle, label);
   }
 
   template <typename T>
-  static bool SetDebugName(vk::Device device,
+  static bool SetDebugName(const vk::Device& device,
                            T handle,
                            std::string_view label) {
     if (!HasValidationLayers()) {
@@ -106,7 +110,11 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  vk::Device GetDevice() const;
+  // |DeviceHolder|
+  const vk::Device& GetDevice() const override;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 
@@ -136,6 +144,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
+  std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   const uint64_t hash_;
 
   bool is_valid_ = false;

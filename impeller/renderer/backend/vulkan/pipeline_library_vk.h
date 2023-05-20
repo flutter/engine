@@ -34,7 +34,7 @@ class PipelineLibraryVK final
  private:
   friend ContextVK;
 
-  vk::Device device_;
+  std::weak_ptr<DeviceHolder> device_holder_;
   std::shared_ptr<PipelineCacheVK> pso_cache_;
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   Mutex pipelines_mutex_;
@@ -43,7 +43,7 @@ class PipelineLibraryVK final
   bool is_valid_ = false;
 
   PipelineLibraryVK(
-      const vk::Device& device,
+      const std::shared_ptr<DeviceHolder>& device_holder,
       std::shared_ptr<const Capabilities> caps,
       fml::UniqueFD cache_directory,
       std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);

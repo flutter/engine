@@ -33,6 +33,11 @@ enum GeometryVertexType {
   kUV,
 };
 
+/// @brief Given a polyline created from a convex filled path, perform a
+/// tessellation.
+std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
+    Path::Polyline polyline);
+
 class Geometry {
  public:
   Geometry();
@@ -40,8 +45,6 @@ class Geometry {
   virtual ~Geometry();
 
   static std::unique_ptr<Geometry> MakeFillPath(const Path& path);
-
-  static std::unique_ptr<Geometry> MakeRRect(Rect rect, Scalar corner_radius);
 
   static std::unique_ptr<Geometry> MakeStrokePath(
       const Path& path,
@@ -53,6 +56,10 @@ class Geometry {
   static std::unique_ptr<Geometry> MakeCover();
 
   static std::unique_ptr<Geometry> MakeRect(Rect rect);
+
+  static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
+                                                  Scalar radius,
+                                                  bool round);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
@@ -257,11 +264,13 @@ class RectGeometry : public Geometry {
   FML_DISALLOW_COPY_AND_ASSIGN(RectGeometry);
 };
 
-class RRectGeometry : public Geometry {
+class PointFieldGeometry : public Geometry {
  public:
-  explicit RRectGeometry(Rect rect, Scalar corner_radius);
+  PointFieldGeometry(std::vector<Point> points, Scalar radius, bool round);
 
-  ~RRectGeometry();
+  ~PointFieldGeometry();
+
+  static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 
  private:
   // |Geometry|
@@ -282,12 +291,16 @@ class RRectGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
-  VertexBufferBuilder<Point> CreatePositionBuffer(const Entity& entity) const;
+  GeometryResult GetPositionBufferCPU(const ContentContext& renderer,
+                                      const Entity& entity,
+                                      RenderPass& pass,
+                                      Scalar radius);
 
-  Rect rect_;
-  Scalar corner_radius_;
+  std::vector<Point> points_;
+  Scalar radius_;
+  bool round_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RRectGeometry);
+  FML_DISALLOW_COPY_AND_ASSIGN(PointFieldGeometry);
 };
 
 }  // namespace impeller

@@ -572,7 +572,7 @@ class BitmapCanvas extends EngineCanvas {
   void _applyFilter(DomElement element, SurfacePaintData paint) {
     if (paint.maskFilter != null) {
       final bool isStroke = paint.style == ui.PaintingStyle.stroke;
-      final String cssColor = colorValueToCssString(paint.color)!;
+      final String cssColor = colorValueToCssString(paint.color);
       final double sigma = paint.maskFilter!.webOnlySigma;
       if (browserEngine == BrowserEngine.webkit && !isStroke) {
         // A bug in webkit leaves artifacts when this element is animated
@@ -808,7 +808,7 @@ class BitmapCanvas extends EngineCanvas {
       case ui.BlendMode.srcOver:
         style
           ..position = 'absolute'
-          ..backgroundColor = colorToCssString(filterColor)!;
+          ..backgroundColor = filterColor!.toCssString();
       case ui.BlendMode.dst:
       case ui.BlendMode.dstIn:
         style
@@ -820,7 +820,7 @@ class BitmapCanvas extends EngineCanvas {
           ..backgroundImage = "url('${image.imgElement.src}')"
           ..backgroundBlendMode =
               blendModeToCssMixBlendMode(colorFilterBlendMode) ?? ''
-          ..backgroundColor = colorToCssString(filterColor)!;
+          ..backgroundColor = filterColor!.toCssString();
         break;
     }
     return imgElement;
@@ -839,7 +839,7 @@ class BitmapCanvas extends EngineCanvas {
     final DomHTMLElement imgElement = _reuseOrCreateImage(image);
     imgElement.style.filter = 'url(#${svgFilter.id})';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
-      imgElement.style.backgroundColor = colorToCssString(filterColor)!;
+      imgElement.style.backgroundColor = filterColor!.toCssString();
     }
     return imgElement;
   }
@@ -900,7 +900,7 @@ class BitmapCanvas extends EngineCanvas {
     if (shadows != null) {
       ctx.save();
       for (final ui.Shadow shadow in shadows) {
-        ctx.shadowColor = colorToCssString(shadow.color);
+        ctx.shadowColor = shadow.color.toCssString();
         ctx.shadowBlur = shadow.blurRadius;
         ctx.shadowOffsetX = shadow.offset.dx;
         ctx.shadowOffsetY = shadow.offset.dy;
@@ -1009,7 +1009,7 @@ class BitmapCanvas extends EngineCanvas {
       final ui.Color color = ui.Color(paint.color);
       _canvasPool.contextHandle
         ..fillStyle = null
-        ..strokeStyle = colorToCssString(color);
+        ..strokeStyle = color.toCssString();
       glRenderer!.drawHairline(ctx, positions);
       restore();
       return;
@@ -1081,11 +1081,11 @@ class BitmapCanvas extends EngineCanvas {
     final double dpr = ui.window.devicePixelRatio;
     final double width = ui.window.physicalSize.width * dpr;
     final double height = ui.window.physicalSize.height * dpr;
-    final Vector3 topLeft = inverted.perspectiveTransform(Vector3(0, 0, 0));
-    final Vector3 topRight = inverted.perspectiveTransform(Vector3(width, 0, 0));
+    final Vector3 topLeft = inverted.perspectiveTransform(x: 0, y: 0, z: 0);
+    final Vector3 topRight = inverted.perspectiveTransform(x: width, y: 0, z: 0);
     final Vector3 bottomRight =
-        inverted.perspectiveTransform(Vector3(width, height, 0));
-    final Vector3 bottomLeft = inverted.perspectiveTransform(Vector3(0, height, 0));
+        inverted.perspectiveTransform(x: width, y: height, z: 0);
+    final Vector3 bottomLeft = inverted.perspectiveTransform(x: 0, y: height, z: 0);
     return ui.Rect.fromLTRB(
       math.min(topLeft.x,
           math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))),
