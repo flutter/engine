@@ -236,7 +236,10 @@ def get_common_ancestor_commit(dep, deps_list):
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
   except subprocess.CalledProcessError as error:
-    print("Subprocess error '{0}' occured.".format(error.output))
+    print("Subprocess command '{0}' failed with exit code '{1}'."
+          .format(error.args[1], error.args[0]))
+    if error.output: print("Subprocess error output: '{0}'"
+                           .format(error.output))
   return {}
 
 
