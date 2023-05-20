@@ -331,3 +331,107 @@ bool isAvif(Uint8List data) {
   }
   return false;
 }
+
+// Wraps another codec and resizes each output image.
+class ResizingCodec implements ui.Codec {
+  ResizingCodec(
+    this.delegate, {
+    this.targetWidth,
+    this.targetHeight,
+    this.allowUpscaling = true,
+  });
+
+  final ui.Codec delegate;
+  final int? targetWidth;
+  final int? targetHeight;
+  final bool allowUpscaling;
+
+  @override
+  void dispose() => delegate.dispose();
+
+  @override
+  int get frameCount => delegate.frameCount;
+
+  @override
+  Future<ui.FrameInfo> getNextFrame() async {
+    final ui.FrameInfo frameInfo = await delegate.getNextFrame();
+    return AnimatedImageFrameInfo(
+      frameInfo.duration,
+      scaleImageIfNeeded(
+        frameInfo.image,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling
+      ),
+    );
+  }
+
+  @override
+  int get repetitionCount => delegate.frameCount;
+}
+
+ui.Size? _scaledSize(
+  int width,
+  int height,
+  int? targetWidth,
+  int? targetHeight,
+) {
+  if (targetWidth == width && targetHeight == height) {
+    // Not scaled
+    return null;
+  }
+  if (targetWidth == null) {
+    if (targetHeight == null || targetHeight == height) {
+      // Not scaled.
+      return null;
+    }
+    targetWidth = (width * targetHeight / height).round();
+  } else if (targetHeight == null) {
+    if (targetWidth == targetWidth) {
+      // Not scaled.
+      return null;
+    }
+    targetHeight = (height * targetWidth / width).round();
+  }
+  return ui.Size(targetWidth.toDouble(), targetHeight.toDouble());
+}
+
+ui.Image scaleImageIfNeeded(
+  ui.Image image, {
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) {
+  final int width = image.width;
+  final int height = image.height;
+  final ui.Size? scaledSize = _scaledSize(
+    width,
+    height,
+    targetWidth,
+    targetHeight
+  );
+  if (scaledSize == null) {
+    return image;
+  }
+  if (!allowUpscaling &&
+    (scaledSize.width > width || scaledSize.height > height)) {
+      return image;
+  }
+
+  final ui.Rect outputRect = ui.Rect.fromLTWH(0, 0, scaledSize.width, scaledSize.height);
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder, outputRect);
+
+  canvas.drawImageRect(
+    image,
+    ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    outputRect,
+    ui.Paint(),
+  );
+  final ui.Image finalImage = recorder.endRecording().toImageSync(
+    scaledSize.width.round(),
+    scaledSize.height.round()
+  );
+  image.dispose();
+  return finalImage;
+}

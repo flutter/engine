@@ -293,9 +293,13 @@ Future<void> testMain() async {
     return info.image;
   });
 
-  emitImageTests('codec_list', () async {
+  emitImageTests('codec_list_resized', () async {
     final ByteBuffer data = await httpFetchByteBuffer('/test_images/mandrill_128.png');
-    final ui.Codec codec = await renderer.instantiateImageCodec(data.asUint8List());
+    final ui.Codec codec = await renderer.instantiateImageCodec(
+      data.asUint8List(),
+      targetWidth: 150,
+      targetHeight: 150,
+    );
 
     final ui.FrameInfo info = await codec.getNextFrame();
     return info.image;

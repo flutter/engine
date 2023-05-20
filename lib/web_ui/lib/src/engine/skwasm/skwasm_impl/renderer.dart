@@ -320,32 +320,6 @@ class SkwasmRenderer implements Renderer {
       indices: indices
     );
 
-  ui.Size? _scaledSize(
-    int width,
-    int height,
-    int? targetWidth,
-    int? targetHeight,
-  ) {
-    if (targetWidth == width && targetHeight == height) {
-      // Not scaled
-      return null;
-    }
-    if (targetWidth == null) {
-      if (targetHeight == null || targetHeight == height) {
-        // Not scaled.
-        return null;
-      }
-      targetWidth = (width * targetHeight / height).round();
-    } else if (targetHeight == null) {
-      if (targetWidth == targetWidth) {
-        // Not scaled.
-        return null;
-      }
-      targetHeight = (height * targetWidth / width).round();
-    }
-    return ui.Size(targetWidth.toDouble(), targetHeight.toDouble());
-  }
-
   @override
   void decodeImageFromPixels(
     Uint8List pixels,
@@ -358,43 +332,19 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) {
-    ui.Size? scaledSize = _scaledSize(
-      width,
-      height,
-      targetWidth,
-      targetHeight
-    );
-    if (!allowUpscaling && scaledSize != null &&
-      (scaledSize.width > width || scaledSize.height > height)) {
-        scaledSize = null;
-    }
     final SkwasmImage pixelImage = SkwasmImage.fromPixels(
       pixels,
       width,
       height,
       format
     );
-    if (scaledSize == null) {
-      callback(pixelImage);
-      return;
-    }
-
-    final ui.Rect outputRect = ui.Rect.fromLTWH(0, 0, scaledSize.width, scaledSize.height);
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, outputRect);
-
-    canvas.drawImageRect(
+    final ui.Image scaledImage = scaleImageIfNeeded(
       pixelImage,
-      ui.Rect.fromLTWH(0, 0, width.toDouble(), width.toDouble()),
-      outputRect,
-      ui.Paint(),
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling,
     );
-    final ui.Image finalImage = recorder.endRecording().toImageSync(
-      scaledSize.width.round(),
-      scaledSize.height.round()
-    );
-    pixelImage.dispose();
-    callback(finalImage);
+    callback(scaledImage);
   }
 
   @override
@@ -420,10 +370,19 @@ class SkwasmRenderer implements Renderer {
     if (contentType == null) {
       throw Exception('Could not determine content type of image from data');
     }
-    return SkwasmImageDecoder(
+    final ui.Codec baseDecoder = SkwasmImageDecoder(
       contentType: contentType,
       dataSource: list.toJS,
       debugSource: 'encoded image bytes',
+    );
+    if (targetWidth == null && targetHeight == null) {
+      return baseDecoder;
+    }
+    return ResizingCodec(
+      baseDecoder,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling
     );
   }
 
