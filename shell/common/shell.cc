@@ -2178,6 +2178,15 @@ const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
   return engine_->GetVsyncWaiter();
 }
 
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+Shell::GetConcurrentWorkerTaskRunner() const {
+  FML_DCHECK(vm_);
+  if (!vm_) {
+    return nullptr;
+  }
+  return vm_->GetConcurrentWorkerTaskRunner();
+}
+
 SkISize Shell::ExpectedFrameSize(int64_t view_id) {
   auto found = expected_frame_sizes_.find(view_id);
   if (found == expected_frame_sizes_.end()) {
