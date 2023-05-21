@@ -77,13 +77,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 #pragma mark - Embedder callback implementations.
 
-#pragma mark - FlutterTextureRegistrar methods.
-
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                          metalTexture:(FlutterMetalExternalTexture*)textureOut {
   FlutterExternalTexture* texture = [self getTextureWithID:textureID];
   return [texture populateTexture:textureOut];
 }
+
+#pragma mark - FlutterTextureRegistrar methods.
 
 - (FlutterExternalTexture*)onRegisterTexture:(id<FlutterTexture>)texture {
   return [[FlutterExternalTexture alloc] initWithFlutterTexture:texture
