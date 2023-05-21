@@ -22,10 +22,6 @@ class Surface final : public flutter::Surface {
   ~Surface() override;
 
  private:
-  const std::string debug_label_;
-  std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_;
-  GrDirectContext* gr_context_;
-
   // |flutter::Surface|
   bool IsValid() override;
 

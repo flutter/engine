@@ -16,9 +16,7 @@ namespace flutter_runner {
 Surface::Surface(std::string debug_label,
                  std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                  GrDirectContext* gr_context)
-    : debug_label_(std::move(debug_label)),
-      view_embedder_(view_embedder),
-      gr_context_(gr_context) {}
+    : debug_label_(std::move(debug_label)) {}
 
 Surface::~Surface() = default;
 
