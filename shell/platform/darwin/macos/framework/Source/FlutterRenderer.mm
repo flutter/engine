@@ -12,23 +12,15 @@
 
 #pragma mark - Static callbacks that require the engine.
 
-static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine,
-                                                           const FlutterFrameInfo* frameInfo) {
-  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
-  // operates on the default view. To support multi-view, we need a new callback
-  // that also receives a view ID, or pass the ID via FlutterFrameInfo.
-  FlutterViewId viewId = kFlutterDefaultViewId;
-  CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
-  return [engine.renderer createTextureForView:viewId size:size];
+static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
+                                             const FlutterFrameInfo* frameInfo) {
+  NSCAssert(NO, @"The renderer config should not be used to get the next drawable.");
+  return FlutterMetalTexture{};
 }
 
-static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
-                                           const FlutterMetalTexture* texture) {
-  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
-  // operates on the default view. To support multi-view, we need a new callback
-  // that also receives a view ID.
-  FlutterViewId viewId = kFlutterDefaultViewId;
-  return [engine.renderer present:viewId texture:texture];
+static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
+  NSCAssert(NO, @"The renderer config should not be used to present drawable.");
+  return false;
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -77,9 +69,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .metal.device = (__bridge FlutterMetalDeviceHandle)_device,
       .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_commandQueue,
       .metal.get_next_drawable_callback =
-          reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawableForDefaultView),
+          reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawable),
       .metal.present_drawable_callback =
-          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawableOfDefaultView),
+          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawable),
       .metal.external_texture_frame_callback =
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
