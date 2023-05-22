@@ -32,12 +32,14 @@
 #include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
+#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
@@ -171,6 +173,8 @@ using SrgbToLinearFilterPipeline =
                     SrgbToLinearFilterFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using GlyphAtlasColorPipeline =
+    RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
     RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
@@ -271,6 +275,9 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
+
+/// Geometry Pipelines
+using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 
 /// Pipeline state configuration.
 ///
@@ -469,6 +476,11 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(glyph_atlas_color_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(geometry_color_pipelines_, opts);
@@ -652,9 +664,16 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return point_field_compute_pipelines_;
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
+  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
+      GlyphAtlas::Type type) const;
 
   const Capabilities& GetDeviceCapabilities() const;
 
@@ -722,6 +741,7 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
+  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
@@ -772,6 +792,8 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      point_field_compute_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -813,7 +835,8 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+  std::shared_ptr<GlyphAtlasContext> alpha_glyph_atlas_context_;
+  std::shared_ptr<GlyphAtlasContext> color_glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 

@@ -24,19 +24,10 @@ class SkwasmRenderer implements Renderer {
     return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
   }
 
-  @override
-  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
-    throw UnimplementedError('composeImageFilters not yet implemented');
-  }
 
   @override
   ui.Path copyPath(ui.Path src) {
     return SkwasmPath.from(src as SkwasmPath);
-  }
-
-  @override
-  ui.ImageFilter createBlurImageFilter({double sigmaX = 0.0, double sigmaY = 0.0, ui.TileMode tileMode = ui.TileMode.clamp}) {
-    throw UnimplementedError('createBlurImageFilter not yet implemented');
   }
 
   @override
@@ -65,19 +56,66 @@ class SkwasmRenderer implements Renderer {
     );
 
   @override
-  ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    throw UnimplementedError('createDilateImageFilter not yet implemented');
-  }
+  ui.ImageFilter createBlurImageFilter({
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
+    ui.TileMode tileMode = ui.TileMode.clamp
+  }) => SkwasmImageFilter.blur(
+    sigmaX: sigmaX,
+    sigmaY: sigmaY,
+    tileMode: tileMode
+  );
 
   @override
-  ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    throw UnimplementedError('createErodeImageFilter not yet implemented');
-  }
+  ui.ImageFilter createDilateImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0
+  }) => SkwasmImageFilter.dilate(
+    radiusX: radiusX,
+    radiusY: radiusY,
+  );
 
   @override
-  ui.ImageShader createImageShader(ui.Image image, ui.TileMode tmx, ui.TileMode tmy, Float64List matrix4, ui.FilterQuality? filterQuality) {
-    throw UnimplementedError('createImageShader not yet implemented');
-  }
+  ui.ImageFilter createErodeImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0
+  }) => SkwasmImageFilter.erode(
+    radiusX: radiusX,
+    radiusY: radiusY,
+  );
+
+  @override
+  ui.ImageFilter composeImageFilters({
+    required ui.ImageFilter outer,
+    required ui.ImageFilter inner
+  }) => SkwasmImageFilter.compose(
+    SkwasmImageFilter.fromUiFilter(outer),
+    SkwasmImageFilter.fromUiFilter(inner),
+  );
+
+  @override
+  ui.ImageFilter createMatrixImageFilter(
+    Float64List matrix4, {
+    ui.FilterQuality filterQuality = ui.FilterQuality.low
+  }) => SkwasmImageFilter.matrix(
+    matrix4,
+    filterQuality: filterQuality
+  );
+
+  @override
+  ui.ImageShader createImageShader(
+    ui.Image image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
+    Float64List matrix4,
+    ui.FilterQuality? filterQuality
+  ) => SkwasmImageShader.imageShader(
+    image as SkwasmImage,
+    tmx,
+    tmy,
+    matrix4,
+    filterQuality
+  );
 
   @override
   ui.Gradient createLinearGradient(
@@ -96,16 +134,13 @@ class SkwasmRenderer implements Renderer {
     matrix4: matrix4,
   );
 
-  @override
-  ui.ImageFilter createMatrixImageFilter(Float64List matrix4, {ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
-    throw UnimplementedError('createMatrixImageFilter not yet implemented');
-  }
 
   @override
   ui.Paint createPaint() => SkwasmPaint();
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => SkwasmParagraphBuilder();
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
+    SkwasmParagraphBuilder(style as SkwasmParagraphStyle, fontCollection);
 
   @override
   ui.ParagraphStyle createParagraphStyle({
@@ -120,7 +155,20 @@ class SkwasmRenderer implements Renderer {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale
-  }) => SkwasmParagraphStyle();
+  }) => SkwasmParagraphStyle(
+    textAlign: textAlign,
+    textDirection: textDirection,
+    maxLines: maxLines,
+    fontFamily: fontFamily,
+    fontSize: fontSize,
+    height: height,
+    textHeightBehavior: textHeightBehavior,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    strutStyle: strutStyle,
+    ellipsis: ellipsis,
+    locale: locale,
+  );
 
   @override
   ui.Path createPath() => SkwasmPath();
@@ -159,9 +207,17 @@ class SkwasmRenderer implements Renderer {
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight
-  }) {
-    throw UnimplementedError('createStrutStyle not yet implemented');
-  }
+  }) => SkwasmStrutStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    leading: leading,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    forceStrutHeight: forceStrutHeight,
+  );
 
   @override
   ui.Gradient createSweepGradient(
@@ -205,7 +261,29 @@ class SkwasmRenderer implements Renderer {
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
     List<ui.FontVariation>? fontVariations
-  }) => SkwasmTextStyle();
+  }) => SkwasmTextStyle(
+    color: color,
+    decoration: decoration,
+    decorationColor: decorationColor,
+    decorationStyle: decorationStyle,
+    decorationThickness: decorationThickness,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    textBaseline: textBaseline,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    letterSpacing: letterSpacing,
+    wordSpacing: wordSpacing,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    locale: locale,
+    background: background,
+    foreground: foreground,
+    shadows: shadows,
+    fontFeatures: fontFeatures,
+    fontVariations: fontVariations,
+  );
 
   @override
   ui.Vertices createVertices(
@@ -241,9 +319,81 @@ class SkwasmRenderer implements Renderer {
       indices: indices
     );
 
+  ui.Size? _scaledSize(
+    int width,
+    int height,
+    int? targetWidth,
+    int? targetHeight,
+  ) {
+    if (targetWidth == width && targetHeight == height) {
+      // Not scaled
+      return null;
+    }
+    if (targetWidth == null) {
+      if (targetHeight == null || targetHeight == height) {
+        // Not scaled.
+        return null;
+      }
+      targetWidth = (width * targetHeight / height).round();
+    } else if (targetHeight == null) {
+      if (targetWidth == targetWidth) {
+        // Not scaled.
+        return null;
+      }
+      targetHeight = (height * targetWidth / width).round();
+    }
+    return ui.Size(targetWidth.toDouble(), targetHeight.toDouble());
+  }
+
   @override
-  void decodeImageFromPixels(Uint8List pixels, int width, int height, ui.PixelFormat format, ui.ImageDecoderCallback callback, {int? rowBytes, int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    throw UnimplementedError('decodeImageFromPixels not yet implemented');
+  void decodeImageFromPixels(
+    Uint8List pixels,
+    int width,
+    int height,
+    ui.PixelFormat format,
+    ui.ImageDecoderCallback callback, {
+    int? rowBytes,
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true
+  }) {
+    ui.Size? scaledSize = _scaledSize(
+      width,
+      height,
+      targetWidth,
+      targetHeight
+    );
+    if (!allowUpscaling && scaledSize != null &&
+      (scaledSize.width > width || scaledSize.height > height)) {
+        scaledSize = null;
+    }
+    final SkwasmImage pixelImage = SkwasmImage.fromPixels(
+      pixels,
+      width,
+      height,
+      format
+    );
+    if (scaledSize == null) {
+      callback(pixelImage);
+      return;
+    }
+
+    final ui.Rect outputRect = ui.Rect.fromLTWH(0, 0, scaledSize.width, scaledSize.height);
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder, outputRect);
+
+    canvas.drawImageRect(
+      pixelImage,
+      ui.Rect.fromLTWH(0, 0, width.toDouble(), width.toDouble()),
+      outputRect,
+      ui.Paint(),
+    );
+    final ui.Image finalImage = recorder.endRecording().toImageSync(
+      scaledSize.width.round(),
+      scaledSize.height.round()
+    );
+    pixelImage.dispose();
+    callback(finalImage);
   }
 
   @override
@@ -309,4 +459,27 @@ class SkwasmRenderer implements Renderer {
       return SkwasmFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => SkwasmLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }

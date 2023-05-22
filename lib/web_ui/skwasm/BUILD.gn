@@ -10,14 +10,22 @@ wasm_lib("skwasm") {
     "contour_measure.cpp",
     "data.cpp",
     "export.h",
+    "filters.cpp",
     "fonts.cpp",
     "helpers.h",
+    "image.cpp",
     "paint.cpp",
     "path.cpp",
     "picture.cpp",
     "shaders.cpp",
     "string.cpp",
     "surface.cpp",
+    "text/line_metrics.cpp",
+    "text/paragraph.cpp",
+    "text/paragraph_builder.cpp",
+    "text/paragraph_style.cpp",
+    "text/strut_style.cpp",
+    "text/text_style.cpp",
     "wrappers.h",
   ]
 
@@ -34,6 +42,7 @@ wasm_lib("skwasm") {
     "-lexports.js",
     "-sEXPORTED_FUNCTIONS=[stackAlloc]",
     "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
+    "-Wno-pthreads-mem-growth",
   ]
 
   if (is_debug) {
@@ -41,11 +50,6 @@ wasm_lib("skwasm") {
       "-sDEMANGLE_SUPPORT=1",
       "-sASSERTIONS=1",
       "-sGL_ASSERTIONS=1",
-    ]
-  } else {
-    ldflags += [
-      "-Oz",
-      "--closure=1",
     ]
   }
 

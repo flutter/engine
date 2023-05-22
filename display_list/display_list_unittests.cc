@@ -92,6 +92,22 @@ class DisplayListTestBase : public BaseT {
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
 
+TEST_F(DisplayListTest, EmptyBuild) {
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->op_count(), 0u);
+  EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+}
+
+TEST_F(DisplayListTest, EmptyRebuild) {
+  DisplayListBuilder builder;
+  auto dl1 = builder.Build();
+  auto dl2 = builder.Build();
+  auto dl3 = builder.Build();
+  ASSERT_TRUE(dl1->Equals(dl2));
+  ASSERT_TRUE(dl2->Equals(dl3));
+}
+
 TEST_F(DisplayListTest, BuilderCanBeReused) {
   DisplayListBuilder builder(kTestBounds);
   builder.DrawRect(kTestBounds, DlPaint());
@@ -567,7 +583,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -589,7 +606,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -607,7 +625,8 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   receiver.transformReset();
   auto display_list = builder.Build();
   ASSERT_NE(display_list, nullptr);
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
   SkCanvas* canvas = surface->getCanvas();
   // We can't use DlSkCanvas.DrawDisplayList as that method protects
   // the canvas against mutations from the display list being drawn.

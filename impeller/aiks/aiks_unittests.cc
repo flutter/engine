@@ -161,6 +161,24 @@ void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
       ColorSource::MakeImage(texture, tile_mode, tile_mode, {}, {});
   paint.color = Color(1, 1, 1, 1);
   canvas.DrawRect({0, 0, 600, 600}, paint);
+
+  // Should not change the image.
+  constexpr auto stroke_width = 64;
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = stroke_width;
+  if (tile_mode == Entity::TileMode::kDecal) {
+    canvas.DrawRect({stroke_width, stroke_width, 600, 600}, paint);
+  } else {
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+  }
+
+  // Should not change the image.
+  PathBuilder path_builder;
+  path_builder.AddCircle({150, 150}, 150);
+  path_builder.AddRoundedRect(Rect::MakeLTRB(300, 300, 600, 600), 10);
+  paint.style = Paint::Style::kFill;
+  canvas.DrawPath(path_builder.TakePath(), paint);
+
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 }  // namespace
@@ -1203,6 +1221,68 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanDrawPaintWithAdvancedBlend) {
+  Canvas canvas;
+  canvas.Scale(Vector2(0.2, 0.2));
+  canvas.DrawPaint({.color = Color::MediumTurquoise()});
+  canvas.DrawPaint({.color = Color::Color::OrangeRed().WithAlpha(0.5),
+                    .blend_mode = BlendMode::kHue});
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+#define BLEND_MODE_TUPLE(blend_mode) {#blend_mode, BlendMode::k##blend_mode},
+
+struct BlendModeSelection {
+  std::vector<const char*> blend_mode_names;
+  std::vector<BlendMode> blend_mode_values;
+};
+
+static BlendModeSelection GetBlendModeSelection() {
+  std::vector<const char*> blend_mode_names;
+  std::vector<BlendMode> blend_mode_values;
+  {
+    const std::vector<std::tuple<const char*, BlendMode>> blends = {
+        IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TUPLE)};
+    assert(blends.size() ==
+           static_cast<size_t>(Entity::kLastAdvancedBlendMode) + 1);
+    for (const auto& [name, mode] : blends) {
+      blend_mode_names.push_back(name);
+      blend_mode_values.push_back(mode);
+    }
+  }
+
+  return {blend_mode_names, blend_mode_values};
+}
+
+TEST_P(AiksTest, CanDrawPaintMultipleTimesInteractive) {
+  auto modes = GetBlendModeSelection();
+
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
+    static Color background = Color::MediumTurquoise();
+    static Color foreground = Color::Color::OrangeRed().WithAlpha(0.5);
+    static int current_blend_index = 3;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&background));
+      ImGui::ColorEdit4("Foreground", reinterpret_cast<float*>(&foreground));
+      ImGui::ListBox("Blend mode", &current_blend_index,
+                     modes.blend_mode_names.data(),
+                     modes.blend_mode_names.size());
+    }
+    ImGui::End();
+
+    Canvas canvas;
+    canvas.Scale(Vector2(0.2, 0.2));
+    canvas.DrawPaint({.color = background});
+    canvas.DrawPaint(
+        {.color = foreground,
+         .blend_mode = static_cast<BlendMode>(current_blend_index)});
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(AiksTest, PaintBlendModeIsRespected) {
   Paint paint;
   Canvas canvas;
@@ -1222,23 +1302,10 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-#define BLEND_MODE_TUPLE(blend_mode) {#blend_mode, BlendMode::k##blend_mode},
-
 TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
-  std::vector<const char*> blend_mode_names;
-  std::vector<BlendMode> blend_mode_values;
-  {
-    const std::vector<std::tuple<const char*, BlendMode>> blends = {
-        IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TUPLE)};
-    assert(blends.size() ==
-           static_cast<size_t>(Entity::kLastAdvancedBlendMode) + 1);
-    for (const auto& [name, mode] : blends) {
-      blend_mode_names.push_back(name);
-      blend_mode_values.push_back(mode);
-    }
-  }
+  BlendModeSelection blend_modes = GetBlendModeSelection();
 
   auto draw_color_wheel = [](Canvas& canvas) {
     /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
@@ -1294,7 +1361,8 @@ TEST_P(AiksTest, ColorWheel) {
     {
       ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
       ImGui::ListBox("Blending mode", &current_blend_index,
-                     blend_mode_names.data(), blend_mode_names.size());
+                     blend_modes.blend_mode_names.data(),
+                     blend_modes.blend_mode_names.size());
       ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
       ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&color0));
       ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
@@ -1347,8 +1415,9 @@ TEST_P(AiksTest, ColorWheel) {
     canvas.Scale(Vector2(3, 3));
 
     // Draw 3 circles to a subpass and blend it in.
-    canvas.SaveLayer({.color = Color::White().WithAlpha(src_alpha),
-                      .blend_mode = blend_mode_values[current_blend_index]});
+    canvas.SaveLayer(
+        {.color = Color::White().WithAlpha(src_alpha),
+         .blend_mode = blend_modes.blend_mode_values[current_blend_index]});
     {
       Paint paint;
       paint.blend_mode = BlendMode::kPlus;
@@ -2080,6 +2149,18 @@ TEST_P(AiksTest,
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, TranslucentSaveLayerWithAdvancedBlendModeDrawsCorrectly) {
+  Canvas canvas;
+  canvas.DrawRect({0, 0, 400, 400}, {.color = Color::Red()});
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+      .blend_mode = BlendMode::kLighten,
+  });
+  canvas.DrawCircle({200, 200}, 100, {.color = Color::Green()});
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 /// This is a regression check for https://github.com/flutter/engine/pull/41129
 /// The entire screen is green if successful. If failing, no frames will render,
 /// or the entire screen will be transparent black.
@@ -2161,6 +2242,133 @@ TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
   canvas.SaveLayer({.blend_mode = BlendMode::kSource});
   canvas.DrawCircle({300, 300}, 100, {.color = Color::Green()});
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
+    auto [a, b] = IMPELLER_PLAYGROUND_LINE(Point(50, 50), Point(300, 200), 30,
+                                           Color::White(), Color::White());
+
+    Canvas canvas;
+    canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+    canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
+    canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
+    canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
+    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), 20);
+    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                     [](const FilterInput::Ref& input,
+                        const Matrix& effect_transform, bool is_subpass) {
+                       return FilterContents::MakeGaussianBlur(
+                           input, Sigma(20.0), Sigma(20.0),
+                           FilterContents::BlurStyle::kNormal,
+                           Entity::TileMode::kClamp, effect_transform);
+                     });
+    canvas.Restore();
+
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, CanRenderBackdropBlur) {
+  Canvas canvas;
+  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+  canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
+  canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
+  canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
+  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), 20);
+  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeGaussianBlur(
+                         input, Sigma(30.0), Sigma(30.0),
+                         FilterContents::BlurStyle::kNormal,
+                         Entity::TileMode::kClamp, effect_transform);
+                   });
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
+  Canvas canvas;
+  canvas.DrawCircle({400, 400}, 300, {.color = Color::Green()});
+  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeGaussianBlur(
+                         input, Sigma(999999), Sigma(999999),
+                         FilterContents::BlurStyle::kNormal,
+                         Entity::TileMode::kClamp, effect_transform);
+                   });
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/126701 .
+TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  auto runtime_stage =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  struct FragUniforms {
+    Vector2 iResolution;
+    Scalar iTime;
+  } frag_uniforms = {.iResolution = Vector2(400, 400), .iTime = 100.0};
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(FragUniforms));
+  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeRuntimeEffect(
+      runtime_stage, uniform_data, texture_inputs);
+
+  Canvas canvas;
+  canvas.Save();
+  canvas.ClipRRect(Rect{0, 0, 400, 400}, 10.0,
+                   Entity::ClipOperation::kIntersect);
+  canvas.DrawRect(Rect{0, 0, 400, 400}, paint);
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanDrawPoints) {
+  std::vector<Point> points = {
+      {0, 0},      //
+      {100, 100},  //
+      {100, 0},    //
+      {0, 100},    //
+      {0, 0},      //
+      {48, 48},    //
+      {52, 52},    //
+  };
+  std::vector<PointStyle> caps = {
+      PointStyle::kRound,
+      PointStyle::kSquare,
+  };
+  Paint paint;
+  paint.color = Color::Yellow().WithAlpha(0.5);
+
+  Paint background;
+  background.color = Color::Black();
+
+  Canvas canvas;
+  canvas.DrawPaint(background);
+  canvas.Translate({200, 200});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kRound);
+  canvas.Translate({150, 0});
+  canvas.DrawPoints(points, 10, paint, PointStyle::kSquare);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

@@ -51,6 +51,9 @@ class HtmlFontCollection implements FlutterFontCollection {
     return _loadFontFaceBytes(fontFamily, list);
   }
 
+  @override
+  Null get fontFallbackManager => null;
+
   /// Unregister all fonts that have been registered.
   @override
   void clear() {
@@ -127,7 +130,12 @@ class HtmlFontCollection implements FlutterFontCollection {
     }
 
     try {
-      fontFaces.forEach(domDocument.fonts!.add);
+      // Since we can't use tear-offs for interop members, this code is faster
+      // and easier to read with a for loop instead of forEach.
+      // ignore: prefer_foreach
+      for (final DomFontFace font in fontFaces) {
+        domDocument.fonts!.add(font);
+      }
     } catch (e) {
       return FontInvalidDataError(asset);
     }
@@ -170,5 +178,9 @@ class HtmlFontCollection implements FlutterFontCollection {
       return false;
     }
     return true;
+  }
+
+  @override
+  void debugResetFallbackFonts() {
   }
 }

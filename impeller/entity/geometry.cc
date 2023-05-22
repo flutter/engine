@@ -7,14 +7,47 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
+
+/// Given a convex polyline, create a triangle fan structure.
+std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
+    Path::Polyline polyline) {
+  std::vector<Point> output;
+  std::vector<uint16_t> indices;
+
+  for (auto j = 0u; j < polyline.contours.size(); j++) {
+    auto [start, end] = polyline.GetContourPointBounds(j);
+    auto center = polyline.points[start];
+
+    // Some polygons will not self close and an additional triangle
+    // must be inserted, others will self close and we need to avoid
+    // inserting an extra triangle.
+    if (polyline.points[end - 1] == polyline.points[start]) {
+      end--;
+    }
+    output.emplace_back(center);
+    output.emplace_back(polyline.points[start + 1]);
+
+    for (auto i = start + 2; i < end; i++) {
+      const auto& point_b = polyline.points[i];
+      output.emplace_back(point_b);
+
+      indices.emplace_back(0);
+      indices.emplace_back(i - 1);
+      indices.emplace_back(i);
+    }
+  }
+  return std::make_pair(output, indices);
+}
 
 Geometry::Geometry() = default;
 
@@ -34,10 +67,13 @@ std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
 }
 
 // static
-std::unique_ptr<Geometry> Geometry::MakeRRect(Rect rect, Scalar corner_radius) {
-  return std::make_unique<RRectGeometry>(rect, corner_radius);
+std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
+                                                   Scalar radius,
+                                                   bool round) {
+  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
 }
 
+// static
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
                                                    Scalar stroke_width,
                                                    Scalar miter_limit,
@@ -65,7 +101,6 @@ static GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                                const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) {
-  constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   auto& host_buffer = pass.GetTransientsBuffer();
 
   std::vector<Point> data(8);
@@ -82,10 +117,8 @@ static GeometryResult ComputeUVGeometryForRect(Rect source_rect,
           {
               .vertex_buffer = host_buffer.Emplace(
                   data.data(), 16 * sizeof(float), alignof(float)),
-              .index_buffer = host_buffer.Emplace(
-                  kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
-              .index_count = 4,
-              .index_type = IndexType::k16bit,
+              .vertex_count = 4,
+              .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
@@ -103,8 +136,30 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
+  VertexBuffer vertex_buffer;
+
+  if (path_.GetFillType() == FillType::kNonZero &&  //
+      path_.IsConvex()) {
+    auto [points, indices] = TessellateConvex(
+        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+
+    vertex_buffer.vertex_buffer = host_buffer.Emplace(
+        points.data(), points.size() * sizeof(Point), alignof(Point));
+    vertex_buffer.index_buffer = host_buffer.Emplace(
+        indices.data(), indices.size() * sizeof(uint16_t), alignof(uint16_t));
+    vertex_buffer.vertex_count = indices.size();
+    vertex_buffer.index_type = IndexType::k16bit;
+
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer = vertex_buffer,
+        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation(),
+        .prevent_overdraw = false,
+    };
+  }
+
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
       path_.GetFillType(),
       path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()),
@@ -115,7 +170,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
             vertices, vertices_count * sizeof(float), alignof(float));
         vertex_buffer.index_buffer = host_buffer.Emplace(
             indices, indices_count * sizeof(uint16_t), alignof(uint16_t));
-        vertex_buffer.index_count = indices_count;
+        vertex_buffer.vertex_count = indices_count;
         vertex_buffer.index_type = IndexType::k16bit;
         return true;
       });
@@ -140,6 +195,36 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     RenderPass& pass) {
   using VS = TextureFillVertexShader;
 
+  if (path_.GetFillType() == FillType::kNonZero &&  //
+      path_.IsConvex()) {
+    auto [points, indices] = TessellateConvex(
+        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+
+    VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+    vertex_builder.Reserve(points.size());
+    vertex_builder.ReserveIndices(indices.size());
+    for (auto i = 0u; i < points.size(); i++) {
+      VS::PerVertexData data;
+      data.position = points[i];
+      auto coverage_coords =
+          (points[i] - texture_coverage.origin) / texture_coverage.size;
+      data.texture_coords = effect_transform * coverage_coords;
+      vertex_builder.AppendVertex(data);
+    }
+    for (auto i = 0u; i < indices.size(); i++) {
+      vertex_builder.AppendIndex(indices[i]);
+    }
+
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation(),
+        .prevent_overdraw = false,
+    };
+  }
+
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
       path_.GetFillType(),
@@ -152,8 +237,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
           Point vtx = {vertices[i], vertices[i + 1]};
           data.position = vtx;
           auto coverage_coords =
-              ((vtx - texture_coverage.origin) / texture_coverage.size) /
-              texture_coverage.size;
+              (vtx - texture_coverage.origin) / texture_coverage.size;
           data.texture_coords = effect_transform * coverage_coords;
           vertex_builder.AppendVertex(data);
         }
@@ -581,8 +665,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
        &effect_transform](SolidFillVertexShader::PerVertexData old_vtx) {
         TextureFillVertexShader::PerVertexData data;
         data.position = old_vtx.position;
-        auto coverage_coords = (old_vtx.position - texture_coverage.origin) /
-                               texture_coverage.size;
+        auto coverage_coords = old_vtx.position / texture_coverage.size;
         data.texture_coords = effect_transform * coverage_coords;
         vertex_builder.AppendVertex(data);
       });
@@ -650,7 +733,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                   rect.GetPoints().data(), 8 * sizeof(float), alignof(float)),
               .index_buffer = host_buffer.Emplace(
                   kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
-              .index_count = 4,
+              .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()),
@@ -687,7 +770,6 @@ RectGeometry::~RectGeometry() = default;
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) {
-  constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -695,10 +777,8 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
           {
               .vertex_buffer = host_buffer.Emplace(
                   rect_.GetPoints().data(), 8 * sizeof(float), alignof(float)),
-              .index_buffer = host_buffer.Emplace(
-                  kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
-              .index_count = 4,
-              .index_type = IndexType::k16bit,
+              .vertex_count = 4,
+              .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
@@ -724,163 +804,210 @@ std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
 }
 
-/////// RRect Geometry ///////
+/////// PointFieldGeometry Geometry ///////
 
-RRectGeometry::RRectGeometry(Rect rect, Scalar corner_radius)
-    : rect_(rect), corner_radius_(corner_radius) {}
+PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
+                                       Scalar radius,
+                                       bool round)
+    : points_(std::move(points)), radius_(radius), round_(round) {}
 
-RRectGeometry::~RRectGeometry() = default;
+PointFieldGeometry::~PointFieldGeometry() = default;
 
-static void AppendRRectCorner(Path::Polyline polyline,
-                              Point corner,
-                              VertexBufferBuilder<Point>& vtx_builder) {
-  for (auto i = 1u; i < polyline.points.size(); i++) {
-    vtx_builder.AddVertices({
-        polyline.points[i - 1],
-        polyline.points[i],
-        corner,
-    });
+GeometryResult PointFieldGeometry::GetPositionBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  if (radius_ < 0.0) {
+    return {};
   }
-}
+  auto determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
+    return {};
+  }
 
-VertexBufferBuilder<Point> RRectGeometry::CreatePositionBuffer(
-    const Entity& entity) const {
-  VertexBufferBuilder<Point> vtx_builder;
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar radius = std::max(radius_, min_size);
 
-  // The rounded rectangle is split into parts:
-  //  * four corner sections defined by an arc
-  //  * An interior shape composed of three rectangles.
+  if (!renderer.GetDeviceCapabilities().SupportsCompute()) {
+    return GetPositionBufferCPU(renderer, entity, pass, radius);
+  }
 
-  auto left = rect_.GetLeft();
-  auto right = rect_.GetRight();
-  auto bottom = rect_.GetBottom();
-  auto top = rect_.GetTop();
-  auto radii = PathBuilder::RoundingRadii(corner_radius_, corner_radius_,
-                                          corner_radius_, corner_radius_);
+  auto vertices_per_geom = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  auto total = points_per_circle * points_.size();
+  auto& host_buffer = pass.GetTransientsBuffer();
 
-  auto topLeft =
-      PathBuilder{}
-          .MoveTo({rect_.origin.x, rect_.origin.y + corner_radius_})
-          .AddRoundedRectTopLeft(rect_, radii)
-          .TakePath()
-          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-  auto topRight =
-      PathBuilder{}
-          .MoveTo({right - radii.top_right.x, rect_.origin.y})
-          .AddRoundedRectTopRight(rect_, radii)
-          .TakePath()
-          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-  auto bottomLeft =
-      PathBuilder{}
-          .MoveTo({left + corner_radius_, bottom})
-          .AddRoundedRectBottomLeft(rect_, radii)
-          .TakePath()
-          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-  auto bottomRight =
-      PathBuilder{}
-          .MoveTo({right, bottom - corner_radius_})
-          .AddRoundedRectBottomRight(rect_, radii)
-          .TakePath()
-          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+  using PS = PointsComputeShader;
 
-  vtx_builder.Reserve(12 * (topLeft.points.size() - 1) + 18);
+  auto points_data = host_buffer.Emplace(
+      points_.data(), points_.size() * sizeof(Point), alignof(Point));
 
-  AppendRRectCorner(topLeft, Point(left + corner_radius_, top + corner_radius_),
-                    vtx_builder);
+  DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total * sizeof(Point);
+  buffer_desc.storage_mode = StorageMode::kDevicePrivate;
 
-  AppendRRectCorner(topRight,
-                    Point(right - corner_radius_, top + corner_radius_),
-                    vtx_builder);
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
-  AppendRRectCorner(bottomLeft,
-                    Point(left + corner_radius_, bottom - corner_radius_),
-                    vtx_builder);
+  ComputeCommand cmd;
+  cmd.label = "Points Geometry";
+  cmd.pipeline = renderer.GetPointComputePipeline();
 
-  AppendRRectCorner(bottomRight,
-                    Point(right - corner_radius_, bottom - corner_radius_),
-                    vtx_builder);
-  vtx_builder.AddVertices({
-      // Top Component.
-      Point(left + corner_radius_, top + corner_radius_),
-      Point(left + corner_radius_, top),
-      Point(right - corner_radius_, top + corner_radius_),
+  PS::FrameInfo frame_info;
+  frame_info.count = points_.size();
+  frame_info.radius = radius;
+  frame_info.radian_start = round_ ? 0.0f : kPiOver4;
+  frame_info.radian_step = k2Pi / vertices_per_geom;
+  frame_info.points_per_circle = points_per_circle;
+  frame_info.divisions_per_circle = vertices_per_geom;
 
-      Point(left + corner_radius_, top),
-      Point(right - corner_radius_, top + corner_radius_),
-      Point(right - corner_radius_, top),
+  PS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  PS::BindGeometryData(
+      cmd, {.buffer = buffer, .range = Range{0, total * sizeof(Point)}});
+  PS::BindPointData(cmd, points_data);
 
-      // Bottom Component.
-      Point(left + corner_radius_, bottom - corner_radius_),
-      Point(left + corner_radius_, bottom),
-      Point(right - corner_radius_, bottom - corner_radius_),
+  {
+    auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
+    auto pass = cmd_buffer->CreateComputePass();
+    pass->SetGridSize(ISize(total, 1));
+    pass->SetThreadGroupSize(ISize(total, 1));
 
-      Point(left + corner_radius_, bottom),
-      Point(right - corner_radius_, bottom - corner_radius_),
-      Point(right - corner_radius_, bottom),
+    if (!pass->AddCommand(std::move(cmd)) || !pass->EncodeCommands() ||
+        !cmd_buffer->SubmitCommands()) {
+      return {};
+    }
+  }
 
-      // // Center Component.
-      Point(left, top + corner_radius_),
-      Point(right, top + corner_radius_),
-      Point(right, bottom - corner_radius_),
-
-      Point(left, top + corner_radius_),
-      Point(left, bottom - corner_radius_),
-      Point(right, bottom - corner_radius_),
-  });
-
-  return vtx_builder;
-}
-
-GeometryResult RRectGeometry::GetPositionBuffer(const ContentContext& renderer,
-                                                const Entity& entity,
-                                                RenderPass& pass) {
-  auto vtx_builder = CreatePositionBuffer(entity);
-
-  return GeometryResult{
+  return {
       .type = PrimitiveType::kTriangle,
-      .vertex_buffer =
-          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+      .vertex_buffer = {.vertex_buffer = {.buffer = buffer,
+                                          .range =
+                                              Range{0, total * sizeof(Point)}},
+                        .vertex_count = total,
+                        .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,
   };
 }
 
-GeometryResult RRectGeometry::GetPositionUVBuffer(
+GeometryResult PointFieldGeometry::GetPositionBufferCPU(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
+    Scalar radius) {
+  auto vertices_per_geom = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  auto total = points_per_circle * points_.size();
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto radian_start = round_ ? 0.0f : 0.785398f;
+  auto radian_step = k2Pi / vertices_per_geom;
+
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+  vtx_builder.Reserve(total);
+
+  /// Precompute all relative points and angles for a fixed geometry size.
+  auto elapsed_angle = radian_start;
+  std::vector<Point> angle_table(vertices_per_geom);
+  for (auto i = 0u; i < vertices_per_geom; i++) {
+    angle_table[i] = Point(cos(elapsed_angle), sin(elapsed_angle)) * radius;
+    elapsed_angle += radian_step;
+  }
+
+  for (auto i = 0u; i < points_.size(); i++) {
+    auto center = points_[i];
+
+    auto origin = center + angle_table[0];
+    vtx_builder.AppendVertex({origin});
+
+    auto pt1 = center + angle_table[1];
+    vtx_builder.AppendVertex({pt1});
+
+    auto pt2 = center + angle_table[2];
+    vtx_builder.AppendVertex({pt2});
+
+    for (auto j = 0u; j < vertices_per_geom - 3; j++) {
+      vtx_builder.AppendVertex({origin});
+      vtx_builder.AppendVertex({pt2});
+
+      pt2 = center + angle_table[j + 3];
+      vtx_builder.AppendVertex({pt2});
+    }
+  }
+
+  return {
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
+}
+
+GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     Rect texture_coverage,
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  auto vtx_builder = CreatePositionBuffer(entity);
-
-  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vertex_builder;
-  vtx_builder.IterateVertices(
-      [&vertex_builder, &texture_coverage, &effect_transform](Point position) {
-        TextureFillVertexShader::PerVertexData data;
-        data.position = position;
-        auto coverage_coords =
-            (position - texture_coverage.origin) / texture_coverage.size;
-        data.texture_coords = effect_transform * coverage_coords;
-        vertex_builder.AppendVertex(data);
-      });
-
-  return GeometryResult{
-      .type = PrimitiveType::kTriangle,
-      .vertex_buffer =
-          vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
-      .prevent_overdraw = true,
-  };
+  FML_UNREACHABLE();
 }
 
-GeometryVertexType RRectGeometry::GetVertexType() const {
+/// @brief Compute the number of vertices to divide each circle into.
+///
+/// @return the number of vertices.
+size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
+                                                  bool round) {
+  if (!round) {
+    return 4;
+  }
+
+  // Note: these values are approximated based on the values returned from
+  // the decomposition of 4 cubics performed by Path::CreatePolyline.
+  if (scaled_radius < 1.0) {
+    return 4;
+  }
+  if (scaled_radius < 2.0) {
+    return 8;
+  }
+  if (scaled_radius < 12.0) {
+    return 24;
+  }
+  if (scaled_radius < 22.0) {
+    return 34;
+  }
+  return std::min(scaled_radius, 140.0f);
+}
+
+// |Geometry|
+GeometryVertexType PointFieldGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }
 
-std::optional<Rect> RRectGeometry::GetCoverage(const Matrix& transform) const {
-  return rect_.TransformBounds(transform);
+// |Geometry|
+std::optional<Rect> PointFieldGeometry::GetCoverage(
+    const Matrix& transform) const {
+  if (points_.size() > 0) {
+    // Doesn't use MakePointBounds as this isn't resilient to points that
+    // all lie along the same axis.
+    auto first = points_.begin();
+    auto last = points_.end();
+    auto left = first->x;
+    auto top = first->y;
+    auto right = first->x;
+    auto bottom = first->y;
+    for (auto it = first + 1; it < last; ++it) {
+      left = std::min(left, it->x);
+      top = std::min(top, it->y);
+      right = std::max(right, it->x);
+      bottom = std::max(bottom, it->y);
+    }
+    return Rect::MakeLTRB(left - radius_, top - radius_, right + radius_,
+                          bottom + radius_);
+  }
+  return std::nullopt;
 }
 
 }  // namespace impeller

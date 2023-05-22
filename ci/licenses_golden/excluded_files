@@ -145,6 +145,7 @@
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/capabilities_unittests.cc
 ../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
@@ -225,9 +226,10 @@
 ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 ../../../flutter/shell/common/vsync_waiter_unittests.cc
 ../../../flutter/shell/platform/android/.gitignore
+../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
+../../../flutter/shell/platform/android/android_context_vulkan_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_shell_holder_unittests.cc
-../../../flutter/shell/platform/android/android_surface_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
@@ -2646,6 +2648,7 @@
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/glx/BUILD.bazel
@@ -2818,7 +2821,6 @@
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
-../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
 ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 ../../../third_party/skia/src/sksl/tracing/BUILD.bazel

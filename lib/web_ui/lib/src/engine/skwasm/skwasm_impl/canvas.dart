@@ -9,7 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmCanvas implements ui.Canvas {
+class SkwasmCanvas implements SceneCanvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
       SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
           pictureRecorderBeginRecording(
@@ -32,10 +32,23 @@ class SkwasmCanvas implements ui.Canvas {
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle);
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
       });
     } else {
-      canvasSaveLayer(_handle, nullptr, paint.handle);
+      canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
+    }
+  }
+
+  @override
+  void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
+    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
+    paint as SkwasmPaint;
+    if (bounds != null) {
+      withStackScope((StackScope s) {
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nativeFilter.handle);
+      });
+    } else {
+      canvasSaveLayer(_handle, nullptr, paint.handle, nativeFilter.handle);
     }
   }
 
@@ -183,21 +196,51 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawImage(ui.Image uiImage, ui.Offset offset, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+  void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) =>
+    canvasDrawImage(
+      _handle,
+      (image as SkwasmImage).handle,
+      offset.dx,
+      offset.dy,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
 
   @override
   void drawImageRect(
-      ui.Image uiImage, ui.Rect src, ui.Rect dst, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+    ui.Image image,
+    ui.Rect src,
+    ui.Rect dst,
+    ui.Paint paint) => withStackScope((StackScope scope) {
+    final Pointer<Float> sourceRect = scope.convertRectToNative(src);
+    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    canvasDrawImageRect(
+      _handle,
+      (image as SkwasmImage).handle,
+      sourceRect,
+      destRect,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
+  });
 
   @override
   void drawImageNine(
-      ui.Image uiImage, ui.Rect center, ui.Rect dst, ui.Paint uiPaint) {
-    throw UnimplementedError();
-  }
+    ui.Image image,
+    ui.Rect center,
+    ui.Rect dst,
+    ui.Paint paint) => withStackScope((StackScope scope) {
+    final Pointer<Int32> centerRect = scope.convertIRectToNative(center);
+    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    canvasDrawImageNine(
+      _handle,
+      (image as SkwasmImage).handle,
+      centerRect,
+      destRect,
+      (paint as SkwasmPaint).handle,
+      paint.filterQuality.index,
+    );
+  });
 
   @override
   void drawPicture(ui.Picture picture) {
@@ -205,8 +248,13 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawParagraph(ui.Paragraph uiParagraph, ui.Offset offset) {
-    // TODO(jacksongardner): implement this
+  void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
+    canvasDrawParagraph(
+      _handle,
+      (paragraph as SkwasmParagraph).handle,
+      offset.dx,
+      offset.dy,
+    );
   }
 
   @override
