@@ -22,6 +22,8 @@ class Surface final : public flutter::Surface {
   ~Surface() override;
 
  private:
+  const std::string debug_label_;
+
   // |flutter::Surface|
   bool IsValid() override;
 
