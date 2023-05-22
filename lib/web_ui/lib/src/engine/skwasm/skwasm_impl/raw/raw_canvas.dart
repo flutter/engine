@@ -237,6 +237,29 @@ external void canvasDrawPoints(
   PaintHandle paint,
 );
 
+@Native<Void Function(
+  CanvasHandle,
+  ImageHandle,
+  RawRSTransformArray,
+  RawRect,
+  RawColorArray,
+  Int,
+  Int,
+  RawRect,
+  PaintHandle,
+)>(symbol: 'canvas_drawAtlas', isLeaf: true)
+external void canvasDrawAtlas(
+  CanvasHandle handle,
+  ImageHandle atlas,
+  RawRSTransformArray transforms,
+  RawRect rects,
+  RawColorArray colors,
+  int spriteCount,
+  int blendMode,
+  RawRect cullRect,
+  PaintHandle paint,
+);
+
 @Native<Void Function(CanvasHandle, RawMatrix44)>(
     symbol: 'canvas_getTransform', isLeaf: true)
 external void canvasGetTransform(CanvasHandle canvas, RawMatrix44 outMatrix);

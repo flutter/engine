@@ -75,7 +75,7 @@ class SkwasmVertices implements ui.Vertices {
   bool _isDisposed = false;
 
   @override
-  bool get debugDisposed => throw UnimplementedError();
+  bool get debugDisposed => _isDisposed;
 
   @override
   void dispose() {

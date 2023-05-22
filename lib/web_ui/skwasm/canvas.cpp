@@ -232,8 +232,7 @@ SKWASM_EXPORT void canvas_drawVertices(SkCanvas* canvas,
                                        SkVertices* vertices,
                                        SkBlendMode mode,
                                        SkPaint* paint) {
-  vertices->ref();
-  canvas->drawVertices(sk_sp<SkVertices>(vertices), mode, *paint);
+  canvas->drawVertices(sk_ref_sp<SkVertices>(vertices), mode, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawPoints(SkCanvas* canvas,
@@ -242,6 +241,19 @@ SKWASM_EXPORT void canvas_drawPoints(SkCanvas* canvas,
                                      int pointCount,
                                      SkPaint* paint) {
   canvas->drawPoints(mode, pointCount, points, *paint);
+}
+
+SKWASM_EXPORT void canvas_drawAtlas(SkCanvas* canvas,
+                                    SkImage* atlas,
+                                    SkRSXform* transforms,
+                                    SkRect* rects,
+                                    SkColor* colors,
+                                    int spriteCount,
+                                    SkBlendMode mode,
+                                    SkRect* cullRect,
+                                    SkPaint* paint) {
+  canvas->drawAtlas(atlas, transforms, rects, colors, spriteCount, mode,
+                    SkSamplingOptions{}, cullRect, paint);
 }
 
 SKWASM_EXPORT void canvas_getTransform(SkCanvas* canvas, SkM44* outTransform) {
