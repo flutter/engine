@@ -44,7 +44,8 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
 @implementation FlutterDarwinContextMetalImpeller
 
 - (instancetype)initWithTaskRunner:(std::shared_ptr<fml::ConcurrentTaskRunner>)task_runner
-       is_gpu_disabled_sync_switch:(std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch {
+       is_gpu_disabled_sync_switch:
+           (std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch {
   self = [super init];
   if (self != nil) {
     _context =

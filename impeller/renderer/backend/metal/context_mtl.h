@@ -88,10 +88,11 @@ class ContextMTL final : public Context,
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   bool is_valid_ = false;
 
-  ContextMTL(id<MTLDevice> device,
-             NSArray<id<MTLLibrary>>* shader_libraries,
-             std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
-             std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
+  ContextMTL(
+      id<MTLDevice> device,
+      NSArray<id<MTLLibrary>>* shader_libraries,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

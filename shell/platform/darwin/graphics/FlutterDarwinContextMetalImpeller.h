@@ -26,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
  * Initializes a FlutterDarwinContextMetalImpeller.
  */
 - (instancetype)initWithTaskRunner:(std::shared_ptr<fml::ConcurrentTaskRunner>)task_runner
-       is_gpu_disabled_sync_switch:(std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch;
+       is_gpu_disabled_sync_switch:
+           (std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch;
 
 /**
  * Creates an external texture with the specified ID and contents.
