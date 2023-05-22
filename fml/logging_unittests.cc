@@ -21,6 +21,7 @@
 namespace fml {
 namespace testing {
 
+#ifndef OS_FUCHSIA
 class MakeSureFmlLogDoesNotSegfaultWhenStaticallyCalled {
  public:
   MakeSureFmlLogDoesNotSegfaultWhenStaticallyCalled() {
@@ -53,6 +54,7 @@ class MakeSureFmlLogDoesNotSegfaultWhenStaticallyCalled {
 };
 
 static MakeSureFmlLogDoesNotSegfaultWhenStaticallyCalled fml_log_static_check_;
+#endif  // !defined(OS_FUCHSIA)
 
 int UnreachableScopeWithoutReturnDoesNotMakeCompilerMad() {
   KillProcess();
