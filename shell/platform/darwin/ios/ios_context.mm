@@ -20,7 +20,8 @@ IOSContext::~IOSContext() = default;
 
 std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI api,
                                                IOSRenderingBackend backend,
-                                               MsaaSampleCount msaa_samples) {
+                                               MsaaSampleCount msaa_samples,
+                                               std::shared_ptr<fml::ConcurrentTaskRunner> task_runner) {
   switch (api) {
     case IOSRenderingAPI::kSoftware:
       return std::make_unique<IOSContextSoftware>();
@@ -30,7 +31,7 @@ std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI api,
         case IOSRenderingBackend::kSkia:
           return std::make_unique<IOSContextMetalSkia>(msaa_samples);
         case IOSRenderingBackend::kImpeller:
-          return std::make_unique<IOSContextMetalImpeller>();
+          return std::make_unique<IOSContextMetalImpeller>(std::move(task_runner));
       }
 #endif  // SHELL_ENABLE_METAL
     default:

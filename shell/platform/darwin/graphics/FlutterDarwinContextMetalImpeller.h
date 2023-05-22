@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initializes a FlutterDarwinContextMetalImpeller.
  */
-- (instancetype)init;
+- (instancetype)initWithTaskRunner:(std::shared_ptr<fml::ConcurrentTaskRunner>)task_runner;
 
 /**
  * Creates an external texture with the specified ID and contents.
@@ -38,11 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
  * Impeller context.
  */
 @property(nonatomic, readonly) std::shared_ptr<impeller::ContextMTL> context;
-
-/**
- * Concurrent message loop.
- */
-@property(nonatomic, readonly) std::shared_ptr<fml::ConcurrentMessageLoop> workers;
 
 /*
  * Texture cache for external textures.

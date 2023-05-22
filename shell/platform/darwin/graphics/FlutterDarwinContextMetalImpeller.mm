@@ -17,7 +17,7 @@
 FLUTTER_ASSERT_ARC
 
 static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
-    const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop) {
+    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
                                              impeller_entity_shaders_length),
@@ -28,9 +28,8 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
       std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
                                              impeller_framebuffer_blend_shaders_length),
   };
-  auto worker_task_runner = concurrent_loop->GetTaskRunner();
-  auto context =
-      impeller::ContextMTL::Create(shader_mappings, worker_task_runner, "Impeller Library");
+  auto context = impeller::ContextMTL::Create(shader_mappings, std::move(worker_task_runner),
+                                              "Impeller Library");
   if (!context) {
     FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
     return nullptr;
@@ -42,11 +41,10 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
 
 @implementation FlutterDarwinContextMetalImpeller
 
-- (instancetype)init {
+- (instancetype)initWithTaskRunner:(std::shared_ptr<fml::ConcurrentTaskRunner>)task_runner {
   self = [super init];
   if (self != nil) {
-    _workers = fml::ConcurrentMessageLoop::Create();
-    _context = CreateImpellerContext(_workers);
+    _context = CreateImpellerContext(std::move(task_runner));
     id<MTLDevice> device = _context->GetMTLDevice();
     if (!device) {
       FML_DLOG(ERROR) << "Could not acquire Metal device.";

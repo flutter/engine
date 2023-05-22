@@ -55,14 +55,16 @@ PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     IOSRenderingAPI rendering_api,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    const flutter::TaskRunners& task_runners)
+    const flutter::TaskRunners& task_runners,
+    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner)
     : PlatformViewIOS(
           delegate,
           IOSContext::Create(
               rendering_api,
               delegate.OnPlatformViewGetSettings().enable_impeller ? IOSRenderingBackend::kImpeller
                                                                    : IOSRenderingBackend::kSkia,
-              static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples)),
+              static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples),
+              worker_task_runner),
           platform_views_controller,
           task_runners) {}
 

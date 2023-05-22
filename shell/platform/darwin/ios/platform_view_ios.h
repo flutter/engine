@@ -49,7 +49,8 @@ class PlatformViewIOS final : public PlatformView {
       PlatformView::Delegate& delegate,
       IOSRenderingAPI rendering_api,
       const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-      const flutter::TaskRunners& task_runners);
+      const flutter::TaskRunners& task_runners,
+      const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner);
 
   ~PlatformViewIOS() override;
 

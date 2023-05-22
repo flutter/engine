@@ -20,7 +20,7 @@ namespace flutter {
 
 class IOSContextMetalImpeller final : public IOSContext {
  public:
-  IOSContextMetalImpeller();
+  IOSContextMetalImpeller(std::shared_ptr<fml::ConcurrentTaskRunner> task_runner);
 
   ~IOSContextMetalImpeller();
 

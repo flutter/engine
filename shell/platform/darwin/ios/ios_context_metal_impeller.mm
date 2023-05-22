@@ -8,10 +8,10 @@
 
 namespace flutter {
 
-IOSContextMetalImpeller::IOSContextMetalImpeller()
+IOSContextMetalImpeller::IOSContextMetalImpeller(std::shared_ptr<fml::ConcurrentTaskRunner> task_runner)
     : IOSContext(MsaaSampleCount::kFour),
       darwin_context_metal_impeller_(fml::scoped_nsobject<FlutterDarwinContextMetalImpeller>{
-          [[FlutterDarwinContextMetalImpeller alloc] init]}) {}
+          [[FlutterDarwinContextMetalImpeller alloc] initWithTaskRunner:task_runner]}) {}
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 
