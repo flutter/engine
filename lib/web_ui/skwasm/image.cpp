@@ -113,8 +113,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
 SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
                                                int32_t width,
                                                int32_t height) {
-  picture->ref();
-  return DeferredFromPicture(sk_sp<SkPicture>(picture), {width, height},
+  return DeferredFromPicture(sk_ref_sp<SkPicture>(picture), {width, height},
                              nullptr, nullptr, BitDepth::kU8,
                              SkColorSpace::MakeSRGB())
       .release();
@@ -125,13 +124,12 @@ SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
                                               int height,
                                               PixelFormat pixelFormat,
                                               size_t rowByteCount) {
-  data->ref();
   return SkImages::RasterFromData(
              SkImageInfo::Make(width, height,
                                colorTypeForPixelFormat(pixelFormat),
                                alphaTypeForPixelFormat(pixelFormat),
                                SkColorSpace::MakeSRGB()),
-             sk_sp(data), rowByteCount)
+             sk_ref_sp(data), rowByteCount)
       .release();
 }
 
@@ -146,6 +144,10 @@ SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObjectId videoFrameId,
                                    SkAlphaType::kPremul_SkAlphaType),
                  videoFrameId, surface))
       .release();
+}
+
+SKWASM_EXPORT void image_ref(SkImage* image) {
+  image->ref();
 }
 
 SKWASM_EXPORT void image_dispose(SkImage* image) {

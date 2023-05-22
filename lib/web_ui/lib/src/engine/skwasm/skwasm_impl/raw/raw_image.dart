@@ -51,6 +51,9 @@ external ImageHandle imageCreateFromVideoFrame(
   SurfaceHandle handle,
 );
 
+@Native<Void Function(ImageHandle)>(symbol:'image_ref', isLeaf: true)
+external void imageRef(ImageHandle handle);
+
 @Native<Void Function(ImageHandle)>(symbol: 'image_dispose', isLeaf: true)
 external void imageDispose(ImageHandle handle);
 

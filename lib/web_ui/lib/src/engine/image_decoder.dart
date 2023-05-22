@@ -428,10 +428,12 @@ ui.Image scaleImageIfNeeded(
     outputRect,
     ui.Paint(),
   );
-  final ui.Image finalImage = recorder.endRecording().toImageSync(
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image finalImage = picture.toImageSync(
     scaledSize.width.round(),
     scaledSize.height.round()
   );
+  picture.dispose();
   image.dispose();
   return finalImage;
 }
