@@ -1,9 +1,15 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #import <Cocoa/Cocoa.h>
 
 /**
  * Takes care of synchronization between raster and platform thread.
  */
 @interface FlutterThreadSynchronizer : NSObject
+
+- (nullable instancetype)init;
 
 /**
  * Blocks current thread until there is frame available.
@@ -40,5 +46,12 @@
  * Called when shutting down. Unblocks everything and prevents any further synchronization.
  */
 - (void)shutdown;
+
+@end
+
+@interface FlutterThreadSynchronizer (Test)
+
+- (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue
+        mainThread:(nonnull NSThread*)thread;
 
 @end

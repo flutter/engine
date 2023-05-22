@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
 #import <QuartzCore/QuartzCore.h>
@@ -10,6 +14,8 @@
 #import "flutter/fml/synchronization/waitable_event.h"
 
 @interface FlutterThreadSynchronizer () {
+  dispatch_queue_t _queue;
+  __weak NSThread* _queueThread;
   std::mutex _mutex;
   BOOL _shuttingDown;
   std::unordered_map<int64_t, CGSize> _contentSizes;
@@ -39,6 +45,20 @@
 
 @implementation FlutterThreadSynchronizer
 
+- (instancetype)init {
+  return [self initWithMainQueue:dispatch_get_main_queue() mainThread:[NSThread mainThread]];
+}
+
+- (instancetype)initWithMainQueue:(dispatch_queue_t)queue
+        mainThread:(NSThread*)thread {
+  self = [super init];
+  if (self != nil) {
+    _queue = queue;
+    _queueThread = thread;
+  }
+  return self;
+}
+
 - (BOOL)allViewsHaveFrame {
   for (auto const& [viewId, contentSize] : _contentSizes) {
     if (CGSizeEqualToSize(contentSize, CGSizeZero)) {
@@ -58,7 +78,7 @@
 }
 
 - (void)drain {
-  FML_DCHECK([NSThread isMainThread]);
+  FML_DCHECK([NSThread currentThread] == _queueThread);
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
@@ -136,7 +156,7 @@
     if (_beginResizeWaiting) {
       _condBlockBeginResize.notify_all();
     } else {
-      dispatch_async(dispatch_get_main_queue(), ^{
+      dispatch_async(_queue, ^{
         std::unique_lock<std::mutex> lock(_mutex);
         [self drain];
       });
