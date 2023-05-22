@@ -338,7 +338,8 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
         fml::MakeRefCounted<ImageDescriptor>(
             std::move(data), std::make_unique<UnknownImageGenerator>());
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_FALSE(image);
       latch.Signal();
@@ -384,7 +385,8 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
@@ -655,7 +657,8 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       decoded_size = image->skia_image()->dimensions();
@@ -715,7 +718,8 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
@@ -786,12 +790,13 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
           std::move(data), std::move(generator));
 
-      ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
-        ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image && image->skia_image());
-        final_size = image->skia_image()->dimensions();
-        latch.Signal();
-      };
+      ImageDecoder::ImageResult callback =
+          [&](const sk_sp<DlImage>& image, const std::string& decode_error) {
+            ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
+            ASSERT_TRUE(image && image->skia_image());
+            final_size = image->skia_image()->dimensions();
+            latch.Signal();
+          };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
     });
     latch.Wait();
@@ -857,12 +862,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {100, 100},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_1->sk_bitmap->dimensions(), SkISize::Make(6, 2));
+  ASSERT_EQ(result_1.sk_bitmap->width(), 6);
+  ASSERT_EQ(result_1.sk_bitmap->height(), 2);
 
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_2->sk_bitmap->dimensions(), SkISize::Make(10, 10));
+  ASSERT_EQ(result_2.sk_bitmap->width(), 10);
+  ASSERT_EQ(result_2.sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
@@ -890,13 +897,13 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_TRUE(expected_data != nullptr);
   ASSERT_FALSE(expected_data->isEmpty());
 
-  auto assert_image = [&](auto decoded_image) {
+  auto assert_image = [&](auto decoded_image, const std::string& decode_error) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
     ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
                     ->equals(expected_data.get()));
   };
 
-  assert_image(decode(300, 100));
+  assert_image(decode(300, 100), {});
 }
 
 TEST_F(ImageDecoderFixtureTest,
