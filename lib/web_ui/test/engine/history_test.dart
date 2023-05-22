@@ -3,15 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_interop'
-    show JSExportedDartFunction, JSExportedDartFunctionToFunction;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
 import 'package:ui/src/engine/dom.dart'
-    show DomEvent, DomEventListener, createDomPopStateEvent;
+    show DomEvent, createDomPopStateEvent;
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
@@ -736,7 +734,7 @@ class TestPlatformLocation implements PlatformLocation {
   @override
   dynamic state;
 
-  List<DomEventListener> popStateListeners = <DomEventListener>[];
+  List<EventListener> popStateListeners = <EventListener>[];
 
   @override
   String pathname = '';
@@ -753,19 +751,18 @@ class TestPlatformLocation implements PlatformLocation {
         if (state != null) 'state': state,
       },
     );
-    for (final DomEventListener listener in popStateListeners) {
-      final Function fn = (listener as JSExportedDartFunction).toDart;
-      fn(event);
+    for (final EventListener listener in popStateListeners) {
+      listener(event);
     }
   }
 
   @override
-  void addPopStateListener(DomEventListener fn) {
+  void addPopStateListener(EventListener fn) {
     popStateListeners.add(fn);
   }
 
   @override
-  void removePopStateListener(DomEventListener fn) {
+  void removePopStateListener(EventListener fn) {
     throw UnimplementedError();
   }
 
@@ -780,7 +777,7 @@ class TestPlatformLocation implements PlatformLocation {
   }
 
   @override
-  void go(double count) {
+  void go(int count) {
     throw UnimplementedError();
   }
 
