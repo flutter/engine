@@ -95,7 +95,8 @@ void main() {
 
   polyline.data[idx] = PolylineComponent(quad.p1, false, false);
   for (uint i = 1; i < decomposition.line_count - 1; i++) {
-    polyline.data[idx + i] = PolylineComponent(GenerateLineFromQuad(quad, i, decomposition), false, false);
+    polyline.data[idx + i] = PolylineComponent(
+        GenerateLineFromQuad(quad, i, decomposition), false, false);
   }
   polyline.data[idx] = PolylineComponent(quad.p2, contour_end, true);
 }
