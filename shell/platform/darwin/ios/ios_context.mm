@@ -18,10 +18,11 @@ IOSContext::IOSContext(MsaaSampleCount msaa_samples) : msaa_samples_(msaa_sample
 
 IOSContext::~IOSContext() = default;
 
-std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI api,
-                                               IOSRenderingBackend backend,
-                                               MsaaSampleCount msaa_samples,
-                                               std::shared_ptr<fml::ConcurrentTaskRunner> task_runner) {
+std::unique_ptr<IOSContext> IOSContext::Create(
+    IOSRenderingAPI api,
+    IOSRenderingBackend backend,
+    MsaaSampleCount msaa_samples,
+    std::shared_ptr<fml::ConcurrentTaskRunner> task_runner) {
   switch (api) {
     case IOSRenderingAPI::kSoftware:
       return std::make_unique<IOSContextSoftware>();
