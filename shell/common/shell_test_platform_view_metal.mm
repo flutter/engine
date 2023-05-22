@@ -31,9 +31,12 @@ static fml::scoped_nsprotocol<id<MTLTexture>> CreateOffscreenTexture(id<MTLDevic
 // non-Objective-C TUs.
 class DarwinContextMetal {
  public:
-  explicit DarwinContextMetal(bool impeller)
+  explicit DarwinContextMetal(bool impeller,
+                              std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
-        impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc] init] : nil),
+        impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc]
+                                         initWithTaskRunner:worker_task_runner]
+                                   : nil),
         offscreen_texture_(CreateOffscreenTexture(
             impeller ? [impeller_context_ context]->GetMTLDevice() : [context_ device])) {}
 
@@ -67,10 +70,12 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
     const TaskRunners& task_runners,
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
-    std::shared_ptr<ShellTestExternalViewEmbedder> shell_test_external_view_embedder)
+    std::shared_ptr<ShellTestExternalViewEmbedder> shell_test_external_view_embedder,
+    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
     : ShellTestPlatformView(delegate, task_runners),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
-      metal_context_(std::make_unique<DarwinContextMetal>(GetSettings().enable_impeller)),
+      metal_context_(
+          std::make_unique<DarwinContextMetal>(GetSettings().enable_impeller, worker_task_runner)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(std::move(shell_test_external_view_embedder)) {
