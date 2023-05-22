@@ -1859,7 +1859,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runner,
+      /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
