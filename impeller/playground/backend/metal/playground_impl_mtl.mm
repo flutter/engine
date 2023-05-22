@@ -64,7 +64,8 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
     : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
       data_(std::make_unique<Data>()),
-      concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch(false)) {
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -73,8 +74,9 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
     return;
   }
   auto worker_task_runner = concurrent_loop_->GetTaskRunner();
-  auto context = ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
-                                    worker_task_runner, "Playground Library");
+  auto context = ContextMTL::Create(
+      ShaderLibraryMappingsForPlayground(), worker_task_runner,
+      is_gpu_disabled_sync_switch_, "Playground Library");
   if (!context) {
     return;
   }

@@ -11,6 +11,7 @@
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
@@ -28,11 +29,13 @@ class ContextMTL final : public Context,
  public:
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::string>& shader_library_paths,
-      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
       std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
       const std::string& label);
 
   // |Context|
@@ -71,6 +74,8 @@ class ContextMTL final : public Context,
 
   const std::shared_ptr<fml::ConcurrentTaskRunner>& GetWorkerTaskRunner() const;
 
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
+
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
@@ -80,11 +85,13 @@ class ContextMTL final : public Context,
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
+  std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   bool is_valid_ = false;
 
   ContextMTL(id<MTLDevice> device,
              NSArray<id<MTLLibrary>>* shader_libraries,
-             std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
+             std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+             std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

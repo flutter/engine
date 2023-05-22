@@ -25,7 +25,8 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
     BackendType backend,
     const std::shared_ptr<ShellTestExternalViewEmbedder>&
         shell_test_external_view_embedder,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner) {
+    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
   // TODO(gw280): https://github.com/flutter/flutter/issues/50298
   // Make this fully runtime configurable
   switch (backend) {
@@ -46,7 +47,8 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
     case BackendType::kMetalBackend:
       return std::make_unique<ShellTestPlatformViewMetal>(
           delegate, task_runners, vsync_clock, create_vsync_waiter,
-          shell_test_external_view_embedder, worker_task_runner);
+          shell_test_external_view_embedder, std::move(worker_task_runner),
+          std::move(is_gpu_disabled_sync_switch));
 #endif  // SHELL_ENABLE_METAL
 
     default:

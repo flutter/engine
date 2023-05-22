@@ -359,7 +359,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
           create_vsync_waiter,                   //
           rendering_backend,                     //
           shell_test_external_view_embedder,     //
-          shell.GetConcurrentWorkerTaskRunner()  //
+          shell.GetConcurrentWorkerTaskRunner(), //
+          shell.GetIsGpuDisabledSyncSwitch()     //
       );
     };
   }

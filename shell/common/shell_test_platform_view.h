@@ -29,7 +29,8 @@ class ShellTestPlatformView : public PlatformView {
       BackendType backend,
       const std::shared_ptr<ShellTestExternalViewEmbedder>&
           shell_test_external_view_embedder,
-      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner);
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   virtual void SimulateVSync() = 0;
 

@@ -11,6 +11,7 @@
 #include "flutter/common/graphics/msaa_sample_count.h"
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/concurrent_message_loop.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
@@ -57,10 +58,12 @@ class IOSContext {
   ///
   /// @return     A valid context on success. `nullptr` on failure.
   ///
-  static std::unique_ptr<IOSContext> Create(IOSRenderingAPI api,
-                                            IOSRenderingBackend backend,
-                                            MsaaSampleCount msaa_samples,
-                                            std::shared_ptr<fml::ConcurrentTaskRunner> task_runner);
+  static std::unique_ptr<IOSContext> Create(
+      IOSRenderingAPI api,
+      IOSRenderingBackend backend,
+      MsaaSampleCount msaa_samples,
+      std::shared_ptr<fml::ConcurrentTaskRunner> task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Collects the context object. This must happen on the thread on
