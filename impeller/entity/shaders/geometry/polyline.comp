@@ -1,0 +1,101 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+layout(local_size_x = 512, local_size_y = 1) in;
+layout(std430) buffer;
+
+#include <impeller/path.glsl>
+#include <impeller/prefix_sum.glsl>
+
+#define MEMORY_SIZE 1024
+
+layout(binding = 0) readonly buffer Quads {
+  uint count;
+  QuadData data[];
+}
+quads;
+
+layout(binding = 1) readonly buffer Lines {
+  uint count;
+  LineData data[];
+}
+lines;
+
+layout(binding = 2) readonly buffer Components {
+  uint count;
+  PathComponent data[];
+}
+components;
+
+struct PolylineComponent {
+  vec2 pt;
+  // This is the end of a countour.
+  //
+  // that is path.close was called with this as the final
+  // point.
+  bool countour_end;
+
+  // This point is the end of a line segment.
+  bool segment_end;
+}
+
+layout(binding = 3) writeonly buffer Polyline {
+  uint count;
+  PolylineComponent data[];
+}
+polyline;
+
+uniform Config {
+  float quad_tolerance;
+}
+config;
+
+shared uint storage[MEMORY_SIZE];
+
+void main() {
+  uint ident = gl_GlobalInvocationID.x;
+
+  uint count = 0;
+  bool contour_end = false;
+  QuadData quad;
+  LineData line;
+  QuadDecomposition decomposition;
+
+  if (ident < components.count) {
+    PathComponent component = components.data[ident];
+    contour_end = component.contour_end;
+    if (comp.count == 2) {
+      line = lines.data[comp.index];
+      count = 1;
+    } else {
+      quad = quads.data[comp.index];
+      decomposition = DecomposeQuad(quad, config.quad_tolerance);
+      count = decomposition.line_count;
+      if (count == 1) {
+        line = LineData(quad.p1, quad.p2);
+      }
+    }
+  }
+
+  storage[ident] = count;
+  barrier();
+
+  ExclusivePrefixSum(ident, storage, MEMORY_SIZE);
+  idx = storage[ident] * 2;
+
+  if (count == 0) {
+    return;
+  }
+
+  if (count == 1) {
+    polyline.data[idx] = PolylineComponent(line.p1, false, false);
+    polyline.data[idx + 1] = PolylineComponent(line.p2, contour_end, true);
+    return;
+  }
+
+  polyline.data[idx] = PolylineComponent(quad.p1, false, false);
+  for (uint i = 1; i < decomposition.line_count - 1; i++) {
+    polyline.data[idx + i] = PolylineComponent(GenerateLineFromQuad(quad, i, decomposition), false, false);
+  }
+  polyline.data[idx] = PolylineComponent(quad.p2, contour_end, true);
+}
