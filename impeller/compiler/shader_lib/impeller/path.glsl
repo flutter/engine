@@ -35,6 +35,7 @@ struct QuadDecomposition {
 struct PathComponent {
   uint index;  // Location in buffer
   uint count;  // Number of points. 4 = cubic, 3 = quad, 2 = line.
+  bool contour_end;
 };
 
 /// Solve for point on a quadratic Bezier curve defined by starting point `p1`,

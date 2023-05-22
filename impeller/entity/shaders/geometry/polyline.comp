@@ -33,11 +33,11 @@ struct PolylineComponent {
   //
   // that is path.close was called with this as the final
   // point.
-  bool countour_end;
+  bool contour_end;
 
   // This point is the end of a line segment.
   bool segment_end;
-}
+};
 
 layout(binding = 3) writeonly buffer Polyline {
   uint count;
@@ -64,11 +64,11 @@ void main() {
   if (ident < components.count) {
     PathComponent component = components.data[ident];
     contour_end = component.contour_end;
-    if (comp.count == 2) {
-      line = lines.data[comp.index];
+    if (component.count == 2) {
+      line = lines.data[component.index];
       count = 1;
     } else {
-      quad = quads.data[comp.index];
+      quad = quads.data[component.index];
       decomposition = DecomposeQuad(quad, config.quad_tolerance);
       count = decomposition.line_count;
       if (count == 1) {
@@ -77,26 +77,27 @@ void main() {
     }
   }
 
-  storage[ident] = count;
+  storage[ident] = count + 1;
   barrier();
 
   ExclusivePrefixSum(ident, storage, MEMORY_SIZE);
-  idx = storage[ident] * 2;
+  uint idx = storage[ident];
 
-  if (count == 0) {
+  if (count <= 1) {
     return;
   }
 
   if (count == 1) {
     polyline.data[idx] = PolylineComponent(line.p1, false, false);
     polyline.data[idx + 1] = PolylineComponent(line.p2, contour_end, true);
-    return;
-  }
 
-  polyline.data[idx] = PolylineComponent(quad.p1, false, false);
-  for (uint i = 1; i < decomposition.line_count - 1; i++) {
-    polyline.data[idx + i] = PolylineComponent(
-        GenerateLineFromQuad(quad, i, decomposition), false, false);
+  } else {
+    polyline.data[idx] = PolylineComponent(quad.p1, false, false);
+    for (uint i = 1; i < decomposition.line_count - 1; i++) {
+      polyline.data[idx + i] = PolylineComponent(
+          GenerateLineFromQuad(quad, i, decomposition), false, false);
+    }
+    polyline.data[idx + count] = PolylineComponent(quad.p2, contour_end, true);
   }
-  polyline.data[idx] = PolylineComponent(quad.p2, contour_end, true);
+  atomicAdd(polyline.count, count);
 }
