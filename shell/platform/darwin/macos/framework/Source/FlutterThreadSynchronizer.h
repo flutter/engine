@@ -12,13 +12,7 @@
 - (nullable instancetype)init;
 
 /**
- * Blocks current thread until there is frame available.
- * Used in FlutterEngineTest.
- */
-- (void)blockUntilFrameAvailable;
-
-/**
- * Called from platform thread. Blocks until commit with given size (or empty)
+ * Called from platform thread. Blocks until a commit with given size (or empty)
  * is requested.
  */
 - (void)beginResizeForView:(int64_t)viewId
@@ -52,5 +46,11 @@
 @interface FlutterThreadSynchronizer (Test)
 
 - (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue;
+
+/**
+ * Blocks current thread until there is frame available.
+ * Used in FlutterEngineTest.
+ */
+- (void)blockUntilFrameAvailable;
 
 @end
