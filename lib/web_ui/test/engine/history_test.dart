@@ -691,7 +691,7 @@ void testMain() {
 
   group('$BrowserPlatformLocation', () {
     test('getOrCreateDomEventListener caches funcions', () {
-      final BrowserPlatformLocation location = BrowserPlatformLocation();
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
       void myListener(Object event) {}
 
       expect(
