@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import '../../engine.dart' show registerHotRestartListener;
@@ -23,7 +24,7 @@ enum Assertiveness {
 AccessibilityAnnouncements get accessibilityAnnouncements {
   assert(
     _accessibilityAnnouncements != null,
-    'AccessibilityAnnouncements not initialized. Call initializeAccessibilityAnnouncements() to innitialize it.',
+    'AccessibilityAnnouncements not initialized. Call initializeAccessibilityAnnouncements() to initialize it.',
   );
   return _accessibilityAnnouncements!;
 }
@@ -49,6 +50,10 @@ void initializeAccessibilityAnnouncements() {
     accessibilityAnnouncements.dispose();
   });
 }
+
+/// Duration for which a live message will be present in the DOM for the screen
+/// reader to announce it.
+const Duration liveMessageDuration = Duration(milliseconds: 300);
 
 /// Makes accessibility announcements using `aria-live` DOM elements.
 class AccessibilityAnnouncements {
@@ -119,12 +124,10 @@ class AccessibilityAnnouncements {
     assert(!_isDisposed);
     final DomHTMLElement ariaLiveElement = ariaLiveElementFor(assertiveness);
 
-    // If the last announced message is the same as the new message, some
-    // screen readers, such as Narrator, will not read the same message
-    // again. In this case, add an artifical "." at the end of the message
-    // string to force the text of the message to look different.
-    final String suffix = ariaLiveElement.innerText == message ? '.' : '';
-    ariaLiveElement.text = '$message$suffix';
+    final DomElement messageElement = createDomElement('div');
+    messageElement.text = message;
+    ariaLiveElement.append(messageElement);
+    Timer(liveMessageDuration, () => messageElement.remove());
   }
 
   static DomHTMLLabelElement _createElement(Assertiveness assertiveness) {
