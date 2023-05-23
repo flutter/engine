@@ -9,6 +9,8 @@
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_generator.h"
 
+#include <utility>
+
 using tonic::DartPersistentValue;
 
 namespace flutter {
@@ -62,7 +64,7 @@ class MultiFrameCodec : public Codec {
     // The index of the frame before last frame
     int exExRequiredFrameIndex_ = -1;
 
-    sk_sp<DlImage> GetNextFrameImage(
+    std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
         const std::shared_ptr<impeller::Context>& impeller_context,
