@@ -284,7 +284,7 @@ class EngineAutofillForm {
     formElement.append(submitButton);
 
     // If the focused node is at the end of the form, we'll default to inserting
-    // it before the submit field. 
+    // it before the submit field.
     nodeToInsertBefore ??= submitButton;
 
     return EngineAutofillForm(
