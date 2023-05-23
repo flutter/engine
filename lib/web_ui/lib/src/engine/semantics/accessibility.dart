@@ -53,6 +53,8 @@ void initializeAccessibilityAnnouncements() {
 
 /// Duration for which a live message will be present in the DOM for the screen
 /// reader to announce it.
+///
+/// This was determined by trial and error with some extra buffer added.
 const Duration liveMessageDuration = Duration(milliseconds: 300);
 
 /// Makes accessibility announcements using `aria-live` DOM elements.
