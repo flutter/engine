@@ -688,6 +688,22 @@ void testMain() {
       expect(state, expected);
     });
   });
+
+  group('$BrowserPlatformLocation', () {
+    test('getOrCreateDomEventListener caches funcions', () {
+      final BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myListener(Object event) {}
+
+      expect(
+        identical(
+          location.getOrCreateDomEventListener(myListener),
+          location.getOrCreateDomEventListener(myListener),
+        ),
+        isTrue,
+      );
+    });
+
+  });
 }
 
 Future<void> routeUpdated(String routeName) {

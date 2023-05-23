@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 
 import 'url_strategy.dart';
@@ -75,6 +76,9 @@ abstract interface class PlatformLocation {
   String? getBaseHref();
 }
 
+final Map<EventListener, DomEventListener> _popStateListenersCache =
+    <EventListener, DomEventListener>{};
+
 /// Delegates to real browser APIs to provide platform location functionality.
 class BrowserPlatformLocation implements PlatformLocation {
   /// Default constructor for [BrowserPlatformLocation].
@@ -83,14 +87,21 @@ class BrowserPlatformLocation implements PlatformLocation {
   DomLocation get _location => domWindow.location;
   DomHistory get _history => domWindow.history;
 
+  @visibleForTesting
+  DomEventListener getOrCreateDomEventListener(EventListener fn) {
+    return _popStateListenersCache.putIfAbsent(fn, () => createDomEventListener(fn));
+  }
+
   @override
   void addPopStateListener(EventListener fn) {
-    domWindow.addEventListener('popstate', createDomEventListener(fn));
+    domWindow.addEventListener('popstate', getOrCreateDomEventListener(fn));
   }
 
   @override
   void removePopStateListener(EventListener fn) {
-    domWindow.removeEventListener('popstate', createDomEventListener(fn));
+    final DomEventListener jsFn = getOrCreateDomEventListener(fn);
+    _popStateListenersCache.remove(fn);
+    domWindow.removeEventListener('popstate', jsFn);
   }
 
   @override
