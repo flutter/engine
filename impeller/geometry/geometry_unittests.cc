@@ -598,6 +598,34 @@ TEST(GeometryTest, EmptyPath) {
   ASSERT_TRUE(polyline.contours.empty());
 }
 
+TEST(GeometryTest, OneLinearSegmentPath) {
+  auto path = PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath();
+  ASSERT_EQ(path.GetComponentCount(), 2u);
+
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
+
+  std::vector<Point> expected = {{0, 0}, {10, 10}};
+  ASSERT_EQ(polyline.points, expected);
+  ASSERT_EQ(polyline.contours[0].start_index, 0u);
+  ASSERT_EQ(polyline.contours[0].is_closed, false);
+  ASSERT_EQ(polyline.contours[0].start_direction, Point(-10, -10).Normalize());
+  ASSERT_EQ(polyline.contours[0].end_direction, Point(10, 10).Normalize());
+}
+
+TEST(GeometryTest, OneLinearSegmentPathWithSamePoint) {
+  auto path = PathBuilder{}.AddLine({0, 0}, {0, 0}).TakePath();
+  ASSERT_EQ(path.GetComponentCount(), 2u);
+
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
+
+  std::vector<Point> expected = {{0, 0}, {10, 10}};
+  ASSERT_EQ(polyline.points, expected);
+  ASSERT_EQ(polyline.contours[0].start_index, 0u);
+  ASSERT_EQ(polyline.contours[0].is_closed, false);
+  ASSERT_EQ(polyline.contours[0].start_direction, Vector2(0, -1));
+  ASSERT_EQ(polyline.contours[0].end_direction, Vector2(0, 1));
+}
+
 TEST(GeometryTest, SimplePath) {
   Path path;
 

@@ -242,7 +242,32 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
+// static
+Path::Polyline Path::CreatePolylineForLineSegment(Point p1, Point p2) {
+  Vector2 start_direction;
+  Vector2 end_direction;
+  if (p1 == p2) {
+    start_direction = Vector2(0, -1);
+    end_direction = Vector2(0, 1);
+  } else {
+    start_direction = (p1 - p2).Normalize();
+    end_direction = (p2 - p1).Normalize();
+  }
+
+  return Polyline{.points = {p1, p2},
+                  .contours = {PolylineContour{
+                      .start_index = 0,
+                      .is_closed = false,
+                      .start_direction = start_direction,
+                      .end_direction = end_direction,
+                  }}};
+}
+
 Path::Polyline Path::CreatePolyline(Scalar scale) const {
+  if (linears_.size() == 1 && quads_.size() == 0 && cubics_.size() == 0) {
+    return CreatePolylineForLineSegment(linears_[0].p1, linears_[0].p2);
+  }
+
   Polyline polyline;
 
   std::optional<Point> previous_contour_point;

@@ -154,6 +154,11 @@ class Path {
 
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
+  /// @brief  Create a polyline for a two point line segment.
+  ///
+  ///         This is an optimization to support canvas.drawLine method.
+  static Polyline CreatePolylineForLineSegment(Point p1, Point p2);
+
  private:
   friend class PathBuilder;
 
