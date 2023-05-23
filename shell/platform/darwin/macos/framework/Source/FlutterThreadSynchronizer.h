@@ -52,6 +52,18 @@
 /**
  * Blocks current thread until the mutex is available, then return whether the
  * synchronizer is waiting for a correct commit during resizing.
+ *
+ * After calling an operation of the thread synchronizer, call this method,
+ * and when it returns, the thread synchronizer can be at one of the following 3
+ * states:
+ *
+ *  1. The operation has not started at all (with a return value FALSE.)
+ *  2. The operation has ended (with a return value FALSE.)
+ *  3. beginResizeForView: is in progress, waiting (with a return value TRUE.)
+ *
+ * By eliminating the 1st case (such as using the notify callback), we can use
+ * this return value to decide whether the synchronizer is in case 2 or case 3,
+ * that is whether the resizing is blocked by a mismatching commit.
  */
 - (BOOL)isWaitingWhenMutexIsAvailable;
 

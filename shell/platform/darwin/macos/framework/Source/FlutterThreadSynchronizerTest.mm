@@ -75,7 +75,7 @@ namespace {}  // namespace
 
 @end
 
-TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
+TEST(FlutterThreadSynchronizerTest, RegularCommit) {
   FlutterThreadSynchronizerTestScaffold* scaffold =
       [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
@@ -121,7 +121,7 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
   EXPECT_EQ(notifiedCommit, 1);
 }
 
-TEST(FlutterThreadSynchronizerTest, FinishResizingOnlyWhenCommittingMatchingSize) {
+TEST(FlutterThreadSynchronizerTest, ResizingBlocksRenderingUntilSizeMatches) {
   FlutterThreadSynchronizerTestScaffold* scaffold =
       [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
@@ -187,7 +187,7 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingOnlyWhenCommittingMatchingSize
   [scaffold joinMain];
 }
 
-TEST(FlutterThreadSynchronizerTest, FinishResizingWhenShuttingDown) {
+TEST(FlutterThreadSynchronizerTest, ShutdownMakesEverythingNonBlocking) {
   FlutterThreadSynchronizerTestScaffold* scaffold =
       [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
@@ -240,5 +240,149 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingWhenShuttingDown) {
                                 }];
   }];
   [scaffold joinRender];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+}
+
+TEST(FlutterThreadSynchronizerTest, RegularCommitForMultipleViews) {
+  FlutterThreadSynchronizerTestScaffold* scaffold =
+      [[FlutterThreadSynchronizerTestScaffold alloc] init];
+  FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
+  fml::AutoResetWaitableEvent begunResizingLatch;
+  fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
+
+  [synchronizer registerView:1];
+  [synchronizer registerView:2];
+
+  // Initial resize: does not block until the first frame.
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:1
+                                size:CGSize{5, 5}
+                              notify:^{
+                              }];
+    [synchronizer beginResizeForView:2
+                                size:CGSize{15, 15}
+                              notify:^{
+                                begunResizing->Signal();
+                              }];
+  }];
+  begunResizing->Wait();
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+  [scaffold joinMain];
+
+  // Still does not block.
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:1
+                                size:CGSize{7, 7}
+                              notify:^{
+                                begunResizing->Signal();
+                              }];
+  }];
+  begunResizing->Signal();
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+  [scaffold joinMain];
+
+  // First frame
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{7, 7}
+                                notify:^{
+                                }];
+    [synchronizer performCommitForView:2
+                                  size:CGSize{15, 15}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+}
+
+TEST(FlutterThreadSynchronizerTest, ResizingForMultipleViews) {
+  FlutterThreadSynchronizerTestScaffold* scaffold =
+      [[FlutterThreadSynchronizerTestScaffold alloc] init];
+  FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
+  fml::AutoResetWaitableEvent begunResizingLatch;
+  fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
+
+  [synchronizer registerView:1];
+  [synchronizer registerView:2];
+
+  // Initial resize: does not block until the first frame.
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:1
+                                size:CGSize{5, 5}
+                              notify:^{
+                              }];
+    [synchronizer beginResizeForView:2
+                                size:CGSize{15, 15}
+                              notify:^{
+                              }];
+  }];
+  [scaffold joinMain];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // First frame.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
+    [synchronizer performCommitForView:2
+                                  size:CGSize{15, 15}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Resize view 2 to (17, 17): blocks until the next frame.
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:2
+                                size:CGSize{17, 17}
+                              notify:^{
+                                begunResizing->Signal();
+                              }];
+  }];
+  begunResizing->Wait();
+  EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Render view 1 with the size. Still blocking.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Render view 2 with the old size. Still blocking.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{15, 15}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Render view 1 with the size.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Render view 2 with the new size. Unblocks.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:2
+                                  size:CGSize{17, 17}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  [scaffold joinMain];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
 }
