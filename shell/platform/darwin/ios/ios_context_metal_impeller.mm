@@ -14,8 +14,8 @@ IOSContextMetalImpeller::IOSContextMetalImpeller(
     : IOSContext(MsaaSampleCount::kFour),
       darwin_context_metal_impeller_(fml::scoped_nsobject<FlutterDarwinContextMetalImpeller>{
           [[FlutterDarwinContextMetalImpeller alloc]
-                       initWithTaskRunner:task_runner
-              is_gpu_disabled_sync_switch:is_gpu_disabled_sync_switch]}) {}
+                       initWithTaskRunner:std::move(task_runner)
+              is_gpu_disabled_sync_switch:std::move(is_gpu_disabled_sync_switch)]}) {}
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 

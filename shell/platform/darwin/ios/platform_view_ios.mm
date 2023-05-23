@@ -66,7 +66,7 @@ PlatformViewIOS::PlatformViewIOS(
                                                                    : IOSRenderingBackend::kSkia,
               static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples),
               worker_task_runner,
-              is_gpu_disabled_sync_switch),
+              std::move(is_gpu_disabled_sync_switch)),
           platform_views_controller,
           task_runners) {}
 
