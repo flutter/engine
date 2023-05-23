@@ -1091,6 +1091,7 @@ ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl + 
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/prefix_sum.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl + ../../../flutter/LICENSE
@@ -1240,8 +1241,20 @@ ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.cc + ../../../flutte
 ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/geometry.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/cover_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/cover_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/fill_path_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/fill_path_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/point_field_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/point_field_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/rect_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/rect_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl + ../../../flutter/LICENSE
@@ -1296,6 +1309,7 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alp
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/geometry/points.comp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/geometry/uv.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas_color.frag + ../../../flutter/LICENSE
@@ -1560,6 +1574,7 @@ ORIGIN: ../../../flutter/impeller/renderer/pipeline_descriptor.cc + ../../../flu
 ORIGIN: ../../../flutter/impeller/renderer/pipeline_descriptor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline_library.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline_library.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/prefix_sum_test.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/render_pass.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/render_pass.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/render_target.cc + ../../../flutter/LICENSE
@@ -2705,7 +2720,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPla
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewControllerTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRendererTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h + ../../../flutter/LICENSE
@@ -3717,6 +3731,7 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/prefix_sum.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
@@ -3866,8 +3881,20 @@ FILE: ../../../flutter/impeller/entity/entity_pass_target.cc
 FILE: ../../../flutter/impeller/entity/entity_pass_target.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
-FILE: ../../../flutter/impeller/entity/geometry.cc
-FILE: ../../../flutter/impeller/entity/geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/cover_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/cover_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/fill_path_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/fill_path_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/point_field_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/point_field_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/rect_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/rect_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.h
 FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.h
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
@@ -3922,6 +3949,7 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag
 FILE: ../../../flutter/impeller/entity/shaders/geometry/points.comp
+FILE: ../../../flutter/impeller/entity/shaders/geometry/uv.comp
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_color.frag
@@ -4186,6 +4214,7 @@ FILE: ../../../flutter/impeller/renderer/pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_descriptor.h
 FILE: ../../../flutter/impeller/renderer/pipeline_library.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_library.h
+FILE: ../../../flutter/impeller/renderer/prefix_sum_test.comp
 FILE: ../../../flutter/impeller/renderer/render_pass.cc
 FILE: ../../../flutter/impeller/renderer/render_pass.h
 FILE: ../../../flutter/impeller/renderer/render_target.cc
@@ -5344,7 +5373,6 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatf
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewControllerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRendererTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h
