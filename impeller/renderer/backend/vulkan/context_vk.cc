@@ -191,7 +191,7 @@ void ContextVK::Setup(Settings settings) {
   instance_info.setPApplicationInfo(&application_info);
   instance_info.setFlags(instance_flags);
 
-  auto device_holder = std::make_shared<UniqueDeviceHolder>();
+  auto device_holder = std::make_shared<DeviceHolderImpl>();
   {
     auto instance = vk::createInstanceUnique(instance_info);
     if (instance.result != vk::Result::eSuccess) {

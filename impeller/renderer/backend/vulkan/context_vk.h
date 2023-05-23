@@ -133,7 +133,7 @@ class ContextVK final : public Context,
   std::shared_ptr<FenceWaiterVK> GetFenceWaiter() const;
 
  private:
-  struct UniqueDeviceHolder : public DeviceHolder {
+  struct DeviceHolderImpl : public DeviceHolder {
     // |DeviceHolder|
     const vk::Device& GetDevice() const override { return device.get(); }
     vk::UniqueInstance instance;
@@ -141,7 +141,7 @@ class ContextVK final : public Context,
     vk::UniqueDevice device;
   };
 
-  std::shared_ptr<UniqueDeviceHolder> device_holder_;
+  std::shared_ptr<DeviceHolderImpl> device_holder_;
   std::unique_ptr<DebugReportVK> debug_report_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;
