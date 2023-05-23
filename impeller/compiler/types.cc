@@ -42,6 +42,15 @@ SourceType SourceTypeFromFileName(const std::string& file_name) {
   return SourceType::kUnknown;
 }
 
+SourceLanguage ToSourceLanguage(const std::string& source_language) {
+  if (source_language == "glsl") {
+    return SourceLanguage::kGLSL;
+  } else if (source_language == "hlsl") {
+    return SourceLanguage::kHLSL;
+  }
+  return SourceLanguage::kUnknown;
+}
+
 std::string TargetPlatformToString(TargetPlatform platform) {
   switch (platform) {
     case TargetPlatform::kUnknown:

@@ -146,11 +146,8 @@ Switches::Switches(const fml::CommandLine& command_line)
       command_line.GetOptionValueWithDefault("source-language", "glsl");
   std::transform(language.begin(), language.end(), language.begin(),
                  [](char x) { return std::tolower(x); });
-  if (language == "glsl") {
-    source_language = SourceLanguage::kGLSL;
-  } else if (language == "hlsl") {
-    source_language = SourceLanguage::kHLSL;
-  }
+
+  source_language = ToSourceLanguage(language);
 
   if (!working_directory || !working_directory->is_valid()) {
     return;
@@ -228,6 +225,14 @@ bool Switches::AreValid(std::ostream& explain) const {
     explain << "Spirv file name was empty." << std::endl;
     valid = false;
   }
+
+  if (iplr && !iplr_bundle.empty()) {
+    explain
+        << "--iplr and --iplr-bundle flag cannot be specified at the same time"
+        << std::endl;
+    valid = false;
+  }
+
   return valid;
 }
 

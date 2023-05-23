@@ -47,6 +47,66 @@ bool Main(const fml::CommandLine& command_line) {
     return false;
   }
 
+  if (!switches.iplr_bundle.empty()) {
+    auto json = nlohmann::json::parse(switches.iplr_bundle);
+    if (!json.is_object()) {
+      std::cerr << "The IPLR bundle spec must be a JSON object." << std::endl;
+      return false;
+    }
+
+    IPLRBundleEntries bundle_entries_result;
+    for (auto& [bundle_name, bundle_value] : json.items()) {
+      if (!bundle_value.is_object()) {
+        std::cerr << "Invalid IPLR bundle entry \"" << bundle_name
+                  << "\": Entry is not a JSON object." << std::endl;
+        return false;
+      }
+
+      IPLRBundleEntry bundle_entry_result;
+      for (auto& [stage_name, stage_value] : bundle_value.items()) {
+        if (bundle_entry_result.find(stage_name) == bundle_entry_result.end()) {
+          std::cerr << "Duplicate IPLR bundle stage entry \"" << stage_name
+                    << "\" in bundle \"" << bundle_name << "\"." << std::endl;
+          return false;
+        }
+        if (!bundle_value.is_object()) {
+          std::cerr << "Invalid IPLR bundle stage entry \"" << stage_name
+                    << "\" in bundle \"" << bundle_name
+                    << "\": Entry is not a JSON object." << std::endl;
+          return false;
+        }
+
+        IPLRStageEntry stage_result;
+
+        stage_result.language = stage_value.contains("language")
+                                    ? ToSourceLanguage(stage_value["language"])
+                                    : SourceLanguage::kGLSL;
+        if (stage_result.language == SourceLanguage::kUnknown) {
+          std::cerr << "Invalid IPLR bundle stage entry \"" << stage_name
+                    << "\" in bundle \"" << bundle_name
+                    << "\": Unknown language type \"" << stage_value["language"]
+                    << "\"." << std::endl;
+          return false;
+        }
+
+        if (!stage_value.contains("name")) {
+          std::cerr << "Duplicate IPLR bundle stage entry \"" << stage_name
+                    << "\" in bundle \"" << bundle_name << "\": Entry ."
+                    << std::endl;
+          return false;
+        }
+        stage_result.source_file_name = stage_value["name"];
+
+        stage_result.entry_point = stage_value.contains("entry_point")
+                                       ? stage_value["entry_point"]
+                                       : "main";
+
+        bundle_entry_result[stage_name] = stage_result;
+      }
+      bundle_entries_result[bundle_name] = bundle_entry_result;
+    }
+  }
+
   std::shared_ptr<fml::FileMapping> source_file_mapping =
       fml::FileMapping::CreateReadOnly(switches.source_file_name);
   if (!source_file_mapping) {

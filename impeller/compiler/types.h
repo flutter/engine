@@ -6,6 +6,7 @@
 
 #include <codecvt>
 #include <locale>
+#include <map>
 #include <string>
 
 #include "flutter/fml/macros.h"
@@ -42,6 +43,16 @@ enum class SourceLanguage {
   kHLSL,
 };
 
+struct IPLRStageEntry {
+  std::string source_file_name;
+  SourceLanguage language;
+  std::string entry_point;
+};
+
+using IPLRBundleEntry = std::map<std::string, IPLRStageEntry>;
+
+using IPLRBundleEntries = std::map<std::string, IPLRBundleEntry>;
+
 bool TargetPlatformIsMetal(TargetPlatform platform);
 
 bool TargetPlatformIsOpenGL(TargetPlatform platform);
@@ -53,6 +64,8 @@ SourceType SourceTypeFromFileName(const std::string& file_name);
 std::string SourceTypeToString(SourceType type);
 
 std::string TargetPlatformToString(TargetPlatform platform);
+
+SourceLanguage ToSourceLanguage(const std::string& source_language);
 
 std::string SourceLanguageToString(SourceLanguage source_language);
 
