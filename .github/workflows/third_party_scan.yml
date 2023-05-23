@@ -14,7 +14,7 @@ jobs:
   vuln-scan:
     name: Vulnerability scanning
     runs-on: ubuntu-20.04
-    if: ${{ github.event.label.name == 'vulnerability patch' }}
+    if: ${{ github.event_name == 'push' || github.event.label.name == 'vulnerability patch' }}
 
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
