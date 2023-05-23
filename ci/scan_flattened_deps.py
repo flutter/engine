@@ -237,8 +237,8 @@ def get_common_ancestor_commit(dep, deps_list):
     return ancestor_commit
   except subprocess.CalledProcessError as error:
     print(
-        "Subprocess command '{0}' failed with exit code '{1}'.".format(
-            error.args[1], error.args[0]
+        "Subprocess command '{0}' failed with exit code: {1}.".format(
+            error.cmd, str(error.returncode)
         )
     )
     if error.output:
