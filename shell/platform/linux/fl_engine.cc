@@ -31,6 +31,7 @@ static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 // differentiate the actual device (mouse v.s. trackpad)
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
+static constexpr int32_t kStylusDeviceId = 2;
 
 struct _FlEngine {
   GObject parent_instance;
@@ -767,6 +768,39 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
   fl_event.device = kMousePointerDeviceId;
+  self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_send_stylus_pointer_event(FlEngine* self,
+                                         FlutterPointerPhase phase,
+                                         size_t timestamp,
+                                         double x,
+                                         double y,
+                                         double scroll_delta_x,
+                                         double scroll_delta_y,
+                                         int64_t buttons,
+                                         double pressure) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent fl_event = {};
+  fl_event.struct_size = sizeof(fl_event);
+  fl_event.phase = phase;
+  fl_event.timestamp = timestamp;
+  fl_event.x = x;
+  fl_event.y = y;
+  if (scroll_delta_x != 0 || scroll_delta_y != 0) {
+    fl_event.signal_kind = kFlutterPointerSignalKindScroll;
+  }
+  fl_event.scroll_delta_x = scroll_delta_x;
+  fl_event.scroll_delta_y = scroll_delta_y;
+  fl_event.device_kind = kFlutterPointerDeviceKindStylus;
+  fl_event.buttons = buttons;
+  fl_event.device = kStylusDeviceId;
+  fl_event.pressure = pressure;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
