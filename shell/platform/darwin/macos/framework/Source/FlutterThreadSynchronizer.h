@@ -51,7 +51,6 @@
 
 @interface FlutterThreadSynchronizer (Test)
 
-- (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue
-        mainThread:(nonnull NSThread*)thread;
+- (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue;
 
 @end

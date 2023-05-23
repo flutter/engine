@@ -13,9 +13,10 @@
 #import "flutter/fml/logging.h"
 #import "flutter/fml/synchronization/waitable_event.h"
 
+static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
+
 @interface FlutterThreadSynchronizer () {
   dispatch_queue_t _queue;
-  __weak NSThread* _queueThread;
   std::mutex _mutex;
   BOOL _shuttingDown;
   std::unordered_map<int64_t, CGSize> _contentSizes;
@@ -41,22 +42,27 @@
  */
 - (BOOL)someViewsHaveFrame;
 
+- (const void*)mainQueueKey;
+
 @end
 
 @implementation FlutterThreadSynchronizer
 
 - (instancetype)init {
-  return [self initWithMainQueue:dispatch_get_main_queue() mainThread:[NSThread mainThread]];
+  return [self initWithMainQueue:dispatch_get_main_queue()];
 }
 
-- (instancetype)initWithMainQueue:(dispatch_queue_t)queue
-        mainThread:(NSThread*)thread {
+- (instancetype)initWithMainQueue:(dispatch_queue_t)queue {
   self = [super init];
   if (self != nil) {
     _queue = queue;
-    _queueThread = thread;
+    dispatch_queue_set_specific(_queue, [self mainQueueKey], (void*)_kMainQueueContext, NULL);
   }
   return self;
+}
+
+- (void)dealloc {
+  dispatch_queue_set_specific(_queue, [self mainQueueKey], NULL, NULL);
 }
 
 - (BOOL)allViewsHaveFrame {
@@ -78,7 +84,7 @@
 }
 
 - (void)drain {
-  FML_DCHECK([NSThread currentThread] == _queueThread);
+  FML_DCHECK(dispatch_get_specific([self mainQueueKey]) == (void*)_kMainQueueContext);
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
@@ -178,6 +184,10 @@
   _shuttingDown = YES;
   _condBlockBeginResize.notify_all();
   [self drain];
+}
+
+- (const void*)mainQueueKey {
+  return (__bridge const void*)self;
 }
 
 @end
