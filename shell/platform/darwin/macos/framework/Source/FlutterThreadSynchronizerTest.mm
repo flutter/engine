@@ -5,14 +5,12 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
 #import <OCMock/OCMock.h>
-#import "flutter/testing/testing.h"
 #import "flutter/fml/synchronization/waitable_event.h"
+#import "flutter/testing/testing.h"
 
 namespace flutter::testing {
 
-namespace {
-
-}  // namespace
+namespace {}  // namespace
 
 }  // namespace flutter::testing
 
@@ -21,8 +19,8 @@ namespace {
 @property(nonatomic, readonly, nonnull) FlutterThreadSynchronizer* synchronizer;
 
 - (nullable instancetype)init;
-- (void)dispatchMainTask:(nonnull void(^)())task;
-- (void)dispatchRenderTask:(nonnull void(^)())task;
+- (void)dispatchMainTask:(nonnull void (^)())task;
+- (void)dispatchRenderTask:(nonnull void (^)())task;
 - (void)joinMain;
 - (void)joinRender;
 @end
@@ -49,32 +47,37 @@ namespace {
   return self;
 }
 
-- (void)dispatchMainTask:(nonnull void(^)())task {
+- (void)dispatchMainTask:(nonnull void (^)())task {
   dispatch_async(_mainQueue, task);
 }
 
-- (void)dispatchRenderTask:(nonnull void(^)())task {
+- (void)dispatchRenderTask:(nonnull void (^)())task {
   dispatch_async(_renderQueue, task);
 }
 
 - (void)joinMain {
   fml::AutoResetWaitableEvent latch;
   fml::AutoResetWaitableEvent* pLatch = &latch;
-  dispatch_async(_mainQueue, ^{ pLatch->Signal(); });
+  dispatch_async(_mainQueue, ^{
+    pLatch->Signal();
+  });
   latch.Wait();
 }
 
 - (void)joinRender {
   fml::AutoResetWaitableEvent latch;
   fml::AutoResetWaitableEvent* pLatch = &latch;
-  dispatch_async(_renderQueue, ^{ pLatch->Signal(); });
+  dispatch_async(_renderQueue, ^{
+    pLatch->Signal();
+  });
   latch.Wait();
 }
 
 @end
 
 TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
-  FlutterThreadSynchronizerTestScaffold* scaffold = [[FlutterThreadSynchronizerTestScaffold alloc] init];
+  FlutterThreadSynchronizerTestScaffold* scaffold =
+      [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
 
   [synchronizer registerView:1];
@@ -82,9 +85,11 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
   // Initial resize: does not block until the first frame.
   __block int notifiedResize = 0;
   [scaffold dispatchMainTask:^{
-    [synchronizer beginResizeForView:1 size:CGSize{5, 5} notify:^{
-      notifiedResize += 1;
-    }];
+    [synchronizer beginResizeForView:1
+                                size:CGSize{5, 5}
+                              notify:^{
+                                notifiedResize += 1;
+                              }];
   }];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
   [scaffold joinMain];
@@ -92,9 +97,11 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
 
   // Still does not block.
   [scaffold dispatchMainTask:^{
-    [synchronizer beginResizeForView:1 size:CGSize{7, 7} notify:^{
-      notifiedResize += 1;
-    }];
+    [synchronizer beginResizeForView:1
+                                size:CGSize{7, 7}
+                              notify:^{
+                                notifiedResize += 1;
+                              }];
   }];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
   [scaffold joinMain];
@@ -103,9 +110,11 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
   // First frame
   __block int notifiedCommit = 0;
   [scaffold dispatchRenderTask:^{
-    [synchronizer performCommitForView:1 size:CGSize{7, 7} notify:^{
-      notifiedCommit += 1;
-    }];
+    [synchronizer performCommitForView:1
+                                  size:CGSize{7, 7}
+                                notify:^{
+                                  notifiedCommit += 1;
+                                }];
   }];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
   [scaffold joinRender];
@@ -113,49 +122,123 @@ TEST(FlutterThreadSynchronizerTest, FinishResizingImmediatelyWhenSizeMatches) {
 }
 
 TEST(FlutterThreadSynchronizerTest, FinishResizingOnlyWhenCommittingMatchingSize) {
-  FlutterThreadSynchronizerTestScaffold* scaffold = [[FlutterThreadSynchronizerTestScaffold alloc] init];
+  FlutterThreadSynchronizerTestScaffold* scaffold =
+      [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
+  // A latch to ensure that a beginResizeForView: call has at least executed
+  // something, so that the isWaitingWhenMutexIsAvailable: call correctly stops
+  // at either when beginResizeForView: finishes or waits half way.
   fml::AutoResetWaitableEvent begunResizingLatch;
-  __block fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
+  fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
 
   [synchronizer registerView:1];
 
   // Initial resize: does not block until the first frame.
   [scaffold dispatchMainTask:^{
-    [synchronizer beginResizeForView:1 size:CGSize{5, 5} notify:^{}];
+    [synchronizer beginResizeForView:1
+                                size:CGSize{5, 5}
+                              notify:^{
+                              }];
   }];
   [scaffold joinMain];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
 
   // First frame.
   [scaffold dispatchRenderTask:^{
-    [synchronizer performCommitForView:1 size:CGSize{5, 5} notify:^{}];
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
   }];
   [scaffold joinRender];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
 
-  // Resize to (7, 7): blocks since there's a frame until the next frame.
+  // Resize to (7, 7): blocks until the next frame.
   [scaffold dispatchMainTask:^{
-    [synchronizer beginResizeForView:1 size:CGSize{7, 7} notify:^{
-      begunResizing->Signal();
-    }];
+    [synchronizer beginResizeForView:1
+                                size:CGSize{7, 7}
+                              notify:^{
+                                begunResizing->Signal();
+                              }];
   }];
   begunResizing->Wait();
   EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
 
   // Render with old size.
   [scaffold dispatchRenderTask:^{
-    [synchronizer performCommitForView:1 size:CGSize{5, 5} notify:^{}];
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
   }];
   [scaffold joinRender];
   EXPECT_TRUE([synchronizer isWaitingWhenMutexIsAvailable]);
 
   // Render with new size.
   [scaffold dispatchRenderTask:^{
-    [synchronizer performCommitForView:1 size:CGSize{7, 7} notify:^{}];
+    [synchronizer performCommitForView:1
+                                  size:CGSize{7, 7}
+                                notify:^{
+                                }];
   }];
   [scaffold joinRender];
   EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
 
   [scaffold joinMain];
+}
+
+TEST(FlutterThreadSynchronizerTest, FinishResizingWhenShuttingDown) {
+  FlutterThreadSynchronizerTestScaffold* scaffold =
+      [[FlutterThreadSynchronizerTestScaffold alloc] init];
+  FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
+  fml::AutoResetWaitableEvent begunResizingLatch;
+  fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
+
+  [synchronizer registerView:1];
+
+  // Initial resize
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:1
+                                size:CGSize{5, 5}
+                              notify:^{
+                              }];
+  }];
+  [scaffold joinMain];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  // Push a frame.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{5, 5}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+
+  [scaffold dispatchMainTask:^{
+    [synchronizer shutdown];
+  }];
+
+  // Resize to (7, 7). Should not block any frames since it has shut down.
+  [scaffold dispatchMainTask:^{
+    [synchronizer beginResizeForView:1
+                                size:CGSize{7, 7}
+                              notify:^{
+                                begunResizing->Signal();
+                              }];
+  }];
+  begunResizing->Wait();
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
+  [scaffold joinMain];
+
+  // All further calls should be unblocking.
+  [scaffold dispatchRenderTask:^{
+    [synchronizer performCommitForView:1
+                                  size:CGSize{9, 9}
+                                notify:^{
+                                }];
+  }];
+  [scaffold joinRender];
+  EXPECT_FALSE([synchronizer isWaitingWhenMutexIsAvailable]);
 }

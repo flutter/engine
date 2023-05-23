@@ -102,6 +102,7 @@
 - (void)beginResizeForView:(int64_t)viewId
                       size:(CGSize)size
                     notify:(nonnull dispatch_block_t)notify {
+  dispatch_assert_queue(_mainQueue);
   std::unique_lock<std::mutex> lock(_mutex);
 
   if (![self allViewsHaveFrame] || _shuttingDown) {
@@ -136,6 +137,7 @@
 - (void)performCommitForView:(int64_t)viewId
                         size:(CGSize)size
                       notify:(nonnull dispatch_block_t)notify {
+  dispatch_assert_queue_not(_mainQueue);
   fml::AutoResetWaitableEvent event;
   {
     std::unique_lock<std::mutex> lock(_mutex);
@@ -171,6 +173,7 @@
 }
 
 - (void)shutdown {
+  dispatch_assert_queue(_mainQueue);
   std::unique_lock<std::mutex> lock(_mutex);
   _shuttingDown = YES;
   _condBlockBeginResize.notify_all();

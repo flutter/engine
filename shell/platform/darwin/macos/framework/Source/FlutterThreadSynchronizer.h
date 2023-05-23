@@ -37,7 +37,9 @@
 - (void)deregisterView:(int64_t)viewId;
 
 /**
- * Called when shutting down. Unblocks everything and prevents any further synchronization.
+ * Called from platform thread when shutting down.
+ *
+ * Prevents any further synchronization and no longer blocks any threads.
  */
 - (void)shutdown;
 
@@ -47,6 +49,10 @@
 
 - (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue;
 
+/**
+ * Blocks current thread until the mutex is available, then return whether the
+ * synchronizer is waiting for a correct commit during resizing.
+ */
 - (BOOL)isWaitingWhenMutexIsAvailable;
 
 /**
