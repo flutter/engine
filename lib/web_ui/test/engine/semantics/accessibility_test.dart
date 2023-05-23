@@ -21,6 +21,7 @@ void main() {
 void testMain() {
   setUpAll(() async {
     await initializeEngine();
+    setLiveMessageDurationForTest(const Duration(milliseconds: 10));
   });
 
   void expectAnnouncementElements({required bool present}) {

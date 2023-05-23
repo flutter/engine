@@ -55,7 +55,12 @@ void initializeAccessibilityAnnouncements() {
 /// reader to announce it.
 ///
 /// This was determined by trial and error with some extra buffer added.
-const Duration liveMessageDuration = Duration(milliseconds: 300);
+Duration liveMessageDuration = const Duration(milliseconds: 300);
+
+/// Sets [liveMessageDuration] to reduce the delay in tests.
+void setLiveMessageDurationForTest(Duration duration) {
+  liveMessageDuration = duration;
+}
 
 /// Makes accessibility announcements using `aria-live` DOM elements.
 class AccessibilityAnnouncements {
