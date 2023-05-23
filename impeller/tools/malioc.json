@@ -13710,6 +13710,69 @@
       }
     }
   },
+  "flutter/impeller/entity/uv.comp.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/uv.comp.vkspv",
+      "has_uniform_computation": true,
+      "type": "Compute",
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 100,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "load_store"
+            ],
+            "longest_path_cycles": [
+              0.1875,
+              0.1875,
+              0.1875,
+              0.0625,
+              2.0,
+              0.0
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt"
+            ],
+            "shortest_path_cycles": [
+              0.046875,
+              0.0,
+              0.046875,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              0.1875,
+              0.1875,
+              0.1875,
+              0.0625,
+              2.0,
+              0.0
+            ]
+          },
+          "shared_storage_used": 0,
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 14,
+          "work_registers_used": 10
+        }
+      }
+    }
+  },
   "flutter/impeller/entity/vertices.frag.vkspv": {
     "Mali-G78": {
       "core": "Mali-G78",
@@ -14023,6 +14086,68 @@
           "thread_occupancy": 50,
           "uniform_registers_used": 32,
           "work_registers_used": 51
+        }
+      }
+    }
+  },
+  "flutter/impeller/renderer/prefix_sum_test.comp.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/renderer/prefix_sum_test.comp.vkspv",
+      "has_uniform_computation": true,
+      "type": "Compute",
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": null,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "load_store"
+            ],
+            "longest_path_cycles": [
+              2.549999952316284,
+              0.0,
+              2.549999952316284,
+              1.0,
+              72.0,
+              0.0
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "load_store"
+            ],
+            "shortest_path_cycles": [
+              0.949999988079071,
+              0.0,
+              0.949999988079071,
+              0.0,
+              1.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              2.549999952316284,
+              0.0,
+              2.549999952316284,
+              1.0,
+              72.0,
+              0.0
+            ]
+          },
+          "shared_storage_used": 4096,
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 8,
+          "work_registers_used": 21
         }
       }
     }
