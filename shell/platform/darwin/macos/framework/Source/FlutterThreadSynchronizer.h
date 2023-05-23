@@ -47,6 +47,8 @@
 
 - (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue;
 
+- (BOOL)isWaitingWhenMutexIsAvailable;
+
 /**
  * Blocks current thread until there is frame available.
  * Used in FlutterEngineTest.

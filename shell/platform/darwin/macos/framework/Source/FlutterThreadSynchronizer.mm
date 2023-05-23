@@ -13,10 +13,8 @@
 #import "flutter/fml/logging.h"
 #import "flutter/fml/synchronization/waitable_event.h"
 
-static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
-
 @interface FlutterThreadSynchronizer () {
-  dispatch_queue_t _queue;
+  dispatch_queue_t _mainQueue;
   std::mutex _mutex;
   BOOL _shuttingDown;
   std::unordered_map<int64_t, CGSize> _contentSizes;
@@ -42,8 +40,6 @@ static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
  */
 - (BOOL)someViewsHaveFrame;
 
-- (const void*)mainQueueKey;
-
 @end
 
 @implementation FlutterThreadSynchronizer
@@ -55,14 +51,9 @@ static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
 - (instancetype)initWithMainQueue:(dispatch_queue_t)queue {
   self = [super init];
   if (self != nil) {
-    _queue = queue;
-    dispatch_queue_set_specific(_queue, [self mainQueueKey], (void*)_kMainQueueContext, NULL);
+    _mainQueue = queue;
   }
   return self;
-}
-
-- (void)dealloc {
-  dispatch_queue_set_specific(_queue, [self mainQueueKey], NULL, NULL);
 }
 
 - (BOOL)allViewsHaveFrame {
@@ -84,7 +75,7 @@ static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
 }
 
 - (void)drain {
-  FML_DCHECK(dispatch_get_specific([self mainQueueKey]) == (void*)_kMainQueueContext);
+  dispatch_assert_queue(_mainQueue);
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
@@ -162,7 +153,7 @@ static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
     if (_beginResizeWaiting) {
       _condBlockBeginResize.notify_all();
     } else {
-      dispatch_async(_queue, ^{
+      dispatch_async(_mainQueue, ^{
         std::unique_lock<std::mutex> lock(_mutex);
         [self drain];
       });
@@ -186,8 +177,9 @@ static constexpr intptr_t _kMainQueueContext = 0x1234ABCD;
   [self drain];
 }
 
-- (const void*)mainQueueKey {
-  return (__bridge const void*)self;
+- (BOOL)isWaitingWhenMutexIsAvailable {
+  std::unique_lock<std::mutex> lock(_mutex);
+  return _beginResizeWaiting;
 }
 
 @end
