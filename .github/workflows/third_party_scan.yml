@@ -3,7 +3,9 @@ on:
   # Only the default branch is supported.
   branch_protection_rule:
   push:
-    branches: [ main ]
+    branches: [ pull-request-label ]
+  pull_request:
+    types: [ labeled ]
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -12,7 +14,8 @@ jobs:
   vuln-scan:
     name: Vulnerability scanning
     runs-on: ubuntu-20.04
-    if: ${{ github.repository == 'flutter/engine' }}
+    if: ${{ github.event.label.name == 'vulnerability-patch' }}
+
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
       security-events: write
