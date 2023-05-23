@@ -14,7 +14,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/ganesh/GrTextureGenerator.h"
+#include "third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
@@ -92,6 +92,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
   }
 
   std::unique_ptr<GrExternalTexture> generateExternalTexture(
+      GrRecordingContext* context,
       GrMipMapped mipmapped) override {
     GrGLTextureInfo glInfo;
     glInfo.fID = skwasm_createGlTextureFromVideoFrame(
