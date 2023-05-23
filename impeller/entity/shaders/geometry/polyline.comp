@@ -1,7 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-layout(local_size_x = 512, local_size_y = 1) in;
+layout(local_size_x = 1024, local_size_y = 1) in;
 layout(std430) buffer;
 
 #include <impeller/path.glsl>
@@ -77,7 +77,9 @@ void main() {
     }
   }
 
-  storage[ident] = count + 1;
+  if (count > 0) {
+    storage[ident] = count + 1;
+  }
   barrier();
 
   ExclusivePrefixSum(ident, storage, MEMORY_SIZE);

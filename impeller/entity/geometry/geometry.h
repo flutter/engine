@@ -89,4 +89,6 @@ class Geometry {
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
 };
 
+void EncodePath(Path path);
+
 }  // namespace impeller

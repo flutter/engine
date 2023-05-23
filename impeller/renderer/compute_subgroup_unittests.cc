@@ -29,7 +29,7 @@
 #include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/stroke.comp.h"
+#include "impeller/entity/stroke.comp.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/utils/SkParsePath.h"
 

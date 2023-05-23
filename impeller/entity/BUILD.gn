@@ -99,6 +99,8 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/geometry/points.comp",
     "shaders/geometry/polyline.comp",
     "shaders/geometry/uv.comp",
+    "shaders/geometry/stroke.comp",
+    "shaders/geometry/convex.comp",
   ]
 }
 

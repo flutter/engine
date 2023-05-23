@@ -6,15 +6,16 @@
 #include <impeller/types.glsl>
 
 // Unused, see See PointFieldGeometry::GetPositionBuffer
-layout(local_size_x = 16) in;
+layout(local_size_x = 1024) in;
+layout(std430) buffer;
 
-layout(std430) readonly buffer PointData {
+layout(binding = 0) readonly buffer PointData {
   // Size of this input data is frame_info.count;
   vec2 points[];
 }
 point_data;
 
-layout(std430) writeonly buffer GeometryData {
+layout(binding = 1) writeonly buffer GeometryData {
   // Size of this output data is frame_info.count * points_per_circle;
   vec2 geometry[];
 }

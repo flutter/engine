@@ -9,6 +9,7 @@
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/entity/polyline.comp.h"
 
 namespace impeller {
 
@@ -136,6 +137,63 @@ std::unique_ptr<Geometry> Geometry::MakeCover() {
 
 std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
   return std::make_unique<RectGeometry>(rect);
+}
+
+/**
+ * @brief layout(binding = 0) readonly buffer Quads {
+  uint count;
+  QuadData data[];
+}
+quads;
+
+layout(binding = 1) readonly buffer Lines {
+  uint count;
+  LineData data[];
+}
+lines;
+
+layout(binding = 2) readonly buffer Components {
+  uint count;
+  PathComponent data[];
+}
+components;
+
+
+ *
+ * @param path
+ */
+
+void EncodePathForPolyline(Path path, HostBuffer host_buffer) {
+  using CS = PolylineComputeShader;
+  static_assert(sizeof(LinearPathComponent) == sizeof(CS::LineData));
+  static_assert(sizeof(QuadraticPathComponent) == sizeof(CS::QuadData));
+  FML_DCHECK(path.GetCubics().size, 0);
+  auto lines = path.GetLinears().size;
+  auto quads = path.GetLinears().size;
+}
+
+// struct PolylineComponent {
+//   vec2 pt;
+//   // This is the end of a countour.
+//   //
+//   // that is path.close was called with this as the final
+//   // point.
+//   bool contour_end;
+
+//   // This point is the end of a line segment.
+//   bool segment_end;
+// };
+
+// layout(binding = 0) readonly buffer Polyline {
+//   uint count;
+//   PolylineComponent data[];
+// }
+// polyline;
+
+void EncodePolyline(Path::Polyline polyline, HostBuffer host_buffer) {
+  using CS = PolylineComputeShader;
+  std::vector<CS::PolylineComponent> polyline_data(polyline.points);
+  for (auto i = 0u; i < polyline_data.)
 }
 
 }  // namespace impeller
