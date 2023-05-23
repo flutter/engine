@@ -126,4 +126,14 @@ void webOnlySetPluginHandler(Future<void> Function(String, ByteData?, PlatformMe
 }
 
 // TODO(mdebbar): Deprecate this and remove it.
-ui_web.PlatformViewRegistry get platformViewRegistry => ui_web.platformViewRegistry;
+// https://github.com/flutter/flutter/issues/127395
+ui_web.PlatformViewRegistry get platformViewRegistry {
+  assert(() {
+    engine.printWarning(
+      'The platformViewRegistry getter is deprecated and will be removed in a '
+      'future release. Please import it from `dart:ui_web` instead.',
+    );
+    return true;
+  }());
+  return ui_web.platformViewRegistry;
+}
