@@ -1,4 +1,4 @@
-Signature: 7c90faae9d2445c4481ce460ce46ff15
+Signature: 089d2122b002b01c95fbfa80f126c4fa
 
 ====================================================================================================
 LIBRARY: etc1
@@ -397,6 +397,7 @@ FILE: ../../../third_party/skia/relnotes/skimagefilters_shader.md
 FILE: ../../../third_party/skia/relnotes/skimagegenerator_encoded.md
 FILE: ../../../third_party/skia/relnotes/skimagegenerator_grexternaltexturegenerator.md
 FILE: ../../../third_party/skia/relnotes/sksurface_backend.md
+FILE: ../../../third_party/skia/relnotes/sksurface_methods.md
 FILE: ../../../third_party/skia/relnotes/sksurface_namespace.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
