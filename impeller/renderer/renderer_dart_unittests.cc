@@ -2,14 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#define FML_USED_ON_EMBEDDER
-
 #include <memory>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/backtrace.h"
-#include "flutter/fml/command_line.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -25,7 +21,6 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
-#include "gtest/gtest.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
@@ -38,9 +33,7 @@ class RendererDartTest : public PlaygroundTest,
       : settings_(CreateSettingsForFixture()),
         vm_ref_(flutter::DartVMRef::Create(settings_)) {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
-
     current_task_runner_ = fml::MessageLoop::GetCurrent().GetTaskRunner();
-
     isolate_ = CreateDartIsolate();
     assert(isolate_);
     assert(isolate_->get()->GetPhase() == flutter::DartIsolate::Phase::Running);
