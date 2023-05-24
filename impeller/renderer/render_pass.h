@@ -61,6 +61,8 @@ class RenderPass {
   ///
   bool EncodeCommands() const;
 
+  bool EncodeGeometryPass() const;
+
  protected:
   const std::weak_ptr<const Context> context_;
   const RenderTarget render_target_;

@@ -71,8 +71,6 @@ void main() {
     vec2 a = polyline.data[ident - 1].pt;
     vec2 b = polyline.data[ident].pt;
 
-    uint index_offset = ident * 3;
-
     geometry.data[index_offset] = section_origin;
     geometry.data[index_offset + 1] = a;
     geometry.data[index_offset + 2] = b;

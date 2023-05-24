@@ -186,6 +186,10 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   if (!context) {
     return false;
   }
+  if (!render_pass->EncodeGeometryPass()) {
+    return false;
+  }
+
   [buffer_ enqueue];
   auto buffer = buffer_;
   buffer_ = nil;

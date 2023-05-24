@@ -73,7 +73,7 @@ bool RenderPass::AddCommand(Command command) {
   return true;
 }
 
-bool RenderPass::EncodeCommands() const {
+bool RenderPass::EncodeGeometryPass() const {
   auto context = context_.lock();
   // The context could have been collected in the meantime.
   if (!context) {
@@ -88,6 +88,15 @@ bool RenderPass::EncodeCommands() const {
     if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
       return false;
     }
+  }
+  return true;
+}
+
+bool RenderPass::EncodeCommands() const {
+  auto context = context_.lock();
+  // The context could have been collected in the meantime.
+  if (!context) {
+    return false;
   }
   return OnEncodeCommands(*context);
 }
