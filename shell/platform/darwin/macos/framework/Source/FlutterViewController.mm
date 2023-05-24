@@ -402,7 +402,6 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             controller.engine, controller.viewId);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
-  controller->_weakViewThreadSynchronizer = engine.threadSynchronizer;
   [controller initializeKeyboard];
   [controller notifySemanticsEnabledChanged];
   // macOS fires this message when changing IMEs.
@@ -546,10 +545,13 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(FlutterViewId)viewId {
+- (void)setUpWithEngine:(FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+     threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
+  _weakViewThreadSynchronizer = threadSynchronizer;
 }
 
 - (void)detachFromEngine {

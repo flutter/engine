@@ -34,6 +34,7 @@ constexpr int64_t kDefaultViewId = 0ll;
  * May be nil if the compositor has not been initialized yet.
  */
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+
 @end
 
 @interface TestPlatformViewFactory : NSObject <FlutterPlatformViewFactory>
@@ -440,7 +441,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                 result:^(id result){
                 }];
 
-  [engine.threadSynchronizer blockUntilFrameAvailable];
+  [engine.testThreadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 

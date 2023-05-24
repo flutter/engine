@@ -108,8 +108,6 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  */
 @property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
 
-@property(nonatomic, readonly) FlutterThreadSynchronizer* threadSynchronizer;
-
 /**
  * Attach a view controller to the engine as its default controller.
  *
@@ -195,6 +193,10 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (void)announceAccessibilityMessage:(NSString*)message
                         withPriority:(NSAccessibilityPriorityLevel)priority;
 
+@end
+
+@interface FlutterEngine (Tests)
+- (nonnull FlutterThreadSynchronizer*)testThreadSynchronizer;
 @end
 
 NS_ASSUME_NONNULL_END

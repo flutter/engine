@@ -592,7 +592,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(![controller attached],
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
-  [controller attachToEngine:self withId:viewId];
+  [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }
@@ -1122,7 +1122,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return flutter::GetSwitchesFromEnvironment();
 }
 
-- (FlutterThreadSynchronizer*)threadSynchronizer {
+- (FlutterThreadSynchronizer*)testThreadSynchronizer {
   return _threadSynchronizer;
 }
 

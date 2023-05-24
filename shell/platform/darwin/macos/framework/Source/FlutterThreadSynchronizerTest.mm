@@ -80,11 +80,10 @@ TEST(FlutterThreadSynchronizerTest, RegularCommit) {
       [[FlutterThreadSynchronizerTestScaffold alloc] init];
   FlutterThreadSynchronizer* synchronizer = scaffold.synchronizer;
 
-  [synchronizer registerView:1];
-
   // Initial resize: does not block until the first frame.
   __block int notifiedResize = 0;
   [scaffold dispatchMainTask:^{
+    [synchronizer registerView:1];
     [synchronizer beginResizeForView:1
                                 size:CGSize{5, 5}
                               notify:^{
@@ -131,10 +130,9 @@ TEST(FlutterThreadSynchronizerTest, ResizingBlocksRenderingUntilSizeMatches) {
   fml::AutoResetWaitableEvent begunResizingLatch;
   fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
 
-  [synchronizer registerView:1];
-
   // Initial resize: does not block until the first frame.
   [scaffold dispatchMainTask:^{
+    [synchronizer registerView:1];
     [synchronizer beginResizeForView:1
                                 size:CGSize{5, 5}
                               notify:^{
@@ -194,10 +192,9 @@ TEST(FlutterThreadSynchronizerTest, ShutdownMakesEverythingNonBlocking) {
   fml::AutoResetWaitableEvent begunResizingLatch;
   fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
 
-  [synchronizer registerView:1];
-
   // Initial resize
   [scaffold dispatchMainTask:^{
+    [synchronizer registerView:1];
     [synchronizer beginResizeForView:1
                                 size:CGSize{5, 5}
                               notify:^{
@@ -250,11 +247,10 @@ TEST(FlutterThreadSynchronizerTest, RegularCommitForMultipleViews) {
   fml::AutoResetWaitableEvent begunResizingLatch;
   fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
 
-  [synchronizer registerView:1];
-  [synchronizer registerView:2];
-
   // Initial resize: does not block until the first frame.
   [scaffold dispatchMainTask:^{
+    [synchronizer registerView:1];
+    [synchronizer registerView:2];
     [synchronizer beginResizeForView:1
                                 size:CGSize{5, 5}
                               notify:^{
@@ -303,11 +299,10 @@ TEST(FlutterThreadSynchronizerTest, ResizingForMultipleViews) {
   fml::AutoResetWaitableEvent begunResizingLatch;
   fml::AutoResetWaitableEvent* begunResizing = &begunResizingLatch;
 
-  [synchronizer registerView:1];
-  [synchronizer registerView:2];
-
   // Initial resize: does not block until the first frame.
   [scaffold dispatchMainTask:^{
+    [synchronizer registerView:1];
+    [synchronizer registerView:2];
     [synchronizer beginResizeForView:1
                                 size:CGSize{5, 5}
                               notify:^{
