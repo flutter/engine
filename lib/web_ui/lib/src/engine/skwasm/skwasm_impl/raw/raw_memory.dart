@@ -92,7 +92,7 @@ class StackScope {
       pointer[i * 4] = rect.left;
       pointer[i * 4 + 1] = rect.top;
       pointer[i * 4 + 2] = rect.right;
-      pointer[i * 4 + 2] = rect.bottom;
+      pointer[i * 4 + 3] = rect.bottom;
     }
     return pointer;
   }
