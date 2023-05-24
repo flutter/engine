@@ -307,6 +307,17 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
     uv_compute_pipelines_ =
         context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
+
+    auto convex_pipeline_desc =
+        ConvexComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    convex_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(convex_pipeline_desc).Get();
+
+    auto polyline_pipeline_desc =
+        PolylineComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    polyline_compute_pipelines_ = context_->GetPipelineLibrary()
+                                      ->GetPipeline(polyline_pipeline_desc)
+                                      .Get();
   }
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {

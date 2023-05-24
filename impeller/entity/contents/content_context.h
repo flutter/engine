@@ -30,6 +30,7 @@
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/convex.comp.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_color.frag.h"
@@ -40,6 +41,7 @@
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
+#include "impeller/entity/polyline.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
@@ -280,6 +282,9 @@ using FramebufferBlendSoftLightPipeline =
 /// Geometry Pipelines
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+using ConvexComputeShaderPipeline = ComputePipelineBuilder<ConvexComputeShader>;
+using PolylineComputeShaderPipeline =
+    ComputePipelineBuilder<PolylineComputeShader>;
 
 /// Pipeline state configuration.
 ///
@@ -678,6 +683,18 @@ class ContentContext {
     return uv_compute_pipelines_;
   }
 
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+  GetConvexComputePipeline() const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return convex_compute_pipelines_;
+  }
+
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+  GetPolylineComputePipeline() const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return polyline_compute_pipelines_;
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
@@ -800,10 +817,16 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+
+  // Geometry compute pipelines.
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       point_field_compute_pipelines_;
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       uv_compute_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      convex_compute_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      polyline_compute_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

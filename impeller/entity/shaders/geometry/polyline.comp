@@ -1,0 +1,110 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+layout(local_size_x = 1024, local_size_y = 1) in;
+layout(std430) buffer;
+
+#include <impeller/path.glsl>
+#include <impeller/prefix_sum.glsl>
+
+#define MEMORY_SIZE 1024
+
+struct IndexDataItem {
+  uint first_offset;
+  uint indirect_offset;
+};
+
+struct IndirectCommandArguments {
+  uint vertex_count;
+  uint instance_count;
+  uint vertex_start;
+  uint base_instance;
+};
+
+layout(binding = 0) readonly buffer Quads {
+  QuadData data[];
+}
+quads;
+
+layout(binding = 1) readonly buffer IndexData {
+  IndexDataItem data[];
+}
+index_data;
+
+layout(binding = 2) readonly buffer Lines {
+  LineData data[];
+}
+lines;
+
+layout(binding = 3) readonly buffer Components {
+  PathComponent data[];
+}
+components;
+
+layout(binding = 4) writeonly buffer Polyline {
+  uint count;
+  vec2 data[];
+}
+polyline;
+
+layout(binding = 5) writeonly buffer IndirectCommandData {
+  IndirectCommandArguments data[];
+}
+indirect_command_data;
+
+uniform Config {
+  float quad_tolerance;
+  uint input_count;
+}
+config;
+
+shared uint storage[MEMORY_SIZE];
+
+void main() {
+  uint ident = gl_GlobalInvocationID.x;
+
+  uint count = 0;
+  QuadData quad;
+  LineData line;
+  QuadDecomposition decomposition;
+
+  if (ident < config.input_count) {
+    PathComponent component = components.data[ident];
+    if (component.count == 2) {
+      line = lines.data[component.index];
+      count = 1;
+    } else {
+      quad = quads.data[component.index];
+      decomposition = DecomposeQuad(quad, config.quad_tolerance);
+      count = decomposition.line_count;
+      if (count == 1) {
+        line = LineData(quad.p1, quad.p2);
+      }
+    }
+  }
+
+  if (count > 0) {
+    storage[ident] = count + 1;
+  }
+  barrier();
+
+  ExclusivePrefixSum(ident, storage, MEMORY_SIZE);
+  uint idx = storage[ident];
+
+  if (count <= 1) {
+    return;
+  }
+
+  if (count == 1) {
+    polyline.data[idx] = line.p1;
+    polyline.data[idx + 1] = line.p2;
+
+  } else {
+    polyline.data[idx] = quad.p1;
+    for (uint i = 1; i < decomposition.line_count - 1; i++) {
+      polyline.data[idx + i] = GenerateLineFromQuad(quad, i, decomposition);
+    }
+    polyline.data[idx + count] = quad.p2;
+  }
+  atomicAdd(polyline.count, count);
+}

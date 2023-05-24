@@ -1,0 +1,78 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+layout(local_size_x = 1024, local_size_y = 1) in;
+layout(std430) buffer;
+
+#include <impeller/path.glsl>
+#include <impeller/prefix_sum.glsl>
+
+struct IndirectCommandArguments {
+  uint vertex_count;
+  uint instance_count;
+  uint vertex_start;
+  uint base_instance;
+};
+
+struct PolylineComponent {
+  vec2 pt;
+};
+
+struct IndexDataItem {
+  uint first_offset;
+  uint indirect_offset;
+};
+
+layout(binding = 0) readonly buffer Polyline {
+  PolylineComponent data[];
+}
+polyline;
+
+layout(binding = 1) readonly buffer IndexData {
+  IndexDataItem data[];
+}
+index_data;
+
+layout(binding = 2) writeonly buffer Geometry {
+  vec2 data[];
+}
+geometry;
+
+layout(binding = 3) buffer IndirectCommandData {
+  IndirectCommandArguments data[];
+}
+indirect_command_data;
+
+uniform FrameData {
+  uint input_count;
+} frame_data;
+
+void main() {
+  uint ident = gl_GlobalInvocationID.x;
+  if (ident >= frame_data.input_count) {
+    return;
+  }
+
+  IndexDataItem data = index_data.data[ident];
+  uint index_offset = ident * 3;
+
+  // Technically a convex N-gon only requires (N - 2) * 3 vertices, but that
+  // makes computing the buffer offsets much harder. Instead we assume each
+  // takes N * 3 vertices, but allocate the first 6 slots with 0 area triangles.
+  // This should probably be fixed at some point, but it seems to work OK for now.
+  if (data.first_offset == ident || data.first_offset + 1 == ident) {
+    geometry.data[index_offset] = polyline.data[data.first_offset].pt;
+    geometry.data[index_offset + 1] = polyline.data[data.first_offset].pt;
+    geometry.data[index_offset + 2] = polyline.data[data.first_offset].pt;
+  } else {
+    vec2 section_origin = polyline.data[data.first_offset].pt;
+    vec2 a = polyline.data[ident - 1].pt;
+    vec2 b = polyline.data[ident].pt;
+
+    uint index_offset = ident * 3;
+
+    geometry.data[index_offset] = section_origin;
+    geometry.data[index_offset + 1] = a;
+    geometry.data[index_offset + 2] = b;
+  }
+}

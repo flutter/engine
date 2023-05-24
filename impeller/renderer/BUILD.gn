@@ -58,6 +58,8 @@ impeller_component("renderer") {
     "compute_command.h",
     "compute_pass.cc",
     "compute_pass.h",
+    "geometry_pass.cc",
+    "geometry_pass.h",
     "compute_pipeline_builder.cc",
     "compute_pipeline_builder.h",
     "compute_pipeline_descriptor.cc",

@@ -8,6 +8,8 @@
 
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/compute_pass.h"
+#include "impeller/renderer/geometry_pass.h"
 
 namespace impeller {
 
@@ -37,6 +39,8 @@ class RenderPass {
 
   HostBuffer& GetTransientsBuffer();
 
+  std::shared_ptr<GeometryPass> GetGeometryPass();
+
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
   ///             command buffer. No work is encoded into the command buffer at
@@ -61,6 +65,7 @@ class RenderPass {
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
+  std::shared_ptr<GeometryPass> geometry_pass_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
 

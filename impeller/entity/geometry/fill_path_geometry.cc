@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry/fill_path_geometry.h"
+#include "impeller/entity/convex.comp.h"
+#include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
@@ -19,6 +21,23 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
+    if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+      auto polyline =
+          path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+      auto geometry_pass = pass.GetGeometryPass();
+      auto pass_result = geometry_pass->AddPolyline(polyline, renderer);
+
+      return GeometryResult{
+          .type = PrimitiveType::kTriangle,
+          .vertex_buffer = {.vertex_buffer = pass_result.output_geometry,
+                            .vertex_count = polyline.points.size() * 3,
+                            .index_type = IndexType::kNone},
+          .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                       entity.GetTransformation(),
+          .prevent_overdraw = false,
+      };
+    }
+
     auto [points, indices] = TessellateConvex(
         path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
 

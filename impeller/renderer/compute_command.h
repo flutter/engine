@@ -55,6 +55,8 @@ struct ComputeCommand : public ResourceBinder {
   ///
   std::string label;
 
+  ISize grid_size;
+
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,

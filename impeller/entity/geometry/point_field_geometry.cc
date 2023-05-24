@@ -203,6 +203,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     ComputeCommand cmd;
     cmd.label = "UV Geometry";
     cmd.pipeline = renderer.GetUvComputePipeline();
+    cmd.grid_size = ISize(total, 1);
 
     UV::FrameInfo frame_info;
     frame_info.count = total;
@@ -219,9 +220,6 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     }
     output = geometry_uv_buffer;
   }
-
-  compute_pass->SetGridSize(ISize(total, 1));
-  compute_pass->SetThreadGroupSize(ISize(total, 1));
 
   if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
     return {};

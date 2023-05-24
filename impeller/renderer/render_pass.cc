@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
@@ -32,6 +33,13 @@ void RenderPass::SetLabel(std::string label) {
   }
   transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
   OnSetLabel(std::move(label));
+}
+
+std::shared_ptr<GeometryPass> RenderPass::GetGeometryPass() {
+  if (!geometry_pass_) {
+    geometry_pass_ = std::make_shared<GeometryPass>();
+  }
+  return geometry_pass_;
 }
 
 bool RenderPass::AddCommand(Command command) {
@@ -70,6 +78,16 @@ bool RenderPass::EncodeCommands() const {
   // The context could have been collected in the meantime.
   if (!context) {
     return false;
+  }
+  if (geometry_pass_) {
+    auto cmd_buffer = context->CreateCommandBuffer();
+    auto compute_pass = cmd_buffer->CreateComputePass();
+    if (!geometry_pass_->Encode(*compute_pass)) {
+      return false;
+    }
+    if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
+      return false;
+    }
   }
   return OnEncodeCommands(*context);
 }

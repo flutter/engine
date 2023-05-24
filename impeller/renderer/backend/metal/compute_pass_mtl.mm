@@ -47,15 +47,11 @@ void ComputePassMTL::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-bool ComputePassMTL::OnEncodeCommands(const Context& context,
-                                      const ISize& grid_size,
-                                      const ISize& thread_group_size) const {
+bool ComputePassMTL::OnEncodeCommands(const Context& context) const {
   TRACE_EVENT0("impeller", "ComputePassMTL::EncodeCommands");
   if (!IsValid()) {
     return false;
   }
-
-  FML_DCHECK(!grid_size_.IsEmpty() && !thread_group_size_.IsEmpty());
 
   // TODO(dnfield): Support non-serial dispatch type on higher iOS versions.
   auto compute_command_encoder = [buffer_ computeCommandEncoder];
@@ -73,8 +69,7 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context,
   fml::ScopedCleanupClosure auto_end(
       [compute_command_encoder]() { [compute_command_encoder endEncoding]; });
 
-  return EncodeCommands(context.GetResourceAllocator(), compute_command_encoder,
-                        grid_size, thread_group_size);
+  return EncodeCommands(context.GetResourceAllocator(), compute_command_encoder);
 }
 
 //-----------------------------------------------------------------------------
@@ -208,17 +203,17 @@ static bool Bind(ComputePassBindingsCache& pass,
 }
 
 bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
-                                    id<MTLComputeCommandEncoder> encoder,
-                                    const ISize& grid_size,
-                                    const ISize& thread_group_size) const {
-  if (grid_size.width == 0 || grid_size.height == 0) {
-    return true;
-  }
-
+                                    id<MTLComputeCommandEncoder> encoder) const {
   ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
   for (const auto& command : commands_) {
+    auto grid_size = command.grid_size;
+
+    if (grid_size.width == 0 || grid_size.height == 0) {
+      continue;
+    }
+
     fml::ScopedCleanupClosure auto_pop_debug_marker(pop_debug_marker);
     if (!command.label.empty()) {
       [encoder pushDebugGroup:@(command.label.c_str())];

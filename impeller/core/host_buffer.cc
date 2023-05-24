@@ -27,6 +27,10 @@ void HostBuffer::SetLabel(std::string label) {
   label_ = std::move(label);
 }
 
+BufferView HostBuffer::AsBufferView() {
+  return BufferView{shared_from_this(), GetBuffer(), Range{0, GetLength()}};
+}
+
 BufferView HostBuffer::Emplace(const void* buffer,
                                size_t length,
                                size_t align) {

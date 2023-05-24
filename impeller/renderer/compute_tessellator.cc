@@ -118,12 +118,10 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
         context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
     FML_DCHECK(compute_pipeline);
 
-    pass->SetGridSize(ISize(line_count, 1));
-    pass->SetThreadGroupSize(ISize(line_count, 1));
-
     ComputeCommand cmd;
     cmd.label = "Generate Polyline";
     cmd.pipeline = compute_pipeline;
+    cmd.grid_size = ISize(line_count, 1);
 
     PS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
     PS::BindCubics(cmd,
@@ -148,12 +146,10 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
         context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
     FML_DCHECK(compute_pipeline);
 
-    pass->SetGridSize(ISize(line_count, 1));
-    pass->SetThreadGroupSize(ISize(line_count, 1));
-
     ComputeCommand cmd;
     cmd.label = "Compute Stroke";
     cmd.pipeline = compute_pipeline;
+    cmd.grid_size = ISize(line_count, 1);
 
     SS::Config config{
         .width = stroke_width_,

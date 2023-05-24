@@ -45,12 +45,10 @@ TEST_P(ComputeTest, CanCreateComputePass) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-  pass->SetThreadGroupSize(ISize(kCount, 1));
-
   ComputeCommand cmd;
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
+  cmd.grid_size = ISize(kCount, 1);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
@@ -124,12 +122,10 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-  pass->SetThreadGroupSize(ISize(kCount, 1));
-
   ComputeCommand cmd;
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
+  cmd.grid_size = ISize(kCount, 1);
 
   CS::InputData<kCount> input_data;
   input_data.count = kCount;
@@ -189,11 +185,10 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
 
     static constexpr size_t kCount = 1023;
 
-    pass->SetGridSize(ISize(kCount, 1));
-
     ComputeCommand cmd;
     cmd.label = "Compute";
     cmd.pipeline = compute_pipeline;
+    cmd.grid_size = ISize(kCount, 1);
 
     CS::InputData<kCount> input_data;
     input_data.count = kCount;
@@ -246,9 +241,6 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
   static constexpr size_t kCount1 = 5;
   static constexpr size_t kCount2 = kCount1 * 2;
 
-  pass->SetGridSize(ISize(512, 1));
-  pass->SetThreadGroupSize(ISize(512, 1));
-
   CS1::Input<kCount1> input_1;
   input_1.count = kCount1;
   for (size_t i = 0; i < kCount1; i++) {
@@ -270,6 +262,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
     ComputeCommand cmd;
     cmd.label = "Compute1";
     cmd.pipeline = compute_pipeline_1;
+    cmd.grid_size = ISize(512, 1);
 
     CS1::BindInput(cmd,
                    pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
@@ -282,6 +275,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
     ComputeCommand cmd;
     cmd.label = "Compute2";
     cmd.pipeline = compute_pipeline_2;
+    cmd.grid_size = ISize(512, 1);
 
     CS1::BindInput(cmd, output_buffer_1->AsBufferView());
     CS2::BindOutput(cmd, output_buffer_2->AsBufferView());
@@ -336,11 +330,10 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-
   ComputeCommand cmd;
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
+  cmd.grid_size = ISize(kCount, 1);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
@@ -416,12 +409,10 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
 
   // Intentionally making the grid size zero in one dimension. No GPU will
   // tolerate this.
-  pass->SetGridSize(ISize(0, 1));
-  pass->SetThreadGroupSize(ISize(0, 1));
-
   ComputeCommand cmd;
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
+  cmd.grid_size = ISize(0, 1);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;

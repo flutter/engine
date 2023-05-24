@@ -33,14 +33,10 @@ class ComputePassMTL final : public ComputePass {
   void OnSetLabel(std::string label) override;
 
   // |ComputePass|
-  bool OnEncodeCommands(const Context& context,
-                        const ISize& grid_size,
-                        const ISize& thread_group_size) const override;
+  bool OnEncodeCommands(const Context& context) const override;
 
   bool EncodeCommands(const std::shared_ptr<Allocator>& allocator,
-                      id<MTLComputeCommandEncoder> pass,
-                      const ISize& grid_size,
-                      const ISize& thread_group_size) const;
+                      id<MTLComputeCommandEncoder> pass) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ComputePassMTL);
 };

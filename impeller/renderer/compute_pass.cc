@@ -28,14 +28,6 @@ void ComputePass::SetLabel(std::string label) {
   OnSetLabel(std::move(label));
 }
 
-void ComputePass::SetGridSize(const ISize& size) {
-  grid_size_ = size;
-}
-
-void ComputePass::SetThreadGroupSize(const ISize& size) {
-  thread_group_size_ = size;
-}
-
 bool ComputePass::AddCommand(ComputeCommand command) {
   if (!command) {
     VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
@@ -47,17 +39,12 @@ bool ComputePass::AddCommand(ComputeCommand command) {
 }
 
 bool ComputePass::EncodeCommands() const {
-  if (grid_size_.IsEmpty() || thread_group_size_.IsEmpty()) {
-    FML_DLOG(WARNING) << "Attempted to encode a compute pass with an empty "
-                         "grid or thread group size.";
-    return false;
-  }
   auto context = context_.lock();
   // The context could have been collected in the meantime.
   if (!context) {
     return false;
   }
-  return OnEncodeCommands(*context, grid_size_, thread_group_size_);
+  return OnEncodeCommands(*context);
 }
 
 }  // namespace impeller
