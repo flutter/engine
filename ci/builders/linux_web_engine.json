@@ -117,7 +117,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -163,7 +163,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -186,7 +186,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -255,7 +255,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -278,7 +278,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -301,7 +301,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
@@ -324,7 +324,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "cores=32"
+                "cores=8"
             ],
             "generators": {
                 "tasks": [
