@@ -738,7 +738,3 @@ void fl_view_set_textures(FlView* self,
 
   fl_gl_area_queue_render(self->gl_area, textures);
 }
-
-gboolean fl_view_send_pointer_event(FlView* self, FlPointerEvent* event) {
-  return send_pointer_button_event(self, event);
-}

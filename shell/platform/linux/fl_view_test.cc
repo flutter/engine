@@ -14,7 +14,7 @@
 // MOCK_ENGINE_PROC is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
-TEST(FlEngineTest, SendPointerEventMouse) {
+TEST(FlViewTest, SendPointerEventMouse) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
@@ -40,27 +40,24 @@ TEST(FlEngineTest, SendPointerEventMouse) {
         return kSuccess;
       }));
 
-  g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_engine_start(engine, &error));
-  EXPECT_EQ(error, nullptr);
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+  g_autoptr(FlView) view = fl_view_new_with_engine(project, engine);
 
-  FlDartProject* project = fl_dart_project_new();
-  FlView* view = fl_view_new_with_engine(project, engine);
+  FlPointerEvent fl_event;
+  fl_event.time = 1234567890;
+  fl_event.x = 800;
+  fl_event.y = 900;
+  fl_event.fl_pointer_device_kind = kFlutterPointerDeviceKindMouse;
+  fl_event.pressure = 0.0;
+  fl_event.type = GDK_BUTTON_PRESS;
+  fl_event.button = kFlutterPointerButtonMousePrimary;
+  fl_event.scale_factor = 1;
 
-  GdkEvent* gdk_event = gdk_event_new(GDK_BUTTON_PRESS);
-  gdk_event->button.time = 1234567890;
-  gdk_event->button.x = 800;
-  gdk_event->button.y = 900;
-  gdk_event->button.axes = NULL;
-  gdk_event->button.button = 1;
-
-  FlPointerEvent* fl_event =
-      fl_pointer_event_new_from_gdk_event(gdk_event, view);
-  fl_view_send_pointer_event(view, fl_event);
+  fl_view_send_pointer_event(view, &fl_event, kDown);
   EXPECT_TRUE(called);
 }
 
-TEST(FlEngineTest, SendPointerEventStylus) {
+TEST(FlViewTest, SendPointerEventStylus) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
@@ -86,23 +83,20 @@ TEST(FlEngineTest, SendPointerEventStylus) {
         return kSuccess;
       }));
 
-  g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_engine_start(engine, &error));
-  EXPECT_EQ(error, nullptr);
-
   FlDartProject* project = fl_dart_project_new();
   FlView* view = fl_view_new_with_engine(project, engine);
 
-  GdkEvent* gdk_event = gdk_event_new(GDK_BUTTON_PRESS);
-  gdk_event->button.time = 1234567890;
-  gdk_event->button.x = 800;
-  gdk_event->button.y = 900;
-  gdk_event->button.axes = NULL;  // TODO: Define pressure
-  gdk_event->button.button = 1;
+  FlPointerEvent fl_event;
+  fl_event.time = 1234567890;
+  fl_event.x = 800;
+  fl_event.y = 900;
+  fl_event.fl_pointer_device_kind = kFlutterPointerDeviceKindStylus;
+  fl_event.pressure = 0.5;
+  fl_event.type = GDK_BUTTON_PRESS;
+  fl_event.button = kFlutterPointerButtonMousePrimary;
+  fl_event.scale_factor = 1;
 
-  FlPointerEvent* fl_event =
-      fl_pointer_event_new_from_gdk_event(gdk_event, view);
-  fl_view_send_pointer_event(view, fl_event);
+  fl_view_send_pointer_event(view, &fl_event, kDown);
   EXPECT_TRUE(called);
 }
 

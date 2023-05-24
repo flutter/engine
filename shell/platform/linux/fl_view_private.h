@@ -14,7 +14,9 @@
 
 FlView* fl_view_new_with_engine(FlDartProject* project, FlEngine* engine);
 
-gboolean fl_view_send_pointer_event(FlView* view, FlPointerEvent* event);
+void fl_view_send_pointer_event(FlView* self,
+                                FlPointerEvent* event,
+                                FlutterPointerPhase phase);
 
 /**
  * fl_view_set_textures:
