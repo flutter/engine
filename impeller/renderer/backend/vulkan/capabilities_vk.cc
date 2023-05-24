@@ -349,7 +349,7 @@ bool CapabilitiesVK::SupportsCompute() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsComputeSubgroups() const {
-  // Set after in |SetDevice|.
+  // Set by |SetDevice|.
   return supports_compute_subgroups_;
 }
 
