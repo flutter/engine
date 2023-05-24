@@ -188,6 +188,15 @@ bool SurfaceMTL::Present() const {
       ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
   [command_buffer commit];
   [command_buffer waitUntilScheduled];
+#else
+  // On Physical iOS devices we still need to wait if we're taking a frame
+  // capture.
+  if ([[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+    id<MTLCommandBuffer> command_buffer =
+        ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
+    [command_buffer commit];
+    [command_buffer waitUntilScheduled];
+  }
 #endif  // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
 
   [drawable_ present];
