@@ -130,7 +130,11 @@ targets:
     properties:
       cache_name: "builder"
       cache_root: "cache"
-      cache_paths: ["builder", "git"]
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
     timeout: 60
 
   - name: Windows builder_cache
@@ -142,7 +146,11 @@ targets:
     properties:
       cache_name: "builder"
       cache_root: "cache"
-      cache_paths: ["builder", "git"]
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
     timeout: 60
 
   - name: Mac builder_cache
@@ -154,7 +162,11 @@ targets:
     properties:
       cache_name: "builder"
       cache_root: "cache"
-      cache_paths: ["builder", "git"]
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
     timeout: 60
 
   - name: Linux Benchmarks
