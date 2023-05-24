@@ -145,7 +145,7 @@ class EngineAutofillForm {
     this.elements,
     this.items,
     this.formIdentifier = '',
-    this.nodeToInsertBefore,
+    this.insertionReferenceNode,
   });
 
   final DomHTMLFormElement formElement;
@@ -154,7 +154,7 @@ class EngineAutofillForm {
 
   final Map<String, AutofillInfo>? items;
 
-  final DomHTMLElement? nodeToInsertBefore;
+  final DomHTMLElement? insertionReferenceNode;
   /// Identifier for the form.
   ///
   /// It is constructed by concatenating unique ids of input elements on the
@@ -191,7 +191,7 @@ class EngineAutofillForm {
     final Map<String, DomHTMLElement> elements = <String, DomHTMLElement>{};
     final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final DomHTMLFormElement formElement = createDomHTMLFormElement();
-    DomHTMLElement? nodeToInsertBefore;
+    DomHTMLElement? insertionReferenceNode;
 
     // Validation is in the framework side.
     formElement.noValidate = true;
@@ -243,7 +243,7 @@ class EngineAutofillForm {
           // element, so we can later insert that element in the correct position
           // right before this node.
           if(fieldIsFocusedElement){
-            nodeToInsertBefore = htmlElement;
+            insertionReferenceNode = htmlElement;
             fieldIsFocusedElement = false;
           }
         } else {
@@ -285,19 +285,19 @@ class EngineAutofillForm {
 
     // If the focused node is at the end of the form, we'll default to inserting
     // it before the submit field.
-    nodeToInsertBefore ??= submitButton;
+    insertionReferenceNode ??= submitButton;
 
     return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
       items: items,
       formIdentifier: formIdentifier,
-      nodeToInsertBefore: nodeToInsertBefore
+      insertionReferenceNode: insertionReferenceNode
     );
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
-    formElement.insertBefore(mainTextEditingElement, nodeToInsertBefore);
+    formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
     defaultTextEditingRoot.append(formElement);
   }
 
