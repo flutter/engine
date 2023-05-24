@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include "flutter/shell/platform/linux/fl_gl_area.h"
