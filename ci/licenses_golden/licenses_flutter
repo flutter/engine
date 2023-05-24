@@ -1213,14 +1213,14 @@ ORIGIN: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc + 
 ORIGIN: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/runtime_effect_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/runtime_effect_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/scene_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/scene_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/solid_color_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/solid_color_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/solid_rrect_blur_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/solid_rrect_blur_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/text_contents.cc + ../../../flutter/LICENSE
@@ -1241,8 +1241,20 @@ ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.cc + ../../../flutte
 ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/geometry.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/cover_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/cover_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/fill_path_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/fill_path_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/point_field_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/point_field_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/rect_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/rect_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl + ../../../flutter/LICENSE
@@ -1687,11 +1699,14 @@ ORIGIN: ../../../flutter/lib/ui/dart_runtime_hooks.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/dart_ui.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/dart_ui.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/dart_wrapper.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/experiments/gpu.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/scene.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/setup_hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/floating_point.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/geometry.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/gpu/context.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/gpu/context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hash_codes.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/io_manager.cc + ../../../flutter/LICENSE
@@ -2078,6 +2093,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/platform_view_registry.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/window.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/canvas.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp + ../../../flutter/LICENSE
@@ -3841,14 +3857,14 @@ FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h
-FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h
 FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.h
 FILE: ../../../flutter/impeller/entity/contents/scene_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/scene_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
+FILE: ../../../flutter/impeller/entity/contents/solid_rrect_blur_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/solid_rrect_blur_contents.h
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
@@ -3869,8 +3885,20 @@ FILE: ../../../flutter/impeller/entity/entity_pass_target.cc
 FILE: ../../../flutter/impeller/entity/entity_pass_target.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
-FILE: ../../../flutter/impeller/entity/geometry.cc
-FILE: ../../../flutter/impeller/entity/geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/cover_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/cover_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/fill_path_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/fill_path_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/point_field_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/point_field_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/rect_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/rect_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/stroke_path_geometry.h
+FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc
+FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.h
 FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.h
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
@@ -4317,11 +4345,14 @@ FILE: ../../../flutter/lib/ui/dart_runtime_hooks.h
 FILE: ../../../flutter/lib/ui/dart_ui.cc
 FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/dart_wrapper.h
+FILE: ../../../flutter/lib/ui/experiments/gpu.dart
 FILE: ../../../flutter/lib/ui/experiments/scene.dart
 FILE: ../../../flutter/lib/ui/experiments/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/experiments/ui.dart
 FILE: ../../../flutter/lib/ui/floating_point.h
 FILE: ../../../flutter/lib/ui/geometry.dart
+FILE: ../../../flutter/lib/ui/gpu/context.cc
+FILE: ../../../flutter/lib/ui/gpu/context.h
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
 FILE: ../../../flutter/lib/ui/io_manager.cc
@@ -4708,6 +4739,7 @@ FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/platform_view_registry.dart
 FILE: ../../../flutter/lib/web_ui/lib/window.dart
 FILE: ../../../flutter/lib/web_ui/skwasm/canvas.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp

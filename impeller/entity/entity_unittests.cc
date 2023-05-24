@@ -23,9 +23,9 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -35,7 +35,9 @@
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
@@ -1363,8 +1365,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
-  // Draws the image as four squares stiched together. Because blend modes
-  // aren't implented this ends up as four solid color blocks.
+  // Draws the image as four squares stiched together.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
   auto size = atlas->GetSize();
   // Divide image into four quadrants.
@@ -1710,7 +1711,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
-    auto contents = std::make_unique<RRectShadowContents>();
+    auto contents = std::make_unique<SolidRRectBlurContents>();
     contents->SetRRect(rect, corner_radius);
     contents->SetColor(color);
     contents->SetSigma(Radius(blur_radius));
