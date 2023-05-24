@@ -152,6 +152,20 @@ bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect) {
 IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
+ 
+static bool ShouldWaitForCommandBuffer() {
+#if ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
+  // If a transaction is present, `presentDrawable` will present too early. And
+  // so we wait on an empty command buffer to get scheduled instead, which
+  // forces us to also wait for all of the previous command buffers in the queue
+  // to get scheduled.
+  return true;
+#else
+  // On Physical iOS devices we still need to wait if we're taking a frame
+  // capture.
+  return [[MTLCaptureManager sharedCaptureManager] isCapturing];
+#endif   // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
+}
 
 // |Surface|
 bool SurfaceMTL::Present() const {
@@ -179,26 +193,12 @@ bool SurfaceMTL::Present() const {
     }
   }
 
-#if ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
-  // If a transaction is present, `presentDrawable` will present too early. And
-  // so we wait on an empty command buffer to get scheduled instead, which
-  // forces us to also wait for all of the previous command buffers in the queue
-  // to get scheduled.
-  id<MTLCommandBuffer> command_buffer =
-      ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
-  [command_buffer commit];
-  [command_buffer waitUntilScheduled];
-#else
-  // On Physical iOS devices we still need to wait if we're taking a frame
-  // capture.
-  if ([[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+  if (ShouldWaitForCommandBuffer()) {
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
     [command_buffer commit];
     [command_buffer waitUntilScheduled];
   }
-#endif  // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
-
   [drawable_ present];
 
   return true;
