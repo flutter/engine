@@ -6,14 +6,20 @@
 
 /**
  * Takes care of synchronization between raster and platform thread.
+ *
+ * All methods of this class must be called from the platform thread,
+ * except for performCommitForView:size:notify:.
  */
 @interface FlutterThreadSynchronizer : NSObject
 
+/**
+ * Creates a FlutterThreadSynchronizer that uses the OS main thread as the
+ * platform thread.
+ */
 - (nullable instancetype)init;
 
 /**
- * Called from platform thread. Blocks until a commit with given size (or empty)
- * is requested.
+ * Blocks until all views have a commit with their given sizes (or empty) is requested.
  */
 - (void)beginResizeForView:(int64_t)viewId
                       size:(CGSize)size
@@ -32,12 +38,24 @@
                         size:(CGSize)size
                       notify:(nonnull dispatch_block_t)notify;
 
+/**
+ * Requests the synchronizer to track another view.
+ *
+ * A view must be registered before calling begineResizeForView: or
+ * performCommitForView:. It is typically done when the view controller is
+ * created.
+ */
 - (void)registerView:(int64_t)viewId;
 
+/**
+ * Requests the synchronizer to no longer track a view.
+ *
+ * It is typically done when the view controller is created.
+ */
 - (void)deregisterView:(int64_t)viewId;
 
 /**
- * Called from platform thread when shutting down.
+ * Called when the engine shuts down.
  *
  * Prevents any further synchronization and no longer blocks any threads.
  */
@@ -45,8 +63,12 @@
 
 @end
 
-@interface FlutterThreadSynchronizer (Test)
+@interface FlutterThreadSynchronizer (TestUtils)
 
+/**
+ * Creates a FlutterThreadSynchronizer that uses the specified queue as the
+ * platform thread.
+ */
 - (nullable instancetype)initWithMainQueue:(nonnull dispatch_queue_t)queue;
 
 /**

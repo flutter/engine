@@ -165,10 +165,14 @@
 }
 
 - (void)registerView:(int64_t)viewId {
+  dispatch_assert_queue(_mainQueue);
+  std::unique_lock<std::mutex> lock(_mutex);
   _contentSizes[viewId] = CGSizeZero;
 }
 
 - (void)deregisterView:(int64_t)viewId {
+  dispatch_assert_queue(_mainQueue);
+  std::unique_lock<std::mutex> lock(_mutex);
   _contentSizes.erase(viewId);
 }
 
