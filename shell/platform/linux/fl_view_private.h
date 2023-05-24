@@ -10,6 +10,11 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include "flutter/shell/platform/linux/fl_gl_area.h"
+#include "flutter/shell/platform/linux/fl_pointer_event.h"
+
+FlView* fl_view_new_with_engine(FlDartProject* project, FlEngine* engine);
+
+gboolean fl_view_send_pointer_event(FlView* view, FlPointerEvent* event);
 
 /**
  * fl_view_set_textures:

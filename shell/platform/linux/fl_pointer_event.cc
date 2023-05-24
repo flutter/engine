@@ -61,11 +61,11 @@ FlutterPointerDeviceKind fl_pointer_check_device_is_stylus(FlView* view,
   if (!(flags & GDK_AXIS_FLAG_PRESSURE)) {
     return kFlutterPointerDeviceKindMouse;
   }
-  GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(view));
-  gdouble axes[GDK_AXIS_LAST] = {
-      0,
-  };
-  gdk_device_get_state(device, window, axes, NULL);
-  gdk_device_get_axis(device, axes, GDK_AXIS_PRESSURE, pressure);
+  // GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(view));
+  // gdouble axes[GDK_AXIS_LAST] = {
+  //     0,
+  // };
+  // gdk_device_get_state(device, window, axes, NULL);
+  // gdk_device_get_axis(device, axes, GDK_AXIS_PRESSURE, pressure);
   return kFlutterPointerDeviceKindStylus;
 }

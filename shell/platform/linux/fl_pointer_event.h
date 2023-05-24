@@ -6,8 +6,9 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_POINTER_EVENT_H_
 
 #include <gdk/gdk.h>
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
+
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/linux/fl_view_private.h"
 
 /**
  * FlPointerEventDispose:

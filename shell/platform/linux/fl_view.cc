@@ -533,7 +533,9 @@ static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
   self->renderer = FL_RENDERER(fl_renderer_gl_new());
-  self->engine = fl_engine_new(self->project, self->renderer);
+  if (self->engine == nullptr) {
+    self->engine = fl_engine_new(self->project, self->renderer);
+  }
   fl_engine_set_update_semantics_node_handler(
       self->engine, update_semantics_node_cb, self, nullptr);
   fl_engine_set_on_pre_engine_restart_handler(
@@ -706,8 +708,15 @@ static void fl_view_init(FlView* self) {
 }
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
-  return static_cast<FlView*>(
+  return FL_VIEW(
       g_object_new(fl_view_get_type(), "flutter-project", project, nullptr));
+}
+
+FlView* fl_view_new_with_engine(FlDartProject* project, FlEngine* engine) {
+  FlView* self = FL_VIEW(
+      g_object_new(fl_view_get_type(), "flutter-project", project, nullptr));
+  self->engine = engine;
+  return self;
 }
 
 G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* self) {
@@ -728,4 +737,8 @@ void fl_view_set_textures(FlView* self,
   }
 
   fl_gl_area_queue_render(self->gl_area, textures);
+}
+
+gboolean fl_view_send_pointer_event(FlView* self, FlPointerEvent* event) {
+  return send_pointer_button_event(self, event);
 }
