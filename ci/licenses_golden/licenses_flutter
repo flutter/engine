@@ -3038,6 +3038,8 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc + ../../../
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registry.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/fl_pointer_event.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/fl_pointer_event.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_renderer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_renderer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_renderer_gl.cc + ../../../flutter/LICENSE
@@ -3086,6 +3088,7 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible.cc + ../../../f
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_private.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/fl_view_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.g.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h + ../../../flutter/LICENSE
@@ -5700,6 +5703,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registry.cc
+FILE: ../../../flutter/shell/platform/linux/fl_pointer_event.cc
+FILE: ../../../flutter/shell/platform/linux/fl_pointer_event.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_gl.cc
@@ -5748,6 +5753,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.h
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_view_test.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.g.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h
