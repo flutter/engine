@@ -15,6 +15,7 @@ import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
 import 'package:ui/ui_web/src/ui_web.dart';
 
+import '../common/matchers.dart';
 import '../common/spy.dart';
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
@@ -703,6 +704,19 @@ void testMain() {
       );
     });
 
+    test('throws if removing an invalid listener', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myAddedListener(Object event) {}
+      void myNonAddedListener(Object event) {}
+
+      location.addPopStateListener(myAddedListener);
+      expect(() => location.removePopStateListener(myAddedListener), returnsNormally);
+      // Removing the same listener twice should throw.
+      expect(() => location.removePopStateListener(myAddedListener), throwsAssertionError);
+
+      // A listener that was never added.
+      expect(() => location.removePopStateListener(myNonAddedListener), throwsAssertionError);
+    });
   });
 }
 

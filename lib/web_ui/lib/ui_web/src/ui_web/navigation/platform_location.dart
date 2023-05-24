@@ -99,9 +99,12 @@ class BrowserPlatformLocation implements PlatformLocation {
 
   @override
   void removePopStateListener(EventListener fn) {
-    final DomEventListener jsFn = getOrCreateDomEventListener(fn);
+    assert(
+      _popStateListenersCache.containsKey(fn),
+      'Removing a listener that was never added or was removed already.',
+    );
+    domWindow.removeEventListener('popstate', getOrCreateDomEventListener(fn));
     _popStateListenersCache.remove(fn);
-    domWindow.removeEventListener('popstate', jsFn);
   }
 
   @override
