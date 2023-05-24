@@ -45,7 +45,8 @@ indirect_command_data;
 
 uniform FrameData {
   uint input_count;
-} frame_data;
+}
+frame_data;
 
 void main() {
   uint ident = gl_GlobalInvocationID.x;
@@ -59,7 +60,8 @@ void main() {
   // Technically a convex N-gon only requires (N - 2) * 3 vertices, but that
   // makes computing the buffer offsets much harder. Instead we assume each
   // takes N * 3 vertices, but allocate the first 6 slots with 0 area triangles.
-  // This should probably be fixed at some point, but it seems to work OK for now.
+  // This should probably be fixed at some point, but it seems to work OK for
+  // now.
   if (data.first_offset == ident || data.first_offset + 1 == ident) {
     geometry.data[index_offset] = polyline.data[data.first_offset].pt;
     geometry.data[index_offset + 1] = polyline.data[data.first_offset].pt;

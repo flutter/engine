@@ -69,7 +69,8 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context) const {
   fml::ScopedCleanupClosure auto_end(
       [compute_command_encoder]() { [compute_command_encoder endEncoding]; });
 
-  return EncodeCommands(context.GetResourceAllocator(), compute_command_encoder);
+  return EncodeCommands(context.GetResourceAllocator(),
+                        compute_command_encoder);
 }
 
 //-----------------------------------------------------------------------------
@@ -202,8 +203,9 @@ static bool Bind(ComputePassBindingsCache& pass,
   return true;
 }
 
-bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
-                                    id<MTLComputeCommandEncoder> encoder) const {
+bool ComputePassMTL::EncodeCommands(
+    const std::shared_ptr<Allocator>& allocator,
+    id<MTLComputeCommandEncoder> encoder) const {
   ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
