@@ -152,7 +152,7 @@ bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect) {
 IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
- 
+
 static bool ShouldWaitForCommandBuffer() {
 #if ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
   // If a transaction is present, `presentDrawable` will present too early. And
@@ -164,7 +164,7 @@ static bool ShouldWaitForCommandBuffer() {
   // On Physical iOS devices we still need to wait if we're taking a frame
   // capture.
   return [[MTLCaptureManager sharedCaptureManager] isCapturing];
-#endif   // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
+#endif  // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
 }
 
 // |Surface|
