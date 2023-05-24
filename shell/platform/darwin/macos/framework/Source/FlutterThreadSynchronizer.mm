@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
 #import <QuartzCore/QuartzCore.h>
@@ -10,6 +14,7 @@
 #import "flutter/fml/synchronization/waitable_event.h"
 
 @interface FlutterThreadSynchronizer () {
+  dispatch_queue_t _mainQueue;
   std::mutex _mutex;
   BOOL _shuttingDown;
   std::unordered_map<int64_t, CGSize> _contentSizes;
@@ -39,6 +44,18 @@
 
 @implementation FlutterThreadSynchronizer
 
+- (instancetype)init {
+  return [self initWithMainQueue:dispatch_get_main_queue()];
+}
+
+- (instancetype)initWithMainQueue:(dispatch_queue_t)queue {
+  self = [super init];
+  if (self != nil) {
+    _mainQueue = queue;
+  }
+  return self;
+}
+
 - (BOOL)allViewsHaveFrame {
   for (auto const& [viewId, contentSize] : _contentSizes) {
     if (CGSizeEqualToSize(contentSize, CGSizeZero)) {
@@ -58,7 +75,7 @@
 }
 
 - (void)drain {
-  FML_DCHECK([NSThread isMainThread]);
+  dispatch_assert_queue(_mainQueue);
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
@@ -85,6 +102,7 @@
 - (void)beginResizeForView:(int64_t)viewId
                       size:(CGSize)size
                     notify:(nonnull dispatch_block_t)notify {
+  dispatch_assert_queue(_mainQueue);
   std::unique_lock<std::mutex> lock(_mutex);
 
   if (![self allViewsHaveFrame] || _shuttingDown) {
@@ -119,6 +137,7 @@
 - (void)performCommitForView:(int64_t)viewId
                         size:(CGSize)size
                       notify:(nonnull dispatch_block_t)notify {
+  dispatch_assert_queue_not(_mainQueue);
   fml::AutoResetWaitableEvent event;
   {
     std::unique_lock<std::mutex> lock(_mutex);
@@ -136,7 +155,7 @@
     if (_beginResizeWaiting) {
       _condBlockBeginResize.notify_all();
     } else {
-      dispatch_async(dispatch_get_main_queue(), ^{
+      dispatch_async(_mainQueue, ^{
         std::unique_lock<std::mutex> lock(_mutex);
         [self drain];
       });
@@ -146,18 +165,28 @@
 }
 
 - (void)registerView:(int64_t)viewId {
+  dispatch_assert_queue(_mainQueue);
+  std::unique_lock<std::mutex> lock(_mutex);
   _contentSizes[viewId] = CGSizeZero;
 }
 
 - (void)deregisterView:(int64_t)viewId {
+  dispatch_assert_queue(_mainQueue);
+  std::unique_lock<std::mutex> lock(_mutex);
   _contentSizes.erase(viewId);
 }
 
 - (void)shutdown {
+  dispatch_assert_queue(_mainQueue);
   std::unique_lock<std::mutex> lock(_mutex);
   _shuttingDown = YES;
   _condBlockBeginResize.notify_all();
   [self drain];
+}
+
+- (BOOL)isWaitingWhenMutexIsAvailable {
+  std::unique_lock<std::mutex> lock(_mutex);
+  return _beginResizeWaiting;
 }
 
 @end

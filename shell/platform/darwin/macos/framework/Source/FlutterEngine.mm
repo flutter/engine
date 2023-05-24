@@ -388,7 +388,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
-  FlutterThreadSynchronizer* _synchronizer;
+  FlutterThreadSynchronizer* _threadSynchronizer;
 
   int _nextViewId;
 }
@@ -429,7 +429,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
-  _synchronizer = [[FlutterThreadSynchronizer alloc] init];
+  _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
@@ -592,7 +592,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(![controller attached],
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
-  [controller attachToEngine:self withId:viewId];
+  [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }
@@ -924,8 +924,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  [_synchronizer shutdown];
-  _synchronizer = nil;
+  [_threadSynchronizer shutdown];
+  _threadSynchronizer = nil;
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
     [nextViewController.flutterView shutdown];
@@ -1114,8 +1114,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return flutter::GetSwitchesFromEnvironment();
 }
 
-- (FlutterThreadSynchronizer*)synchronizer {
-  return _synchronizer;
+- (FlutterThreadSynchronizer*)testThreadSynchronizer {
+  return _threadSynchronizer;
 }
 
 #pragma mark - FlutterBinaryMessenger

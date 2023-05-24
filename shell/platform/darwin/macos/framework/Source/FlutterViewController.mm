@@ -375,7 +375,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
   // FlutterViewController does not actually uses the synchronizer, but only
   // passes it to FlutterView.
-  __weak FlutterThreadSynchronizer* _weakSynchronizer;
+  __weak FlutterThreadSynchronizer* _weakViewThreadSynchronizer;
 }
 
 @synthesize viewId = _viewId;
@@ -402,7 +402,6 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
             controller.engine, controller.viewId);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
-  controller->_weakSynchronizer = engine.synchronizer;
   [controller initializeKeyboard];
   [controller notifySemanticsEnabledChanged];
   // macOS fires this message when changing IMEs.
@@ -550,10 +549,13 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(FlutterViewId)viewId {
+- (void)setUpWithEngine:(FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+     threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
+  _weakViewThreadSynchronizer = threadSynchronizer;
 }
 
 - (void)detachFromEngine {
@@ -868,7 +870,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
                                 reshapeListener:self
-                                   synchronizer:_weakSynchronizer
+                             threadSynchronizer:_weakViewThreadSynchronizer
                                          viewId:_viewId];
 }
 

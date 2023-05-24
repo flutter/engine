@@ -13,7 +13,7 @@
   int64_t _viewId;
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterSurfaceManager* _surfaceManager;
-  FlutterThreadSynchronizer* _synchronizer;
+  FlutterThreadSynchronizer* _threadSynchronizer;
 }
 
 @end
@@ -23,7 +23,7 @@
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
                   reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener
-                     synchronizer:(FlutterThreadSynchronizer*)synchronizer
+               threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer
                            viewId:(int64_t)viewId {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
@@ -32,18 +32,18 @@
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _viewId = viewId;
     _reshapeListener = reshapeListener;
-    _synchronizer = synchronizer;
+    _threadSynchronizer = threadSynchronizer;
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
                                                        commandQueue:commandQueue
                                                               layer:self.layer
                                                            delegate:self];
-    [_synchronizer registerView:viewId];
+    [_threadSynchronizer registerView:viewId];
   }
   return self;
 }
 
 - (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
-  [_synchronizer performCommitForView:_viewId size:frameSize notify:block];
+  [_threadSynchronizer performCommitForView:_viewId size:frameSize notify:block];
 }
 
 - (FlutterSurfaceManager*)surfaceManager {
@@ -52,11 +52,11 @@
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_synchronizer beginResizeForView:_viewId
-                               size:scaledSize
-                             notify:^{
-                               [_reshapeListener viewDidReshape:self];
-                             }];
+  [_threadSynchronizer beginResizeForView:_viewId
+                                     size:scaledSize
+                                   notify:^{
+                                     [_reshapeListener viewDidReshape:self];
+                                   }];
 }
 
 - (void)setBackgroundColor:(NSColor*)color {
