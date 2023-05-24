@@ -39,6 +39,15 @@ namespace testing {
 using ComputeSubgroupTest = ComputePlaygroundTest;
 INSTANTIATE_COMPUTE_SUITE(ComputeSubgroupTest);
 
+using ComputeMetalAndVulkanSubgroupTest = ComputePlaygroundTest;
+INSTANTIATE_COMPUTE_SUITE_WITH_VULKAN(ComputeMetalAndVulkanSubgroupTest);
+
+TEST_P(ComputeMetalAndVulkanSubgroupTest, CapabilitiesSuportSubgroups) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
+}
+
 TEST_P(ComputeSubgroupTest, PathPlayground) {
   // Renders stroked SVG paths in an interactive playground.
   using SS = StrokeComputeShader;
