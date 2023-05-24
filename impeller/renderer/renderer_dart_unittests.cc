@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include <memory>
 
 #include "flutter/common/settings.h"
@@ -37,10 +39,7 @@ class RendererDartTest : public PlaygroundTest,
         vm_ref_(flutter::DartVMRef::Create(settings_)) {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     current_task_runner_ = fml::MessageLoop::GetCurrent().GetTaskRunner();
-#pragma clang diagnostic pop
 
     isolate_ = CreateDartIsolate();
     assert(isolate_);
@@ -93,10 +92,3 @@ TEST_P(RendererDartTest, CanRunDartInPlaygroundFrame) {
 
 }  // namespace testing
 }  // namespace impeller
-
-int main(int argc, char** argv) {
-  fml::InstallCrashHandler();
-  testing::InitGoogleTest(&argc, argv);
-  fml::CommandLine cmd = fml::CommandLineFromPlatformOrArgcArgv(argc, argv);
-  return RUN_ALL_TESTS();
-}

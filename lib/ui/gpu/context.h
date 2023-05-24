@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "impeller/renderer/context.h"
@@ -27,6 +28,8 @@ class GpuContext : public RefCountedDartWrappable<GpuContext> {
 
  private:
   std::shared_ptr<impeller::Context> context_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GpuContext);
 };
 
 }  // namespace flutter
