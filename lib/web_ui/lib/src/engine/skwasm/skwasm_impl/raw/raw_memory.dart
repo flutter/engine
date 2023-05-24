@@ -148,8 +148,8 @@ class StackScope {
     final Pointer<Float> pointer = allocFloatArray(transforms.length * 4);
     for (int i = 0; i < transforms.length; i++) {
       final ui.RSTransform transform = transforms[i];
-      pointer[i * 4] = transform.ssin;
-      pointer[i * 4 + 1] = transform.scos;
+      pointer[i * 4] = transform.scos;
+      pointer[i * 4 + 1] = transform.ssin;
       pointer[i * 4 + 2] = transform.tx;
       pointer[i * 4 + 3] = transform.ty;
     }
