@@ -102,6 +102,10 @@ impeller_component("impeller_unittests") {
     deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
   }
 
+  if (glfw_vulkan_library != "") {
+    deps += [ "//third_party/swiftshader" ]
+  }
+
   if (impeller_enable_compute) {
     deps += [ "renderer:compute_tessellation_unittests" ]
   }
