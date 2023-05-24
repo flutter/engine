@@ -62,7 +62,6 @@ def run_cmd(
     expect_failure: bool = False,
     env: typing.Dict[str, str] = None,
     allowed_failure_output: typing.List[str] = None,
-    should_debug: bool = False,
     **kwargs
 ) -> None:
   if forbidden_output is None:
@@ -80,35 +79,18 @@ def run_cmd(
   stdout_pipe = sys.stdout if not collect_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not collect_output else subprocess.PIPE
 
-  stdout = None
-  stderr = None
-  if should_debug:
-    lldb_cmd = ['lldb']
-    lldb_cmd += ['--batch']
-    for [key, value] in env.items():
-      lldb_cmd += ['-o', f'env {key}={value}']
-    lldb_cmd += ['-o', 'b abort']
-    lldb_cmd += ['-o', "break command add -o 'bt'"]
-    lldb_cmd += ['-o', ' '.join(['run'] + cmd[1:])]
-    lldb_cmd += ['--', cmd[0]]
-
-    doof = ' '.join(lldb_cmd)
-    print(f'lldb cmd: {doof}')
-    process = subprocess.Popen(lldb_cmd, universal_newlines=True, **kwargs)
-    process.wait()
-  else:
-    process = subprocess.Popen(
-        cmd,
-        stdout=stdout_pipe,
-        stderr=stderr_pipe,
-        env=env,
-        universal_newlines=True,
-        **kwargs
-    )
-    stdout, stderr = process.communicate()
+  process = subprocess.Popen(
+      cmd,
+      stdout=stdout_pipe,
+      stderr=stderr_pipe,
+      env=env,
+      universal_newlines=True,
+      **kwargs
+  )
+  stdout, stderr = process.communicate()
   end_time = time.time()
 
-  if (process.returncode != 0 or should_debug) and not expect_failure:
+  if process.returncode != 0 and not expect_failure:
     print_divider('!')
 
     print(
@@ -242,7 +224,6 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     coverage=False,
     extra_env=None,
     gtest=False,
-    should_debug=False,
 ):
   if executable_filter is not None and executable_name not in executable_filter:
     print('Skipping %s due to filter.' % executable_name)
@@ -300,7 +281,6 @@ def run_engine_executable( # pylint: disable=too-many-arguments
         expect_failure=expect_failure,
         env=env,
         allowed_failure_output=allowed_failure_output,
-        should_debug=should_debug
     )
   except:
     # The LUCI environment may provide a variable containing a directory path
@@ -524,7 +504,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage,
         extra_env=extra_env,
-        should_debug=True,
         # TODO(117122): Remove this allowlist.
         # https://github.com/flutter/flutter/issues/114872
         allowed_failure_output=[
