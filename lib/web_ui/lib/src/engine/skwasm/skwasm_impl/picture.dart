@@ -19,7 +19,10 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
   int get approximateBytesUsed => pictureApproximateBytesUsed(handle);
 
   @override
-  bool debugDisposed = false;
+  void dispose() {
+    super.dispose();
+    ui.Picture.onDispose?.call(this);
+  }
 
   @override
   ui.Image toImageSync(int width, int height) =>
