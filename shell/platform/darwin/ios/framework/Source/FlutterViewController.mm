@@ -1640,8 +1640,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
-  auto callback = [weakSelf =
-                       [self getWeakPtr]](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+  auto keyboardAnimationCallback = [weakSelf = [self getWeakPtr]](
+                                       fml::TimePoint keyboardAnimationTargetTime) {
     if (!weakSelf) {
       return;
     }
@@ -1664,9 +1664,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [flutterViewController updateViewportMetricsIfNeeded];
       }
     } else {
-      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
-                                   flutterViewController.get().keyboardAnimationStartTime;
-
+      fml::TimeDelta timeElapsed =
+          keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
       [flutterViewController updateViewportMetricsIfNeeded];
@@ -1675,9 +1674,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   flutter::Shell& shell = [_engine.get() shell];
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
+
+  // Need to call the updateViewportMetrics signal after flutter UI thread's process callback,
+  // So here need to wait vsync on UI thread instead of posting the signal
+  // on platform thread directly.
+  auto uiCallback = [keyboardAnimationCallback,
+                     &shell](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
+    fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
+    shell.GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+        [keyboardAnimationCallback, keyboardAnimationTargetTime] {
+          keyboardAnimationCallback(keyboardAnimationTargetTime);
+        });
+  };
   _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
-                                     callback:callback];
+      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetUITaskRunner()
+                                     callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
 }
