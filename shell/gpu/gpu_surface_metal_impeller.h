@@ -5,11 +5,15 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 
+#include <QuartzCore/CAMetalLayer.h>
+
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
@@ -24,10 +28,17 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   // |Surface|
   bool IsValid() override;
 
+  virtual Surface::SurfaceData GetSurfaceData() const override;
+
  private:
   const GPUSurfaceMetalDelegate* delegate_;
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
+  fml::scoped_nsprotocol<id<MTLDrawable>> last_drawable_;
+  bool disable_partial_repaint_ = false;
+  // Accumulated damage for each framebuffer; Key is address of underlying
+  // MTLTexture for each drawable
+  std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
@@ -48,7 +59,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   bool EnableRasterCache() const override;
 
   // |Surface|
-  impeller::AiksContext* GetAiksContext() const override;
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalImpeller);
 };

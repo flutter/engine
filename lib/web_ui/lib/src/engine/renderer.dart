@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -15,7 +16,6 @@ import 'embedder.dart';
 import 'fonts.dart';
 import 'html/renderer.dart';
 import 'html_image_codec.dart';
-import 'skwasm/skwasm_stub/renderer.dart' if (dart.library.ffi) 'skwasm/skwasm_impl/renderer.dart';
 
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
@@ -29,25 +29,26 @@ abstract class Renderer {
   factory Renderer._internal() {
     if (FlutterConfiguration.flutterWebUseSkwasm) {
       return SkwasmRenderer();
-    }
-    bool useCanvasKit;
-    if (FlutterConfiguration.flutterWebAutoDetect) {
-      if (configuration.requestedRendererType != null) {
-        useCanvasKit = configuration.requestedRendererType == 'canvaskit';
-      } else {
-        // If requestedRendererType is not specified, use CanvasKit for desktop and
-        // html for mobile.
-        useCanvasKit = isDesktop;
-      }
     } else {
-      useCanvasKit = FlutterConfiguration.useSkia;
-    }
+      bool useCanvasKit;
+      if (FlutterConfiguration.flutterWebAutoDetect) {
+        if (configuration.requestedRendererType != null) {
+          useCanvasKit = configuration.requestedRendererType == 'canvaskit';
+        } else {
+          // If requestedRendererType is not specified, use CanvasKit for desktop and
+          // html for mobile.
+          useCanvasKit = isDesktop;
+        }
+      } else {
+        useCanvasKit = FlutterConfiguration.useSkia;
+      }
 
-    return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+      return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+    }
   }
 
   String get rendererTag;
-  FontCollection get fontCollection;
+  FlutterFontCollection get fontCollection;
 
   FutureOr<void> initialize();
   void reset(FlutterViewEmbedder embedder);
@@ -160,6 +161,18 @@ abstract class Renderer {
   ui.Path copyPath(ui.Path src);
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2);
 
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  });
+
   ui.TextStyle createTextStyle({
     required ui.Color? color,
     required ui.TextDecoration? decoration,
@@ -213,5 +226,5 @@ abstract class Renderer {
 
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style);
 
-  void renderScene(ui.Scene scene);
+  FutureOr<void> renderScene(ui.Scene scene);
 }

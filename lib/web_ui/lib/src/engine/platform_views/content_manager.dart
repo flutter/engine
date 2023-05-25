@@ -128,8 +128,9 @@ class PlatformViewManager {
       }
 
       _ensureContentCorrectlySized(content, viewType);
+      wrapper.append(content);
 
-      return wrapper..append(content);
+      return wrapper;
     });
   }
 
@@ -161,7 +162,7 @@ class PlatformViewManager {
     final DomElement slot = domDocument.createElement('slot')
       ..style.display = 'none'
       ..setAttribute('name', tombstoneName);
-    flutterViewEmbedder.glassPaneShadow!.append(slot);
+    flutterViewEmbedder.glassPaneShadow.append(slot);
     // Link the element to the new slot
     element.setAttribute('slot', tombstoneName);
     // Delete both the element, and the new slot

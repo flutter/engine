@@ -9,7 +9,8 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "flutter/impeller/renderer/texture.h"
+#include "flutter/impeller/core/texture.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
@@ -26,5 +27,21 @@ class Context;
 std::shared_ptr<Texture> CreateGradientTexture(
     const GradientData& gradient_data,
     const std::shared_ptr<impeller::Context>& context);
+
+struct StopData {
+  Color color;
+  Scalar stop;
+  Padding<12> _padding_;
+};
+
+/**
+ * @brief Populate a vector with the color and stop data for a gradient
+ *
+ * @param colors
+ * @param stops
+ * @return StopData
+ */
+std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
+                                           const std::vector<Scalar>& stops);
 
 }  // namespace impeller

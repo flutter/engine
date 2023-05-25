@@ -298,15 +298,30 @@ void FlutterWindow::SendInitialAccessibilityFeatures() {
   OnThemeChange();
 }
 
-AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
-  if (!accessibility_root_) {
-    CreateAccessibilityRootNode();
-  }
-  return accessibility_root_;
-}
-
 ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
   return binding_handler_delegate_->GetAxFragmentRootDelegate();
+}
+
+AlertPlatformNodeDelegate* FlutterWindow::GetAlertDelegate() {
+  CreateAxFragmentRoot();
+  return alert_delegate_.get();
+}
+
+ui::AXPlatformNodeWin* FlutterWindow::GetAlert() {
+  CreateAxFragmentRoot();
+  return alert_node_.get();
+}
+
+bool FlutterWindow::NeedsVSync() {
+  // If the Desktop Window Manager composition is enabled,
+  // the system itself synchronizes with v-sync.
+  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
+  BOOL composition_enabled;
+  if (SUCCEEDED(::DwmIsCompositionEnabled(&composition_enabled))) {
+    return !composition_enabled;
+  }
+
+  return true;
 }
 
 }  // namespace flutter

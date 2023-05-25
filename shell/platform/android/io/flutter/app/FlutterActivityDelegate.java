@@ -261,6 +261,11 @@ public final class FlutterActivityDelegate
   }
 
   @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    flutterView.getPluginRegistry().onWindowFocusChanged(hasFocus);
+  }
+
+  @Override
   public void onTrimMemory(int level) {
     // Use a trim level delivered while the application is running so the
     // framework has a chance to react to the notification.
@@ -321,15 +326,22 @@ public final class FlutterActivityDelegate
     if (intent.getBooleanExtra("verbose-logging", false)) {
       args.add("--verbose-logging");
     }
-    final int observatoryPort = intent.getIntExtra("observatory-port", 0);
-    if (observatoryPort > 0) {
-      args.add("--observatory-port=" + Integer.toString(observatoryPort));
+    int vmServicePort = intent.getIntExtra("vm-service-port", 0);
+    if (vmServicePort > 0) {
+      args.add("--vm-service-port=" + Integer.toString(vmServicePort));
+    } else {
+      // TODO(bkonyi): remove once flutter_tools no longer uses this option.
+      // See https://github.com/dart-lang/sdk/issues/50233
+      vmServicePort = intent.getIntExtra("observatory-port", 0);
+      if (vmServicePort > 0) {
+        args.add("--vm-service-port=" + Integer.toString(vmServicePort));
+      }
     }
     if (intent.getBooleanExtra("endless-trace-buffer", false)) {
       args.add("--endless-trace-buffer");
     }
     // NOTE: all flags provided with this argument are subject to filtering
-    // based on a a list of allowed flags in shell/common/switches.cc. If any
+    // based on a list of allowed flags in shell/common/switches.cc. If any
     // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra("dart-flags")) {
       args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));

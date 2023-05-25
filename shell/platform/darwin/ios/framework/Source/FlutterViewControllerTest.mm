@@ -17,6 +17,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/third_party/spring_animation/spring_animation.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -90,6 +91,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 ///
 /// Used for testing deallocation.
 @interface MockEngine : NSObject
+@property(nonatomic, strong) FlutterDartProject* project;
 @end
 
 @implementation MockEngine
@@ -114,6 +116,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
+@property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
 
 - (void)createTouchRateCorrectionVSyncClientIfNeeded;
 - (void)surfaceUpdated:(BOOL)appeared;
@@ -121,7 +124,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
-- (void)updateViewportMetrics;
+- (void)updateViewportMetricsIfNeeded;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
@@ -133,6 +136,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (CGFloat)calculateMultitaskingAdjustment:(CGRect)screenRect keyboardFrame:(CGRect)keyboardFrame;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
+- (UIView*)keyboardAnimationView;
+- (SpringAnimation*)keyboardSpringAnimation;
+- (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;
@@ -166,6 +172,19 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   self.messageSent = nil;
 }
 
+- (id)setupMockMainScreenAndView:(FlutterViewController*)viewControllerMock
+                       viewFrame:(CGRect)viewFrame
+                  convertedFrame:(CGRect)convertedFrame {
+  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
+  id mockView = OCMClassMock([UIView class]);
+  OCMStub([mockView frame]).andReturn(viewFrame);
+  OCMStub([mockView convertRect:viewFrame toCoordinateSpace:[OCMArg any]])
+      .andReturn(convertedFrame);
+  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
+
+  return mockView;
+}
+
 - (void)testViewDidLoadWillInvokeCreateTouchRateCorrectionVSyncClient {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
@@ -190,6 +209,147 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMVerify([viewControllerMock setupKeyboardAnimationVsyncClient]);
 }
 
+- (void)testStartKeyboardAnimationWillInvokeSetupKeyboardSpringAnimationIfNeeded {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  viewControllerMock.targetViewInsetBottom = 100;
+  [viewControllerMock startKeyBoardAnimation:0.25];
+
+  CAAnimation* keyboardAnimation =
+      [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
+
+  OCMVerify([viewControllerMock setupKeyboardSpringAnimationIfNeeded:keyboardAnimation]);
+}
+
+- (void)testSetupKeyboardSpringAnimationIfNeeded {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect viewFrame = UIScreen.mainScreen.bounds;
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+
+  // Null check.
+  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:nil];
+  SpringAnimation* keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
+  XCTAssertTrue(keyboardSpringAnimation == nil);
+
+  // CAAnimation that is not a CASpringAnimation.
+  CABasicAnimation* nonSpringAnimation = [CABasicAnimation animation];
+  nonSpringAnimation.duration = 1.0;
+  nonSpringAnimation.fromValue = [NSNumber numberWithFloat:0.0];
+  nonSpringAnimation.toValue = [NSNumber numberWithFloat:1.0];
+  nonSpringAnimation.keyPath = @"position";
+  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:nonSpringAnimation];
+  keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
+
+  XCTAssertTrue(keyboardSpringAnimation == nil);
+
+  // CASpringAnimation.
+  CASpringAnimation* springAnimation = [CASpringAnimation animation];
+  springAnimation.mass = 1.0;
+  springAnimation.stiffness = 100.0;
+  springAnimation.damping = 10.0;
+  springAnimation.keyPath = @"position";
+  springAnimation.fromValue = [NSValue valueWithCGPoint:CGPointMake(0, 0)];
+  springAnimation.toValue = [NSValue valueWithCGPoint:CGPointMake(100, 100)];
+  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:springAnimation];
+  keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
+  XCTAssertTrue(keyboardSpringAnimation != nil);
+}
+
+- (void)testKeyboardAnimationIsShowingAndCompounding {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect viewFrame = UIScreen.mainScreen.bounds;
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+
+  BOOL isLocal = YES;
+  CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
+  CGFloat screenWidth = UIScreen.mainScreen.bounds.size.height;
+
+  // Start show keyboard animation.
+  CGRect initialShowKeyboardBeginFrame = CGRectMake(0, screenHeight, screenWidth, 250);
+  CGRect initialShowKeyboardEndFrame = CGRectMake(0, screenHeight - 250, screenWidth, 500);
+  NSNotification* fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillChangeFrameNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(initialShowKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(initialShowKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+  viewControllerMock.targetViewInsetBottom = 0;
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation1 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertTrue(isShowingAnimation1);
+
+  // Start compounding show keyboard animation.
+  CGRect compoundingShowKeyboardBeginFrame = CGRectMake(0, screenHeight - 250, screenWidth, 250);
+  CGRect compoundingShowKeyboardEndFrame = CGRectMake(0, screenHeight - 500, screenWidth, 500);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillChangeFrameNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(compoundingShowKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(compoundingShowKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation2 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertTrue(isShowingAnimation2);
+  XCTAssertTrue(isShowingAnimation1 == isShowingAnimation2);
+
+  // Start hide keyboard animation.
+  CGRect initialHideKeyboardBeginFrame = CGRectMake(0, screenHeight - 500, screenWidth, 250);
+  CGRect initialHideKeyboardEndFrame = CGRectMake(0, screenHeight - 250, screenWidth, 500);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillChangeFrameNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(initialHideKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(initialHideKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation3 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertFalse(isShowingAnimation3);
+  XCTAssertTrue(isShowingAnimation2 != isShowingAnimation3);
+
+  // Start compounding hide keyboard animation.
+  CGRect compoundingHideKeyboardBeginFrame = CGRectMake(0, screenHeight - 250, screenWidth, 250);
+  CGRect compoundingHideKeyboardEndFrame = CGRectMake(0, screenHeight, screenWidth, 500);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillChangeFrameNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(compoundingHideKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(compoundingHideKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation4 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertFalse(isShowingAnimation4);
+  XCTAssertTrue(isShowingAnimation3 == isShowingAnimation4);
+}
+
 - (void)testShouldIgnoreKeyboardNotification {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
@@ -197,7 +357,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
+  CGRect viewFrame = UIScreen.mainScreen.bounds;
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
 
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
@@ -215,6 +376,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                     @"UIKeyboardAnimationDurationUserInfoKey" : @0.25,
                                     @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
                                   }];
+
   BOOL shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
   XCTAssertTrue(shouldIgnore == NO);
 
@@ -297,11 +459,11 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  bundle:nil];
 
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect viewFrame = UIScreen.mainScreen.bounds;
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
 
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
-
-  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
 
   // hide notification
   CGRect keyboardFrame = CGRectZero;
@@ -421,7 +583,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
 
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
@@ -429,17 +590,14 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGRect viewOrigFrame = CGRectMake(0, 0, 320, screenHeight - 40);
   CGRect convertedViewFrame = CGRectMake(20, 20, 320, screenHeight - 40);
   CGRect keyboardFrame = CGRectMake(20, screenHeight - 320, screenWidth, 300);
-
-  id mockView = OCMClassMock([UIView class]);
-  OCMStub([mockView frame]).andReturn(viewOrigFrame);
-  OCMStub([mockView convertRect:viewOrigFrame toCoordinateSpace:[OCMArg any]])
-      .andReturn(convertedViewFrame);
+  id mockView = [self setupMockMainScreenAndView:viewControllerMock
+                                       viewFrame:viewOrigFrame
+                                  convertedFrame:convertedViewFrame];
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection userInterfaceIdiom]).andReturn(UIUserInterfaceIdiomPad);
   OCMStub([mockTraitCollection horizontalSizeClass]).andReturn(UIUserInterfaceSizeClassCompact);
   OCMStub([mockTraitCollection verticalSizeClass]).andReturn(UIUserInterfaceSizeClassRegular);
   OCMStub([mockView traitCollection]).andReturn(mockTraitCollection);
-  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
 
   CGFloat adjustment = [viewControllerMock calculateMultitaskingAdjustment:screenRect
                                                              keyboardFrame:keyboardFrame];
@@ -461,11 +619,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGRect convertedViewFrame = CGRectMake(20, 20, 320, screenHeight - 40);
   CGRect keyboardFrame = CGRectMake(20, screenHeight - 320, screenWidth, 300);
 
-  id mockView = OCMClassMock([UIView class]);
-  OCMStub([mockView frame]).andReturn(viewOrigFrame);
-  OCMStub([mockView convertRect:viewOrigFrame toCoordinateSpace:[OCMArg any]])
-      .andReturn(convertedViewFrame);
-  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
+  [self setupMockMainScreenAndView:viewControllerMock
+                         viewFrame:viewOrigFrame
+                    convertedFrame:convertedViewFrame];
 
   CGFloat inset = [viewControllerMock calculateKeyboardInset:keyboardFrame
                                                 keyboardMode:FlutterKeyboardModeDocked];
@@ -493,11 +649,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                     @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
                                   }];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
-  id mockView = OCMClassMock([UIView class]);
-  OCMStub([mockView frame]).andReturn(viewFrame);
-  OCMStub([mockView convertRect:viewFrame toCoordinateSpace:[OCMArg any]]).andReturn(viewFrame);
-  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
+  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
   viewControllerMock.targetViewInsetBottom = 0;
   XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
   OCMStub([mockEngine updateViewportMetrics:flutter::ViewportMetrics()])
@@ -682,7 +834,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.inactive"]);
 }
 
-- (void)testUpdateViewportMetricsDoesntInvokeEngineWhenNotTheViewController {
+- (void)testUpdateViewportMetricsIfNeeded_DoesntInvokeEngineWhenNotTheViewController {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -693,12 +845,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  nibName:nil
                                                                                   bundle:nil];
   mockEngine.viewController = viewControllerB;
-  [viewControllerA updateViewportMetrics];
+  [viewControllerA updateViewportMetricsIfNeeded];
   flutter::ViewportMetrics viewportMetrics;
   OCMVerify(never(), [mockEngine updateViewportMetrics:viewportMetrics]);
 }
 
-- (void)testUpdateViewportMetricsDoesInvokeEngineWhenIsTheViewController {
+- (void)testUpdateViewportMetricsIfNeeded_DoesInvokeEngineWhenIsTheViewController {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -707,7 +859,85 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   mockEngine.viewController = viewController;
   flutter::ViewportMetrics viewportMetrics;
   OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
-  [viewController updateViewportMetrics];
+  [viewController updateViewportMetricsIfNeeded];
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testUpdateViewportMetricsIfNeeded_DoesNotInvokeEngineWhenShouldBeIgnoredDuringRotation {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0.5);
+
+  // Mimic the device rotation.
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  // Should not trigger the engine call when during rotation.
+  [viewController updateViewportMetricsIfNeeded];
+
+  OCMVerify(never(), [mockEngine updateViewportMetrics:flutter::ViewportMetrics()]);
+}
+
+- (void)testViewWillTransitionToSize_DoesDelayEngineCallIfNonZeroDuration {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
+  mockEngine.viewController = viewController;
+
+  // Mimic the device rotation with non-zero transition duration.
+  NSTimeInterval transitionDuration = 0.5;
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(transitionDuration);
+
+  flutter::ViewportMetrics viewportMetrics;
+  OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
+
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  // Should not immediately call the engine (this request should be ignored).
+  [viewController updateViewportMetricsIfNeeded];
+  OCMVerify(never(), [mockEngine updateViewportMetrics:flutter::ViewportMetrics()]);
+
+  // Should delay the engine call for half of the transition duration.
+  // Wait for additional transitionDuration to allow updateViewportMetrics calls if any.
+  XCTWaiterResult result = [XCTWaiter
+      waitForExpectations:@[ [self expectationWithDescription:@"Waiting for rotation duration"] ]
+                  timeout:transitionDuration];
+  XCTAssertEqual(result, XCTWaiterResultTimedOut);
+
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testViewWillTransitionToSize_DoesNotDelayEngineCallIfZeroDuration {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock mainScreenIfViewLoaded]).andReturn(UIScreen.mainScreen);
+  mockEngine.viewController = viewController;
+
+  // Mimic the device rotation with zero transition duration.
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0);
+
+  flutter::ViewportMetrics viewportMetrics;
+  OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
+
+  // Should immediately trigger the engine call, without delay.
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  [viewController updateViewportMetricsIfNeeded];
+
   OCMVerifyAll(mockEngine);
 }
 
@@ -1187,47 +1417,53 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   id mockApplication = OCMClassMock([UIApplication class]);
   id mockWindowScene;
   id deviceMock;
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:self.mockEngine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  if (@available(iOS 16.0, *)) {
-    mockWindowScene = OCMClassMock([UIWindowScene class]);
-    if (realVC.supportedInterfaceOrientations == mask) {
-      OCMReject([mockWindowScene requestGeometryUpdateWithPreferences:[OCMArg any]
-                                                         errorHandler:[OCMArg any]]);
+  __block __weak id weakPreferences;
+  @autoreleasepool {
+    FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                          nibName:nil
+                                                                           bundle:nil];
+    if (@available(iOS 16.0, *)) {
+      mockWindowScene = OCMClassMock([UIWindowScene class]);
+      if (realVC.supportedInterfaceOrientations == mask) {
+        OCMReject([mockWindowScene requestGeometryUpdateWithPreferences:[OCMArg any]
+                                                           errorHandler:[OCMArg any]]);
+      } else {
+        // iOS 16 will decide whether to rotate based on the new preference, so always set it
+        // when it changes.
+        OCMExpect([mockWindowScene
+            requestGeometryUpdateWithPreferences:[OCMArg checkWithBlock:^BOOL(
+                                                             UIWindowSceneGeometryPreferencesIOS*
+                                                                 preferences) {
+              weakPreferences = preferences;
+              return preferences.interfaceOrientations == mask;
+            }]
+                                    errorHandler:[OCMArg any]]);
+      }
+      OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+      OCMStub([mockApplication connectedScenes]).andReturn([NSSet setWithObject:mockWindowScene]);
     } else {
-      // iOS 16 will decide whether to rotate based on the new preference, so always set it
-      // when it changes.
-      OCMExpect([mockWindowScene
-          requestGeometryUpdateWithPreferences:[OCMArg checkWithBlock:^BOOL(
-                                                           UIWindowSceneGeometryPreferencesIOS*
-                                                               preferences) {
-            return preferences.interfaceOrientations == mask;
-          }]
-                                  errorHandler:[OCMArg any]]);
-    }
-    OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-    OCMStub([mockApplication connectedScenes]).andReturn([NSSet setWithObject:mockWindowScene]);
-  } else {
-    deviceMock = OCMPartialMock([UIDevice currentDevice]);
-    if (!didChange) {
-      OCMReject([deviceMock setValue:[OCMArg any] forKey:@"orientation"]);
-    } else {
-      OCMExpect([deviceMock setValue:@(resultingOrientation) forKey:@"orientation"]);
+      deviceMock = OCMPartialMock([UIDevice currentDevice]);
+      if (!didChange) {
+        OCMReject([deviceMock setValue:[OCMArg any] forKey:@"orientation"]);
+      } else {
+        OCMExpect([deviceMock setValue:@(resultingOrientation) forKey:@"orientation"]);
+      }
+
+      OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+      OCMStub([mockApplication statusBarOrientation]).andReturn(currentOrientation);
     }
 
-    OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-    OCMStub([mockApplication statusBarOrientation]).andReturn(currentOrientation);
+    [realVC performOrientationUpdate:mask];
+    if (@available(iOS 16.0, *)) {
+      OCMVerifyAll(mockWindowScene);
+    } else {
+      OCMVerifyAll(deviceMock);
+    }
   }
-
-  [realVC performOrientationUpdate:mask];
-  if (@available(iOS 16.0, *)) {
-    OCMVerifyAll(mockWindowScene);
-  } else {
-    OCMVerifyAll(deviceMock);
-  }
+  [mockWindowScene stopMocking];
   [deviceMock stopMocking];
   [mockApplication stopMocking];
+  XCTAssertNil(weakPreferences);
 }
 
 // Creates a mocked UITraitCollection with nil values for everything except accessibilityContrast,

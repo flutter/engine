@@ -12,6 +12,8 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/macros.h"
 
+class GrDirectContext;
+
 namespace impeller {
 class AiksContext;
 }  // namespace impeller
@@ -21,6 +23,12 @@ namespace flutter {
 /// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
+  /// A screenshot of the surface's raw data.
+  struct SurfaceData {
+    std::string pixel_format;
+    sk_sp<SkData> data;
+  };
+
   Surface();
 
   virtual ~Surface();
@@ -41,7 +49,13 @@ class Surface {
 
   virtual bool EnableRasterCache() const;
 
-  virtual impeller::AiksContext* GetAiksContext() const;
+  virtual std::shared_ptr<impeller::AiksContext> GetAiksContext() const;
+
+  /// Capture the `SurfaceData` currently present in the surface.
+  ///
+  /// Not guaranteed to work on all setups and not intended to be used in
+  /// production. The data field will be null if it was unable to work.
+  virtual SurfaceData GetSurfaceData() const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

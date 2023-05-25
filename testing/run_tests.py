@@ -8,16 +8,21 @@
 A top level harness to run all unit-tests in a specific engine build.
 """
 
+from pathlib import Path
+
 import argparse
-import glob
+import csv
 import errno
+import glob
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
-import csv
+import typing
 import xvfb
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -33,6 +38,7 @@ ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
 FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
 
 FML_UNITTESTS_FILTER = '--gtest_filter=-*TimeSensitiveTest*'
+ENCODING = 'UTF-8'
 
 
 def print_divider(char='='):
@@ -51,19 +57,28 @@ def is_asan(build_dir):
 
 
 def run_cmd(
-    cmd, forbidden_output=None, expect_failure=False, env=None, **kwargs
-):
+    cmd: typing.List[str],
+    forbidden_output: typing.List[str] = None,
+    expect_failure: bool = False,
+    env: typing.Dict[str, str] = None,
+    allowed_failure_output: typing.List[str] = None,
+    **kwargs
+) -> None:
   if forbidden_output is None:
     forbidden_output = []
+  if allowed_failure_output is None:
+    allowed_failure_output = []
 
   command_string = ' '.join(cmd)
 
   print_divider('>')
-  print('Running command "%s"' % command_string)
+  print(f'Running command "{command_string}"')
 
   start_time = time.time()
-  stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
-  stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
+  collect_output = forbidden_output or allowed_failure_output
+  stdout_pipe = sys.stdout if not collect_output else subprocess.PIPE
+  stderr_pipe = sys.stderr if not collect_output else subprocess.PIPE
+
   process = subprocess.Popen(
       cmd,
       stdout=stdout_pipe,
@@ -79,22 +94,27 @@ def run_cmd(
     print_divider('!')
 
     print(
-        'Failed Command:\n\n%s\n\nExit Code: %d\n' %
-        (command_string, process.returncode)
+        f'Failed Command:\n\n{command_string}\n\nExit Code: {process.returncode}\n'
     )
 
     if stdout:
-      print('STDOUT: \n%s' % stdout)
+      print(f'STDOUT: \n{stdout}')
 
     if stderr:
-      print('STDERR: \n%s' % stderr)
+      print(f'STDERR: \n{stderr}')
 
     print_divider('!')
 
-    raise Exception(
-        'Command "%s" exited with code %d.' %
-        (command_string, process.returncode)
-    )
+    allowed_failure = False
+    for allowed_string in allowed_failure_output:
+      if (stdout and allowed_string in stdout) or (stderr and
+                                                   allowed_string in stderr):
+        allowed_failure = True
+
+    if not allowed_failure:
+      raise RuntimeError(
+          f'Command "{command_string}" exited with code {process.returncode}.'
+      )
 
   if stdout or stderr:
     print(stdout)
@@ -103,20 +123,28 @@ def run_cmd(
   for forbidden_string in forbidden_output:
     if (stdout and forbidden_string in stdout) or (stderr and
                                                    forbidden_string in stderr):
-      raise Exception(
-          'command "%s" contained forbidden string %s' %
-          (command_string, forbidden_string)
+      raise RuntimeError(
+          f'command "{command_string}" contained forbidden string {forbidden_string}'
       )
 
   print_divider('<')
   print(
-      'Command run successfully in %.2f seconds: %s' %
-      (end_time - start_time, command_string)
+      f'Command run successfully in {end_time - start_time:.2f} seconds: {command_string}'
   )
 
 
 def is_mac():
   return sys.platform == 'darwin'
+
+
+def is_aarm64():
+  assert is_mac()
+  output = subprocess.check_output(['sysctl', 'machdep.cpu'])
+  text = output.decode('utf-8')
+  aarm64 = text.find('Apple') >= 0
+  if not aarm64:
+    assert text.find('GenuineIntel') >= 0
+  return aarm64
 
 
 def is_linux():
@@ -191,10 +219,11 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     flags=None,
     cwd=BUILDROOT_DIR,
     forbidden_output=None,
+    allowed_failure_output=None,
     expect_failure=False,
     coverage=False,
     extra_env=None,
-    gtest=False
+    gtest=False,
 ):
   if executable_filter is not None and executable_name not in executable_filter:
     print('Skipping %s due to filter.' % executable_name)
@@ -204,6 +233,8 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     flags = []
   if forbidden_output is None:
     forbidden_output = []
+  if allowed_failure_output is None:
+    allowed_failure_output = []
   if extra_env is None:
     extra_env = {}
 
@@ -248,7 +279,8 @@ def run_engine_executable( # pylint: disable=too-many-arguments
         cwd=cwd,
         forbidden_output=forbidden_output,
         expect_failure=expect_failure,
-        env=env
+        env=env,
+        allowed_failure_output=allowed_failure_output,
     )
   except:
     # The LUCI environment may provide a variable containing a directory path
@@ -286,6 +318,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
       flags=None,
       cwd=BUILDROOT_DIR,
       forbidden_output=None,
+      allowed_failure_output=None,
       expect_failure=False,
       coverage=False,
       extra_env=None,
@@ -296,6 +329,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
     self.flags = flags
     self.cwd = cwd
     self.forbidden_output = forbidden_output
+    self.allowed_failure_output = allowed_failure_output
     self.expect_failure = expect_failure
     self.coverage = coverage
     self.extra_env = extra_env
@@ -308,6 +342,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
         flags=self.flags,
         cwd=self.cwd,
         forbidden_output=self.forbidden_output,
+        allowed_failure_output=self.allowed_failure_output,
         expect_failure=self.expect_failure,
         coverage=self.coverage,
         extra_env=self.extra_env,
@@ -393,6 +428,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         # The accessibility library only supports Mac and Windows.
         make_test('accessibility_unittests'),
         make_test('flutter_channels_unittests'),
+        make_test('spring_animation_unittests'),
     ]
 
   if is_linux():
@@ -433,35 +469,48 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     # flutter_desktop_darwin_unittests uses global state that isn't handled
     # correctly by gtest-parallel.
     # https://github.com/flutter/flutter/issues/104789
+    if not os.path.basename(build_dir).startswith('host_debug'):
+      # Test is disabled for flaking in debug runs:
+      # https://github.com/flutter/flutter/issues/127441
+      run_engine_executable(
+          build_dir,
+          'flutter_desktop_darwin_unittests',
+          executable_filter,
+          shuffle_flags,
+          coverage=coverage
+      )
+    extra_env = {
+        # pylint: disable=line-too-long
+        # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+        'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
+        'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+            '1',  # Validates accesses to device and constant memory.
+        'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+            '1',  # Validates accesses to threadgroup memory.
+        'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+            '1',  # Validates that texture references are not nil.
+        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+    }
+    if is_aarm64():
+      extra_env.update({
+          'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+          'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
+      })
+    # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
-        'flutter_desktop_darwin_unittests',
+        'impeller_unittests',
         executable_filter,
         shuffle_flags,
-        coverage=coverage
+        coverage=coverage,
+        extra_env=extra_env,
+        # TODO(117122): Remove this allowlist.
+        # https://github.com/flutter/flutter/issues/114872
+        allowed_failure_output=[
+            '[MTLCompiler createVertexStageAndLinkPipelineWithFragment:',
+            '[MTLCompiler pipelineStateWithVariant:',
+        ]
     )
-    # TODO(117122): Re-enable impeller_unittests after shader compiler errors
-    #               are addressed.
-    # Impeller tests are only supported on macOS for now.
-    # run_engine_executable(
-    #     build_dir,
-    #     'impeller_unittests',
-    #     executable_filter,
-    #     shuffle_flags,
-    #     coverage=coverage,
-    #     extra_env={
-    #         # pylint: disable=line-too-long
-    #         # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-    #         'MTL_SHADER_VALIDATION':
-    #             '1',  # Enables all shader validation tests.
-    #         'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-    #             '1',  # Validates accesses to device and constant memory.
-    #         'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-    #             '1',  # Validates accesses to threadgroup memory.
-    #         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-    #             '1',  # Validates that texture references are not nil.
-    #     }
-    # )
 
 
 def parse_impeller_vulkan_filter():
@@ -568,17 +617,6 @@ def gather_dart_test(
   )
 
 
-def ensure_debug_unopt_sky_packages():
-  variant_out_dir = os.path.join(OUT_DIR, 'host_debug_unopt')
-  message = []
-  message.append('gn --runtime-mode debug --unopt --no-lto')
-  message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
-  final_message = "%s doesn't exist. Please run the following commands: \n%s" % (
-      variant_out_dir, '\n'.join(message)
-  )
-  assert os.path.exists(variant_out_dir), final_message
-
-
 def ensure_ios_tests_are_built(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(OUT_DIR, ios_out_dir)
@@ -587,17 +625,31 @@ def ensure_ios_tests_are_built(ios_out_dir):
   message.append(
       'gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator'
   )
-  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  message.append('ninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = "%s or %s doesn't exist. Please run the following commands: \n%s" % (
       ios_out_dir, ios_test_lib, '\n'.join(message)
   )
   assert os.path.exists(tmp_out_dir
                        ) and os.path.exists(ios_test_lib), final_message
 
+  ios_test_lib_time = os.path.getmtime(ios_test_lib)
+  flutter_dylib = os.path.join(tmp_out_dir, 'libFlutter.dylib')
+  flutter_dylib_time = os.path.getmtime(flutter_dylib)
+
+  final_message = '%s is older than %s. Please run the following commands: \n%s' % (
+      ios_test_lib, flutter_dylib, '\n'.join(message)
+  )
+  assert flutter_dylib_time <= ios_test_lib_time, final_message
+
 
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
+  # TODO ricardoamador: remove this check when python 2 is deprecated.
+  version_output = version_output if isinstance(
+      version_output, str
+  ) else version_output.decode(ENCODING)
+  version_output = version_output.strip()
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'
   assert match, message
@@ -703,21 +755,45 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     ios_unit_test_dir = os.path.join(
         BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
-    # Avoid using xcpretty unless the following can be addressed:
-    # - Make sure all relevant failure output is printed on a failure.
-    # - Make sure that a failing exit code is set for CI.
-    # See https://github.com/flutter/flutter/issues/63742
-    test_command = [
-        'xcodebuild '
-        '-sdk iphonesimulator '
-        '-scheme IosUnitTests '
-        "-destination name='" + new_simulator_name + "' "
-        'test '
-        'FLUTTER_ENGINE=' + ios_variant
-    ]
-    if test_filter is not None:
-      test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
-    run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
+                                    ) as result_bundle_temp:
+      result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
+
+      # Avoid using xcpretty unless the following can be addressed:
+      # - Make sure all relevant failure output is printed on a failure.
+      # - Make sure that a failing exit code is set for CI.
+      # See https://github.com/flutter/flutter/issues/63742
+      test_command = [
+          'xcodebuild '
+          '-sdk iphonesimulator '
+          '-scheme IosUnitTests '
+          '-resultBundlePath ' + result_bundle_path + ' '
+          '-destination name=' + new_simulator_name + ' '
+          'test '
+          'FLUTTER_ENGINE=' + ios_variant
+      ]
+      if test_filter is not None:
+        test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
+      try:
+        run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+      except:
+        # The LUCI environment may provide a variable containing a directory path
+        # for additional output files that will be uploaded to cloud storage.
+        # Upload the xcresult when the tests fail.
+        luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
+        xcresult_bundle = os.path.join(
+            result_bundle_temp, 'ios_embedding.xcresult'
+        )
+        if luci_test_outputs_path and os.path.exists(xcresult_bundle):
+          dump_path = os.path.join(
+              luci_test_outputs_path, 'ios_embedding.xcresult'
+          )
+          # xcresults contain many little files. Archive the bundle before upload.
+          shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
+        raise
+
   finally:
     delete_simulator(new_simulator_name)
 
@@ -741,11 +817,6 @@ def gather_dart_tests(build_dir, test_filter):
       'testing',
       'dart',
   )
-
-  # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
-  # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
-  # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  ensure_debug_unopt_sky_packages()
 
   # Now that we have the Sky packages at the hardcoded location, run `dart pub get`.
   run_engine_executable(
@@ -955,10 +1026,62 @@ def run_engine_tasks_in_parallel(tasks):
     raise Exception()
 
 
+class DirectoryChange():
+  """
+  A scoped change in the CWD.
+  """
+  old_cwd: str = ''
+  new_cwd: str = ''
+
+  def __init__(self, new_cwd: str):
+    self.new_cwd = new_cwd
+
+  def __enter__(self):
+    self.old_cwd = os.getcwd()
+    os.chdir(self.new_cwd)
+
+  def __exit__(self, exception_type, exception_value, exception_traceback):
+    os.chdir(self.old_cwd)
+
+
+def run_impeller_golden_tests(build_dir: str):
+  """
+  Executes the impeller golden image tests from in the `variant` build.
+  """
+  tests_path: str = os.path.join(build_dir, 'impeller_golden_tests')
+  if not os.path.exists(tests_path):
+    raise Exception(
+        'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.'
+        % (build_dir)
+    )
+  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('impeller').joinpath(
+      'golden_tests_harvester'
+  )
+  with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
+    with DirectoryChange(harvester_path):
+      run_cmd(['dart', 'pub', 'get'])
+      bin_path = Path('.').joinpath('bin'
+                                   ).joinpath('golden_tests_harvester.dart')
+      run_cmd(['dart', 'run', str(bin_path), temp_dir])
+
+
 def main():
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(
+      description="""
+In order to learn the details of running tests in the engine, please consult the
+Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testing-the-engine
+"""
+  )
   all_types = [
-      'engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset'
+      'engine',
+      'dart',
+      'benchmarks',
+      'java',
+      'android',
+      'objc',
+      'font-subset',
+      'impeller-golden',
   ]
 
   parser.add_argument(
@@ -1148,6 +1271,9 @@ def main():
   if ('engine' in types or
       'font-subset' in types) and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
+
+  if 'impeller-golden' in types:
+    run_impeller_golden_tests(build_dir)
 
 
 if __name__ == '__main__':

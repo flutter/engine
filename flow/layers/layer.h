@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/display_list/display_list_builder_multiplexer.h"
+#include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
@@ -31,6 +31,8 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
+
+class GrDirectContext;
 
 namespace flutter {
 
@@ -61,7 +63,6 @@ struct PrerollContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
   // presence of a platform view during Preroll.
@@ -103,8 +104,7 @@ struct PaintContext {
   // allowing leaf layers to report that they can handle rendering some of
   // its state attributes themselves via the |applyState| method.
   LayerStateStack& state_stack;
-  SkCanvas* canvas;
-  DisplayListBuilder* builder = nullptr;
+  DlCanvas* canvas;
 
   GrDirectContext* gr_context;
   SkColorSpace* dst_color_space;
@@ -113,7 +113,6 @@ struct PaintContext {
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
   const RasterCache* raster_cache;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
   // only when leaf layer tracing is enabled.

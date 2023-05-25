@@ -21,7 +21,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/canvas_spy.h"
-#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -60,21 +59,15 @@ class FlatlandExternalViewEmbedder final
   ~FlatlandExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
-
-  // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
-
-  // |ExternalViewEmbedder|
-  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override;
+  flutter::DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
+  flutter::DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   flutter::PostPrerollResult PostPrerollAction(
@@ -171,6 +164,8 @@ class FlatlandExternalViewEmbedder final
 
     std::optional<flutter::EmbeddedViewParams> embedded_view_params;
     std::unique_ptr<SkPictureRecorder> recorder;
+    // TODO(cyanglaz: use DlOpSpy instead.
+    // https://github.com/flutter/flutter/issues/123805
     std::unique_ptr<flutter::CanvasSpy> canvas_spy;
     SkISize surface_size;
     sk_sp<SkPicture> picture;

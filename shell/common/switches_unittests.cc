@@ -76,5 +76,41 @@ TEST(SwitchesTest, MsaaSamples) {
   EXPECT_EQ(settings.msaa_samples, 0);
 }
 
+TEST(SwitchesTest, EnableEmbedderAPI) {
+  {
+    // enable
+    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+        {"command", "--enable-embedder-api"});
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_embedder_api, true);
+  }
+  {
+    // default
+    fml::CommandLine command_line =
+        fml::CommandLineFromInitializerList({"command"});
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_embedder_api, false);
+  }
+}
+
+TEST(SwitchesTest, NoEnableImpeller) {
+  {
+    // enable
+    fml::CommandLine command_line =
+        fml::CommandLineFromInitializerList({"command", "--enable-impeller"});
+    EXPECT_TRUE(command_line.HasOption("enable-impeller"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_impeller, true);
+  }
+  {
+    // disable
+    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+        {"command", "--enable-impeller=false"});
+    EXPECT_TRUE(command_line.HasOption("enable-impeller"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_impeller, false);
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter

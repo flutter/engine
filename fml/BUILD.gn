@@ -97,7 +97,7 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (is_mac || is_linux || is_win || (is_ios && is_debug)) {
+  if (enable_backtrace) {
     sources += [ "backtrace.cc" ]
   } else {
     sources += [ "backtrace_stub.cc" ]
@@ -116,7 +116,7 @@ source_set("fml") {
     "//third_party/icu",
   ]
 
-  if (is_mac || is_linux || is_win || (is_ios && is_debug)) {
+  if (enable_backtrace) {
     # This abseil dependency is only used by backtrace.cc.
     deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
   }
@@ -150,6 +150,8 @@ source_set("fml") {
       "platform/darwin/platform_version.mm",
       "platform/darwin/scoped_block.h",
       "platform/darwin/scoped_block.mm",
+      "platform/darwin/scoped_nsautorelease_pool.cc",
+      "platform/darwin/scoped_nsautorelease_pool.h",
       "platform/darwin/scoped_nsobject.h",
       "platform/darwin/scoped_nsobject.mm",
       "platform/darwin/string_range_sanitization.h",

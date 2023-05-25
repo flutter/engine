@@ -46,6 +46,11 @@ bool DlImageGPU::isTextureBacked() const {
 }
 
 // |DlImage|
+bool DlImageGPU::isUIThreadSafe() const {
+  return true;
+}
+
+// |DlImage|
 SkISize DlImageGPU::dimensions() const {
   const auto image = skia_image();
   return image ? image->dimensions() : SkISize::MakeEmpty();
@@ -53,10 +58,10 @@ SkISize DlImageGPU::dimensions() const {
 
 // |DlImage|
 size_t DlImageGPU::GetApproximateByteSize() const {
-  auto size = sizeof(this);
+  auto size = sizeof(*this);
   if (auto image = skia_image()) {
     const auto& info = image->imageInfo();
-    const auto kMipmapOverhead = 4.0 / 3.0;
+    const auto kMipmapOverhead = image->hasMipmaps() ? 4.0 / 3.0 : 1.0;
     const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
     size += image_byte_size;
   }

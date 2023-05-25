@@ -67,7 +67,18 @@ def main():
     zip_archive(dst)
 
 
+def embed_codesign_configuration(config_path, contents):
+  with open(config_path, 'w') as file:
+    file.write('\n'.join(contents) + '\n')
+
+
 def zip_archive(dst):
+  snapshot_filepath = ['gen_snapshot_arm64', 'gen_snapshot_x64']
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'entitlements.txt'), snapshot_filepath
+  )
+
   subprocess.check_call([
       'zip',
       '-r',

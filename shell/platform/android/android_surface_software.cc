@@ -13,7 +13,9 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
@@ -38,10 +40,7 @@ bool GetSkColorType(int32_t buffer_format,
 
 }  // anonymous namespace
 
-AndroidSurfaceSoftware::AndroidSurfaceSoftware(
-    const std::shared_ptr<AndroidContext>& android_context,
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
-    : AndroidSurface(android_context) {
+AndroidSurfaceSoftware::AndroidSurfaceSoftware() {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
 }
@@ -96,7 +95,7 @@ sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
       SkImageInfo::Make(size.fWidth, size.fHeight, target_color_type_,
                         target_alpha_type_, SkColorSpace::MakeSRGB());
 
-  sk_surface_ = SkSurface::MakeRaster(image_info);
+  sk_surface_ = SkSurfaces::Raster(image_info);
 
   return sk_surface_;
 }

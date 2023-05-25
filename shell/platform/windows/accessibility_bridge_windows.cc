@@ -4,17 +4,15 @@
 
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
 
 namespace flutter {
 
-AccessibilityBridgeWindows::AccessibilityBridgeWindows(
-    FlutterWindowsEngine* engine,
-    FlutterWindowsView* view)
-    : engine_(engine), view_(view) {
-  assert(engine_);
-  assert(view_);
+AccessibilityBridgeWindows::AccessibilityBridgeWindows(FlutterWindowsView* view)
+    : view_(view) {
+  FML_DCHECK(view_);
 }
 
 void AccessibilityBridgeWindows::OnAccessibilityEvent(
@@ -24,7 +22,8 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
 
   auto node_delegate =
       GetFlutterPlatformNodeDelegateFromID(ax_node->id()).lock();
-  assert(node_delegate);
+  FML_DCHECK(node_delegate)
+      << "No FlutterPlatformNodeDelegate found for node ID " << ax_node->id();
   std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
       std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
           node_delegate);
@@ -166,7 +165,7 @@ void AccessibilityBridgeWindows::DispatchAccessibilityAction(
     AccessibilityNodeId target,
     FlutterSemanticsAction action,
     fml::MallocMapping data) {
-  engine_->DispatchSemanticsAction(target, action, std::move(data));
+  view_->GetEngine()->DispatchSemanticsAction(target, action, std::move(data));
 }
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
@@ -188,7 +187,12 @@ void AccessibilityBridgeWindows::SetFocus(
 
 gfx::NativeViewAccessible
 AccessibilityBridgeWindows::GetChildOfAXFragmentRoot() {
-  return view_->GetNativeViewAccessible();
+  ui::AXPlatformNodeDelegate* root_delegate = RootDelegate();
+  if (!root_delegate) {
+    return nullptr;
+  }
+
+  return root_delegate->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible

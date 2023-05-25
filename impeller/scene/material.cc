@@ -4,8 +4,8 @@
 
 #include "impeller/scene/material.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/sampler_descriptor.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/scene/importer/conversions.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
@@ -81,13 +81,11 @@ std::unique_ptr<UnlitMaterial> UnlitMaterial::MakeFromFlatbuffer(
 
   if (material.base_color_factor()) {
     result->SetColor(importer::ToColor(*material.base_color_factor()));
-    result->SetVertexColorWeight(0);
   }
 
   if (material.base_color_texture() >= 0 &&
       material.base_color_texture() < static_cast<int32_t>(textures.size())) {
     result->SetColorTexture(textures[material.base_color_texture()]);
-    result->SetVertexColorWeight(0);
   }
 
   return result;

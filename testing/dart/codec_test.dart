@@ -86,6 +86,33 @@ void main() {
     ]));
   });
 
+  test('with size', () async {
+    final Uint8List data = await _getSkiaResource('baby_tux.png').readAsBytes();
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(data);
+    final ui.Codec codec = await ui.instantiateImageCodecWithSize(
+      buffer,
+      getTargetSize: (int intrinsicWidth, int intrinsicHeight) {
+        return ui.TargetImageSize(
+          width: intrinsicWidth ~/ 2,
+          height: intrinsicHeight ~/ 2,
+        );
+      },
+    );
+    final List<List<int>> decodedFrameInfos = <List<int>>[];
+    for (int i = 0; i < 2; i++) {
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      decodedFrameInfos.add(<int>[
+        frameInfo.duration.inMilliseconds,
+        frameInfo.image.width,
+        frameInfo.image.height,
+      ]);
+    }
+    expect(decodedFrameInfos, equals(<List<int>>[
+      <int>[0, 120, 123],
+      <int>[0, 120, 123],
+    ]));
+  });
+
   test('disposed decoded image', () async {
     final Uint8List data = await _getSkiaResource('flutter_logo.jpg').readAsBytes();
     final ui.Codec codec = await ui.instantiateImageCodec(data);
@@ -98,6 +125,57 @@ void main() {
     } on Exception catch (e) {
       expect(e.toString(), contains('Decoded image has been disposed'));
     }
+  });
+
+  test('Animated gif can reuse across multiple frames', () async {
+    // Regression test for b/271947267 and https://github.com/flutter/flutter/issues/122134
+
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'four_frame_with_reuse.gif'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // Capture the final frame of animation. If we have not composited
+    // correctly, it will be clipped strangely.
+    late ui.FrameInfo frameInfo;
+    for (int i = 0; i < 4; i++) {
+      frameInfo = await codec.getNextFrame();
+    }
+
+    final ui.Image image = frameInfo.image;
+    final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+
+    final Uint8List goldenData = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'four_frame_with_reuse_end.png'),
+    ).readAsBytesSync();
+
+    expect(imageData.buffer.asUint8List(), goldenData);
+  });
+
+  test('Animated webp can reuse across multiple frames', () async {
+    // Regression test for https://github.com/flutter/flutter/issues/61150#issuecomment-679055858
+
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'heart.webp'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // Capture the final frame of animation. If we have not composited
+    // correctly, the hearts will be incorrectly repeated in the image.
+    late ui.FrameInfo frameInfo;
+    for (int i = 0; i < 69; i++) {
+      frameInfo  = await codec.getNextFrame();
+    }
+
+    final ui.Image image = frameInfo.image;
+    final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+
+    final Uint8List goldenData = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'heart_end.png'),
+    ).readAsBytesSync();
+
+    expect(imageData.buffer.asUint8List(), goldenData);
+
   });
 }
 

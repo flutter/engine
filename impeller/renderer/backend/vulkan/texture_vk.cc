@@ -4,35 +4,33 @@
 
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
+
 namespace impeller {
 
-TextureVK::TextureVK(TextureDescriptor desc,
-                     ContextVK* context,
-                     std::unique_ptr<TextureInfoVK> texture_info)
-    : Texture(desc),
-      context_(context),
-      texture_info_(std::move(texture_info)) {}
+TextureVK::TextureVK(std::weak_ptr<Context> context,
+                     std::shared_ptr<TextureSourceVK> source)
+    : Texture(source->GetTextureDescriptor()),
+      context_(std::move(context)),
+      source_(std::move(source)) {}
 
-TextureVK::~TextureVK() {
-  if (!IsWrapped() && IsValid()) {
-    const auto& texture = texture_info_->allocated_texture;
-    vmaDestroyImage(*texture.backing_allocation.allocator, texture.image,
-                    texture.backing_allocation.allocation);
-  }
-}
+TextureVK::~TextureVK() = default;
 
 void TextureVK::SetLabel(std::string_view label) {
-  context_->SetDebugName(GetImage(), label);
+  auto context = context_.lock();
+  if (!context) {
+    // The context may have died.
+    return;
+  }
+  ContextVK::Cast(*context).SetDebugName(GetImage(), label);
+  ContextVK::Cast(*context).SetDebugName(GetImageView(), label);
 }
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
                               size_t length,
                               size_t slice) {
-  if (IsWrapped()) {
-    FML_LOG(ERROR) << "Cannot set contents of a wrapped texture";
-    return false;
-  }
-
   if (!IsValid() || !contents) {
     return false;
   }
@@ -41,19 +39,74 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
 
   // Out of bounds access.
   if (length != desc.GetByteSizeOfBaseMipLevel()) {
-    VALIDATION_LOG << "illegal to set contents for invalid size";
+    VALIDATION_LOG << "Illegal to set contents for invalid size.";
     return false;
   }
 
-  // currently we are only supporting 2d textures, no cube textures etc.
-  auto mapping = texture_info_->allocated_texture.staging_buffer.GetMapping();
-
-  if (mapping) {
-    memcpy(mapping, contents, length);
-    return true;
-  } else {
+  auto context = context_.lock();
+  if (!context) {
+    VALIDATION_LOG << "Context died before setting contents on texture.";
     return false;
   }
+
+  auto staging_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(contents, length);
+
+  if (!staging_buffer) {
+    VALIDATION_LOG << "Could not create staging buffer.";
+    return false;
+  }
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+
+  if (!cmd_buffer) {
+    return false;
+  }
+
+  const auto encoder = CommandBufferVK::Cast(*cmd_buffer).GetEncoder();
+
+  if (!encoder->Track(staging_buffer) || !encoder->Track(source_)) {
+    return false;
+  }
+
+  const auto& vk_cmd_buffer = encoder->GetCommandBuffer();
+
+  LayoutTransition transition;
+  transition.cmd_buffer = vk_cmd_buffer;
+  transition.new_layout = vk::ImageLayout::eTransferDstOptimal;
+  transition.src_access = {};
+  transition.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  transition.dst_access = vk::AccessFlagBits::eTransferWrite;
+  transition.dst_stage = vk::PipelineStageFlagBits::eTransfer;
+
+  if (!SetLayout(transition)) {
+    return false;
+  }
+
+  vk::BufferImageCopy copy;
+  copy.bufferOffset = 0u;
+  copy.bufferRowLength = 0u;    // 0u means tightly packed per spec.
+  copy.bufferImageHeight = 0u;  // 0u means tightly packed per spec.
+  copy.imageOffset.x = 0u;
+  copy.imageOffset.y = 0u;
+  copy.imageOffset.z = 0u;
+  copy.imageExtent.width = desc.size.width;
+  copy.imageExtent.height = desc.size.height;
+  copy.imageExtent.depth = 1u;
+  copy.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+  copy.imageSubresource.mipLevel = 0u;
+  copy.imageSubresource.baseArrayLayer = slice;
+  copy.imageSubresource.layerCount = 1u;
+
+  vk_cmd_buffer.copyBufferToImage(
+      DeviceBufferVK::Cast(*staging_buffer).GetBuffer(),  // src buffer
+      GetImage(),                                         // dst image
+      transition.new_layout,                              // dst image layout
+      1u,                                                 // region count
+      &copy                                               // regions
+  );
+
+  return cmd_buffer->SubmitCommands();
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
@@ -64,61 +117,37 @@ bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
 }
 
 bool TextureVK::IsValid() const {
-  switch (texture_info_->backing_type) {
-    case TextureBackingTypeVK::kUnknownType:
-      return false;
-    case TextureBackingTypeVK::kAllocatedTexture:
-      return texture_info_->allocated_texture.image;
-    case TextureBackingTypeVK::kWrappedTexture:
-      return texture_info_->wrapped_texture.swapchain_image;
-  }
+  return !!source_;
 }
 
 ISize TextureVK::GetSize() const {
   return GetTextureDescriptor().size;
 }
 
-TextureInfoVK* TextureVK::GetTextureInfo() const {
-  return texture_info_.get();
-}
-
-bool TextureVK::IsWrapped() const {
-  return texture_info_->backing_type == TextureBackingTypeVK::kWrappedTexture;
+vk::Image TextureVK::GetImage() const {
+  return source_->GetImage();
 }
 
 vk::ImageView TextureVK::GetImageView() const {
-  switch (texture_info_->backing_type) {
-    case TextureBackingTypeVK::kUnknownType:
-      return nullptr;
-    case TextureBackingTypeVK::kAllocatedTexture:
-      return vk::ImageView{texture_info_->allocated_texture.image_view};
-    case TextureBackingTypeVK::kWrappedTexture:
-      return texture_info_->wrapped_texture.swapchain_image->GetImageView();
-  }
+  return source_->GetImageView();
 }
 
-vk::Image TextureVK::GetImage() const {
-  switch (texture_info_->backing_type) {
-    case TextureBackingTypeVK::kUnknownType:
-      FML_CHECK(false) << "Unknown texture backing type";
-    case TextureBackingTypeVK::kAllocatedTexture:
-      return vk::Image{texture_info_->allocated_texture.image};
-    case TextureBackingTypeVK::kWrappedTexture:
-      return texture_info_->wrapped_texture.swapchain_image->GetImage();
-  }
+std::shared_ptr<const TextureSourceVK> TextureVK::GetTextureSource() const {
+  return source_;
 }
 
-vk::Buffer TextureVK::GetStagingBuffer() const {
-  switch (texture_info_->backing_type) {
-    case TextureBackingTypeVK::kUnknownType:
-      FML_CHECK(false) << "Unknown texture backing type";
-      return nullptr;
-    case TextureBackingTypeVK::kAllocatedTexture:
-      return texture_info_->allocated_texture.staging_buffer.GetBufferHandle();
-    case TextureBackingTypeVK::kWrappedTexture:
-      FML_CHECK(false) << "Wrapped textures do not have staging buffers";
-      return nullptr;
-  }
+bool TextureVK::SetLayout(const LayoutTransition& transition) const {
+  return source_ ? source_->SetLayout(transition) : false;
+}
+
+vk::ImageLayout TextureVK::SetLayoutWithoutEncoding(
+    vk::ImageLayout layout) const {
+  return source_ ? source_->SetLayoutWithoutEncoding(layout)
+                 : vk::ImageLayout::eUndefined;
+}
+
+vk::ImageLayout TextureVK::GetLayout() const {
+  return source_ ? source_->GetLayout() : vk::ImageLayout::eUndefined;
 }
 
 }  // namespace impeller

@@ -30,7 +30,7 @@
   return self;
 }
 
-- (nullable FlutterView*)getView:(uint64_t)viewId {
+- (nullable FlutterView*)viewForId:(FlutterViewId)viewId {
   if (viewId == kFlutterDefaultViewId) {
     return _defaultView;
   }

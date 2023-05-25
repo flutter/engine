@@ -18,6 +18,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just
@@ -147,7 +148,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   sk_sp<SkColorSpace> colorspace = SkColorSpace::MakeSRGB();
   SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
 
-  return SkSurface::MakeFromBackendRenderTarget(
+  return SkSurfaces::WrapBackendRenderTarget(
       context,                                       // Gr context
       render_target,                                 // render target
       GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,  // origin
@@ -227,7 +228,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
     framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
         nullptr, framebuffer_info,
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
         size);
@@ -245,7 +246,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   surface->getCanvas()->setMatrix(root_surface_transformation);
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) {
+                                          DlCanvas* canvas) {
         return weak ? weak->PresentSurface(surface_frame, canvas) : false;
       };
 
@@ -259,7 +260,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
 }
 
 bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
-                                      SkCanvas* canvas) {
+                                      DlCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }

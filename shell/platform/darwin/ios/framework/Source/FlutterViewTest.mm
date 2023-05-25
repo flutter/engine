@@ -9,6 +9,7 @@
 
 @interface FakeDelegate : NSObject <FlutterViewEngineDelegate>
 @property(nonatomic) BOOL callbackCalled;
+@property(nonatomic, assign) BOOL isUsingImpeller;
 @end
 
 @implementation FakeDelegate {
@@ -43,10 +44,26 @@
 
 - (void)testFlutterViewEnableSemanticsWhenIsAccessibilityElementIsCalled {
   FakeDelegate* delegate = [[FakeDelegate alloc] init];
-  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO];
+  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:NO];
   delegate.callbackCalled = NO;
   XCTAssertFalse(view.isAccessibilityElement);
   XCTAssertTrue(delegate.callbackCalled);
+}
+
+- (void)testFlutterViewBackgroundColorIsNotNil {
+  FakeDelegate* delegate = [[FakeDelegate alloc] init];
+  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:NO];
+  XCTAssertNotNil(view.backgroundColor);
+}
+
+- (void)testIgnoreWideColorWithoutImpeller {
+  FakeDelegate* delegate = [[FakeDelegate alloc] init];
+  delegate.isUsingImpeller = NO;
+  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:YES];
+  [view layoutSubviews];
+  XCTAssertTrue([view.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]);
+  CAMetalLayer* layer = (CAMetalLayer*)view.layer;
+  XCTAssertEqual(layer.pixelFormat, MTLPixelFormatBGRA8Unorm);
 }
 
 @end

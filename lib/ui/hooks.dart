@@ -5,6 +5,32 @@
 part of dart.ui;
 
 @pragma('vm:entry-point')
+void _updateDisplays(
+  List<int> ids,
+  List<double> widths,
+  List<double> heights,
+  List<double> devicePixelRatios,
+  List<double> refreshRates,
+) {
+  assert(ids.length == widths.length);
+  assert(ids.length == heights.length);
+  assert(ids.length == devicePixelRatios.length);
+  assert(ids.length == refreshRates.length);
+  final List<Display> displays = <Display>[];
+  for (int index = 0; index < ids.length; index += 1) {
+    final int displayId = ids[index];
+    displays.add(Display._(
+      id: displayId,
+      size: Size(widths[index], heights[index]),
+      devicePixelRatio: devicePixelRatios[index],
+      refreshRate: refreshRates[index],
+    ));
+  }
+
+  PlatformDispatcher.instance._updateDisplays(displays);
+}
+
+@pragma('vm:entry-point')
 void _updateWindowMetrics(
   Object id,
   double devicePixelRatio,
@@ -26,6 +52,7 @@ void _updateWindowMetrics(
   List<double> displayFeaturesBounds,
   List<int> displayFeaturesType,
   List<int> displayFeaturesState,
+  int displayId,
 ) {
   PlatformDispatcher.instance._updateWindowMetrics(
     id,
@@ -48,6 +75,7 @@ void _updateWindowMetrics(
     displayFeaturesBounds,
     displayFeaturesType,
     displayFeaturesState,
+    displayId,
   );
 }
 
@@ -67,8 +95,8 @@ void _updateUserSettingsData(String jsonData) {
 }
 
 @pragma('vm:entry-point')
-void _updateLifecycleState(String state) {
-  PlatformDispatcher.instance._updateLifecycleState(state);
+void _updateInitialLifecycleState(String state) {
+  PlatformDispatcher.instance._updateInitialLifecycleState(state);
 }
 
 @pragma('vm:entry-point')
@@ -138,9 +166,6 @@ void _invoke(void Function()? callback, Zone zone) {
   if (callback == null) {
     return;
   }
-
-  assert(zone != null);
-
   if (identical(zone, Zone.current)) {
     callback();
   } else {
@@ -157,9 +182,6 @@ void _invoke1<A>(void Function(A a)? callback, Zone zone, A arg) {
   if (callback == null) {
     return;
   }
-
-  assert(zone != null);
-
   if (identical(zone, Zone.current)) {
     callback(arg);
   } else {
@@ -176,9 +198,6 @@ void _invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone zone, A1 arg1,
   if (callback == null) {
     return;
   }
-
-  assert(zone != null);
-
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2);
   } else {
@@ -197,9 +216,6 @@ void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zon
   if (callback == null) {
     return;
   }
-
-  assert(zone != null);
-
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2, arg3);
   } else {

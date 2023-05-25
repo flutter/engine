@@ -7,6 +7,10 @@ import("//flutter/testing/testing.gni")
 
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
+
+  # Not analyzing because they are not performance critical, and mipmap uses
+  # textureLod, which uses an extension that malioc does not support.
+  analyze = false
   shaders = [
     "array.frag",
     "array.vert",
@@ -23,13 +27,21 @@ impeller_shaders("shader_fixtures") {
     "mipmaps.frag",
     "mipmaps.vert",
     "sample.comp",
+    "stage1.comp",
+    "stage2.comp",
     "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
+    "half.frag",
   ]
 
   if (impeller_enable_opengles) {
-    gles_exclusions = [ "sample.comp" ]
+    gles_exclusions = [
+      "sample.comp",
+      "stage1.comp",
+      "stage2.comp",
+      "half.frag",
+    ]
   }
 }
 
@@ -73,6 +85,8 @@ test_fixtures("file_fixtures") {
     "sample_with_binding.vert",
     "simple.vert.hlsl",
     "sa%m#ple.vert",
+    "stage1.comp",
+    "stage2.comp",
     "struct_def_bug.vert",
     "table_mountain_nx.png",
     "table_mountain_ny.png",

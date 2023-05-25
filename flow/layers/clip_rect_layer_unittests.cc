@@ -11,12 +11,13 @@
 #include "flutter/flow/testing/mock_embedder.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
 
 namespace flutter {
 namespace testing {
 
 using ClipRectLayerTest = LayerTest;
+
+using ClipOp = DlCanvas::ClipOp;
 
 #ifndef NDEBUG
 TEST_F(ClipRectLayerTest, ClipNoneBehaviorDies) {
@@ -98,7 +99,7 @@ TEST_F(ClipRectLayerTest, ChildOutsideBounds) {
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
   const SkRect clip_rect = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
   layer->Add(mock_layer);
@@ -111,8 +112,8 @@ TEST_F(ClipRectLayerTest, ChildOutsideBounds) {
   // Set up both contexts to cull clipped child
   preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
                                                       initial_matrix);
-  paint_context().canvas->clipRect(device_cull_bounds);
-  paint_context().canvas->concat(initial_matrix);
+  paint_context().canvas->ClipRect(device_cull_bounds);
+  paint_context().canvas->Transform(initial_matrix);
 
   layer->Preroll(preroll_context());
   // Untouched
@@ -140,7 +141,7 @@ TEST_F(ClipRectLayerTest, FullyContainedChild) {
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRectLayer>(layer_bounds, Clip::hardEdge);
   layer->Add(mock_layer);
@@ -162,17 +163,19 @@ TEST_F(ClipRectLayerTest, FullyContainedChild) {
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_bounds)}));
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector(
-          {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-           MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
-                                           MockCanvas::kHard_ClipEdgeStyle}},
-           MockCanvas::DrawCall{
-               1, MockCanvas::DrawPathData{child_path, child_paint}},
-           MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)layer::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(layer_bounds);
+      /* mock_layer::Paint */ {
+        expected_builder.DrawPath(child_path, child_paint);
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
@@ -182,7 +185,7 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
   const SkRect clip_rect = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
   layer->Add(mock_layer);
@@ -211,17 +214,19 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(clip_rect)}));
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector(
-          {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-           MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{clip_rect, SkClipOp::kIntersect,
-                                           MockCanvas::kHard_ClipEdgeStyle}},
-           MockCanvas::DrawCall{
-               1, MockCanvas::DrawPathData{child_path, child_paint}},
-           MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)layer::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(clip_rect);
+      /* mock_layer::Paint */ {
+        expected_builder.DrawPath(child_path, child_paint);
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 static bool ReadbackResult(PrerollContext* context,
@@ -241,7 +246,7 @@ static bool ReadbackResult(PrerollContext* context,
 TEST_F(ClipRectLayerTest, Readback) {
   PrerollContext* context = preroll_context();
   SkPath path;
-  SkPaint paint;
+  DlPaint paint;
 
   const Clip hard = Clip::hardEdge;
   const Clip soft = Clip::antiAlias;
@@ -402,22 +407,22 @@ TEST_F(ClipRectLayerTest, OpacityInheritancePainting) {
 
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
-    expected_builder.save();
+    expected_builder.Save();
     {
-      expected_builder.translate(offset.fX, offset.fY);
+      expected_builder.Translate(offset.fX, offset.fY);
       /* ClipRectLayer::Paint() */ {
-        expected_builder.save();
-        expected_builder.clipRect(clip_rect, SkClipOp::kIntersect, true);
+        expected_builder.Save();
+        expected_builder.ClipRect(clip_rect, ClipOp::kIntersect, true);
         /* child layer1 paint */ {
-          expected_builder.drawPath(path1, DlPaint().setAlpha(opacity_alpha));
+          expected_builder.DrawPath(path1, DlPaint().setAlpha(opacity_alpha));
         }
         /* child layer2 paint */ {
-          expected_builder.drawPath(path2, DlPaint().setAlpha(opacity_alpha));
+          expected_builder.DrawPath(path2, DlPaint().setAlpha(opacity_alpha));
         }
-        expected_builder.restore();
+        expected_builder.Restore();
       }
     }
-    expected_builder.restore();
+    expected_builder.Restore();
   }
 
   opacity_layer->Paint(display_list_paint_context());
@@ -452,25 +457,24 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
 
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
-    expected_builder.save();
+    expected_builder.Save();
     {
-      expected_builder.translate(offset.fX, offset.fY);
+      expected_builder.Translate(offset.fX, offset.fY);
       /* ClipRectLayer::Paint() */ {
-        expected_builder.save();
-        expected_builder.clipRect(clip_rect, SkClipOp::kIntersect, true);
-        expected_builder.setColor(opacity_alpha << 24);
-        expected_builder.saveLayer(&children_bounds, true);
+        expected_builder.Save();
+        expected_builder.ClipRect(clip_rect, ClipOp::kIntersect, true);
+        expected_builder.SaveLayer(&children_bounds,
+                                   &DlPaint().setAlpha(opacity_alpha));
         /* child layer1 paint */ {
-          expected_builder.setColor(0xFF000000);
-          expected_builder.drawPath(path1);
+          expected_builder.DrawPath(path1, DlPaint());
         }
         /* child layer2 paint */ {  //
-          expected_builder.drawPath(path2);
+          expected_builder.DrawPath(path2, DlPaint());
         }
-        expected_builder.restore();
+        expected_builder.Restore();
       }
     }
-    expected_builder.restore();
+    expected_builder.Restore();
   }
 
   opacity_layer->Paint(display_list_paint_context());
@@ -487,8 +491,8 @@ TEST_F(ClipRectLayerTest, LayerCached) {
 
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   SkMatrix cache_ctm = initial_transform;
-  SkCanvas cache_canvas;
-  cache_canvas.setMatrix(cache_ctm);
+  DisplayListBuilder cache_canvas;
+  cache_canvas.Transform(cache_ctm);
 
   use_mock_raster_cache();
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
@@ -511,7 +515,7 @@ TEST_F(ClipRectLayerTest, LayerCached) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_EQ(clip_cache_item->cache_state(),
             RasterCacheItem::CacheState::kCurrent);
-  SkPaint paint;
+  DlPaint paint;
   EXPECT_TRUE(raster_cache()->Draw(clip_cache_item->GetId().value(),
                                    cache_canvas, &paint));
 }
@@ -527,8 +531,8 @@ TEST_F(ClipRectLayerTest, EmptyClipDoesNotCullPlatformView) {
   clip->Add(platform_view);
 
   auto embedder = MockViewEmbedder();
-  SkCanvas fake_overlay_canvas;
-  embedder.AddCanvas(&fake_overlay_canvas);
+  DisplayListBuilder fake_overlay_builder;
+  embedder.AddCanvas(&fake_overlay_builder);
   preroll_context()->view_embedder = &embedder;
   paint_context().view_embedder = &embedder;
 

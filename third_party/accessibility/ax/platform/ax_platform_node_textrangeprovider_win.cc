@@ -6,6 +6,7 @@
 
 #include <UIAutomation.h>
 #include <wrl/client.h>
+#include <string_view>
 
 #include "ax/ax_action_data.h"
 #include "ax/ax_range.h"
@@ -13,6 +14,8 @@
 #include "ax/platform/ax_platform_node_win.h"
 #include "ax/platform/ax_platform_tree_manager.h"
 #include "base/win/variant_vector.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
+#include "third_party/icu/source/i18n/unicode/usearch.h"
 
 #define UIA_VALIDATE_TEXTRANGEPROVIDER_CALL()                  \
   if (!GetOwner() || !GetOwner()->GetDelegate() || !start() || \
@@ -432,26 +435,61 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindAttributeRange(
   return S_OK;
 }
 
-static bool StringSearch(const std::u16string& search_string,
-                         const std::u16string& find_in,
-                         size_t* find_start,
-                         size_t* find_length,
-                         bool ignore_case,
-                         bool backwards) {
-  // TODO(schectman) Respect ignore_case/i18n.
-  // https://github.com/flutter/flutter/issues/117013
-  size_t match_pos;
-  if (backwards) {
-    match_pos = find_in.rfind(search_string);
-  } else {
-    match_pos = find_in.find(search_string);
-  }
-  if (match_pos == std::u16string::npos) {
+static bool StringSearchBasic(const std::u16string_view search_string,
+                              const std::u16string_view find_in,
+                              size_t* find_start,
+                              size_t* find_length,
+                              bool backwards) {
+  size_t index =
+      backwards ? find_in.rfind(search_string) : find_in.find(search_string);
+  if (index == std::u16string::npos) {
     return false;
   }
-  *find_start = match_pos;
-  *find_length = search_string.length();
+  *find_start = index;
+  *find_length = search_string.size();
   return true;
+}
+
+bool StringSearch(std::u16string_view search_string,
+                  std::u16string_view find_in,
+                  size_t* find_start,
+                  size_t* find_length,
+                  bool ignore_case,
+                  bool backwards) {
+  UErrorCode status = U_ZERO_ERROR;
+  UCollator* col = ucol_open(uloc_getDefault(), &status);
+  UStringSearch* search = usearch_openFromCollator(
+      search_string.data(), search_string.size(), find_in.data(),
+      find_in.size(), col, nullptr, &status);
+  if (!U_SUCCESS(status)) {
+    if (search) {
+      usearch_close(search);
+    }
+    return StringSearchBasic(search_string, find_in, find_start, find_length,
+                             backwards);
+  }
+  UCollator* collator = usearch_getCollator(search);
+  ucol_setStrength(collator, ignore_case ? UCOL_PRIMARY : UCOL_TERTIARY);
+  usearch_reset(search);
+  status = U_ZERO_ERROR;
+  usearch_setText(search, find_in.data(), find_in.size(), &status);
+  if (!U_SUCCESS(status)) {
+    if (search) {
+      usearch_close(search);
+    }
+    return StringSearchBasic(search_string, find_in, find_start, find_length,
+                             backwards);
+  }
+  int32_t index = backwards ? usearch_last(search, &status)
+                            : usearch_first(search, &status);
+  bool match = false;
+  if (U_SUCCESS(status) && index != USEARCH_DONE) {
+    match = true;
+    *find_start = static_cast<size_t>(index);
+    *find_length = static_cast<size_t>(usearch_getMatchedLength(search));
+  }
+  usearch_close(search);
+  return match;
 }
 
 HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
@@ -483,7 +521,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
   ScopedAXEmbeddedObjectBehaviorSetter ax_embedded_object_behavior(
       AXEmbeddedObjectBehavior::kSuppressCharacter);
 
-  std::u16string search_string = base::WideToUTF16(string);
+  std::u16string search_string = fml::WideStringToUtf16(string);
   if (search_string.length() <= 0)
     return E_INVALIDARG;
 
@@ -703,7 +741,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::GetText(int max_count, BSTR* text) {
   if (max_count < -1)
     return E_INVALIDARG;
 
-  std::wstring full_text = base::UTF16ToWide(GetString(max_count));
+  std::wstring full_text = fml::Utf16ToWideString(GetString(max_count));
   if (!full_text.empty()) {
     size_t length = full_text.length();
 

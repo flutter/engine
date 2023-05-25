@@ -185,30 +185,67 @@ void testMain() {
     await ui.webOnlyInitializePlatform();
   });
 
-  test('FragmentProgram can be created from JSON IPLR bundle', () async {
-    // TODO(hterkelsen): Remove this check when local CanvasKit is default.
-    if (isRuntimeEffectAvailable) {
-      final Uint8List data = utf8.encode(kJsonIPLR) as Uint8List;
-      final CkFragmentProgram program = await CkFragmentProgram.fromBytes('test', data);
+  test('FragmentProgram can be created from JSON IPLR bundle', () {
+    final Uint8List data = utf8.encode(kJsonIPLR) as Uint8List;
+    final CkFragmentProgram program = CkFragmentProgram.fromBytes('test', data);
 
-      expect(program.effect, isNotNull);
-      expect(program.floatCount, 32);
-      expect(program.textureCount, 0);
-      expect(program.uniforms, hasLength(17));
-      expect(program.name, 'test');
+    expect(program.effect, isNotNull);
+    expect(program.floatCount, 32);
+    expect(program.textureCount, 0);
+    expect(program.uniforms, hasLength(17));
+    expect(program.name, 'test');
 
-      final ui.FragmentShader shader = program.fragmentShader();
+    {
+      final CkFragmentShader shader = program.fragmentShader() as CkFragmentShader;
 
       shader.setFloat(0, 4);
+      expect(
+        reason: 'SkShaders are created lazily',
+        shader.ref,
+        isNull,
+      );
+
+      final SkShader skShader = shader.getSkShader(ui.FilterQuality.none);
+      final UniqueRef<SkShader> ref = shader.ref!;
+      expect(skShader, same(ref.nativeObject));
+      expect(ref.isDisposed, false);
+
       shader.dispose();
-
+      expect(ref.isDisposed, true);
+      expect(shader.ref, isNull);
       expect(shader.debugDisposed, true);
+    }
 
-      final ui.FragmentShader shader2 = program.fragmentShader();
-
+    {
+      final CkFragmentShader shader = program.fragmentShader() as CkFragmentShader;
       shader.setFloat(0, 5);
-      shader2.dispose();
-      expect(shader2.debugDisposed, true);
+
+      final SkShader skShader1 = shader.getSkShader(ui.FilterQuality.none);
+      final UniqueRef<SkShader> ref1 = shader.ref!;
+
+      final SkShader skShader2 = shader.getSkShader(ui.FilterQuality.none);
+      final UniqueRef<SkShader> ref2 = shader.ref!;
+      expect(ref1, isNot(same(ref2)));
+      expect(
+        reason: 'getSkShader creates a new shader every time. Old references should be disposed of.',
+        ref1.isDisposed,
+        true,
+      );
+      expect(ref2.isDisposed, false);
+
+      expect(
+        reason: 'Fragment shaders are mutable, so a new instance is created with every application.',
+        skShader1,
+        isNot(same(skShader2)),
+      );
+
+      shader.dispose();
+      expect(shader.debugDisposed, true);
+      expect(
+        reason: 'The last remaining SkShader reference should be disposed of when the FragmentShader itself is disposed of.',
+        ref2.isDisposed,
+        true,
+      );
     }
   });
 }

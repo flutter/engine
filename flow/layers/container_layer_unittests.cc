@@ -10,9 +10,7 @@
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
-#include "include/core/SkCanvas.h"
 #include "include/core/SkMatrix.h"
 
 namespace flutter {
@@ -68,8 +66,8 @@ TEST_F(ContainerLayerTest, LayerWithParentHasTextureLayerNeedsResetFlag) {
   child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   SkPath child_path2;
   child_path2.addRect(8.0f, 2.0f, 16.5f, 14.5f);
-  SkPaint child_paint1(SkColors::kGray);
-  SkPaint child_paint2(SkColors::kGreen);
+  DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
+  DlPaint child_paint2 = DlPaint(DlColor::kGreen());
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   mock_layer1->set_fake_has_texture_layer(true);
@@ -93,7 +91,7 @@ TEST_F(ContainerLayerTest, LayerWithParentHasTextureLayerNeedsResetFlag) {
 TEST_F(ContainerLayerTest, Simple) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkPaint child_paint(SkColors::kGreen);
+  DlPaint child_paint = DlPaint(DlColor::kGreen());
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
@@ -111,10 +109,14 @@ TEST_F(ContainerLayerTest, Simple) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawPathData{child_path, child_paint}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer::Paint */ {
+      expected_builder.DrawPath(child_path, child_paint);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, Multiple) {
@@ -122,8 +124,8 @@ TEST_F(ContainerLayerTest, Multiple) {
   child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   SkPath child_path2;
   child_path2.addRect(8.0f, 2.0f, 16.5f, 14.5f);
-  SkPaint child_paint1(SkColors::kGray);
-  SkPaint child_paint2(SkColors::kGreen);
+  DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
+  DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -151,20 +153,24 @@ TEST_F(ContainerLayerTest, Multiple) {
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
             kGiantRect);  // Siblings are independent
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
-                                               child_path2, child_paint2}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    /* mock_layer2::Paint */ {
+      expected_builder.DrawPath(child_path2, child_paint2);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   SkPath child_path1;
   child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkPaint child_paint1(SkColors::kGray);
-  SkPaint child_paint2(SkColors::kGreen);
+  DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
+  DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -188,10 +194,15 @@ TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
   EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawPathData{child_path1, child_paint1}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    // mock_layer2 not drawn due to needs_painting() returning false
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, NeedsSystemComposite) {
@@ -199,8 +210,8 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   SkPath child_path2;
   child_path2.addRect(8.0f, 2.0f, 16.5f, 14.5f);
-  SkPaint child_paint1(SkColors::kGray);
-  SkPaint child_paint2(SkColors::kGreen);
+  DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
+  DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -227,13 +238,17 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
   EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
-                                               child_path2, child_paint2}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    /* mock_layer2::Paint */ {
+      expected_builder.DrawPath(child_path2, child_paint2);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, RasterCacheTest) {
@@ -241,9 +256,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path2 = SkPath().addRect(21.0f, 6.0f, 25.5f, 21.5f);
   const SkPath child_path3 = SkPath().addRect(26.0f, 6.0f, 30.5f, 21.5f);
-  const SkPaint child_paint1(SkColors::kGray);
-  const SkPaint child_paint2(SkColors::kGreen);
-  const SkPaint paint;
+  const DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
+  const DlPaint child_paint2 = DlPaint(DlColor::kGreen());
+  const DlPaint paint;
   auto cacheable_container_layer1 =
       MockCacheableContainerLayer::CacheLayerOrChildren();
   auto cacheable_container_layer2 =
@@ -286,8 +301,8 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   layer->Add(mock_layer2);
   layer->Add(cacheable_container_layer2);
 
-  SkCanvas cache_canvas;
-  cache_canvas.setMatrix(SkMatrix::I());
+  DisplayListBuilder cache_canvas;
+  cache_canvas.TransformReset();
 
   // Initial Preroll for check the layer paint bounds
   layer->Preroll(preroll_context());
@@ -510,7 +525,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
 TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkPaint child_paint(SkColors::kGreen);
+  DlPaint child_paint = DlPaint(DlColor::kGreen());
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer1 = std::make_shared<MockLayer>(SkPath(), child_paint);

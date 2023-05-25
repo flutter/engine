@@ -43,13 +43,7 @@ namespace {
 
 class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
  public:
-  SkCanvas* GetRootCanvas() override { return nullptr; }
-  std::vector<SkCanvas*> GetCurrentCanvases() override {
-    return std::vector<SkCanvas*>();
-  }
-  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
-    return std::vector<flutter::DisplayListBuilder*>();
-  }
+  flutter::DlCanvas* GetRootCanvas() override { return nullptr; }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -57,16 +51,16 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {
-    return;
-  }
+                   std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
-    return {nullptr, nullptr};
+
+  flutter::DlCanvas* CompositeEmbeddedView(int64_t view_id) override {
+    return nullptr;
   }
 };
 
@@ -442,7 +436,8 @@ class PlatformViewBuilder {
         std::move(on_create_surface_callback_),
         std::move(on_semantics_node_update_callback_),
         std::move(on_request_announce_callback_),
-        std::move(on_shader_warmup_callback_), [](auto...) {}, [](auto...) {});
+        std::move(on_shader_warmup_callback_), [](auto...) {}, [](auto...) {},
+        nullptr);
   }
 
  private:
@@ -666,7 +661,7 @@ TEST_F(FlatlandPlatformViewTests, SetViewportMetrics) {
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.metrics(),
             flutter::ViewportMetrics(kDPR, std::round(width * kDPR),
-                                     std::round(height * kDPR), -1.0));
+                                     std::round(height * kDPR), -1.0, 0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics
@@ -1502,7 +1497,8 @@ TEST_F(FlatlandPlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
 
   viewport_watcher.SetLayout(width, height);
   RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics(1, width, height, -1));
+  EXPECT_EQ(delegate.metrics(),
+            flutter::ViewportMetrics(1, width, height, -1, 0));
 
   // Inject
   std::vector<fuchsia::ui::pointer::TouchEvent> events =

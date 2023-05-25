@@ -10,12 +10,15 @@
 #include "flutter/shell/common/context_options.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #include "impeller/entity/mtl/entity_shaders.h"
+#include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/scene/shaders/mtl/scene_shaders.h"
 
 FLUTTER_ASSERT_ARC
 
-static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
+static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
+    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
                                              impeller_entity_shaders_length),
@@ -23,8 +26,12 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
                                              impeller_scene_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_data,
                                              impeller_modern_shaders_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
+                                             impeller_framebuffer_blend_shaders_length),
   };
-  auto context = impeller::ContextMTL::Create(shader_mappings, "Impeller Library");
+  auto context =
+      impeller::ContextMTL::Create(shader_mappings, std::move(worker_task_runner),
+                                   std::move(is_gpu_disabled_sync_switch), "Impeller Library");
   if (!context) {
     FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
     return nullptr;
@@ -36,10 +43,13 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
 
 @implementation FlutterDarwinContextMetalImpeller
 
-- (instancetype)init {
+- (instancetype)initWithTaskRunner:(std::shared_ptr<fml::ConcurrentTaskRunner>)task_runner
+       is_gpu_disabled_sync_switch:
+           (std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch {
   self = [super init];
   if (self != nil) {
-    _context = CreateImpellerContext();
+    _context =
+        CreateImpellerContext(std::move(task_runner), std::move(is_gpu_disabled_sync_switch));
     id<MTLDevice> device = _context->GetMTLDevice();
     if (!device) {
       FML_DLOG(ERROR) << "Could not acquire Metal device.";

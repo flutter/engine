@@ -5,7 +5,10 @@
 #include "flutter/shell/gpu/gpu_surface_software.h"
 
 #include <memory>
+
 #include "flutter/fml/logging.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
@@ -33,7 +36,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, framebuffer_info,
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
         logical_size);
@@ -63,13 +66,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
 
   SurfaceFrame::SubmitCallback on_submit =
       [self = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) -> bool {
+                                          DlCanvas* canvas) -> bool {
     // If the surface itself went away, there is nothing more to do.
     if (!self || !self->IsValid() || canvas == nullptr) {
       return false;
     }
 
-    canvas->flush();
+    canvas->Flush();
 
     return self->delegate_->PresentBackingStore(surface_frame.SkiaSurface());
   };

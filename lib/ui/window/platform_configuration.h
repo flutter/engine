@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/shell/common/display.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
@@ -30,7 +31,7 @@ class Scene;
 /// @brief An enum for defining the different kinds of accessibility features
 ///        that can be enabled by the platform.
 ///
-///         Must match the `AccessibilityFeatureFlag` enum in framework.
+///         Must match the `AccessibilityFeatures` class in framework.
 enum class AccessibilityFeatureFlag : int32_t {
   kAccessibleNavigation = 1 << 0,
   kInvertColors = 1 << 1,
@@ -49,6 +50,16 @@ enum class AccessibilityFeatureFlag : int32_t {
 ///
 class PlatformConfigurationClient {
  public:
+  //--------------------------------------------------------------------------
+  /// @brief      Whether the platform provides an implicit view. If true,
+  ///             the Framework may assume that it can always render into
+  ///             the view with ID 0.
+  ///
+  ///             This value must not change for the lifetime of the
+  ///             application.
+  ///
+  virtual bool ImplicitViewEnabled() = 0;
+
   //--------------------------------------------------------------------------
   /// @brief      The route or path that the embedder requested when the
   ///             application was launched.
@@ -71,7 +82,7 @@ class PlatformConfigurationClient {
   virtual void Render(Scene* scene) = 0;
 
   //--------------------------------------------------------------------------
-  /// @brief      Receives a updated semantics tree from the Framework.
+  /// @brief      Receives an updated semantics tree from the Framework.
   ///
   /// @param[in] update The updated semantic tree to apply.
   ///
@@ -258,10 +269,14 @@ class PlatformConfiguration final {
   void DidCreateIsolate();
 
   //----------------------------------------------------------------------------
-  /// @brief      Update the specified locale data in the framework.
+  /// @brief      Update the specified display data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
+  /// @param[in]  displays  The display data to send to Dart.
+  ///
+  void UpdateDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the specified locale data in the framework.
   ///
   /// @param[in]  locale_data  The locale data. This should consist of groups of
   ///             4 strings, each group representing a single locale.
@@ -271,9 +286,6 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Update the user settings data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
-  ///
   /// @param[in]  data  The user settings data.
   ///
   void UpdateUserSettingsData(const std::string& data);
@@ -281,12 +293,9 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Updates the lifecycle state data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
-  ///
   /// @param[in]  data  The lifecycle state data.
   ///
-  void UpdateLifecycleState(const std::string& data);
+  void UpdateInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the embedder has
@@ -318,6 +327,15 @@ class PlatformConfiguration final {
   ///                      application.
   ///
   void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the PlatformConfiguration that the client has sent
+  ///             it pointer events. This call originates in the platform view
+  ///             and has been forwarded through the engine to here.
+  ///
+  /// @param[in]  packet  The pointer event(s) serialized into a packet.
+  ///
+  void DispatchPointerDataPacket(const PointerDataPacket& packet);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that the embedder encountered an
@@ -424,12 +442,14 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
-  tonic::DartPersistentValue update_lifecycle_state_;
+  tonic::DartPersistentValue update_initial_lifecycle_state_;
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
+  tonic::DartPersistentValue dispatch_pointer_data_packet_;
   tonic::DartPersistentValue dispatch_semantics_action_;
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;
@@ -469,6 +489,8 @@ class PlatformMessageHandlerStorage {
 //----------------------------------------------------------------------------
 class PlatformConfigurationNativeApi {
  public:
+  static Dart_Handle ImplicitViewEnabled();
+
   static std::string DefaultRouteName();
 
   static void ScheduleFrame();
@@ -526,7 +548,7 @@ class PlatformConfigurationNativeApi {
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 
  private:
-  static Dart_PerformanceMode current_performace_mode_;
+  static Dart_PerformanceMode current_performance_mode_;
 };
 
 }  // namespace flutter

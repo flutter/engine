@@ -2,26 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// Uses the `ImageDecoder` class supplied by the browser.
-///
-/// See also:
-///
-///  * `image_wasm_codecs.dart`, which uses codecs supplied by the CanvasKit WASM bundle.
+// Uses the `ImageDecoder` class supplied by the browser.
+//
+// See also:
+//
+//  * `image_wasm_codecs.dart`, which uses codecs supplied by the CanvasKit WASM bundle.
 
 import 'dart:async';
 import 'dart:convert' show base64;
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../alarm_clock.dart';
-import '../dom.dart';
-import '../safe_browser_api.dart';
-import '../util.dart';
-import 'canvaskit_api.dart';
-import 'image.dart';
 
 Duration _kDefaultWebDecoderExpireDuration = const Duration(seconds: 3);
 Duration _kWebDecoderExpireDuration = _kDefaultWebDecoderExpireDuration;
@@ -147,18 +142,18 @@ class CkBrowserImageDecoder implements ui.Codec {
     _cacheExpirationClock.callback = null;
     try {
       final ImageDecoder webDecoder = ImageDecoder(ImageDecoderOptions(
-        type: contentType,
-        data: data,
+        type: contentType.toJS,
+        data: data.toJS,
 
         // Flutter always uses premultiplied alpha when decoding.
-        premultiplyAlpha: 'premultiply',
+        premultiplyAlpha: 'premultiply'.toJS,
         // "default" gives the browser the liberty to convert to display-appropriate
         // color space, typically SRGB, which is what we want.
-        colorSpaceConversion: 'default',
+        colorSpaceConversion: 'default'.toJS,
 
         // Flutter doesn't give the developer a way to customize this, so if this
         // is an animated image we should prefer the animated track.
-        preferAnimation: true,
+        preferAnimation: true.toJS,
       ));
 
       await promiseToFuture<void>(webDecoder.tracks.ready);
@@ -217,7 +212,7 @@ class CkBrowserImageDecoder implements ui.Codec {
     _debugCheckNotDisposed();
     final ImageDecoder webDecoder = await _getOrCreateWebDecoder();
     final DecodeResult result = await promiseToFuture<DecodeResult>(
-      webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex)),
+      webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toJS)),
     );
     final VideoFrame frame = result.image;
     _nextFrameIndex = (_nextFrameIndex + 1) % frameCount;
@@ -228,8 +223,8 @@ class CkBrowserImageDecoder implements ui.Codec {
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
         colorSpace: SkColorSpaceSRGB,
-        width: frame.displayWidth.toInt(),
-        height: frame.displayHeight.toInt(),
+        width: frame.displayWidth,
+        height: frame.displayHeight,
       ),
     );
 
@@ -440,10 +435,16 @@ bool _shouldReadPixelsUnmodified(VideoFrame videoFrame, ui.ImageByteFormat forma
 
 Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
   final int size = videoFrame.allocationSize().toInt();
-  final Uint8List destination = Uint8List(size);
+
+  // In dart2wasm, Uint8List is not the same as a JS Uint8Array. So we
+  // explicitly construct the JS object here.
+  final JSUint8Array destination = createUint8ArrayFromLength(size);
   final JsPromise copyPromise = videoFrame.copyTo(destination);
   await promiseToFuture<void>(copyPromise);
-  return destination.buffer;
+
+  // In dart2wasm, `toDart` incurs a copy here. On JS backends, this is a
+  // no-op.
+  return destination.toDart.buffer;
 }
 
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {

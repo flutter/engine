@@ -12,6 +12,7 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
+#include "flutter/lib/ui/gpu/context.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/codec.h"
@@ -55,7 +56,7 @@ typedef CanvasPathMeasure PathMeasure;
 typedef CanvasGradient Gradient;
 typedef CanvasPath Path;
 
-// List of native static functions used as @FfiNative functions.
+// List of native static functions used as @Native functions.
 // Items are tuples of ('function_name', 'parameter_count'), where:
 //   'function_name' is the fully qualified name of the native function.
 //   'parameter_count' is the number of parameters the function has.
@@ -65,8 +66,8 @@ typedef CanvasPath Path;
 //   bindings.
 //   If the name does not match a native function, the template will fail to
 //   instatiate, resulting in a compile time error.
-// - Resolve the native function pointer associated with an @FfiNative function.
-//   If there is a mismatch between name or parameter count an @FfiNative is
+// - Resolve the native function pointer associated with an @Native function.
+//   If there is a mismatch between name or parameter count an @Native is
 //   trying to resolve, an exception will be thrown.
 #define FFI_FUNCTION_LIST(V)                                          \
   /* Constructors */                                                  \
@@ -95,6 +96,7 @@ typedef CanvasPath Path;
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
+  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
   V(PlatformConfigurationNativeApi::Render, 1)                        \
@@ -117,7 +119,7 @@ typedef CanvasPath Path;
   V(DartPluginRegistrant_EnsureInitialized, 0)                        \
   V(Vertices::init, 6)
 
-// List of native instance methods used as @FfiNative functions.
+// List of native instance methods used as @Native functions.
 // Items are tuples of ('class_name', 'method_name', 'parameter_count'), where:
 //   'class_name' is the name of the class containing the method.
 //   'method_name' is the name of the method.
@@ -129,8 +131,8 @@ typedef CanvasPath Path;
 //   bindings.
 //   If the name does not match a native function, the template will fail to
 //   instatiate, resulting in a compile time error.
-// - Resolve the native function pointer associated with an @FfiNative function.
-//   If there is a mismatch between names or parameter count an @FfiNative is
+// - Resolve the native function pointer associated with an @Native function.
+//   If there is a mismatch between names or parameter count an @Native is
 //   trying to resolve, an exception will be thrown.
 #define FFI_METHOD_LIST(V)                             \
   V(Canvas, clipPath, 3)                               \
@@ -189,6 +191,7 @@ typedef CanvasPath Path;
   V(Image, width, 1)                                   \
   V(Image, height, 1)                                  \
   V(Image, toByteData, 3)                              \
+  V(Image, colorSpace, 1)                              \
   V(ImageDescriptor, bytesPerPixel, 1)                 \
   V(ImageDescriptor, dispose, 1)                       \
   V(ImageDescriptor, height, 1)                        \
@@ -284,7 +287,6 @@ typedef CanvasPath Path;
   V(SceneBuilder, pushImageFilter, 4)                  \
   V(SceneBuilder, pushOffset, 5)                       \
   V(SceneBuilder, pushOpacity, 6)                      \
-  V(SceneBuilder, pushPhysicalShape, 8)                \
   V(SceneBuilder, pushShaderMask, 10)                  \
   V(SceneBuilder, pushTransformHandle, 4)              \
   V(SceneBuilder, setCheckerboardOffscreenLayers, 2)   \
@@ -314,6 +316,10 @@ typedef CanvasPath Path;
   V(SceneShader, SetCameraTransform, 2) \
   V(SceneShader, Dispose, 1)
 
+#define FFI_FUNCTION_LIST_GPU(V) V(GpuContext::InitializeDefault, 1)
+
+#define FFI_METHOD_LIST_GPU(V)
+
 #endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
@@ -342,9 +348,13 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+
 #ifdef IMPELLER_ENABLE_3D
   FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
+
+  FFI_FUNCTION_LIST_GPU(FFI_FUNCTION_INSERT)
+  FFI_METHOD_LIST_GPU(FFI_METHOD_INSERT)
 #endif  // IMPELLER_ENABLE_3D
 }
 

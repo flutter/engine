@@ -72,10 +72,15 @@ function run_tests() (
 # Runs in a subshell.
 function collect_licenses() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  dart --enable-asserts lib/main.dart         \
-    --src ../../..                            \
-    --out ../../../out/license_script_output  \
-    --golden ../../ci/licenses_golden \
+  # `--interpret_irregexp`` tells dart to use interpreter mode for running
+  # the regexp matching, rather than generating machine code for it.
+  # For very large RegExps that are currently used in license script using
+  # interpreter is faster than using unoptimized machine code, which has
+  # no chance of being optimized(due to its size).
+  dart --enable-asserts --interpret_irregexp lib/main.dart \
+    --src ../../..                                         \
+    --out ../../../out/license_script_output               \
+    --golden ../../ci/licenses_golden                      \
     "${QUIET}"
 )
 
@@ -149,7 +154,7 @@ function verify_licenses() (
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=19 # When changing this number: Update the error message below as well describing the newly expected license types.
+  local expectedLicenseCount=20 # When changing this number: Update the error message below as well describing the newly expected license types.
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
       echo "=============================== ERROR ==============================="

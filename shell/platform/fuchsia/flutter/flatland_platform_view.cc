@@ -32,7 +32,8 @@ FlatlandPlatformView::FlatlandPlatformView(
     OnShaderWarmup on_shader_warmup,
     AwaitVsyncCallback await_vsync_callback,
     AwaitVsyncForSecondaryCallbackCallback
-        await_vsync_for_secondary_callback_callback)
+        await_vsync_for_secondary_callback_callback,
+    std::shared_ptr<sys::ServiceDirectory> dart_application_svc)
     : PlatformView(true /* is_flatland */,
                    delegate,
                    std::move(task_runners),
@@ -52,7 +53,8 @@ FlatlandPlatformView::FlatlandPlatformView(
                    std::move(on_request_announce_callback),
                    std::move(on_shader_warmup),
                    std::move(await_vsync_callback),
-                   std::move(await_vsync_for_secondary_callback_callback)),
+                   std::move(await_vsync_for_secondary_callback_callback),
+                   std::move(dart_application_svc)),
       parent_viewport_watcher_(parent_viewport_watcher.Bind()),
       on_create_view_callback_(std::move(on_create_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
@@ -105,6 +107,7 @@ void FlatlandPlatformView::OnGetLayout(
       {},                       // p_physical_display_features_bounds
       {},                       // p_physical_display_features_type
       {},                       // p_physical_display_features_state
+      0,                        // p_display_id
   });
 
   parent_viewport_watcher_->GetLayout(
@@ -179,17 +182,9 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
     FML_CHECK(weak);
     FML_CHECK(weak->child_view_info_.count(content_id.value) == 0);
 
-    // Bind the child view watcher to the platform thread so that the FIDL calls
-    // are handled on the platform thread.
-    fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher =
-        child_view_watcher_handle.Bind();
-    FML_CHECK(child_view_watcher);
-
-    child_view_watcher.set_error_handler(
-        [weak, view_id, content_id](zx_status_t status) {
-          FML_LOG(ERROR) << "Interface error on: ChildViewWatcher status: "
-                         << status;
-
+    platform_task_runner->PostTask(fml::MakeCopyable(
+        [weak, view_id, content_id,
+         watcher_handle = std::move(child_view_watcher_handle)]() mutable {
           if (!weak) {
             FML_LOG(WARNING)
                 << "Flatland View bound to PlatformView after PlatformView was "
@@ -197,25 +192,33 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
             return;
           }
 
-          // Disconnected views cannot listen to pointer events.
-          weak->pointer_injector_delegate_->OnDestroyView(view_id);
+          // Bind the child view watcher to the platform thread so that the FIDL
+          // calls are handled on the platform thread.
+          fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher =
+              watcher_handle.Bind();
+          FML_CHECK(child_view_watcher);
 
-          weak->OnChildViewDisconnected(content_id.value);
-        });
-
-    platform_task_runner->PostTask(
-        fml::MakeCopyable([weak, view_id, content_id,
-                           watcher = std::move(child_view_watcher)]() mutable {
-          if (!weak) {
+          child_view_watcher.set_error_handler([weak, view_id, content_id](
+                                                   zx_status_t status) {
             FML_LOG(WARNING)
-                << "Flatland View bound to PlatformView after PlatformView was "
-                   "destroyed; ignoring.";
-            return;
-          }
+                << "Child disconnected. ChildViewWatcher status: " << status;
+
+            if (!weak) {
+              FML_LOG(WARNING) << "Flatland View bound to PlatformView after "
+                                  "PlatformView was "
+                                  "destroyed; ignoring.";
+              return;
+            }
+
+            // Disconnected views cannot listen to pointer events.
+            weak->pointer_injector_delegate_->OnDestroyView(view_id);
+
+            weak->OnChildViewDisconnected(content_id.value);
+          });
 
           weak->child_view_info_.emplace(
               std::piecewise_construct, std::forward_as_tuple(content_id.value),
-              std::forward_as_tuple(view_id, std::move(watcher)));
+              std::forward_as_tuple(view_id, std::move(child_view_watcher)));
 
           weak->child_view_info_.at(content_id.value)
               .child_view_watcher->GetStatus(

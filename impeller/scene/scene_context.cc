@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/scene/scene_context.h"
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 #include "impeller/scene/material.h"
 #include "impeller/scene/shaders/skinned.vert.h"
 #include "impeller/scene/shaders/unlit.frag.h"
@@ -28,6 +28,9 @@ void SceneContextOptions::ApplyToPipelineDescriptor(
 
   desc.SetSampleCount(sample_count);
   desc.SetPrimitiveType(primitive_type);
+
+  desc.SetWindingOrder(WindingOrder::kCounterClockwise);
+  desc.SetCullMode(CullMode::kBackFace);
 }
 
 SceneContext::SceneContext(std::shared_ptr<Context> context)

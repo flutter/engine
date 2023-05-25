@@ -214,8 +214,12 @@ public class FlutterJNI {
    */
   private static float refreshRateFPS = 60.0f;
 
+  private static float displayWidth = -1.0f;
+  private static float displayHeight = -1.0f;
+  private static float displayDensity = -1.0f;
+
   // This is set from native code via JNI.
-  @Nullable private static String observatoryUri;
+  @Nullable private static String vmServiceUri;
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
@@ -230,14 +234,28 @@ public class FlutterJNI {
   }
 
   /**
-   * Observatory URI for the VM instance.
+   * VM Service URI for the VM instance.
    *
    * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
    * String, long)} is run.
    */
   @Nullable
+  public static String getVMServiceUri() {
+    return vmServiceUri;
+  }
+
+  /**
+   * VM Service URI for the VM instance.
+   *
+   * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
+   * String, long)} is run.
+   *
+   * @deprecated replaced by {@link #getVMServiceUri()}.
+   */
+  @Deprecated
+  @Nullable
   public static String getObservatoryUri() {
-    return observatoryUri;
+    return vmServiceUri;
   }
 
   /**
@@ -259,6 +277,18 @@ public class FlutterJNI {
     FlutterJNI.refreshRateFPS = refreshRateFPS;
     updateRefreshRate();
   }
+
+  public void updateDisplayMetrics(int displayId, float width, float height, float density) {
+    FlutterJNI.displayWidth = width;
+    FlutterJNI.displayHeight = height;
+    FlutterJNI.displayDensity = density;
+    if (!FlutterJNI.loadLibraryCalled) {
+      return;
+    }
+    nativeUpdateDisplayMetrics(nativeShellHolderId);
+  }
+
+  private native void nativeUpdateDisplayMetrics(long nativeShellHolderId);
 
   public void updateRefreshRate() {
     if (!FlutterJNI.loadLibraryCalled) {

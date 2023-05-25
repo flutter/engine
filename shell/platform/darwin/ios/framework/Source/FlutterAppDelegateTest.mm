@@ -67,8 +67,9 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
-                                           arguments:@"/custom/route?query=test"]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 - (void)testLaunchUrlWithDeepLinkingNotSet {
@@ -104,8 +105,9 @@ FLUTTER_ASSERT_ARC
           openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test#fragment"]
           options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
-                                           arguments:@"/custom/route?query=test#fragment"]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test#fragment"}]);
 }
 
 - (void)testLaunchUrlWithFragmentNoQueryParameter {
@@ -117,8 +119,9 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route#fragment"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
-                                           arguments:@"/custom/route#fragment"]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route#fragment"}]);
 }
 
 - (void)testReleasesWindowOnDealloc {
@@ -139,7 +142,7 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Deep linking
 
-- (void)testUniversalLinkPushRoute {
+- (void)testUniversalLinkPushRouteInformation {
   OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
       .andReturn(@YES);
 
@@ -151,8 +154,9 @@ FLUTTER_ASSERT_ARC
         restorationHandler:^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
         }];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
-                                           arguments:@"/custom/route?query=test"]);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 @end

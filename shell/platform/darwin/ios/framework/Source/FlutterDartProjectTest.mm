@@ -60,15 +60,93 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(settings.leak_vm, NO);
 }
 
-- (void)testEnableImpellerSettingIsCorrectlyParsed {
-  // The FLTEnableImpeller's value is defined in Info.plist
-  NSBundle* mainBundle = [NSBundle mainBundle];
-  NSNumber* enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
-  XCTAssertEqual(enableImpeller.boolValue, NO);
+- (void)testFLTFrameworkBundleInternalWhenBundleIsNotPresent {
+  NSBundle* found =
+      FLTFrameworkBundleInternal(@"doesNotExist", NSBundle.mainBundle.privateFrameworksURL);
+  XCTAssertNil(found);
+}
+
+- (void)testFLTFrameworkBundleInternalWhenBundleIsPresent {
+  NSString* presentBundleID = @"io.flutter.flutter";
+  NSBundle* found =
+      FLTFrameworkBundleInternal(presentBundleID, NSBundle.mainBundle.privateFrameworksURL);
+  XCTAssertNotNil(found);
+}
+
+- (void)testDisableImpellerSettingIsCorrectlyParsed {
+  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+  OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"NO");
 
   auto settings = FLTDefaultSettingsForBundle();
   // Check settings.enable_impeller value is same as the value defined in Info.plist.
   XCTAssertEqual(settings.enable_impeller, NO);
+  [mockMainBundle stopMocking];
+}
+
+- (void)testEnableImpellerSettingIsCorrectlyParsed {
+  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+  OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"YES");
+
+  auto settings = FLTDefaultSettingsForBundle();
+  // Check settings.enable_impeller value is same as the value defined in Info.plist.
+  XCTAssertEqual(settings.enable_impeller, YES);
+  [mockMainBundle stopMocking];
+}
+
+- (void)testEnableImpellerSettingIsCorrectlyOverriddenByCommandLine {
+  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+  OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"NO");
+  id mockProcessInfo = OCMPartialMock([NSProcessInfo processInfo]);
+  NSArray* arguments = @[ @"process_name", @"--enable-impeller" ];
+  OCMStub([mockProcessInfo arguments]).andReturn(arguments);
+
+  auto settings = FLTDefaultSettingsForBundle(nil, mockProcessInfo);
+  // Check settings.enable_impeller value is same as the value on command line.
+  XCTAssertEqual(settings.enable_impeller, YES);
+  [mockMainBundle stopMocking];
+}
+
+- (void)testDisableImpellerSettingIsCorrectlyOverriddenByCommandLine {
+  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+  OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"YES");
+  id mockProcessInfo = OCMPartialMock([NSProcessInfo processInfo]);
+  NSArray* arguments = @[ @"process_name", @"--enable-impeller=false" ];
+  OCMStub([mockProcessInfo arguments]).andReturn(arguments);
+
+  auto settings = FLTDefaultSettingsForBundle(nil, mockProcessInfo);
+  // Check settings.enable_impeller value is same as the value on command line.
+  XCTAssertEqual(settings.enable_impeller, NO);
+  [mockMainBundle stopMocking];
+}
+
+- (void)testDisableImpellerAppBundleSettingIsCorrectlyParsed {
+  NSString* bundleId = [FlutterDartProject defaultBundleIdentifier];
+  id mockAppBundle = OCMClassMock([NSBundle class]);
+  OCMStub([mockAppBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"NO");
+  OCMStub([mockAppBundle bundleWithIdentifier:bundleId]).andReturn(mockAppBundle);
+
+  auto settings = FLTDefaultSettingsForBundle();
+  // Check settings.enable_impeller value is same as the value defined in Info.plist.
+  XCTAssertEqual(settings.enable_impeller, NO);
+
+  [mockAppBundle stopMocking];
+}
+
+- (void)testEnableImpellerAppBundleSettingIsCorrectlyParsed {
+  NSString* bundleId = [FlutterDartProject defaultBundleIdentifier];
+  id mockAppBundle = OCMClassMock([NSBundle class]);
+  OCMStub([mockAppBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"YES");
+  OCMStub([mockAppBundle bundleWithIdentifier:bundleId]).andReturn(mockAppBundle);
+
+  // Since FLTEnableImpeller is set to false in the main bundle, this is also
+  // testing that setting FLTEnableImpeller in the app bundle takes
+  // precedence over setting it in the root bundle.
+
+  auto settings = FLTDefaultSettingsForBundle();
+  // Check settings.enable_impeller value is same as the value defined in Info.plist.
+  XCTAssertEqual(settings.enable_impeller, YES);
+
+  [mockAppBundle stopMocking];
 }
 
 - (void)testEnableTraceSystraceSettingIsCorrectlyParsed {

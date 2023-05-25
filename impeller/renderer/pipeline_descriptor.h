@@ -16,8 +16,8 @@
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/shader_types.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -55,6 +55,8 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   const std::shared_ptr<VertexDescriptor>& GetVertexDescriptor() const;
 
+  size_t GetMaxColorAttacmentBindIndex() const;
+
   PipelineDescriptor& SetColorAttachmentDescriptor(
       size_t index,
       ColorAttachmentDescriptor desc);
@@ -82,6 +84,12 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   PipelineDescriptor& SetStencilAttachmentDescriptors(
       std::optional<StencilAttachmentDescriptor> front,
       std::optional<StencilAttachmentDescriptor> back);
+
+  void ClearStencilAttachments();
+
+  void ClearDepthAttachment();
+
+  void ClearColorAttachment(size_t index);
 
   std::optional<StencilAttachmentDescriptor>
   GetFrontStencilAttachmentDescriptor() const;
@@ -119,6 +127,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PrimitiveType GetPrimitiveType() const;
 
+  void SetPolygonMode(PolygonMode mode);
+
+  PolygonMode GetPolygonMode() const;
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -136,6 +148,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   std::optional<StencilAttachmentDescriptor>
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
+  PolygonMode polygon_mode_ = PolygonMode::kFill;
 };
 
 }  // namespace impeller
