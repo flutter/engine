@@ -2198,6 +2198,8 @@ Future<void> testMain() async {
       // Only username, password, submit nodes are created
       expect(formChildNodes, hasLength(3));
       expect(formChildNodes[0].name, 'username');
+      expect(formChildNodes[1].name, 'current-password');
+      expect(formChildNodes[2].type, 'submit');
       // insertion point for email should be before username
       expect(autofillForm.insertionReferenceNode, formChildNodes[0]);
 
@@ -2208,8 +2210,11 @@ Future<void> testMain() async {
       formChildNodes = autofillForm.formElement.childNodes.toList()
           as List<DomHTMLInputElement>;
       // email node should be placed before username
+      expect(formChildNodes, hasLength(4));
       expect(formChildNodes[0].name, 'email');
       expect(formChildNodes[1].name, 'username');
+      expect(formChildNodes[2].name, 'current-password');
+      expect(formChildNodes[3].type, 'submit');
     });
 
     tearDown(() {
