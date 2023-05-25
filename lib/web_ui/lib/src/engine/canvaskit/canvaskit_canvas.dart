@@ -4,7 +4,6 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../renderer.dart';
@@ -12,6 +11,7 @@ import '../validators.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
+import 'fonts.dart';
 import 'image.dart';
 import 'painting.dart';
 import 'path.dart';
