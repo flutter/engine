@@ -452,13 +452,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           // texture is implemented on other platforms.
           sk_sp<DlImage> image;
           std::string decode_error;
-#ifdef FML_OS_IOS
-          std::tie(image, decode_error) = UploadTextureToPrivate(
-              context, bitmap_result.device_buffer, bitmap_result.image_info);
-#else
           std::tie(image, decode_error) =
               UploadTextureToShared(context, bitmap_result.sk_bitmap);
-#endif
           result(image, decode_error);
         };
         // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
