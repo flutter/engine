@@ -262,14 +262,9 @@ RasterStatus Rasterizer::Draw(
 
   bool should_resubmit_frame = ShouldResubmitFrame(draw_result.raster_status);
   if (should_resubmit_frame) {
-    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-        draw_result.resubmitted_view_id,
-        std::move(draw_result.resubmitted_layer_tree),
-        std::move(draw_result.resubmitted_recorder),
-        draw_result.resubmitted_pixel_ratio);
     auto front_continuation = pipeline->ProduceIfEmpty();
-    PipelineProduceResult pipeline_result =
-        front_continuation.Complete(std::move(resubmitted_layer_tree_item));
+    PipelineProduceResult pipeline_result = front_continuation.Complete(
+        std::move(draw_result.resubmitted_layer_tree_item));
     if (pipeline_result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
@@ -453,11 +448,12 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   } else if (ShouldResubmitFrame(raster_status)) {
     return DoDrawResult{
         .raster_status = raster_status,
-        .resubmitted_view_id = view_id,
-        .resubmitted_layer_tree = std::move(layer_tree),
-        .resubmitted_recorder = frame_timings_recorder->CloneUntil(
-            FrameTimingsRecorder::State::kBuildEnd),
-        .resubmitted_pixel_ratio = device_pixel_ratio,
+        .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+            view_id,
+            std::move(layer_tree),
+            frame_timings_recorder->CloneUntil(
+                FrameTimingsRecorder::State::kBuildEnd),
+            device_pixel_ratio),
     };
   } else if (raster_status == RasterStatus::kDiscarded) {
     return DoDrawResult{

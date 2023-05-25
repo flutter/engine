@@ -6,7 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 
@@ -41,7 +41,6 @@ class ColorSourceContents : public Contents {
 
   Scalar GetOpacity() const;
 
- protected:
   const std::shared_ptr<Geometry>& GetGeometry() const;
 
  private:

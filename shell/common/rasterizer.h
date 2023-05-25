@@ -503,16 +503,17 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
+  // The result of `DoDraw`.
+  //
+  // Normally `DoDraw` returns simply a raster status. However, sometimes we
+  // need to attempt to rasterize the layer tree again. This happens when
+  // layer_tree has not successfully rasterized due to changes in the thread
+  // configuration, in which case the resubmitted task will be inserted to the
+  // front of the pipeline.
   struct DoDrawResult {
     RasterStatus raster_status = RasterStatus::kFailed;
-    int64_t resubmitted_view_id;
-    // Set when we need attempt to rasterize the layer tree again. This
-    // layer_tree has not successfully rasterized. This can happen due to the
-    // change in the thread configuration. This will be inserted to the front of
-    // the pipeline.
-    std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree;
-    std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder;
-    float resubmitted_pixel_ratio;
+
+    std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
 
   struct SurfaceRecord {
