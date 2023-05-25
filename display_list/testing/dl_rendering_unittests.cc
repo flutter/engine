@@ -4091,7 +4091,7 @@ class DisplayListNopTest : public DisplayListCanvas {
     SkCanvas* canvas = surface->getCanvas();
     renderer(canvas);
     canvas->flush();
-    surface->flushAndSubmit();
+    surface->flushAndSubmit(true);
     return std::make_unique<RenderResult>(surface, snapshot);
   }
 
@@ -4208,7 +4208,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       result_canvas->drawImage(test_image.get(), 0, 0);
       result_canvas->drawRect(test_bounds, sk_paint);
       result_canvas->flush();
-      result_surface->sk_surface()->flushAndSubmit(TRUE);
+      result_surface->sk_surface()->flushAndSubmit(true);
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
 
@@ -4266,7 +4266,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       result_canvas->drawImage(test_image_src_data->image(), 0, 0,
                                SkSamplingOptions(), &sk_paint);
       result_canvas->flush();
-      result_surface->sk_surface()->flushAndSubmit(TRUE);
+      result_surface->sk_surface()->flushAndSubmit(true);
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
 
