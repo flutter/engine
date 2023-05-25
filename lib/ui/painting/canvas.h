@@ -184,6 +184,17 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                   double elevation,
                   bool transparentOccluder);
 
+  void drawGlyphRun(Dart_Handle glyphs_handle,
+                    Dart_Handle positions_handle,
+                    double originX,
+                    double originY,
+                    Dart_Handle font_family_name_handle,
+                    int font_weight_index,
+                    int font_slant_index,
+                    double font_size,
+                    Dart_Handle paint_objects,
+                    Dart_Handle paint_data);
+
   void Invalidate();
 
   DisplayListBuilder* builder() { return display_list_builder_.get(); }

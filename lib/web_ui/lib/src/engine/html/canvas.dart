@@ -498,4 +498,10 @@ class SurfaceCanvas implements ui.Canvas {
   ) {
     _canvas.drawShadow(path, color, elevation, transparentOccluder);
   }
+
+  @override
+  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+    // CanvasRenderingContext2D does not have an interface to draw glyphs
+    throw UnimplementedError();
+  }
 }

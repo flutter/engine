@@ -4,8 +4,10 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../renderer.dart';
 import '../validators.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
@@ -425,5 +427,31 @@ class CanvasKitCanvas implements ui.Canvas {
   void _drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     _canvas.drawShadow(path as CkPath, color, elevation, transparentOccluder);
+  }
+
+  @override
+  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+    final SkiaFontCollection fontCollection =
+        renderer.fontCollection as SkiaFontCollection;
+    final List<SkFont>? fonts = fontCollection.familyToFontMap[run.fontFamily];
+
+    if (fonts == null || fonts.isEmpty) {
+      return;
+    }
+
+    final SkFont font = fonts[0];
+    final double originalSize = font.getSize();
+    font.setSize(run.fontSize);
+    _canvas.drawGlyphs(
+      run.glyphs,
+      run.positions,
+      offset.dx,
+      offset.dy,
+      font,
+      paint as CkPaint,
+    );
+
+    // Restore the original font size.
+    font.setSize(originalSize);
   }
 }

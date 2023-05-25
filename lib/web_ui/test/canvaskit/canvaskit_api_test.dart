@@ -1325,6 +1325,17 @@ void _canvasTests() {
     );
   });
 
+  test('drawGlyphs', () {
+    canvas.drawGlyphs(
+      Uint16List.fromList(<int>[0, 1, 2, 3]),
+      Float32List.fromList(<double>[0, 0, 10, 10, 0, 10, 10, 0]),
+      0,
+      0,
+      SkFont(null),
+      SkPaint(),
+    );
+  });
+
   test('rotate', () {
     canvas.rotate(90, 10, 20);
     expect(canvas.getLocalToDevice(), <double>[

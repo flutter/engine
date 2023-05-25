@@ -4936,6 +4936,59 @@ enum ClipOp {
   intersect,
 }
 
+/// Defines a list of glyphs to draw, used by [Canvas.drawGlyphRun].
+///
+/// All glyphs are baseline aligned when drawing.
+class GlyphRun {
+
+  /// Creates a glyph run.
+  ///
+  /// The [glyphs] and [positions] lengths must match.
+  GlyphRun({
+    required this.glyphs,
+    required List<Offset> positions,
+    required this.fontFamily,
+    required this.fontSize,
+    this.fontWeight = FontWeight.normal,
+    this.fontStyle = FontStyle.normal,
+  })  : assert(glyphs.length == positions.length),
+        positions = _encodePointList(positions);
+
+  /// Creates a glyph run from raw data.
+  ///
+  /// The length of [positions] must be twice the length of [glyphs].
+  GlyphRun.raw({
+    required this.glyphs,
+    required this.positions,
+    required this.fontFamily,
+    required this.fontSize,
+    this.fontWeight = FontWeight.normal,
+    this.fontStyle = FontStyle.normal,
+  }) : assert(positions.length == glyphs.length * 2);
+
+  /// The id of the glyphs to draw. If a glyph id in this list does not exist
+  /// in the font given by [familyName], it takes no visual effect.
+  final Uint16List glyphs;
+
+  /// The position of each glyph to place. Alternating x0, y0, x1, y1, ...
+  final Float32List positions;
+
+  /// The font family name. A unique font is determined by [fontWeight],
+  /// [fontStyle], and [fontFamily] together. Make sure the font is exists,
+  /// otherwise it will use the default font to paint the glyphs, thus the
+  /// painting result is unpredicatable.
+  final String fontFamily;
+
+  /// The font weight, defaults to [FontWeight.normal].
+  final FontWeight fontWeight;
+
+  /// The font style, defaults to [FontStyle.normal].
+  final FontStyle fontStyle;
+
+  /// The size of glyphs (in logical pixels) to use when painting.
+  final double fontSize;
+}
+
 /// An interface for recording graphical operations.
 ///
 /// [Canvas] objects are used in creating [Picture] objects, which can
@@ -5756,6 +5809,11 @@ abstract class Canvas {
   ///
   /// The arguments must not be null.
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder);
+
+  /// Draw a list of glyphs given by [run]. All glyphs are baseline aligned.
+  /// [offset] specifies the origin point to draw the glyphs, so the position of
+  /// each glyph given by [GlyphRun.positions] is relative to [offset].
+  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
 }
 
 base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
@@ -6228,6 +6286,35 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+
+  @override
+  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint) {
+    _drawGlyphRun(
+      run.glyphs,
+      run.positions,
+      offset.dx,
+      offset.dy,
+      run.fontFamily,
+      run.fontWeight.index,
+      run.fontStyle.index,
+      run.fontSize,
+      paint._objects,
+      paint._data,
+    );
+  }
+
+  @Native<Void Function(Pointer<Void>, Handle, Handle, Double, Double, Handle, Int32, Int32, Double, Handle, Handle)>(symbol: 'Canvas::drawGlyphRun')
+  external void _drawGlyphRun(
+      Uint16List glyphs,
+      Float32List positions,
+      double originX,
+      double originY,
+      String familyName,
+      int fontWeightIndex,
+      int fontSlantIndex,
+      double fontSize,
+      List<Object?>? paintObjects,
+      ByteData paintData);
 }
 
 /// Signature for [Picture] lifecycle events.

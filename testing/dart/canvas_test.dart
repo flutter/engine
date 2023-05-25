@@ -62,6 +62,13 @@ void testNoCrashes() {
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(1, 1);
 
+    final GlyphRun glyphRun = GlyphRun(
+      glyphs: Uint16List.fromList(<int>[1]),
+      positions: <Offset>[Offset.zero],
+      fontFamily: 'Roboto',
+      fontSize: 10.0,
+    );
+
     try { Canvas(PictureRecorder()); } catch (error) { } // ignore: empty_catches
     try { Canvas(PictureRecorder(), rect); } catch (error) { } // ignore: empty_catches
 
@@ -97,6 +104,7 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, false));
     testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, true));
     testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[]), BlendMode.screen, paint));
+    testCanvas((Canvas canvas) => canvas.drawGlyphRun(glyphRun, offset, paint));
     testCanvas((Canvas canvas) => canvas.getSaveCount());
     testCanvas((Canvas canvas) => canvas.restore());
     testCanvas((Canvas canvas) => canvas.rotate(double.nan));

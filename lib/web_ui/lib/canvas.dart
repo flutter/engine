@@ -53,6 +53,39 @@ abstract class Vertices {
   bool get debugDisposed;
 }
 
+class GlyphRun {
+  GlyphRun({
+    required this.glyphs,
+    required List<Offset> positions,
+    required this.fontFamily,
+    required this.fontSize,
+    this.fontWeight = FontWeight.normal,
+    this.fontStyle = FontStyle.normal,
+  })  : assert(glyphs.length == positions.length),
+        positions = _encodePointList(positions);
+
+  GlyphRun.raw({
+    required this.glyphs,
+    required this.positions,
+    required this.fontFamily,
+    required this.fontSize,
+    this.fontWeight = FontWeight.normal,
+    this.fontStyle = FontStyle.normal,
+  }) : assert(positions.length == glyphs.length * 2);
+
+  final Uint16List glyphs;
+
+  final Float32List positions;
+
+  final String fontFamily;
+
+  final FontWeight fontWeight;
+
+  final FontStyle fontStyle;
+
+  final double fontSize;
+}
+
 abstract class PictureRecorder {
   factory PictureRecorder() => engine.renderer.createPictureRecorder();
   bool get isRecording;
@@ -123,6 +156,7 @@ abstract class Canvas {
     double elevation,
     bool transparentOccluder,
   );
+  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
 }
 
 typedef PictureEventCallback = void Function(Picture picture);

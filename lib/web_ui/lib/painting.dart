@@ -33,6 +33,20 @@ Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha(engine.clampInt((a.alpha * factor).round(), 0, 255));
 }
 
+Float32List _encodePointList(List<Offset> points) {
+  final int pointCount = points.length;
+  final Float32List result = Float32List(pointCount * 2);
+  for (int i = 0; i < pointCount; ++i) {
+    final int xIndex = i * 2;
+    final int yIndex = xIndex + 1;
+    final Offset point = points[i];
+    assert(_offsetIsValid(point));
+    result[xIndex] = point.dx;
+    result[yIndex] = point.dy;
+  }
+  return result;
+}
+
 class Color {
   const Color(int value) : value = value & 0xFFFFFFFF;
   const Color.fromARGB(int a, int r, int g, int b)

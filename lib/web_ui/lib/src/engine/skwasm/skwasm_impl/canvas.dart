@@ -319,6 +319,11 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
+  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+    throw UnimplementedError();
+  }
+
+  @override
   ui.Rect getDestinationClipBounds() {
     return withStackScope((StackScope scope) {
       final Pointer<Int32> outRect = scope.allocInt32Array(4);

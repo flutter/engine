@@ -2511,6 +2511,25 @@ extension SkCanvasExtension on SkCanvas {
     SkPaint paint,
   );
 
+  @JS('drawGlyphs')
+  external JSVoid _drawGlyphs(
+    JSUint16Array glyphs,
+    JSFloat32Array positions,
+    JSNumber x,
+    JSNumber y,
+    SkFont font,
+    SkPaint paint,
+  );
+  void drawGlyphs(
+    Uint16List glyphs,
+    Float32List positions,
+    double x,
+    double y,
+    SkFont font,
+    SkPaint paint,
+  ) =>
+      _drawGlyphs(glyphs.toJS, positions.toJS, x.toJS, y.toJS, font, paint);
+
   @JS('save')
   external JSNumber _save();
   double save() => _save().toDart;
@@ -3036,7 +3055,7 @@ class SkTypeface {}
 @JS('window.flutterCanvasKit.Font')
 @staticInterop
 class SkFont {
-  external factory SkFont(SkTypeface typeface);
+  external factory SkFont(SkTypeface? typeface);
 }
 
 extension SkFontExtension on SkFont {
@@ -3050,6 +3069,14 @@ extension SkFontExtension on SkFont {
   void getGlyphBounds(
       List<int> glyphs, SkPaint? paint, Uint8List? output) =>
       _getGlyphBounds(glyphs.toJSAnyShallow, paint, output?.toJS);
+
+  @JS('getSize')
+  external JSNumber _getSize();
+  double getSize() => _getSize().toDart;
+
+  @JS('setSize')
+  external JSVoid _setSize(JSNumber size);
+  void setSize(double size) => _setSize(size.toJS);
 }
 
 @JS()

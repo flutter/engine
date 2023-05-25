@@ -509,6 +509,16 @@ void drawTestPicture(CkCanvas canvas) {
     CkPaint()..color = const ui.Color(0xFF0000AA),
   );
 
+  canvas.translate(60, 0);
+  canvas.drawGlyphs(
+    Uint16List.fromList(<int>[10, 11, 12, 13]),
+    Float32List.fromList(<double>[0, 0, 10, 10, 0, 10, 10, 0]),
+    0,
+    0,
+    SkFont(null),
+    CkPaint()..color = const ui.Color(0xFF0000AA),
+  );
+
   canvas.restore();
 }
 

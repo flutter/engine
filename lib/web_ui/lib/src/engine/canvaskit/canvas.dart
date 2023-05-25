@@ -260,6 +260,24 @@ class CkCanvas {
     );
   }
 
+  void drawGlyphs(
+    Uint16List glyphs,
+    Float32List positions,
+    double x,
+    double y,
+    SkFont font,
+    CkPaint paint,
+  ) {
+    skCanvas.drawGlyphs(
+      glyphs,
+      positions,
+      x,
+      y,
+      font,
+      paint.skiaObject,
+    );
+  }
+
   void restore() {
     skCanvas.restore();
   }

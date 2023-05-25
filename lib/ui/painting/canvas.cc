@@ -5,12 +5,14 @@
 #include "flutter/lib/ui/painting/canvas.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/paint.h"
+#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
@@ -636,6 +638,77 @@ void Canvas::drawShadow(const CanvasPath* path,
     // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
     builder()->DrawShadow(path->path(), color, SafeNarrow(elevation),
                           transparentOccluder, dpr);
+  }
+}
+
+void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
+                          Dart_Handle positions_handle,
+                          double originX,
+                          double originY,
+                          Dart_Handle font_family_name_handle,
+                          int font_weight_index,
+                          int font_slant_index,
+                          double font_size,
+                          Dart_Handle paint_objects,
+                          Dart_Handle paint_data) {
+  Paint paint(paint_objects, paint_data);
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_builder_) {
+    tonic::Uint16List glyphs(glyphs_handle);
+    tonic::Float32List positions(positions_handle);
+    std::string font_family_name =
+        tonic::StdStringFromDart(font_family_name_handle);
+    auto sk_glyphs = reinterpret_cast<const SkGlyphID*>(glyphs.data());
+    auto sk_points = reinterpret_cast<const SkPoint*>(positions.data());
+
+    // Convert txt::FontWeight values (ranging from 0-8) to SkFontStyle:Weight
+    // values (ranging from 100-900)
+    SkFontStyle::Weight font_weight =
+        static_cast<SkFontStyle::Weight>(font_weight_index * 100 + 100);
+    // Convert txt::FontStyle to SkFontFontStyle::Slant
+    SkFontStyle::Slant font_slant = font_slant_index == 0
+                                        ? SkFontStyle::Slant::kUpright_Slant
+                                        : SkFontStyle::Slant::kItalic_Slant;
+    SkFontStyle font_style(font_weight, SkFontStyle::Width::kNormal_Width,
+                           font_slant);
+
+    auto font_collection = UIDartState::Current()
+                               ->platform_configuration()
+                               ->client()
+                               ->GetFontCollection()
+                               .GetFontCollection();
+
+    std::vector<SkString> sk_font_families;
+    sk_font_families.push_back(SkString(font_family_name.c_str()));
+
+    auto sk_typefaces =
+        font_collection->CreateSktFontCollection()->findTypefaces(
+            sk_font_families, font_style);
+
+    if (sk_typefaces.empty()) {
+      return;
+    }
+
+    auto matched_sk_typeface = sk_typefaces.front();
+    SkString matched_sk_font_family_name;
+    matched_sk_typeface->getFamilyName(&matched_sk_font_family_name);
+
+    // return if fallback font is used
+    if (!SkString(font_family_name.c_str())
+             .equals(matched_sk_font_family_name)) {
+      std::cout << "font_family_name does not match" << std::endl;
+      return;
+    }
+
+    const SkFont sk_font(sk_typefaces.front(), SafeNarrow(font_size));
+    auto sk_textblob = SkTextBlob::MakeFromPosText(
+        sk_glyphs, glyphs.num_elements() * sizeof(SkGlyphID), sk_points,
+        sk_font, SkTextEncoding::kGlyphID);
+
+    DlPaint dl_paint;
+    paint.paint(dl_paint, kDrawTextBlobFlags);
+    builder()->DrawTextBlob(sk_textblob, SafeNarrow(originX),
+                            SafeNarrow(originY), dl_paint);
   }
 }
 
