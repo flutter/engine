@@ -7,25 +7,40 @@ import 'dart:js_interop';
 
 import 'package:ui/src/engine.dart';
 
-abstract class SkwasmObjectWrapper<T extends NativeType> {
-  Pointer<T> get handle;
+class SkwasmObjectWrapper<T extends NativeType> {
+  SkwasmObjectWrapper(this.handle, this.registry) {
+    registry.register(this);
+  }
+  final SkwasmFinalizationRegistry<T> registry;
+  final Pointer<T> handle;
+  bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    registry.evict(this);
+    _isDisposed = true;
+  }
+
+  bool get debugDisposed => _isDisposed;
 }
 
 typedef DisposeFunction<T extends NativeType> = void Function(Pointer<T>);
 
 class SkwasmFinalizationRegistry<T extends NativeType> {
-  SkwasmFinalizationRegistry(DisposeFunction<T> dispose)
+  SkwasmFinalizationRegistry(this.dispose)
     : registry = DomFinalizationRegistry(((JSNumber address) =>
       dispose(Pointer<T>.fromAddress(address.toDart.toInt()))
     ).toJS);
 
   final DomFinalizationRegistry registry;
+  final DisposeFunction<T> dispose;
 
   void register(SkwasmObjectWrapper<T> wrapper) {
     registry.register(wrapper, wrapper.handle.address, wrapper);
   }
 
-  void unregister(SkwasmObjectWrapper<T> wrapper) {
+  void evict(SkwasmObjectWrapper<T> wrapper) {
     registry.unregister(wrapper);
+    dispose(wrapper.handle);
   }
 }

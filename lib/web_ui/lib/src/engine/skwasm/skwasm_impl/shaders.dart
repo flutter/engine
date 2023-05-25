@@ -17,28 +17,11 @@ abstract class SkwasmShader implements ui.Shader {
 
 // An implementation that handles the storage, disposal, and finalization of
 // a native shader handle.
-class SkwasmNativeShader implements SkwasmObjectWrapper<RawShader>, SkwasmShader {
-  SkwasmNativeShader(this.handle) {
-    _registry.register(this);
-  }
-
-  @override
-  final ShaderHandle handle;
-  bool _isDisposed = false;
+class SkwasmNativeShader extends SkwasmObjectWrapper<RawShader> implements SkwasmShader {
+  SkwasmNativeShader(ShaderHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawShader> _registry =
     SkwasmFinalizationRegistry<RawShader>(shaderDispose);
-
-  @override
-  bool get debugDisposed => _isDisposed;
-
-  @override
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    shaderDispose(handle);
-    _isDisposed = true;
-  }
 }
 
 class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
@@ -196,13 +179,14 @@ class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
   }
 }
 
-class SkwasmFragmentProgram implements SkwasmObjectWrapper<RawRuntimeEffect>, ui.FragmentProgram {
+class SkwasmFragmentProgram extends SkwasmObjectWrapper<RawRuntimeEffect> implements ui.FragmentProgram {
   SkwasmFragmentProgram._(
     this.name,
-    this.handle,
+    RuntimeEffectHandle handle,
     this.floatUniformCount,
     this.childShaderCount,
-  );
+  ) : super(handle, _registry);
+
   factory SkwasmFragmentProgram.fromBytes(String name, Uint8List bytes) {
     final ShaderData shaderData = ShaderData.fromBytes(bytes);
 
@@ -228,19 +212,9 @@ class SkwasmFragmentProgram implements SkwasmObjectWrapper<RawRuntimeEffect>, ui
   static final SkwasmFinalizationRegistry<RawRuntimeEffect> _registry =
     SkwasmFinalizationRegistry<RawRuntimeEffect>(runtimeEffectDispose);
 
-  @override
-  final RuntimeEffectHandle handle;
   final String name;
   final int floatUniformCount;
   final int childShaderCount;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    runtimeEffectDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   ui.FragmentShader fragmentShader() => SkwasmFragmentShader(this);
@@ -248,24 +222,11 @@ class SkwasmFragmentProgram implements SkwasmObjectWrapper<RawRuntimeEffect>, ui
   int get uniformSize => runtimeEffectGetUniformSize(handle);
 }
 
-class SkwasmShaderData implements SkwasmObjectWrapper<RawSkData> {
-  SkwasmShaderData(int size) : handle = skDataCreate(size) {
-    _registry.register(this);
-  }
+class SkwasmShaderData extends SkwasmObjectWrapper<RawSkData> {
+  SkwasmShaderData(int size) : super(skDataCreate(size), _registry);
 
   static final SkwasmFinalizationRegistry<RawSkData> _registry =
     SkwasmFinalizationRegistry<RawSkData>(skDataDispose);
-
-  @override
-  final SkDataHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    skDataDispose(handle);
-    _isDisposed = true;
-  }
 }
 
 // This class does not inherit from SkwasmNativeShader, as its handle might

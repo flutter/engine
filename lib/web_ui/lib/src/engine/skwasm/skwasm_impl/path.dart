@@ -19,7 +19,7 @@ enum PathArcSize {
   large,
 }
 
-class SkwasmPath implements SkwasmObjectWrapper<RawPath>, ui.Path {
+class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   factory SkwasmPath() {
     return SkwasmPath.fromHandle(pathCreate());
   }
@@ -28,23 +28,10 @@ class SkwasmPath implements SkwasmObjectWrapper<RawPath>, ui.Path {
     return SkwasmPath.fromHandle(pathCopy(source.handle));
   }
 
-  SkwasmPath.fromHandle(this.handle) {
-    _registry.register(this);
-  }
+  SkwasmPath.fromHandle(PathHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawPath> _registry =
     SkwasmFinalizationRegistry<RawPath>(pathDispose);
-
-  @override
-  final PathHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    pathDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   ui.PathFillType get fillType => ui.PathFillType.values[pathGetFillType(handle)];

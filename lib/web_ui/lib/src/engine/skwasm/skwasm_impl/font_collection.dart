@@ -19,24 +19,11 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
-class SkwasmTypeface implements SkwasmObjectWrapper<RawTypeface> {
-  SkwasmTypeface(SkDataHandle data) : handle = typefaceCreate(data) {
-    _registry.register(this);
-  }
+class SkwasmTypeface extends SkwasmObjectWrapper<RawTypeface> {
+  SkwasmTypeface(SkDataHandle data) : super(typefaceCreate(data), _registry);
 
   static final SkwasmFinalizationRegistry<RawTypeface> _registry =
     SkwasmFinalizationRegistry<RawTypeface>(typefaceDispose);
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    typefaceDispose(handle);
-    _isDisposed = true;
-  }
-
-  @override
-  TypefaceHandle handle;
-  bool _isDisposed = false;
 }
 
 class SkwasmFontCollection implements FlutterFontCollection {

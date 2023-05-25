@@ -19,27 +19,15 @@ class SkwasmPathMetrics extends IterableBase<ui.PathMetric>
   late Iterator<ui.PathMetric> iterator = SkwasmPathMetricIterator(path, forceClosed);
 }
 
-class SkwasmPathMetricIterator implements SkwasmObjectWrapper<RawContourMeasureIter>, Iterator<ui.PathMetric> {
+class SkwasmPathMetricIterator extends SkwasmObjectWrapper<RawContourMeasureIter> implements Iterator<ui.PathMetric> {
   SkwasmPathMetricIterator(SkwasmPath path, bool forceClosed)
-      : handle = contourMeasureIterCreate(path.handle, forceClosed, 1.0) {
-    _registry.register(this);
-  }
+      : super(contourMeasureIterCreate(path.handle, forceClosed, 1.0), _registry);
 
   static final SkwasmFinalizationRegistry<RawContourMeasureIter> _registry =
     SkwasmFinalizationRegistry<RawContourMeasureIter>(contourMeasureIterDispose);
 
-  @override
-  final ContourMeasureIterHandle handle;
-  bool _isDisposed = false;
   SkwasmPathMetric? _current;
   int _nextIndex = 0;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    contourMeasureIterDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   ui.PathMetric get current {
@@ -66,24 +54,11 @@ class SkwasmPathMetricIterator implements SkwasmObjectWrapper<RawContourMeasureI
   }
 }
 
-class SkwasmPathMetric implements SkwasmObjectWrapper<RawContourMeasure>, ui.PathMetric {
-  SkwasmPathMetric(this.handle, this.contourIndex) {
-    _registry.register(this);
-  }
+class SkwasmPathMetric extends SkwasmObjectWrapper<RawContourMeasure> implements ui.PathMetric {
+  SkwasmPathMetric(ContourMeasureHandle handle, this.contourIndex) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawContourMeasure> _registry =
     SkwasmFinalizationRegistry<RawContourMeasure>(contourMeasureDispose);
-
-  @override
-  final ContourMeasureHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    contourMeasureDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   final int contourIndex;

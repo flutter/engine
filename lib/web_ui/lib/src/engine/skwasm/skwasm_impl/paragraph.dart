@@ -13,7 +13,7 @@ import 'package:ui/ui.dart' as ui;
 const int _kSoftLineBreak = 0;
 const int _kHardLineBreak = 100;
 
-class SkwasmLineMetrics implements SkwasmObjectWrapper<RawLineMetrics>, ui.LineMetrics {
+class SkwasmLineMetrics extends SkwasmObjectWrapper<RawLineMetrics> implements ui.LineMetrics {
   factory SkwasmLineMetrics({
     required bool hardBreak,
     required double ascent,
@@ -36,23 +36,10 @@ class SkwasmLineMetrics implements SkwasmObjectWrapper<RawLineMetrics>, ui.LineM
     lineNumber,
   ));
 
-  SkwasmLineMetrics._(this.handle) {
-    _registry.register(this);
-  }
+  SkwasmLineMetrics._(LineMetricsHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawLineMetrics> _registry =
     SkwasmFinalizationRegistry<RawLineMetrics>(lineMetricsDispose);
-
-  @override
-  final LineMetricsHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    lineMetricsDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   bool get hardBreak => lineMetricsGetHardBreak(handle);
@@ -82,29 +69,13 @@ class SkwasmLineMetrics implements SkwasmObjectWrapper<RawLineMetrics>, ui.LineM
   int get lineNumber => lineMetricsGetLineNumber(handle);
 }
 
-class SkwasmParagraph implements SkwasmObjectWrapper<RawParagraph>, ui.Paragraph {
-  SkwasmParagraph(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Paragraph {
+  SkwasmParagraph(ParagraphHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawParagraph> _registry =
     SkwasmFinalizationRegistry<RawParagraph>(paragraphDispose);
 
-  @override
-  final ParagraphHandle handle;
-  bool _isDisposed = false;
   bool _hasCheckedForMissingCodePoints = false;
-
-  @override
-  bool get debugDisposed => _isDisposed;
-
-  @override
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    paragraphDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   double get width => paragraphGetWidth(handle);
@@ -263,26 +234,13 @@ void withScopedFontList(
   });
 }
 
-class SkwasmNativeTextStyle implements SkwasmObjectWrapper<RawTextStyle> {
-  SkwasmNativeTextStyle(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmNativeTextStyle extends SkwasmObjectWrapper<RawTextStyle> {
+  SkwasmNativeTextStyle(TextStyleHandle handle) : super(handle, _registry);
 
   factory SkwasmNativeTextStyle.defaultTextStyle() => SkwasmNativeTextStyle(textStyleCreate());
 
   static final SkwasmFinalizationRegistry<RawTextStyle> _registry =
     SkwasmFinalizationRegistry<RawTextStyle>(textStyleDispose);
-
-  @override
-  final TextStyleHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    textStyleDispose(handle);
-    _isDisposed = true;
-  }
 
   SkwasmNativeTextStyle copy() {
     return SkwasmNativeTextStyle(textStyleCopy(handle));
@@ -448,7 +406,7 @@ class SkwasmTextStyle implements ui.TextStyle {
   final List<ui.FontVariation>? fontVariations;
 }
 
-class SkwasmStrutStyle implements SkwasmObjectWrapper<RawStrutStyle>, ui.StrutStyle {
+class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implements ui.StrutStyle {
   factory SkwasmStrutStyle({
     String? fontFamily,
     List<String>? fontFamilyFallback,
@@ -497,26 +455,13 @@ class SkwasmStrutStyle implements SkwasmObjectWrapper<RawStrutStyle>, ui.StrutSt
     return SkwasmStrutStyle._(handle);
   }
 
-  SkwasmStrutStyle._(this.handle) {
-    _registry.register(this);
-  }
+  SkwasmStrutStyle._(StrutStyleHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawStrutStyle> _registry =
     SkwasmFinalizationRegistry<RawStrutStyle>(strutStyleDispose);
-
-  @override
-  final StrutStyleHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    strutStyleDispose(handle);
-    _isDisposed = true;
-  }
 }
 
-class SkwasmParagraphStyle implements SkwasmObjectWrapper<RawParagraphStyle>, ui.ParagraphStyle {
+class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implements ui.ParagraphStyle {
   factory SkwasmParagraphStyle({
     ui.TextAlign? textAlign,
     ui.TextDirection? textDirection,
@@ -593,28 +538,20 @@ class SkwasmParagraphStyle implements SkwasmObjectWrapper<RawParagraphStyle>, ui
     return SkwasmParagraphStyle._(handle, textStyle, fontFamily);
   }
 
-  SkwasmParagraphStyle._(this.handle, this.textStyle, this.defaultFontFamily) {
-    _registry.register(this);
-  }
+  SkwasmParagraphStyle._(
+    ParagraphStyleHandle handle,
+    this.textStyle,
+    this.defaultFontFamily
+  ) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawParagraphStyle> _registry =
     SkwasmFinalizationRegistry<RawParagraphStyle>(paragraphStyleDispose);
 
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    paragraphStyleDispose(handle);
-    _isDisposed = true;
-  }
-
-  @override
-  final ParagraphStyleHandle handle;
-  bool _isDisposed = false;
   final SkwasmNativeTextStyle textStyle;
   final String? defaultFontFamily;
 }
 
-class SkwasmParagraphBuilder implements SkwasmObjectWrapper<RawParagraphBuilder>, ui.ParagraphBuilder {
+class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> implements ui.ParagraphBuilder {
   factory SkwasmParagraphBuilder(
     SkwasmParagraphStyle style,
     SkwasmFontCollection collection,
@@ -623,25 +560,13 @@ class SkwasmParagraphBuilder implements SkwasmObjectWrapper<RawParagraphBuilder>
       collection.handle,
     ), style);
 
-  SkwasmParagraphBuilder._(this.handle, this.style) {
-    _registry.register(this);
-  }
+  SkwasmParagraphBuilder._(ParagraphBuilderHandle handle, this.style) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawParagraphBuilder> _registry =
     SkwasmFinalizationRegistry<RawParagraphBuilder>(paragraphBuilderDispose);
 
-  @override
-  final ParagraphBuilderHandle handle;
-  bool _isDisposed = false;
   final SkwasmParagraphStyle style;
   final List<SkwasmNativeTextStyle> textStyleStack = <SkwasmNativeTextStyle>[];
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    paragraphBuilderDispose(handle);
-    _isDisposed = true;
-  }
 
   @override
   List<double> placeholderScales = <double>[];

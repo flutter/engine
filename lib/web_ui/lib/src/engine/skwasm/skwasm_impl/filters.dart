@@ -9,10 +9,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmImageFilter implements SceneImageFilter, SkwasmObjectWrapper<RawImageFilter> {
-  SkwasmImageFilter._(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmImageFilter extends SkwasmObjectWrapper<RawImageFilter> implements SceneImageFilter {
+  SkwasmImageFilter._(ImageFilterHandle handle) : super(handle, _registry);
 
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
@@ -66,17 +64,6 @@ class SkwasmImageFilter implements SceneImageFilter, SkwasmObjectWrapper<RawImag
     SkwasmFinalizationRegistry<RawImageFilter>(imageFilterDispose);
 
   @override
-  final ImageFilterHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    imageFilterDispose(handle);
-    _isDisposed = true;
-  }
-
-  @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
     final RawIRect rawRect = scope.convertIRectToNative(inputBounds);
     imageFilterGetFilterBounds(handle, rawRect);
@@ -84,10 +71,8 @@ class SkwasmImageFilter implements SceneImageFilter, SkwasmObjectWrapper<RawImag
   });
 }
 
-class SkwasmColorFilter implements SkwasmObjectWrapper<RawColorFilter> {
-  SkwasmColorFilter._(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmColorFilter extends SkwasmObjectWrapper<RawColorFilter> {
+  SkwasmColorFilter._(ColorFilterHandle handle) : super(handle, _registry);
 
   factory SkwasmColorFilter.fromEngineColorFilter(EngineColorFilter colorFilter) =>
     switch (colorFilter.type) {
@@ -110,23 +95,10 @@ class SkwasmColorFilter implements SkwasmObjectWrapper<RawColorFilter> {
 
   static final SkwasmFinalizationRegistry<RawColorFilter> _registry =
     SkwasmFinalizationRegistry<RawColorFilter>(colorFilterDispose);
-
-  @override
-  final ColorFilterHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    colorFilterDispose(handle);
-    _isDisposed = true;
-  }
 }
 
-class SkwasmMaskFilter implements SkwasmObjectWrapper<RawMaskFilter> {
-  SkwasmMaskFilter._(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmMaskFilter extends SkwasmObjectWrapper<RawMaskFilter> {
+  SkwasmMaskFilter._(MaskFilterHandle handle) : super(handle, _registry);
 
   factory SkwasmMaskFilter.fromUiMaskFilter(ui.MaskFilter maskFilter) =>
     SkwasmMaskFilter._(maskFilterCreateBlur(
@@ -136,15 +108,4 @@ class SkwasmMaskFilter implements SkwasmObjectWrapper<RawMaskFilter> {
 
   static final SkwasmFinalizationRegistry<RawMaskFilter> _registry =
     SkwasmFinalizationRegistry<RawMaskFilter>(maskFilterDispose);
-
-  @override
-  final MaskFilterHandle handle;
-  bool _isDisposed = false;
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    maskFilterDispose(handle);
-    _isDisposed = true;
-  }
 }

@@ -9,10 +9,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmImage implements SkwasmObjectWrapper<RawImage>, ui.Image {
-  SkwasmImage(this.handle) {
-    _registry.register(this);
-  }
+class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
+  SkwasmImage(ImageHandle handle) : super(handle, _registry);
 
   factory SkwasmImage.fromPixels(
     Uint8List pixels,
@@ -41,18 +39,6 @@ class SkwasmImage implements SkwasmObjectWrapper<RawImage>, ui.Image {
     SkwasmFinalizationRegistry<RawImage>(imageDispose);
 
   @override
-  final ImageHandle handle;
-  bool _isDisposed = false;
-
-  @override
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    imageDispose(handle);
-    _isDisposed = true;
-  }
-
-  @override
   int get width => imageGetWidth(handle);
 
   @override
@@ -66,9 +52,6 @@ class SkwasmImage implements SkwasmObjectWrapper<RawImage>, ui.Image {
 
   @override
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
-
-  @override
-  bool get debugDisposed => _isDisposed;
 
   @override
   SkwasmImage clone() {

@@ -8,26 +8,11 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmPaint implements SkwasmObjectWrapper<RawPaint>, ui.Paint {
-  factory SkwasmPaint() => SkwasmPaint._fromHandle(paintCreate());
-
-  SkwasmPaint._fromHandle(this.handle) {
-    _registry.register(this);
-  }
-
-  void dispose() {
-    assert(!_isDisposed);
-    _registry.unregister(this);
-    paintDispose(handle);
-    _isDisposed = true;
-  }
+class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
+  SkwasmPaint() : super(paintCreate(), _registry);
 
   static final SkwasmFinalizationRegistry<RawPaint> _registry =
     SkwasmFinalizationRegistry<RawPaint>(paintDispose);
-
-  @override
-  PaintHandle handle;
-  bool _isDisposed = false;
 
   ui.BlendMode _cachedBlendMode = ui.BlendMode.srcOver;
 
