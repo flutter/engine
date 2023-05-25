@@ -113,8 +113,6 @@
   return YES;
 }
 
-- (void)shutdown {
-}
 #pragma mark - NSAccessibility overrides
 
 - (BOOL)isAccessibilityElement {

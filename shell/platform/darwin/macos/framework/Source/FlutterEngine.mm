@@ -931,13 +931,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
 
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
   [_threadSynchronizer shutdown];
   _threadSynchronizer = nil;
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController.flutterView shutdown];
-  }
 
   FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
   if (result != kSuccess) {
