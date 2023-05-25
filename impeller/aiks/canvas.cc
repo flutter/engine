@@ -13,7 +13,7 @@
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_text_contents.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
@@ -199,7 +199,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
-  auto contents = std::make_shared<RRectShadowContents>();
+  auto contents = std::make_shared<SolidRRectBlurContents>();
   contents->SetColor(new_paint.color);
   contents->SetSigma(new_paint.mask_blur_descriptor->sigma);
   contents->SetRRect(rect, corner_radius);
@@ -598,8 +598,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates() &&
-      paint.color_source.GetType() != ColorSource::Type::kImage) {
+  if (vertices->HasTextureCoordinates()) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large

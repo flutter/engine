@@ -55,6 +55,10 @@ platform_properties:
       cpu: x86
       os: Mac-12
       xcode: 14e222b
+      $flutter/osx_sdk : >-
+        {
+          "sdk_version": "14e222b"
+        }
     dimensions:
       mac_model: "Macmini8,1|Macmini9,1"
   windows:
@@ -83,7 +87,6 @@ targets:
     recipe: engine/engine
     bringup: true
     properties:
-      add_recipes_cq: "true"
       build_android_aot: "true"
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
@@ -93,7 +96,6 @@ targets:
     recipe: engine/engine
     bringup: true
     properties:
-      add_recipes_cq: "true"
       build_android_debug: "true"
       build_android_jit_release: "true"
       build_android_vulkan: "true"
@@ -120,6 +122,54 @@ targets:
       - .ci.yaml
       - testing/**
       - shell/platform/android/**
+
+  - name: Linux builder_cache
+    enabled_branches:
+      - main
+    recipe: engine_v2/cache
+    bringup: true
+    presubmit: false
+    properties:
+      cache_name: "builder"
+      cache_root: "cache"
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
+    timeout: 60
+
+  - name: Windows builder_cache
+    enabled_branches:
+      - main
+    recipe: engine_v2/cache
+    bringup: true
+    presubmit: false
+    properties:
+      cache_name: "builder"
+      cache_root: "cache"
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
+    timeout: 60
+
+  - name: Mac builder_cache
+    enabled_branches:
+      - main
+    recipe: engine_v2/cache
+    bringup: true
+    presubmit: false
+    properties:
+      cache_name: "builder"
+      cache_root: "cache"
+      cache_paths: >-
+        [
+          "builder",
+          "git"
+        ]
+    timeout: 60
 
   - name: Linux Benchmarks
     enabled_branches:
@@ -164,7 +214,6 @@ targets:
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
     properties:
-      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
@@ -187,7 +236,6 @@ targets:
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
-      add_recipes_cq: "true"
       build_host: "true"
       cores: "32"
     timeout: 60
@@ -196,7 +244,6 @@ targets:
     bringup: true
     recipe: engine/engine_unopt
     properties:
-      add_recipes_cq: "true"
       clobber: "true"
     timeout: 60
 
@@ -204,7 +251,6 @@ targets:
     bringup: true
     recipe: engine/engine_license
     properties:
-      add_recipes_cq: "true"
       clobber: "true"
     timeout: 60
 
@@ -251,7 +297,6 @@ targets:
     bringup: true
     recipe: engine/engine_arm
     properties:
-      add_recipes_cq: "true"
       build_host: "true"
     timeout: 90
 
@@ -277,6 +322,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_arm_host_engine
     drone_dimensions:
@@ -286,6 +332,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_engine
     drone_dimensions:
@@ -295,6 +342,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_desktop_engine
     drone_dimensions:
@@ -304,6 +352,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_aot_engine
     drone_dimensions:
@@ -313,6 +362,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_debug_engine
     drone_dimensions:
@@ -322,6 +372,7 @@ targets:
     recipe: engine_v2/builder
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       config_name: linux_license
       clobber: "true"
 
@@ -387,7 +438,6 @@ targets:
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
-      add_recipes_cq: "true"
       build_host: "true"
     timeout: 75
 
@@ -395,6 +445,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_android_aot_engine
     drone_dimensions:
@@ -423,6 +474,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       cpu: arm64
       config_name: mac_host_engine
@@ -431,7 +483,9 @@ targets:
           {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
         ]
       $flutter/osx_sdk : >-
-        { "sdk_version": "14e222b" }
+        {
+          "sdk_version": "14e222b"
+        }
     drone_dimensions:
       - os=Mac-12
 
@@ -446,12 +500,20 @@ targets:
     bringup: true
     recipe: engine/engine_unopt
     properties:
-      add_recipes_cq: "true"
       runtime_versions: >-
         [
           "ios-16-4_14e222b",
           "ios-16-2_14c18"
         ]
+      $flutter/osx_sdk : >-
+        {
+          "sdk_version": "14e222b",
+          "runtime_versions":
+            [
+              "ios-16-4_14e222b",
+              "ios-16-2_14c18"
+            ]
+        }
     timeout: 75
 
   - name: Mac Host clang-tidy
@@ -502,7 +564,6 @@ targets:
     bringup: true
     recipe: engine/engine
     properties:
-      add_recipes_cq: "true"
       build_ios: "true"
       ios_debug: "true"
     timeout: 60
@@ -511,10 +572,13 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14e222b" }
+        {
+          "sdk_version": "14e222b"
+        }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -546,13 +610,13 @@ targets:
     properties:
       gclient_variables: >-
         {"download_emsdk": true}
-      add_recipes_cq: "true"
       build_host: "true"
 
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_android_aot_engine
     drone_dimensions:
@@ -562,6 +626,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_host_engine
     drone_dimensions:
@@ -574,6 +639,7 @@ targets:
       # Don't run this on release branches
       - main
     properties:
+      add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_arm_host_engine
     drone_dimensions:
