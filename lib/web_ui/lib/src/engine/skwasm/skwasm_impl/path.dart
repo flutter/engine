@@ -28,13 +28,23 @@ class SkwasmPath implements ui.Path {
     return SkwasmPath.fromHandle(pathCopy(source._handle));
   }
 
-  SkwasmPath.fromHandle(this._handle);
+  SkwasmPath.fromHandle(this._handle) {
+    _registry.register(this, handle.address, this);
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(pathDispose));
+
   final PathHandle _handle;
+  bool _isDisposed = false;
 
   PathHandle get handle => _handle;
 
-  void delete() {
-    pathDestroy(_handle);
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    pathDispose(_handle);
+    _isDisposed = true;
   }
 
   @override

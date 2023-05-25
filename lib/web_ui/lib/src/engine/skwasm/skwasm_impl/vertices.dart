@@ -7,6 +7,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -69,7 +70,12 @@ class SkwasmVertices implements ui.Vertices {
     ));
   });
 
-  SkwasmVertices._(this.handle);
+  SkwasmVertices._(this.handle) {
+    _registry.register(this, handle.address, this);
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(verticesDispose));
 
   final VerticesHandle handle;
   bool _isDisposed = false;
@@ -79,9 +85,9 @@ class SkwasmVertices implements ui.Vertices {
 
   @override
   void dispose() {
-    if (!_isDisposed) {
-      verticesDispose(handle);
-      _isDisposed = true;
-    }
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    verticesDispose(handle);
+    _isDisposed = true;
   }
 }

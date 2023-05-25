@@ -7,20 +7,30 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmPicture implements ScenePicture {
-  SkwasmPicture.fromHandle(this._handle);
+  SkwasmPicture.fromHandle(this._handle) {
+    _registry.register(this, handle.address, this);
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(pictureDispose));
+
   final PictureHandle _handle;
+  bool _isDisposed = false;
+
+  @override
+  void dispose() {
+    assert(!_isDisposed);
+    ui.Picture.onDispose?.call(this);
+    _registry.unregister(this);
+    pictureDispose(_handle);
+    _isDisposed = true;
+  }
 
   PictureHandle get handle => _handle;
 
   @override
   Future<ui.Image> toImage(int width, int height) async => toImageSync(width, height);
 
-  @override
-  void dispose() {
-    ui.Picture.onDispose?.call(this);
-    pictureDispose(_handle);
-    debugDisposed = true;
-  }
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(_handle);
@@ -46,12 +56,25 @@ class SkwasmPictureRecorder implements ui.PictureRecorder {
   factory SkwasmPictureRecorder() =>
     SkwasmPictureRecorder._fromHandle(pictureRecorderCreate());
 
-  SkwasmPictureRecorder._fromHandle(this._handle);
+  SkwasmPictureRecorder._fromHandle(this._handle) {
+    _registry.register(this, _handle.address, this);
+  }
+
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(pictureRecorderDispose));
+
   final PictureRecorderHandle _handle;
+  bool _isDisposed = false;
 
   PictureRecorderHandle get handle => _handle;
 
-  void delete() => pictureRecorderDestroy(_handle);
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    pictureRecorderDispose(_handle);
+    _isDisposed = true;
+  }
 
   @override
   SkwasmPicture endRecording() {

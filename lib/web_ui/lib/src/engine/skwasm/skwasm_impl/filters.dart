@@ -10,8 +10,10 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmImageFilter implements SceneImageFilter {
-  SkwasmImageFilter._(this.handle);
-
+  SkwasmImageFilter._(this.handle) {
+    _registry.register(this, handle.address, this);
+  }
+  
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
@@ -60,15 +62,18 @@ class SkwasmImageFilter implements SceneImageFilter {
     return SkwasmImageFilter._(imageFilterCompose(nativeOuter.handle, nativeInner.handle));
   }
 
-  void dispose() {
-    if (!_isDisposed) {
-      imageFilterDispose(handle);
-      _isDisposed = true;
-    }
-  }
+  static final DomFinalizationRegistry _registry = 
+    DomFinalizationRegistry(createSkwasmFinalizer(imageFilterDispose));
 
   final ImageFilterHandle handle;
   bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    imageFilterDispose(handle);
+    _isDisposed = true;
+  }
 
   @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
@@ -79,7 +84,9 @@ class SkwasmImageFilter implements SceneImageFilter {
 }
 
 class SkwasmColorFilter {
-  SkwasmColorFilter._(this.handle);
+  SkwasmColorFilter._(this.handle) {
+    _registry.register(this, handle.address, this);
+  }
 
   factory SkwasmColorFilter.fromEngineColorFilter(EngineColorFilter colorFilter) =>
     switch (colorFilter.type) {
@@ -100,19 +107,24 @@ class SkwasmColorFilter {
     SkwasmColorFilter inner,
   ) => SkwasmColorFilter._(colorFilterCompose(outer.handle, inner.handle));
 
-  void dispose() {
-    if (!_isDisposed) {
-      colorFilterDispose(handle);
-      _isDisposed = true;
-    }
-  }
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(colorFilterDispose));
 
   final ColorFilterHandle handle;
   bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    colorFilterDispose(handle);
+    _isDisposed = true;
+  }
 }
 
 class SkwasmMaskFilter {
-  SkwasmMaskFilter._(this.handle);
+  SkwasmMaskFilter._(this.handle) {
+    _registry.register(this, handle.address, this);
+  }
 
   factory SkwasmMaskFilter.fromUiMaskFilter(ui.MaskFilter maskFilter) =>
     SkwasmMaskFilter._(maskFilterCreateBlur(
@@ -120,13 +132,16 @@ class SkwasmMaskFilter {
       maskFilter.webOnlySigma
     ));
 
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(maskFilterDispose));
+
   final MaskFilterHandle handle;
   bool _isDisposed = false;
 
   void dispose() {
-    if (!_isDisposed) {
-      maskFilterDispose(handle);
-      _isDisposed = true;
-    }
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    maskFilterDispose(handle);
+    _isDisposed = true;
   }
 }

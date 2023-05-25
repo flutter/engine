@@ -9,12 +9,24 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmPaint implements ui.Paint {
-  factory SkwasmPaint() {
-    return SkwasmPaint._fromHandle(paintCreate());
+  factory SkwasmPaint() => SkwasmPaint._fromHandle(paintCreate());
+
+  SkwasmPaint._fromHandle(this._handle) {
+    _registry.register(this, _handle.address, this);
   }
 
-  SkwasmPaint._fromHandle(this._handle);
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    paintDispose(handle);
+    _isDisposed = true;
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(paintDispose));
+
   PaintHandle _handle;
+  bool _isDisposed = false;
 
   PaintHandle get handle => _handle;
 

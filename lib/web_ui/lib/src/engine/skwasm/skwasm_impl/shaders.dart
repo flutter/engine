@@ -10,21 +10,38 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
+// A shared interface for shaders for which you can acquire a native handle
 abstract class SkwasmShader implements ui.Shader {
   ShaderHandle get handle;
+}
+
+// An implementation that handles the storage, disposal, and finalization of
+// a native shader handle.
+class SkwasmNativeShader implements SkwasmShader {
+  SkwasmNativeShader(this.handle) {
+    _registry.register(this, handle.address, this);
+  }
 
   @override
-  bool get debugDisposed => handle == nullptr;
+  final ShaderHandle handle;
+  bool _isDisposed = false;
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(shaderDispose));
+
+  @override
+  bool get debugDisposed => _isDisposed;
 
   @override
   void dispose() {
-    if (handle != nullptr) {
-      shaderDispose(handle);
-    }
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    shaderDispose(handle);
+    _isDisposed = true;
   }
 }
 
-class SkwasmGradient extends SkwasmShader implements ui.Gradient {
+class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
   factory SkwasmGradient.linear({
     required ui.Offset from,
     required ui.Offset to,
@@ -143,20 +160,11 @@ class SkwasmGradient extends SkwasmShader implements ui.Gradient {
     return SkwasmGradient._(handle);
   });
 
-  SkwasmGradient._(this.handle);
-
-  @override
-  ShaderHandle handle;
-
-  @override
-  void dispose() {
-    super.dispose();
-    handle = nullptr;
-  }
+  SkwasmGradient._(super.handle);
 }
 
-class SkwasmImageShader extends SkwasmShader implements ui.ImageShader {
-  SkwasmImageShader._(this.handle);
+class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
+  SkwasmImageShader._(super.handle);
 
   factory SkwasmImageShader.imageShader(
     SkwasmImage image,
@@ -185,15 +193,6 @@ class SkwasmImageShader extends SkwasmShader implements ui.ImageShader {
         nullptr,
       ));
     }
-  }
-
-  @override
-  ShaderHandle handle;
-
-  @override
-  void dispose() {
-    super.dispose();
-    handle = nullptr;
   }
 }
 
@@ -226,43 +225,53 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
     );
   }
 
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(runtimeEffectDispose));
+
   final RuntimeEffectHandle handle;
   final String name;
   final int floatUniformCount;
   final int childShaderCount;
   bool _isDisposed = false;
 
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    runtimeEffectDispose(handle);
+    _isDisposed = true;
+  }
+
   @override
   ui.FragmentShader fragmentShader() => SkwasmFragmentShader(this);
 
   int get uniformSize => runtimeEffectGetUniformSize(handle);
-
-  void dispose() {
-    if (!_isDisposed) {
-      runtimeEffectDispose(handle);
-      _isDisposed = true;
-    }
-  }
 }
 
-class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
-  SkwasmFragmentShader(
-    SkwasmFragmentProgram program
-  ) : _program = program,
-       _uniformData = skDataCreate(program.uniformSize),
-       _floatUniformCount = program.floatUniformCount,
-       _childShaders = List<SkwasmShader?>.filled(program.childShaderCount, null);
+// This class does not inherit from SkwasmNativeShader, as its handle might
+// change over time if the uniforms or image shaders are changed. Instead this
+// wraps a SkwasmNativeShader that it creates and destroys on demand. It does
+// implement SkwasmShader though, in order to provide the handle for the
+// underlying shader object.
+class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
+  SkwasmFragmentShader(SkwasmFragmentProgram program) :
+    _program = program,
+    _uniformData = skDataCreate(program.uniformSize),
+    _floatUniformCount = program.floatUniformCount,
+    _childShaders = List<SkwasmShader?>.filled(program.childShaderCount, null) {
+    _registry.register(this, handle.address, this);
+  }
 
   @override
   ShaderHandle get handle {
-    if (_handle == nullptr) {
-      _handle = withStackScope((StackScope s) {
+    if (_nativeShader == null) {
+      final ShaderHandle newHandle = withStackScope((StackScope s) {
         Pointer<ShaderHandle> childShaders = nullptr;
         if (_childShaders.isNotEmpty) {
           childShaders = s.allocPointerArray(_childShaders.length)
             .cast<ShaderHandle>();
           for (int i = 0; i < _childShaders.length; i++) {
-            childShaders[i] = _childShaders[i]!.handle;
+            final SkwasmShader? child = _childShaders[i];
+            childShaders[i] = child != null ? child.handle : nullptr;
           }
         }
         return shaderCreateRuntimeEffectShader(
@@ -272,23 +281,39 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
           _childShaders.length,
         );
       });
+      _nativeShader = SkwasmNativeShader(newHandle);
     }
-    return _handle;
+    return _nativeShader!.handle;
   }
 
-  ShaderHandle _handle = nullptr;
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(skDataDispose));
+
+  SkwasmShader? _nativeShader;
   final SkwasmFragmentProgram _program;
-  SkDataHandle _uniformData;
+  final SkDataHandle _uniformData;
+  bool _isDisposed = false;
   final int _floatUniformCount;
   final List<SkwasmShader?> _childShaders;
 
   @override
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    skDataDispose(_uniformData);
+    _isDisposed = true;
+  }
+
+  @override
+  bool get debugDisposed => _isDisposed;
+
+  @override
   void setFloat(int index, double value) {
-    if (_handle != nullptr) {
+    if (_nativeShader != null) {
       // Invalidate the previous shader so that it is recreated with the new
       // uniform data.
-      shaderDispose(_handle);
-      _handle = nullptr;
+      _nativeShader!.dispose();
+      _nativeShader = null;
     }
     final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
     dataPointer[index] = value;
@@ -296,6 +321,13 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
 
   @override
   void setImageSampler(int index, ui.Image image) {
+    if (_nativeShader != null) {
+      // Invalidate the previous shader so that it is recreated with the new
+      // child shaders.
+      _nativeShader!.dispose();
+      _nativeShader = null;
+    }
+
     final SkwasmImageShader shader = SkwasmImageShader.imageShader(
       image as SkwasmImage,
       ui.TileMode.clamp,
@@ -310,14 +342,5 @@ class SkwasmFragmentShader extends SkwasmShader implements ui.FragmentShader {
     final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
     dataPointer[_floatUniformCount + index * 2] = image.width.toDouble();
     dataPointer[_floatUniformCount + index * 2 + 1] = image.height.toDouble();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    if (_uniformData != nullptr) {
-      skDataDispose(_uniformData);
-      _uniformData = nullptr;
-    }
   }
 }

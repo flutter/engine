@@ -5,6 +5,7 @@
 import 'dart:collection';
 import 'dart:ffi';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -21,11 +22,24 @@ class SkwasmPathMetrics extends IterableBase<ui.PathMetric>
 
 class SkwasmPathMetricIterator implements Iterator<ui.PathMetric> {
   SkwasmPathMetricIterator(SkwasmPath path, bool forceClosed)
-      : _handle = contourMeasureIterCreate(path.handle, forceClosed, 1.0);
+      : _handle = contourMeasureIterCreate(path.handle, forceClosed, 1.0) {
+    _registry.register(this, _handle.address, this);
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(contourMeasureIterDispose));
 
   final ContourMeasureIterHandle _handle;
+  bool _isDisposed = false;
   SkwasmPathMetric? _current;
   int _nextIndex = 0;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    contourMeasureIterDispose(_handle);
+    _isDisposed = true;
+  }
 
   @override
   ui.PathMetric get current {
@@ -53,9 +67,22 @@ class SkwasmPathMetricIterator implements Iterator<ui.PathMetric> {
 }
 
 class SkwasmPathMetric implements ui.PathMetric {
-  SkwasmPathMetric(this._handle, this.contourIndex);
+  SkwasmPathMetric(this._handle, this.contourIndex) {
+    _registry.register(this, _handle.address, this);
+  }
+
+  static final DomFinalizationRegistry _registry =
+    DomFinalizationRegistry(createSkwasmFinalizer(contourMeasureDispose));
 
   final ContourMeasureHandle _handle;
+  bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    contourMeasureDispose(_handle);
+    _isDisposed = true;
+  }
 
   @override
   final int contourIndex;
