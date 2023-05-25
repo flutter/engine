@@ -37,7 +37,6 @@
                                                        commandQueue:commandQueue
                                                               layer:self.layer
                                                            delegate:self];
-    [_threadSynchronizer registerView:viewId];
   }
   return self;
 }
@@ -114,8 +113,6 @@
   return YES;
 }
 
-- (void)shutdown {
-}
 #pragma mark - NSAccessibility overrides
 
 - (BOOL)isAccessibilityElement {
