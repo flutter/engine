@@ -22,6 +22,37 @@ struct GeometryPassResult {
   BufferView output_geometry;
 };
 
+class DevicePrivateBuffer final
+    : public std::enable_shared_from_this<DevicePrivateBuffer>,
+      public Buffer {
+ public:
+  static std::shared_ptr<DevicePrivateBuffer> Create();
+
+  // |Buffer|
+  virtual ~DevicePrivateBuffer();
+
+  void SetLabel(std::string label);
+
+  [[nodiscard]] BufferView AsBufferView();
+
+  [[nodiscard]] BufferView Reserve(size_t length);
+
+ private:
+  mutable std::shared_ptr<DeviceBuffer> device_buffer_;
+  size_t size_ = 0u;
+  mutable size_t device_buffer_generation_ = 0u;
+  size_t generation_ = 1u;
+  std::string label_;
+
+  // |Buffer|
+  std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
+      Allocator& allocator) const override;
+
+  DevicePrivateBuffer();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DevicePrivateBuffer);
+};
+
 class GeometryPass {
  public:
   GeometryPass();
@@ -41,9 +72,9 @@ class GeometryPass {
     uint32_t count;
     uint32_t size;
     std::shared_ptr<HostBuffer> input_buffer;
-    std::shared_ptr<HostBuffer> output_buffer;
     std::shared_ptr<HostBuffer> indirect_buffer;
     std::shared_ptr<HostBuffer> index_buffer;
+    std::shared_ptr<DevicePrivateBuffer> output_buffer;
   };
 
   AccumulatedConvexCommand& GetOrCreateConvex(size_t count);

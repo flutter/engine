@@ -14,6 +14,48 @@
 
 namespace impeller {
 
+std::shared_ptr<DevicePrivateBuffer> DevicePrivateBuffer::Create() {
+  return std::shared_ptr<DevicePrivateBuffer>(new DevicePrivateBuffer());
+}
+
+DevicePrivateBuffer::DevicePrivateBuffer() = default;
+
+DevicePrivateBuffer::~DevicePrivateBuffer() = default;
+
+void DevicePrivateBuffer::SetLabel(std::string label) {
+  label_ = std::move(label);
+}
+
+BufferView DevicePrivateBuffer::AsBufferView() {
+  return BufferView{shared_from_this(), nullptr, Range{0, size_}};
+}
+
+BufferView DevicePrivateBuffer::Reserve(size_t length) {
+  auto old_length = size_;
+  size_ += length;
+  generation_++;
+  return BufferView{shared_from_this(), nullptr, Range{old_length, length}};
+}
+
+std::shared_ptr<const DeviceBuffer> DevicePrivateBuffer::GetDeviceBuffer(
+    Allocator& allocator) const {
+  if (generation_ == device_buffer_generation_) {
+    return device_buffer_;
+  }
+  DeviceBufferDescriptor desc;
+  desc.storage_mode = StorageMode::kDevicePrivate;
+  desc.size = size_;
+
+  auto new_buffer = allocator.CreateBuffer(desc);
+  if (!new_buffer) {
+    return nullptr;
+  }
+  new_buffer->SetLabel(label_);
+  device_buffer_generation_ = generation_;
+  device_buffer_ = std::move(new_buffer);
+  return device_buffer_;
+}
+
 GeometryPass::GeometryPass() {}
 
 constexpr size_t kMaxConvexSegments = 0xFFFFFFFF;  // max uint32_t.
@@ -27,9 +69,9 @@ GeometryPass::AccumulatedConvexCommand& GeometryPass::GetOrCreateConvex(
         .count = 0u,
         .size = 0u,
         .input_buffer = HostBuffer::Create(),
-        .output_buffer = HostBuffer::Create(),
         .indirect_buffer = HostBuffer::Create(),
         .index_buffer = HostBuffer::Create(),
+        .output_buffer = DevicePrivateBuffer::Create(),
     });
   }
   return convex_commands_.back();
@@ -45,8 +87,9 @@ GeometryPassResult GeometryPass::AddPolyline(Path::Polyline polyline,
   // Emplace with no padding as we're going to treat this as a single buffer.
   std::ignore = convex_command.input_buffer->Emplace(
       polyline.points.data(), polyline.points.size() * sizeof(Point), 0);
-  auto geometry_buffer = convex_command.output_buffer->Emplace(
-      nullptr, result_size * sizeof(Point), 0);
+
+  auto geometry_buffer =
+      convex_command.output_buffer->Reserve(result_size * sizeof(Point));
 
   // TODO: find a smarter way to do this?
   std::vector<CS::IndexDataItem> index_data(polyline.points.size());
