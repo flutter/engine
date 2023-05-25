@@ -90,7 +90,7 @@
   [plugin handleMethodCall:call
                     result:^(id){
                     }];
-    
+
   // Verify editing state was set.
   NSDictionary* editingState = [plugin editingState];
   EXPECT_STREQ([editingState[@"text"] UTF8String], "Text");
