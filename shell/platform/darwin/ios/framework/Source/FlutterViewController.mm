@@ -1676,7 +1676,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            @"_keyboardAnimationVSyncClient must be nil when setup");
 
   // Need to call the updateViewportMetrics signal after flutter UI thread's process callback,
-  // So here need to wait vsync on UI thread instead of posting the signal
+  // so here need to wait vsync on UI thread instead of posting the signal
   // on platform thread directly.
   auto uiCallback = [keyboardAnimationCallback,
                      &shell](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
