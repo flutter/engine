@@ -714,8 +714,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   enum class OpResult {
     kNoEffect,
-    kClearsPixels,
-    kDrawsPixels,
+    kPreservesTransparency,
+    kAffectsAll,
   };
 
   bool paint_nops_on_transparency();
@@ -725,9 +725,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void UpdateLayerResult(OpResult result) {
     switch (result) {
       case OpResult::kNoEffect:
-      case OpResult::kClearsPixels:
+      case OpResult::kPreservesTransparency:
         break;
-      case OpResult::kDrawsPixels:
+      case OpResult::kAffectsAll:
         current_layer_->add_visible_op();
         break;
     }
@@ -735,7 +735,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // kAnyColor is a non-opaque and non-transparent color that will not
   // trigger any short-circuit tests about the results of a blend.
-  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlpha(0x7f);
+  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlpha(0x80);
   static_assert(!kAnyColor.isOpaque());
   static_assert(!kAnyColor.isTransparent());
   static DlColor GetEffectiveColor(const DlPaint& paint,
