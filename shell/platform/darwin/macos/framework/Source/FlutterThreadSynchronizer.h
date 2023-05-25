@@ -50,7 +50,7 @@
 /**
  * Requests the synchronizer to no longer track a view.
  *
- * It is typically done when the view controller is created.
+ * It is typically done when the view controller is destroyed.
  */
 - (void)deregisterView:(int64_t)viewId;
 

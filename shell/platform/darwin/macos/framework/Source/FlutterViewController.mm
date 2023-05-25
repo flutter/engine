@@ -375,7 +375,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
   // FlutterViewController does not actually uses the synchronizer, but only
   // passes it to FlutterView.
-  __weak FlutterThreadSynchronizer* _weakViewThreadSynchronizer;
+  FlutterThreadSynchronizer* _threadSynchronizer;
 }
 
 @synthesize viewId = _viewId;
@@ -551,11 +551,14 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
-  _weakViewThreadSynchronizer = threadSynchronizer;
+  _threadSynchronizer = threadSynchronizer;
+  [_threadSynchronizer registerView:_viewId];
 }
 
 - (void)detachFromEngine {
   NSAssert(_engine != nil, @"Not attached to any engine.");
+  [_threadSynchronizer deregisterView:_viewId];
+  _threadSynchronizer = nil;
   _engine = nil;
 }
 
@@ -866,7 +869,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
                                 reshapeListener:self
-                             threadSynchronizer:_weakViewThreadSynchronizer
+                             threadSynchronizer:_threadSynchronizer
                                          viewId:_viewId];
 }
 

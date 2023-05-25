@@ -37,7 +37,6 @@
                                                        commandQueue:commandQueue
                                                               layer:self.layer
                                                            delegate:self];
-    [_threadSynchronizer registerView:viewId];
   }
   return self;
 }
