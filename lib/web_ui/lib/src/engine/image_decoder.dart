@@ -73,6 +73,9 @@ abstract class BrowserImageDecoder implements ui.Codec {
   ///
   /// This decoder is closed and the field is nulled out after some time of
   /// inactivity.
+  ///
+  /// TODO: Evaluate whether this complexity is necessary.
+  /// See https://github.com/flutter/flutter/issues/127548
   ImageDecoder? _cachedWebDecoder;
 
   /// The underlying image decoder used to decode images.
@@ -127,7 +130,7 @@ abstract class BrowserImageDecoder implements ui.Codec {
 
       // We coerce the DOM's `repetitionCount` into an int by explicitly
       // handling `infinity`. Note: This will still throw if the DOM returns a
-      // `NaN.
+      // `NaN`.
       final double rawRepetitionCount = webDecoder.tracks.selectedTrack!.repetitionCount;
       repetitionCount = rawRepetitionCount == double.infinity ? -1 :
           rawRepetitionCount.toInt();
@@ -294,7 +297,7 @@ class ImageFileFormat {
 /// signature of [detectContentType].
 typedef DebugContentTypeDetector = String? Function(Uint8List);
 
-/// If not null, replaced the functionality of [detectContentType] with its own.
+/// If not null, replaces the functionality of [detectContentType] with its own.
 ///
 /// This is useful in tests, for example, to test unsupported content types.
 DebugContentTypeDetector? debugContentTypeDetector;

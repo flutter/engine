@@ -48,7 +48,7 @@ uint32_t Surface::renderPicture(SkPicture* picture) {
                                 reinterpret_cast<void*>(fRenderPicture),
                                 nullptr, this, picture);
 
-  // After drawing to the surface, the browser implicitly flushed the drawing
+  // After drawing to the surface, the browser implicitly flushes the drawing
   // commands at the end of the event loop. As a result, in order to make
   // sure we call back after the rendering has actually occurred, we issue
   // the callback in a subsequent event, after the flushing has happened.
