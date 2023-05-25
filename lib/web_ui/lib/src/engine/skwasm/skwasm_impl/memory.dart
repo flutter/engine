@@ -5,9 +5,27 @@
 import 'dart:ffi';
 import 'dart:js_interop';
 
+import 'package:ui/src/engine.dart';
+
+abstract class SkwasmObjectWrapper<T extends NativeType> {
+  Pointer<T> get handle;
+}
+
 typedef DisposeFunction<T extends NativeType> = void Function(Pointer<T>);
-JSFunction createSkwasmFinalizer<T extends NativeType>(DisposeFunction<T> dispose) {
-  return ((JSNumber address) => 
-    dispose(Pointer<Void>.fromAddress(address.toDart.toInt()).cast<T>())
-  ).toJS;
+
+class SkwasmFinalizationRegistry<T extends NativeType> {
+  SkwasmFinalizationRegistry(DisposeFunction<T> dispose)
+    : registry = DomFinalizationRegistry(((JSNumber address) =>
+      dispose(Pointer<T>.fromAddress(address.toDart.toInt()))
+    ).toJS);
+
+  final DomFinalizationRegistry registry;
+
+  void register(SkwasmObjectWrapper<T> wrapper) {
+    registry.register(wrapper, wrapper.handle.address, wrapper);
+  }
+
+  void unregister(SkwasmObjectWrapper<T> wrapper) {
+    registry.unregister(wrapper);
+  }
 }

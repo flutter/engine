@@ -17,17 +17,17 @@ abstract class SkwasmShader implements ui.Shader {
 
 // An implementation that handles the storage, disposal, and finalization of
 // a native shader handle.
-class SkwasmNativeShader implements SkwasmShader {
+class SkwasmNativeShader implements SkwasmObjectWrapper<RawShader>, SkwasmShader {
   SkwasmNativeShader(this.handle) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
 
   @override
   final ShaderHandle handle;
   bool _isDisposed = false;
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(shaderDispose));
+  static final SkwasmFinalizationRegistry<RawShader> _registry =
+    SkwasmFinalizationRegistry<RawShader>(shaderDispose);
 
   @override
   bool get debugDisposed => _isDisposed;
@@ -196,7 +196,7 @@ class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
   }
 }
 
-class SkwasmFragmentProgram implements ui.FragmentProgram {
+class SkwasmFragmentProgram implements SkwasmObjectWrapper<RawRuntimeEffect>, ui.FragmentProgram {
   SkwasmFragmentProgram._(
     this.name,
     this.handle,
@@ -225,9 +225,10 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
     );
   }
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(runtimeEffectDispose));
+  static final SkwasmFinalizationRegistry<RawRuntimeEffect> _registry =
+    SkwasmFinalizationRegistry<RawRuntimeEffect>(runtimeEffectDispose);
 
+  @override
   final RuntimeEffectHandle handle;
   final String name;
   final int floatUniformCount;
@@ -247,6 +248,26 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
   int get uniformSize => runtimeEffectGetUniformSize(handle);
 }
 
+class SkwasmShaderData implements SkwasmObjectWrapper<RawSkData> {
+  SkwasmShaderData(int size) : handle = skDataCreate(size) {
+    _registry.register(this);
+  }
+
+  static final SkwasmFinalizationRegistry<RawSkData> _registry =
+    SkwasmFinalizationRegistry<RawSkData>(skDataDispose);
+
+  @override
+  final SkDataHandle handle;
+  bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _registry.unregister(this);
+    skDataDispose(handle);
+    _isDisposed = true;
+  }
+}
+
 // This class does not inherit from SkwasmNativeShader, as its handle might
 // change over time if the uniforms or image shaders are changed. Instead this
 // wraps a SkwasmNativeShader that it creates and destroys on demand. It does
@@ -255,11 +276,9 @@ class SkwasmFragmentProgram implements ui.FragmentProgram {
 class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
   SkwasmFragmentShader(SkwasmFragmentProgram program) :
     _program = program,
-    _uniformData = skDataCreate(program.uniformSize),
+    _uniformData = SkwasmShaderData(program.uniformSize),
     _floatUniformCount = program.floatUniformCount,
-    _childShaders = List<SkwasmShader?>.filled(program.childShaderCount, null) {
-    _registry.register(this, handle.address, this);
-  }
+    _childShaders = List<SkwasmShader?>.filled(program.childShaderCount, null);
 
   @override
   ShaderHandle get handle {
@@ -276,7 +295,7 @@ class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
         }
         return shaderCreateRuntimeEffectShader(
           _program.handle,
-          _uniformData,
+          _uniformData.handle,
           childShaders,
           _childShaders.length,
         );
@@ -286,12 +305,9 @@ class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
     return _nativeShader!.handle;
   }
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(skDataDispose));
-
   SkwasmShader? _nativeShader;
   final SkwasmFragmentProgram _program;
-  final SkDataHandle _uniformData;
+  final SkwasmShaderData _uniformData;
   bool _isDisposed = false;
   final int _floatUniformCount;
   final List<SkwasmShader?> _childShaders;
@@ -299,8 +315,8 @@ class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
   @override
   void dispose() {
     assert(!_isDisposed);
-    _registry.unregister(this);
-    skDataDispose(_uniformData);
+    _nativeShader?.dispose();
+    _uniformData.dispose();
     _isDisposed = true;
   }
 
@@ -315,7 +331,7 @@ class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
       _nativeShader!.dispose();
       _nativeShader = null;
     }
-    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
+    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData.handle).cast<Float>();
     dataPointer[index] = value;
   }
 
@@ -339,7 +355,7 @@ class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
     _childShaders[index] = shader;
     oldShader?.dispose();
 
-    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData).cast<Float>();
+    final Pointer<Float> dataPointer = skDataGetPointer(_uniformData.handle).cast<Float>();
     dataPointer[_floatUniformCount + index * 2] = image.width.toDouble();
     dataPointer[_floatUniformCount + index * 2 + 1] = image.height.toDouble();
   }

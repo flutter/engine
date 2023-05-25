@@ -9,11 +9,11 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmImageFilter implements SceneImageFilter {
+class SkwasmImageFilter implements SceneImageFilter, SkwasmObjectWrapper<RawImageFilter> {
   SkwasmImageFilter._(this.handle) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
-  
+
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
@@ -62,9 +62,10 @@ class SkwasmImageFilter implements SceneImageFilter {
     return SkwasmImageFilter._(imageFilterCompose(nativeOuter.handle, nativeInner.handle));
   }
 
-  static final DomFinalizationRegistry _registry = 
-    DomFinalizationRegistry(createSkwasmFinalizer(imageFilterDispose));
+  static final SkwasmFinalizationRegistry<RawImageFilter> _registry =
+    SkwasmFinalizationRegistry<RawImageFilter>(imageFilterDispose);
 
+  @override
   final ImageFilterHandle handle;
   bool _isDisposed = false;
 
@@ -83,9 +84,9 @@ class SkwasmImageFilter implements SceneImageFilter {
   });
 }
 
-class SkwasmColorFilter {
+class SkwasmColorFilter implements SkwasmObjectWrapper<RawColorFilter> {
   SkwasmColorFilter._(this.handle) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
 
   factory SkwasmColorFilter.fromEngineColorFilter(EngineColorFilter colorFilter) =>
@@ -107,9 +108,10 @@ class SkwasmColorFilter {
     SkwasmColorFilter inner,
   ) => SkwasmColorFilter._(colorFilterCompose(outer.handle, inner.handle));
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(colorFilterDispose));
+  static final SkwasmFinalizationRegistry<RawColorFilter> _registry =
+    SkwasmFinalizationRegistry<RawColorFilter>(colorFilterDispose);
 
+  @override
   final ColorFilterHandle handle;
   bool _isDisposed = false;
 
@@ -121,9 +123,9 @@ class SkwasmColorFilter {
   }
 }
 
-class SkwasmMaskFilter {
+class SkwasmMaskFilter implements SkwasmObjectWrapper<RawMaskFilter> {
   SkwasmMaskFilter._(this.handle) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
 
   factory SkwasmMaskFilter.fromUiMaskFilter(ui.MaskFilter maskFilter) =>
@@ -132,9 +134,10 @@ class SkwasmMaskFilter {
       maskFilter.webOnlySigma
     ));
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(maskFilterDispose));
+  static final SkwasmFinalizationRegistry<RawMaskFilter> _registry =
+    SkwasmFinalizationRegistry<RawMaskFilter>(maskFilterDispose);
 
+  @override
   final MaskFilterHandle handle;
   bool _isDisposed = false;
 

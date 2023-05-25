@@ -9,9 +9,9 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmImage implements ui.Image {
+class SkwasmImage implements SkwasmObjectWrapper<RawImage>, ui.Image {
   SkwasmImage(this.handle) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
 
   factory SkwasmImage.fromPixels(
@@ -37,9 +37,10 @@ class SkwasmImage implements ui.Image {
     return SkwasmImage(imageHandle);
   }
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(imageDispose));
+  static final SkwasmFinalizationRegistry<RawImage> _registry =
+    SkwasmFinalizationRegistry<RawImage>(imageDispose);
 
+  @override
   final ImageHandle handle;
   bool _isDisposed = false;
 

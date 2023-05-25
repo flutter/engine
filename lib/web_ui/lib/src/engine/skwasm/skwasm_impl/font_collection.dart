@@ -19,13 +19,13 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
-class SkwasmTypeface {
+class SkwasmTypeface implements SkwasmObjectWrapper<RawTypeface> {
   SkwasmTypeface(SkDataHandle data) : handle = typefaceCreate(data) {
-    _registry.register(this, handle.address, this);
+    _registry.register(this);
   }
 
-  static final DomFinalizationRegistry _registry =
-    DomFinalizationRegistry(createSkwasmFinalizer(typefaceDispose));
+  static final SkwasmFinalizationRegistry<RawTypeface> _registry =
+    SkwasmFinalizationRegistry<RawTypeface>(typefaceDispose);
 
   void dispose() {
     assert(!_isDisposed);
@@ -34,6 +34,7 @@ class SkwasmTypeface {
     _isDisposed = true;
   }
 
+  @override
   TypefaceHandle handle;
   bool _isDisposed = false;
 }
@@ -46,7 +47,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
   // Most of the time, when an object deals with native handles to skwasm objects,
   // we register it with a finalization registry so that it can clean up the handle
   // when the dart side of object gets GC'd. However, this object is basically a
-  // singleton (the renderer creates one and just hangs onto it forever) so it's 
+  // singleton (the renderer creates one and just hangs onto it forever) so it's
   // not really worth it to do the finalization dance here.
   FontCollectionHandle handle = fontCollectionCreate();
   SkwasmNativeTextStyle defaultTextStyle = SkwasmNativeTextStyle.defaultTextStyle();
