@@ -209,7 +209,11 @@ public class FlutterJNI {
       PackageInfo packageInfo =
           context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       version = packageInfo.versionName;
-      versionCode = packageInfo.getLongVersionCode();
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        versionCode = packageInfo.getLongVersionCode();
+      } else {
+        versionCode = packageInfo.versionCode;
+      }
     } catch (PackageManager.NameNotFoundException e) {
       Log.e(TAG, "Failed to read app version.  Shorebird updater can't run.", e);
     }
