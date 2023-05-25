@@ -74,8 +74,8 @@ abstract class BrowserImageDecoder implements ui.Codec {
   /// This decoder is closed and the field is nulled out after some time of
   /// inactivity.
   ///
-  /// TODO: Evaluate whether this complexity is necessary.
-  /// See https://github.com/flutter/flutter/issues/127548
+  // TODO(jacksongardner): Evaluate whether this complexity is necessary.
+  // See https://github.com/flutter/flutter/issues/127548
   ImageDecoder? _cachedWebDecoder;
 
   /// The underlying image decoder used to decode images.
