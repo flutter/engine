@@ -292,7 +292,7 @@ The guidelines are as follows:
 * Flags receiving paths to resources from multiple sub-builds need to use paths
 relative to the checkout (`src/`) directory. If there are global generators in a build
 configuration, the engine\_v2 recipes will download the full sub-build archives
-to the checkout/out/&lt;sub-build name> directory.
+to the src/out/&lt;sub-build name> directory.
 * Flags receiving paths to output directories must use paths relative to the out
 folder. This is to be able to reference the artifacts in the global archives
 section.
