@@ -5,10 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_COMMON_APP_LIFECYCLE_STATE_H_
 #define FLUTTER_SHELL_PLATFORM_COMMON_APP_LIFECYCLE_STATE_H_
 
-#include <cassert>
-#include <map>
-#include <string>
-
 namespace flutter {
 
 /**
