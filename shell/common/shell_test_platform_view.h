@@ -15,10 +15,10 @@ namespace testing {
 class ShellTestPlatformView : public PlatformView {
  public:
   enum class BackendType {
+    kDefaultBackend = 0,  // Default value
     kGLBackend,
     kVulkanBackend,
     kMetalBackend,
-    kDefaultBackend,
   };
 
   static std::unique_ptr<ShellTestPlatformView> Create(

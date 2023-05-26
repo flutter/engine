@@ -2026,6 +2026,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/filters.da
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/font_collection.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/image.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/layers.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/memory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paint.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paragraph.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path.dart + ../../../flutter/LICENSE
@@ -2045,6 +2046,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_sh
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_skdata.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_skstring.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_surface.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/skwasm_module.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/text/raw_line_metrics.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/text/raw_paragraph.dart + ../../../flutter/LICENSE
@@ -2124,6 +2126,7 @@ ORIGIN: ../../../flutter/lib/web_ui/skwasm/text/paragraph_builder.cpp + ../../..
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/text/paragraph_style.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/text/strut_style.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/text/text_style.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/vertices.cpp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/skwasm/wrappers.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/dart_isolate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/dart_isolate.h + ../../../flutter/LICENSE
@@ -4709,6 +4712,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/filters.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/font_collection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/layers.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/memory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paragraph.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path.dart
@@ -4728,6 +4732,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_shad
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_skdata.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_skstring.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/skwasm_module.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/text/raw_line_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/text/raw_paragraph.dart
@@ -4807,6 +4812,7 @@ FILE: ../../../flutter/lib/web_ui/skwasm/text/paragraph_builder.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/text/paragraph_style.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/text/strut_style.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/text/text_style.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/vertices.cpp
 FILE: ../../../flutter/lib/web_ui/skwasm/wrappers.h
 FILE: ../../../flutter/runtime/dart_isolate.cc
 FILE: ../../../flutter/runtime/dart_isolate.h

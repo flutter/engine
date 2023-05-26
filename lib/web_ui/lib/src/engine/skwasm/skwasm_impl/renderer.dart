@@ -11,7 +11,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-// TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
   late DomCanvasElement sceneElement;
   late SkwasmSurface surface;
@@ -24,7 +23,6 @@ class SkwasmRenderer implements Renderer {
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
     return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
   }
-
 
   @override
   ui.Path copyPath(ui.Path src) {
