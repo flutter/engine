@@ -284,7 +284,7 @@ Generators are scripts used to generate artifacts combining the output of two
 or more sub-builds. The most common use case is to generate universal binaries for
 Mac/iOS artifacts.
 
-Generators can be written in any language but they require to follow some
+Generators can be written in any language but they are required to follow some
 guidelines to make them compatible with the engine build system.
 
 The guidelines are as follows:
