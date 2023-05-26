@@ -21,12 +21,13 @@ uniform FragInfo {
   float16_t src_factor;
   float16_t inner_blur_factor;
   float16_t outer_blur_factor;
+  float16_t alpha;
 
   f16vec2 sigma_uv;
 }
 frag_info;
 
-in f16vec2 v_texture_coords;
+in highp vec2 v_texture_coords;
 
 out f16vec4 frag_color;
 
@@ -40,11 +41,11 @@ float16_t BoxBlurMask(f16vec2 uv) {
 
 void main() {
   f16vec4 image_color = texture(texture_sampler, v_texture_coords);
-  float16_t blur_factor = BoxBlurMask(v_texture_coords);
+  float16_t blur_factor = BoxBlurMask(f16vec2(v_texture_coords));
 
   float16_t within_bounds =
-      float16_t(v_texture_coords.x >= 0.0hf && v_texture_coords.y >= 0.0hf &&
-                v_texture_coords.x < 1.0hf && v_texture_coords.y < 1.0hf);
+      float16_t(v_texture_coords.x >= 0.0 && v_texture_coords.y >= 0.0 &&
+                v_texture_coords.x < 1.0 && v_texture_coords.y < 1.0);
   float16_t inner_factor =
       (frag_info.inner_blur_factor * blur_factor + frag_info.src_factor) *
       within_bounds;

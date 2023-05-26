@@ -5,17 +5,10 @@
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../util.dart';
-import 'canvaskit_api.dart';
-import 'font_fallbacks.dart';
-import 'native_memory.dart';
-import 'painting.dart';
-import 'renderer.dart';
-import 'skia_object_cache.dart';
-import 'text_fragmenter.dart';
-import 'util.dart';
+final bool _ckRequiresClientICU = canvasKit.ParagraphBuilder.RequiresClientICU();
 
 final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
 String? _effectiveFontFamily(String? fontFamily) {
@@ -550,16 +543,6 @@ SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
 }
 
 /// The CanvasKit implementation of [ui.Paragraph].
-///
-/// This class does not use [ManagedSkiaObject] because it requires that its
-/// memory is reclaimed synchronously. This protects our memory usage from
-/// blowing up if within a single frame the framework needs to layout a lot of
-/// paragraphs. One common use-case is `ListView.builder`, which needs to layout
-/// more of its content than it actually renders to compute the scroll position.
-/// More generally, this protects from the pattern of laying out a lot of text
-/// while painting a small subset of it. To achieve this a
-/// [SynchronousSkiaObjectCache] is used that limits the number of live laid out
-/// paragraphs at any point in time within or outside the frame.
 class CkParagraph implements ui.Paragraph {
   CkParagraph(SkParagraph skParagraph, this._paragraphStyle) {
     _ref = UniqueRef<SkParagraph>(this, skParagraph, 'Paragraph');
@@ -751,9 +734,16 @@ class CkParagraph implements ui.Paragraph {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
   }
 }
@@ -875,7 +865,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     if (style.fontFamilyFallback != null) {
       fontFamilies.addAll(style.fontFamilyFallback!);
     }
-    FontFallbackData.instance.ensureFontsSupportText(text, fontFamilies);
+    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(text, fontFamilies);
     _paragraphBuilder.addText(text);
   }
 
@@ -887,7 +877,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Builds the CkParagraph with the builder and deletes the builder.
   SkParagraph _buildSkParagraph() {
-    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+    if (_ckRequiresClientICU) {
       injectClientICU(_paragraphBuilder);
     }
     final SkParagraph result = _paragraphBuilder.build();
@@ -905,12 +895,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   void pop() {
     if (_styleStack.length <= 1) {
       // The top-level text style is paragraph-level. We don't pop it off.
-      if (assertionsEnabled) {
+      assert(() {
         printWarning(
           'Cannot pop text style in ParagraphBuilder. '
           'Already popped all text styles from the style stack.',
         );
-      }
+        return true;
+      }());
       return;
     }
     _styleStack.removeLast();
@@ -984,6 +975,8 @@ List<String> _getEffectiveFontFamilies(String? fontFamily,
       !fontFamilyFallback.every((String font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);
   }
-  fontFamilies.addAll(FontFallbackData.instance.globalFontFallbacks);
+  fontFamilies.addAll(
+    renderer.fontCollection.fontFallbackManager!.globalFontFallbacks
+  );
   return fontFamilies;
 }

@@ -11,6 +11,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
@@ -164,11 +165,17 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
-      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
+      alpha_glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
+      color_glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
       scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
+
+#ifdef IMPELLER_DEBUG
+  checkerboard_pipelines_[{}] =
+      CreateDefaultPipeline<CheckerboardPipeline>(*context_);
+#endif  // IMPELLER_DEBUG
 
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
@@ -281,12 +288,26 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
-  glyph_atlas_sdf_pipelines_[{}] =
-      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
+  glyph_atlas_color_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasColorPipeline>(*context_);
   geometry_color_pipelines_[{}] =
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
+  porter_duff_blend_pipelines_[{}] =
+      CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
+
+  if (context_->GetCapabilities()->SupportsCompute()) {
+    auto pipeline_desc =
+        PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    point_field_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+
+    auto uv_pipeline_desc =
+        UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    uv_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
+  }
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =
@@ -354,11 +375,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands()) {
-    return nullptr;
-  }
-
-  if (!sub_command_buffer->SubmitCommands()) {
+  if (!sub_command_buffer->SubmitCommandsAsync(std::move(sub_renderpass))) {
     return nullptr;
   }
 
@@ -373,9 +390,10 @@ std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
 }
 
-std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
-    const {
-  return glyph_atlas_context_;
+std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext(
+    GlyphAtlas::Type type) const {
+  return type == GlyphAtlas::Type::kAlphaBitmap ? alpha_glyph_atlas_context_
+                                                : color_glyph_atlas_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:isolate';
-import 'dart:ffi';
+import 'dart:ffi' hide Size;
 
 void main() {}
 
@@ -248,9 +248,12 @@ void createPath() {
 external void _validatePath(Path path);
 
 @pragma('vm:entry-point')
-void frameCallback(_Image, int) {
-  print('called back');
+void frameCallback(Object? image, int durationMilliseconds, String decodeError) {
+  validateFrameCallback(image, durationMilliseconds, decodeError);
 }
+
+@pragma('vm:external-name', 'ValidateFrameCallback')
+external void validateFrameCallback(Object? image, int durationMilliseconds, String decodeError);
 
 @pragma('vm:entry-point')
 void platformMessagePortResponseTest() async {
@@ -441,7 +444,7 @@ void hooksTests() async {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -462,6 +465,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -537,7 +541,7 @@ void hooksTests() async {
   await test('View padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -558,6 +562,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -567,7 +572,7 @@ void hooksTests() async {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -588,6 +593,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
@@ -599,7 +605,7 @@ void hooksTests() async {
    await test('Window physical touch slop', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -620,6 +626,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.gestureSettings,
@@ -627,7 +634,7 @@ void hooksTests() async {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -648,6 +655,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.gestureSettings,
@@ -655,7 +663,7 @@ void hooksTests() async {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -676,6 +684,7 @@ void hooksTests() async {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.gestureSettings,
@@ -878,6 +887,28 @@ void hooksTests() async {
     expectEquals(frameNumber, 2);
   });
 
+  await test('_updateDisplays preserves callback zone', () {
+    late Zone innerZone;
+    late Zone runZone;
+    late Display display;
+
+    runZoned(() {
+      innerZone = Zone.current;
+      window.onMetricsChanged = () {
+        runZone = Zone.current;
+        display = PlatformDispatcher.instance.displays.first;
+      };
+    });
+
+    _callHook('_updateDisplays', 5, <int>[0], <double>[800], <double>[600], <double>[1.5], <double>[65]);
+    expectNotEquals(runZone, null);
+    expectIdentical(runZone, innerZone);
+    expectEquals(display.id, 0);
+    expectEquals(display.size, const Size(800, 600));
+    expectEquals(display.devicePixelRatio, 1.5);
+    expectEquals(display.refreshRate, 65);
+  });
+
   await test('_futureize handles callbacker sync error', () async {
     String? callbacker(void Function(Object? arg) cb) {
       return 'failure';
@@ -1040,4 +1071,5 @@ external void _callHook(
   Object? arg18,
   Object? arg19,
   Object? arg20,
+  Object? arg21,
 ]);

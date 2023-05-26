@@ -13,6 +13,8 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
@@ -21,8 +23,6 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/sampler.h"
-#include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_structs.hpp"
 
@@ -429,7 +429,7 @@ static bool EncodeCommand(const Context& context,
                           const Command& command,
                           CommandEncoderVK& encoder,
                           const ISize& target_size) {
-  if (command.index_count == 0u || command.instance_count == 0u) {
+  if (command.vertex_count == 0u || command.instance_count == 0u) {
     return true;
   }
 
@@ -466,24 +466,22 @@ static bool EncodeCommand(const Context& context,
 
   // Configure vertex and index and buffers for binding.
   auto vertex_buffer_view = command.GetVertexBuffer();
-  auto index_buffer_view = command.index_buffer;
 
-  if (!vertex_buffer_view || !index_buffer_view) {
+  if (!vertex_buffer_view) {
     return false;
   }
 
   auto& allocator = *context.GetResourceAllocator();
 
   auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer(allocator);
-  auto index_buffer = index_buffer_view.buffer->GetDeviceBuffer(allocator);
 
-  if (!vertex_buffer || !index_buffer) {
-    VALIDATION_LOG << "Failed to acquire device buffers"
-                   << " for vertex and index buffer views";
+  if (!vertex_buffer) {
+    VALIDATION_LOG << "Failed to acquire device buffer"
+                   << " for vertex buffer view";
     return false;
   }
 
-  if (!encoder.Track(vertex_buffer) || !encoder.Track(index_buffer)) {
+  if (!encoder.Track(vertex_buffer)) {
     return false;
   }
 
@@ -493,19 +491,43 @@ static bool EncodeCommand(const Context& context,
   vk::DeviceSize vertex_buffer_offsets[] = {vertex_buffer_view.range.offset};
   cmd_buffer.bindVertexBuffers(0u, 1u, vertex_buffers, vertex_buffer_offsets);
 
-  // Bind the index buffer.
-  auto index_buffer_handle = DeviceBufferVK::Cast(*index_buffer).GetBuffer();
-  cmd_buffer.bindIndexBuffer(index_buffer_handle,
-                             index_buffer_view.range.offset,
-                             ToVKIndexType(command.index_type));
+  if (command.index_type != IndexType::kNone) {
+    // Bind the index buffer.
+    auto index_buffer_view = command.index_buffer;
+    if (!index_buffer_view) {
+      return false;
+    }
 
-  // Engage!
-  cmd_buffer.drawIndexed(command.index_count,     // index count
-                         command.instance_count,  // instance count
-                         0u,                      // first index
-                         command.base_vertex,     // vertex offset
-                         0u                       // first instance
-  );
+    auto index_buffer = index_buffer_view.buffer->GetDeviceBuffer(allocator);
+    if (!index_buffer) {
+      VALIDATION_LOG << "Failed to acquire device buffer"
+                     << " for index buffer view";
+      return false;
+    }
+
+    if (!encoder.Track(index_buffer)) {
+      return false;
+    }
+
+    auto index_buffer_handle = DeviceBufferVK::Cast(*index_buffer).GetBuffer();
+    cmd_buffer.bindIndexBuffer(index_buffer_handle,
+                               index_buffer_view.range.offset,
+                               ToVKIndexType(command.index_type));
+
+    // Engage!
+    cmd_buffer.drawIndexed(command.vertex_count,    // index count
+                           command.instance_count,  // instance count
+                           0u,                      // first index
+                           command.base_vertex,     // vertex offset
+                           0u                       // first instance
+    );
+  } else {
+    cmd_buffer.draw(command.vertex_count,    // vertex count
+                    command.instance_count,  // instance count
+                    command.base_vertex,     // vertex offset
+                    0u                       // first instance
+    );
+  }
   return true;
 }
 

@@ -2,18 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/ui.dart';
 
-import '../canvaskit/common.dart';
+Picture drawPicture(void Function(Canvas) drawCommands) {
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  drawCommands(canvas);
+  return recorder.endRecording();
+}
 
-/// Initializes the renderer for this test.
-Future<void> setUpUiTest() async {
-  if (isCanvasKit) {
-    setUpCanvasKitTest();
-  } else if (isHtml) {
-    await initializeEngine();
-  }
+/// Draws the [Picture]. This is in preparation for a golden test.
+Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
+  final SceneBuilder sb = SceneBuilder();
+  sb.pushOffset(0, 0);
+  sb.addPicture(Offset.zero, picture);
+  await renderer.renderScene(sb.build());
 }
 
 /// Returns [true] if this test is running in the CanvasKit renderer.

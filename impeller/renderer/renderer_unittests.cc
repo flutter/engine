@@ -6,6 +6,8 @@
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
@@ -31,8 +33,6 @@
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/sampler.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
@@ -163,7 +163,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     vertex_buffer.index_buffer = {
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
-    vertex_buffer.index_count = 36;
+    vertex_buffer.vertex_count = 36;
     vertex_buffer.index_type = IndexType::k16bit;
   }
 
@@ -1007,7 +1007,16 @@ TEST_P(RendererTest, DefaultIndexSize) {
   // Default to 16bit index buffer size, as this is a reasonable default and
   // supported on all backends without extensions.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.AppendIndex(0u);
   ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, DefaultIndexBehavior) {
+  using VS = BoxFadeVertexShader;
+
+  // Do not create any index buffer if no indices were provided.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::kNone);
 }
 
 TEST_P(RendererTest, VertexBufferBuilder) {

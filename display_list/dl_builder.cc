@@ -65,17 +65,25 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+
   size_t bytes = used_;
   int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
+  bool compatible = layer_stack_.back().is_group_opacity_compatible();
+  bool is_safe = is_ui_thread_safe_;
+
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
-  bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(std::move(storage_), bytes, count,
-                                            nested_bytes, nested_count,
-                                            bounds(), compatible, rtree()));
+  layer_stack_.pop_back();
+  layer_stack_.emplace_back();
+  tracker_.reset();
+  current_ = DlPaint();
+
+  return sk_sp<DisplayList>(
+      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
+                      nested_count, bounds(), compatible, is_safe, rtree()));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
@@ -128,7 +136,7 @@ void DisplayListBuilder::onSetStrokeJoin(DlStrokeJoin join) {
   current_.setStrokeJoin(join);
   Push<SetStrokeJoinOp>(0, 0, join);
 }
-void DisplayListBuilder::onSetStyle(DlDrawStyle style) {
+void DisplayListBuilder::onSetDrawStyle(DlDrawStyle style) {
   current_.setDrawStyle(style);
   Push<SetStyleOp>(0, 0, style);
 }
@@ -156,6 +164,7 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
     Push<ClearColorSourceOp>(0, 0);
   } else {
     current_.setColorSource(source->shared());
+    is_ui_thread_safe_ = is_ui_thread_safe_ && source->isUIThreadSafe();
     switch (source->type()) {
       case DlColorSourceType::kColor: {
         const DlColorColorSource* color_source = source->asColor();
@@ -344,7 +353,7 @@ void DisplayListBuilder::SetAttributesFromPaint(
     setBlendMode(paint.getBlendMode());
   }
   if (flags.applies_style()) {
-    setStyle(paint.getDrawStyle());
+    setDrawStyle(paint.getDrawStyle());
   }
   if (flags.is_stroked(paint.getDrawStyle())) {
     setStrokeWidth(paint.getStrokeWidth());
@@ -576,15 +585,18 @@ void DisplayListBuilder::Transform2DAffine(
     SkScalar myx, SkScalar myy, SkScalar myt) {
   if (SkScalarsAreFinite(mxx, myx) &&
       SkScalarsAreFinite(mxy, myy) &&
-      SkScalarsAreFinite(mxt, myt) &&
-      !(mxx == 1 && mxy == 0 && mxt == 0 &&
-        myx == 0 && myy == 1 && myt == 0)) {
-    checkForDeferredSave();
-    Push<Transform2DAffineOp>(0, 1,
-                              mxx, mxy, mxt,
-                              myx, myy, myt);
-    tracker_.transform2DAffine(mxx, mxy, mxt,
-                               myx, myy, myt);
+      SkScalarsAreFinite(mxt, myt)) {
+    if (mxx == 1 && mxy == 0 &&
+        myx == 0 && myy == 1) {
+      Translate(mxt, myt);
+    } else {
+      checkForDeferredSave();
+      Push<Transform2DAffineOp>(0, 1,
+                                mxx, mxy, mxt,
+                                myx, myy, myt);
+      tracker_.transform2DAffine(mxx, mxy, mxt,
+                                 myx, myy, myt);
+    }
   }
 }
 // full 4x4 transform in row major order
@@ -923,6 +935,7 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
       ? Push<DrawImageWithAttrOp>(0, 1, image, point, sampling)
       : Push<DrawImageOp>(0, 1, image, point, sampling);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
   DisplayListAttributeFlags flags = render_with_attributes  //
@@ -951,6 +964,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
   Push<DrawImageRectOp>(0, 1, image, src, dst, sampling, render_with_attributes,
                         constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageRectWithPaintFlags
                                         : kDrawImageRectFlags;
@@ -979,6 +993,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
       ? Push<DrawImageNineWithAttrOp>(0, 1, image, center, dst, filter)
       : Push<DrawImageNineOp>(0, 1, image, center, dst, filter);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
                                         : kDrawImageNineFlags;
@@ -1034,6 +1049,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // on it to distribute the opacity without overlap without checking all
   // of the transforms and texture rectangles.
   UpdateLayerOpacityCompatibility(false);
+  is_ui_thread_safe_ = is_ui_thread_safe_ && atlas->isUIThreadSafe();
 
   SkPoint quad[4];
   RectBoundsAccumulator atlasBounds;
@@ -1075,6 +1091,7 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                          SkScalar opacity) {
   DlPaint current_paint = current_;
   Push<DrawDisplayListOp>(0, 1, display_list, opacity);
+  is_ui_thread_safe_ = is_ui_thread_safe_ && display_list->isUIThreadSafe();
   // Not really necessary if the developer is interacting with us via
   // our attribute-state-less DlCanvas methods, but this avoids surprises
   // for those who may have been using the stateful Dispatcher methods.

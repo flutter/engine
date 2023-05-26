@@ -92,12 +92,14 @@ class EntityPass {
 
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
+  void SetEnableOffscreenCheckerboard(bool enabled);
+
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
   std::optional<Rect> GetElementsCoverage(
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
  private:
   struct EntityResult {
@@ -196,7 +198,7 @@ class EntityPass {
                 StencilCoverageStack& stencil_coverage_stack,
                 size_t stencil_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
-                std::optional<InlinePassContext::RenderPassResult>
+                const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
 
   /// The list of renderable items in the scene. Each of these items is
@@ -207,8 +209,9 @@ class EntityPass {
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  bool cover_whole_screen_ = false;
+  bool flood_clip_ = false;
   Color clear_color_ = Color::BlackTransparent();
+  bool enable_offscreen_debug_checkerboard_ = false;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -229,13 +232,6 @@ class EntityPass {
       EntityPassDelegate::MakeDefault();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
-};
-
-struct CanvasStackEntry {
-  Matrix xformation;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
-  bool contains_clips = false;
 };
 
 }  // namespace impeller

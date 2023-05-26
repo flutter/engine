@@ -14,9 +14,7 @@
 
 namespace impeller {
 
-using CommandPoolMap =
-    std::map<const ContextVK*, std::shared_ptr<CommandPoolVK>>;
-
+using CommandPoolMap = std::map<uint64_t, std::shared_ptr<CommandPoolVK>>;
 FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool;
 
 static Mutex g_all_pools_mutex;
@@ -33,7 +31,7 @@ std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
     tls_command_pool.reset(new CommandPoolMap());
   }
   CommandPoolMap& pool_map = *tls_command_pool.get();
-  auto found = pool_map.find(context);
+  auto found = pool_map.find(context->GetHash());
   if (found != pool_map.end() && found->second->IsValid()) {
     return found->second;
   }
@@ -41,7 +39,7 @@ std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
   if (!pool->IsValid()) {
     return nullptr;
   }
-  pool_map[context] = pool;
+  pool_map[context->GetHash()] = pool;
   {
     Lock pool_lock(g_all_pools_mutex);
     g_all_pools[context].push_back(pool);
@@ -50,6 +48,9 @@ std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
 }
 
 void CommandPoolVK::ClearAllPools(const ContextVK* context) {
+  if (tls_command_pool.get()) {
+    tls_command_pool.get()->erase(context->GetHash());
+  }
   Lock pool_lock(g_all_pools_mutex);
   if (auto found = g_all_pools.find(context); found != g_all_pools.end()) {
     for (auto& weak_pool : found->second) {
@@ -70,14 +71,14 @@ CommandPoolVK::CommandPoolVK(const ContextVK* context)
     : owner_id_(std::this_thread::get_id()) {
   vk::CommandPoolCreateInfo pool_info;
 
-  pool_info.queueFamilyIndex = context->GetGraphicsQueueInfo().index;
+  pool_info.queueFamilyIndex = context->GetGraphicsQueue()->GetIndex().family;
   pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient;
   auto pool = context->GetDevice().createCommandPoolUnique(pool_info);
   if (pool.result != vk::Result::eSuccess) {
     return;
   }
 
-  device_ = context->GetDevice();
+  device_holder_ = context->GetDeviceHolder();
   graphics_pool_ = std::move(pool.value);
   is_valid_ = true;
 }
@@ -100,6 +101,10 @@ vk::CommandPool CommandPoolVK::GetGraphicsCommandPool() const {
 }
 
 vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return {};
+  }
   if (std::this_thread::get_id() != owner_id_) {
     return {};
   }
@@ -111,7 +116,8 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
   alloc_info.commandPool = graphics_pool_.get();
   alloc_info.commandBufferCount = 1u;
   alloc_info.level = vk::CommandBufferLevel::ePrimary;
-  auto [result, buffers] = device_.allocateCommandBuffersUnique(alloc_info);
+  auto [result, buffers] =
+      strong_device->GetDevice().allocateCommandBuffersUnique(alloc_info);
   if (result != vk::Result::eSuccess) {
     return {};
   }
@@ -121,6 +127,11 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
 void CommandPoolVK::CollectGraphicsCommandBuffer(
     vk::UniqueCommandBuffer buffer) {
   Lock lock(buffers_to_collect_mutex_);
+  if (!graphics_pool_) {
+    // If the command pool has already been destroyed, then its command buffers
+    // have been freed and are now invalid.
+    buffer.release();
+  }
   buffers_to_collect_.insert(MakeSharedVK(std::move(buffer)));
   GarbageCollectBuffersIfAble();
 }

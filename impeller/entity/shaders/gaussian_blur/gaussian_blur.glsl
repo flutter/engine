@@ -21,14 +21,13 @@
 uniform f16sampler2D texture_sampler;
 
 uniform BlurInfo {
-  f16vec2 texture_size;
-  f16vec2 blur_direction;
+  f16vec2 blur_uv_offset;
 
   // The blur sigma and radius have a linear relationship which is defined
   // host-side, but both are useful controls here. Sigma (pixels per standard
   // deviation) is used to define the gaussian function itself, whereas the
   // radius is used to limit how much of the function is integrated.
-  float16_t blur_sigma;
+  float blur_sigma;
   float16_t blur_radius;
 }
 blur_info;
@@ -44,7 +43,7 @@ uniform MaskInfo {
 mask_info;
 #endif
 
-f16vec4 Sample(f16sampler2D tex, f16vec2 coords) {
+f16vec4 Sample(f16sampler2D tex, vec2 coords) {
 #if ENABLE_DECAL_SPECIALIZATION
   return IPHalfSampleDecal(tex, coords);
 #else
@@ -52,24 +51,28 @@ f16vec4 Sample(f16sampler2D tex, f16vec2 coords) {
 #endif
 }
 
-in f16vec2 v_texture_coords;
-in f16vec2 v_src_texture_coords;
+in vec2 v_texture_coords;
+in vec2 v_src_texture_coords;
 
 out f16vec4 frag_color;
 
 void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
-  f16vec2 blur_uv_offset = blur_info.blur_direction / blur_info.texture_size;
 
-  for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius; i++) {
-    float16_t gaussian = IPGaussian(i, blur_info.blur_sigma);
+  for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius;
+       i += 2.0hf) {
+    // Use the 32 bit Gaussian function because the 16 bit variation results in
+    // quality loss/visible banding. Also, 16 bit variation internally breaks
+    // down at a moderately high (but still reasonable) blur sigma of >255 when
+    // computing sigma^2 due to the exponent only having 5 bits.
+    float16_t gaussian = float16_t(IPGaussian(float(i), blur_info.blur_sigma));
     gaussian_integral += gaussian;
     total_color +=
-        gaussian *
-        Sample(texture_sampler,                       // sampler
-               v_texture_coords + blur_uv_offset * i  // texture coordinates
-        );
+        gaussian * Sample(texture_sampler,  // sampler
+                          v_texture_coords + blur_info.blur_uv_offset *
+                                                 i  // texture coordinates
+                   );
   }
 
   frag_color = total_color / gaussian_integral;
@@ -78,9 +81,13 @@ void main() {
   f16vec4 src_color = Sample(alpha_mask_sampler,   // sampler
                              v_src_texture_coords  // texture coordinates
   );
-  float16_t blur_factor =
-      mask_info.inner_blur_factor * float16_t(src_color.a > 0.0hf) +
-      mask_info.outer_blur_factor * float16_t(src_color.a == 0.0hf);
+
+  float16_t blur_factor;
+  if (src_color.a > 0.0hf) {
+    blur_factor = mask_info.inner_blur_factor;
+  } else if (src_color.a == 0.0hf) {
+    blur_factor = mask_info.outer_blur_factor;
+  }
 
   frag_color = frag_color * blur_factor + src_color * mask_info.src_factor;
 #endif

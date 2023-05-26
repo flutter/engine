@@ -409,7 +409,9 @@ TEST_F(ShellTest,
               return static_cast<std::unique_ptr<VsyncWaiter>>(
                   std::make_unique<VsyncWaiterFallback>(task_runners));
             },
-            ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
+            ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
+            shell.GetConcurrentWorkerTaskRunner(),
+            shell.GetIsGpuDisabledSyncSwitch());
       },
       [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   ASSERT_TRUE(ValidateShell(shell.get()));
@@ -804,13 +806,8 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -935,13 +932,8 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -981,13 +973,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1048,13 +1035,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1117,13 +1099,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1185,13 +1162,8 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1229,13 +1201,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1295,13 +1262,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1341,13 +1303,8 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1495,7 +1452,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22, 0});
   fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
@@ -1629,7 +1586,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
 
   RunEngine(shell.get(), std::move(configuration));
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.0, 100, 100, 22});
+    shell->GetPlatformView()->SetViewportMetrics({1.0, 100, 100, 22, 0});
   });
 
   // first cache bytes
@@ -1658,7 +1615,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22});
+                 {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1667,7 +1624,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 300, 22});
+                 {1.0, 100, 300, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1675,18 +1632,20 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
 
   std::unique_ptr<Shell> third_shell = shell_spawn_callback();
   PlatformViewNotifyCreated(third_shell.get());
-  PostSync(
-      third_shell->GetTaskRunners().GetPlatformTaskRunner(), [&third_shell]() {
-        third_shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 100, 22});
-      });
+  PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&third_shell]() {
+             third_shell->GetPlatformView()->SetViewportMetrics(
+                 {1.0, 400, 100, 22, 0});
+           });
   // first cache bytes + second cache bytes + third cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(3840000U));
 
-  PostSync(
-      third_shell->GetTaskRunners().GetPlatformTaskRunner(), [&third_shell]() {
-        third_shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 100, 22});
-      });
+  PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&third_shell]() {
+             third_shell->GetPlatformView()->SetViewportMetrics(
+                 {1.0, 800, 100, 22, 0});
+           });
   // max bytes threshold
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(4000000U));
@@ -1698,7 +1657,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22});
+                 {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1742,7 +1701,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1762,7 +1721,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1779,7 +1738,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1806,7 +1765,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -2083,13 +2042,8 @@ TEST_F(ShellTest, Screenshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<DisplayList>(
-            {MakeSizedDisplayList(80, 80), queue}),
-        false, false);
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -2441,13 +2395,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<DisplayList> display_list = MakeSizedDisplayList(10, 10);
-  fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-      GetCurrentTaskRunner(), fml::TimeDelta::Zero());
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(0, 0),
-      flutter::SkiaGPUObject<DisplayList>(
-          {MakeSizedDisplayList(100, 100), queue}),
-      false, false);
+      SkPoint::Make(0, 0), MakeSizedDisplayList(100, 100), false, false);
   display_list_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
 
   // 2. Rasterize the picture and the picture layer in the raster cache.
@@ -2473,7 +2422,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         };
 
@@ -2488,7 +2436,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .has_texture_layer             = false,
             .raster_cached_entries         = &raster_cache_items,
@@ -2682,7 +2629,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
             {1.0, static_cast<double>(expected_size.width()),
-             static_cast<double>(expected_size.height()), 22});
+             static_cast<double>(expected_size.height()), 22, 0});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2755,7 +2702,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       [&shell, &origin_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
             {1.0, static_cast<double>(origin_size.width()),
-             static_cast<double>(origin_size.height()), 22});
+             static_cast<double>(origin_size.height()), 22, 0});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2774,7 +2721,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       [&shell, &new_size, &resize_latch]() {
         shell->GetPlatformView()->SetViewportMetrics(
             {1.0, static_cast<double>(new_size.width()),
-             static_cast<double>(new_size.height()), 22});
+             static_cast<double>(new_size.height()), 22, 0});
         resize_latch.Signal();
       });
 
@@ -2837,13 +2784,14 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22});
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22, 0});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22});
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22, 0});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22});
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22, 0});
         task_runner->PostTask([&]() {
-          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0, 22});
+          shell->GetPlatformView()->SetViewportMetrics(
+              {0.8, 400, 200.0, 22, 0});
         });
       });
     });
@@ -2855,7 +2803,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22});
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22, 0});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
@@ -3976,6 +3924,53 @@ TEST_F(ShellTest, PictureToImageSync) {
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   PlatformViewNotifyCreated(shell.get());
+  configuration.SetEntrypoint("toImageSync");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
+#if !SHELL_ENABLE_METAL
+  // This test uses the Metal backend.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_METAL
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
+      );
+
+  AddNativeCallback("NativeOnBeforeToImageSync",
+                    CREATE_NATIVE_ENTRY([&](auto args) {
+                      // nop
+                    }));
+
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
+                    }));
+
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+
+  // Important: Do not create the platform view yet!
+  // This test is making sure that the rasterizer can create the texture
+  // as expected without a surface.
+
   configuration.SetEntrypoint("toImageSync");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());

@@ -29,12 +29,7 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
 
 ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
                                                const Entity& entity) {
-  ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  ContentContextOptions opts = OptionsFromPass(pass);
   opts.blend_mode = entity.GetBlendMode();
   return opts;
 }
@@ -50,6 +45,10 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+bool Contents::IsOpaque() const {
+  return false;
+}
+
 Contents::StencilCoverage Contents::GetStencilCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_stencil_coverage) const {
@@ -60,15 +59,27 @@ Contents::StencilCoverage Contents::GetStencilCoverage(
 std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
+    std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
   }
 
+  // Pad Contents snapshots with 1 pixel borders to ensure correct sampling
+  // behavior. Not doing so results in a coverage leak for filters that support
+  // customizing the input sampling mode. Snapshots of contents should be
+  // theoretically treated as infinite size just like layers.
+  coverage = coverage->Expand(1);
+
+  if (coverage_limit.has_value()) {
+    coverage = coverage->Intersection(*coverage_limit);
+  }
+
   auto texture = renderer.MakeSubpass(
-      "Snapshot", ISize::Ceil(coverage->size),
+      label, ISize::Ceil(coverage->size),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
@@ -109,9 +120,6 @@ bool Contents::ShouldRender(const Entity& entity,
   if (!stencil_coverage.has_value()) {
     return false;
   }
-  if (Entity::IsBlendModeDestructive(entity.GetBlendMode())) {
-    return true;
-  }
 
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
@@ -121,6 +129,14 @@ bool Contents::ShouldRender(const Entity& entity,
     return true;
   }
   return stencil_coverage->IntersectsWithRect(coverage.value());
+}
+
+void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {
+  coverage_hint_ = coverage_hint;
+}
+
+const std::optional<Rect>& Contents::GetCoverageHint() const {
+  return coverage_hint_;
 }
 
 std::optional<Size> Contents::GetColorSourceSize() const {

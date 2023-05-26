@@ -18,6 +18,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/range.h"
+#include "impeller/core/sampler.h"
 #include "impeller/core/texture.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/core/vertex_buffer.h"
@@ -31,7 +32,6 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler.h"
 #include "impeller/renderer/sampler_library.h"
 
 struct ImGui_ImplImpeller_Data {
@@ -256,7 +256,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             .range = impeller::Range(
                 index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
-        vertex_buffer.index_count = pcmd->ElemCount;
+        vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;

@@ -4,6 +4,20 @@
 
 import("../../../tools/impeller.gni")
 
+impeller_component("vulkan_unittests") {
+  testonly = true
+  sources = [
+    "blit_command_vk_unittests.cc",
+    "context_vk_unittests.cc",
+    "test/mock_vulkan.cc",
+    "test/mock_vulkan.h",
+  ]
+  deps = [
+    ":vulkan",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
 impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
@@ -38,6 +52,8 @@ impeller_component("vulkan") {
     "pipeline_library_vk.h",
     "pipeline_vk.cc",
     "pipeline_vk.h",
+    "queue_vk.cc",
+    "queue_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
     "sampler_library_vk.cc",

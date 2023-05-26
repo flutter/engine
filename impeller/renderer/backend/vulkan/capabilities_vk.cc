@@ -310,6 +310,11 @@ bool CapabilitiesVK::SupportsOffscreenMSAA() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsSSBO() const {
+  return true;
+}
+
+// |Capabilities|
+bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
   return false;
 }
 
@@ -336,6 +341,15 @@ bool CapabilitiesVK::SupportsComputeSubgroups() const {
 // |Capabilities|
 bool CapabilitiesVK::SupportsReadFromResolve() const {
   return false;
+}
+
+// |Capabilities|
+bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
+  return false;
+}
+
+bool CapabilitiesVK::SupportsDecalTileMode() const {
+  return true;
 }
 
 // |Capabilities|

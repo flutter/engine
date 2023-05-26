@@ -45,7 +45,7 @@
 library configuration;
 
 import 'dart:js_interop';
-import 'package:js/js.dart';
+
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
@@ -277,6 +277,12 @@ class FlutterConfiguration {
   ///
   /// This is used by the Renderer class to decide how to initialize the engine.
   String? get requestedRendererType => _configuration?.renderer ?? _requestedRendererType;
+
+  /// Whether to use color emojis or not.
+  ///
+  /// The font used to render color emojis is large (~24MB). This configuration
+  /// gives developers the ability to decide for their app.
+  bool get useColorEmoji => _configuration?.useColorEmoji ?? false;
 }
 
 @JS('window.flutterConfiguration')
@@ -317,6 +323,10 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('renderer')
   external JSString? get _renderer;
   String? get renderer => _renderer?.toDart;
+
+  @JS('useColorEmoji')
+  external JSBoolean? get _useColorEmoji;
+  bool? get useColorEmoji => _useColorEmoji?.toDart;
 }
 
 /// A JavaScript entrypoint that allows developer to set rendering backend

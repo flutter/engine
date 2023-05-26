@@ -66,11 +66,11 @@ class WindowsPlatformBinding implements PlatformBinding {
 
   @override
   String getChromeDownloadUrl(String version) =>
-      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchrome-win.zip?alt=media';
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win_x64%2F$version%2Fchrome-win.zip?alt=media';
 
   @override
   String getChromeDriverDownloadUrl(String version) =>
-      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchromedriver_win32.zip?alt=media';
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win_x64%2F$version%2Fchromedriver_win32.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) =>
@@ -262,10 +262,14 @@ const List<String> kAllBrowserNames = <String>[
 /// Creates an environment for a browser.
 ///
 /// The [browserName] matches the browser name passed as the `--browser` option.
-BrowserEnvironment getBrowserEnvironment(BrowserName browserName, { required bool enableWasmGC }) {
+BrowserEnvironment getBrowserEnvironment(
+  BrowserName browserName, {
+  required bool enableWasmGC,
+  required bool useDwarf,
+}) {
   switch (browserName) {
     case BrowserName.chrome:
-      return ChromeEnvironment(enableWasmGC);
+      return ChromeEnvironment(enableWasmGC: enableWasmGC, useDwarf: useDwarf);
     case BrowserName.edge:
       return EdgeEnvironment();
     case BrowserName.firefox:

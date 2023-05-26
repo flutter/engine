@@ -10,9 +10,16 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'felt_config.dart';
+
+enum RuntimeMode {
+  debug,
+  profile,
+  release,
+}
 
 class FilePath {
   FilePath.fromCwd(String relativePath)
@@ -328,7 +335,29 @@ mixin ArgUtils<T> on Command<T> {
 
   /// Extracts a string argument from [argResults].
   String stringArg(String name) => argResults![name] as String;
+
+  RuntimeMode get runtimeMode {
+    final bool isProfile = boolArg('profile');
+    final bool isDebug = boolArg('debug');
+    if (isProfile && isDebug) {
+      throw ToolExit('Cannot specify both --profile and --debug at the same time.');
+    }
+    if (isProfile) {
+      return RuntimeMode.profile;
+    } else if (isDebug) {
+      return RuntimeMode.debug;
+    } else {
+      return RuntimeMode.release;
+    }
+  }
 }
+
+io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) =>
+  switch (runtimeMode) {
+    RuntimeMode.debug => environment.wasmDebugUnoptOutDir,
+    RuntimeMode.profile => environment.wasmProfileOutDir,
+    RuntimeMode.release => environment.wasmReleaseOutDir,
+  };
 
 /// There might be proccesses started during the tests.
 ///
@@ -390,8 +419,23 @@ io.Directory getBundleBuildDirectory(TestBundle bundle) {
   );
 }
 
+io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
+  return io.Directory(
+    path.join(
+      environment.webUiSkiaGoldDirectory.path,
+      suite.name,
+    )
+  );
+}
+
 extension AnsiColors on String {
-  static bool shouldEscape = io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+  static bool shouldEscape = () {
+    if (isLuci) {
+      // Produce clean output on LUCI.
+      return false;
+    }
+    return io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+  }();
 
   static const String _noColorCode = '\u001b[39m';
 

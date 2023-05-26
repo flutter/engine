@@ -113,11 +113,17 @@ class DisplayListBuilder final : public virtual DlCanvas,
   SkMatrix GetTransform() const override { return tracker_.matrix_3x3(); }
 
   // |DlCanvas|
-  void ClipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void ClipRect(const SkRect& rect,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
   // |DlCanvas|
-  void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void ClipRRect(const SkRRect& rrect,
+                 ClipOp clip_op = ClipOp::kIntersect,
+                 bool is_aa = false) override;
   // |DlCanvas|
-  void ClipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void ClipPath(const SkPath& path,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
 
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
@@ -193,6 +199,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
+  using DlCanvas::DrawImageRect;
   // |DlCanvas|
   void DrawImageNine(const sk_sp<DlImage>& image,
                      const SkIRect& center,
@@ -240,6 +247,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
       DisplayListBuilder& builder);
   friend DlOpReceiver& DisplayListBuilderTestingAccessor(
       DisplayListBuilder& builder);
+  friend DlPaint DisplayListBuilderTestingAttributes(
+      DisplayListBuilder& builder);
 
   void SetAttributesFromPaint(const DlPaint& paint,
                               const DisplayListAttributeFlags flags);
@@ -275,9 +284,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
     }
   }
   // |DlOpReceiver|
-  void setStyle(DlDrawStyle style) override {
+  void setDrawStyle(DlDrawStyle style) override {
     if (current_.getDrawStyle() != style) {
-      onSetStyle(style);
+      onSetDrawStyle(style);
     }
   }
   // |DlOpReceiver|
@@ -334,6 +343,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
       onSetMaskFilter(filter);
     }
   }
+
+  DlPaint CurrentAttributes() const { return current_; }
 
   // |DlOpReceiver|
   void save() override { Save(); }
@@ -479,6 +490,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
   int nested_op_count_ = 0;
+
+  bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);
@@ -645,7 +658,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void onSetInvertColors(bool invert);
   void onSetStrokeCap(DlStrokeCap cap);
   void onSetStrokeJoin(DlStrokeJoin join);
-  void onSetStyle(DlDrawStyle style);
+  void onSetDrawStyle(DlDrawStyle style);
   void onSetStrokeWidth(SkScalar width);
   void onSetStrokeMiter(SkScalar limit);
   void onSetColor(DlColor color);

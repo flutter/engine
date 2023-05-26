@@ -525,16 +525,7 @@ import java.util.List;
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
       if (data != null) {
-        String fullRoute = data.getPath();
-        if (fullRoute != null && !fullRoute.isEmpty()) {
-          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-            fullRoute += "?" + data.getQuery();
-          }
-          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-            fullRoute += "#" + data.getFragment();
-          }
-          return fullRoute;
-        }
+        return data.toString();
       }
     }
     return null;
@@ -581,7 +572,7 @@ import java.util.List;
   void onResume() {
     Log.v(TAG, "onResume()");
     ensureAlive();
-    if (host.shouldDispatchAppLifecycleState()) {
+    if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
       flutterEngine.getLifecycleChannel().appIsResumed();
     }
   }
@@ -629,7 +620,7 @@ import java.util.List;
   void onPause() {
     Log.v(TAG, "onPause()");
     ensureAlive();
-    if (host.shouldDispatchAppLifecycleState()) {
+    if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
       flutterEngine.getLifecycleChannel().appIsInactive();
     }
   }
@@ -652,7 +643,7 @@ import java.util.List;
     Log.v(TAG, "onStop()");
     ensureAlive();
 
-    if (host.shouldDispatchAppLifecycleState()) {
+    if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
       flutterEngine.getLifecycleChannel().appIsPaused();
     }
 
@@ -678,8 +669,13 @@ import java.util.List;
       flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
       activePreDrawListener = null;
     }
-    flutterView.detachFromFlutterEngine();
-    flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+
+    // flutterView can be null in instances where a delegate.onDestroyView is called without
+    // onCreateView being called. See https://github.com/flutter/engine/pull/41082 for more detail.
+    if (flutterView != null) {
+      flutterView.detachFromFlutterEngine();
+      flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+    }
   }
 
   void onSaveInstanceState(@Nullable Bundle bundle) {
@@ -758,7 +754,7 @@ import java.util.List;
       platformPlugin = null;
     }
 
-    if (host.shouldDispatchAppLifecycleState()) {
+    if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
       flutterEngine.getLifecycleChannel().appIsDetached();
     }
 
@@ -890,6 +886,27 @@ import java.util.List;
       flutterEngine.getActivityControlSurface().onUserLeaveHint();
     } else {
       Log.w(TAG, "onUserLeaveHint() invoked before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@code Activity#onWindowFocusChanged()}.
+   *
+   * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
+   * the {@code Fragment} can then invoke this method.
+   */
+  void onWindowFocusChanged(boolean hasFocus) {
+    ensureAlive();
+    Log.v(TAG, "Received onWindowFocusChanged: " + (hasFocus ? "true" : "false"));
+    if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
+      // TODO(gspencergoog): Once we have support for multiple windows/views,
+      // this code will need to consult the list of windows/views to determine if
+      // any windows in the app are focused and call the appropriate function.
+      if (hasFocus) {
+        flutterEngine.getLifecycleChannel().aWindowIsFocused();
+      } else {
+        flutterEngine.getLifecycleChannel().noWindowsAreFocused();
+      }
     }
   }
 

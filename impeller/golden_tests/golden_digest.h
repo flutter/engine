@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,8 @@ namespace testing {
 class GoldenDigest {
  public:
   static GoldenDigest* Instance();
+
+  void AddDimension(const std::string& name, const std::string& value);
 
   void AddImage(const std::string& test_name,
                 const std::string& filename,
@@ -36,10 +39,13 @@ class GoldenDigest {
     std::string filename;
     int32_t width;
     int32_t height;
+    double max_diff_pixels_percent;
+    int32_t max_color_delta;
   };
 
   static GoldenDigest* instance_;
   std::vector<Entry> entries_;
+  std::map<std::string, std::string> dimensions_;
 };
 }  // namespace testing
 }  // namespace impeller

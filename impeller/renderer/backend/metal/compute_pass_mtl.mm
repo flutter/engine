@@ -15,13 +15,13 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "impeller/renderer/compute_command.h"
-#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -54,6 +54,8 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context,
   if (!IsValid()) {
     return false;
   }
+
+  FML_DCHECK(!grid_size_.IsEmpty() && !thread_group_size_.IsEmpty());
 
   // TODO(dnfield): Support non-serial dispatch type on higher iOS versions.
   auto compute_command_encoder = [buffer_ computeCommandEncoder];
@@ -209,6 +211,10 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                     id<MTLComputeCommandEncoder> encoder,
                                     const ISize& grid_size,
                                     const ISize& thread_group_size) const {
+  if (grid_size.width == 0 || grid_size.height == 0) {
+    return true;
+  }
+
   ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
@@ -244,19 +250,28 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     // TODO(dnfield): use feature detection to support non-uniform threadgroup
     // sizes.
     // https://github.com/flutter/flutter/issues/110619
-
-    // For now, check that the sizes are uniform.
-    FML_DCHECK(grid_size == thread_group_size);
     auto width = grid_size.width;
     auto height = grid_size.height;
-    while (width * height >
-           static_cast<int64_t>(
-               pass_bindings.GetPipeline().maxTotalThreadsPerThreadgroup)) {
-      width = std::max(1LL, width / 2);
-      height = std::max(1LL, height / 2);
+
+    auto maxTotalThreadsPerThreadgroup = static_cast<int64_t>(
+        pass_bindings.GetPipeline().maxTotalThreadsPerThreadgroup);
+
+    // Special case for linear processing.
+    if (height == 1) {
+      int64_t threadGroups =
+          std::max(width / maxTotalThreadsPerThreadgroup, 1LL);
+      [encoder dispatchThreadgroups:MTLSizeMake(threadGroups, 1, 1)
+              threadsPerThreadgroup:MTLSizeMake(maxTotalThreadsPerThreadgroup,
+                                                1, 1)];
+    } else {
+      while (width * height > maxTotalThreadsPerThreadgroup) {
+        width = std::max(1LL, width / 2);
+        height = std::max(1LL, height / 2);
+      }
+
+      auto size = MTLSizeMake(width, height, 1);
+      [encoder dispatchThreadgroups:size threadsPerThreadgroup:size];
     }
-    auto size = MTLSizeMake(width, height, 1);
-    [encoder dispatchThreadgroups:size threadsPerThreadgroup:size];
   }
 
   return true;

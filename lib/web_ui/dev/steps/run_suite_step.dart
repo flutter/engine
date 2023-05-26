@@ -29,20 +29,22 @@ import '../utils.dart';
 /// them from another bot.
 class RunSuiteStep implements PipelineStep {
   RunSuiteStep(this.suite, {
-    required this.isDebug,
+    required this.startPaused,
     required this.isVerbose,
     required this.doUpdateScreenshotGoldens,
     required this.requireSkiaGold,
-    this.testFiles,
     required this.overridePathToCanvasKit,
+    required this.useDwarf,
+    this.testFiles,
   });
 
   final TestSuite suite;
   final Set<FilePath>? testFiles;
-  final bool isDebug;
+  final bool startPaused;
   final bool isVerbose;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
+  final bool useDwarf;
 
   /// Require Skia Gold to be available and reachable.
   final bool requireSkiaGold;
@@ -63,7 +65,9 @@ class RunSuiteStep implements PipelineStep {
     _prepareTestResultsDirectory();
     final BrowserEnvironment browserEnvironment = getBrowserEnvironment(
       suite.runConfig.browser,
-      enableWasmGC: isWasm);
+      enableWasmGC: isWasm,
+      useDwarf: useDwarf,
+    );
     await browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
@@ -76,10 +80,14 @@ class RunSuiteStep implements PipelineStep {
       ...<String>['-r', 'compact'],
       // Disable concurrency. Running with concurrency proved to be flaky.
       '--concurrency=1',
-      if (isDebug) '--pause-after-load',
+      if (startPaused) '--pause-after-load',
       '--platform=${browserEnvironment.packageTestRuntime.identifier}',
       '--precompiled=$bundleBuildPath',
       '--configuration=$configurationFilePath',
+      if (AnsiColors.shouldEscape) '--color' else '--no-color',
+
+      // TODO(jacksongardner): Set the default timeout to five minutes when
+      // https://github.com/dart-lang/test/issues/2006 is fixed.
       '--',
       ..._collectTestPaths(),
     ];
@@ -93,7 +101,6 @@ class RunSuiteStep implements PipelineStep {
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
-        isWasm: isWasm,
         isVerbose: isVerbose,
       );
     });
@@ -115,9 +122,15 @@ class RunSuiteStep implements PipelineStep {
 
     await browserEnvironment.cleanup();
 
+    // Since we are just calling `main()` on the test executable, it will modify
+    // the exit code. We use this as a signal that there were some tests that failed.
     if (io.exitCode != 0) {
       print('[${suite.name.ansiCyan}] ${'Some tests failed.'.ansiRed}');
+      // Change the exit code back to 0 when we're done. Failures will be bubbled up
+      // at the end of the pipeline and we'll exit abnormally if there were any
+      // failures in the pipeline.
       io.exitCode = 0;
+      throw ToolExit('Some unit tests failed in suite ${suite.name.ansiCyan}.');
     } else {
       print('[${suite.name.ansiCyan}] ${'All tests passed!'.ansiGreen}');
     }
@@ -167,7 +180,7 @@ class RunSuiteStep implements PipelineStep {
     final Renderer renderer = suite.testBundle.compileConfig.renderer;
     final CanvasKitVariant? variant = suite.runConfig.variant;
     final SkiaGoldClient skiaClient = SkiaGoldClient(
-      environment.webUiSkiaGoldDirectory,
+      getSkiaGoldDirectoryForSuite(suite),
       dimensions: <String, String> {
         'Browser': suite.runConfig.browser.name,
         if (isWasm) 'Wasm': 'true',

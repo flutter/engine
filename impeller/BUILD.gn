@@ -2,12 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
 config("impeller_public_config") {
   include_dirs = [ ".." ]
 
   defines = []
+
+  if (impeller_debug) {
+    defines += [ "IMPELLER_DEBUG=1" ]
+  }
 
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
@@ -84,12 +89,21 @@ impeller_component("impeller_unittests") {
       "display_list:display_list_unittests",
       "entity:entity_unittests",
       "fixtures",
+      "geometry:geometry_unittests",
       "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
       "scene:scene_unittests",
       "typographer:typographer_unittests",
     ]
+  }
+
+  if (impeller_enable_vulkan) {
+    deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
+  }
+
+  if (glfw_vulkan_library != "") {
+    deps += [ "//third_party/swiftshader" ]
   }
 
   if (impeller_enable_compute) {

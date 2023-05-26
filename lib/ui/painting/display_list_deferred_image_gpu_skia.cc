@@ -4,7 +4,10 @@
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 
+#include "flutter/fml/make_copyable.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 namespace flutter {
 
@@ -23,7 +26,7 @@ sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::Make(
 
 sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::MakeFromLayerTree(
     const SkImageInfo& image_info,
-    std::shared_ptr<LayerTree> layer_tree,
+    std::unique_ptr<LayerTree> layer_tree,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
@@ -74,6 +77,11 @@ bool DlDeferredImageGPUSkia::isTextureBacked() const {
 }
 
 // |DlImage|
+bool DlDeferredImageGPUSkia::isUIThreadSafe() const {
+  return true;
+}
+
+// |DlImage|
 SkISize DlDeferredImageGPUSkia::dimensions() const {
   return image_wrapper_ ? image_wrapper_->image_info().dimensions()
                         : SkISize::MakeEmpty();
@@ -107,7 +115,7 @@ DlDeferredImageGPUSkia::ImageWrapper::Make(
 std::shared_ptr<DlDeferredImageGPUSkia::ImageWrapper>
 DlDeferredImageGPUSkia::ImageWrapper::MakeFromLayerTree(
     const SkImageInfo& image_info,
-    std::shared_ptr<LayerTree> layer_tree,
+    std::unique_ptr<LayerTree> layer_tree,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
@@ -144,7 +152,7 @@ sk_sp<SkImage> DlDeferredImageGPUSkia::ImageWrapper::CreateSkiaImage() const {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
 
   if (texture_.isValid() && context_) {
-    return SkImage::MakeFromTexture(
+    return SkImages::BorrowTextureFrom(
         context_.get(), texture_, kTopLeft_GrSurfaceOrigin,
         image_info_.colorType(), image_info_.alphaType(),
         image_info_.refColorSpace());
@@ -157,10 +165,11 @@ bool DlDeferredImageGPUSkia::ImageWrapper::isTextureBacked() const {
 }
 
 void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
-    std::shared_ptr<LayerTree> layer_tree) {
+    std::unique_ptr<LayerTree> layer_tree) {
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner_,
-      [weak_this = weak_from_this(), layer_tree = std::move(layer_tree)]() {
+      fml::MakeCopyable([weak_this = weak_from_this(),
+                         layer_tree = std::move(layer_tree)]() mutable {
         auto wrapper = weak_this.lock();
         if (!wrapper) {
           return;
@@ -192,7 +201,7 @@ void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
           std::scoped_lock lock(wrapper->error_mutex_);
           wrapper->error_ = result->error;
         }
-      });
+      }));
 }
 
 std::optional<std::string> DlDeferredImageGPUSkia::ImageWrapper::get_error() {

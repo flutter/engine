@@ -44,6 +44,12 @@ CORES = [
     'Mali-T880',  # 2016
 ]
 
+# Path to the engine root checkout. This is used to calculate absolute
+# paths if relative ones are passed to the script.
+BUILD_ROOT_DIR = os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
+)
+
 
 def parse_args(argv):
   parser = argparse.ArgumentParser(
@@ -60,6 +66,22 @@ def parse_args(argv):
       '-b',
       type=str,
       help='The path to a json file containing existing malioc results.',
+  )
+  parser.add_argument(
+      '--after-relative-to-src',
+      type=str,
+      help=(
+          'A relative path calculated from the engine src directory to '
+          'a directory tree containing new malioc results in json files'
+      ),
+  )
+  parser.add_argument(
+      '--before-relative-to-src',
+      type=str,
+      help=(
+          'A relative path calculated from the engine src directory to '
+          'a json file containing existing malioc results in json files'
+      ),
   )
   parser.add_argument(
       '--print-diff',
@@ -86,6 +108,23 @@ def parse_args(argv):
 
 
 def validate_args(args):
+  if not args.after and not args.after_relative_to_src:
+    print('--after argument or --after-relative-to-src must be specified.')
+    return False
+
+  if not args.before and not args.before_relative_to_src:
+    print('--before argument or --before-relative-to-src must be specified.')
+    return False
+
+  # Generate full paths if relative ones are provided with before and
+  # after taking precedence.
+  args.before = (
+      args.before or os.path.join(BUILD_ROOT_DIR, args.before_relative_to_src)
+  )
+  args.after = (
+      args.after or os.path.join(BUILD_ROOT_DIR, args.after_relative_to_src)
+  )
+
   if not args.after or not os.path.isdir(args.after):
     print('The --after argument must refer to a directory.')
     return False
@@ -180,8 +219,12 @@ def read_malioc_tree(malioc_tree):
 # a space of `width` characters, and separated by `sep`. The separator does not
 # count against the `width`. If `width` is 0, then the width is unconstrained.
 def pretty_list(lst, fmt='s', sep='', width=12):
-  return (sep.join(['{:<{width}{fmt}}'] * len(lst))).format(
-      width='' if width == 0 else width, fmt=fmt, *lst
+  formats = [
+      '{:<{width}{fmt}}' if ele is not None else '{:<{width}s}' for ele in lst
+  ]
+  sanitized_list = [x if x is not None else 'null' for x in lst]
+  return (sep.join(formats)).format(
+      width='' if width == 0 else width, fmt=fmt, *sanitized_list
   )
 
 

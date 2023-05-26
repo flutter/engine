@@ -12,10 +12,12 @@
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
@@ -54,7 +56,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   }
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
-  sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
   DlSkCanvasAdapter canvas(surface->getCanvas());
 
   ASSERT_TRUE(surface != nullptr);
@@ -72,7 +74,6 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
       .ui_time                       = mock_stopwatch,
       .texture_registry              = nullptr,
       .raster_cache                  = nullptr,
-      .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };
 
@@ -89,7 +90,8 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   layer.Paint(paint_context);
 
   sk_sp<SkImage> snapshot = surface->makeImageSnapshot();
-  sk_sp<SkData> snapshot_data = snapshot->encodeToData();
+  sk_sp<SkData> snapshot_data =
+      SkPngEncoder::Encode(nullptr, snapshot.get(), {});
 
   sk_sp<SkData> golden_data =
       SkData::MakeFromFileName(golden_file_path.c_str());

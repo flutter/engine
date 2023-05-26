@@ -34,6 +34,9 @@ all web engine targets are built. Common targets are as follows:
 The output of these steps is used in unit tests, and can be used with the flutter
 command via the `--local-web-sdk=wasm_release` command.
 
+The `build` command also accepts either the `--profile` or `--debug` flags, which
+can be used to change the build profile of the artifacts.
+
 ##### Examples
 Builds all web engine targets, then runs a Flutter app using it:
 ```
@@ -54,14 +57,19 @@ information on how test suites are structured, see the test configuration
 
 By default, `felt test` compiles and runs all suites that are compatible with the
 host system. Some useful flags supported by this command:
-  * `--compile` will only perform compilation of these suites without running them. 
-  * `--run` will only run the tests and not compile them, and assume they have been 
-    compiled in a previous run of the tool.
+  * Action flags which say what parts of the test pipeline to perform. More of one
+    of these can be specified to run multiple actions. If none are specified, then
+    *all* of these actions are performed
+    * `--compile` performs compilation of the test bundles.
+    * `--run` runs the unit tests
+    * `--copy-artifacts` will copy build artifacts needed for the tests to run.
+      * The `--profile` or `--debug` flags can be specified to copy over artifacts
+        from the profile or debug build folders instead of release.
   * `--list` will list all the test suites and test bundles and exit without
     compiling or running anything.
   * `--verbose` will output some extra information that may be useful for debugging.
-  * `--debug` will open a browser window and pause the tests before starting so that
-    breakpoints can be set before starting the test suites.
+  * `--start-paused` will open a browser window and pause the tests before starting
+    so that breakpoints can be set before starting the test suites.
 
 Several other flags can be passed that filter which test suites should be run:
   * `--browser` runs only the test suites that test on the browsers passed. Valid
@@ -132,6 +140,29 @@ fetched from CIPD.
 
 Since the engine code and infra recipes do not live in the same repository
 there are few steps to follow in order to upgrade a browser's version.
+
+### Rolling fallback fonts
+
+To generate new fallback font data and push the fallback fonts into a CIPD
+package for engine unit tests to consume, run the following felt command:
+
+```
+cipd auth-login
+felt roll-fallback-fonts --key=<Google Fonts API key>
+```
+
+This will take the following steps:
+* Fetch a list of fonts from the Google Fonts API
+* Download each font we use for fallbacks and calculate its unicode ranges
+* Generate the `font_fallback_data.dart` file that is used in the engine
+* Push the fonts up to a CIPD package called `flutter/flutter_font_fallbacks`
+* Update the `DEPS` file in the engine to use the new version of the package
+
+To perform all these steps except actually uploading the package to CIPD, pass
+the `--dry-run` flag to the felt command.
+
+NOTE: Because this script uses `fc-config`, this roll step only actually works
+on Linux, not on macOS or Windows.
 
 #### Chromium
 
@@ -213,19 +244,6 @@ Resources:
    hackers-infra on Discord for more information)
 2. LUCI web [recipe][5]
 3. More general reading on CIPD packages [link][6]
-
-### Rolling Noto Font Data
-
-In order to generate new data for the Noto fallback fonts, you will need
-a GoogleFonts API key. Once you have one, run:
-
-```
-./dev/felt generate-fallback-font-data --key=<your GoogleFonts API key>
-```
-
-This will generate the file `lib/src/engine/canvaskit/font_fallback_data.dart` with
-the latest data from GoogleFonts. This generated file should then be rolled in with
-a PR to the engine.
 
 ### Configuration files
 

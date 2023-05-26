@@ -102,16 +102,15 @@ class FilterContents : public Contents {
   ///         particular filter's implementation.
   void SetInputs(FilterInput::Vector inputs);
 
-  /// @brief  Screen space bounds to use for cropping the filter output.
-  void SetCoverageCrop(std::optional<Rect> coverage_crop);
-
   /// @brief  Sets the transform which gets appended to the effect of this
   ///         filter. Note that this is in addition to the entity's transform.
   void SetEffectTransform(Matrix effect_transform);
 
   /// @brief  Create an Entity that renders this filter's output.
-  std::optional<Entity> GetEntity(const ContentContext& renderer,
-                                  const Entity& entity) const;
+  std::optional<Entity> GetEntity(
+      const ContentContext& renderer,
+      const Entity& entity,
+      const std::optional<Rect>& coverage_hint) const;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -125,8 +124,10 @@ class FilterContents : public Contents {
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
-      bool msaa_enabled = true) const override;
+      bool msaa_enabled = true,
+      const std::string& label = "Filter Snapshot") const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
@@ -139,16 +140,17 @@ class FilterContents : public Contents {
       const Matrix& effect_transform) const;
 
   /// @brief  Converts zero or more filter inputs into a render instruction.
-  virtual std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
-                                             const ContentContext& renderer,
-                                             const Entity& entity,
-                                             const Matrix& effect_transform,
-                                             const Rect& coverage) const = 0;
+  virtual std::optional<Entity> RenderFilter(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Matrix& effect_transform,
+      const Rect& coverage,
+      const std::optional<Rect>& coverage_hint) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
-  std::optional<Rect> coverage_crop_;
   Matrix effect_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);

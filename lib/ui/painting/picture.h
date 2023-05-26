@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer_tree.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -22,13 +21,10 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
  public:
   ~Picture() override;
-  static fml::RefPtr<Picture> Create(
-      Dart_Handle dart_handle,
-      flutter::SkiaGPUObject<DisplayList> display_list);
+  static fml::RefPtr<Picture> Create(Dart_Handle dart_handle,
+                                     sk_sp<DisplayList> display_list);
 
-  sk_sp<DisplayList> display_list() const {
-    return display_list_.skia_object();
-  }
+  sk_sp<DisplayList> display_list() const { return display_list_; }
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
@@ -53,24 +49,23 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       Dart_Handle raw_image_callback);
 
   static Dart_Handle RasterizeLayerTreeToImage(
-      std::shared_ptr<LayerTree> layer_tree,
-      uint32_t width,
-      uint32_t height,
+      std::unique_ptr<LayerTree> layer_tree,
       Dart_Handle raw_image_callback);
 
-  // Callers may provide either a display list or a layer tree. If a layer tree
-  // is provided, it will be flattened on the raster thread. In this case the
-  // display list will be ignored.
-  static Dart_Handle RasterizeToImage(const sk_sp<DisplayList>& display_list,
-                                      std::shared_ptr<LayerTree> layer_tree,
-                                      uint32_t width,
-                                      uint32_t height,
-                                      Dart_Handle raw_image_callback);
+  // Callers may provide either a display list or a layer tree, but not both.
+  //
+  // If a layer tree is provided, it will be flattened on the raster thread, and
+  // picture_bounds should be the layer tree's frame_size().
+  static Dart_Handle DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
+                                        std::unique_ptr<LayerTree> layer_tree,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        Dart_Handle raw_image_callback);
 
  private:
-  explicit Picture(flutter::SkiaGPUObject<DisplayList> display_list);
+  explicit Picture(sk_sp<DisplayList> display_list);
 
-  flutter::SkiaGPUObject<DisplayList> display_list_;
+  sk_sp<DisplayList> display_list_;
 };
 
 }  // namespace flutter

@@ -129,7 +129,8 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
       22,                     // physical touch slop
       std::vector<double>(),  // display features bounds
       std::vector<int>(),     // display features type
-      std::vector<int>()      // display features state
+      std::vector<int>(),     // display features state
+      0                       // Display ID
   };
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
@@ -168,7 +169,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder));
+  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
@@ -197,18 +198,19 @@ void ShellTest::PumpOneFrame(Shell* shell,
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        auto layer_tree = std::make_shared<LayerTree>(
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
-        layer_tree->set_root_layer(root_layer);
+        auto layer_tree = std::make_unique<LayerTree>(
+            LayerTree::Config{.root_layer = root_layer},
+            SkISize::Make(viewport_metrics.physical_width,
+                          viewport_metrics.physical_height));
+        float device_pixel_ratio =
+            static_cast<float>(viewport_metrics.device_pixel_ratio);
         if (builder) {
           builder(root_layer);
         }
-        runtime_delegate->Render(std::move(layer_tree));
+        runtime_delegate->Render(std::move(layer_tree), device_pixel_ratio);
         latch.Signal();
       });
   latch.Wait();
@@ -350,12 +352,15 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
                                      shell_test_external_view_embedder,  //
                                      rendering_backend                   //
     ](Shell& shell) {
-      return ShellTestPlatformView::Create(shell,                             //
-                                           shell.GetTaskRunners(),            //
-                                           vsync_clock,                       //
-                                           create_vsync_waiter,               //
-                                           rendering_backend,                 //
-                                           shell_test_external_view_embedder  //
+      return ShellTestPlatformView::Create(
+          shell,                                  //
+          shell.GetTaskRunners(),                 //
+          vsync_clock,                            //
+          create_vsync_waiter,                    //
+          rendering_backend,                      //
+          shell_test_external_view_embedder,      //
+          shell.GetConcurrentWorkerTaskRunner(),  //
+          shell.GetIsGpuDisabledSyncSwitch()      //
       );
     };
   }

@@ -8,6 +8,7 @@
 #include "flutter/impeller/core/allocator.h"
 #include "flutter/impeller/core/device_buffer.h"
 #include "flutter/impeller/geometry/size.h"
+#include "flutter/impeller/renderer/context.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
@@ -23,11 +24,32 @@
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
+
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 namespace impeller {
+
+class TestImpellerTexture : public Texture {
+ public:
+  explicit TestImpellerTexture(TextureDescriptor desc) : Texture(desc) {}
+
+  void SetLabel(std::string_view label) override {}
+  bool IsValid() const override { return true; }
+  ISize GetSize() const { return GetTextureDescriptor().size; }
+
+  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
+    return true;
+  }
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) {
+    return true;
+  }
+};
 
 class TestImpellerDeviceBuffer : public DeviceBuffer {
  public:
@@ -83,8 +105,44 @@ class TestImpellerAllocator : public impeller::Allocator {
 
   std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) override {
+    return std::make_shared<TestImpellerTexture>(desc);
+  }
+};
+
+class TestImpellerContext : public impeller::Context {
+ public:
+  TestImpellerContext() = default;
+
+  std::string DescribeGpuModel() const override { return "TestGpu"; }
+
+  bool IsValid() const override { return true; }
+
+  const std::shared_ptr<const Capabilities>& GetCapabilities() const override {
+    return capabilities_;
+  }
+
+  std::shared_ptr<Allocator> GetResourceAllocator() const override {
+    return std::make_shared<TestImpellerAllocator>();
+  }
+
+  std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override {
     return nullptr;
   }
+
+  std::shared_ptr<SamplerLibrary> GetSamplerLibrary() const override {
+    return nullptr;
+  }
+
+  std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
+    return nullptr;
+  }
+
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
+    return nullptr;
+  }
+
+ private:
+  std::shared_ptr<const Capabilities> capabilities_;
 };
 
 }  // namespace impeller
@@ -97,6 +155,7 @@ class TestIOManager final : public IOManager {
   explicit TestIOManager(const fml::RefPtr<fml::TaskRunner>& task_runner,
                          bool has_gpu_context = true)
       : gl_surface_(SkISize::Make(1, 1)),
+        impeller_context_(std::make_shared<impeller::TestImpellerContext>()),
         gl_context_(has_gpu_context ? gl_surface_.CreateGrContext() : nullptr),
         weak_gl_context_factory_(
             has_gpu_context
@@ -148,10 +207,20 @@ class TestIOManager final : public IOManager {
     return is_gpu_disabled_sync_switch_;
   }
 
+  // |IOManager|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override {
+    return impeller_context_;
+  }
+
+  void SetGpuDisabled(bool disabled) {
+    is_gpu_disabled_sync_switch_->SetSwitch(disabled);
+  }
+
   bool did_access_is_gpu_disabled_sync_switch_ = false;
 
  private:
   TestGLSurface gl_surface_;
+  std::shared_ptr<impeller::Context> impeller_context_;
   sk_sp<GrDirectContext> gl_context_;
   std::unique_ptr<fml::WeakPtrFactory<GrDirectContext>>
       weak_gl_context_factory_;
@@ -271,7 +340,8 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
         fml::MakeRefCounted<ImageDescriptor>(
             std::move(data), std::make_unique<UnknownImageGenerator>());
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_FALSE(image);
       latch.Signal();
@@ -317,7 +387,8 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
@@ -361,7 +432,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
   SkBitmap bitmap;
   bitmap.allocPixels(info, 10 * 4);
   auto data = SkData::MakeWithoutCopy(bitmap.getPixels(), 10 * 10 * 4);
-  auto image = SkImage::MakeFromBitmap(bitmap);
+  auto image = SkImages::RasterFromBitmap(bitmap);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(10, 10), image->dimensions());
   ASSERT_EQ(nullptr, image->colorSpace());
@@ -384,7 +455,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
 
 TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3) {
   auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
-  auto image = SkImage::MakeFromEncoded(data);
+  auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
 
@@ -439,7 +510,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
   SkBitmap bitmap;
   bitmap.allocPixels(info, 10 * 16);
   auto data = SkData::MakeWithoutCopy(bitmap.getPixels(), 10 * 10 * 16);
-  auto image = SkImage::MakeFromBitmap(bitmap);
+  auto image = SkImages::RasterFromBitmap(bitmap);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(10, 10), image->dimensions());
   ASSERT_EQ(nullptr, image->colorSpace());
@@ -473,7 +544,7 @@ float DecodeBGR10(uint32_t x) {
 
 TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
   auto data = OpenFixtureAsSkData("DisplayP3Logo.jpg");
-  auto image = SkImage::MakeFromEncoded(data);
+  auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
 
@@ -525,7 +596,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNonWideGamut) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
-  auto image = SkImage::MakeFromEncoded(data);
+  auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
@@ -588,7 +659,8 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       decoded_size = image->skia_image()->dimensions();
@@ -648,7 +720,8 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
+    ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image,
+                                             const std::string& decode_error) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image && image->skia_image());
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
@@ -669,9 +742,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 }
 
 TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
-  const auto image_dimensions =
-      SkImage::MakeFromEncoded(OpenFixtureAsSkData("DashInNooglerHat.jpg"))
-          ->dimensions();
+  const auto image_dimensions = SkImages::DeferredFromEncodedData(
+                                    OpenFixtureAsSkData("DashInNooglerHat.jpg"))
+                                    ->dimensions();
 
   ASSERT_FALSE(image_dimensions.isEmpty());
 
@@ -719,12 +792,13 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
           std::move(data), std::move(generator));
 
-      ImageDecoder::ImageResult callback = [&](const sk_sp<DlImage>& image) {
-        ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image && image->skia_image());
-        final_size = image->skia_image()->dimensions();
-        latch.Signal();
-      };
+      ImageDecoder::ImageResult callback =
+          [&](const sk_sp<DlImage>& image, const std::string& decode_error) {
+            ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
+            ASSERT_TRUE(image && image->skia_image());
+            final_size = image->skia_image()->dimensions();
+            latch.Signal();
+          };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
     });
     latch.Wait();
@@ -767,9 +841,10 @@ TEST(ImageDecoderTest,
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
-  auto image = SkImage::MakeFromEncoded(data);
+  auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+  ASSERT_EQ(600, image->width());
+  ASSERT_EQ(200, image->height());
 
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -778,11 +853,11 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
-
-  ASSERT_EQ(ImageDecoderSkia::ImageFromCompressedData(
-                descriptor.get(), 6, 2, fml::tracing::TraceFlow(""))
-                ->dimensions(),
-            SkISize::Make(6, 2));
+  auto compressed_image = ImageDecoderSkia::ImageFromCompressedData(
+      descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
+  ASSERT_EQ(compressed_image->width(), 6);
+  ASSERT_EQ(compressed_image->height(), 2);
+  ASSERT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
 
 #if IMPELLER_SUPPORTS_RENDERING
   std::shared_ptr<impeller::Allocator> allocator =
@@ -790,13 +865,33 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {100, 100},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_1->sk_bitmap->dimensions(), SkISize::Make(6, 2));
+  ASSERT_EQ(result_1.sk_bitmap->width(), 6);
+  ASSERT_EQ(result_1.sk_bitmap->height(), 2);
 
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_2->sk_bitmap->dimensions(), SkISize::Make(10, 10));
+  ASSERT_EQ(result_2.sk_bitmap->width(), 10);
+  ASSERT_EQ(result_2.sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
+}
+
+TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
+  auto data = OpenFixtureAsSkData("heart_end.png");
+  ASSERT_TRUE(data);
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> generator =
+      registry.CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                                         std::move(generator));
+  auto compressed_image = ImageDecoderSkia::ImageFromCompressedData(
+      descriptor.get(), 250, 250, fml::tracing::TraceFlow(""));
+  ASSERT_TRUE(compressed_image);
+  ASSERT_EQ(compressed_image->width(), 250);
+  ASSERT_EQ(compressed_image->height(), 250);
+  ASSERT_EQ(compressed_image->alphaType(), kPremul_SkAlphaType);
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
@@ -809,9 +904,15 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto descriptor =
       fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
 
-  auto image = SkImage::MakeFromEncoded(data);
+  // If Exif metadata is ignored, the height and width will be swapped because
+  // "Rotate 90 CW" is what is encoded there.
+  ASSERT_EQ(600, descriptor->width());
+  ASSERT_EQ(200, descriptor->height());
+
+  auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+  ASSERT_EQ(600, image->width());
+  ASSERT_EQ(200, image->height());
 
   auto decode = [descriptor](uint32_t target_width, uint32_t target_height) {
     return ImageDecoderSkia::ImageFromCompressedData(
@@ -823,13 +924,14 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_TRUE(expected_data != nullptr);
   ASSERT_FALSE(expected_data->isEmpty());
 
-  auto assert_image = [&](auto decoded_image) {
+  auto assert_image = [&](auto decoded_image, const std::string& decode_error) {
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
-                    ->equals(expected_data.get()));
+    sk_sp<SkData> encoded =
+        SkPngEncoder::Encode(nullptr, decoded_image.get(), {});
+    ASSERT_TRUE(encoded->equals(expected_data.get()));
   };
 
-  assert_image(decode(300, 100));
+  assert_image(decode(300, 100), {});
 }
 
 TEST_F(ImageDecoderFixtureTest,
@@ -938,7 +1040,15 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
 
   std::unique_ptr<TestIOManager> io_manager;
   fml::RefPtr<MultiFrameCodec> codec;
+  fml::AutoResetWaitableEvent latch;
 
+  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+    latch.Signal();
+  };
+
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
   // Setup the IO manager.
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
@@ -977,6 +1087,95 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
     EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   });
 
+  latch.Wait();
+
+  // Destroy the Isolate
+  isolate = nullptr;
+
+  // Destroy the MultiFrameCodec
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { codec = nullptr; });
+
+  // Destroy the IO manager
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
+}
+
+TEST_F(ImageDecoderFixtureTest,
+       MultiFrameCodecProducesATextureEvenIfGPUIsDisabledOnImpeller) {
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
+
+  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+
+  ASSERT_TRUE(gif_mapping);
+
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> gif_generator =
+      registry.CreateCompatibleGenerator(gif_mapping);
+  ASSERT_TRUE(gif_generator);
+
+  TaskRunners runners(GetCurrentTestName(),         // label
+                      CreateNewThread("platform"),  // platform
+                      CreateNewThread("raster"),    // raster
+                      CreateNewThread("ui"),        // ui
+                      CreateNewThread("io")         // io
+  );
+
+  std::unique_ptr<TestIOManager> io_manager;
+  fml::RefPtr<MultiFrameCodec> codec;
+  fml::AutoResetWaitableEvent latch;
+
+  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+    latch.Signal();
+  };
+
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
+
+  // Setup the IO manager.
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+    io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
+    // Mark GPU disabled.
+    io_manager->SetGpuDisabled(true);
+  });
+
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                                      GetDefaultKernelFilePath(),
+                                      io_manager->GetWeakIOManager());
+
+  PostTaskSync(runners.GetUITaskRunner(), [&]() {
+    fml::AutoResetWaitableEvent isolate_latch;
+
+    EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
+      Dart_Handle library = Dart_RootLibrary();
+      if (Dart_IsError(library)) {
+        isolate_latch.Signal();
+        return false;
+      }
+      Dart_Handle closure =
+          Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
+      if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
+        isolate_latch.Signal();
+        return false;
+      }
+
+      EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
+      codec->getNextFrame(closure);
+      isolate_latch.Signal();
+      return true;
+    }));
+    isolate_latch.Wait();
+  });
+
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+    EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
+  });
+
+  latch.Wait();
+
   // Destroy the Isolate
   isolate = nullptr;
 
@@ -989,3 +1188,5 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

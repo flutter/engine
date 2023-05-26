@@ -10,7 +10,6 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
-import 'util.dart';
 
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
   getJsProperty<Object>(
@@ -87,7 +86,7 @@ class HtmlCodec implements ui.Codec {
     // on the main thread, and may cause dropped framed.
     late DomEventListener errorListener;
     DomEventListener? loadListener;
-    errorListener = allowInterop((DomEvent event) {
+    errorListener = createDomEventListener((DomEvent event) {
       if (loadListener != null) {
         imgElement.removeEventListener('load', loadListener);
       }
@@ -95,7 +94,7 @@ class HtmlCodec implements ui.Codec {
       completer.completeError(event);
     });
     imgElement.addEventListener('error', errorListener);
-    loadListener = allowInterop((DomEvent event) {
+    loadListener = createDomEventListener((DomEvent event) {
       if (chunkCallback != null) {
         chunkCallback!(100, 100);
       }
@@ -151,17 +150,25 @@ class HtmlImage implements ui.Image {
     ui.Image.onDispose?.call(this);
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
-    if (assertionsEnabled) {
+    assert(() {
       _disposed = true;
-    }
+      return true;
+    }());
   }
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
-    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
+
+    throw StateError('Image.debugDisposed is only available when asserts are enabled.');
   }
 
 

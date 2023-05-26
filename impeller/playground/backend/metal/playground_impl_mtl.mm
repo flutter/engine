@@ -18,7 +18,6 @@
 #include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/fixtures/mtl/fixtures_shaders.h"
-#include "impeller/fixtures/mtl/subgroup_fixtures_shaders.h"
 #include "impeller/playground/imgui/mtl/imgui_shaders.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -44,9 +43,6 @@ ShaderLibraryMappingsForPlayground() {
               impeller_framebuffer_blend_shaders_length),
           std::make_shared<fml::NonOwnedMapping>(
               impeller_fixtures_shaders_data, impeller_fixtures_shaders_length),
-          std::make_shared<fml::NonOwnedMapping>(
-              impeller_subgroup_fixtures_shaders_data,
-              impeller_subgroup_fixtures_shaders_length),
           std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
                                                  impeller_imgui_shaders_length),
           std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
@@ -67,7 +63,9 @@ void PlaygroundImplMTL::DestroyWindowHandle(WindowHandle handle) {
 PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
     : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
-      data_(std::make_unique<Data>()) {
+      data_(std::make_unique<Data>()),
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch(false)) {
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -75,8 +73,10 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
   if (!window) {
     return;
   }
-  auto context = ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
-                                    "Playground Library");
+  auto worker_task_runner = concurrent_loop_->GetTaskRunner();
+  auto context = ContextMTL::Create(
+      ShaderLibraryMappingsForPlayground(), worker_task_runner,
+      is_gpu_disabled_sync_switch_, "Playground Library");
   if (!context) {
     return;
   }
@@ -119,7 +119,9 @@ std::unique_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
   data_->metal_layer.drawableSize =
       CGSizeMake(layer_size.width * scale.x, layer_size.height * scale.y);
 
-  return SurfaceMTL::WrapCurrentMetalLayerDrawable(context, data_->metal_layer);
+  auto drawable =
+      SurfaceMTL::GetMetalDrawableAndValidate(context, data_->metal_layer);
+  return SurfaceMTL::WrapCurrentMetalLayerDrawable(context, drawable);
 }
 
 }  // namespace impeller

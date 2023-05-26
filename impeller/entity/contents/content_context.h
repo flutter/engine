@@ -18,6 +18,11 @@
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
+#ifdef IMPELLER_DEBUG
+#include "impeller/entity/checkerboard.frag.h"
+#include "impeller/entity/checkerboard.vert.h"
+#endif  // IMPELLER_DEBUG
+
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -27,14 +32,15 @@
 #include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/glyph_atlas_sdf.frag.h"
-#include "impeller/entity/glyph_atlas_sdf.vert.h"
+#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.comp.h"
+#include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -47,6 +53,7 @@
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
+#include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
@@ -59,7 +66,6 @@
 
 #include "impeller/entity/position_color.vert.h"
 
-#include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
 
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
@@ -103,6 +109,11 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
+using CheckerboardPipeline =
+    RenderPipelineT<CheckerboardVertexShader, CheckerboardFragmentShader>;
+#endif  // IMPELLER_DEBUG
+
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
 using SolidFillPipeline =
@@ -126,7 +137,6 @@ using RadialGradientSSBOFillPipeline =
 using SweepGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     SweepGradientSsboFillFragmentShader>;
-using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
@@ -164,8 +174,10 @@ using SrgbToLinearFilterPipeline =
                     SrgbToLinearFilterFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasSdfPipeline =
-    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
+using GlyphAtlasColorPipeline =
+    RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
+using PorterDuffBlendPipeline =
+    RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
@@ -265,6 +277,10 @@ using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
 
+/// Geometry Pipelines
+using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
+using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -325,6 +341,13 @@ class ContentContext {
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
 
   std::shared_ptr<Tessellator> GetTessellator() const;
+
+#ifdef IMPELLER_DEBUG
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(checkerboard_pipelines_, opts);
+  }
+#endif  // IMPELLER_DEBUG
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -455,9 +478,9 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasSdfPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(glyph_atlas_sdf_pipelines_, opts);
+    return GetPipeline(glyph_atlas_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
@@ -468,6 +491,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPorterDuffBlendPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(porter_duff_blend_pipelines_, opts);
   }
 
   // Advanced blends.
@@ -638,9 +666,22 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return point_field_compute_pipelines_;
+  }
+
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetUvComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return uv_compute_pipelines_;
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
+  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
+      GlyphAtlas::Type type) const;
 
   const Capabilities& GetDeviceCapabilities() const;
 
@@ -668,6 +709,11 @@ class ContentContext {
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
   // map.
+
+#ifdef IMPELLER_DEBUG
+  mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
+#endif  // IMPELLER_DEBUG
+
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
@@ -703,9 +749,10 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
+  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
+  mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
@@ -753,6 +800,10 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      point_field_compute_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      uv_compute_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -775,7 +826,12 @@ class ContentContext {
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());
 
-    auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
+    auto pipeline = prototype->second->WaitAndGet();
+    if (!pipeline) {
+      return nullptr;
+    }
+
+    auto variant_future = pipeline->CreateVariant(
         [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
@@ -789,7 +845,8 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+  std::shared_ptr<GlyphAtlasContext> alpha_glyph_atlas_context_;
+  std::shared_ptr<GlyphAtlasContext> color_glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 

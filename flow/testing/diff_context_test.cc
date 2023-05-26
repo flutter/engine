@@ -10,10 +10,7 @@
 namespace flutter {
 namespace testing {
 
-DiffContextTest::DiffContextTest()
-    : unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
-          GetCurrentTaskRunner(),
-          fml::TimeDelta::FromSeconds(0))) {}
+DiffContextTest::DiffContextTest() {}
 
 Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,
@@ -23,7 +20,7 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       bool use_raster_cache) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 
-  DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
+  DiffContext dc(layer_tree.size(), layer_tree.paint_region_map(),
                  old_layer_tree.paint_region_map(), use_raster_cache);
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
@@ -40,11 +37,9 @@ sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
 }
 
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
-    sk_sp<DisplayList> display_list,
+    const sk_sp<DisplayList>& display_list,
     const SkPoint& offset) {
-  return std::make_shared<DisplayListLayer>(
-      offset, SkiaGPUObject(std::move(display_list), unref_queue()), false,
-      false);
+  return std::make_shared<DisplayListLayer>(offset, display_list, false, false);
 }
 
 std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(

@@ -9,6 +9,8 @@
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_generator.h"
 
+#include <utility>
+
 using tonic::DartPersistentValue;
 
 namespace flutter {
@@ -56,10 +58,10 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
-    sk_sp<DlImage> GetNextFrameImage(
+    std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-        std::shared_ptr<impeller::Context> impeller_context_,
+        const std::shared_ptr<impeller::Context>& impeller_context,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue);
 
     void GetNextFrameAndInvokeCallback(
@@ -69,7 +71,7 @@ class MultiFrameCodec : public Codec {
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
         size_t trace_id,
-        std::shared_ptr<impeller::Context> impeller_context_);
+        const std::shared_ptr<impeller::Context>& impeller_context);
   };
 
   // Shared across the UI and IO task runners.

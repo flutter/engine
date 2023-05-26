@@ -10,7 +10,10 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "flutter/shell/platform/embedder/tests/embedder_unittests_util.h"
 
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 namespace testing {
@@ -19,7 +22,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                      GrDirectContext* context) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(layer.size.width, layer.size.height);
-  auto surface = context ? SkSurface::MakeRenderTarget(
+  auto surface = context ? SkSurfaces::RenderTarget(
                                context,                   // context
                                skgpu::Budgeted::kNo,      // budgeted
                                image_info,                // image info
@@ -29,7 +32,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                false                      // mipmaps
 
                                )
-                         : SkSurface::MakeRaster(image_info);
+                         : SkSurfaces::Raster(image_info);
   FML_CHECK(surface != nullptr);
   return surface;
 }
@@ -135,7 +138,7 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
     return false;
   }
 
-  auto data = image->encodeToData();
+  auto data = SkPngEncoder::Encode(nullptr, image.get(), {});
 
   if (!data) {
     return false;
@@ -156,7 +159,8 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
   auto encoded_image = SkData::MakeWithoutCopy(
       fixture_image_mapping.GetMapping(), fixture_image_mapping.GetSize());
   auto fixture_image =
-      SkImage::MakeFromEncoded(std::move(encoded_image))->makeRasterImage();
+      SkImages::DeferredFromEncodedData(std::move(encoded_image))
+          ->makeRasterImage();
 
   FML_CHECK(fixture_image) << "Could not create image from fixture: "
                            << fixture_file_name;

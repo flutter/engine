@@ -676,9 +676,13 @@ typedef struct {
   FlutterMetalCommandQueueHandle present_command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
+  ///
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterMetalTextureCallback get_next_drawable_callback;
   /// The callback presented to the embedder to present a fully populated metal
   /// texture to the user.
+  ///
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterMetalPresentCallback present_drawable_callback;
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
@@ -805,6 +809,11 @@ typedef struct {
   };
 } FlutterRendererConfig;
 
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
   size_t struct_size;
@@ -826,6 +835,8 @@ typedef struct {
   double physical_view_inset_bottom;
   /// Left inset of window.
   double physical_view_inset_left;
+  /// The identifier of the display the view is rendering on.
+  FlutterEngineDisplayId display_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -896,7 +907,6 @@ typedef enum {
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
   kFlutterPointerSignalKindScale,
-  kFlutterPointerSignalKindStylusAuxiliaryAction,
 } FlutterPointerSignalKind;
 
 typedef struct {
@@ -1654,11 +1664,6 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     const FlutterLocale** /* supported_locales*/,
     size_t /* Number of locales*/);
 
-/// Display refers to a graphics hardware system consisting of a framebuffer,
-/// typically a monitor or a screen. This ID is unique per display and is
-/// stable until the Flutter application restarts.
-typedef uint64_t FlutterEngineDisplayId;
-
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterDisplay).
   size_t struct_size;
@@ -1674,6 +1679,16 @@ typedef struct {
   /// This represents the refresh period in frames per second. This value may be
   /// zero if the device is not running or unavailable or unknown.
   double refresh_rate;
+
+  /// The width of the display, in physical pixels.
+  size_t width;
+
+  /// The height of the display, in physical pixels.
+  size_t height;
+
+  /// The pixel ratio of the display, which is used to convert physical pixels
+  /// to logical pixels.
+  double device_pixel_ratio;
 } FlutterEngineDisplay;
 
 /// The update type parameter that is passed to

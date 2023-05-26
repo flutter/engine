@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/aiks/color_source.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -14,7 +15,7 @@
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {
@@ -37,30 +38,20 @@ struct Paint {
     kStroke,
   };
 
-  enum class ColorSourceType {
-    kColor,
-    kImage,
-    kLinearGradient,
-    kRadialGradient,
-    kConicalGradient,
-    kSweepGradient,
-    kRuntimeEffect,
-    kScene,
-  };
-
   struct MaskBlurDescriptor {
     FilterContents::BlurStyle style;
     Sigma sigma;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
+        std::shared_ptr<ColorSourceContents> color_source_contents) const;
+
+    std::shared_ptr<FilterContents> CreateMaskBlur(
         const FilterInput::Ref& input,
-        bool is_solid_color,
-        const Matrix& effect_matrix) const;
+        bool is_solid_color) const;
   };
 
   Color color = Color::Black();
-  std::optional<ColorSourceProc> color_source;
-  ColorSourceType color_source_type = ColorSourceType::kColor;
+  ColorSource color_source;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
@@ -105,18 +96,14 @@ struct Paint {
                                                     bool cover = false) const;
 
   std::shared_ptr<Contents> CreateContentsForGeometry(
-      std::unique_ptr<Geometry> geometry) const;
-
-  std::shared_ptr<Contents> CreateContentsForGeometry(
-      const std::shared_ptr<Geometry>& geometry) const;
+      std::shared_ptr<Geometry> geometry) const;
 
   /// @brief   Whether this paint has a color filter that can apply opacity
   bool HasColorFilter() const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
-                                         bool is_solid_color,
-                                         const Matrix& effect_transform) const;
+                                         bool is_solid_color) const;
 
   std::shared_ptr<Contents> WithImageFilter(std::shared_ptr<Contents> input,
                                             const Matrix& effect_transform,

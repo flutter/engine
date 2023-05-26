@@ -93,7 +93,8 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 @end
 
 @interface SemanticsObject (Tests)
-
+- (BOOL)accessibilityScrollToVisible;
+- (BOOL)accessibilityScrollToVisibleWithChild:(id)child;
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event;
 @end
 
@@ -200,6 +201,42 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
   XCTAssertNil(hitTestResult);
+}
+
+- (void)testAccessibilityScrollToVisible {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
+
+  flutter::SemanticsNode node3;
+  node3.id = 3;
+  node3.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  [object3 setSemanticsNode:&node3];
+
+  [object3 accessibilityScrollToVisible];
+
+  XCTAssertTrue(bridge->observations.size() == 1);
+  XCTAssertTrue(bridge->observations[0].id == 3);
+  XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
+}
+
+- (void)testAccessibilityScrollToVisibleWithChild {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
+
+  flutter::SemanticsNode node3;
+  node3.id = 3;
+  node3.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  [object3 setSemanticsNode:&node3];
+
+  [object3 accessibilityScrollToVisibleWithChild:object3];
+
+  XCTAssertTrue(bridge->observations.size() == 1);
+  XCTAssertTrue(bridge->observations[0].id == 3);
+  XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
 }
 
 - (void)testAccessibilityHitTestOutOfRect {
@@ -863,6 +900,24 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 
   XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
   XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
+}
+
+- (void)testFlutterSemanticsObjectOfRadioButton {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+
+  // Handle initial setting of node with header.
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kHasCheckedState) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kHasEnabledState) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsEnabled);
+  node.label = "foo";
+  [object setSemanticsNode:&node];
+  XCTAssertTrue((object.accessibilityTraits & UIAccessibilityTraitButton) > 0);
+  XCTAssertNil(object.accessibilityValue);
 }
 
 - (void)testFlutterSwitchSemanticsObjectMatchesUISwitchDisabled {

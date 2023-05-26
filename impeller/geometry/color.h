@@ -8,7 +8,39 @@
 #include <array>
 #include <cstdlib>
 #include <ostream>
+#include <type_traits>
 #include "impeller/geometry/scalar.h"
+
+#define IMPELLER_FOR_EACH_BLEND_MODE(V) \
+  V(Clear)                              \
+  V(Source)                             \
+  V(Destination)                        \
+  V(SourceOver)                         \
+  V(DestinationOver)                    \
+  V(SourceIn)                           \
+  V(DestinationIn)                      \
+  V(SourceOut)                          \
+  V(DestinationOut)                     \
+  V(SourceATop)                         \
+  V(DestinationATop)                    \
+  V(Xor)                                \
+  V(Plus)                               \
+  V(Modulate)                           \
+  V(Screen)                             \
+  V(Overlay)                            \
+  V(Darken)                             \
+  V(Lighten)                            \
+  V(ColorDodge)                         \
+  V(ColorBurn)                          \
+  V(HardLight)                          \
+  V(SoftLight)                          \
+  V(Difference)                         \
+  V(Exclusion)                          \
+  V(Multiply)                           \
+  V(Hue)                                \
+  V(Saturation)                         \
+  V(Color)                              \
+  V(Luminosity)
 
 namespace impeller {
 
@@ -55,6 +87,8 @@ enum class BlendMode {
   kSaturation,
   kColor,
   kLuminosity,
+
+  kLast = kLuminosity,
 };
 
 /**
@@ -762,6 +796,8 @@ struct Color {
 
   constexpr bool IsOpaque() const { return alpha == 1.0f; }
 };
+
+std::string ColorToString(const Color& color);
 
 /**
  *  Represents a color by its constituent hue, saturation, brightness and alpha

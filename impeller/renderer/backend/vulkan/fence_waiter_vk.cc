@@ -7,10 +7,12 @@
 #include <chrono>
 
 #include "flutter/fml/thread.h"
+#include "flutter/fml/trace_event.h"
 
 namespace impeller {
 
-FenceWaiterVK::FenceWaiterVK(vk::Device device) : device_(device) {
+FenceWaiterVK::FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder)
+    : device_holder_(device_holder) {
   waiter_thread_ = std::make_unique<std::thread>([&]() { Main(); });
   is_valid_ = true;
 }
@@ -50,7 +52,12 @@ void FenceWaiterVK::Main() {
 
     wait_set_cv_.wait(lock, [&]() { return !wait_set_.empty() || terminate_; });
 
-    auto wait_set = TrimAndCreateWaitSetLocked();
+    auto device_holder = device_holder_.lock();
+    if (!device_holder) {
+      break;
+    }
+
+    auto wait_set = TrimAndCreateWaitSetLocked(device_holder);
 
     lock.unlock();
 
@@ -61,7 +68,7 @@ void FenceWaiterVK::Main() {
       continue;
     }
 
-    auto result = device_.waitForFences(
+    auto result = device_holder->GetDevice().waitForFences(
         wait_set->size(),                        // fences count
         wait_set->data(),                        // fences
         false,                                   // wait for all
@@ -73,15 +80,16 @@ void FenceWaiterVK::Main() {
   }
 }
 
-std::optional<std::vector<vk::Fence>>
-FenceWaiterVK::TrimAndCreateWaitSetLocked() {
+std::optional<std::vector<vk::Fence>> FenceWaiterVK::TrimAndCreateWaitSetLocked(
+    std::shared_ptr<DeviceHolder> device_holder) {
   if (terminate_) {
     return std::nullopt;
   }
+  TRACE_EVENT0("impeller", "TrimFences");
   std::vector<vk::Fence> fences;
   fences.reserve(wait_set_.size());
   for (auto it = wait_set_.begin(); it != wait_set_.end();) {
-    switch (device_.getFenceStatus(it->first->Get())) {
+    switch (device_holder->GetDevice().getFenceStatus(it->first->Get())) {
       case vk::Result::eSuccess:  // Signalled.
         it->second();
         it = wait_set_.erase(it);

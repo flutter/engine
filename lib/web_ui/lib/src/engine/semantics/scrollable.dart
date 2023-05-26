@@ -121,7 +121,7 @@ class Scrollable extends RoleManager {
       };
       semanticsObject.owner.addGestureModeListener(_gestureModeListener);
 
-      _scrollListener = allowInterop((_) {
+      _scrollListener = createDomEventListener((_) {
         _recomputeScrollPosition();
       });
       semanticsObject.element.addEventListener('scroll', _scrollListener);
@@ -224,6 +224,7 @@ class Scrollable extends RoleManager {
 
   @override
   void dispose() {
+    super.dispose();
     final DomCSSStyleDeclaration style = semanticsObject.element.style;
     assert(_gestureModeListener != null);
     style.removeProperty('overflowY');
