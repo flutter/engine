@@ -664,8 +664,6 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
-    // TODO(justinmc): Make sure this still works as before on older Android
-    // devices. Not sure if I'm still listening to backs somewhere.
     if (Build.VERSION.SDK_INT >= 33) {
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
