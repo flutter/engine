@@ -337,7 +337,7 @@ ImageDecoderImpeller::UploadTextureToPrivate(
           .SetIfTrue([&result, context, bitmap, gpu_disabled_switch] {
             // create_mips is false because we already know the GPU is disabled.
             result = UploadTextureToShared(context, bitmap, gpu_disabled_switch,
-                                           false);
+                                           /*create_mips=*/false);
           }));
   return result;
 }
