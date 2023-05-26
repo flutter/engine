@@ -290,7 +290,7 @@ guidelines to make them compatible with the engine build system.
 The guidelines are as follows:
 
 * Flags receiving paths to resources from multiple sub-builds need to use paths
-relative to the checkout directory. If there are global generators in a build
+relative to the checkout (`src/`) directory. If there are global generators in a build
 configuration, the engine\_v2 recipes will download the full sub-build archives
 to the checkout/out/&lt;sub-build name> directory.
 * Flags receiving paths to output directories must use paths relative to the out
