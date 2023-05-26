@@ -500,7 +500,7 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
-  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+  bool drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
     // CanvasRenderingContext2D does not have an interface to draw glyphs
     throw UnimplementedError();
   }
