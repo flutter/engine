@@ -224,6 +224,10 @@
                         "--engine-capture-core-dump"
                     ],
                     "script": "flutter/testing/run_tests.py"
+                },
+                {
+                    "name": "Generate metrics test",
+                    "script": "flutter/testing/benchmark/generate_metrics.sh"
                 }
             ]
         }
