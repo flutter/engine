@@ -127,6 +127,8 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
+    bringup: true
+    presubmit: false
     properties:
       cache_name: "builder"
       cache_root: "cache"
