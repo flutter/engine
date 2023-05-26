@@ -20,6 +20,9 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path_builder.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 
 Canvas::Canvas() {
@@ -598,8 +601,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates() &&
-      paint.color_source.GetType() != ColorSource::Type::kImage) {
+  if (vertices->HasTextureCoordinates()) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large
@@ -659,3 +661,5 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
 }
 
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

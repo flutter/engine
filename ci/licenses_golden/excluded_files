@@ -1588,6 +1588,7 @@
 ../../../third_party/dart/runtime/tools/wiki/build/cpp_indexer.py
 ../../../third_party/dart/runtime/tools/wiki/build/xrefs.py
 ../../../third_party/dart/runtime/vm/allocation_test.cc
+../../../third_party/dart/runtime/vm/ama_test.cc
 ../../../third_party/dart/runtime/vm/assert_test.cc
 ../../../third_party/dart/runtime/vm/atomic_test.cc
 ../../../third_party/dart/runtime/vm/base64_test.cc
@@ -1651,6 +1652,7 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
+../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc
