@@ -492,7 +492,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
               bitmap_result.sk_bitmap, gpu_disabled_switch);
 #else
           std::tie(image, decode_error) = UploadTextureToShared(
-              context, bitmap_result.sk_bitmap, gpu_disabled_switch, true);
+              context, bitmap_result.sk_bitmap, gpu_disabled_switch, /*create_mips=*/true);
 #endif  // FML_OS_IOS
           result(image, decode_error);
         };
