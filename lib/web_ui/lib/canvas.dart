@@ -156,7 +156,7 @@ abstract class Canvas {
     double elevation,
     bool transparentOccluder,
   );
-  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
+  bool drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
 }
 
 typedef PictureEventCallback = void Function(Picture picture);

@@ -5813,7 +5813,10 @@ abstract class Canvas {
   /// Draw a list of glyphs given by [run]. All glyphs are baseline aligned.
   /// [offset] specifies the origin point to draw the glyphs, so the position of
   /// each glyph given by [GlyphRun.positions] is relative to [offset].
-  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
+  ///
+  /// Returns false if no font matches the requirements of [run]. Otherwise,
+  /// returns true and draws the glyphs.
+  bool drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
 }
 
 base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
@@ -6288,8 +6291,8 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
 
   @override
-  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint) {
-    _drawGlyphRun(
+  bool drawGlyphRun(GlyphRun run, Offset offset, Paint paint) {
+    return _drawGlyphRun(
       run.glyphs,
       run.positions,
       offset.dx,
@@ -6303,8 +6306,8 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
     );
   }
 
-  @Native<Void Function(Pointer<Void>, Handle, Handle, Double, Double, Handle, Int32, Int32, Double, Handle, Handle)>(symbol: 'Canvas::drawGlyphRun')
-  external void _drawGlyphRun(
+  @Native<Bool Function(Pointer<Void>, Handle, Handle, Double, Double, Handle, Int32, Int32, Double, Handle, Handle)>(symbol: 'Canvas::drawGlyphRun')
+  external bool _drawGlyphRun(
       Uint16List glyphs,
       Float32List positions,
       double originX,

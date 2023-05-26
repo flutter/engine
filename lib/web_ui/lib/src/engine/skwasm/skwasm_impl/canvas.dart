@@ -319,7 +319,7 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
-  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+  bool drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
     throw UnimplementedError();
   }
 

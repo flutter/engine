@@ -430,13 +430,13 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   @override
-  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+  bool drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
     final SkiaFontCollection fontCollection =
         renderer.fontCollection as SkiaFontCollection;
     final List<SkFont>? fonts = fontCollection.familyToFontMap[run.fontFamily];
 
     if (fonts == null || fonts.isEmpty) {
-      return;
+      return false;
     }
 
     final SkFont font = fonts[0];
@@ -453,5 +453,6 @@ class CanvasKitCanvas implements ui.Canvas {
 
     // Restore the original font size.
     font.setSize(originalSize);
+    return true;
   }
 }

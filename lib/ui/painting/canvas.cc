@@ -5,7 +5,6 @@
 #include "flutter/lib/ui/painting/canvas.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/lib/ui/floating_point.h"
@@ -641,16 +640,16 @@ void Canvas::drawShadow(const CanvasPath* path,
   }
 }
 
-void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
-                          Dart_Handle positions_handle,
-                          double originX,
-                          double originY,
-                          Dart_Handle font_family_name_handle,
-                          int font_weight_index,
-                          int font_slant_index,
-                          double font_size,
-                          Dart_Handle paint_objects,
-                          Dart_Handle paint_data) {
+Dart_Handle Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
+                                 Dart_Handle positions_handle,
+                                 double originX,
+                                 double originY,
+                                 Dart_Handle font_family_name_handle,
+                                 int font_weight_index,
+                                 int font_slant_index,
+                                 double font_size,
+                                 Dart_Handle paint_objects,
+                                 Dart_Handle paint_data) {
   Paint paint(paint_objects, paint_data);
   FML_DCHECK(paint.isNotNull());
   if (display_list_builder_) {
@@ -686,7 +685,7 @@ void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
             sk_font_families, font_style);
 
     if (sk_typefaces.empty()) {
-      return;
+      return Dart_False();
     }
 
     auto matched_sk_typeface = sk_typefaces.front();
@@ -696,8 +695,7 @@ void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
     // return if fallback font is used
     if (!SkString(font_family_name.c_str())
              .equals(matched_sk_font_family_name)) {
-      std::cout << "font_family_name does not match" << std::endl;
-      return;
+      return Dart_False();
     }
 
     const SkFont sk_font(sk_typefaces.front(), SafeNarrow(font_size));
@@ -709,6 +707,7 @@ void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
     paint.paint(dl_paint, kDrawTextBlobFlags);
     builder()->DrawTextBlob(sk_textblob, SafeNarrow(originX),
                             SafeNarrow(originY), dl_paint);
+    return Dart_True();
   }
 }
 
