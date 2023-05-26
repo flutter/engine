@@ -707,8 +707,8 @@ Dart_Handle Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
     paint.paint(dl_paint, kDrawTextBlobFlags);
     builder()->DrawTextBlob(sk_textblob, SafeNarrow(originX),
                             SafeNarrow(originY), dl_paint);
-    return Dart_True();
   }
+  return Dart_True();
 }
 
 void Canvas::Invalidate() {
