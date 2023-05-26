@@ -293,7 +293,7 @@ The guidelines are as follows:
 relative to the checkout (`src/`) directory. If there are global generators in a build
 configuration, the engine\_v2 recipes will download the full sub-build archives
 to the src/out/&lt;sub-build name> directory.
-* Flags receiving paths to output directories must use paths relative to the out
+* Flags receiving paths to output directories must use paths relative to the `src/out`
 folder. This is to be able to reference the artifacts in the global archives
 section.
 * The script is in charge of generating the final artifact, e.g. if the script
