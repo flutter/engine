@@ -297,8 +297,8 @@ to the src/out/&lt;sub-build name> directory.
 folder. This is to be able to reference the artifacts in the global archives
 section.
 * The script is in charge of generating the final artifact, e.g. if the script
-generates multiple files that will be zipped later then it is the script
-responsibility to generate the final zip.
+generates multiple files that will be zipped later, then it is the responsibility
+of the script to generate the final zip.
 * If the generator is producing a Mac/iOS artifact, then it is the responsibility
 of the script to embed the signing metadata.
 
