@@ -7,7 +7,6 @@ import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
 
@@ -1395,10 +1394,10 @@ extension DomCanvasGradientExtension on DomCanvasGradient {
 @staticInterop
 class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 
-Future<_DomResponse> _rawHttpGet(String url) =>
-    js_util.promiseToFuture<_DomResponse>(domWindow._fetch1(url.toJS));
+Future<DomResponse> rawHttpGet(String url) =>
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch1(url.toJS));
 
-typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse> Function(
+typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse?> Function(
     String url);
 
 MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
@@ -1418,18 +1417,21 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    return mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    if (response != null) {
+      return response;
+    }
   }
   try {
-    final _DomResponse domResponse = await _rawHttpGet(url);
+    final DomResponse domResponse = await rawHttpGet(url);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
   }
 }
 
-Future<_DomResponse> _rawHttpPost(String url, String data) =>
-    js_util.promiseToFuture<_DomResponse>(domWindow._fetch2(
+Future<DomResponse> _rawHttpPost(String url, String data) =>
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch2(
         url.toJS,
         <String, Object?>{
           'method': 'POST',
@@ -1447,7 +1449,7 @@ Future<_DomResponse> _rawHttpPost(String url, String data) =>
 @visibleForTesting
 Future<HttpFetchResponse> testOnlyHttpPost(String url, String data) async {
   try {
-    final _DomResponse domResponse = await _rawHttpPost(url, data);
+    final DomResponse domResponse = await _rawHttpPost(url, data);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
@@ -1540,7 +1542,7 @@ class HttpFetchResponseImpl implements HttpFetchResponse {
   @override
   final String url;
 
-  final _DomResponse _domResponse;
+  final DomResponse _domResponse;
 
   @override
   int get status => _domResponse.status;
@@ -1622,7 +1624,7 @@ abstract class HttpFetchPayload {
 class HttpFetchPayloadImpl implements HttpFetchPayload {
   HttpFetchPayloadImpl._(this._domResponse);
 
-  final _DomResponse _domResponse;
+  final DomResponse _domResponse;
 
   @override
   Future<void> read<T>(HttpFetchReader<T> callback) async {
@@ -1657,31 +1659,36 @@ typedef MockOnRead = Future<void> Function<T>(HttpFetchReader<T> callback);
 
 class MockHttpFetchPayload implements HttpFetchPayload {
   MockHttpFetchPayload({
-    ByteBuffer? byteBuffer,
-    Object? json,
-    String? text,
-    MockOnRead? onRead,
+    required ByteBuffer byteBuffer,
+    int? chunkSize,
   })  : _byteBuffer = byteBuffer,
-        _json = json,
-        _text = text,
-        _onRead = onRead;
+        _chunkSize = chunkSize ?? 64;
 
-  final ByteBuffer? _byteBuffer;
-  final Object? _json;
-  final String? _text;
-  final MockOnRead? _onRead;
+  final ByteBuffer _byteBuffer;
+  final int _chunkSize;
 
   @override
-  Future<void> read<T>(HttpFetchReader<T> callback) => _onRead!(callback);
+  Future<void> read<T>(HttpFetchReader<T> callback) async {
+    final int totalLength = _byteBuffer.lengthInBytes;
+    int currentIndex = 0;
+    while (currentIndex < totalLength) {
+      final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
+      final Uint8List chunk = Uint8List.sublistView(
+        _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize
+      );
+      callback(chunk.toJS as T);
+      currentIndex += chunkSize;
+    }
+  }
 
   @override
-  Future<ByteBuffer> asByteBuffer() async => _byteBuffer!;
+  Future<ByteBuffer> asByteBuffer() async => _byteBuffer;
 
   @override
-  Future<dynamic> json() async => _json!;
+  Future<dynamic> json() async => throw AssertionError('json not supported by mock');
 
   @override
-  Future<String> text() async => _text!;
+  Future<String> text() async => throw AssertionError('text not supported by mock');
 }
 
 /// Indicates a missing HTTP payload when one was expected, such as when
@@ -1736,14 +1743,14 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class _DomResponse {}
+class DomResponse {}
 
-extension _DomResponseExtension on _DomResponse {
+extension DomResponseExtension on DomResponse {
   @JS('status')
   external JSNumber get _status;
   int get status => _status.toDart.toInt();
 
-  external _DomHeaders get headers;
+  external DomHeaders get headers;
 
   external _DomReadableStream get body;
 
@@ -1763,9 +1770,9 @@ extension _DomResponseExtension on _DomResponse {
 
 @JS()
 @staticInterop
-class _DomHeaders {}
+class DomHeaders {}
 
-extension _DomHeadersExtension on _DomHeaders {
+extension DomHeadersExtension on DomHeaders {
   @JS('get')
   external JSString? _get(JSString? headerName);
   String? get(String? headerName) => _get(headerName?.toJS)?.toDart;
@@ -1795,9 +1802,7 @@ extension _DomStreamReaderExtension on _DomStreamReader {
 class _DomStreamChunk {}
 
 extension _DomStreamChunkExtension on _DomStreamChunk {
-  @JS('value')
-  external JSAny? get _value;
-  Object? get value => _value?.toObjectShallow;
+  external JSAny? get value;
 
   @JS('done')
   external JSBoolean get _done;
@@ -1919,6 +1924,10 @@ extension DomFontFaceExtension on DomFontFace {
   @JS('weight')
   external JSString? get _weight;
   String? get weight => _weight?.toDart;
+
+  @JS('status')
+  external JSString? get _status;
+  String? get status => _status?.toDart;
 }
 
 @JS()
@@ -2110,7 +2119,7 @@ extension DomHistoryExtension on DomHistory {
   external JSVoid _go1();
   @JS('go')
   external JSVoid _go2(JSNumber delta);
-  void go([double? delta]) {
+  void go([int? delta]) {
     if (delta == null) {
       _go1();
     } else {
@@ -2823,6 +2832,9 @@ class DomScreen {}
 
 extension DomScreenExtension on DomScreen {
   external DomScreenOrientation? get orientation;
+
+  external double get width;
+  external double get height;
 }
 
 @JS()
@@ -3286,8 +3298,8 @@ class DomSegmenter {
 
 extension DomSegmenterExtension on DomSegmenter {
   @JS('segment')
-  external DomSegments _segment(JSString text);
-  DomSegments segment(String text) => _segment(text.toJS);
+  external DomSegments segmentRaw(JSString text);
+  DomSegments segment(String text) => segmentRaw(text.toJS);
 }
 
 @JS()
@@ -3386,8 +3398,7 @@ class DomV8BreakIterator {
 
 extension DomV8BreakIteratorExtension on DomV8BreakIterator {
   @JS('adoptText')
-  external JSVoid _adoptText(JSString text);
-  void adoptText(String text) => _adoptText(text.toJS);
+  external JSVoid adoptText(JSString text);
 
   @JS('first')
   external JSNumber _first();
@@ -3413,4 +3424,14 @@ DomV8BreakIterator createV8BreakIterator() {
 
   return DomV8BreakIterator(
       <JSAny?>[].toJS, const <String, String>{'type': 'line'}.toJSAnyDeep);
+}
+
+@JS('TextDecoder')
+@staticInterop
+class DomTextDecoder {
+  external factory DomTextDecoder();
+}
+
+extension DomTextDecoderExtension on DomTextDecoder {
+  external JSString decode(JSTypedArray buffer);
 }

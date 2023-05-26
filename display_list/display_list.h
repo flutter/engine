@@ -235,6 +235,7 @@ class DisplayList : public SkRefCnt {
 
   void Dispatch(DlOpReceiver& ctx) const;
   void Dispatch(DlOpReceiver& ctx, const SkRect& cull_rect) const;
+  void Dispatch(DlOpReceiver& ctx, const SkIRect& cull_rect) const;
 
   // From historical behavior, SkPicture always included nested bytes,
   // but nested ops are only included if requested. The defaults used
@@ -257,14 +258,12 @@ class DisplayList : public SkRefCnt {
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
-  bool Equals(sk_sp<const DisplayList> other) const {
+  bool Equals(const sk_sp<const DisplayList>& other) const {
     return Equals(other.get());
   }
 
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
   bool isUIThreadSafe() const { return is_ui_thread_safe_; }
-
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
  private:
   DisplayList(DisplayListStorage&& ptr,
@@ -278,6 +277,8 @@ class DisplayList : public SkRefCnt {
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
+
+  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
   const DisplayListStorage storage_;
   const size_t byte_count_;

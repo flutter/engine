@@ -6,7 +6,7 @@
 
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
@@ -66,7 +66,12 @@ TiledTextureContents::CreateFilterTexture(
   const ColorFilterProc& filter = color_filter_.value();
   auto color_filter_contents = filter(FilterInput::Make(texture_));
   auto snapshot = color_filter_contents->RenderToSnapshot(
-      renderer, Entity(), std::nullopt, true, "TiledTextureContents Snapshot");
+      renderer,                          // renderer
+      Entity(),                          // entity
+      std::nullopt,                      // coverage_limit
+      std::nullopt,                      // sampler_descriptor
+      true,                              // msaa_enabled
+      "TiledTextureContents Snapshot");  // label
   if (snapshot.has_value()) {
     return snapshot.value().texture;
   }
@@ -93,6 +98,17 @@ bool TiledTextureContents::UsesEmulatedTileMode(
          !TileModeToAddressMode(y_tile_mode_, capabilities).has_value();
 }
 
+// |Contents|
+bool TiledTextureContents::IsOpaque() const {
+  if (GetOpacity() < 1) {
+    return false;
+  }
+  if (color_filter_.has_value()) {
+    return false;
+  }
+  return texture_->IsOpaque();
+}
+
 bool TiledTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass) const {
@@ -110,10 +126,9 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  auto bounds_origin = GetGeometry()->GetCoverage(Matrix())->origin;
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect(bounds_origin, Size(texture_size)), GetInverseMatrix(), renderer,
-      entity, pass);
+      Rect({0, 0}, Size(texture_size)), GetInverseMatrix(), renderer, entity,
+      pass);
   bool uses_emulated_tile_mode =
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
 

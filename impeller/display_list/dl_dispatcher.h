@@ -15,6 +15,10 @@ class DlDispatcher final : public flutter::DlOpReceiver {
  public:
   DlDispatcher();
 
+  explicit DlDispatcher(Rect cull_rect);
+
+  explicit DlDispatcher(IRect cull_rect);
+
   ~DlDispatcher();
 
   Picture EndRecordingAsPicture();
@@ -26,7 +30,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void setDither(bool dither) override;
 
   // |flutter::DlOpReceiver|
-  void setStyle(flutter::DlDrawStyle style) override;
+  void setDrawStyle(flutter::DlDrawStyle style) override;
 
   // |flutter::DlOpReceiver|
   void setColor(flutter::DlColor color) override;

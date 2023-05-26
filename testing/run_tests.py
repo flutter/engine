@@ -17,10 +17,12 @@ import glob
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
+import typing
 import xvfb
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -55,13 +57,13 @@ def is_asan(build_dir):
 
 
 def run_cmd(
-    cmd,
-    forbidden_output=None,
-    expect_failure=False,
-    env=None,
-    allowed_failure_output=None,
+    cmd: typing.List[str],
+    forbidden_output: typing.List[str] = None,
+    expect_failure: bool = False,
+    env: typing.Dict[str, str] = None,
+    allowed_failure_output: typing.List[str] = None,
     **kwargs
-):
+) -> None:
   if forbidden_output is None:
     forbidden_output = []
   if allowed_failure_output is None:
@@ -70,12 +72,13 @@ def run_cmd(
   command_string = ' '.join(cmd)
 
   print_divider('>')
-  print('Running command "%s"' % command_string)
+  print(f'Running command "{command_string}"')
 
   start_time = time.time()
   collect_output = forbidden_output or allowed_failure_output
   stdout_pipe = sys.stdout if not collect_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not collect_output else subprocess.PIPE
+
   process = subprocess.Popen(
       cmd,
       stdout=stdout_pipe,
@@ -91,15 +94,14 @@ def run_cmd(
     print_divider('!')
 
     print(
-        'Failed Command:\n\n%s\n\nExit Code: %d\n' %
-        (command_string, process.returncode)
+        f'Failed Command:\n\n{command_string}\n\nExit Code: {process.returncode}\n'
     )
 
     if stdout:
-      print('STDOUT: \n%s' % stdout)
+      print(f'STDOUT: \n{stdout}')
 
     if stderr:
-      print('STDERR: \n%s' % stderr)
+      print(f'STDERR: \n{stderr}')
 
     print_divider('!')
 
@@ -110,9 +112,8 @@ def run_cmd(
         allowed_failure = True
 
     if not allowed_failure:
-      raise Exception(
-          'Command "%s" exited with code %d.' %
-          (command_string, process.returncode)
+      raise RuntimeError(
+          f'Command "{command_string}" exited with code {process.returncode}.'
       )
 
   if stdout or stderr:
@@ -122,20 +123,28 @@ def run_cmd(
   for forbidden_string in forbidden_output:
     if (stdout and forbidden_string in stdout) or (stderr and
                                                    forbidden_string in stderr):
-      raise Exception(
-          'command "%s" contained forbidden string %s' %
-          (command_string, forbidden_string)
+      raise RuntimeError(
+          f'command "{command_string}" contained forbidden string {forbidden_string}'
       )
 
   print_divider('<')
   print(
-      'Command run successfully in %.2f seconds: %s' %
-      (end_time - start_time, command_string)
+      f'Command run successfully in {end_time - start_time:.2f} seconds: {command_string}'
   )
 
 
 def is_mac():
   return sys.platform == 'darwin'
+
+
+def is_aarm64():
+  assert is_mac()
+  output = subprocess.check_output(['sysctl', 'machdep.cpu'])
+  text = output.decode('utf-8')
+  aarm64 = text.find('Apple') >= 0
+  if not aarm64:
+    assert text.find('GenuineIntel') >= 0
+  return aarm64
 
 
 def is_linux():
@@ -214,7 +223,7 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     expect_failure=False,
     coverage=False,
     extra_env=None,
-    gtest=False
+    gtest=False,
 ):
   if executable_filter is not None and executable_name not in executable_filter:
     print('Skipping %s due to filter.' % executable_name)
@@ -271,7 +280,7 @@ def run_engine_executable( # pylint: disable=too-many-arguments
         forbidden_output=forbidden_output,
         expect_failure=expect_failure,
         env=env,
-        allowed_failure_output=allowed_failure_output
+        allowed_failure_output=allowed_failure_output,
     )
   except:
     # The LUCI environment may provide a variable containing a directory path
@@ -460,13 +469,33 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     # flutter_desktop_darwin_unittests uses global state that isn't handled
     # correctly by gtest-parallel.
     # https://github.com/flutter/flutter/issues/104789
-    run_engine_executable(
-        build_dir,
-        'flutter_desktop_darwin_unittests',
-        executable_filter,
-        shuffle_flags,
-        coverage=coverage
-    )
+    if not os.path.basename(build_dir).startswith('host_debug'):
+      # Test is disabled for flaking in debug runs:
+      # https://github.com/flutter/flutter/issues/127441
+      run_engine_executable(
+          build_dir,
+          'flutter_desktop_darwin_unittests',
+          executable_filter,
+          shuffle_flags,
+          coverage=coverage
+      )
+    extra_env = {
+        # pylint: disable=line-too-long
+        # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+        'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
+        'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+            '1',  # Validates accesses to device and constant memory.
+        'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+            '1',  # Validates accesses to threadgroup memory.
+        'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+            '1',  # Validates that texture references are not nil.
+        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+    }
+    if is_aarm64():
+      extra_env.update({
+          'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+          'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
+      })
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
@@ -474,18 +503,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags,
         coverage=coverage,
-        extra_env={
-            # pylint: disable=line-too-long
-            # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-            'MTL_SHADER_VALIDATION':
-                '1',  # Enables all shader validation tests.
-            'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-                '1',  # Validates accesses to device and constant memory.
-            'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-                '1',  # Validates accesses to threadgroup memory.
-            'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-                '1',  # Validates that texture references are not nil.
-        },
+        extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
         # https://github.com/flutter/flutter/issues/114872
         allowed_failure_output=[
@@ -607,12 +625,21 @@ def ensure_ios_tests_are_built(ios_out_dir):
   message.append(
       'gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator'
   )
-  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  message.append('ninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = "%s or %s doesn't exist. Please run the following commands: \n%s" % (
       ios_out_dir, ios_test_lib, '\n'.join(message)
   )
   assert os.path.exists(tmp_out_dir
                        ) and os.path.exists(ios_test_lib), final_message
+
+  ios_test_lib_time = os.path.getmtime(ios_test_lib)
+  flutter_dylib = os.path.join(tmp_out_dir, 'libFlutter.dylib')
+  flutter_dylib_time = os.path.getmtime(flutter_dylib)
+
+  final_message = '%s is older than %s. Please run the following commands: \n%s' % (
+      ios_test_lib, flutter_dylib, '\n'.join(message)
+  )
+  assert flutter_dylib_time <= ios_test_lib_time, final_message
 
 
 def assert_expected_xcode_version():
@@ -728,21 +755,45 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     ios_unit_test_dir = os.path.join(
         BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
-    # Avoid using xcpretty unless the following can be addressed:
-    # - Make sure all relevant failure output is printed on a failure.
-    # - Make sure that a failing exit code is set for CI.
-    # See https://github.com/flutter/flutter/issues/63742
-    test_command = [
-        'xcodebuild '
-        '-sdk iphonesimulator '
-        '-scheme IosUnitTests '
-        "-destination name='" + new_simulator_name + "' "
-        'test '
-        'FLUTTER_ENGINE=' + ios_variant
-    ]
-    if test_filter is not None:
-      test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
-    run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
+                                    ) as result_bundle_temp:
+      result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
+
+      # Avoid using xcpretty unless the following can be addressed:
+      # - Make sure all relevant failure output is printed on a failure.
+      # - Make sure that a failing exit code is set for CI.
+      # See https://github.com/flutter/flutter/issues/63742
+      test_command = [
+          'xcodebuild '
+          '-sdk iphonesimulator '
+          '-scheme IosUnitTests '
+          '-resultBundlePath ' + result_bundle_path + ' '
+          '-destination name=' + new_simulator_name + ' '
+          'test '
+          'FLUTTER_ENGINE=' + ios_variant
+      ]
+      if test_filter is not None:
+        test_command[0] = test_command[0] + ' -only-testing:%s' % test_filter
+      try:
+        run_cmd(test_command, cwd=ios_unit_test_dir, shell=True)
+
+      except:
+        # The LUCI environment may provide a variable containing a directory path
+        # for additional output files that will be uploaded to cloud storage.
+        # Upload the xcresult when the tests fail.
+        luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
+        xcresult_bundle = os.path.join(
+            result_bundle_temp, 'ios_embedding.xcresult'
+        )
+        if luci_test_outputs_path and os.path.exists(xcresult_bundle):
+          dump_path = os.path.join(
+              luci_test_outputs_path, 'ios_embedding.xcresult'
+          )
+          # xcresults contain many little files. Archive the bundle before upload.
+          shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
+        raise
+
   finally:
     delete_simulator(new_simulator_name)
 

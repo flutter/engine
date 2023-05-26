@@ -2,25 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
-@TestOn('!safari')
-library;
-
 import 'dart:async';
-import 'dart:js_interop'
-    show JSExportedDartFunction, JSExportedDartFunctionToFunction;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart'
-    show DomEvent, DomEventListener, createDomPopStateEvent;
+    show DomEvent, createDomPopStateEvent;
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
+import 'package:ui/ui_web/src/ui_web.dart';
 
+import '../common/matchers.dart';
 import '../common/spy.dart';
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
@@ -285,7 +280,7 @@ void testMain() {
       // 3. The active entry doesn't belong to our history anymore because we
       // navigated past it.
       expect(originalStrategy.currentEntryIndex, -1);
-    }, skip: browserEngine == BrowserEngine.webkit);
+    });
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -522,7 +517,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 0);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-    }, skip: browserEngine == BrowserEngine.webkit);
+    });
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -652,6 +647,23 @@ void testMain() {
       expect(strategy.getPath(), '/');
     });
 
+    test('prepareExternalUrl', () {
+      const String internalUrl = '/menu?foo=bar';
+      final HashUrlStrategy strategy = HashUrlStrategy(location);
+
+      location.pathname = '/';
+      expect(strategy.prepareExternalUrl(internalUrl), '/#/menu?foo=bar');
+
+      location.pathname = '/main';
+      expect(strategy.prepareExternalUrl(internalUrl), '/main#/menu?foo=bar');
+
+      location.search = '?foo=bar';
+      expect(
+        strategy.prepareExternalUrl(internalUrl),
+        '/main?foo=bar#/menu?foo=bar',
+      );
+    });
+
     test('addPopStateListener fn unwraps DomPopStateEvent state', () {
       final HashUrlStrategy strategy = HashUrlStrategy(location);
       const String expected = 'expected value';
@@ -675,6 +687,35 @@ void testMain() {
       // flutter/flutter#125228
       expect(state, isNot(isA<DomEvent>()));
       expect(state, expected);
+    });
+  });
+
+  group('$BrowserPlatformLocation', () {
+    test('getOrCreateDomEventListener caches funcions', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myListener(Object event) {}
+
+      expect(
+        identical(
+          location.getOrCreateDomEventListener(myListener),
+          location.getOrCreateDomEventListener(myListener),
+        ),
+        isTrue,
+      );
+    });
+
+    test('throws if removing an invalid listener', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myAddedListener(Object event) {}
+      void myNonAddedListener(Object event) {}
+
+      location.addPopStateListener(myAddedListener);
+      expect(() => location.removePopStateListener(myAddedListener), returnsNormally);
+      // Removing the same listener twice should throw.
+      expect(() => location.removePopStateListener(myAddedListener), throwsAssertionError);
+
+      // A listener that was never added.
+      expect(() => location.removePopStateListener(myNonAddedListener), throwsAssertionError);
     });
   });
 }
@@ -716,20 +757,20 @@ Future<void> systemNavigatorPop() {
 }
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
-class TestPlatformLocation extends PlatformLocation {
+class TestPlatformLocation implements PlatformLocation {
   @override
   String? hash;
 
   @override
   dynamic state;
 
-  List<DomEventListener> popStateListeners = <DomEventListener>[];
+  List<EventListener> popStateListeners = <EventListener>[];
 
   @override
-  String get pathname => throw UnimplementedError();
+  String pathname = '';
 
   @override
-  String get search => throw UnimplementedError();
+  String search = '';
 
   /// Calls all the registered `popStateListeners` with a 'popstate'
   /// event with value `state`
@@ -740,19 +781,18 @@ class TestPlatformLocation extends PlatformLocation {
         if (state != null) 'state': state,
       },
     );
-    for (final DomEventListener listener in popStateListeners) {
-      final Function fn = (listener as JSExportedDartFunction).toDart;
-      fn(event);
+    for (final EventListener listener in popStateListeners) {
+      listener(event);
     }
   }
 
   @override
-  void addPopStateListener(DomEventListener fn) {
+  void addPopStateListener(EventListener fn) {
     popStateListeners.add(fn);
   }
 
   @override
-  void removePopStateListener(DomEventListener fn) {
+  void removePopStateListener(EventListener fn) {
     throw UnimplementedError();
   }
 
@@ -767,7 +807,7 @@ class TestPlatformLocation extends PlatformLocation {
   }
 
   @override
-  void go(double count) {
+  void go(int count) {
     throw UnimplementedError();
   }
 

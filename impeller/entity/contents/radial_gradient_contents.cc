@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -43,6 +43,18 @@ const std::vector<Color>& RadialGradientContents::GetColors() const {
 
 const std::vector<Scalar>& RadialGradientContents::GetStops() const {
   return stops_;
+}
+
+bool RadialGradientContents::IsOpaque() const {
+  if (GetOpacity() < 1) {
+    return false;
+  }
+  for (auto color : colors_) {
+    if (!color.IsOpaque()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool RadialGradientContents::Render(const ContentContext& renderer,

@@ -11,7 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -35,6 +35,9 @@ class SolidColorContents final : public ColorSourceContents {
   Color GetColor() const;
 
   // |Contents|
+  bool IsOpaque() const override;
+
+  // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
@@ -45,10 +48,6 @@ class SolidColorContents final : public ColorSourceContents {
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-
-  /// @brief Convert SrcOver blend modes into Src blend modes if the color has
-  ///        no opacity.
-  bool ConvertToSrc(const Entity& entity) const;
 
  private:
   Color color_;

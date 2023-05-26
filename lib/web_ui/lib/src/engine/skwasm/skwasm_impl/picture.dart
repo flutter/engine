@@ -2,19 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmPicture implements ui.Picture {
+class SkwasmPicture implements ScenePicture {
   SkwasmPicture.fromHandle(this._handle);
   final PictureHandle _handle;
 
   PictureHandle get handle => _handle;
 
   @override
-  Future<ui.Image> toImage(int width, int height) {
-    throw UnimplementedError();
-  }
+  Future<ui.Image> toImage(int width, int height) async => toImageSync(width, height);
 
   @override
   void dispose() {
@@ -30,11 +29,10 @@ class SkwasmPicture implements ui.Picture {
   bool debugDisposed = false;
 
   @override
-  ui.Image toImageSync(int width, int height) {
-    // TODO(jacksongardner): implement toImageSync
-    throw UnimplementedError();
-  }
+  ui.Image toImageSync(int width, int height) =>
+    SkwasmImage(imageCreateFromPicture(handle, width, height));
 
+  @override
   ui.Rect get cullRect {
     return withStackScope((StackScope s) {
       final RawRect rect = s.allocFloatArray(4);

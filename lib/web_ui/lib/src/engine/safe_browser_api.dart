@@ -17,7 +17,6 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -25,7 +24,7 @@ import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
-export 'package:js/js.dart' show allowInterop;
+export 'package:js/js_util.dart' show allowInterop;
 
 
 /// Returns true if [object] has property [name], false otherwise.
@@ -247,7 +246,7 @@ extension ImageDecoderExtension on ImageDecoder {
 class ImageDecoderOptions {
   external factory ImageDecoderOptions({
     required JSString type,
-    required JSUint8Array data,
+    required JSAny data,
     required JSString premultiplyAlpha,
     JSNumber? desiredWidth,
     JSNumber? desiredHeight,

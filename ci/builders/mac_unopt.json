@@ -32,7 +32,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14c18"
+                    "sdk_version": "14e222b"
                 }
             },
             "tests": [
@@ -46,8 +46,7 @@
                         "dart,engine",
                         "--engine-capture-core-dump"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -63,10 +62,10 @@
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
-                        "ios-16-2_14c18",
-                        "ios-16-0_14a5294e"
+                        "ios-16-4_14e222b",
+                        "ios-16-2_14c18"
                     ],
-                    "sdk_version": "14c18"
+                    "sdk_version": "14e222b"
                 }
             },
             "drone_dimensions": [
@@ -105,16 +104,14 @@
                         "--ios-variant",
                         "ios_debug_sim"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 },
                 {
                     "name": "Scenario App Integration Tests",
                     "parameters": [
                         "ios_debug_sim"
                     ],
-                    "script": "flutter/testing/scenario_app/run_ios_tests.sh",
-                    "type": "local"
+                    "script": "flutter/testing/scenario_app/run_ios_tests.sh"
                 }
             ]
         },
@@ -154,7 +151,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14c18"
+                    "sdk_version": "14e222b"
                 }
             }
         },
@@ -171,10 +168,10 @@
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
-                        "ios-16-2_14c18",
-                        "ios-16-0_14a5294e"
+                        "ios-16-4_14e222b",
+                        "ios-16-2_14c18"
                     ],
-                    "sdk_version": "14c18"
+                    "sdk_version": "14e222b"
                 }
             },
             "drone_dimensions": [
@@ -216,16 +213,14 @@
                         "--ios-variant",
                         "ios_debug_sim_arm64"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 },
                 {
                     "name": "Scenario App Integration Tests",
                     "parameters": [
                         "ios_debug_sim_arm64"
                     ],
-                    "script": "flutter/testing/scenario_app/run_ios_tests.sh",
-                    "type": "local"
+                    "script": "flutter/testing/scenario_app/run_ios_tests.sh"
                 }
 
             ]

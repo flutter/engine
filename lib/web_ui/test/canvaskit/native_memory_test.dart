@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:js_interop';
-import 'package:js/js.dart';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -253,17 +252,19 @@ class TestJsConstructor implements JsConstructor {
 
 class TestCountedRefOwner implements StackTraceDebugger {
   TestCountedRefOwner(TestSkDeletable nativeObject) {
-    if (assertionsEnabled) {
+    assert(() {
       _debugStackTrace = StackTrace.current;
-    }
+      return true;
+    }());
     ref = CountedRef<TestCountedRefOwner, TestSkDeletable>(
         nativeObject, this, 'TestCountedRefOwner');
   }
 
   TestCountedRefOwner.cloneOf(this.ref) {
-    if (assertionsEnabled) {
+    assert(() {
       _debugStackTrace = StackTrace.current;
-    }
+      return true;
+    }());
     ref.ref(this);
   }
 

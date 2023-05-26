@@ -6,11 +6,13 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/shader_types.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
@@ -436,7 +438,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
   for (const auto& command : commands_) {
-    if (command.index_count == 0u) {
+    if (command.vertex_count == 0u) {
       continue;
     }
     if (command.instance_count == 0u) {
@@ -486,6 +488,28 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                               ShaderStage::kFragment)) {
       return false;
     }
+
+    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
+    if (command.index_type == IndexType::kNone) {
+      if (command.instance_count != 1u) {
+#if TARGET_OS_SIMULATOR
+        VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+        return false;
+#endif
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                    vertexStart:command.base_vertex
+                    vertexCount:command.vertex_count
+                  instanceCount:command.instance_count
+                   baseInstance:0u];
+
+      } else {
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                    vertexStart:command.base_vertex
+                    vertexCount:command.vertex_count];
+      }
+      continue;
+    }
+
     if (command.index_type == IndexType::kUnknown) {
       return false;
     }
@@ -503,9 +527,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       return false;
     }
 
-    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
-
-    FML_DCHECK(command.index_count *
+    FML_DCHECK(command.vertex_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==
                command.index_buffer.range.length);
 
@@ -515,7 +537,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       return false;
 #endif
       [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
-                          indexCount:command.index_count
+                          indexCount:command.vertex_count
                            indexType:ToMTLIndexType(command.index_type)
                          indexBuffer:mtl_index_buffer
                    indexBufferOffset:command.index_buffer.range.offset
@@ -524,7 +546,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                         baseInstance:0u];
     } else {
       [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
-                          indexCount:command.index_count
+                          indexCount:command.vertex_count
                            indexType:ToMTLIndexType(command.index_type)
                          indexBuffer:mtl_index_buffer
                    indexBufferOffset:command.index_buffer.range.offset];

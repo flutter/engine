@@ -224,21 +224,21 @@ struct TRect {
         // Full cutout.
         return std::nullopt;
       }
-      if (b_top <= a_top) {
+      if (b_top <= a_top && b_bottom > a_top) {
         // Cuts off the top.
         return TRect::MakeLTRB(a_left, b_bottom, a_right, a_bottom);
       }
-      if (b_bottom >= b_bottom) {
+      if (b_bottom >= a_bottom && b_top < a_bottom) {
         // Cuts out the bottom.
         return TRect::MakeLTRB(a_left, a_top, a_right, b_top);
       }
     }
     if (b_top <= a_top && b_bottom >= a_bottom) {
-      if (b_left <= a_left) {
+      if (b_left <= a_left && b_right > a_left) {
         // Cuts out the left.
         return TRect::MakeLTRB(b_right, a_top, a_right, a_bottom);
       }
-      if (b_right >= a_right) {
+      if (b_right >= a_right && b_left < a_right) {
         // Cuts out the right.
         return TRect::MakeLTRB(a_left, a_top, b_left, a_bottom);
       }
@@ -251,6 +251,24 @@ struct TRect {
   constexpr TRect<T> Shift(TPoint<T> offset) const {
     return TRect(origin.x + offset.x, origin.y + offset.y, size.width,
                  size.height);
+  }
+
+  /// @brief  Returns a rectangle with expanded edges. Negative expansion
+  ///         results in shrinking.
+  constexpr TRect<T> Expand(T left, T top, T right, T bottom) {
+    return TRect(origin.x - left,            //
+                 origin.y - top,             //
+                 size.width + left + right,  //
+                 size.height + top + bottom);
+  }
+
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(T amount) {
+    return TRect(origin.x - amount,        //
+                 origin.y - amount,        //
+                 size.width + amount * 2,  //
+                 size.height + amount * 2);
   }
 };
 

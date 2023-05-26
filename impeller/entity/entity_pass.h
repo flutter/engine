@@ -96,10 +96,10 @@ class EntityPass {
 
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
   std::optional<Rect> GetElementsCoverage(
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
  private:
   struct EntityResult {
@@ -209,7 +209,7 @@ class EntityPass {
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  bool cover_whole_screen_ = false;
+  bool flood_clip_ = false;
   Color clear_color_ = Color::BlackTransparent();
   bool enable_offscreen_debug_checkerboard_ = false;
 
@@ -232,13 +232,6 @@ class EntityPass {
       EntityPassDelegate::MakeDefault();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
-};
-
-struct CanvasStackEntry {
-  Matrix xformation;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
-  bool contains_clips = false;
 };
 
 }  // namespace impeller

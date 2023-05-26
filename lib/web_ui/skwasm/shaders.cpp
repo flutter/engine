@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <emscripten.h>
 #include "export.h"
 #include "helpers.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 #include "wrappers.h"
@@ -102,18 +102,6 @@ SKWASM_EXPORT void shader_dispose(SkShader* shader) {
   shader->unref();
 }
 
-SKWASM_EXPORT SkString* shaderSource_allocate(size_t length) {
-  return new SkString(length);
-}
-
-SKWASM_EXPORT char* shaderSource_getData(SkString* string) {
-  return string->data();
-}
-
-SKWASM_EXPORT void shaderSource_free(SkString* string) {
-  return delete string;
-}
-
 SKWASM_EXPORT SkRuntimeEffect* runtimeEffect_create(SkString* source) {
   auto result = SkRuntimeEffect::MakeForShader(*source);
   if (result.effect == nullptr) {
@@ -133,18 +121,6 @@ SKWASM_EXPORT size_t runtimeEffect_getUniformSize(SkRuntimeEffect* effect) {
   return effect->uniformSize();
 }
 
-SKWASM_EXPORT SkData* data_create(size_t size) {
-  return SkData::MakeUninitialized(size).release();
-}
-
-SKWASM_EXPORT void* data_getPointer(SkData* data) {
-  return data->writable_data();
-}
-
-SKWASM_EXPORT void data_dispose(SkData* data) {
-  return data->unref();
-}
-
 SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
     SkRuntimeEffect* runtimeEffect,
     SkData* uniforms,
@@ -152,12 +128,28 @@ SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
     size_t childCount) {
   std::vector<sk_sp<SkShader>> childPointers;
   for (size_t i = 0; i < childCount; i++) {
-    auto child = children[i];
-    child->ref();
-    childPointers.emplace_back(child);
+    childPointers.emplace_back(sk_ref_sp<SkShader>(children[i]));
   }
   return runtimeEffect
       ->makeShader(SkData::MakeWithCopy(uniforms->data(), uniforms->size()),
                    childPointers.data(), childCount, nullptr)
       .release();
+}
+
+SKWASM_EXPORT SkShader* shader_createFromImage(SkImage* image,
+                                               SkTileMode tileModeX,
+                                               SkTileMode tileModeY,
+                                               FilterQuality quality,
+                                               SkScalar* matrix33) {
+  if (matrix33) {
+    SkMatrix localMatrix = createMatrix(matrix33);
+    return image
+        ->makeShader(tileModeX, tileModeY, samplingOptionsForQuality(quality),
+                     &localMatrix)
+        .release();
+  } else {
+    return image
+        ->makeShader(tileModeX, tileModeY, samplingOptionsForQuality(quality))
+        .release();
+  }
 }

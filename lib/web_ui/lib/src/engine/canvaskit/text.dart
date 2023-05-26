@@ -5,16 +5,8 @@
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../util.dart';
-import 'canvaskit_api.dart';
-import 'font_fallbacks.dart';
-import 'native_memory.dart';
-import 'painting.dart';
-import 'renderer.dart';
-import 'text_fragmenter.dart';
-import 'util.dart';
 
 final bool _ckRequiresClientICU = canvasKit.ParagraphBuilder.RequiresClientICU();
 
@@ -742,9 +734,16 @@ class CkParagraph implements ui.Paragraph {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
   }
 }
@@ -866,7 +865,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     if (style.fontFamilyFallback != null) {
       fontFamilies.addAll(style.fontFamilyFallback!);
     }
-    FontFallbackData.instance.ensureFontsSupportText(text, fontFamilies);
+    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(text, fontFamilies);
     _paragraphBuilder.addText(text);
   }
 
@@ -896,12 +895,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   void pop() {
     if (_styleStack.length <= 1) {
       // The top-level text style is paragraph-level. We don't pop it off.
-      if (assertionsEnabled) {
+      assert(() {
         printWarning(
           'Cannot pop text style in ParagraphBuilder. '
           'Already popped all text styles from the style stack.',
         );
-      }
+        return true;
+      }());
       return;
     }
     _styleStack.removeLast();
@@ -975,6 +975,8 @@ List<String> _getEffectiveFontFamilies(String? fontFamily,
       !fontFamilyFallback.every((String font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);
   }
-  fontFamilies.addAll(FontFallbackData.instance.globalFontFallbacks);
+  fontFamilies.addAll(
+    renderer.fontCollection.fontFallbackManager!.globalFontFallbacks
+  );
   return fontFamilies;
 }

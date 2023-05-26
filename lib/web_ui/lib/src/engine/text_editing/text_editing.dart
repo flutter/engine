@@ -813,9 +813,12 @@ class EditingState {
 
   @override
   String toString() {
-    return assertionsEnabled
-        ? 'EditingState("$text", base:$baseOffset, extent:$extentOffset, composingBase:$composingBaseOffset, composingExtent:$composingExtentOffset)'
-        : super.toString();
+    String result = super.toString();
+    assert(() {
+      result = 'EditingState("$text", base:$baseOffset, extent:$extentOffset, composingBase:$composingBaseOffset, composingExtent:$composingExtentOffset)';
+      return true;
+    }());
+    return result;
   }
 
   /// Sets the selection values of a DOM element using this [EditingState].
@@ -1415,9 +1418,12 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Prevent default behavior for mouse down, up and move.
   ///
-  /// When normal mouse events are not prevented, in desktop browsers, mouse
-  /// selection conflicts with selection sent from the framework, which creates
+  /// When normal mouse events are not prevented, mouse selection
+  /// conflicts with selection sent from the framework, which creates
   /// flickering during selection by mouse.
+  ///
+  /// On mobile browsers, mouse events are sent after a touch event,
+  /// see: https://bugs.chromium.org/p/chromium/issues/detail?id=119216#c11.
   void preventDefaultForMouseEvents() {
     subscriptions.add(
         DomSubscription(activeDomElement, 'mousedown', (_) {
@@ -1704,6 +1710,8 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
             }));
+
+    preventDefaultForMouseEvents();
   }
 
   @override

@@ -20,14 +20,13 @@
 
 namespace flutter {
 
-LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
-    : frame_size_(frame_size),
-      device_pixel_ratio_(device_pixel_ratio),
-      rasterizer_tracing_threshold_(0),
-      checkerboard_raster_cache_images_(false),
-      checkerboard_offscreen_layers_(false) {
-  FML_CHECK(device_pixel_ratio_ != 0.0f);
-}
+LayerTree::LayerTree(const Config& config, const SkISize& frame_size)
+    : root_layer_(config.root_layer),
+      frame_size_(frame_size),
+      rasterizer_tracing_threshold_(config.rasterizer_tracing_threshold),
+      checkerboard_raster_cache_images_(
+          config.checkerboard_raster_cache_images),
+      checkerboard_offscreen_layers_(config.checkerboard_offscreen_layers) {}
 
 inline SkColorSpace* GetColorSpace(DlCanvas* canvas) {
   return canvas ? canvas->GetImageInfo().colorSpace() : nullptr;
@@ -64,7 +63,6 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .raster_cached_entries         = &raster_cache_items_,
       .display_list_enabled          = frame.display_list_builder() != nullptr,
       // clang-format on
@@ -113,7 +111,9 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   }
 
   LayerStateStack state_stack;
-  if (checkerboard_offscreen_layers_) {
+
+  // DrawCheckerboard is not supported on Impeller.
+  if (checkerboard_offscreen_layers_ && !frame.aiks_context()) {
     state_stack.set_checkerboard_func(DrawCheckerboard);
   }
 
@@ -141,7 +141,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
       .raster_cache                  = cache,
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
       .aiks_context                  = frame.aiks_context(),
@@ -182,7 +181,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
       .texture_registry              = texture_registry,
-      .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
   };
 
@@ -199,7 +197,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .ui_time                       = unused_stopwatch,
       .texture_registry              = texture_registry,
       .raster_cache                  = nullptr,
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
       // clang-format on

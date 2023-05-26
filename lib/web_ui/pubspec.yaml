@@ -21,6 +21,8 @@ dev_dependencies:
   archive: 3.1.2
   args: any
   async: any
+  convert: any
+  crypto: any
   html: 0.15.0
   http: 0.13.5
   http_multi_server: any
@@ -41,7 +43,7 @@ dev_dependencies:
   test_core: any
   typed_data: any
   uuid: 3.0.6
-  watcher: 1.0.0
+  watcher: 1.1.0
   web_socket_channel: any
   webdriver: 3.0.1
   webkit_inspection_protocol: any
