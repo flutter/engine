@@ -58,12 +58,6 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
-    // The frame before last frame
-    std::unique_ptr<SkBitmap> exRequiredFrame_;
-
-    // The index of the frame before last frame
-    int exRequiredFrameIndex_ = -1;
-
     std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,

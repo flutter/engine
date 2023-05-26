@@ -119,13 +119,7 @@ MultiFrameCodec::State::GetNextFrameImage(
     // We are here when the frame said |disposal_method| is
     // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
     // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
-    if (requiredFrameIndex == exRequiredFrameIndex_ && exRequiredFrame_) {
-      if (exRequiredFrame_->getPixels() &&
-          CopyToBitmap(&bitmap, exRequiredFrame_->colorType(),
-                       *exRequiredFrame_)) {
-        prior_frame_index = requiredFrameIndex;
-      }
-    } else if (lastRequiredFrame_ == nullptr) {
+    if (lastRequiredFrame_ == nullptr) {
       FML_DLOG(INFO)
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
@@ -152,20 +146,17 @@ MultiFrameCodec::State::GetNextFrameImage(
     return std::make_pair(nullptr, decode_error);
   }
 
-  // Always keep the last frame to support kRestorePrevious disposal op.
-  //
-  // Example below shows we must keep the frame whatever disposal method is
-  // |kRestoreBGColor| or |kRestorePrevious| or |kKeep|.
-  //
-  // Frame 1          ,   Frame 2           ,  Frame 3          ,  Frame 4
-  // complete decode  ,   complete decode   ,  reuse frame 1    ,  reuse frame 2
-  // OP_BACKGROUND    ,   OP_PREVIOUS       ,  OP_PREVIOUS      ,  OP_KEEP
-  // kRestoreBGColor  ,   kRestorePrevious  ,  kRestorePrevious ,  kKeep
-  exRequiredFrame_ = std::move(lastRequiredFrame_);
-  exRequiredFrameIndex_ = lastRequiredFrameIndex_;
-
-  lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
-  lastRequiredFrameIndex_ = nextFrameIndex_;
+  // Hold onto this if we need it to decode future frames except that current
+  // frame's disposal_method is kRestorePrevious.
+  const bool dont_keep_current_frame =
+      frameInfo.disposal_method ==
+      SkCodecAnimation::DisposalMethod::kRestorePrevious;
+  if (!dont_keep_current_frame &&
+      (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
+      lastRequiredFrame_)) {
+    lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
+    lastRequiredFrameIndex_ = nextFrameIndex_;
+  }
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
