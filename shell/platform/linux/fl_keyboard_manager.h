@@ -83,6 +83,14 @@ void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* manager,
                                                  guint state,
                                                  double event_time);
 
+/**
+ * fl_keyboard_manager_get_pressed_state:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Returns the keyboard pressed state.
+ */
+GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* responder);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_

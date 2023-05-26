@@ -12,6 +12,8 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
+#include "flutter/shell/platform/linux/fl_keyboard_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_plugin_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
@@ -48,6 +50,7 @@ struct _FlView {
   FlScrollingManager* scrolling_manager;
   FlTextInputPlugin* text_input_plugin;
   FlMouseCursorPlugin* mouse_cursor_plugin;
+  FlKeyboardPlugin* keyboard_plugin;
   FlPlatformPlugin* platform_plugin;
 
   GtkWidget* event_box;
@@ -76,6 +79,9 @@ static void fl_view_scrolling_delegate_iface_init(
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface);
 
+static void fl_view_keyboard_plugin_delegate_iface_init(
+    FlKeyboardPluginViewDelegateInterface* iface);
+
 G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
@@ -87,7 +93,10 @@ G_DEFINE_TYPE_WITH_CODE(
             G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
                                   fl_view_scrolling_delegate_iface_init)
                 G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init))
+                                      fl_view_text_input_delegate_iface_init)
+                    G_IMPLEMENT_INTERFACE(
+                        fl_keyboard_plugin_view_delegate_get_type(),
+                        fl_view_keyboard_plugin_delegate_iface_init))
 
 // Signal handler for GtkWidget::delete-event
 static gboolean window_delete_event_cb(GtkWidget* widget,
@@ -112,6 +121,8 @@ static void init_keyboard(FlView* self) {
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
   self->keyboard_manager =
       fl_keyboard_manager_new(FL_KEYBOARD_VIEW_DELEGATE(self));
+  self->keyboard_plugin =
+      fl_keyboard_plugin_new(messenger, FL_KEYBOARD_PLUGIN_VIEW_DELEGATE(self));
 }
 
 static void init_scrolling(FlView* self) {
@@ -296,6 +307,15 @@ static void fl_view_keyboard_delegate_iface_init(
     FlView* self = FL_VIEW(view_delegate);
     g_return_val_if_fail(self->keymap != nullptr, 0);
     return gdk_keymap_lookup_key(self->keymap, key);
+  };
+}
+
+static void fl_view_keyboard_plugin_delegate_iface_init(
+    FlKeyboardPluginViewDelegateInterface* iface) {
+  iface->get_keyboard_state =
+      [](FlKeyboardPluginViewDelegate* view_delegate) -> GHashTable* {
+    FlView* self = FL_VIEW(view_delegate);
+    return fl_view_get_keyboard_state(self);
   };
 }
 
@@ -634,6 +654,7 @@ static void fl_view_dispose(GObject* object) {
     self->keymap_keys_changed_cb_id = 0;
   }
   g_clear_object(&self->mouse_cursor_plugin);
+  g_clear_object(&self->keyboard_plugin);
   g_clear_object(&self->platform_plugin);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
@@ -708,4 +729,10 @@ void fl_view_set_textures(FlView* self,
   }
 
   fl_gl_area_queue_render(self->gl_area, textures);
+}
+
+GHashTable* fl_view_get_keyboard_state(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
+
+  return fl_keyboard_manager_get_pressed_state(self->keyboard_manager);
 }

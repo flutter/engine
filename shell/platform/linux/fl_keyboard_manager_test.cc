@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
+#include "flutter/shell/platform/linux/key_mapping.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 #include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
 #include "gtest/gtest.h"
@@ -924,6 +925,24 @@ TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
   verifyModifierIsSynthesized(GDK_MOD1_MASK, kPhysicalAltLeft, kLogicalAltLeft);
   verifyModifierIsSynthesized(GDK_SHIFT_MASK, kPhysicalShiftLeft,
                               kLogicalShiftLeft);
+}
+
+TEST(FlKeyboardManagerTest, GetPressedState) {
+  KeyboardTester tester;
+  tester.respondToTextInputWith(true);
+
+  // Dispatch a key event.
+  fl_keyboard_manager_handle_event(
+      tester.manager(),
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+
+  GHashTable* pressedState =
+      fl_keyboard_manager_get_pressed_state(tester.manager());
+  EXPECT_EQ(g_hash_table_size(pressedState), 1u);
+
+  gpointer physical_key =
+      g_hash_table_lookup(pressedState, uint64_to_gpointer(kPhysicalKeyA));
+  EXPECT_EQ(gpointer_to_uint64(physical_key), kLogicalKeyA);
 }
 
 // The following layout data is generated using DEBUG_PRINT_LAYOUT.

@@ -22,4 +22,12 @@ void fl_view_set_textures(FlView* view,
                           GdkGLContext* context,
                           GPtrArray* textures);
 
+/**
+ * fl_view_get_keyboard_state:
+ * @view: an #FlView.
+ *
+ * Return the keyboard pressed state.
+ */
+GHashTable* fl_view_get_keyboard_state(FlView* view);
+
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_

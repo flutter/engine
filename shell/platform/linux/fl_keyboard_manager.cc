@@ -614,10 +614,22 @@ gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* self) {
 void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* self,
                                                  guint state,
                                                  double event_time) {
+  g_return_if_fail(FL_IS_KEYBOARD_MANAGER(self));
+
   // The embedder responder is the first element in
   // FlKeyboardManager.responder_list.
   FlKeyEmbedderResponder* responder =
       FL_KEY_EMBEDDER_RESPONDER(g_ptr_array_index(self->responder_list, 0));
   fl_key_embedder_responder_sync_modifiers_if_needed(responder, state,
                                                      event_time);
+}
+
+GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* self) {
+  g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), nullptr);
+
+  // The embedder responder is the first element in
+  // FlKeyboardManager.responder_list.
+  FlKeyEmbedderResponder* responder =
+      FL_KEY_EMBEDDER_RESPONDER(g_ptr_array_index(self->responder_list, 0));
+  return fl_key_embedder_responder_get_pressed_state(responder);
 }
