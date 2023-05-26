@@ -17,10 +17,12 @@ class ComputePassVK final : public ComputePass {
  private:
   friend class CommandBufferVK;
 
+  std::weak_ptr<CommandEncoderVK> encoder_;
   std::string label_;
   bool is_valid_ = false;
 
-  ComputePassVK(std::weak_ptr<const Context> context);
+  ComputePassVK(std::weak_ptr<const Context> context,
+                std::weak_ptr<CommandEncoderVK> encoder);
 
   // |ComputePass|
   bool IsValid() const override;
