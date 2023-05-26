@@ -492,7 +492,6 @@ public class PlatformPlugin {
       return;
     }
 
-    // TODO(justinmc): Will this ever interfer with predictive back?
     if (activity instanceof OnBackPressedDispatcherOwner) {
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {

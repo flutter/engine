@@ -697,9 +697,6 @@ public class FlutterActivity extends Activity
             @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
-              Log.e(
-                  "justin",
-                  "calling onBackPressed in onBackInvokedCallback in FlutterActivity (embedder)");
               onBackPressed();
             }
           }
@@ -710,10 +707,8 @@ public class FlutterActivity extends Activity
   @Override
   public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
     if (frameworkHandlesBacks && !hasRegisteredCallback) {
-      Log.e("justin", "Stopping predictive back");
       registerOnBackInvokedCallback();
     } else if (!frameworkHandlesBacks && hasRegisteredCallback) {
-      Log.e("justin", "Enabling predictive back");
       unregisterOnBackInvokedCallback();
     }
   }
