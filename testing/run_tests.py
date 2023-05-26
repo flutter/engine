@@ -481,7 +481,10 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '1',  # Validates accesses to threadgroup memory.
         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
             '1',  # Validates that texture references are not nil.
+        # Note: built from //third_party/swiftshader
         'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+        # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+        # and //third_party/vulkan_validation_layers.
         'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
         'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
     }
