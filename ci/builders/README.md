@@ -197,7 +197,7 @@ in builders that do not need it.
 #### GN
 
 A list of strings representing flags passed to the
-[tools/gn](https://cs.opensource.google/flutter/engine/+/master:tools/gn?q=gn&ss=flutter%2Fengine) script. The strings can be in the form of “--flag=value” or
+[tools/gn](https://github.com/flutter/engine/blob/main/tools/gn) script. The strings can be in the form of “--flag=value” or
 “--flag” followed by “value”.
 
 ```yaml
