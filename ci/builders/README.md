@@ -194,7 +194,7 @@ The example above is used to avoid downloading the
 [android sdk dependencies](https://cs.opensource.google/flutter/engine/+/main:DEPS;l=80)
 in builders that do not need it.
 
-#### Gn
+#### GN
 
 A list of strings representing flags passed to the
 [tools/gn](https://cs.opensource.google/flutter/engine/+/master:tools/gn?q=gn&ss=flutter%2Fengine) script. The strings can be in the form of “--flag=value” or
