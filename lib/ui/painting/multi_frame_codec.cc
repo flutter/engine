@@ -119,10 +119,10 @@ MultiFrameCodec::State::GetNextFrameImage(
     // We are here when the frame said |disposal_method| is
     // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
     // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
-    if (requiredFrameIndex == exExRequiredFrameIndex_ && exExRequiredFrame_) {
-      if (exExRequiredFrame_->getPixels() &&
-          CopyToBitmap(&bitmap, exExRequiredFrame_->colorType(),
-                       *exExRequiredFrame_)) {
+    if (requiredFrameIndex == exRequiredFrameIndex_ && exRequiredFrame_) {
+      if (exRequiredFrame_->getPixels() &&
+          CopyToBitmap(&bitmap, exRequiredFrame_->colorType(),
+                       *exRequiredFrame_)) {
         prior_frame_index = requiredFrameIndex;
       }
     } else if (lastRequiredFrame_ == nullptr) {
@@ -161,8 +161,8 @@ MultiFrameCodec::State::GetNextFrameImage(
   // complete decode  ,   complete decode   ,  reuse frame 1    ,  reuse frame 2
   // OP_BACKGROUND    ,   OP_PREVIOUS       ,  OP_PREVIOUS      ,  OP_KEEP
   // kRestoreBGColor  ,   kRestorePrevious  ,  kRestorePrevious ,  kKeep
-  exExRequiredFrame_ = std::move(lastRequiredFrame_);
-  exExRequiredFrameIndex_ = lastRequiredFrameIndex_;
+  exRequiredFrame_ = std::move(lastRequiredFrame_);
+  exRequiredFrameIndex_ = lastRequiredFrameIndex_;
 
   lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
   lastRequiredFrameIndex_ = nextFrameIndex_;
