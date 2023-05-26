@@ -57,7 +57,7 @@ public class PlatformPlugin {
      */
     boolean popSystemNavigator();
 
-    void updateNavigationStackStatus(boolean frameworkHandlesPop);
+    void setFrameworkHandlesBacks(boolean frameworkHandlesBacks);
   }
 
   @VisibleForTesting
@@ -112,8 +112,8 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void updateNavigationStackStatus(boolean frameworkHandlesPop) {
-          PlatformPlugin.this.updateNavigationStackStatus(frameworkHandlesPop);
+        public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
+          PlatformPlugin.this.setFrameworkHandlesBacks(frameworkHandlesBacks);
         }
 
         @Override
@@ -482,8 +482,8 @@ public class PlatformPlugin {
     currentTheme = systemChromeStyle;
   }
 
-  private void updateNavigationStackStatus(boolean frameworkHandlesPop) {
-    platformPluginDelegate.updateNavigationStackStatus(frameworkHandlesPop);
+  private void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
+    platformPluginDelegate.setFrameworkHandlesBacks(frameworkHandlesBacks);
   }
 
   private void popSystemNavigator() {

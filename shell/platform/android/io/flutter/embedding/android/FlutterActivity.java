@@ -705,14 +705,14 @@ public class FlutterActivity extends Activity
           }
           : null;
 
-  // TODO(justinmc): Do the same thing in other embedding strategies (justin FlutterFragment?
+  // TODO(justinmc): Do the same thing in other embedding strategies (just FlutterFragment?
   // FlutterFragmentActivity?).
   @Override
-  public void updateNavigationStackStatus(boolean frameworkHandlesPop) {
-    if (frameworkHandlesPop && !hasRegisteredCallback) {
+  public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
+    if (frameworkHandlesBacks && !hasRegisteredCallback) {
       Log.e("justin", "Stopping predictive back");
       registerOnBackInvokedCallback();
-    } else if (!frameworkHandlesPop && hasRegisteredCallback) {
+    } else if (!frameworkHandlesBacks && hasRegisteredCallback) {
       Log.e("justin", "Enabling predictive back");
       unregisterOnBackInvokedCallback();
     }

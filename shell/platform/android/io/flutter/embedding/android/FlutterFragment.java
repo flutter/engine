@@ -1687,7 +1687,7 @@ public class FlutterFragment extends Fragment
   }
 
   @Override
-  public void updateNavigationStackStatus(boolean hasMultiple) {
+  public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
     // TODO(justinmc): Implement. Implementing in FlutterActivity first.
     // unregisterOnBackInvokedCallback();
   }
