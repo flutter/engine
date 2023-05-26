@@ -153,7 +153,7 @@ MultiFrameCodec::State::GetNextFrameImage(
       SkCodecAnimation::DisposalMethod::kRestorePrevious;
   if (!dont_keep_current_frame &&
       (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
-      lastRequiredFrame_)) {
+       lastRequiredFrame_)) {
     lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
