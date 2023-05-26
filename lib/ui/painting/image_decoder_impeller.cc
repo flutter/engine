@@ -124,7 +124,6 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   return std::nullopt;
 }
 
-std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
 DecompressResult ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
