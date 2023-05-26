@@ -1491,7 +1491,13 @@ DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
       color = paint.getColor();
     }
   } else if (flags.applies_alpha()) {
-    color = kAnyColor.modulateOpacity(paint.getOpacity());
+    // If the operation applies alpha, but not color, then the only impact
+    // of the alpha is to modulate the output towards transparency.
+    // We can not guarantee an opaque source even if the alpha is opaque
+    // since that would require knowing something about the colors that
+    // the alpha is modulating, but we can guarantee a transparent source
+    // if the alpha is 0.
+    color = (paint.getAlpha() == 0) ? DlColor::kTransparent() : kAnyColor;
   } else {
     color = kAnyColor;
   }
