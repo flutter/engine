@@ -138,8 +138,11 @@ class TestImpellerContext : public impeller::Context {
   }
 
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
+    command_buffer_count_ += 1;
     return nullptr;
   }
+
+  mutable size_t command_buffer_count_ = 0;
 
  private:
   std::shared_ptr<const Capabilities> capabilities_;
@@ -427,6 +430,34 @@ float HalfToFloat(uint16_t half) {
   return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
 }
 }  // namespace
+
+TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
+#if !IMPELLER_SUPPORTS_RENDERING
+  GTEST_SKIP() << "Impeller only test.";
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
+  auto no_gpu_access_context =
+      std::make_shared<impeller::TestImpellerContext>();
+  auto gpu_disabled_switch = std::make_shared<fml::SyncSwitch>(true);
+
+  auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
+                                SkAlphaType::kPremul_SkAlphaType);
+  auto bitmap = std::make_shared<SkBitmap>();
+  bitmap->allocPixels(info, 10 * 4);
+  impeller::DeviceBufferDescriptor desc;
+  desc.size = bitmap->computeByteSize();
+  auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
+
+  auto result = ImageDecoderImpeller::UploadTextureToPrivate(
+      no_gpu_access_context, buffer, info, bitmap, gpu_disabled_switch);
+  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  ASSERT_EQ(result.second, "");
+
+  result = ImageDecoderImpeller::UploadTextureToShared(
+      no_gpu_access_context, bitmap, gpu_disabled_switch, true);
+  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  ASSERT_EQ(result.second, "");
+}
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
   auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
