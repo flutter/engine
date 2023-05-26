@@ -127,8 +127,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: false
-    presubmit: true
     properties:
       cache_name: "builder"
       cache_root: "cache"
@@ -141,7 +139,7 @@ targets:
         {
           "download_emsdk": true,
           "download_android_deps": true,
-        },
+        }
     timeout: 60
 
   - name: Windows builder_cache
@@ -158,6 +156,10 @@ targets:
           "builder",
           "git"
         ]
+      gclient_variables: >-
+        {
+          "download_android_deps": true,
+        }
     timeout: 60
 
   - name: Mac builder_cache
@@ -174,6 +176,10 @@ targets:
           "builder",
           "git"
         ]
+      gclient_variables: >-
+        {
+          "download_android_deps": true,
+        }
     timeout: 60
 
   - name: Linux Benchmarks
