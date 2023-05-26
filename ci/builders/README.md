@@ -281,7 +281,7 @@ copy the relevant files to the FLUTTER\_LOGS\_DIR directory.
 #### Generators
 
 Generators are scripts used to generate artifacts combining the output of two
-or more sub-builds. The most common use case is to generate FAT binaries for
+or more sub-builds. The most common use case is to generate universal binaries for
 Mac/iOS artifacts.
 
 Generators can be written in any language but they require to follow some
