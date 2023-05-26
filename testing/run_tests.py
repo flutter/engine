@@ -513,19 +513,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     )
 
 
-def parse_impeller_vulkan_filter():
-  test_status_path = os.path.join(SCRIPT_DIR, 'impeller_vulkan_test_status.csv')
-  gtest_filter = '--gtest_filter="'
-  with open(test_status_path, 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
-    next(csvreader)  # Skip header.
-    for row in csvreader:
-      if row[1] == 'pass':
-        gtest_filter += '*%s:' % row[0]
-  gtest_filter += '"'
-  return gtest_filter
-
-
 def run_engine_benchmarks(build_dir, executable_filter):
   print('Running Engine Benchmarks.')
 
@@ -1209,20 +1196,17 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     )
 
   # Use this type to exclusively run impeller vulkan tests.
-  # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
-  # impeller vulkan tests are stable.
   if 'impeller-vulkan' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
-      vulkan_gtest_filter = parse_impeller_vulkan_filter()
-      gtest_flags = shuffle_flags
-      gtest_flags.append(vulkan_gtest_filter)
       run_engine_executable(
           build_dir,
           'impeller_unittests',
           engine_filter,
-          gtest_flags,
+          shuffle_flags + [
+              '--gtest_filter=-*/OpenGLES:Play/TypographerTest.MaybeHasOverlapping/Vulkan:Play/TypographerTest.GlyphAtlasWithLotsOfdUniqueGlyphSize/Vulkan',
+          ],
           coverage=args.coverage
       )
     finally:
