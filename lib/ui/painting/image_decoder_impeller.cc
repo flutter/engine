@@ -80,9 +80,11 @@ ImageDecoderImpeller::ImageDecoderImpeller(
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     const fml::WeakPtr<IOManager>& io_manager,
-    bool supports_wide_gamut)
+    bool supports_wide_gamut,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
     : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager),
-      supports_wide_gamut_(supports_wide_gamut) {
+      supports_wide_gamut_(supports_wide_gamut),
+      gpu_disabled_switch_(gpu_disabled_switch) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -322,7 +324,8 @@ std::pair<sk_sp<DlImage>, std::string>
 ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<SkBitmap> bitmap,
-    bool create_mips) {
+    bool create_mips,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context) {
     return std::make_pair(nullptr, "No Impeller context is available");
@@ -370,32 +373,44 @@ ImageDecoderImpeller::UploadTextureToShared(
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
 
   if (texture_descriptor.mip_count > 1u && create_mips) {
-    auto command_buffer = context->CreateCommandBuffer();
-    if (!command_buffer) {
-      std::string decode_error(
-          "Could not create command buffer for mipmap generation.");
-      FML_DLOG(ERROR) << decode_error;
-      return std::make_pair(nullptr, decode_error);
-    }
-    command_buffer->SetLabel("Mipmap Command Buffer");
+    std::optional<std::string> decode_error;
+#if FML_OS_IOS
+    gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
+        [context, &texture, &decode_error] {
+#else
+    [context, &texture, &decode_error] {
+#endif  // FML_OS_IOS
+          auto command_buffer = context->CreateCommandBuffer();
+          if (!command_buffer) {
+            decode_error =
+                "Could not create command buffer for mipmap generation.";
+            return;
+          }
+          command_buffer->SetLabel("Mipmap Command Buffer");
 
-    auto blit_pass = command_buffer->CreateBlitPass();
-    if (!blit_pass) {
-      std::string decode_error(
-          "Could not create blit pass for mipmap generation.");
-      FML_DLOG(ERROR) << decode_error;
-      return std::make_pair(nullptr, decode_error);
-    }
-    blit_pass->SetLabel("Mipmap Blit Pass");
-    blit_pass->GenerateMipmap(texture);
+          auto blit_pass = command_buffer->CreateBlitPass();
+          if (!blit_pass) {
+            decode_error = "Could not create blit pass for mipmap generation.";
+            return;
+          }
+          blit_pass->SetLabel("Mipmap Blit Pass");
+          blit_pass->GenerateMipmap(texture);
 
-    blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!command_buffer->SubmitCommands()) {
-      std::string decode_error("Failed to submit blit pass command buffer.");
-      FML_DLOG(ERROR) << decode_error;
-      return std::make_pair(nullptr, decode_error);
+          blit_pass->EncodeCommands(context->GetResourceAllocator());
+          if (!command_buffer->SubmitCommands()) {
+            decode_error = "Failed to submit blit pass command buffer.";
+            return;
+          }
+          command_buffer->WaitUntilScheduled();
+#if FML_OS_IOS
+        }));
+#else
+    }();
+#endif  // FML_OS_IOS
+    if (decode_error.has_value()) {
+      FML_DLOG(ERROR) << decode_error.value();
+      return std::make_pair(nullptr, decode_error.value());
     }
-    command_buffer->WaitUntilScheduled();
   }
 
   return std::make_pair(impeller::DlImageImpeller::Make(std::move(texture)),
@@ -429,8 +444,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        target_size = SkISize::Make(target_width, target_height),  //
        io_runner = runners_.GetIOTaskRunner(),                    //
        result,
-       supports_wide_gamut = supports_wide_gamut_  //
-  ]() {
+       supports_wide_gamut = supports_wide_gamut_,  //
+       gpu_disabled_switch = gpu_disabled_switch_]() {
         if (!context) {
           result(nullptr, "No Impeller context is available");
           return;
@@ -446,24 +461,39 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           result(nullptr, bitmap_result.decode_error);
           return;
         }
-        auto upload_texture_and_invoke_result = [result, context,
-                                                 bitmap_result]() {
-          // TODO(jonahwilliams): remove ifdef once blit from buffer to
-          // texture is implemented on other platforms.
+        auto upload_texture_and_invoke_result = [result, context, bitmap_result,
+                                                 gpu_disabled_switch]() {
+          // TODO(jonahwilliams): remove ifdef once blit from buffer
+          // to texture is implemented on other platforms.
           sk_sp<DlImage> image;
           std::string decode_error;
+          bool needs_upload = true;
+
 #ifdef FML_OS_IOS
-          std::tie(image, decode_error) = UploadTextureToPrivate(
-              context, bitmap_result.device_buffer, bitmap_result.image_info);
-#else
-          std::tie(image, decode_error) =
-              UploadTextureToShared(context, bitmap_result.sk_bitmap);
-#endif
+          FML_DCHECK(gpu_disabled_switch);
+          if (gpu_disabled_switch) {
+            gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
+                [&needs_upload, &image, &decode_error, &context,
+                 &bitmap_result] {
+                  needs_upload = false;
+                  FML_LOG(ERROR) << "Yay";
+                  std::tie(image, decode_error) = UploadTextureToPrivate(
+                      context, bitmap_result.device_buffer,
+                      bitmap_result.image_info);
+                }));
+          }
+#endif  // FML_OS_IOS
+          if (needs_upload) {
+            FML_LOG(ERROR) << "Boo";
+            std::tie(image, decode_error) = UploadTextureToShared(
+                context, bitmap_result.sk_bitmap, true, gpu_disabled_switch);
+          }
           result(image, decode_error);
         };
-        // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
-        // Technically we don't need to post tasks to the io runner, but without
-        // this forced serialization we can end up overloading the GPU and/or
+        // TODO(jonahwilliams):
+        // https://github.com/flutter/flutter/issues/123058 Technically we
+        // don't need to post tasks to the io runner, but without this
+        // forced serialization we can end up overloading the GPU and/or
         // competing with raster workloads.
         io_runner->PostTask(upload_texture_and_invoke_result);
       });

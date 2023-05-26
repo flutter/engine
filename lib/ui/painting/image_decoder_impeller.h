@@ -50,7 +50,8 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
       const fml::WeakPtr<IOManager>& io_manager,
-      bool supports_wide_gamut);
+      bool supports_wide_gamut,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   ~ImageDecoderImpeller() override;
 
@@ -83,16 +84,20 @@ class ImageDecoderImpeller final : public ImageDecoder {
   /// @param bitmap      A bitmap containg the image to be uploaded.
   /// @param create_mips Whether mipmaps should be generated for the given
   /// image.
+  /// @param gpu_disabled_switch Whether the GPU is available for mipmap
+  /// creation.
   /// @return            A DlImage.
   static std::pair<sk_sp<DlImage>, std::string> UploadTextureToShared(
       const std::shared_ptr<impeller::Context>& context,
       std::shared_ptr<SkBitmap> bitmap,
-      bool create_mips = true);
+      bool create_mips = true,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch = nullptr);
 
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
   const bool supports_wide_gamut_;
+  std::shared_ptr<fml::SyncSwitch> gpu_disabled_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };
