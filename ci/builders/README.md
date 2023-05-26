@@ -230,7 +230,7 @@ and “target” which is a list of strings with the Ninja targets to build.
 In the example above the ninja command will use the configuration for
 host\_debug and will build artifacts and embedder targets as described
 by the
-[flutter/build/archives/BUILD.gn](https://cs.opensource.google/flutter/engine/+/master:build/archives/BUILD.gn)
+[flutter/build/archives/BUILD.gn](https://github.com/flutter/engine/blob/main/build/archives/BUILD.gn)
 file.
 
 #### Tests
