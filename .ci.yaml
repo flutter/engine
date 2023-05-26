@@ -128,7 +128,7 @@ targets:
       - main
     recipe: engine_v2/cache
     bringup: true
-    presubmit: false
+    presubmit: true
     properties:
       cache_name: "builder"
       cache_root: "cache"
@@ -137,6 +137,11 @@ targets:
           "builder",
           "git"
         ]
+      gclient_variables: >-
+        {
+          "download_emsdk": true,
+          "download_android_deps": true,
+        },
     timeout: 60
 
   - name: Windows builder_cache
