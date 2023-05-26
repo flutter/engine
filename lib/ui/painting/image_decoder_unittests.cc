@@ -280,7 +280,8 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
     TestIOManager manager(runners.GetIOTaskRunner());
     Settings settings;
     auto decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                                      manager.GetWeakIOManager());
+                                      manager.GetWeakIOManager(),
+                                      std::make_shared<fml::SyncSwitch>());
     ASSERT_NE(decoder, nullptr);
   });
 }
@@ -331,7 +332,8 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
     TestIOManager manager(runners.GetIOTaskRunner());
     Settings settings;
     auto decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                                      manager.GetWeakIOManager());
+                                      manager.GetWeakIOManager(),
+                                      std::make_shared<fml::SyncSwitch>());
 
     auto data = OpenFixtureAsSkData("ThisDoesNotExist.jpg");
     ASSERT_FALSE(data);
@@ -370,9 +372,9 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
   };
   auto decode_image = [&]() {
     Settings settings;
-    std::unique_ptr<ImageDecoder> image_decoder =
-        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                           io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder = ImageDecoder::Make(
+        settings, runners, loop->GetTaskRunner(),
+        io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
     auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
@@ -642,9 +644,9 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
   SkISize decoded_size = SkISize::MakeEmpty();
   auto decode_image = [&]() {
     Settings settings;
-    std::unique_ptr<ImageDecoder> image_decoder =
-        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                           io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder = ImageDecoder::Make(
+        settings, runners, loop->GetTaskRunner(),
+        io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
     auto data = OpenFixtureAsSkData("Horizontal.jpg");
 
@@ -703,9 +705,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 
   auto decode_image = [&]() {
     Settings settings;
-    std::unique_ptr<ImageDecoder> image_decoder =
-        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                           io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder = ImageDecoder::Make(
+        settings, runners, loop->GetTaskRunner(),
+        io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
     auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
@@ -771,7 +773,8 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
     Settings settings;
     image_decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
-                                       io_manager->GetWeakIOManager());
+                                       io_manager->GetWeakIOManager(),
+                                       std::make_shared<fml::SyncSwitch>());
   });
 
   // Setup a generic decoding utility that gives us the final decoded size.

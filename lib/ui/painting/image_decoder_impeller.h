@@ -73,11 +73,15 @@ class ImageDecoderImpeller final : public ImageDecoder {
   /// @param context    The Impeller graphics context.
   /// @param buffer     A host buffer containing the image to be uploaded.
   /// @param image_info Format information about the particular image.
+  /// @param bitmap      A bitmap containg the image to be uploaded.
+  /// @param gpu_disabled_switch Whether the GPU is available command encoding.
   /// @return           A DlImage.
   static std::pair<sk_sp<DlImage>, std::string> UploadTextureToPrivate(
       const std::shared_ptr<impeller::Context>& context,
       const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-      const SkImageInfo& image_info);
+      const SkImageInfo& image_info,
+      std::shared_ptr<SkBitmap> bitmap,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   /// @brief Create a host visible texture from the provided bitmap.
   /// @param context     The Impeller graphics context.
@@ -90,8 +94,8 @@ class ImageDecoderImpeller final : public ImageDecoder {
   static std::pair<sk_sp<DlImage>, std::string> UploadTextureToShared(
       const std::shared_ptr<impeller::Context>& context,
       std::shared_ptr<SkBitmap> bitmap,
-      bool create_mips = true,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch = nullptr);
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+      bool create_mips = true);
 
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;

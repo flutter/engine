@@ -248,18 +248,11 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
                           .image_info = scaled_bitmap->info()};
 }
 
-std::pair<sk_sp<DlImage>, std::string>
-ImageDecoderImpeller::UploadTextureToPrivate(
+/// Only call this method if the GPU is available.
+static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context) {
-    return std::make_pair(nullptr, "No Impeller context is available");
-  }
-  if (!buffer) {
-    return std::make_pair(nullptr, "No Impeller device buffer is available");
-  }
   const auto pixel_format =
       impeller::skia_conversions::ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
@@ -321,11 +314,40 @@ ImageDecoderImpeller::UploadTextureToPrivate(
 }
 
 std::pair<sk_sp<DlImage>, std::string>
+ImageDecoderImpeller::UploadTextureToPrivate(
+    const std::shared_ptr<impeller::Context>& context,
+    const std::shared_ptr<impeller::DeviceBuffer>& buffer,
+    const SkImageInfo& image_info,
+    std::shared_ptr<SkBitmap> bitmap,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!context) {
+    return std::make_pair(nullptr, "No Impeller context is available");
+  }
+  if (!buffer) {
+    return std::make_pair(nullptr, "No Impeller device buffer is available");
+  }
+
+  std::pair<sk_sp<DlImage>, std::string> result;
+  gpu_disabled_switch->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfFalse([&result, context, buffer, image_info] {
+            result = UnsafeUploadTextureToPrivate(context, buffer, image_info);
+          })
+          .SetIfTrue([&result, context, bitmap, gpu_disabled_switch] {
+            // create_mips is false because we already know the GPU is disabled.
+            result = UploadTextureToShared(context, bitmap, gpu_disabled_switch,
+                                           false);
+          }));
+  return result;
+}
+
+std::pair<sk_sp<DlImage>, std::string>
 ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<SkBitmap> bitmap,
-    bool create_mips,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+    bool create_mips) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context) {
     return std::make_pair(nullptr, "No Impeller context is available");
@@ -374,12 +396,12 @@ ImageDecoderImpeller::UploadTextureToShared(
 
   if (texture_descriptor.mip_count > 1u && create_mips) {
     std::optional<std::string> decode_error;
-#if FML_OS_IOS
+
+    // The only platform that needs mipmapping unconditionally is GL.
+    // GL based platforms never disable GPU access.
+    // This is only really needed for iOS.
     gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
         [context, &texture, &decode_error] {
-#else
-    [context, &texture, &decode_error] {
-#endif  // FML_OS_IOS
           auto command_buffer = context->CreateCommandBuffer();
           if (!command_buffer) {
             decode_error =
@@ -402,11 +424,7 @@ ImageDecoderImpeller::UploadTextureToShared(
             return;
           }
           command_buffer->WaitUntilScheduled();
-#if FML_OS_IOS
         }));
-#else
-    }();
-#endif  // FML_OS_IOS
     if (decode_error.has_value()) {
       FML_DLOG(ERROR) << decode_error.value();
       return std::make_pair(nullptr, decode_error.value());
@@ -467,27 +485,15 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           // to texture is implemented on other platforms.
           sk_sp<DlImage> image;
           std::string decode_error;
-          bool needs_upload = true;
 
 #ifdef FML_OS_IOS
-          FML_DCHECK(gpu_disabled_switch);
-          if (gpu_disabled_switch) {
-            gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
-                [&needs_upload, &image, &decode_error, &context,
-                 &bitmap_result] {
-                  needs_upload = false;
-                  FML_LOG(ERROR) << "Yay";
-                  std::tie(image, decode_error) = UploadTextureToPrivate(
-                      context, bitmap_result.device_buffer,
-                      bitmap_result.image_info);
-                }));
-          }
+          std::tie(image, decode_error) = UploadTextureToPrivate(
+              context, bitmap_result.device_buffer, bitmap_result.image_info,
+              bitmap_result.sk_bitmap, gpu_disabled_switch);
+#else
+          std::tie(image, decode_error) = UploadTextureToShared(
+              context, bitmap_result.sk_bitmap, gpu_disabled_switch, true);
 #endif  // FML_OS_IOS
-          if (needs_upload) {
-            FML_LOG(ERROR) << "Boo";
-            std::tie(image, decode_error) = UploadTextureToShared(
-                context, bitmap_result.sk_bitmap, true, gpu_disabled_switch);
-          }
           result(image, decode_error);
         };
         // TODO(jonahwilliams):

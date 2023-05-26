@@ -28,7 +28,7 @@ class ImageDecoder {
       const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
       fml::WeakPtr<IOManager> io_manager,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch = nullptr);
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   virtual ~ImageDecoder();
 
