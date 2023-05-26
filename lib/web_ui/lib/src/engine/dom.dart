@@ -1394,8 +1394,8 @@ extension DomCanvasGradientExtension on DomCanvasGradient {
 @staticInterop
 class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 
-Future<_DomResponse> _rawHttpGet(String url) =>
-    js_util.promiseToFuture<_DomResponse>(domWindow._fetch1(url.toJS));
+Future<DomResponse> rawHttpGet(String url) =>
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch1(url.toJS));
 
 typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse?> Function(
     String url);
@@ -1423,15 +1423,15 @@ Future<HttpFetchResponse> httpFetch(String url) async {
     }
   }
   try {
-    final _DomResponse domResponse = await _rawHttpGet(url);
+    final DomResponse domResponse = await rawHttpGet(url);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
   }
 }
 
-Future<_DomResponse> _rawHttpPost(String url, String data) =>
-    js_util.promiseToFuture<_DomResponse>(domWindow._fetch2(
+Future<DomResponse> _rawHttpPost(String url, String data) =>
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch2(
         url.toJS,
         <String, Object?>{
           'method': 'POST',
@@ -1449,7 +1449,7 @@ Future<_DomResponse> _rawHttpPost(String url, String data) =>
 @visibleForTesting
 Future<HttpFetchResponse> testOnlyHttpPost(String url, String data) async {
   try {
-    final _DomResponse domResponse = await _rawHttpPost(url, data);
+    final DomResponse domResponse = await _rawHttpPost(url, data);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
@@ -1542,7 +1542,7 @@ class HttpFetchResponseImpl implements HttpFetchResponse {
   @override
   final String url;
 
-  final _DomResponse _domResponse;
+  final DomResponse _domResponse;
 
   @override
   int get status => _domResponse.status;
@@ -1624,7 +1624,7 @@ abstract class HttpFetchPayload {
 class HttpFetchPayloadImpl implements HttpFetchPayload {
   HttpFetchPayloadImpl._(this._domResponse);
 
-  final _DomResponse _domResponse;
+  final DomResponse _domResponse;
 
   @override
   Future<void> read<T>(HttpFetchReader<T> callback) async {
@@ -1743,14 +1743,14 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class _DomResponse {}
+class DomResponse {}
 
-extension _DomResponseExtension on _DomResponse {
+extension DomResponseExtension on DomResponse {
   @JS('status')
   external JSNumber get _status;
   int get status => _status.toDart.toInt();
 
-  external _DomHeaders get headers;
+  external DomHeaders get headers;
 
   external _DomReadableStream get body;
 
@@ -1770,9 +1770,9 @@ extension _DomResponseExtension on _DomResponse {
 
 @JS()
 @staticInterop
-class _DomHeaders {}
+class DomHeaders {}
 
-extension _DomHeadersExtension on _DomHeaders {
+extension DomHeadersExtension on DomHeaders {
   @JS('get')
   external JSString? _get(JSString? headerName);
   String? get(String? headerName) => _get(headerName?.toJS)?.toDart;
@@ -3435,3 +3435,35 @@ class DomTextDecoder {
 extension DomTextDecoderExtension on DomTextDecoder {
   external JSString decode(JSTypedArray buffer);
 }
+
+@JS('window.FinalizationRegistry')
+@staticInterop
+class DomFinalizationRegistry {
+  external factory DomFinalizationRegistry(JSFunction cleanup);
+}
+
+extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
+  @JS('register')
+  external JSVoid _register1(JSAny target, JSAny value);
+
+  @JS('register')
+  external JSVoid _register2(JSAny target, JSAny value, JSAny token);
+  void register(Object target, Object value, [Object? token]) {
+      if (token != null) {
+        _register2(target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
+      } else {
+        _register1(target.toJSAnyShallow, value.toJSAnyShallow);
+      }
+  }
+
+  @JS('unregister')
+  external JSVoid _unregister(JSAny token);
+  void unregister(Object token) => _unregister(token.toJSAnyShallow);
+}
+
+@JS('window.FinalizationRegistry')
+external JSAny? get _finalizationRegistryConstructor;
+
+/// Whether the current browser supports `FinalizationRegistry`.
+bool browserSupportsFinalizationRegistry =
+    _finalizationRegistryConstructor != null;
