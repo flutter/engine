@@ -59,7 +59,8 @@ void Rasterizer::SetImpellerContext(
   impeller_context_ = std::move(impeller_context);
 }
 
-void Rasterizer::Setup(std::unique_ptr<Studio> studio) {
+void Rasterizer::Setup(std::unique_ptr<Studio> studio,
+                       bool support_thread_merging) {
   studio_ = std::move(studio);
 
   if (max_cache_bytes_.has_value()) {
@@ -72,9 +73,7 @@ void Rasterizer::Setup(std::unique_ptr<Studio> studio) {
     compositor_context_->OnGrContextCreated();
   }
 
-  if (external_view_embedder_ &&
-      external_view_embedder_->SupportsDynamicThreadMerging() &&
-      !raster_thread_merger_) {
+  if (support_thread_merging && !raster_thread_merger_) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
@@ -193,10 +192,10 @@ int Rasterizer::DrawLastLayerTree(
   }
   int success_count = 0;
   bool should_resubmit_frame = false;
-  for (auto& record_pair : surfaces_) {
-    Surface* surface = record_pair.second.surface.get();
-    flutter::LayerTree* layer_tree = record_pair.second.last_tree.get();
-    float device_pixel_ratio = record_pair.second.last_pixel_ratio;
+  for (auto& [view_id, surface_record] : surfaces_) {
+    Surface* surface = surface_record.surface.get();
+    flutter::LayerTree* layer_tree = surface_record.last_tree.get();
+    float device_pixel_ratio = surface_record.last_pixel_ratio;
     if (!surface || !layer_tree) {
       continue;
     }
@@ -205,7 +204,7 @@ int Rasterizer::DrawLastLayerTree(
     }
     RasterStatus raster_status =
         DrawToSurface(*frame_timings_recorder, layer_tree, device_pixel_ratio,
-                      &record_pair.second);
+                      &surface_record);
     if (enable_leaf_layer_tracing) {
       layer_tree->enable_leaf_layer_tracing(false);
     }
@@ -449,8 +448,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     return DoDrawResult{
         .raster_status = raster_status,
         .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-            view_id,
-            std::move(layer_tree),
+            view_id, std::move(layer_tree),
             frame_timings_recorder->CloneUntil(
                 FrameTimingsRecorder::State::kBuildEnd),
             device_pixel_ratio),

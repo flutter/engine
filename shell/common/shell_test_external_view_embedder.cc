@@ -8,11 +8,9 @@ namespace flutter {
 
 ShellTestExternalViewEmbedder::ShellTestExternalViewEmbedder(
     const EndFrameCallBack& end_frame_call_back,
-    PostPrerollResult post_preroll_result,
-    bool support_thread_merging)
+    PostPrerollResult post_preroll_result)
     : end_frame_call_back_(end_frame_call_back),
       post_preroll_result_(post_preroll_result),
-      support_thread_merging_(support_thread_merging),
       submitted_frame_count_(0) {}
 
 void ShellTestExternalViewEmbedder::UpdatePostPrerollResult(
@@ -116,10 +114,6 @@ void ShellTestExternalViewEmbedder::EndFrame(
 // |ExternalViewEmbedder|
 DlCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
-}
-
-bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return support_thread_merging_;
 }
 
 }  // namespace flutter

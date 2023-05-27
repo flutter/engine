@@ -300,11 +300,6 @@ void AndroidExternalViewEmbedder::EndFrame(
 }
 
 // |ExternalViewEmbedder|
-bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return true;
-}
-
-// |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::Teardown() {
   DestroySurfaces();
 }

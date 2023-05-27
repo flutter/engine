@@ -321,6 +321,11 @@ PlatformViewAndroid::CreateExternalViewEmbedder() {
 }
 
 // |PlatformView|
+bool PlatformViewAndroid::SupportsDynamicThreadMerging() {
+  return true;
+}
+
+// |PlatformView|
 std::unique_ptr<SnapshotSurfaceProducer>
 PlatformViewAndroid::CreateSnapshotSurfaceProducer() {
   if (!android_surface_) {

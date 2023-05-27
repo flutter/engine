@@ -21,7 +21,8 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
                           std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                           CreateVsyncWaiter create_vsync_waiter,
                           std::shared_ptr<ShellTestExternalViewEmbedder>
-                              shell_test_external_view_embedder);
+                              shell_test_external_view_embedder,
+                          bool support_thread_merging);
 
   // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewGL() override;
@@ -41,6 +42,8 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
 
   sk_sp<GrDirectContext> main_context_;
 
+  bool support_thread_merging_;
+
   // |PlatformView|
   std::unique_ptr<Studio> CreateRenderingStudio() override;
 
@@ -49,6 +52,9 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
+
+  // |PlatformView|
+  bool SupportsDynamicThreadMerging() override;
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

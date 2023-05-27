@@ -77,7 +77,8 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
     CreateVsyncWaiter create_vsync_waiter,
     std::shared_ptr<ShellTestExternalViewEmbedder> shell_test_external_view_embedder,
     const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
-    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+    bool support_thread_merging)
     : ShellTestPlatformView(delegate, task_runners),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_context_(std::make_unique<DarwinContextMetal>(GetSettings().enable_impeller,
@@ -85,7 +86,8 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
                                                           is_gpu_disabled_sync_switch)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
-      shell_test_external_view_embedder_(std::move(shell_test_external_view_embedder)) {
+      shell_test_external_view_embedder_(std::move(shell_test_external_view_embedder)),
+      support_thread_merging_(support_thread_merging) {
   sksl_precompiler_ = std::make_shared<GPUSurfaceMetalDelegate::SkSLPrecompiler>();
   if (GetSettings().enable_impeller) {
     FML_CHECK([metal_context_->impeller_context() context] != nil);
@@ -108,6 +110,11 @@ void ShellTestPlatformViewMetal::SimulateVSync() {
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> ShellTestPlatformViewMetal::CreateExternalViewEmbedder() {
   return shell_test_external_view_embedder_;
+}
+
+// |PlatformView|
+bool ShellTestPlatformViewMetal::SupportsDynamicThreadMerging() {
+  return support_thread_merging_;
 }
 
 // |PlatformView|

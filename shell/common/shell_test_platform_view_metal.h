@@ -25,8 +25,8 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
       std::shared_ptr<ShellTestExternalViewEmbedder>
           shell_test_external_view_embedder,
       const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
-      const std::shared_ptr<const fml::SyncSwitch>&
-          is_gpu_disabled_sync_switch);
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+      bool support_thread_merging);
 
   // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewMetal() override;
@@ -38,6 +38,7 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   const std::shared_ptr<ShellTestVsyncClock> vsync_clock_;
   const std::shared_ptr<ShellTestExternalViewEmbedder>
       shell_test_external_view_embedder_;
+  bool support_thread_merging_;
 
   // |ShellTestPlatformView|
   virtual void SimulateVSync() override;
@@ -47,6 +48,9 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
+
+  // |PlatformView|
+  bool SupportsDynamicThreadMerging() override;
 
   // |PlatformView|
   PointerDataDispatcherMaker GetDispatcherMaker() override;

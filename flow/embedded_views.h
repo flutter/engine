@@ -433,13 +433,6 @@ class ExternalViewEmbedder {
       bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
-  // Whether the embedder should support dynamic thread merging.
-  //
-  // Returning `true` results a |RasterThreadMerger| instance to be created.
-  // * See also |BegineFrame| and |EndFrame| for getting the
-  // |RasterThreadMerger| instance.
-  virtual bool SupportsDynamicThreadMerging();
-
   // Called when the rasterizer is being torn down.
   // This method provides a way to release resources associated with the current
   // embedder.

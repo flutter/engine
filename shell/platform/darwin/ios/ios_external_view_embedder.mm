@@ -83,11 +83,6 @@ void IOSExternalViewEmbedder::EndFrame(bool should_resubmit_frame,
 }
 
 // |ExternalViewEmbedder|
-bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return true;
-}
-
-// |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     std::shared_ptr<const DlImageFilter> filter,
     const SkRect& filter_rect) {

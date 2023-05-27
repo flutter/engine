@@ -48,6 +48,7 @@ class ShellTest : public FixtureTest {
     // Defaults to calling ShellTestPlatformView::Create with the provided
     // arguments.
     Shell::CreateCallback<PlatformView> platform_view_create_callback;
+    bool support_thread_merging;
   };
 
   ShellTest();

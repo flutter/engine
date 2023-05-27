@@ -160,6 +160,9 @@ class PlatformViewIOS final : public PlatformView {
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
+  bool SupportsDynamicThreadMerging() override;
+
+  // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|

@@ -929,13 +929,15 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
                        GetThreadMergerFromRasterThread(&platform_thread));
 }
 
-TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
-  auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
-  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
-      android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
-  ASSERT_TRUE(embedder->SupportsDynamicThreadMerging());
-}
+// TODO(dkwingsmt): Migrate to a unit test for PlatformViewAndroid, which
+//    however doesn't have unit tests at all...
+// TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
+//   auto jni_mock = std::make_shared<JNIMock>();
+//   auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+//   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+//       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
+//   ASSERT_TRUE(embedder->SupportsDynamicThreadMerging());
+// }
 
 TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
   auto jni_mock = std::make_shared<JNIMock>();

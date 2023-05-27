@@ -683,7 +683,12 @@ class PlatformView {
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
 
+  /// @brief Returns the external view embedder for the implicit view.
+  ///        Those of non-implicit views should be set by
+  ///        Shell::AddRenderSurface.
   virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
+
+  virtual bool SupportsDynamicThreadMerging();
 
   //--------------------------------------------------------------------------
   /// @brief      Invoked when the dart VM requests that a deferred library

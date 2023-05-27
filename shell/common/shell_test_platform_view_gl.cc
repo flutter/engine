@@ -18,13 +18,15 @@ ShellTestPlatformViewGL::ShellTestPlatformViewGL(
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder)
+        shell_test_external_view_embedder,
+    bool support_thread_merging)
     : ShellTestPlatformView(delegate, task_runners),
       gl_surface_(SkISize::Make(800, 600)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {}
+          std::move(shell_test_external_view_embedder), ),
+      support_thread_merging_(support_thread_merging) {}
 
 ShellTestPlatformViewGL::~ShellTestPlatformViewGL() = default;
 
@@ -58,6 +60,11 @@ std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface(
 std::shared_ptr<ExternalViewEmbedder>
 ShellTestPlatformViewGL::CreateExternalViewEmbedder() {
   return shell_test_external_view_embedder_;
+}
+
+// |PlatformView|
+bool ShellTestPlatformViewGL::SupportsDynamicThreadMerging() {
+  return support_thread_merging_;
 }
 
 // |PlatformView|

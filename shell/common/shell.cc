@@ -804,7 +804,8 @@ void Shell::OnPlatformViewCreated() {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
-          rasterizer->Setup(std::move(studio));
+          rasterizer->Setup(std::move(studio),
+                            platform_view->SupportsDynamicThreadMerging());
           rasterizer->AddSurface(kFlutterDefaultViewId, std::move(surface));
         }
 

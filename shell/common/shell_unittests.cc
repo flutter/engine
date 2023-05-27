@@ -421,9 +421,11 @@ TEST_F(ShellTest,
               return static_cast<std::unique_ptr<VsyncWaiter>>(
                   std::make_unique<VsyncWaiterFallback>(task_runners));
             },
-            ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
+            ShellTestPlatformView::BackendType::kDefaultBackend,
+            /*external_view_embedder=*/nullptr,
             shell.GetConcurrentWorkerTaskRunner(),
-            shell.GetIsGpuDisabledSyncSwitch());
+            shell.GetIsGpuDisabledSyncSwitch(),
+            /*support_thread_merging=*/false);
       },
       [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   ASSERT_TRUE(ValidateShell(shell.get()));
@@ -807,7 +809,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kResubmitFrame, false);
+      end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
@@ -866,7 +868,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
       };
 
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kResubmitFrame, false);
+      end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
@@ -937,10 +939,11 @@ TEST_F(ShellTest,
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kResubmitFrame, true);
+      end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -979,11 +982,12 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
         raster_thread_merger = std::move(thread_merger);
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
 
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1041,13 +1045,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
   // Set resubmit once to trigger thread merging.
   external_view_embedder->UpdatePostPrerollResult(
       PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1109,11 +1114,12 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   // can later check if the rasterizer is tore down using
   // |ValidateDestroyPlatformView|
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
 
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1175,10 +1181,11 @@ TEST_F(ShellTest,
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1266,7 +1273,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
   ThreadHost thread_host(
       "io.flutter.test." + GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
@@ -1281,6 +1288,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
       .settings = settings,
       .task_runners = &task_runners,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1320,10 +1328,11 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSuccess);
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   // Create the surface needed by rasterizer
@@ -1372,11 +1381,12 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSkipAndRetryFrame, true);
+      end_frame_callback, PostPrerollResult::kSkipAndRetryFrame);
 
   auto shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
+      .support_thread_merging = true,
   });
 
   PlatformViewNotifyCreated(shell.get());
@@ -2658,7 +2668,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      std::move(end_frame_callback), PostPrerollResult::kSuccess, false);
+      std::move(end_frame_callback), PostPrerollResult::kSuccess);
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
       .shell_test_external_view_embedder = external_view_embedder,
@@ -2733,7 +2743,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       };
 
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame);
 
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,

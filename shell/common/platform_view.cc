@@ -173,6 +173,10 @@ PlatformView::CreateExternalViewEmbedder() {
   return nullptr;
 }
 
+bool PlatformView::SupportsDynamicThreadMerging() {
+  return false;
+}
+
 void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;

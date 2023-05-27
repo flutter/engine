@@ -35,13 +35,15 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder)
+        shell_test_external_view_embedder,
+    bool support_thread_merging)
     : ShellTestPlatformView(delegate, task_runners),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {}
+          std::move(shell_test_external_view_embedder)),
+      support_thread_merging_(support_thread_merging) {}
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
 
@@ -75,6 +77,11 @@ std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
 std::shared_ptr<ExternalViewEmbedder>
 ShellTestPlatformViewVulkan::CreateExternalViewEmbedder() {
   return shell_test_external_view_embedder_;
+}
+
+// |PlatformView|
+bool ShellTestPlatformViewVulkan::SupportsDynamicThreadMerging() {
+  return support_thread_merging_;
 }
 
 // |PlatformView|

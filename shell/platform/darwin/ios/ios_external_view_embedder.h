@@ -60,9 +60,6 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  bool SupportsDynamicThreadMerging() override;
-
-  // |ExternalViewEmbedder|
   void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter,
       const SkRect& filter_rect) override;

@@ -30,8 +30,8 @@ class ShellTestPlatformView : public PlatformView {
       const std::shared_ptr<ShellTestExternalViewEmbedder>&
           shell_test_external_view_embedder,
       const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
-      const std::shared_ptr<const fml::SyncSwitch>&
-          is_gpu_disabled_sync_switch);
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+      bool support_thread_merging);
 
   virtual void SimulateVSync() = 0;
 

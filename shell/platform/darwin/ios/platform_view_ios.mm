@@ -171,6 +171,11 @@ std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedde
 }
 
 // |PlatformView|
+bool PlatformViewIOS::SupportsDynamicThreadMerging() {
+  return true;
+}
+
+// |PlatformView|
 sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
   return ios_context_->CreateResourceContext();
 }

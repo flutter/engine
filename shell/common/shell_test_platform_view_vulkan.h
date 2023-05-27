@@ -22,7 +22,8 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
                               std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                               CreateVsyncWaiter create_vsync_waiter,
                               std::shared_ptr<ShellTestExternalViewEmbedder>
-                                  shell_test_external_view_embedder);
+                                  shell_test_external_view_embedder,
+                              bool support_thread_merging);
 
   ~ShellTestPlatformViewVulkan() override;
 
@@ -43,6 +44,7 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     std::unique_ptr<vulkan::VulkanDevice> logical_device_;
     sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
     sk_sp<GrDirectContext> context_;
+    bool support_thread_merging_;
 
     bool CreateSkiaGrContext();
     bool CreateSkiaBackendContext(GrVkBackendContext* context);

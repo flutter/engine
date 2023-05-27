@@ -171,7 +171,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  studio  The on-screen render studio.
   ///
-  void Setup(std::unique_ptr<Studio> studio);
+  void Setup(std::unique_ptr<Studio> studio, bool support_thread_merging);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and

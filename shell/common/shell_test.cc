@@ -355,8 +355,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
          &create_vsync_waiter,  //
          shell_test_external_view_embedder =
              config.shell_test_external_view_embedder,  //
-         rendering_backend = config.rendering_backend   //
-    ](Shell& shell) {
+         rendering_backend = config.rendering_backend,  //
+         support_thread_merging = config.support_thread_merging](Shell& shell) {
           return ShellTestPlatformView::Create(
               shell,                                  //
               shell.GetTaskRunners(),                 //
@@ -365,7 +365,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
               rendering_backend,                      //
               shell_test_external_view_embedder,      //
               shell.GetConcurrentWorkerTaskRunner(),  //
-              shell.GetIsGpuDisabledSyncSwitch()      //
+              shell.GetIsGpuDisabledSyncSwitch(),     //
+              support_thread_merging                  //
           );
         };
   }
