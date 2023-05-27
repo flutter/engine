@@ -138,7 +138,7 @@ vars = {
   "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_browser_launcher": "https://github.com/dart-lang/browser_launcher.git",
-  "upstream_buildroot": "https://github.com/flutter/buildroot.git",
+  "upstream_buildroot": "https://github.com/godofredoc/buildroot.git",
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
   "upstream_clock": "https://github.com/dart-lang/clock.git",
   "upstream_collection": "https://github.com/dart-lang/collection.git",
@@ -256,7 +256,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '859e7ccc38f55f89dac8aea49367b7a4c1656490',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '287117512e2611b24cb8512cdc1b1fe10cabc2fc',
 
    # Fuchsia compatibility
    #
