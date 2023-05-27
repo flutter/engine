@@ -20,12 +20,12 @@ HostBuffer& ComputePass::GetTransientsBuffer() {
   return *transients_buffer_;
 }
 
-void ComputePass::SetLabel(std::string label) {
+void ComputePass::SetLabel(const std::string& label) {
   if (label.empty()) {
     return;
   }
   transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
-  OnSetLabel(std::move(label));
+  OnSetLabel(label);
 }
 
 void ComputePass::SetGridSize(const ISize& size) {

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/compute_pass.h"
 
 namespace impeller {
@@ -31,7 +32,7 @@ class ComputePassVK final : public ComputePass {
   void OnSetLabel(const std::string& label) override;
 
   // |ComputePass|
-  void OnEncodeCommands(const Context& context,
+  bool OnEncodeCommands(const Context& context,
                         const ISize& grid_size,
                         const ISize& thread_group_size) const override;
 };
