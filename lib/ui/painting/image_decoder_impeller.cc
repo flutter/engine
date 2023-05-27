@@ -442,7 +442,6 @@ ImageDecoderImpeller::UploadTextureToShared(
             decode_error = "Failed to submit blit pass command buffer.";
             return;
           }
-          command_buffer->WaitUntilScheduled();
         }));
     if (decode_error.has_value()) {
       FML_DLOG(ERROR) << decode_error.value();
