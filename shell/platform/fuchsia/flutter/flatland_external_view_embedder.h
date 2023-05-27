@@ -93,9 +93,6 @@ class FlatlandExternalViewEmbedder final
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }
 
-  // |ExternalViewEmbedder|
-  bool SupportsDynamicThreadMerging() override { return false; }
-
   // View manipulation.
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.

@@ -44,7 +44,6 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     std::unique_ptr<vulkan::VulkanDevice> logical_device_;
     sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
     sk_sp<GrDirectContext> context_;
-    bool support_thread_merging_;
 
     bool CreateSkiaGrContext();
     bool CreateSkiaBackendContext(GrVkBackendContext* context);
@@ -115,6 +114,8 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
       shell_test_external_view_embedder_;
 
   std::shared_ptr<OffScreenContext> offscreen_context_;
+
+  bool support_thread_merging_;
 
   // |PlatformView|
   std::unique_ptr<Studio> CreateRenderingStudio() override;

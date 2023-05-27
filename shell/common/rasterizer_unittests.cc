@@ -91,7 +91,6 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,
                     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD0(SupportsDynamicThreadMerging, bool());
 };
 }  // namespace
 
@@ -244,8 +243,6 @@ TEST(
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
-  EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
-      .WillRepeatedly(Return(true));
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
@@ -268,7 +265,7 @@ TEST(
                                                 /*raster_thread_merger=*/_))
       .Times(1);
 
-  rasterizer->Setup(std::move(studio), false);
+  rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
   rasterizer->AddSurface(kDefaultViewId, std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
@@ -330,8 +327,6 @@ TEST(
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*studio, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
-  EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
-      .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*external_view_embedder,
               BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
@@ -343,7 +338,7 @@ TEST(
                                                 /*raster_thread_merger=*/_))
       .Times(1);
 
-  rasterizer->Setup(std::move(studio), false);
+  rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
   rasterizer->AddSurface(kDefaultViewId, std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -407,8 +402,6 @@ TEST(RasterizerTest,
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
   EXPECT_CALL(*studio, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
-  EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
-      .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*external_view_embedder,
               BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
@@ -420,7 +413,7 @@ TEST(RasterizerTest,
                                                 /*raster_thread_merger=*/_))
       .Times(2);
 
-  rasterizer->Setup(std::move(studio), false);
+  rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
   rasterizer->AddSurface(kDefaultViewId, std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);

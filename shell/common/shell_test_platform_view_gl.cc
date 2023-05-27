@@ -25,7 +25,7 @@ ShellTestPlatformViewGL::ShellTestPlatformViewGL(
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder), ),
+          std::move(shell_test_external_view_embedder)),
       support_thread_merging_(support_thread_merging) {}
 
 ShellTestPlatformViewGL::~ShellTestPlatformViewGL() = default;
