@@ -523,14 +523,6 @@ bool APNGImageGenerator::DemuxNextImageInternal() {
     return false;
   }
 
-  if (images_.back().frame_info->disposal_method ==
-      SkCodecAnimation::DisposalMethod::kRestorePrevious) {
-    FML_DLOG(INFO)
-        << "DisposalMethod::kRestorePrevious is not supported by the "
-           "MultiFrameCodec. Falling back to DisposalMethod::kRestoreBGColor "
-           " behavior instead.";
-  }
-
   if (images_.size() > first_frame_index_ &&
       images_.back().frame_info->disposal_method ==
           SkCodecAnimation::DisposalMethod::kKeep) {
