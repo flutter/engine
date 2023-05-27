@@ -139,8 +139,8 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_emsdk": true,
-          "download_android_deps": true,
+          "download_emsdk": "true",
+          "download_android_deps": "true"
         }
     timeout: 60
 
@@ -160,7 +160,7 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": true,
+          "download_android_deps": "true"
         }
     timeout: 60
 
@@ -180,7 +180,7 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": true,
+          "download_android_deps": "true"
         }
     timeout: 60
 
@@ -278,6 +278,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - .clang-tidy
       - tools/**
       - ci/**
       - "**.h"
@@ -298,6 +299,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - .clang-tidy
       - tools/**
       - ci/**
       - "**.h"
@@ -541,6 +543,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - .clang-tidy
       - tools/**
       - ci/**
       - "**.h"
@@ -563,6 +566,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - .clang-tidy
       - tools/**
       - ci/**
       - "**.h"

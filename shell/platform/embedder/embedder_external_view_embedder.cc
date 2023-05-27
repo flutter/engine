@@ -11,6 +11,9 @@
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
@@ -267,3 +270,5 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
 }
 
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)
