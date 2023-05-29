@@ -25,7 +25,7 @@ TEST(DisplayListRegion, SingleRectangle) {
   EXPECT_EQ(rects.front(), SkIRect::MakeLTRB(10, 10, 50, 50));
 }
 
-TEST(DisplayListRegion, NonOverlappingRectangles) {
+TEST(DisplayListRegion, NonOverlappingRectangles1) {
   DlRegion region;
   for (int i = 0; i < 10; ++i) {
     SkIRect rect = SkIRect::MakeXYWH(50 * i, 50 * i, 50, 50);
@@ -37,6 +37,22 @@ TEST(DisplayListRegion, NonOverlappingRectangles) {
       {150, 150, 200, 200}, {200, 200, 250, 250}, {250, 250, 300, 300},
       {300, 300, 350, 350}, {350, 350, 400, 400}, {400, 400, 450, 450},
       {450, 450, 500, 500},
+  };
+  EXPECT_EQ(rects, expected);
+}
+
+TEST(DisplayListRegion, NonOverlappingRectangles2) {
+  DlRegion region;
+  region.addRect(SkIRect::MakeXYWH(5, 5, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(25, 5, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(5, 25, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(25, 25, 10, 10));
+  auto rects = region.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(5, 5, 10, 10),
+      SkIRect::MakeXYWH(25, 5, 10, 10),
+      SkIRect::MakeXYWH(5, 25, 10, 10),
+      SkIRect::MakeXYWH(25, 25, 10, 10),
   };
   EXPECT_EQ(rects, expected);
 }

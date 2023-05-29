@@ -52,7 +52,7 @@ struct DlRegion::SpanLine {
     spans.push_back({left, right});
   }
 
-  bool operator==(const SpanLine& l2) const {
+  bool spansEqual(const SpanLine& l2) const {
     SpanVec& spans = *this->spans;
     SpanVec& otherSpans = *l2.spans;
     assert(this != &l2);
@@ -176,7 +176,7 @@ void DlRegion::addRect(const SkIRect& rect) {
          i < lines_.begin() + dirty_end;) {
       auto& line = *i;
       auto& next = *(i + 1);
-      if (line == next) {
+      if (line.bottom == next.top && line.spansEqual(next)) {
         --dirty_end;
         next.top = line.top;
         i = removeLine(i);
