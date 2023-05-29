@@ -57,6 +57,51 @@ TEST(DisplayListRegion, NonOverlappingRectangles2) {
   EXPECT_EQ(rects, expected);
 }
 
+TEST(DisplayListRegion, NonOverlappingRectangles3) {
+  DlRegion region;
+  region.addRect(SkIRect::MakeXYWH(0, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-11, -11, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(11, 11, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-11, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(0, 11, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(0, -11, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(11, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(11, -11, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-11, 11, 10, 10));
+  auto rects = region.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(-11, -11, 10, 10),  //
+      SkIRect::MakeXYWH(0, -11, 10, 10),    //
+      SkIRect::MakeXYWH(11, -11, 10, 10),   //
+      SkIRect::MakeXYWH(-11, 0, 10, 10),    //
+      SkIRect::MakeXYWH(0, 0, 10, 10),      //
+      SkIRect::MakeXYWH(11, 0, 10, 10),     //
+      SkIRect::MakeXYWH(-11, 11, 10, 10),   //
+      SkIRect::MakeXYWH(0, 11, 10, 10),     //
+      SkIRect::MakeXYWH(11, 11, 10, 10),
+  };
+  EXPECT_EQ(rects, expected);
+}
+
+TEST(DisplayListRegion, MergeTouchingRectangles) {
+  DlRegion region;
+  region.addRect(SkIRect::MakeXYWH(0, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-10, -10, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(10, 10, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-10, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(0, 10, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(0, -10, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(10, 0, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(10, -10, 10, 10));
+  region.addRect(SkIRect::MakeXYWH(-10, 10, 10, 10));
+
+  auto rects = region.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(-10, -10, 30, 30),
+  };
+  EXPECT_EQ(rects, expected);
+}
+
 TEST(DisplayListRegion, OverlappingRectangles) {
   DlRegion region;
   for (int i = 0; i < 10; ++i) {
