@@ -8,6 +8,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "impeller/core/texture.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -36,6 +37,7 @@ class EmbedderRenderTarget {
   ///
   EmbedderRenderTarget(FlutterBackingStore backing_store,
                        sk_sp<SkSurface> render_surface,
+                       std::shared_ptr<impeller::Texture> impeller_surface,
                        fml::closure on_release);
 
   //----------------------------------------------------------------------------
@@ -68,6 +70,7 @@ class EmbedderRenderTarget {
  private:
   FlutterBackingStore backing_store_;
   sk_sp<SkSurface> render_surface_;
+  std::shared_ptr<impeller::Texture> impeller_surface_;
   fml::closure on_release_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderRenderTarget);

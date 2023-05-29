@@ -12,11 +12,14 @@
 
 namespace flutter {
 
-EmbedderRenderTarget::EmbedderRenderTarget(FlutterBackingStore backing_store,
-                                           sk_sp<SkSurface> render_surface,
-                                           fml::closure on_release)
+EmbedderRenderTarget::EmbedderRenderTarget(
+    FlutterBackingStore backing_store,
+    sk_sp<SkSurface> render_surface,
+    std::shared_ptr<impeller::Texture> impeller_surface,
+    fml::closure on_release)
     : backing_store_(backing_store),
       render_surface_(std::move(render_surface)),
+      impeller_surface_(std::move(impeller_surface)),
       on_release_(std::move(on_release)) {
   // TODO(38468): The optimization to elide backing store updates between frames
   // has not been implemented yet.

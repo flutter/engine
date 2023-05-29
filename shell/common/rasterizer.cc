@@ -635,8 +635,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
+      auto aiks_context = surface_->GetAiksContext();
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(),
+          !!aiks_context ? aiks_context->GetContext() : nullptr,
+          std::move(frame));
     } else {
       frame->Submit();
     }
