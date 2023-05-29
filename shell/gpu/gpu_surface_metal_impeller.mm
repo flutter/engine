@@ -29,11 +29,13 @@ static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
 }
 
 GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 const std::shared_ptr<impeller::Context>& context)
+                                                 const std::shared_ptr<impeller::Context>& context,
+                                                 bool render_to_surface)
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
-          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)) {
+          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)),
+      render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
@@ -50,7 +52,7 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_info) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size) {
   TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
 
   if (!IsValid()) {
@@ -58,7 +60,18 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
     return nullptr;
   }
 
-  auto layer = delegate_->GetCAMetalLayer(frame_info);
+  if (frame_size.isEmpty()) {
+    FML_LOG(ERROR) << "Metal surface was asked for an empty frame.";
+    return nullptr;
+  }
+
+  if (!render_to_surface_) {
+    return std::make_unique<SurfaceFrame>(
+        nullptr, SurfaceFrame::FramebufferInfo(),
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+  }
+
+  auto layer = delegate_->GetCAMetalLayer(frame_size);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
     return nullptr;
@@ -149,7 +162,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   return std::make_unique<SurfaceFrame>(nullptr,           // surface
                                         framebuffer_info,  // framebuffer info
                                         submit_callback,   // submit callback
-                                        frame_info,        // frame size
+                                        frame_size,        // frame size
                                         nullptr,           // context result
                                         true               // display list fallback
   );

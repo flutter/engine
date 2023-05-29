@@ -68,6 +68,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -452,7 +453,8 @@ InferMetalPlatformViewCreationCallback(
     const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
-        external_view_embedder) {
+        external_view_embedder,
+    bool enable_impeller) {
   if (config->type != kMetal) {
     return nullptr;
   }
@@ -486,20 +488,33 @@ InferMetalPlatformViewCreationCallback(
     return texture_info;
   };
 
-  flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
-      .present = metal_present,
-      .get_texture = metal_get_texture,
-  };
-
   std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
       std::move(external_view_embedder);
 
-  std::unique_ptr<flutter::EmbedderSurfaceMetal> embedder_surface =
-      std::make_unique<flutter::EmbedderSurfaceMetal>(
-          const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
-          const_cast<flutter::GPUMTLCommandQueueHandle>(
-              config->metal.present_command_queue),
-          metal_dispatch_table, view_embedder);
+  std::unique_ptr<flutter::EmbedderSurface> embedder_surface;
+
+  if (enable_impeller) {
+    flutter::EmbedderSurfaceMetalImpeller::MetalDispatchTable
+        metal_dispatch_table = {
+            .present = metal_present,
+            .get_texture = metal_get_texture,
+        };
+    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetalImpeller>(
+        const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
+        const_cast<flutter::GPUMTLCommandQueueHandle>(
+            config->metal.present_command_queue),
+        metal_dispatch_table, view_embedder);
+  } else {
+    flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
+        .present = metal_present,
+        .get_texture = metal_get_texture,
+    };
+    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetal>(
+        const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
+        const_cast<flutter::GPUMTLCommandQueueHandle>(
+            config->metal.present_command_queue),
+        metal_dispatch_table, view_embedder);
+  }
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -650,7 +665,8 @@ InferPlatformViewCreationCallback(
     const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
-        external_view_embedder) {
+        external_view_embedder,
+    bool enable_impeller) {
   if (config == nullptr) {
     return nullptr;
   }
@@ -667,7 +683,7 @@ InferPlatformViewCreationCallback(
     case kMetal:
       return InferMetalPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
-          std::move(external_view_embedder));
+          std::move(external_view_embedder), enable_impeller);
     case kVulkan:
       return InferVulkanPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
@@ -1830,7 +1846,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(
       config, user_data, platform_dispatch_table,
-      std::move(external_view_embedder_result.first));
+      std::move(external_view_embedder_result.first), settings.enable_impeller);
 
   if (!on_create_platform_view) {
     return LOG_EMBEDDER_ERROR(

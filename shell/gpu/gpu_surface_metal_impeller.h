@@ -20,7 +20,8 @@ namespace flutter {
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                          const std::shared_ptr<impeller::Context>& context);
+                          const std::shared_ptr<impeller::Context>& context,
+                          bool render_to_surface = true);
 
   // |Surface|
   ~GPUSurfaceMetalImpeller();
@@ -35,13 +36,19 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   fml::scoped_nsprotocol<id<MTLDrawable>> last_drawable_;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  bool render_to_surface_ = true;
   bool disable_partial_repaint_ = false;
   // Accumulated damage for each framebuffer; Key is address of underlying
   // MTLTexture for each drawable
   std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& frame_size) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
