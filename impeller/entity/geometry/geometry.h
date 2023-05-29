@@ -51,6 +51,10 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
     Path::Polyline polyline);
 
+/// @brief Given a polyline created from a potential X or Y monotone filled
+/// path, perform a tessellation, or return std::nullopt.
+bool VerifyMonotone(Path::Polyline polyline, bool xaxis);
+
 class Geometry {
  public:
   Geometry();

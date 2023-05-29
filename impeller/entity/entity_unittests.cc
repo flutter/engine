@@ -2635,5 +2635,98 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
 }
 
+TEST(GeometryTest, MonotonePolygon) {
+  {
+    // Trivial monotone shape is actually convex.
+    PathBuilder builder;
+    builder.AddRoundedRect({{10, 10}, {300, 300}}, {50, 50, 50, 50});
+    ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                               /*xaxis=*/true));
+  }
+
+  {
+    // Trivial multi-contour shape should be rejected.
+    PathBuilder builder;
+    builder.AddRoundedRect({{10, 10}, {300, 300}}, {50, 50, 50, 50});
+    builder.AddRoundedRect({{0, 0}, {10, 10}}, {50, 50, 50, 50});
+    ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                                /*xaxis=*/true));
+  }
+
+  {
+    // Non-convex X-monotone path.
+    //
+    //    *       *
+    //    | \   / |
+    //    |  \ /  |
+    //    |   *   |
+    //    *-------*
+
+    PathBuilder builder;
+    builder.MoveTo({0, 0});
+    builder.LineTo({10, 15});
+    builder.LineTo({20, 0});
+    builder.LineTo({20, 20});
+    builder.LineTo({0, 20});
+    builder.Close();
+
+    ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                               /*xaxis=*/true));
+    ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                                /*xaxis=*/false));
+  }
+
+  {
+    // Non-convex Y-monotone path.
+    //
+    //    *--------*
+    //     \       |
+    //      \      |
+    //       *     |
+    //      /      |
+    //     /       |
+    //    *--------*
+
+    PathBuilder builder;
+    builder.MoveTo({0, 0});
+    builder.LineTo({10, 0});
+    builder.LineTo({10, 20});
+    builder.LineTo({0, 20});
+    builder.LineTo({5, 10});
+    builder.Close();
+
+    ASSERT_FALSE(
+        VerifyMonotone(builder.TakePath().CreatePolyline(0.1), /*xaxis=*/true));
+    ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                               /*xaxis=*/false));
+  }
+
+  {
+    // Non-convex non-X-monotone path.
+    //
+    //    *
+    //    | \
+    //    |  \
+    //    |   *
+    //    |  /
+    //    | *-----*    <- Cusp, decreasing X value.
+    //    |       |
+    //    *-------*
+    //
+
+    PathBuilder builder;
+    builder.MoveTo({0, 0});
+    builder.LineTo({5, 10});
+    builder.LineTo({3, 15});
+    builder.LineTo({20, 15});
+    builder.LineTo({20, 20});
+    builder.LineTo({0, 20});
+    builder.Close();
+
+    ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                                /*xaxis=*/true));
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller

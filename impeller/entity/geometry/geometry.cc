@@ -43,6 +43,119 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
   return std::make_pair(output, indices);
 }
 
+static bool IsConvex(const Point& a, const Point& b, const Point& c) {
+  // TODO math stuff.
+}
+
+bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
+  if (polyline.contours.size() > 1) {
+    return false;
+  }
+
+  auto [start, end] = polyline.GetContourPointBounds(0);
+
+  FML_DCHECK(start == 0u);  // Assumes single countour.
+  size_t vertex_count = end;
+
+  // To determine if this is horizontally monotone, first find the largest
+  // and the smallest vertices in terms of the X coordinates. These vertices
+  // split the polygon into an "upper" and "lower" segment. Note, that we
+  // need to make an adjustment to support line segments that lie exactly
+  // along the X axis. in this case, if the X value is nearly identical and
+  // it comes from the prior index, we permit.
+  size_t min_x_index = 0u;
+  size_t max_x_index = 0u;
+  Scalar min_x;
+  Scalar max_x;
+  if (xaxis) {
+    min_x = polyline.points[min_x_index].x;
+    max_x = polyline.points[max_x_index].x;
+  } else {
+    min_x = polyline.points[min_x_index].y;
+    max_x = polyline.points[max_x_index].y;
+  }
+  for (auto i = 1u; i < end; i++) {
+    auto x = xaxis ? polyline.points[i].x : polyline.points[i].y;
+    if (x < min_x) {
+      min_x_index = i;
+      min_x = x;
+    } else if (x > max_x) {
+      max_x_index = i;
+      max_x = x;
+    }
+  }
+
+  // Next, We must verify that the xcoordinates are non-decreasing in left to
+  // right order. This is done in order for the upper chain and in reverse order
+  // on the lower chain.
+
+  // Verify upper chain.
+  Scalar prev_x = min_x;
+  for (auto i = 1u; i < vertex_count; i++) {
+    auto j = (min_x_index + i) % vertex_count;
+    if (j == max_x_index) {
+      break;
+    }
+    auto x = xaxis ? polyline.points[j].x : polyline.points[j].y;
+    if (x < prev_x) {
+      return false;
+    }
+    prev_x = x;
+  }
+
+  // Verify lower chain.
+  prev_x = max_x;
+  for (auto i = 1u; i < vertex_count; i++) {
+    auto j = (max_x_index + i) % vertex_count;
+    if (j == min_x_index) {
+      break;
+    }
+    auto x = xaxis ? polyline.points[j].x : polyline.points[j].y;
+    if (x > prev_x) {
+      return false;
+    }
+    prev_x = x;
+  }
+  return true;
+
+  // At this point, we've verifed that the polygon is X or Y monotone.
+  // This allows for a simple triangulation where we walk one of the chains
+  // and greedly add triangles. This is done via a simplified ear clip.
+  //
+  // We traverse each monotone chain, and add triangles from a working set
+  // as long as the angle is convex. The working set begins with the first
+  // two vertices.
+
+  std::vector<Point> result_set;
+  std::vector<Point> candidate_set;
+  candidate_set.push_back(polyline.points[min_x_index]);
+  candidate_set.push_back(polyline.points[(min_x_index + 1) % vertex_count]);
+  auto i = (min_x_index + 2) % vertex_count;
+
+  // min to max chain.
+  while (i != max_x_index) {
+    auto current = polyline.points[i];
+    if (isConvex(candidate_set[candidate_set.size() - 2],
+                 candidate_set[candidate_set.size() - 1], current)) {
+      result_set.push_back(candidate_set[candidate_set.size() - 2]);
+      result_set.push_back(candidate_set[candidate_set.size() - 1]);
+      result_set.push_back(current);
+      candidate_set.pop_back();
+      if (candidate_set.size() == 1) {
+        candidate_set.push_back(current);
+        i = (i + 1) % vertex_count;
+      }
+    } else {
+      candidate_set.push_back(current);
+      i = (i + 1) % vertex_count;
+    }
+  }
+
+  FML_DCHECK(candidate_set.size() == 0);
+
+  return result_set;
+}
+
 VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
 ComputeUVGeometryCPU(
     VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& input,
