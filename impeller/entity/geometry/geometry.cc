@@ -44,7 +44,30 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
 }
 
 static bool IsConvex(const Point& a, const Point& b, const Point& c) {
-  // TODO math stuff.
+  // The vectors ab and bc are convex if the angle between them is less
+  // than 180 degrees. We can determine the proper angle computation by
+  // determining which direction the triangle is facing w.r.t the axis
+  // that the polygon is monotone in. Consider:
+  //
+  //
+  //       B -- C
+  //      /
+  //     A
+  //
+  // Given the following points for A, B, C and that we are moving left to
+  // right creating triangles. Visually, we can tell that this angle is
+  // "convex". This can be determined computationally by realizing that the
+  // direction of AB and BC is consistently moving left to right (it doesn't
+  // change direction). In contrast:
+  //
+  //      C
+  //      |
+  //      B
+  //     /
+  //    A
+  //
+  // We can see in the above diagram that the direction changes moving from
+  // AB to BC. Thus the angle is not convex.
 }
 
 bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
