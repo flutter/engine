@@ -109,8 +109,7 @@ class DlRTree : public SkRefCnt {
 
   /// Finds the rects in the tree that intersect with the query rect.
   ///
-  /// When two matching query results intersect with each other, they are
-  /// joined into a single rect which also intersects with the query rect.
+  /// The returned list of rectangles will be non-overlapping.
   /// In other words, the bounds of each rect in the result list are mutually
   /// exclusive.
   std::list<SkRect> searchAndConsolidateRects(const SkRect& query) const;
