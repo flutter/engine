@@ -190,18 +190,19 @@ void DlRegion::addRect(const SkIRect& rect) {
 
 std::vector<SkIRect> DlRegion::getRects(bool deband) const {
   std::vector<SkIRect> rects;
+  size_t previous_span_end = 0;
   for (const auto& line : lines_) {
     for (const Span& span : *line.spans) {
       SkIRect rect{span.left, line.top, span.right, line.bottom};
       if (deband) {
-        auto iter = rects.end();
-        // If there is recangle previously in rects on which this one is a
+        auto iter = rects.begin() + previous_span_end;
+        // If there is rectangle previously in rects on which this one is a
         // vertical continuation, remove the previous rectangle and expand this
         // one vertically to cover the area.
         while (iter != rects.begin()) {
           --iter;
           if (iter->bottom() < rect.top()) {
-            // Went too far.
+            // Went all the way to previous span line.
             break;
           } else if (iter->bottom() == rect.top() &&
                      iter->left() == rect.left() &&
@@ -214,6 +215,7 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
       }
       rects.push_back(rect);
     }
+    previous_span_end = rects.size();
   }
   return rects;
 }
