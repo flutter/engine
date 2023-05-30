@@ -1983,6 +1983,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
     AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
+    return obtainAccessibilityEvent(event, virtualViewId, eventType);
+  }
+
+  @VisibleForTesting
+  public AccessibilityEvent obtainAccessibilityEvent(AccessibilityEvent event, int virtualViewId, int eventType) {
     event.setPackageName(rootAccessibilityView.getContext().getPackageName());
     event.setSource(rootAccessibilityView, virtualViewId);
     return event;
