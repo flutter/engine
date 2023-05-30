@@ -54,6 +54,9 @@
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 namespace testing {
 
@@ -2730,3 +2733,5 @@ TEST(GeometryTest, MonotonePolygon) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)
