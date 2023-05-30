@@ -113,6 +113,7 @@ void Surface::_init() {
   }
 
   makeCurrent(_glContext);
+  emscripten_webgl_enable_extension(_glContext, "WEBGL_debug_renderer_info");
 
   _grContext = GrDirectContext::MakeGL(GrGLMakeNativeInterface());
 
@@ -196,7 +197,7 @@ void Surface::_rasterizeImage(SkImage* image,
       data = nullptr;
     }
   }
-  emscripten_sync_run_in_main_runtime_thread(
+  emscripten_async_run_in_main_runtime_thread(
       EM_FUNC_SIG_VIII, fOnRasterizeComplete, this, data.release(), callbackId);
 }
 
@@ -210,7 +211,7 @@ void Surface::_onRasterizeComplete(SkData* data, uint32_t callbackId) {
 
 // Worker thread only
 void Surface::_notifyRenderComplete(uint32_t callbackId) {
-  emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VII, fOnRenderComplete,
+  emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VII, fOnRenderComplete,
                                              this, callbackId);
 }
 
