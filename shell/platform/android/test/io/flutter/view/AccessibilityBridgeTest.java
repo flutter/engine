@@ -1873,18 +1873,24 @@ public class AccessibilityBridgeTest {
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
     when(mockManager.isEnabled()).thenReturn(true);
+    ViewParent mockParent = mock(ViewParent.class);
+    when(mockRootView.getParent()).thenReturn(mockParent);
+    AccessibilityEvent mockEvent = mock(AccessibilityEvent.class);
 
     AccessibilityBridge accessibilityBridge =
         setUpBridge(mockRootView, null, mockManager, null, null, null);
 
-    AccessibilityManager manager = accessibilityBridge.accessibilityMessageHandler;
+
+    AccessibilityBridge spyAccessibilityBridge = spy(accessibilityBridge);
+
+    when(spyAccessibilityBridge.obtainAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED))
+    .thenReturn(mockEvent);
+
+    spyAccessibilityBridge.sendAccessibilityEvent(123, AccessibilityEvent.TYPE_VIEW_FOCUSED);
 
 
-    AccessibilityEvent mockEvent = mock(AccessibilityEvent.class);
-    accessibilityBridge.obtainAccessibilityEvent(
-        mockEvent, 123, AccessibilityEvent.TYPE_VIEW_FOCUSED);
-    verify(mockEvent).setSource(eq(mockRootView), eq(123));
     verify(mockEvent).setPackageName("test");
+    verify(mockEvent).setSource(eq(mockRootView), eq(123));
   }
 
   AccessibilityBridge setUpBridge() {

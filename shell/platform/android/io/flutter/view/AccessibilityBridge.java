@@ -1889,7 +1889,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * <p>The given {@code viewId} may either belong to {@link #rootAccessibilityView}, or any Flutter
    * {@link SemanticsNode}.
    */
-  private void sendAccessibilityEvent(int viewId, int eventType) {
+  @VisibleForTesting
+  public void sendAccessibilityEvent(int viewId, int eventType) {
     if (!accessibilityManager.isEnabled()) {
       return;
     }
@@ -1982,16 +1983,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * invoked to create an {@link AccessibilityEvent} for the {@link #rootAccessibilityView}.
    */
   private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-    AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
-    return obtainAccessibilityEvent(event, virtualViewId, eventType);
-  }
-
-  @VisibleForTesting
-  public AccessibilityEvent obtainAccessibilityEvent(
-      AccessibilityEvent event, int virtualViewId, int eventType) {
+    AccessibilityEvent event = obtainAccessibilityEvent(eventType);
     event.setPackageName(rootAccessibilityView.getContext().getPackageName());
     event.setSource(rootAccessibilityView, virtualViewId);
     return event;
+  }
+
+  @VisibleForTesting
+  public AccessibilityEvent obtainAccessibilityEvent(int eventType) {
+        return AccessibilityEvent.obtain(eventType);
   }
 
   /**
