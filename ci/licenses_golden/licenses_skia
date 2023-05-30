@@ -1,4 +1,4 @@
-Signature: 959220be4b833bcdb24e336353826031
+Signature: 2f5cfed3bb15f1522352251337bdefde
 
 ====================================================================================================
 LIBRARY: etc1
@@ -386,6 +386,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/skif_runtimeshader_sampleradius.md
 FILE: ../../../third_party/skia/relnotes/skimagegenerator_grexternaltexturegenerator.md
+FILE: ../../../third_party/skia/relnotes/sksamplingoptions_implicit.md
 FILE: ../../../third_party/skia/relnotes/sksurface_methods.md
 FILE: ../../../third_party/skia/relnotes/sktablecolorfilter.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
