@@ -43,7 +43,10 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
   return std::make_pair(output, indices);
 }
 
-static bool IsConvex(const Point& a, const Point& b, const Point& c) {
+static bool IsConvex(const Point& a,
+                     const Point& b,
+                     const Point& c,
+                     Scalar scale) {
   // The vectors ab and bc are convex if the angle between them is less
   // than 180 degrees. We can determine the proper angle computation by
   // determining which direction the triangle is facing w.r.t the axis
@@ -68,11 +71,20 @@ static bool IsConvex(const Point& a, const Point& b, const Point& c) {
   //
   // We can see in the above diagram that the direction changes moving from
   // AB to BC. Thus the angle is not convex.
+  //
+  // This left/right side determination is computed via comparing the cross
+  // product of AB and AC. if resulting vector has a positive Z, then it lies
+  // inside the polygon (when moving left to right) and outside the polygon
+  // when moving right to left.
+  auto ba = Point(a.x - b.x, a.y - b.y);
+  auto bc = Point(c.x - b.x, c.y - b.y);
+  return (ba.Cross(bc) * scale) > 0;
 }
 
-bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
+std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
+                                                 bool xaxis) {
   if (polyline.contours.size() > 1) {
-    return false;
+    return std::nullopt;
   }
 
   auto [start, end] = polyline.GetContourPointBounds(0);
@@ -121,7 +133,7 @@ bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
     }
     auto x = xaxis ? polyline.points[j].x : polyline.points[j].y;
     if (x < prev_x) {
-      return false;
+      return std::nullopt;
     }
     prev_x = x;
   }
@@ -135,11 +147,10 @@ bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
     }
     auto x = xaxis ? polyline.points[j].x : polyline.points[j].y;
     if (x > prev_x) {
-      return false;
+      return std::nullopt;
     }
     prev_x = x;
   }
-  return true;
 
   // At this point, we've verifed that the polygon is X or Y monotone.
   // This allows for a simple triangulation where we walk one of the chains
@@ -158,8 +169,27 @@ bool VerifyMonotone(Path::Polyline polyline, bool xaxis) {
   // min to max chain.
   while (i != max_x_index) {
     auto current = polyline.points[i];
-    if (isConvex(candidate_set[candidate_set.size() - 2],
-                 candidate_set[candidate_set.size() - 1], current)) {
+    if (IsConvex(candidate_set[candidate_set.size() - 2],
+                 candidate_set[candidate_set.size() - 1], current, 1.0)) {
+      result_set.push_back(candidate_set[candidate_set.size() - 2]);
+      result_set.push_back(candidate_set[candidate_set.size() - 1]);
+      result_set.push_back(current);
+      candidate_set.pop_back();
+      if (candidate_set.size() == 1) {
+        candidate_set.push_back(current);
+        i = (i + 1) % vertex_count;
+      }
+    } else {
+      candidate_set.push_back(current);
+      i = (i + 1) % vertex_count;
+    }
+  }
+
+  // max to min chain.
+  while (i != min_x_index) {
+    auto current = polyline.points[i];
+    if (IsConvex(candidate_set[candidate_set.size() - 2],
+                 candidate_set[candidate_set.size() - 1], current, -1.0)) {
       result_set.push_back(candidate_set[candidate_set.size() - 2]);
       result_set.push_back(candidate_set[candidate_set.size() - 1]);
       result_set.push_back(current);

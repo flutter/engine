@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -2644,7 +2645,8 @@ TEST(GeometryTest, MonotonePolygon) {
     PathBuilder builder;
     builder.AddRoundedRect({{10, 10}, {300, 300}}, {50, 50, 50, 50});
     ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                               /*xaxis=*/true));
+                               /*xaxis=*/true)
+                    .has_value());
   }
 
   {
@@ -2653,7 +2655,8 @@ TEST(GeometryTest, MonotonePolygon) {
     builder.AddRoundedRect({{10, 10}, {300, 300}}, {50, 50, 50, 50});
     builder.AddRoundedRect({{0, 0}, {10, 10}}, {50, 50, 50, 50});
     ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                                /*xaxis=*/true));
+                                /*xaxis=*/true)
+                     .has_value());
   }
 
   {
@@ -2674,9 +2677,22 @@ TEST(GeometryTest, MonotonePolygon) {
     builder.Close();
 
     ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                               /*xaxis=*/true));
+                               /*xaxis=*/true)
+                    .has_value());
     ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                                /*xaxis=*/false));
+                                /*xaxis=*/false)
+                     .has_value());
+
+    auto points = VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+                                 /*xaxis=*/true)
+                      .value();
+
+    std::vector<Point> expected_triangulation = {
+        {10, 15}, {20, 0},  {20, 20},  //
+        {10, 15}, {20, 20}, {0, 20},   //
+        {0, 0},   {10, 15}, {0, 20},   //
+    };
+    ASSERT_EQ(points, expected_triangulation);
   }
 
   {
@@ -2699,9 +2715,11 @@ TEST(GeometryTest, MonotonePolygon) {
     builder.Close();
 
     ASSERT_FALSE(
-        VerifyMonotone(builder.TakePath().CreatePolyline(0.1), /*xaxis=*/true));
+        VerifyMonotone(builder.TakePath().CreatePolyline(0.1), /*xaxis=*/true)
+            .has_value());
     ASSERT_TRUE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                               /*xaxis=*/false));
+                               /*xaxis=*/false)
+                    .has_value());
   }
 
   {
@@ -2727,7 +2745,8 @@ TEST(GeometryTest, MonotonePolygon) {
     builder.Close();
 
     ASSERT_FALSE(VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                                /*xaxis=*/true));
+                                /*xaxis=*/true)
+                     .has_value());
   }
 }
 
