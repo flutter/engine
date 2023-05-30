@@ -135,7 +135,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (FlutterKeyboardMode)calculateKeyboardAttachMode:(NSNotification*)notification;
 - (CGFloat)calculateMultitaskingAdjustment:(CGRect)screenRect keyboardFrame:(CGRect)keyboardFrame;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
-- (void)setupKeyboardAnimationVsyncClient;
 - (UIView*)keyboardAnimationView;
 - (SpringAnimation*)keyboardSpringAnimation;
 - (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
@@ -195,18 +194,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [viewControllerMock loadView];
   [viewControllerMock viewDidLoad];
   OCMVerify([viewControllerMock createTouchRateCorrectionVSyncClientIfNeeded]);
-}
-
-- (void)testStartKeyboardAnimationWillInvokeSetupKeyboardAnimationVsyncClient {
-  FlutterEngine* engine = [[FlutterEngine alloc] init];
-  [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
-  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  viewControllerMock.targetViewInsetBottom = 100;
-  [viewControllerMock startKeyBoardAnimation:0.25];
-  OCMVerify([viewControllerMock setupKeyboardAnimationVsyncClient]);
 }
 
 - (void)testStartKeyboardAnimationWillInvokeSetupKeyboardSpringAnimationIfNeeded {

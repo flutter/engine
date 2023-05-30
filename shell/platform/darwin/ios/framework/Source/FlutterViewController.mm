@@ -44,8 +44,6 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
-typedef std::function<void(fml::TimePoint)> KeyboardAnimationCallback;
-
 // Struct holding data to help adapt system mouse/trackpad events to embedder events.
 typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
@@ -1599,7 +1597,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
 
-  KeyboardAnimationCallback keyboardAnimationCallback =
+  FlutterKeyboardAnimationCallback keyboardAnimationCallback =
       [weakSelf = [self getWeakPtr]](fml::TimePoint keyboardAnimationTargetTime) {
         if (!weakSelf) {
           return;
@@ -1675,7 +1673,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                 toValue:self.targetViewInsetBottom]);
 }
 
-- (void)setupKeyboardAnimationVsyncClient:(KeyboardAnimationCallback)keyboardAnimationCallback {
+- (void)setupKeyboardAnimationVsyncClient:
+    (FlutterKeyboardAnimationCallback)keyboardAnimationCallback {
+  if (!keyboardAnimationCallback) {
+    return;
+  }
   flutter::Shell& shell = [_engine.get() shell];
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
