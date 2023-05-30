@@ -1,4 +1,4 @@
-Signature: f9a6985942fbf70f270e88af97f8774a
+Signature: 767592b22b8953887f51f46cee78937f
 
 ====================================================================================================
 LIBRARY: etc1
@@ -1430,7 +1430,6 @@ ORIGIN: ../../../third_party/skia/src/core/SkBlitRow.h + ../../../third_party/sk
 ORIGIN: ../../../third_party/skia/src/core/SkBlitRow_D32.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkClipStack.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkClipStack.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/core/SkColorFilter_Matrix.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkConvertPixels.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkData.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDevice.cpp + ../../../third_party/skia/LICENSE
@@ -1442,6 +1441,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkFontStream.cpp + ../../../third_par
 ORIGIN: ../../../third_party/skia/src/core/SkLineClipper.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkLineClipper.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMallocPixelRef.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkMatrixColorFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPictureData.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPictureData.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPictureFlat.cpp + ../../../third_party/skia/LICENSE
@@ -1613,7 +1613,6 @@ FILE: ../../../third_party/skia/src/core/SkBlitRow.h
 FILE: ../../../third_party/skia/src/core/SkBlitRow_D32.cpp
 FILE: ../../../third_party/skia/src/core/SkClipStack.cpp
 FILE: ../../../third_party/skia/src/core/SkClipStack.h
-FILE: ../../../third_party/skia/src/core/SkColorFilter_Matrix.cpp
 FILE: ../../../third_party/skia/src/core/SkConvertPixels.h
 FILE: ../../../third_party/skia/src/core/SkData.cpp
 FILE: ../../../third_party/skia/src/core/SkDevice.cpp
@@ -1625,6 +1624,7 @@ FILE: ../../../third_party/skia/src/core/SkFontStream.cpp
 FILE: ../../../third_party/skia/src/core/SkLineClipper.cpp
 FILE: ../../../third_party/skia/src/core/SkLineClipper.h
 FILE: ../../../third_party/skia/src/core/SkMallocPixelRef.cpp
+FILE: ../../../third_party/skia/src/core/SkMatrixColorFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkPictureData.cpp
 FILE: ../../../third_party/skia/src/core/SkPictureData.h
 FILE: ../../../third_party/skia/src/core/SkPictureFlat.cpp
@@ -3224,6 +3224,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkXfermodeInterpretation.h + ../../..
 ORIGIN: ../../../third_party/skia/src/core/SkYUVPlanesCache.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkYUVPlanesCache.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/SkTableColorFilter.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/effects/SkTableColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkImageImageFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/Blend.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/Device_drawTexture.cpp + ../../../third_party/skia/LICENSE
@@ -3513,6 +3514,7 @@ FILE: ../../../third_party/skia/src/core/SkXfermodeInterpretation.h
 FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.h
 FILE: ../../../third_party/skia/src/effects/SkTableColorFilter.cpp
+FILE: ../../../third_party/skia/src/effects/SkTableColorFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkImageImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/Blend.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/Device_drawTexture.cpp
@@ -8941,18 +8943,28 @@ ORIGIN: ../../../third_party/skia/src/core/SkBlitter_A8.h + ../../../third_party
 ORIGIN: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkChecksum.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkColorSpaceXformColorFilter.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkColorSpaceXformColorFilter.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkComposeColorFilter.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkComposeColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawBase.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawBase.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFilterColorProgram.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFilterColorProgram.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFontMetricsPriv.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFontMetricsPriv.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkMatrixColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkModeColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPixmapDraw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRSXform.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRuntimeBlender.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkRuntimeColorFilter.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkRuntimeColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkScan_SAAPath.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkWorkingFormatColorFilter.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkWorkingFormatColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkWritePixelsRec.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/SkShaderMaskFilterImpl.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/encode/SkEncoder.cpp + ../../../third_party/skia/LICENSE
@@ -8970,6 +8982,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/TiledTextureUtils.h + ../../../third_p
 ORIGIN: ../../../third_party/skia/src/gpu/dawn/DawnUtilsPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/image/GrImageUtils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/image/GrImageUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/image/GrTextureGenerator.cpp + ../../../third_party/skia/LICENSE
@@ -9032,6 +9046,7 @@ ORIGIN: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.cpp + ../../.
 ORIGIN: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/transform/SkSLRewriteIndexedSwizzle.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/utils/SkGaussianColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp
@@ -9078,18 +9093,28 @@ FILE: ../../../third_party/skia/src/core/SkBlitter_A8.h
 FILE: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h
 FILE: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp
 FILE: ../../../third_party/skia/src/core/SkChecksum.cpp
+FILE: ../../../third_party/skia/src/core/SkColorSpaceXformColorFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkColorSpaceXformColorFilter.h
+FILE: ../../../third_party/skia/src/core/SkComposeColorFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkComposeColorFilter.h
 FILE: ../../../third_party/skia/src/core/SkDrawBase.cpp
 FILE: ../../../third_party/skia/src/core/SkDrawBase.h
 FILE: ../../../third_party/skia/src/core/SkFilterColorProgram.cpp
 FILE: ../../../third_party/skia/src/core/SkFilterColorProgram.h
 FILE: ../../../third_party/skia/src/core/SkFontMetricsPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkFontMetricsPriv.h
+FILE: ../../../third_party/skia/src/core/SkMatrixColorFilter.h
 FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp
+FILE: ../../../third_party/skia/src/core/SkModeColorFilter.h
 FILE: ../../../third_party/skia/src/core/SkPixmapDraw.cpp
 FILE: ../../../third_party/skia/src/core/SkRSXform.cpp
 FILE: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp
 FILE: ../../../third_party/skia/src/core/SkRuntimeBlender.h
+FILE: ../../../third_party/skia/src/core/SkRuntimeColorFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkRuntimeColorFilter.h
 FILE: ../../../third_party/skia/src/core/SkScan_SAAPath.cpp
+FILE: ../../../third_party/skia/src/core/SkWorkingFormatColorFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkWorkingFormatColorFilter.h
 FILE: ../../../third_party/skia/src/core/SkWritePixelsRec.cpp
 FILE: ../../../third_party/skia/src/effects/SkShaderMaskFilterImpl.h
 FILE: ../../../third_party/skia/src/encode/SkEncoder.cpp
@@ -9107,6 +9132,8 @@ FILE: ../../../third_party/skia/src/gpu/TiledTextureUtils.h
 FILE: ../../../third_party/skia/src/gpu/dawn/DawnUtilsPriv.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.h
+FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/image/GrImageUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/image/GrImageUtils.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/image/GrTextureGenerator.cpp
@@ -9169,6 +9196,7 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.cpp
 FILE: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.cpp
 FILE: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.h
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLRewriteIndexedSwizzle.cpp
+FILE: ../../../third_party/skia/src/utils/SkGaussianColorFilter.h
 FILE: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 Google LLC
