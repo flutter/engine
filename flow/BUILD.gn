@@ -93,6 +93,7 @@ source_set("flow") {
     "//flutter/common",
     "//flutter/common/graphics",
     "//flutter/fml",
+    "//flutter/impeller/aiks:aiks",
     "//third_party/skia",
   ]
 

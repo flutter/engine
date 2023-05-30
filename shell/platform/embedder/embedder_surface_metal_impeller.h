@@ -17,7 +17,7 @@
 namespace flutter {
 
 class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
-                                   public GPUSurfaceMetalDelegate {
+                                           public GPUSurfaceMetalDelegate {
  public:
   struct MetalDispatchTable {
     std::function<bool(GPUMTLTextureInfo texture)> present;  // required

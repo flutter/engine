@@ -14,7 +14,7 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "impeller/renderer/context.h"
+#include "impeller/aiks/aiks_context.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -418,7 +418,7 @@ class ExternalViewEmbedder {
   // It can also allocate frames for overlay surfaces to compose hybrid views.
   virtual void SubmitFrame(
       GrDirectContext* context,
-      const std::shared_ptr<impeller::Context>& impeller_context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after

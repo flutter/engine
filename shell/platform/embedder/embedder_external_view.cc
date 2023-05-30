@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
+#include "impeller/display_list/dl_dispatcher.h"
 
 namespace flutter {
 
@@ -83,15 +85,28 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
 
-  auto surface = render_target.GetRenderSurface();
-  if (!surface) {
+  auto impeller_target = render_target.GetImpellerRenderTarget();
+  if (impeller_target.has_value()) {
+    auto aiks_context = render_target.GetAiksContext();
+
+    DisplayListBuilder dl_builder;
+    dl_builder.SetTransform(&surface_transformation_);
+    slice_->render_into(&dl_builder);
+
+    auto dispatcher = impeller::DlDispatcher();
+    dispatcher.drawDisplayList(dl_builder.Build(), 1);
+    aiks_context->Render(dispatcher.EndRecordingAsPicture(), *impeller_target);
+    return true;
+  }
+
+  auto skia_surface = render_target.GetRenderSurface();
+  if (!skia_surface) {
     return false;
   }
 
-  FML_DCHECK(SkISize::Make(surface->width(), surface->height()) ==
-             render_surface_size_);
+  FML_DCHECK(render_target.GetRenderTargetSize() == render_surface_size_);
 
-  auto canvas = surface->getCanvas();
+  auto canvas = skia_surface->getCanvas();
   if (!canvas) {
     return false;
   }

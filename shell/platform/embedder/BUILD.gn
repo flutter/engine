@@ -91,6 +91,8 @@ template("embedder_source_set") {
       "vsync_waiter_embedder.h",
     ]
 
+    public_deps = [ ":embedder_headers" ]
+
     if (embedder_enable_gl) {
       sources += [
         "embedder_external_texture_gl.cc",
@@ -122,10 +124,14 @@ template("embedder_source_set") {
         "embedder_external_texture_metal.mm",
         "embedder_surface_metal.h",
         "embedder_surface_metal.mm",
+        "embedder_surface_metal_impeller.h",
+        "embedder_surface_metal_impeller.mm",
       ]
 
       cflags_objc = flutter_cflags_objc
       cflags_objcc = flutter_cflags_objcc
+
+      public_deps += [ "//flutter/impeller/renderer/backend/metal" ]
 
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
@@ -141,8 +147,6 @@ template("embedder_source_set") {
         "//flutter/vulkan/procs",
       ]
     }
-
-    public_deps = [ ":embedder_headers" ]
 
     public_configs += [
       ":embedder_gpu_configuration_config",

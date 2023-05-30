@@ -14,7 +14,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
-#include "impeller/renderer/context.h"
+#include "impeller/aiks/aiks_context.h"
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -77,7 +77,7 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
   MOCK_METHOD1(CompositeEmbeddedView, DlCanvas*(int64_t view_id));
   MOCK_METHOD3(SubmitFrame,
                void(GrDirectContext* context,
-                    const std::shared_ptr<impeller::Context>& impeller_context,
+                    const std::shared_ptr<impeller::AiksContext>& aiks_context,
                     std::unique_ptr<SurfaceFrame> frame));
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,

@@ -14,7 +14,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
 #include "flutter/shell/platform/embedder/embedder_render_target_cache.h"
-#include "impeller/renderer/context.h"
 
 namespace flutter {
 
@@ -33,7 +32,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   using CreateRenderTargetCallback =
       std::function<std::unique_ptr<EmbedderRenderTarget>(
           GrDirectContext* context,
-          const std::shared_ptr<impeller::Context>& impeller_context,
+          const std::shared_ptr<impeller::AiksContext>& aiks_context,
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
       std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
@@ -98,7 +97,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   const std::shared_ptr<impeller::Context>& impeller_context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|

@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/core/formats.h"
-#include "impeller/core/texture_descriptor.h"
-#include "impeller/renderer/backend/metal/texture_mtl.h"
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -20,6 +17,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/thread.h"
+#include "impeller/core/texture.h"
+#include "impeller/renderer/render_target.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -72,6 +71,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
+#include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -916,63 +916,71 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #endif
 }
 
-static std::shared_ptr<impeller::Texture> MakeImpellerSurfaceFromBackingStore(
-    std::shared_ptr<impeller::Context> impeller_context,
+static std::optional<impeller::RenderTarget>
+MakeImpellerSurfaceFromBackingStore(
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
 #ifdef SHELL_ENABLE_METAL
   if (!metal->texture.texture) {
     FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
-    return nullptr;
+    return std::nullopt;
   }
 
-  impeller::TextureDescriptor desc;
-  desc.size = ISize(config.size.width, config.size.height);
-  desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
-  desc.mip_count = 0;
-  desc.sample_count = impeller::SampleCount::kCount1;
-  desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-               static_cast<uint64_t>(TextureUsage::kShaderRead);
-  auto texture = impeller::TextureMTL::Wrapper(desc, metal->texture.texture); // WRAP THE DESTRUCTION CALLBACK HERE
+  const auto size = impeller::ISize(config.size.width, config.size.height);
+  const auto color_format = impeller::PixelFormat::kR8G8B8A8UNormInt;
 
+  impeller::TextureDescriptor msaa_tex_desc;
+  msaa_tex_desc.storage_mode = impeller::StorageMode::kDeviceTransient;
+  msaa_tex_desc.type = impeller::TextureType::kTexture2DMultisample;
+  msaa_tex_desc.sample_count = impeller::SampleCount::kCount4;
+  msaa_tex_desc.format = color_format;
+  msaa_tex_desc.size = size;
+  msaa_tex_desc.usage =
+      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget);
 
+  auto msaa_tex =
+      aiks_context->GetContext()->GetResourceAllocator()->CreateTexture(
+          msaa_tex_desc);
+  if (!msaa_tex) {
+    FML_LOG(ERROR) << "Could not allocate MSAA color texture.";
+    return std::nullopt;
+  }
+  msaa_tex->SetLabel("ImpellerBackingStoreColorMSAA");
 
+  impeller::TextureDescriptor resolve_tex_desc;
+  resolve_tex_desc.size = size;
+  resolve_tex_desc.format = color_format;
+  resolve_tex_desc.mip_count = 0;
+  resolve_tex_desc.sample_count = impeller::SampleCount::kCount1;
+  resolve_tex_desc.storage_mode = impeller::StorageMode::kDevicePrivate;
+  resolve_tex_desc.usage =
+      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget) |
+      static_cast<uint64_t>(impeller::TextureUsage::kShaderRead);
+  auto resolve_tex = impeller::WrapTextureMTL(
+      resolve_tex_desc, metal->texture.texture,
+      [callback = metal->texture.destruction_callback,
+       user_data = metal->texture.user_data]() { callback(user_data); });
 
-
-
-
-  GrMtlTextureInfo texture_info;
-  GrBackendTexture backend_texture(config.size.width,   //
-                                   config.size.height,  //
-                                   GrMipMapped::kNo,    //
-                                   texture_info         //
-  );
-
-  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
-
-  auto surface = SkSurfaces::WrapBackendTexture(
-      context,                   // context
-      backend_texture,           // back-end texture
-      kTopLeft_GrSurfaceOrigin,  // surface origin
-      // TODO(dnfield): Update this when embedders support MSAA, see
-      // https://github.com/flutter/flutter/issues/100392
-      1,                       // sample count
-      kBGRA_8888_SkColorType,  // color type
-      nullptr,                 // color space
-      &surface_properties,     // surface properties
-      static_cast<SkSurfaces::TextureReleaseProc>(
-          metal->texture.destruction_callback),  // release proc
-      metal->texture.user_data                   // release context
-  );
-
-  if (!surface) {
+  if (!resolve_tex) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
-    return nullptr;
+    return std::nullopt;
   }
+  resolve_tex->SetLabel("ImpellerBackingStoreResolve");
 
-  return surface;
+  impeller::ColorAttachment color0;
+  color0.texture = msaa_tex;
+  color0.clear_color = impeller::Color::DarkSlateGray();
+  color0.load_action = impeller::LoadAction::kClear;
+  color0.store_action = impeller::StoreAction::kMultisampleResolve;
+  color0.resolve_texture = resolve_tex;
+
+  impeller::RenderTarget render_target_desc;
+  render_target_desc.SetColorAttachment(color0, 0u);
+
+  return render_target_desc;
 #else
-  return nullptr;
+  return std::nullopt;
 #endif
 }
 
@@ -1034,7 +1042,7 @@ CreateEmbedderRenderTarget(
     const FlutterCompositor* compositor,
     const FlutterBackingStoreConfig& config,
     GrDirectContext* context,
-    const std::shared_ptr<impeller::Context>& impeller_context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     bool enable_impeller) {
   FlutterBackingStore backing_store = {};
   backing_store.struct_size = sizeof(backing_store);
@@ -1071,7 +1079,7 @@ CreateEmbedderRenderTarget(
   // the struct.
 
   sk_sp<SkSurface> skia_surface;
-  std::shared_ptr<impeller::Texture> impeller_surface;
+  std::optional<impeller::RenderTarget> impeller_target;
 
   switch (backing_store.type) {
     case kFlutterBackingStoreTypeOpenGL:
@@ -1096,8 +1104,8 @@ CreateEmbedderRenderTarget(
       break;
     case kFlutterBackingStoreTypeMetal:
       if (enable_impeller) {
-        impeller_surface = MakeImpellerSurfaceFromBackingStore(
-            impeller_context, config, &backing_store.metal);
+        impeller_target = MakeImpellerSurfaceFromBackingStore(
+            aiks_context, config, &backing_store.metal);
       } else {
         skia_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.metal);
@@ -1110,14 +1118,14 @@ CreateEmbedderRenderTarget(
       break;
   };
 
-  if (!(skia_surface || impeller_surface)) {
+  if (!(skia_surface || impeller_target.has_value())) {
     FML_LOG(ERROR) << "Could not create a surface from an embedder provided "
                       "render target.";
     return nullptr;
   }
 
   return std::make_unique<flutter::EmbedderRenderTarget>(
-      backing_store, std::move(skia_surface), std::move(impeller_surface),
+      backing_store, std::move(skia_surface), aiks_context, impeller_target,
       collect_callback.Release());
 }
 
@@ -1150,10 +1158,10 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
       create_render_target_callback =
           [captured_compositor, enable_impeller](
               GrDirectContext* context,
-              const std::shared_ptr<impeller::Context>& impeller_context,
+              const std::shared_ptr<impeller::AiksContext>& aiks_context,
               const auto& config) {
             return CreateEmbedderRenderTarget(&captured_compositor, config,
-                                              context, impeller_context,
+                                              context, aiks_context,
                                               enable_impeller);
           };
 

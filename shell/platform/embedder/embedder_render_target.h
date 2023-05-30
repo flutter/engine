@@ -5,11 +5,15 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_RENDER_TARGET_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_RENDER_TARGET_H_
 
+#include <memory>
+#include <optional>
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "impeller/core/texture.h"
+#include "impeller/aiks/aiks_context.h"
+#include "impeller/renderer/render_target.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -37,7 +41,8 @@ class EmbedderRenderTarget {
   ///
   EmbedderRenderTarget(FlutterBackingStore backing_store,
                        sk_sp<SkSurface> render_surface,
-                       std::shared_ptr<impeller::Texture> impeller_surface,
+                       std::shared_ptr<impeller::AiksContext> aiks_context,
+                       std::optional<impeller::RenderTarget> impeller_target,
                        fml::closure on_release);
 
   //----------------------------------------------------------------------------
@@ -56,6 +61,29 @@ class EmbedderRenderTarget {
   sk_sp<SkSurface> GetRenderSurface() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      An impeller render target the rasterizer can use to draw into
+  ///             the backing store.
+  ///
+  /// @return     The Impeller render target.
+  ///
+  std::optional<impeller::RenderTarget> GetImpellerRenderTarget() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Returns the AiksContext that should be used for rendering, if
+  ///             this render target is backed by Impeller.
+  ///
+  /// @return     The Impeller Aiks context.
+  ///
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Returns the size of the render target.
+  ///
+  /// @return     The size of the render target.
+  ///
+  SkISize GetRenderTargetSize() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      The embedder backing store descriptor. This is the descriptor
   ///             that was given to the engine by the embedder. This descriptor
   ///             may contain context the embedder can use to associate it
@@ -70,7 +98,10 @@ class EmbedderRenderTarget {
  private:
   FlutterBackingStore backing_store_;
   sk_sp<SkSurface> render_surface_;
-  std::shared_ptr<impeller::Texture> impeller_surface_;
+
+  std::shared_ptr<impeller::AiksContext> aiks_context_;
+  std::optional<impeller::RenderTarget> impeller_target_;
+
   fml::closure on_release_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderRenderTarget);
