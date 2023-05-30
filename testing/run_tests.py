@@ -11,7 +11,6 @@ A top level harness to run all unit-tests in a specific engine build.
 from pathlib import Path
 
 import argparse
-import csv
 import errno
 import glob
 import multiprocessing
@@ -1207,7 +1206,10 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           # TODO(https://github.com/flutter/flutter/issues/127714): Remove test exemption.
           # TODO(https://github.com/flutter/flutter/issues/127715): Remove test exemption.
           shuffle_flags + [
-              '--gtest_filter=-*/OpenGLES:Play/TypographerTest.MaybeHasOverlapping/Vulkan:Play/TypographerTest.GlyphAtlasWithLotsOfdUniqueGlyphSize/Vulkan',
+              '--gtest_filter=-'
+              '*/OpenGLES:'
+              'Play/TypographerTest.MaybeHasOverlapping/Vulkan:'
+              'Play/TypographerTest.GlyphAtlasWithLotsOfdUniqueGlyphSize/Vulkan',
           ],
           coverage=args.coverage
       )
