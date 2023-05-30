@@ -195,7 +195,7 @@ void main() {
         final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
 
         final Uint8List goldenData = File(
-          path.join('flutter', 'lib', 'ui', 'fixtures', '2_dispose_op_restore_previous.apng.${i}.png'),
+          path.join('flutter', 'lib', 'ui', 'fixtures', '2_dispose_op_restore_previous.apng.$i.png'),
         ).readAsBytesSync();
 
         expect(imageData.buffer.asUint8List(), goldenData);
