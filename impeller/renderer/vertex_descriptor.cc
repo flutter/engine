@@ -20,6 +20,10 @@ bool VertexDescriptor::SetStageInputs(
   return true;
 }
 
+void VertexDescriptor::SetInterleavedVertexData(bool value) {
+  interleaved_vertex_data_ = value;
+}
+
 bool VertexDescriptor::RegisterDescriptorSetLayouts(
     const DescriptorSetLayout desc_set_layout[],
     size_t count) {
@@ -36,16 +40,22 @@ size_t VertexDescriptor::GetHash() const {
   for (const auto& input : inputs_) {
     fml::HashCombineSeed(seed, input.GetHash());
   }
+  fml::HashCombineSeed(seed, interleaved_vertex_data_);
   return seed;
 }
 
 // |Comparable<VertexDescriptor>|
 bool VertexDescriptor::IsEqual(const VertexDescriptor& other) const {
-  return inputs_ == other.inputs_;
+  return inputs_ == other.inputs_ &&
+         other.interleaved_vertex_data_ == interleaved_vertex_data_;
 }
 
 const std::vector<ShaderStageIOSlot>& VertexDescriptor::GetStageInputs() const {
   return inputs_;
+}
+
+bool VertexDescriptor::GetInterleavedVertexData() const {
+  return interleaved_vertex_data_;
 }
 
 const std::vector<DescriptorSetLayout>&

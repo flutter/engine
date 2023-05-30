@@ -42,6 +42,7 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, cull_mode_);
   fml::HashCombineSeed(seed, primitive_type_);
   fml::HashCombineSeed(seed, polygon_mode_);
+  fml::HashCombineSeed(seed, interleaved_vertex_data_);
   return seed;
 }
 
@@ -61,7 +62,8 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          winding_order_ == other.winding_order_ &&
          cull_mode_ == other.cull_mode_ &&
          primitive_type_ == other.primitive_type_ &&
-         polygon_mode_ == other.polygon_mode_;
+         polygon_mode_ == other.polygon_mode_ &&
+         interleaved_vertex_data_ == other.interleaved_vertex_data_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -275,6 +277,14 @@ void PipelineDescriptor::SetPolygonMode(PolygonMode mode) {
 
 PolygonMode PipelineDescriptor::GetPolygonMode() const {
   return polygon_mode_;
+}
+
+void PipelineDescriptor::SetInterleavedVertexData(bool value) {
+  interleaved_vertex_data_ = value;
+}
+
+bool PipelineDescriptor::GetInterleavedVertexData() const {
+  return interleaved_vertex_data_;
 }
 
 }  // namespace impeller

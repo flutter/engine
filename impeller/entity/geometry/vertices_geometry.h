@@ -8,12 +8,24 @@
 
 namespace impeller {
 
+struct PositionColorBufferResult {
+  BufferView index_buffer;
+  BufferView position_buffer;
+  BufferView color_buffer;
+
+  PrimitiveType type;
+  size_t vertex_count;
+  IndexType index_type;
+  Matrix transform;
+};
+
 /// @brief A geometry that is created from a vertices object.
 class VerticesGeometry : public Geometry {
  public:
-  virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                                const Entity& entity,
-                                                RenderPass& pass) = 0;
+  virtual PositionColorBufferResult GetPositionColorBuffer(
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass) = 0;
 
   virtual bool HasVertexColors() const = 0;
 

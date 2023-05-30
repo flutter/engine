@@ -183,10 +183,15 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   auto geometry_result =
       geometry->GetPositionColorBuffer(renderer, entity, pass);
   auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.interleaved_vertex_data = false;
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(geometry_result.vertex_buffer);
+
+  cmd.BindVertexBuffer(geometry_result.position_buffer, 0u);
+  cmd.BindVertexBuffer(geometry_result.color_buffer, 1u);
+  cmd.BindIndexBuffer(geometry_result.index_type, geometry_result.index_buffer);
+  cmd.vertex_count = geometry_result.vertex_count;
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;

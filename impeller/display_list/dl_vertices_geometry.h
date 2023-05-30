@@ -27,11 +27,12 @@ class DlVerticesGeometry : public VerticesGeometry {
       const flutter::DlVertices* vertices);
 
   // |VerticesGeometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass) override;
+  PositionColorBufferResult GetPositionColorBuffer(
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass) override;
 
-  // |VerticesGeometry|
+  // |Geometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                      Matrix effect_transform,
                                      const ContentContext& renderer,

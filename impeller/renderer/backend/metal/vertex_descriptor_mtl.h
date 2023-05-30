@@ -22,6 +22,8 @@ class VertexDescriptorMTL {
 
   bool SetStageInputs(const std::vector<ShaderStageIOSlot>& inputs);
 
+  void SetInterleavedVertexData(bool value);
+
   MTLVertexDescriptor* GetMTLVertexDescriptor() const;
 
  private:
@@ -41,6 +43,7 @@ class VertexDescriptorMTL {
     };
   };
   std::set<StageInput, StageInput::Compare> stage_inputs_;
+  bool interleaved_vertex_data_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptorMTL);
 };

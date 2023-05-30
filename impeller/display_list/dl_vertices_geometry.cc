@@ -7,7 +7,6 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
@@ -160,9 +159,8 @@ GeometryResult DlVerticesGeometry::GetPositionBuffer(
                               Range{0, total_vtx_bytes}, 0)) {
     return {};
   }
-  if (!buffer->CopyHostBuffer(
-          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(dl_indices)),
-          Range{0, total_idx_bytes}, total_vtx_bytes)) {
+  if (!buffer->CopyHostBuffer(reinterpret_cast<const uint8_t*>(dl_indices),
+                              Range{0, total_idx_bytes}, total_vtx_bytes)) {
     return {};
   }
 
@@ -184,12 +182,10 @@ GeometryResult DlVerticesGeometry::GetPositionBuffer(
   };
 }
 
-GeometryResult DlVerticesGeometry::GetPositionColorBuffer(
+PositionColorBufferResult DlVerticesGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  using VS = GeometryColorPipeline::VertexShader;
-
   auto index_count = normalized_indices_.size() == 0
                          ? vertices_->index_count()
                          : normalized_indices_.size();
@@ -200,56 +196,54 @@ GeometryResult DlVerticesGeometry::GetPositionColorBuffer(
   auto* dl_vertices = vertices_->vertices();
   auto* dl_colors = vertices_->colors();
 
-  std::vector<VS::PerVertexData> vertex_data(vertex_count);
-  {
-    for (auto i = 0; i < vertex_count; i++) {
-      auto dl_color = dl_colors[i];
-      auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
-                         dl_color.getBlueF(), dl_color.getAlphaF())
-                       .Premultiply();
-      auto sk_point = dl_vertices[i];
-      vertex_data[i] = {
-          .position = Point(sk_point.x(), sk_point.y()),
-          .color = color,
-      };
-    }
-  }
-
-  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
+  size_t total_position_bytes = vertex_count * sizeof(float) * 2;
+  size_t total_color_bytes = vertex_count * sizeof(float) * 4;
+  size_t total_vtx_bytes = total_position_bytes + total_color_bytes;
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
   DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
+  buffer_desc.size = total_position_bytes + total_color_bytes + total_idx_bytes;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
 
   auto buffer =
       renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
+  if (!buffer->CopyHostBuffer(reinterpret_cast<const uint8_t*>(dl_vertices),
+                              Range{0, total_position_bytes}, 0)) {
     return {};
   }
-  if (!buffer->CopyHostBuffer(
-          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(dl_indices)),
-          Range{0, total_idx_bytes}, total_vtx_bytes)) {
+  // This conversion is still necessary because dl_color is backed by a unit32
+  // instead of 4 floats and is not premupltiplied.
+  std::vector<Color> colors(vertex_count);
+  for (auto i = 0; i < vertex_count; i++) {
+    auto dl_color = dl_colors[i];
+    colors[i] = Color(dl_color.getRedF(), dl_color.getGreenF(),
+                      dl_color.getBlueF(), dl_color.getAlphaF())
+                    .Premultiply();
+  }
+
+  if (!buffer->CopyHostBuffer(reinterpret_cast<const uint8_t*>(colors.data()),
+                              Range{0, total_color_bytes},
+                              total_position_bytes)) {
+    return {};
+  }
+  if (!buffer->CopyHostBuffer(reinterpret_cast<const uint8_t*>(dl_indices),
+                              Range{0, total_idx_bytes}, total_vtx_bytes)) {
     return {};
   }
 
-  return GeometryResult{
+  return PositionColorBufferResult{
+      .index_buffer = {.buffer = buffer,
+                       .range = Range{total_vtx_bytes, total_idx_bytes}},
+      .position_buffer = {.buffer = buffer,
+                          .range = Range{0, total_position_bytes}},
+      .color_buffer = {.buffer = buffer,
+                       .range = Range{total_position_bytes, total_color_bytes}},
       .type = GetPrimitiveType(vertices_),
-      .vertex_buffer =
-          {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
-              .vertex_count = index_count,
-              .index_type = IndexType::k16bit,
-          },
+      .vertex_count = index_count,
+      .index_type = IndexType::k16bit,
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
-      .prevent_overdraw = false,
   };
 }
 

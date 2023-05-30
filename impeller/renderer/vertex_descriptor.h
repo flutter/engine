@@ -50,6 +50,10 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
 
   const std::vector<ShaderStageIOSlot>& GetStageInputs() const;
 
+  void SetInterleavedVertexData(bool value);
+
+  bool GetInterleavedVertexData() const;
+
   const std::vector<DescriptorSetLayout>& GetDescriptorSetLayouts() const;
 
   // |Comparable<VertexDescriptor>|
@@ -61,6 +65,7 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
  private:
   std::vector<ShaderStageIOSlot> inputs_;
   std::vector<DescriptorSetLayout> desc_set_layouts_;
+  bool interleaved_vertex_data_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptor);
 };

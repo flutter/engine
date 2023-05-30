@@ -163,6 +163,10 @@ struct Command : public ResourceBinder {
   ///
   bool BindVertices(const VertexBuffer& buffer);
 
+  void BindIndexBuffer(IndexType index_type, BufferView index_buffer);
+
+  void BindVertexBuffer(BufferView vertex_buffer, size_t offset);
+
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,

@@ -35,6 +35,17 @@ BufferView Command::GetVertexBuffer() const {
   return {};
 }
 
+void Command::BindIndexBuffer(IndexType type, BufferView buffer) {
+  index_type = type;
+  index_buffer = buffer;
+}
+
+void Command::BindVertexBuffer(BufferView vertex_buffer, size_t offset) {
+  vertex_bindings
+      .buffers[VertexDescriptor::kReservedVertexBufferIndex - offset] = {
+      nullptr, vertex_buffer};
+}
+
 bool Command::BindResource(ShaderStage stage,
                            const ShaderUniformSlot& slot,
                            const ShaderMetadata& metadata,

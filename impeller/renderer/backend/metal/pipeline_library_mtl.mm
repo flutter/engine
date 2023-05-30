@@ -43,6 +43,8 @@ static MTLRenderPipelineDescriptor* GetMTLRenderPipelineDescriptor(
     VertexDescriptorMTL vertex_descriptor_mtl;
     if (vertex_descriptor_mtl.SetStageInputs(
             vertex_descriptor->GetStageInputs())) {
+      vertex_descriptor_mtl.SetInterleavedVertexData(
+          vertex_descriptor->GetInterleavedVertexData());
       descriptor.vertexDescriptor =
           vertex_descriptor_mtl.GetMTLVertexDescriptor();
     }

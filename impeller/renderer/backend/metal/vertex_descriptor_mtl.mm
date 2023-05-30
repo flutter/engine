@@ -188,29 +188,52 @@ bool VertexDescriptorMTL::SetStageInputs(
   return true;
 }
 
+void VertexDescriptorMTL::SetInterleavedVertexData(bool value) {
+  interleaved_vertex_data_ = value;
+}
+
 MTLVertexDescriptor* VertexDescriptorMTL::GetMTLVertexDescriptor() const {
   auto descriptor = [MTLVertexDescriptor vertexDescriptor];
 
-  const size_t vertex_buffer_index =
-      VertexDescriptor::kReservedVertexBufferIndex;
+  if (interleaved_vertex_data_) {
+    const size_t vertex_buffer_index =
+        VertexDescriptor::kReservedVertexBufferIndex;
 
-  size_t offset = 0u;
-  for (const auto& input : stage_inputs_) {
-    auto attrib = descriptor.attributes[input.location];
-    attrib.format = input.format;
-    attrib.offset = offset;
-    // All vertex inputs are interleaved and tightly packed in one buffer at a
-    // reserved index.
-    attrib.bufferIndex = vertex_buffer_index;
-    offset += input.length;
+    size_t offset = 0u;
+    for (const auto& input : stage_inputs_) {
+      auto attrib = descriptor.attributes[input.location];
+      attrib.format = input.format;
+      attrib.offset = offset;
+      // All vertex inputs are interleaved and tightly packed in one buffer at a
+      // reserved index.
+      attrib.bufferIndex = vertex_buffer_index;
+      offset += input.length;
+    }
+
+    // Since it's all in one buffer, indicate its layout.
+    auto vertex_layout = descriptor.layouts[vertex_buffer_index];
+    vertex_layout.stride = offset;
+    vertex_layout.stepRate = 1u;
+    vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
+
+  } else {
+    // each piece of vertex data is in its own buffer. They are assigned
+    // starting at kReservedVertexBufferIndex counting backwards.
+    size_t vertex_buffer_index = VertexDescriptor::kReservedVertexBufferIndex;
+
+    for (const auto& input : stage_inputs_) {
+      auto attrib = descriptor.attributes[input.location];
+      attrib.format = input.format;
+      attrib.offset = 0u;
+      attrib.bufferIndex = vertex_buffer_index;
+
+      auto vertex_layout = descriptor.layouts[vertex_buffer_index];
+      vertex_layout.stride = input.length;
+      vertex_layout.stepRate = 1u;
+      vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
+      vertex_buffer_index--;
+    }
   }
-
-  // Since it's all in one buffer, indicate its layout.
-  auto vertex_layout = descriptor.layouts[vertex_buffer_index];
-  vertex_layout.stride = offset;
-  vertex_layout.stepRate = 1u;
-  vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
-
   return descriptor;
 }
 
