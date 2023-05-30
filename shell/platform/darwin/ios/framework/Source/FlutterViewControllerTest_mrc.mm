@@ -188,4 +188,15 @@ FLUTTER_ASSERT_NOT_ARC
   XCTAssertNotNil(viewController.keyboardAnimationVSyncClient);
 }
 
+- (void)
+    testSetupKeyboardAnimationVsyncClientWillNotCreateNewVsyncClientWhenKeyboardAnimationCallbackIsNil {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController setupKeyboardAnimationVsyncClient:nil];
+  XCTAssertNil(viewController.keyboardAnimationVSyncClient);
+}
+
 @end
