@@ -700,8 +700,6 @@ public class FlutterActivity extends Activity
           }
           : null;
 
-  // TODO(justinmc): Do the same thing in other embedding strategies (just FlutterFragment?
-  // FlutterFragmentActivity?).
   @Override
   public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
     if (frameworkHandlesBacks && !hasRegisteredCallback) {

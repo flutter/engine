@@ -1060,9 +1060,6 @@ public class FlutterFragment extends Fragment
     super.onAttach(context);
     delegate = delegateFactory.createDelegate(this);
     delegate.onAttach(context);
-    // TODO(justinmc): What is ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED?
-    // In order to follow what this PR did in FlutterActivity, this should
-    // be removed and only add a callback when the framework sends the message.
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
@@ -1684,12 +1681,6 @@ public class FlutterFragment extends Fragment
     }
     // Hook for subclass. No-op if returns false.
     return false;
-  }
-
-  @Override
-  public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
-    // TODO(justinmc): Implement. Implementing in FlutterActivity first.
-    // unregisterOnBackInvokedCallback();
   }
 
   @VisibleForTesting
