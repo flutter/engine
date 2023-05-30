@@ -127,6 +127,9 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
+  bool SupportsDynamicThreadMerging() override;
+
+  // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
