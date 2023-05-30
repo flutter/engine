@@ -16,6 +16,9 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 
 void ContentContextOptions::ApplyToPipelineDescriptor(
@@ -302,6 +305,11 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
     point_field_compute_pipelines_ =
         context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+
+    auto uv_pipeline_desc =
+        UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    uv_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
   }
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
@@ -370,11 +378,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands()) {
-    return nullptr;
-  }
-
-  if (!sub_command_buffer->SubmitCommands()) {
+  if (!sub_command_buffer->SubmitCommandsAsync(std::move(sub_renderpass))) {
     return nullptr;
   }
 
@@ -408,3 +412,5 @@ void ContentContext::SetWireframe(bool wireframe) {
 }
 
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -6,13 +6,16 @@
 
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 
@@ -195,3 +198,5 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 }
 
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

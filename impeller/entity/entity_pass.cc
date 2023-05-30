@@ -34,6 +34,9 @@
 #include "impeller/entity/contents/checkerboard_contents.h"
 #endif  // IMPELLER_DEBUG
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 
 EntityPass::EntityPass() = default;
@@ -615,6 +618,12 @@ bool EntityPass::OnRender(
       stencil_coverage.coverage->origin += global_pass_position;
     }
 
+    // The coverage hint tells the rendered Contents which portion of the
+    // rendered output will actually be used, and so we set this to the current
+    // stencil coverage (which is the max clip bounds). The contents may
+    // optionally use this hint to avoid unnecessary rendering work.
+    element_entity.GetContents()->SetCoverageHint(current_stencil_coverage);
+
     switch (stencil_coverage.type) {
       case Contents::StencilCoverage::Type::kNoChange:
         break;
@@ -683,17 +692,6 @@ bool EntityPass::OnRender(
              "a bug in EntityPass. Parent passes are responsible for setting "
              "up backdrop filters for their children.";
       return false;
-    }
-
-    // Tell the backdrop contents which portion of the rendered output will
-    // actually be used. The contents may optionally use this hint to avoid
-    // unnecessary rendering work.
-    if (!stencil_coverage_stack.empty() &&
-        stencil_coverage_stack.back().coverage.has_value()) {
-      auto coverage_hint = Rect(
-          stencil_coverage_stack.back().coverage->origin - global_pass_position,
-          stencil_coverage_stack.back().coverage->size);
-      backdrop_filter_contents->SetCoverageHint(coverage_hint);
     }
 
     Entity backdrop_entity;
@@ -915,3 +913,5 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
 }
 
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

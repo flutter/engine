@@ -33,6 +33,9 @@
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 
 constexpr char kSkiaChannel[] = "flutter/skia";
@@ -54,19 +57,21 @@ std::unique_ptr<Engine> CreateEngine(
     const fml::WeakPtr<IOManager>& io_manager,
     const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
     const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
-    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
-  return std::make_unique<Engine>(delegate,             //
-                                  dispatcher_maker,     //
-                                  vm,                   //
-                                  isolate_snapshot,     //
-                                  task_runners,         //
-                                  platform_data,        //
-                                  settings,             //
-                                  std::move(animator),  //
-                                  io_manager,           //
-                                  unref_queue,          //
-                                  snapshot_delegate,    //
-                                  volatile_path_tracker);
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+  return std::make_unique<Engine>(delegate,               //
+                                  dispatcher_maker,       //
+                                  vm,                     //
+                                  isolate_snapshot,       //
+                                  task_runners,           //
+                                  platform_data,          //
+                                  settings,               //
+                                  std::move(animator),    //
+                                  io_manager,             //
+                                  unref_queue,            //
+                                  snapshot_delegate,      //
+                                  volatile_path_tracker,  //
+                                  gpu_disabled_switch);
 }
 
 // Though there can be multiple shells, some settings apply to all components in
@@ -301,7 +306,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                              weak_io_manager_future.get(),    //
                              unref_queue_future.get(),        //
                              snapshot_delegate_future.get(),  //
-                             shell->volatile_path_tracker_));
+                             shell->volatile_path_tracker_,
+                             shell->is_gpu_disabled_sync_switch_));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -538,7 +544,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::WeakPtr<IOManager>& io_manager,
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
+          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
         return engine->Spawn(
             /*delegate=*/delegate,
             /*dispatcher_maker=*/dispatcher_maker,
@@ -546,7 +553,8 @@ std::unique_ptr<Shell> Shell::Spawn(
             /*animator=*/std::move(animator),
             /*initial_route=*/initial_route,
             /*io_manager=*/io_manager,
-            /*snapshot_delegate=*/std::move(snapshot_delegate));
+            /*snapshot_delegate=*/std::move(snapshot_delegate),
+            /*gpu_disabled_switch=*/is_gpu_disabled_sync_switch);
       },
       is_gpu_disabled);
   result->RunEngine(std::move(run_configuration));
@@ -2106,4 +2114,15 @@ const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
   return engine_->GetVsyncWaiter();
 }
 
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+Shell::GetConcurrentWorkerTaskRunner() const {
+  FML_DCHECK(vm_);
+  if (!vm_) {
+    return nullptr;
+  }
+  return vm_->GetConcurrentWorkerTaskRunner();
+}
+
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)
