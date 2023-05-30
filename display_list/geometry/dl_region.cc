@@ -71,7 +71,8 @@ struct DlRegion::SpanLine {
 };
 
 DlRegion::DlRegion() {
-  // If we can't memmove SpanLines addRect would be signifantly slower.
+  // If SpanLines can not be memmoved `addRect` would be signifantly slower
+  // due to cost of inserting and removing elements from the `lines_` vector.
   static_assert(std::is_trivially_constructible<SpanLine>::value,
                 "SpanLine must be trivially constructible.");
 }
@@ -194,7 +195,7 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
       SkIRect rect{span.left, line.top, span.right, line.bottom};
       if (deband) {
         auto iter = rects.end();
-        // If there is recangle previously in rect on which this one is a
+        // If there is recangle previously in rects on which this one is a
         // vertical continuation, remove the previous rectangle and expand this
         // one vertically to cover the area.
         while (iter != rects.begin()) {
