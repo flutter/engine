@@ -44,6 +44,8 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
+typedef std::function<void(fml::TimePoint)> KeyboardAnimationCallback;
+
 // Struct holding data to help adapt system mouse/trackpad events to embedder events.
 typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
@@ -1596,7 +1598,41 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
-  [self setupKeyboardAnimationVsyncClient];
+
+  KeyboardAnimationCallback keyboardAnimationCallback =
+      [weakSelf = [self getWeakPtr]](fml::TimePoint keyboardAnimationTargetTime) {
+        if (!weakSelf) {
+          return;
+        }
+        fml::scoped_nsobject<FlutterViewController> flutterViewController(
+            [(FlutterViewController*)weakSelf.get() retain]);
+        if (!flutterViewController) {
+          return;
+        }
+
+        if ([flutterViewController keyboardAnimationView].superview == nil) {
+          // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+          [flutterViewController.get().view
+              addSubview:[flutterViewController keyboardAnimationView]];
+        }
+
+        if ([flutterViewController keyboardSpringAnimation] == nil) {
+          if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
+            flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+                flutterViewController.get()
+                    .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+            [flutterViewController updateViewportMetricsIfNeeded];
+          }
+        } else {
+          fml::TimeDelta timeElapsed =
+              keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
+          flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+              [[flutterViewController keyboardSpringAnimation]
+                  curveFunction:timeElapsed.ToSecondsF()];
+          [flutterViewController updateViewportMetricsIfNeeded];
+        }
+      };
+  [self setupKeyboardAnimationVsyncClient:keyboardAnimationCallback];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
@@ -1639,38 +1675,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                 toValue:self.targetViewInsetBottom]);
 }
 
-- (void)setupKeyboardAnimationVsyncClient {
-  auto keyboardAnimationCallback = [weakSelf = [self getWeakPtr]](
-                                       fml::TimePoint keyboardAnimationTargetTime) {
-    if (!weakSelf) {
-      return;
-    }
-    fml::scoped_nsobject<FlutterViewController> flutterViewController(
-        [(FlutterViewController*)weakSelf.get() retain]);
-    if (!flutterViewController) {
-      return;
-    }
-
-    if ([flutterViewController keyboardAnimationView].superview == nil) {
-      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-      [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
-    }
-
-    if ([flutterViewController keyboardSpringAnimation] == nil) {
-      if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
-        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-            flutterViewController.get()
-                .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        [flutterViewController updateViewportMetricsIfNeeded];
-      }
-    } else {
-      fml::TimeDelta timeElapsed =
-          keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
-      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-          [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      [flutterViewController updateViewportMetricsIfNeeded];
-    }
-  };
+- (void)setupKeyboardAnimationVsyncClient:(KeyboardAnimationCallback)keyboardAnimationCallback {
   flutter::Shell& shell = [_engine.get() shell];
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
