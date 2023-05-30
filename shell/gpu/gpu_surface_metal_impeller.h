@@ -33,9 +33,10 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
 
  private:
   const GPUSurfaceMetalDelegate* delegate_;
+  const MTLRenderTargetType render_target_type_;
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
-  fml::scoped_nsprotocol<id<MTLDrawable>> last_drawable_;
+  fml::scoped_nsprotocol<id<MTLTexture>> last_texture_;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a
   // hack to make avoid allocating resources for the root surface when an
@@ -49,6 +50,12 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(
       const SkISize& frame_size) override;
+
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
+      const SkISize& frame_size);
+
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
+      const SkISize& frame_size);
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

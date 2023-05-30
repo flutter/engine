@@ -214,7 +214,7 @@ struct Settings {
 #if FML_OS_IOS || FML_OS_IOS_SIMULATOR
   bool enable_impeller = true;
 #else
-  bool enable_impeller = false;
+  bool enable_impeller = true;
 #endif
 
   // Enable Vulkan validation on backends that support it. The validation layers

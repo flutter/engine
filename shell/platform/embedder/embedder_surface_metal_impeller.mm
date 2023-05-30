@@ -68,7 +68,8 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface() API_AV
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceMetalImpeller>(this, context_);
+  const bool render_to_surface = !external_view_embedder_;
+  auto surface = std::make_unique<GPUSurfaceMetalImpeller>(this, context_, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;
