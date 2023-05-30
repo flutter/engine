@@ -682,8 +682,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   io_manager_ = io_manager;
 
   // Set the external view embedder for the rasterizer.
-  auto view_embedder = platform_view_->CreateExternalViewEmbedder();
-  rasterizer_->SetExternalViewEmbedder(view_embedder);
   rasterizer_->SetSnapshotSurfaceProducer(
       platform_view_->CreateSnapshotSurfaceProducer());
 
@@ -803,13 +801,15 @@ void Shell::OnPlatformViewCreated() {
   ]() mutable {
         std::unique_ptr<Surface> surface =
             platform_view->CreateSurface(kFlutterDefaultViewId);
+        auto view_embedder = platform_view->CreateExternalViewEmbedder();
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(studio),
                             platform_view->SupportsDynamicThreadMerging());
-          rasterizer->AddSurface(kFlutterDefaultViewId, std::move(surface));
+          rasterizer->AddSurface(kFlutterDefaultViewId, std::move(surface),
+                                 view_embedder);
         }
 
         waiting_for_first_frame.store(true);
@@ -2024,10 +2024,11 @@ void Shell::AddRenderSurface(int64_t view_id) {
                          view_id                                  //
   ]() mutable {
         if (platform_view && rasterizer) {
+          auto view_embedder = platform_view->CreateExternalViewEmbedder();
           std::unique_ptr<Surface> surface =
               platform_view->CreateSurface(view_id);
           if (surface) {
-            rasterizer->AddSurface(view_id, std::move(surface));
+            rasterizer->AddSurface(view_id, std::move(surface), view_embedder);
           }
         }
       }));

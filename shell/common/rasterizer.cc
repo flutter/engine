@@ -152,7 +152,15 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::AddSurface(int64_t view_id, std::unique_ptr<Surface> surface) {
+void Rasterizer::AddSurface(
+    int64_t view_id,
+    std::unique_ptr<Surface> surface,
+    std::shared_ptr<ExternalViewEmbedder> view_embedder) {
+  if (!external_view_embedder_) {
+    external_view_embedder_ = view_embedder;
+  } else {
+    FML_DCHECK(external_view_embedder_ == view_embedder);
+  }
   bool insertion_happened =
       surfaces_
           .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id,
@@ -857,11 +865,6 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLayerTree(
 
 void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
   next_frame_callback_ = callback;
-}
-
-void Rasterizer::SetExternalViewEmbedder(
-    const std::shared_ptr<ExternalViewEmbedder>& view_embedder) {
-  external_view_embedder_ = view_embedder;
 }
 
 void Rasterizer::SetSnapshotSurfaceProducer(

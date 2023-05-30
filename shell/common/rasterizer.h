@@ -206,7 +206,9 @@ class Rasterizer final : public SnapshotDelegate,
 
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
-  void AddSurface(int64_t view_id, std::unique_ptr<Surface> surface);
+  void AddSurface(int64_t view_id,
+                  std::unique_ptr<Surface> surface,
+                  std::shared_ptr<ExternalViewEmbedder> view_embedder);
 
   void RemoveSurface(int64_t view_id);
 
@@ -399,16 +401,6 @@ class Rasterizer final : public SnapshotDelegate,
   ///                       rendered on-screen.
   ///
   void SetNextFrameCallback(const fml::closure& callback);
-
-  //----------------------------------------------------------------------------
-  /// @brief Set the External View Embedder. This is done on shell
-  ///        initialization. This is non-null on platforms that support
-  ///        embedding externally composited views.
-  ///
-  /// @param[in] view_embedder The external view embedder object.
-  ///
-  void SetExternalViewEmbedder(
-      const std::shared_ptr<ExternalViewEmbedder>& view_embedder);
 
   //----------------------------------------------------------------------------
   /// @brief Set the snapshot surface producer. This is done on shell

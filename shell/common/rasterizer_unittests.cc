@@ -136,7 +136,7 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   EXPECT_CALL(*studio, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -169,7 +169,6 @@ TEST(RasterizerTest,
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -199,7 +198,8 @@ TEST(RasterizerTest,
       .Times(1);
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -242,7 +242,6 @@ TEST(
   auto surface = std::make_unique<NiceMock<MockSurface>>();
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
@@ -266,7 +265,8 @@ TEST(
       .Times(1);
 
   rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -313,7 +313,6 @@ TEST(
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -339,7 +338,8 @@ TEST(
       .Times(1);
 
   rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
@@ -381,7 +381,6 @@ TEST(RasterizerTest,
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -414,7 +413,8 @@ TEST(RasterizerTest,
       .Times(2);
 
   rasterizer->Setup(std::move(studio), /*support_thread_merging=*/true);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
@@ -434,52 +434,6 @@ TEST(RasterizerTest,
   // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
   rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
-}
-
-TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
-  std::string test_name =
-      ::testing::UnitTest::GetInstance()->current_test_info()->name();
-  ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
-  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
-                           thread_host.raster_thread->GetTaskRunner(),
-                           thread_host.ui_thread->GetTaskRunner(),
-                           thread_host.io_thread->GetTaskRunner());
-  NiceMock<MockDelegate> delegate;
-  Settings settings;
-  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
-  EXPECT_CALL(delegate, GetTaskRunners())
-      .WillRepeatedly(ReturnRef(task_runners));
-  auto rasterizer = std::make_unique<Rasterizer>(delegate);
-
-  std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
-      std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
-
-  EXPECT_CALL(
-      *external_view_embedder,
-      EndFrame(/*should_resubmit_frame=*/false,
-               /*raster_thread_merger=*/fml::RefPtr<fml::RasterThreadMerger>(
-                   nullptr)))
-      .Times(0);
-
-  fml::AutoResetWaitableEvent latch;
-  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        kDefaultViewId, std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
-    PipelineProduceResult result =
-        pipeline->Produce().Complete(std::move(layer_tree_item));
-    EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
-    latch.Signal();
-  });
-  latch.Wait();
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
@@ -506,9 +460,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
 
   EXPECT_CALL(*external_view_embedder,
               BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
@@ -566,9 +520,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
-  rasterizer->SetExternalViewEmbedder(external_view_embedder);
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface),
+                         external_view_embedder);
 
   EXPECT_CALL(
       *external_view_embedder,
@@ -628,7 +582,7 @@ TEST(RasterizerTest,
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -688,7 +642,7 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -748,7 +702,7 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -807,7 +761,7 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -865,7 +819,7 @@ TEST(
   EXPECT_CALL(*studio, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -947,7 +901,7 @@ TEST(RasterizerTest,
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(studio), false);
-    rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+    rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
@@ -1003,7 +957,7 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   EXPECT_CALL(*studio, GetContext()).WillRepeatedly(Return(context.get()));
 
   rasterizer->Setup(std::move(studio), false);
-  rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+  rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
   EXPECT_EQ(context->getResourceCacheLimit(), 0ul);
 
   rasterizer->SetResourceCacheMaxBytes(10000000, false);
@@ -1122,7 +1076,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(studio), false);
-    rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+    rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
@@ -1205,7 +1159,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(studio), false);
-    rasterizer->AddSurface(kDefaultViewId, std::move(surface));
+    rasterizer->AddSurface(kDefaultViewId, std::move(surface), nullptr);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
