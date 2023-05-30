@@ -9,6 +9,7 @@
 #import "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
+#import "flutter/shell/common/shell.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
@@ -26,6 +27,7 @@ FLUTTER_ASSERT_ARC
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
+- (flutter::Shell&)shell;
 @end
 
 /// Sometimes we have to use a custom mock to avoid retain cycles in OCMock.
@@ -138,6 +140,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (UIView*)keyboardAnimationView;
 - (SpringAnimation*)keyboardSpringAnimation;
 - (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
+- (void)setupKeyboardAnimationVsyncClient:
+    (FlutterKeyboardAnimationCallback)keyboardAnimationCallback;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;
@@ -210,6 +214,29 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
       [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
 
   OCMVerify([viewControllerMock setupKeyboardSpringAnimationIfNeeded:keyboardAnimation]);
+}
+
+- (void)testKeyboardAnimationWillWaitUIThreadVsync {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // Post a task to UI thread to block the thread.
+  flutter::Shell& shell = [engine shell];
+  const int delayTime = 1;
+  shell.GetTaskRunners().GetUITaskRunner()->PostTask([] { sleep(delayTime); });
+  XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
+  CFTimeInterval startTime = CACurrentMediaTime();
+  CFTimeInterval fulfillTime;
+  FlutterKeyboardAnimationCallback callback = [&expectation,
+                                               &fulfillTime](fml::TimePoint targetTime) {
+    fulfillTime = CACurrentMediaTime();
+    [expectation fulfill];
+  };
+  [viewController setupKeyboardAnimationVsyncClient:callback];
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  XCTAssertTrue(fulfillTime - startTime > delayTime);
 }
 
 - (void)testSetupKeyboardSpringAnimationIfNeeded {
