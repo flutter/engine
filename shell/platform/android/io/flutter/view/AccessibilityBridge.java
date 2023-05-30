@@ -1991,7 +1991,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @VisibleForTesting
   public AccessibilityEvent obtainAccessibilityEvent(int eventType) {
-        return AccessibilityEvent.obtain(eventType);
+    return AccessibilityEvent.obtain(eventType);
   }
 
   /**
