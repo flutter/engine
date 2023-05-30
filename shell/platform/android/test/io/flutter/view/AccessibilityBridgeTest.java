@@ -1878,10 +1878,10 @@ public class AccessibilityBridgeTest {
         setUpBridge(mockRootView, null, mockManager, null, null, null);
 
     AccessibilityEvent mockEvent = mock(AccessibilityEvent.class);
-    accessibilityBridge.obtainAccessibilityEvent(mockEvent, 123, AccessibilityEvent.TYPE_VIEW_FOCUSED);
+    accessibilityBridge.obtainAccessibilityEvent(
+        mockEvent, 123, AccessibilityEvent.TYPE_VIEW_FOCUSED);
     verify(mockEvent).setSource(eq(mockRootView), eq(123));
     verify(mockEvent).setPackageName("test");
-
   }
 
   AccessibilityBridge setUpBridge() {
