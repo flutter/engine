@@ -80,6 +80,11 @@ ShellTestPlatformViewVulkan::CreateExternalViewEmbedder() {
 }
 
 // |PlatformView|
+bool ShellTestPlatformViewVulkan::SupportsDynamicThreadMerging() {
+  return support_thread_merging_;
+}
+
+// |PlatformView|
 PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
   return [](DefaultPointerDataDispatcher::Delegate& delegate) {
     return std::make_unique<SmoothPointerDataDispatcher>(delegate);
