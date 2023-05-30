@@ -188,29 +188,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   return mockView;
 }
 
-- (void)testKeyboardAnimationWillWaitUIThreadVsync {
-  FlutterEngine* engine = [[FlutterEngine alloc] init];
-  [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
-  // Post a task to UI thread to block the thread.
-  flutter::Shell& shell = [engine shell];
-  const int delayTime = 1;
-  shell.GetTaskRunners().GetUITaskRunner()->PostTask([] { sleep(delayTime); });
-  XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
-  CFTimeInterval startTime = CACurrentMediaTime();
-  CFTimeInterval fulfillTime;
-  FlutterKeyboardAnimationCallback callback = [&expectation,
-                                               &fulfillTime](fml::TimePoint targetTime) {
-    fulfillTime = CACurrentMediaTime();
-    [expectation fulfill];
-  };
-  [viewController setupKeyboardAnimationVsyncClient:callback];
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
-  XCTAssertTrue(fulfillTime - startTime > delayTime);
-}
-
 - (void)testViewDidLoadWillInvokeCreateTouchRateCorrectionVSyncClient {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
@@ -463,6 +440,29 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
     XCTAssertTrue(shouldIgnore == YES);
   }
+}
+
+- (void)testKeyboardAnimationWillWaitUIThreadVsync {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // Post a task to UI thread to block the thread.
+  flutter::Shell& shell = [engine shell];
+  const int delayTime = 1;
+  shell.GetTaskRunners().GetUITaskRunner()->PostTask([] { sleep(delayTime); });
+  XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
+  CFTimeInterval startTime = CACurrentMediaTime();
+  CFTimeInterval fulfillTime;
+  FlutterKeyboardAnimationCallback callback = [&expectation,
+                                               &fulfillTime](fml::TimePoint targetTime) {
+    fulfillTime = CACurrentMediaTime();
+    [expectation fulfill];
+  };
+  [viewController setupKeyboardAnimationVsyncClient:callback];
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  XCTAssertTrue(fulfillTime - startTime > delayTime);
 }
 
 - (void)testCalculateKeyboardAttachMode {
