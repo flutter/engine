@@ -90,8 +90,8 @@ void DlRegion::addRect(const SkIRect& rect) {
     return;
   }
 
-  int32_t i1 = rect.fTop;
-  int32_t i2 = rect.fBottom;
+  int32_t y1 = rect.fTop;
+  int32_t y2 = rect.fBottom;
 
   size_t dirty_start = -1;
   size_t dirty_end = 1;
@@ -109,57 +109,57 @@ void DlRegion::addRect(const SkIRect& rect) {
   };
 
   auto upper_bound = std::upper_bound(
-      lines_.begin(), lines_.end(), i1,
+      lines_.begin(), lines_.end(), y1,
       [](int32_t i, const SpanLine& line) { return i < line.bottom; });
 
   auto start_index = upper_bound - lines_.begin();
 
-  for (size_t i = start_index; i < lines_.size() && i1 < i2; ++i) {
+  for (size_t i = start_index; i < lines_.size() && y1 < y2; ++i) {
     SpanLine& line = lines_[i];
 
     // If this is false the start index is wrong.
-    assert(i1 < line.bottom);
+    assert(y1 < line.bottom);
 
-    if (i2 <= line.top) {
-      insertLine(i, makeLine(i1, i2, rect.fLeft, rect.fRight));
+    if (y2 <= line.top) {
+      insertLine(i, makeLine(y1, y2, rect.fLeft, rect.fRight));
       mark_dirty(i);
-      i1 = i2;
+      y1 = y2;
       break;
     }
-    if (i1 < line.top) {
+    if (y1 < line.top) {
       auto prevLineStart = line.top;
-      insertLine(i, makeLine(i1, prevLineStart, rect.fLeft, rect.fRight));
+      insertLine(i, makeLine(y1, prevLineStart, rect.fLeft, rect.fRight));
       mark_dirty(i);
-      i1 = prevLineStart;
+      y1 = prevLineStart;
       continue;
     }
-    if (i1 > line.top) {
+    if (y1 > line.top) {
       // duplicate line
       auto prevLineEnd = line.bottom;
-      line.bottom = i1;
+      line.bottom = y1;
       mark_dirty(i);
-      insertLine(i + 1, makeLine(i1, prevLineEnd, *line.spans));
+      insertLine(i + 1, makeLine(y1, prevLineEnd, *line.spans));
       continue;
     }
-    assert(i1 == line.top);
-    if (i2 < line.bottom) {
+    assert(y1 == line.top);
+    if (y2 < line.bottom) {
       // duplicate line
-      auto newLine = makeLine(i2, line.bottom, *line.spans);
-      line.bottom = i2;
+      auto newLine = makeLine(y2, line.bottom, *line.spans);
+      line.bottom = y2;
       line.insertSpan(rect.fLeft, rect.fRight);
       insertLine(i + 1, newLine);
-      i1 = i2;
+      y1 = y2;
       mark_dirty(i);
       break;
     }
-    assert(i2 >= line.bottom);
+    assert(y2 >= line.bottom);
     line.insertSpan(rect.fLeft, rect.fRight);
     mark_dirty(i);
-    i1 = line.bottom;
+    y1 = line.bottom;
   }
 
-  if (i1 < i2) {
-    lines_.push_back(makeLine(i1, i2, rect.fLeft, rect.fRight));
+  if (y1 < y2) {
+    lines_.push_back(makeLine(y1, y2, rect.fLeft, rect.fRight));
     mark_dirty(lines_.size() - 1);
   }
 
