@@ -26,7 +26,8 @@ void fl_view_set_textures(FlView* view,
  * fl_view_get_keyboard_state:
  * @view: an #FlView.
  *
- * Return the keyboard pressed state.
+ * Returns the keyboard pressed state. The hash table contains one entry per
+ * pressed keys, mapping from the logical key to the physical key.*
  */
 GHashTable* fl_view_get_keyboard_state(FlView* view);
 

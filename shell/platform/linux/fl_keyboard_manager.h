@@ -44,6 +44,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  * Returns: a new #FlKeyboardManager.
  */
 FlKeyboardManager* fl_keyboard_manager_new(
+    FlBinaryMessenger* messenger,
     FlKeyboardViewDelegate* view_delegate);
 
 /**
@@ -87,9 +88,10 @@ void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* manager,
  * fl_keyboard_manager_get_pressed_state:
  * @manager: the #FlKeyboardManager self.
  *
- * Returns the keyboard pressed state.
+ * Returns the keyboard pressed state. The hash table contains one entry per
+ * pressed keys, mapping from the logical key to the physical key.*
  */
-GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* responder);
+GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* manager);
 
 G_END_DECLS
 
