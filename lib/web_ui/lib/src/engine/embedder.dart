@@ -218,7 +218,7 @@ class FlutterViewEmbedder {
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    final DomElement announcementsElement = createDomElement('div');
+    final DomElement announcementsElement = createDomElement('ftl-announcement-host');
     _accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsElement);
 
     shadowRoot.append(accessibilityPlaceholder);

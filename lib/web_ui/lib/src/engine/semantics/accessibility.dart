@@ -89,10 +89,9 @@ class AccessibilityAnnouncements {
     Timer(liveMessageDuration, () => messageElement.remove());
   }
 
-  static DomHTMLDivElement _createElement(Assertiveness assertiveness) {
+  static DomHTMLElement _createElement(Assertiveness assertiveness) {
     final String ariaLiveValue = (assertiveness == Assertiveness.assertive) ? 'assertive' : 'polite';
-    final DomHTMLDivElement liveRegion = createDomHTMLDivElement();
-    liveRegion.setAttribute('id', 'ftl-announcement-$ariaLiveValue');
+    final DomHTMLElement liveRegion = createDomElement('ftl-announcement-$ariaLiveValue') as DomHTMLElement;
     liveRegion.style
       ..position = 'fixed'
       ..overflow = 'hidden'
