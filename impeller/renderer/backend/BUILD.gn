@@ -18,7 +18,7 @@ group("backend") {
   }
 
   if (impeller_enable_vulkan) {
-    assert(is_mac || is_linux || is_win || is_android)
+    assert(is_mac || is_linux || is_win || is_android || is_fuchsia)
     public_deps += [ "vulkan" ]
   }
 }
