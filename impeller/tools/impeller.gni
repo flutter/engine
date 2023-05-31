@@ -18,7 +18,7 @@ declare_args() {
   impeller_enable_opengles = is_linux || is_win || is_android
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan = is_linux || is_win || is_android || is_fuchsia
+  impeller_enable_vulkan = is_linux || is_win || is_android
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
@@ -756,7 +756,7 @@ template("impeller_shaders") {
   }
 
   if (!impeller_supports_rendering) {
-    #not_needed(invoker, "*")
+    not_needed(invoker, "*")
   }
 
   group(target_name) {
