@@ -3,22 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../html_image_codec.dart';
-import '../safe_browser_api.dart';
-import '../util.dart';
-import 'canvas.dart';
-import 'canvaskit_api.dart';
-import 'image_wasm_codecs.dart';
-import 'image_web_codecs.dart';
-import 'painting.dart';
-import 'picture.dart';
-import 'picture_recorder.dart';
-import 'skia_object_cache.dart';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
@@ -73,9 +62,7 @@ void skiaDecodeImageFromPixels(
     }
 
     if (targetWidth != null || targetHeight != null) {
-      if (!validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
-        domWindow.console.warn('Cannot apply targetWidth/targetHeight when allowUpscaling is false.');
-      } else {
+      if (validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
         return callback(scaleImage(skImage, targetWidth, targetHeight));
       }
     }
@@ -137,12 +124,14 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
 
+    final CkPaint paint = CkPaint();
     canvas.drawImageRect(
       CkImage(image),
       ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
       ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
-      CkPaint()
+      paint,
     );
+    paint.dispose();
 
     final CkPicture picture = recorder.endRecording();
     final ui.Image finalImage = picture.toImageSync(
@@ -212,67 +201,23 @@ Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCa
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
 Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
-  final Uint8List result = Uint8List(contentLength);
+  final JSUint8Array result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
-  await payload.read<Uint8List>((Uint8List chunk) {
-    cumulativeBytesLoaded += chunk.lengthInBytes;
+  await payload.read<JSUint8Array1>((JSUint8Array1 chunk) {
+    cumulativeBytesLoaded += chunk.length.toDart.toInt();
     chunkCallback(cumulativeBytesLoaded, contentLength);
-    result.setAll(position, chunk);
-    position += chunk.lengthInBytes;
+    result.set(chunk, position.toJS);
+    position += chunk.length.toDart.toInt();
   });
-  return result;
+  return result.toDart;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, { this.videoFrame }) {
+    box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
-    if (browserSupportsFinalizationRegistry) {
-      box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
-    } else {
-      // If finalizers are not supported we need to be able to resurrect the
-      // image if it was temporarily deleted. To do that, we keep the original
-      // pixels and ask the SkiaObjectBox to make an image from them when
-      // resurrecting.
-      //
-      // IMPORTANT: the alphaType, colorType, and colorSpace passed to
-      // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
-      // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData? originalBytes = _encodeImage(
-        skImage: skImage,
-        format: ui.ImageByteFormat.rawRgba,
-        alphaType: canvasKit.AlphaType.Premul,
-        colorType: canvasKit.ColorType.RGBA_8888,
-        colorSpace: SkColorSpaceSRGB,
-      );
-      if (originalBytes == null) {
-        printWarning('Unable to encode image to bytes. We will not '
-            'be able to resurrect it once it has been garbage collected.');
-        return;
-      }
-      final int originalWidth = skImage.width().toInt();
-      final int originalHeight = skImage.height().toInt();
-      box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
-        final SkImage? skImage = canvasKit.MakeImage(
-          SkImageInfo(
-            alphaType: canvasKit.AlphaType.Premul,
-            colorType: canvasKit.ColorType.RGBA_8888,
-            colorSpace: SkColorSpaceSRGB,
-            width: originalWidth.toDouble(),
-            height: originalHeight.toDouble(),
-          ),
-          originalBytes.buffer.asUint8List(),
-          (4 * originalWidth).toDouble(),
-        );
-        if (skImage == null) {
-          throw ImageCodecException(
-            'Failed to resurrect image from pixels.'
-          );
-        }
-        return skImage;
-      });
-    }
   }
 
   CkImage.cloneOf(this.box, {this.videoFrame}) {
@@ -281,9 +226,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }
 
   void _init() {
-    if (assertionsEnabled) {
+    assert(() {
       _debugStackTrace = StackTrace.current;
-    }
+      return true;
+    }());
     ui.Image.onCreate?.call(this);
   }
 
@@ -291,9 +237,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
   StackTrace get debugStackTrace => _debugStackTrace;
   late StackTrace _debugStackTrace;
 
-  // Use a box because `SkImage` may be deleted either due to this object
+  // Use ref counting because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final SkiaObjectBox<CkImage, SkImage> box;
+  late final CountedRef<CkImage, SkImage> box;
 
   /// For browsers that support `ImageDecoder` this field holds the video frame
   /// from which this image was created.
@@ -305,9 +251,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   /// The underlying Skia image object.
   ///
-  /// Do not store the returned value. It is memory-managed by [SkiaObjectBox].
+  /// Do not store the returned value. It is memory-managed by [CountedRef].
   /// Storing it may result in use-after-free bugs.
-  SkImage get skImage => box.skiaObject;
+  SkImage get skImage => box.nativeObject;
 
   bool _disposed = false;
 
@@ -329,9 +275,16 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError(
         'Image.debugDisposed is only available when asserts are enabled.');
   }
@@ -427,18 +380,4 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     return '[$width\u00D7$height]';
   }
-}
-
-/// Data for a single frame of an animated image.
-class AnimatedImageFrameInfo implements ui.FrameInfo {
-  AnimatedImageFrameInfo(this._duration, this._image);
-
-  final Duration _duration;
-  final CkImage _image;
-
-  @override
-  Duration get duration => _duration;
-
-  @override
-  ui.Image get image => _image;
 }

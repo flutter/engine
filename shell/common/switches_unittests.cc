@@ -10,6 +10,9 @@
 
 #include "gtest/gtest.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 namespace testing {
 
@@ -93,5 +96,26 @@ TEST(SwitchesTest, EnableEmbedderAPI) {
   }
 }
 
+TEST(SwitchesTest, NoEnableImpeller) {
+  {
+    // enable
+    fml::CommandLine command_line =
+        fml::CommandLineFromInitializerList({"command", "--enable-impeller"});
+    EXPECT_TRUE(command_line.HasOption("enable-impeller"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_impeller, true);
+  }
+  {
+    // disable
+    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+        {"command", "--enable-impeller=false"});
+    EXPECT_TRUE(command_line.HasOption("enable-impeller"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.enable_impeller, false);
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -45,6 +45,18 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
   return stops_;
 }
 
+bool RadialGradientContents::IsOpaque() const {
+  if (GetOpacity() < 1) {
+    return false;
+  }
+  for (auto color : colors_) {
+    if (!color.IsOpaque()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool RadialGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
@@ -64,7 +76,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.center = center_;
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
@@ -128,7 +140,7 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
   frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
                                  0.5 / gradient_texture->GetSize().height);
 

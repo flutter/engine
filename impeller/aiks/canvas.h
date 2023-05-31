@@ -5,6 +5,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -13,13 +14,14 @@
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity_pass.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
@@ -27,9 +29,38 @@ namespace impeller {
 
 class Entity;
 
+struct CanvasStackEntry {
+  Matrix xformation;
+  // |cull_rect| is conservative screen-space bounds of the clipped output area
+  std::optional<Rect> cull_rect;
+  size_t stencil_depth = 0u;
+  bool is_subpass = false;
+  bool contains_clips = false;
+};
+
+enum class PointStyle {
+  /// @brief Points are drawn as squares.
+  kRound,
+
+  /// @brief Points are drawn as circles.
+  kSquare,
+};
+
 class Canvas {
  public:
+  struct DebugOptions {
+    /// When enabled, layers that are rendered to an offscreen texture
+    /// internally get a translucent checkerboard pattern painted over them.
+    ///
+    /// Requires the `IMPELLER_DEBUG` preprocessor flag.
+    bool offscreen_texture_checkerboard = false;
+  } debug_options;
+
   Canvas();
+
+  explicit Canvas(Rect cull_rect);
+
+  explicit Canvas(IRect cull_rect);
 
   ~Canvas();
 
@@ -47,6 +78,8 @@ class Canvas {
   void RestoreToCount(size_t count);
 
   const Matrix& GetCurrentTransformation() const;
+
+  const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
@@ -76,6 +109,11 @@ class Canvas {
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
+  void DrawPoints(std::vector<Point>,
+                  Scalar radius,
+                  const Paint& paint,
+                  PointStyle point_style);
+
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,
                  const Paint& paint,
@@ -89,6 +127,15 @@ class Canvas {
 
   void ClipPath(
       const Path& path,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
+  void ClipRect(
+      const Rect& rect,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
+  void ClipRRect(
+      const Rect& rect,
+      Scalar corner_radius,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void DrawPicture(Picture picture);
@@ -117,14 +164,21 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  std::optional<Rect> initial_cull_rect_;
 
-  void Initialize();
+  void Initialize(std::optional<Rect> cull_rect);
 
   void Reset();
 
   EntityPass& GetCurrentPass();
 
   size_t GetStencilDepth() const;
+
+  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+                    Entity::ClipOperation clip_op);
+
+  void IntersectCulling(Rect clip_bounds);
+  void SubtractCulling(Rect clip_bounds);
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,

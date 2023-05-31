@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('browser')
+library;
 
 import 'package:js/js_util.dart' as js_util;
 
@@ -10,7 +11,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -100,6 +101,24 @@ void testMain() {
         js_util.jsify(<String, Object?>{'canvasKitVariant': 'chromium'}) as JsFlutterConfiguration,
       );
       expect(config.canvasKitVariant, CanvasKitVariant.chromium);
+    });
+  });
+
+  group('useColorEmoji', () {
+    test('defaults to false', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
+      );
+      expect(config.useColorEmoji, isFalse);
+    });
+
+    test('can be set to true', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'useColorEmoji': true}) as JsFlutterConfiguration,
+      );
+      expect(config.useColorEmoji, isTrue);
     });
   });
 }

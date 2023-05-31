@@ -8,8 +8,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/device_buffer.h"
 
 namespace impeller {
 
@@ -26,7 +26,7 @@ class DeviceBufferVK final : public DeviceBuffer,
   // |DeviceBuffer|
   ~DeviceBufferVK() override;
 
-  vk::Buffer GetVKBufferHandle() const;
+  vk::Buffer GetBuffer() const;
 
  private:
   friend class AllocatorVK;

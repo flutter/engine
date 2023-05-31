@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/testing/dl_test_snippets.h"
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_receiver.h"
 
 namespace flutter {
@@ -79,11 +79,13 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
       {"SetStyle",
        {
            {0, 8, 0, 0,
-            [](DlOpReceiver& r) { r.setStyle(DlDrawStyle::kStroke); }},
+            [](DlOpReceiver& r) { r.setDrawStyle(DlDrawStyle::kStroke); }},
            {0, 8, 0, 0,
-            [](DlOpReceiver& r) { r.setStyle(DlDrawStyle::kStrokeAndFill); }},
+            [](DlOpReceiver& r) {
+              r.setDrawStyle(DlDrawStyle::kStrokeAndFill);
+            }},
            {0, 0, 0, 0,
-            [](DlOpReceiver& r) { r.setStyle(DlDrawStyle::kFill); }},
+            [](DlOpReceiver& r) { r.setDrawStyle(DlDrawStyle::kFill); }},
        }},
       {"SetStrokeWidth",
        {

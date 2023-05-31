@@ -10,15 +10,17 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../matchers.dart';
-import 'utils.dart';
+import '../common/matchers.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   final bool deviceClipRoundsOut = renderer is! HtmlRenderer;
   runCanvasTests(deviceClipRoundsOut: deviceClipRoundsOut);

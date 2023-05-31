@@ -50,6 +50,18 @@ const std::vector<Scalar>& SweepGradientContents::GetStops() const {
   return stops_;
 }
 
+bool SweepGradientContents::IsOpaque() const {
+  if (GetOpacity() < 1) {
+    return false;
+  }
+  for (auto color : colors_) {
+    if (!color.IsOpaque()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool SweepGradientContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
@@ -70,7 +82,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.bias = bias_;
   frag_info.scale = scale_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
@@ -135,7 +147,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
   frag_info.scale = scale_;
   frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetAlpha();
+  frag_info.alpha = GetOpacity();
   frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
                                  0.5 / gradient_texture->GetSize().height);
 

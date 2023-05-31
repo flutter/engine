@@ -18,6 +18,7 @@
 #include "impeller/compiler/code_gen_template.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
 
@@ -85,21 +86,6 @@ static std::string ExecutionModelToString(spv::ExecutionModel model) {
   }
 }
 
-static std::string ExecutionModelToCommandTypeName(
-    spv::ExecutionModel execution_model) {
-  switch (execution_model) {
-    case spv::ExecutionModel::ExecutionModelVertex:
-    case spv::ExecutionModel::ExecutionModelFragment:
-    case spv::ExecutionModel::ExecutionModelTessellationControl:
-    case spv::ExecutionModel::ExecutionModelTessellationEvaluation:
-      return "Command&";
-    case spv::ExecutionModel::ExecutionModelGLCompute:
-      return "ComputeCommand&";
-    default:
-      return "unsupported";
-  }
-}
-
 static std::string StringToShaderStage(std::string str) {
   if (str == "vertex") {
     return "ShaderStage::kVertex";
@@ -122,28 +108,6 @@ static std::string StringToShaderStage(std::string str) {
   }
 
   return "ShaderStage::kUnknown";
-}
-
-static std::string StringToVkShaderStage(std::string str) {
-  if (str == "vertex") {
-    return "VK_SHADER_STAGE_VERTEX_BIT";
-  }
-  if (str == "fragment") {
-    return "VK_SHADER_STAGE_FRAGMENT_BIT";
-  }
-
-  if (str == "tessellation_control") {
-    return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
-  }
-
-  if (str == "tessellation_evaluation") {
-    return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
-  }
-
-  if (str == "compute") {
-    return "VK_SHADER_STAGE_COMPUTE_BIT";
-  }
-  return "VK_SHADER_STAGE_ALL_GRAPHICS";
 }
 
 Reflector::Reflector(Options options,
@@ -241,7 +205,8 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     if (auto uniform_buffers_json =
             ReflectResources(shader_resources.uniform_buffers);
         uniform_buffers_json.has_value()) {
-      for (const auto& uniform_buffer : uniform_buffers_json.value()) {
+      for (auto uniform_buffer : uniform_buffers_json.value()) {
+        uniform_buffer["descriptor_type"] = "DescriptorType::kUniformBuffer";
         buffers.emplace_back(std::move(uniform_buffer));
       }
     } else {
@@ -250,7 +215,8 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     if (auto storage_buffers_json =
             ReflectResources(shader_resources.storage_buffers);
         storage_buffers_json.has_value()) {
-      for (const auto& uniform_buffer : storage_buffers_json.value()) {
+      for (auto uniform_buffer : storage_buffers_json.value()) {
+        uniform_buffer["descriptor_type"] = "DescriptorType::kStorageBuffer";
         buffers.emplace_back(std::move(uniform_buffer));
       }
     } else {
@@ -280,12 +246,15 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     }
     auto& sampled_images = root["sampled_images"] = nlohmann::json::array_t{};
     for (auto value : combined_sampled_images.value()) {
+      value["descriptor_type"] = "DescriptorType::kSampledImage";
       sampled_images.emplace_back(std::move(value));
     }
     for (auto value : images.value()) {
+      value["descriptor_type"] = "DescriptorType::kImage";
       sampled_images.emplace_back(std::move(value));
     }
     for (auto value : samplers.value()) {
+      value["descriptor_type"] = "DescriptorType::kSampledSampler";
       sampled_images.emplace_back(std::move(value));
     }
   }
@@ -424,10 +393,6 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
                    [type = compiler_.GetType()](inja::Arguments& args) {
                      return ToString(type);
                    });
-  env.add_callback(
-      "to_vk_shader_stage_flag_bits", 1u, [](inja::Arguments& args) {
-        return StringToVkShaderStage(args.at(0u)->get<std::string>());
-      });
 
   auto inflated_template =
       std::make_shared<std::string>(env.render(tmpl, *template_arguments_));
@@ -533,6 +498,11 @@ static std::optional<KnownType> ReadKnownScalarType(
       return KnownType{
           .name = "Scalar",
           .byte_size = sizeof(Scalar),
+      };
+    case spirv_cross::SPIRType::BaseType::Half:
+      return KnownType{
+          .name = "Half",
+          .byte_size = sizeof(Half),
       };
     case spirv_cross::SPIRType::BaseType::UInt:
       return KnownType{
@@ -759,6 +729,75 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Vector4),                       // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
+    // Tightly packed half Point (vec2).
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
+        member.width == sizeof(Half) * 8 &&                          //
+        member.columns == 1 &&                                       //
+        member.vecsize == 2                                          //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(HalfVector2)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(HalfVector2);
+      result.emplace_back(StructMember{
+          "HalfVector2",                         // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(HalfVector2),                   // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
+    // Tightly packed Half Float Vector3.
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
+        member.width == sizeof(Half) * 8 &&                          //
+        member.columns == 1 &&                                       //
+        member.vecsize == 3                                          //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(HalfVector3)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(HalfVector3);
+      result.emplace_back(StructMember{
+          "HalfVector3",                         // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(HalfVector3),                   // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
+    // Tightly packed Half Float Vector4.
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
+        member.width == sizeof(Half) * 8 &&                          //
+        member.columns == 1 &&                                       //
+        member.vecsize == 4                                          //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(HalfVector4)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(HalfVector4);
+      result.emplace_back(StructMember{
+          "HalfVector4",                         // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(HalfVector4),                   // size
           stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
@@ -1051,7 +1090,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = ExecutionModelToCommandTypeName(execution_model),
+        .type_name = "ResourceBinder&",
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{
@@ -1070,7 +1109,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = ExecutionModelToCommandTypeName(execution_model),
+        .type_name = "ResourceBinder&",
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{
@@ -1089,7 +1128,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = ExecutionModelToCommandTypeName(execution_model),
+        .type_name = "ResourceBinder&",
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{

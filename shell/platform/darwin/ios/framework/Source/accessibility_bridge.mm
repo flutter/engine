@@ -267,8 +267,9 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
       !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
     // Text fields are backed by objects that implement UITextInput.
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-  } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
-             node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+  } else if (!node.HasFlag(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) &&
+             (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
+              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState))) {
     return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
     return [[[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr
@@ -360,6 +361,10 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification, message);
+  }
+  if ([type isEqualToString:@"focus"]) {
+    SemanticsObject* node = objects_.get()[annotatedEvent[@"nodeId"]];
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, node);
   }
 }
 

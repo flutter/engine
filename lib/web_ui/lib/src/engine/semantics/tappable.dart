@@ -6,7 +6,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
 import 'semantics.dart';
 
 /// Listens to HTML "click" gestures detected by the browser.
@@ -25,10 +24,6 @@ class Tappable extends RoleManager {
   void update() {
     final DomElement element = semanticsObject.element;
 
-    // "tab-index=0" is used to allow keyboard traversal of non-form elements.
-    // See also: https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
-    element.tabIndex = 0;
-
     semanticsObject.setAriaRole(
         'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));
 
@@ -44,7 +39,7 @@ class Tappable extends RoleManager {
       if (semanticsObject.hasAction(ui.SemanticsAction.tap) &&
           !semanticsObject.hasFlag(ui.SemanticsFlag.isTextField)) {
         if (_clickListener == null) {
-          _clickListener = allowInterop((_) {
+          _clickListener = createDomEventListener((_) {
             if (semanticsObject.owner.gestureMode !=
                 GestureMode.browserGestures) {
               return;
@@ -57,13 +52,6 @@ class Tappable extends RoleManager {
       } else {
         _stopListening();
       }
-    }
-
-    // Request focus so that the AT shifts a11y focus to this node.
-    if (semanticsObject.isFlagsDirty && semanticsObject.hasFocus) {
-      semanticsObject.owner.addOneTimePostUpdateCallback(() {
-        element.focus();
-      });
     }
   }
 
@@ -78,6 +66,7 @@ class Tappable extends RoleManager {
 
   @override
   void dispose() {
+    super.dispose();
     _stopListening();
     semanticsObject.setAriaRole('button', false);
   }

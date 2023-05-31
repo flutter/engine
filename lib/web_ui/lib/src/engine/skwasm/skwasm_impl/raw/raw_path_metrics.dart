@@ -9,9 +9,9 @@ import 'dart:ffi';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
-class RawContourMeasure extends Opaque {}
+final class RawContourMeasure extends Opaque {}
 
-class RawContourMeasureIter extends Opaque {}
+final class RawContourMeasureIter extends Opaque {}
 
 typedef ContourMeasureHandle = Pointer<RawContourMeasure>;
 typedef ContourMeasureIterHandle = Pointer<RawContourMeasureIter>;
@@ -30,7 +30,7 @@ external ContourMeasureHandle contourMeasureIterNext(
     symbol: 'contourMeasureIter_dispose')
 external void contourMeasureIterDispose(ContourMeasureIterHandle handle);
 
-@Native<Void Function(ContourMeasureHandle)>(symbol: 'contourMesaure_dispose')
+@Native<Void Function(ContourMeasureHandle)>(symbol: 'contourMeasure_dispose')
 external void contourMeasureDispose(ContourMeasureHandle handle);
 
 @Native<Float Function(ContourMeasureHandle)>(symbol: 'contourMeasure_length')

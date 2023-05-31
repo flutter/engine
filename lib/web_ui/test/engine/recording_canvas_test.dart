@@ -7,16 +7,17 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../html/screenshot.dart';
-import '../mock_engine_canvas.dart';
+import '../common/mock_engine_canvas.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  debugEmulateFlutterTesterEnvironment = true;
-  setUpStableTestFonts();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;

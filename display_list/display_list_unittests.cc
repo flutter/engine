@@ -9,13 +9,13 @@
 #include <vector>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_rtree.h"
-#include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
@@ -28,6 +28,10 @@ namespace flutter {
 
 DlOpReceiver& DisplayListBuilderTestingAccessor(DisplayListBuilder& builder) {
   return builder.asReceiver();
+}
+
+DlPaint DisplayListBuilderTestingAttributes(DisplayListBuilder& builder) {
+  return builder.CurrentAttributes();
 }
 
 namespace testing {
@@ -87,10 +91,64 @@ class DisplayListTestBase : public BaseT {
     return dl;
   }
 
+  static void check_defaults(
+      DisplayListBuilder& builder,
+      const SkRect& cull_rect = DisplayListBuilder::kMaxCullRect) {
+    DlPaint builder_paint = DisplayListBuilderTestingAttributes(builder);
+    DlPaint defaults;
+
+    EXPECT_EQ(builder_paint.isAntiAlias(), defaults.isAntiAlias());
+    EXPECT_EQ(builder_paint.isDither(), defaults.isDither());
+    EXPECT_EQ(builder_paint.isInvertColors(), defaults.isInvertColors());
+    EXPECT_EQ(builder_paint.getColor(), defaults.getColor());
+    EXPECT_EQ(builder_paint.getBlendMode(), defaults.getBlendMode());
+    EXPECT_EQ(builder_paint.getDrawStyle(), defaults.getDrawStyle());
+    EXPECT_EQ(builder_paint.getStrokeWidth(), defaults.getStrokeWidth());
+    EXPECT_EQ(builder_paint.getStrokeMiter(), defaults.getStrokeMiter());
+    EXPECT_EQ(builder_paint.getStrokeCap(), defaults.getStrokeCap());
+    EXPECT_EQ(builder_paint.getStrokeJoin(), defaults.getStrokeJoin());
+    EXPECT_EQ(builder_paint.getColorSource(), defaults.getColorSource());
+    EXPECT_EQ(builder_paint.getColorFilter(), defaults.getColorFilter());
+    EXPECT_EQ(builder_paint.getImageFilter(), defaults.getImageFilter());
+    EXPECT_EQ(builder_paint.getMaskFilter(), defaults.getMaskFilter());
+    EXPECT_EQ(builder_paint.getPathEffect(), defaults.getPathEffect());
+    EXPECT_EQ(builder_paint, defaults);
+    EXPECT_TRUE(builder_paint.isDefault());
+
+    EXPECT_EQ(builder.GetTransform(), SkMatrix());
+    EXPECT_EQ(builder.GetTransformFullPerspective(), SkM44());
+
+    EXPECT_EQ(builder.GetLocalClipBounds(), cull_rect);
+    EXPECT_EQ(builder.GetDestinationClipBounds(), cull_rect);
+
+    EXPECT_EQ(builder.GetSaveCount(), 1);
+  }
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(DisplayListTestBase);
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
+
+TEST_F(DisplayListTest, Defaults) {
+  DisplayListBuilder builder;
+  check_defaults(builder);
+}
+
+TEST_F(DisplayListTest, EmptyBuild) {
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->op_count(), 0u);
+  EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+}
+
+TEST_F(DisplayListTest, EmptyRebuild) {
+  DisplayListBuilder builder;
+  auto dl1 = builder.Build();
+  auto dl2 = builder.Build();
+  auto dl3 = builder.Build();
+  ASSERT_TRUE(dl1->Equals(dl2));
+  ASSERT_TRUE(dl2->Equals(dl3));
+}
 
 TEST_F(DisplayListTest, BuilderCanBeReused) {
   DisplayListBuilder builder(kTestBounds);
@@ -99,6 +157,199 @@ TEST_F(DisplayListTest, BuilderCanBeReused) {
   builder.DrawRect(kTestBounds, DlPaint());
   auto dl2 = builder.Build();
   ASSERT_TRUE(dl->Equals(dl2));
+}
+
+TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Save();
+  builder.Translate(10.0f, 10.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Scale(10.0f, 10.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Skew(0.1f, 0.1f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Rotate(45.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform(SkMatrix::Scale(10.0f, 10.0f));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform2DAffine(1.0f, 0.0f, 12.0f,  //
+                            0.0f, 1.0f, 35.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform(SkM44(SkMatrix::Scale(10.0f, 10.0f)));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.TransformFullPerspective(1.0f, 0.0f, 0.0f, 12.0f,  //
+                                   0.0f, 1.0f, 0.0f, 35.0f,  //
+                                   0.0f, 0.0f, 1.0f, 5.0f,   //
+                                   0.0f, 0.0f, 0.0f, 1.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresTransform) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Translate(10.0f, 10.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Scale(10.0f, 10.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Skew(0.1f, 0.1f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Rotate(45.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform(SkMatrix::Scale(10.0f, 10.0f));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform2DAffine(1.0f, 0.0f, 12.0f,  //
+                            0.0f, 1.0f, 35.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform(SkM44(SkMatrix::Scale(10.0f, 10.0f)));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.TransformFullPerspective(1.0f, 0.0f, 0.0f, 12.0f,  //
+                                   0.0f, 1.0f, 0.0f, 35.0f,  //
+                                   0.0f, 0.0f, 1.0f, 5.0f,   //
+                                   0.0f, 0.0f, 0.0f, 1.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, SaveRestoreRestoresClip) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Save();
+  builder.ClipRect({0.0f, 0.0f, 10.0f, 10.0f});
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.ClipRRect(SkRRect::MakeRectXY({0.0f, 0.0f, 5.0f, 5.0f}, 2.0f, 2.0f));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.ClipPath(SkPath().addOval({0.0f, 0.0f, 10.0f, 10.0f}));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresClip) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.ClipRect({0.0f, 0.0f, 10.0f, 10.0f});
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.ClipRRect(SkRRect::MakeRectXY({0.0f, 0.0f, 5.0f, 5.0f}, 2.0f, 2.0f));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.ClipPath(SkPath().addOval({0.0f, 0.0f, 10.0f, 10.0f}));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresAttributes) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+  DlOpReceiver& receiver = ToReceiver(builder);
+
+  receiver.setAntiAlias(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setDither(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setInvertColors(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColor(DlColor::kRed());
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setBlendMode(DlBlendMode::kColorBurn);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setDrawStyle(DlDrawStyle::kStrokeAndFill);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeWidth(300.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeMiter(300.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeCap(DlStrokeCap::kRound);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeJoin(DlStrokeJoin::kRound);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColorSource(&kTestSource1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setImageFilter(&kTestBlurImageFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setMaskFilter(&kTestMaskFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setPathEffect(kTestPathEffect1.get());
+  builder.Build();
+  check_defaults(builder, cull_rect);
 }
 
 TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
@@ -567,7 +818,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -589,7 +841,8 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
         // clang-format on
     );
     sk_sp<DisplayList> display_list = builder.Build();
-    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    sk_sp<SkSurface> surface =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
@@ -607,7 +860,8 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   receiver.transformReset();
   auto display_list = builder.Build();
   ASSERT_NE(display_list, nullptr);
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
   SkCanvas* canvas = surface->getCanvas();
   // We can't use DlSkCanvas.DrawDisplayList as that method protects
   // the canvas against mutations from the display list being drawn.
@@ -2532,81 +2786,79 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
   main_receiver.drawRect({20, 20, 30, 30});
   auto main = main_builder.Build();
 
+  auto test = [main](SkIRect cull_rect, const sk_sp<DisplayList>& expected) {
+    {  // Test SkIRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), cull_rect);
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+
+    {  // Test SkRect culling
+      DisplayListBuilder culling_builder;
+      main->Dispatch(ToReceiver(culling_builder), SkRect::Make(cull_rect));
+
+      EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    }
+  };
+
   {  // No rects
-    SkRect cull_rect = {11, 11, 19, 19};
+    SkIRect cull_rect = {11, 11, 19, 19};
 
     DisplayListBuilder expected_builder;
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 1
-    SkRect cull_rect = {9, 9, 19, 19};
+    SkIRect cull_rect = {9, 9, 19, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 0, 10, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 2
-    SkRect cull_rect = {11, 9, 21, 19};
+    SkIRect cull_rect = {11, 9, 21, 19};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 0, 30, 10});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 3
-    SkRect cull_rect = {9, 11, 19, 21};
+    SkIRect cull_rect = {9, 11, 19, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 20, 10, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // Rect 4
-    SkRect cull_rect = {11, 11, 21, 21};
+    SkIRect cull_rect = {11, 11, 21, 21};
 
     DisplayListBuilder expected_builder;
     DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 20, 30, 30});
     auto expected = expected_builder.Build();
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+    test(cull_rect, expected);
   }
 
   {  // All 4 rects
-    SkRect cull_rect = {9, 9, 21, 21};
+    SkIRect cull_rect = {9, 9, 21, 21};
 
-    DisplayListBuilder culling_builder(cull_rect);
-    main->Dispatch(ToReceiver(culling_builder), cull_rect);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
+    test(cull_rect, main);
   }
 }
 

@@ -4,12 +4,15 @@
 
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 
 namespace impeller {
 
-SamplerLibraryVK::SamplerLibraryVK(vk::Device device) : device_(device) {}
+SamplerLibraryVK::SamplerLibraryVK(
+    const std::weak_ptr<DeviceHolder>& device_holder)
+    : device_holder_(device_holder) {}
 
 SamplerLibraryVK::~SamplerLibraryVK() = default;
 
@@ -19,7 +22,8 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
   if (found != samplers_.end()) {
     return found->second;
   }
-  if (!device_) {
+  auto device_holder = device_holder_.lock();
+  if (!device_holder || !device_holder->GetDevice()) {
     return nullptr;
   }
 
@@ -32,15 +36,18 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
   const auto address_mode_v = ToVKSamplerAddressMode(desc.height_address_mode);
   const auto address_mode_w = ToVKSamplerAddressMode(desc.depth_address_mode);
 
-  const auto sampler_create_info = vk::SamplerCreateInfo()
-                                       .setMagFilter(mag_filter)
-                                       .setMinFilter(min_filter)
-                                       .setAddressModeU(address_mode_u)
-                                       .setAddressModeV(address_mode_v)
-                                       .setAddressModeW(address_mode_w)
-                                       .setMipmapMode(mip_map);
+  const auto sampler_create_info =
+      vk::SamplerCreateInfo()
+          .setMagFilter(mag_filter)
+          .setMinFilter(min_filter)
+          .setAddressModeU(address_mode_u)
+          .setAddressModeV(address_mode_v)
+          .setAddressModeW(address_mode_w)
+          .setBorderColor(vk::BorderColor::eFloatTransparentBlack)
+          .setMipmapMode(mip_map);
 
-  auto res = device_.createSamplerUnique(sampler_create_info);
+  auto res =
+      device_holder->GetDevice().createSamplerUnique(sampler_create_info);
   if (res.result != vk::Result::eSuccess) {
     FML_LOG(ERROR) << "Failed to create sampler: " << vk::to_string(res.result);
     return nullptr;
@@ -51,6 +58,12 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
   if (!sampler->IsValid()) {
     return nullptr;
   }
+
+  if (!desc.label.empty()) {
+    ContextVK::SetDebugName(device_holder->GetDevice(), sampler->GetSampler(),
+                            desc.label.c_str());
+  }
+
   samplers_[desc] = sampler;
   return sampler;
 }

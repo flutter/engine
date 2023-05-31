@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_complexity.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -13,8 +13,8 @@
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
-#include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "flutter/testing/assertions_skia.h"
 #include "gtest/gtest.h"
 #include "include/core/SkMatrix.h"
@@ -23,6 +23,9 @@
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 namespace testing {
@@ -858,7 +861,7 @@ TEST(RasterCache, RasterCacheKeyIDHashCode) {
   ASSERT_EQ(fourth_hash, fourth.GetHash());
 }
 
-using RasterCacheTest = SkiaGPUObjectLayerTest;
+using RasterCacheTest = LayerTest;
 
 TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
   auto layer = std::make_shared<ContainerLayer>();
@@ -869,8 +872,7 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
 
   auto display_list = GetSampleDisplayList();
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(0.0f, 0.0f),
-      SkiaGPUObject<DisplayList>(display_list, unref_queue()), false, false);
+      SkPoint::Make(0.0f, 0.0f), display_list, false, false);
   layer->Add(display_list_layer);
 
   auto ids = RasterCacheKeyID::LayerChildrenIds(layer.get()).value();
@@ -886,3 +888,5 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

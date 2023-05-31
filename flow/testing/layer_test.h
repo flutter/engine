@@ -56,7 +56,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
-            .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .raster_cached_entries         = &cacheable_items_,
             // clang-format on
@@ -71,7 +70,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
         display_list_builder_(kDlBounds),
@@ -85,27 +83,25 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
         checkerboard_context_{
             // clang-format off
             .state_stack                   = checkerboard_state_stack_,
-            .canvas                        = &TestT::mock_canvas(),
+            .canvas                        = &display_list_builder_,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
     use_null_raster_cache();
     preroll_state_stack_.set_preroll_delegate(kGiantRect, SkMatrix::I());
     paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(&display_list_builder_);
-    checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
+    checkerboard_state_stack_.set_delegate(&display_list_builder_);
     checkerboard_state_stack_.set_checkerboard_func(draw_checkerboard);
     checkerboard_paint_.setColor(checkerboard_color_);
   }
@@ -176,13 +172,17 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
   sk_sp<DisplayList> display_list() {
     if (display_list_ == nullptr) {
-      // null out the canvas and recorder fields of the PaintContext
-      // and the delegate of the state_stack to prevent future use.
-      display_list_paint_context_.state_stack.clear_delegate();
-      display_list_paint_context_.canvas = nullptr;
       display_list_ = display_list_builder_.Build();
     }
     return display_list_;
+  }
+
+  void reset_display_list() {
+    display_list_ = nullptr;
+    // Build() will leave the builder in a state to start recording a new DL
+    display_list_builder_.Build();
+    // Make sure we are starting from a fresh state stack
+    FML_DCHECK(display_list_state_stack_.is_empty());
   }
 
   void enable_leaf_layer_tracing() {

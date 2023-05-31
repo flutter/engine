@@ -8,8 +8,6 @@
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
 
@@ -23,7 +21,7 @@ std::shared_ptr<DlColorSource> CreateCheckerboardShader(SkColor c1,
   bm.eraseColor(c1);
   bm.eraseArea(SkIRect::MakeLTRB(0, 0, size, size), c2);
   bm.eraseArea(SkIRect::MakeLTRB(size, size, 2 * size, 2 * size), c2);
-  auto image = DlImage::Make(SkImage::MakeFromBitmap(bm));
+  auto image = DlImage::Make(SkImages::RasterFromBitmap(bm));
   return std::make_shared<DlImageColorSource>(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
       DlImageSampling::kNearestNeighbor);

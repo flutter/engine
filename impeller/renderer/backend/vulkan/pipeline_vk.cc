@@ -6,53 +6,55 @@
 
 namespace impeller {
 
-PipelineCreateInfoVK::PipelineCreateInfoVK(
-    vk::UniquePipeline pipeline,
-    vk::UniqueRenderPass render_pass,
-    vk::UniquePipelineLayout layout,
-    vk::UniqueDescriptorSetLayout descriptor_set_layout)
-    : pipeline_(std::move(pipeline)),
+PipelineVK::PipelineVK(std::weak_ptr<DeviceHolder> device_holder,
+                       std::weak_ptr<PipelineLibrary> library,
+                       const PipelineDescriptor& desc,
+                       vk::UniquePipeline pipeline,
+                       vk::UniqueRenderPass render_pass,
+                       vk::UniquePipelineLayout layout,
+                       vk::UniqueDescriptorSetLayout descriptor_set_layout)
+    : Pipeline(std::move(library), desc),
+      device_holder_(device_holder),
+      pipeline_(std::move(pipeline)),
       render_pass_(std::move(render_pass)),
-      pipeline_layout_(std::move(layout)),
+      layout_(std::move(layout)),
       descriptor_set_layout_(std::move(descriptor_set_layout)) {
-  is_valid_ =
-      pipeline_ && render_pass_ && pipeline_layout_ && descriptor_set_layout_;
+  is_valid_ = pipeline_ && render_pass_ && layout_ && descriptor_set_layout_;
 }
 
-bool PipelineCreateInfoVK::IsValid() const {
+PipelineVK::~PipelineVK() {
+  std::shared_ptr<DeviceHolder> device_holder = device_holder_.lock();
+  if (device_holder) {
+    descriptor_set_layout_.reset();
+    layout_.reset();
+    render_pass_.reset();
+    pipeline_.reset();
+  } else {
+    descriptor_set_layout_.release();
+    layout_.release();
+    render_pass_.release();
+    pipeline_.release();
+  }
+}
+
+bool PipelineVK::IsValid() const {
   return is_valid_;
 }
 
-const vk::Pipeline& PipelineCreateInfoVK::GetVKPipeline() const {
+const vk::Pipeline& PipelineVK::GetPipeline() const {
   return *pipeline_;
 }
 
-vk::RenderPass PipelineCreateInfoVK::GetRenderPass() const {
+const vk::RenderPass& PipelineVK::GetRenderPass() const {
   return *render_pass_;
 }
 
-vk::PipelineLayout PipelineCreateInfoVK::GetPipelineLayout() const {
-  return *pipeline_layout_;
+const vk::PipelineLayout& PipelineVK::GetPipelineLayout() const {
+  return *layout_;
 }
 
-vk::DescriptorSetLayout PipelineCreateInfoVK::GetDescriptorSetLayout() const {
+const vk::DescriptorSetLayout& PipelineVK::GetDescriptorSetLayout() const {
   return *descriptor_set_layout_;
-}
-
-PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
-                       const PipelineDescriptor& desc,
-                       std::unique_ptr<PipelineCreateInfoVK> create_info)
-    : Pipeline(std::move(library), desc),
-      pipeline_info_(std::move(create_info)) {}
-
-PipelineVK::~PipelineVK() = default;
-
-bool PipelineVK::IsValid() const {
-  return pipeline_info_->IsValid();
-}
-
-PipelineCreateInfoVK* PipelineVK::GetCreateInfo() const {
-  return pipeline_info_.get();
 }
 
 }  // namespace impeller

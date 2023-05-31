@@ -33,6 +33,9 @@
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 
 constexpr char kSkiaChannel[] = "flutter/skia";
@@ -54,19 +57,21 @@ std::unique_ptr<Engine> CreateEngine(
     const fml::WeakPtr<IOManager>& io_manager,
     const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
     const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
-    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
-  return std::make_unique<Engine>(delegate,             //
-                                  dispatcher_maker,     //
-                                  vm,                   //
-                                  isolate_snapshot,     //
-                                  task_runners,         //
-                                  platform_data,        //
-                                  settings,             //
-                                  std::move(animator),  //
-                                  io_manager,           //
-                                  unref_queue,          //
-                                  snapshot_delegate,    //
-                                  volatile_path_tracker);
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+  return std::make_unique<Engine>(delegate,               //
+                                  dispatcher_maker,       //
+                                  vm,                     //
+                                  isolate_snapshot,       //
+                                  task_runners,           //
+                                  platform_data,          //
+                                  settings,               //
+                                  std::move(animator),    //
+                                  io_manager,             //
+                                  unref_queue,            //
+                                  snapshot_delegate,      //
+                                  volatile_path_tracker,  //
+                                  gpu_disabled_switch);
 }
 
 // Though there can be multiple shells, some settings apply to all components in
@@ -186,6 +191,12 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                     !settings.skia_deterministic_rendering_on_cpu),
                 is_gpu_disabled));
 
+  // Create the platform view on the platform thread (this thread).
+  auto platform_view = on_create_platform_view(*shell.get());
+  if (!platform_view || !platform_view->GetWeakPtr()) {
+    return nullptr;
+  }
+
   // Create the rasterizer on the raster thread.
   std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
   auto rasterizer_future = rasterizer_promise.get_future();
@@ -193,22 +204,19 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       snapshot_delegate_promise;
   auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetRasterTaskRunner(), [&rasterizer_promise,  //
-                                           &snapshot_delegate_promise,
-                                           on_create_rasterizer,  //
-                                           shell = shell.get()    //
+      task_runners.GetRasterTaskRunner(),
+      [&rasterizer_promise,  //
+       &snapshot_delegate_promise,
+       on_create_rasterizer,                                   //
+       shell = shell.get(),                                    //
+       impeller_context = platform_view->GetImpellerContext()  //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
+        rasterizer->SetImpellerContext(impeller_context);
         snapshot_delegate_promise.set_value(rasterizer->GetSnapshotDelegate());
         rasterizer_promise.set_value(std::move(rasterizer));
       });
-
-  // Create the platform view on the platform thread (this thread).
-  auto platform_view = on_create_platform_view(*shell.get());
-  if (!platform_view || !platform_view->GetWeakPtr()) {
-    return nullptr;
-  }
 
   // Ask the platform view for the vsync waiter. This will be used by the engine
   // to create the animator.
@@ -298,7 +306,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                              weak_io_manager_future.get(),    //
                              unref_queue_future.get(),        //
                              snapshot_delegate_future.get(),  //
-                             shell->volatile_path_tracker_));
+                             shell->volatile_path_tracker_,
+                             shell->is_gpu_disabled_sync_switch_));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -535,7 +544,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::WeakPtr<IOManager>& io_manager,
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
+          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
         return engine->Spawn(
             /*delegate=*/delegate,
             /*dispatcher_maker=*/dispatcher_maker,
@@ -543,7 +553,8 @@ std::unique_ptr<Shell> Shell::Spawn(
             /*animator=*/std::move(animator),
             /*initial_route=*/initial_route,
             /*io_manager=*/io_manager,
-            /*snapshot_delegate=*/std::move(snapshot_delegate));
+            /*snapshot_delegate=*/std::move(snapshot_delegate),
+            /*gpu_disabled_switch=*/is_gpu_disabled_sync_switch);
       },
       is_gpu_disabled);
   result->RunEngine(std::move(run_configuration));
@@ -2068,9 +2079,23 @@ void Shell::SetGpuAvailability(GpuAvailability availability) {
   }
 }
 
-void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
-                             std::vector<std::unique_ptr<Display>> displays) {
-  display_manager_->HandleDisplayUpdates(update_type, std::move(displays));
+void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  std::vector<DisplayData> display_data;
+  for (const auto& display : displays) {
+    display_data.push_back(display->GetDisplayData());
+  }
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = engine_->GetWeakPtr(),
+       display_data = std::move(display_data)]() {
+        if (engine) {
+          engine->SetDisplays(display_data);
+        }
+      });
+
+  display_manager_->HandleDisplayUpdates(std::move(displays));
 }
 
 fml::TimePoint Shell::GetCurrentTimePoint() {
@@ -2083,7 +2108,21 @@ Shell::GetPlatformMessageHandler() const {
 }
 
 const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
+  if (!engine_) {
+    return {};
+  }
   return engine_->GetVsyncWaiter();
 }
 
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+Shell::GetConcurrentWorkerTaskRunner() const {
+  FML_DCHECK(vm_);
+  if (!vm_) {
+    return nullptr;
+  }
+  return vm_->GetConcurrentWorkerTaskRunner();
+}
+
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

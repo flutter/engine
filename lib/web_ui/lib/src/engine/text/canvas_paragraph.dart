@@ -8,14 +8,11 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
-import '../util.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
 import 'word_breaker.dart';
-
-const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
 final String placeholderChar = String.fromCharCode(0xFFFC);
 
@@ -214,10 +211,8 @@ class CanvasParagraph implements ui.Paragraph {
     switch (position.affinity) {
       case ui.TextAffinity.upstream:
         characterPosition = position.offset - 1;
-        break;
       case ui.TextAffinity.downstream:
         characterPosition = position.offset;
-        break;
     }
     final int start = WordBreaker.prevBreakIndex(plainText, characterPosition + 1);
     final int end = WordBreaker.nextBreakIndex(plainText, characterPosition);
@@ -257,9 +252,16 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }
@@ -493,7 +495,7 @@ class RootStyleNode extends StyleNode {
   final EngineParagraphStyle paragraphStyle;
 
   @override
-  final ui.Color _color = _defaultTextColor;
+  ui.Color? get _color => null;
 
   @override
   ui.TextDecoration? get _decoration => null;

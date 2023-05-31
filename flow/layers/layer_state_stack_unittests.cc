@@ -4,12 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "flutter/display_list/display_list_color_filter.h"
-#include "flutter/display_list/display_list_image_filter.h"
+#include "flutter/display_list/effects/dl_color_filter.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/testing/display_list_testing.h"
-#include "flutter/testing/mock_canvas.h"
 
 namespace flutter {
 namespace testing {
@@ -63,9 +62,10 @@ TEST(LayerStateStack, SingularDelegate) {
   LayerStateStack state_stack;
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
 
-  // Two kinds of DlCanvas implementation
+  // Two different DlCanvas implementators
   DisplayListBuilder builder;
-  MockCanvas canvas;
+  DisplayListBuilder builder2;
+  DlCanvas& canvas = builder2;
 
   // no delegate -> builder delegate
   state_stack.set_delegate(&builder);
@@ -92,7 +92,8 @@ TEST(LayerStateStack, SingularDelegate) {
 TEST(LayerStateStack, OldDelegateIsRolledBack) {
   LayerStateStack state_stack;
   DisplayListBuilder builder;
-  MockCanvas canvas;
+  DisplayListBuilder builder2;
+  DlCanvas& canvas = builder2;
 
   ASSERT_TRUE(builder.GetTransform().isIdentity());
   ASSERT_TRUE(canvas.GetTransform().isIdentity());

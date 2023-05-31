@@ -6,6 +6,8 @@
 #define TEXTURE_GLSL_
 
 #include <impeller/branching.glsl>
+#include <impeller/conversions.glsl>
+#include <impeller/types.glsl>
 
 /// Sample from a texture.
 ///
@@ -13,17 +15,8 @@
 /// for Impeller graphics backends that use a flipped framebuffer coordinate
 /// space.
 vec4 IPSample(sampler2D texture_sampler, vec2 coords, float y_coord_scale) {
-  if (y_coord_scale < 0.0) {
-    coords.y = 1.0 - coords.y;
-  }
-  return texture(texture_sampler, coords);
-}
-
-vec2 IPRemapCoords(vec2 coords, float y_coord_scale) {
-  if (y_coord_scale < 0.0) {
-    coords.y = 1.0 - coords.y;
-  }
-  return coords;
+  return texture(texture_sampler, IPRemapCoords(coords, y_coord_scale),
+                 kDefaultMipBias);
 }
 
 /// Sample from a texture.
@@ -31,7 +24,7 @@ vec2 IPRemapCoords(vec2 coords, float y_coord_scale) {
 /// If `y_coord_scale` < 0.0, the Y coordinate is flipped. This is useful
 /// for Impeller graphics backends that use a flipped framebuffer coordinate
 /// space.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinear(sampler2D texture_sampler,
                     vec2 coords,
@@ -89,14 +82,32 @@ vec4 IPSampleWithTileMode(sampler2D tex,
     return vec4(0);
   }
 
-  return texture(tex, coords);
+  return texture(tex, coords, kDefaultMipBias);
+}
+
+const float16_t kTileModeDecalHf = 3.0hf;
+
+/// Sample a texture, emulating a specific tile mode.
+///
+/// This is useful for Impeller graphics backend that don't have native support
+/// for Decal.
+f16vec4 IPHalfSampleWithTileMode(f16sampler2D tex,
+                                 vec2 coords,
+                                 float16_t x_tile_mode,
+                                 float16_t y_tile_mode) {
+  if (x_tile_mode == kTileModeDecalHf && (coords.x < 0.0 || coords.x >= 1.0) ||
+      y_tile_mode == kTileModeDecalHf && (coords.y < 0.0 || coords.y >= 1.0)) {
+    return f16vec4(0.0hf);
+  }
+
+  return texture(tex, coords, kDefaultMipBiasHalf);
 }
 
 /// Sample a texture, emulating a specific tile mode.
 ///
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 vec2 coords,
@@ -119,14 +130,23 @@ vec4 IPSampleDecal(sampler2D texture_sampler, vec2 coords) {
       any(greaterThanEqual(coords, vec2(1)))) {
     return vec4(0);
   }
-  return texture(texture_sampler, coords);
+  return texture(texture_sampler, coords, kDefaultMipBias);
+}
+
+/// Sample a texture with decal tile mode.
+f16vec4 IPHalfSampleDecal(f16sampler2D texture_sampler, vec2 coords) {
+  if (any(lessThan(coords, vec2(0))) ||
+      any(greaterThanEqual(coords, vec2(1)))) {
+    return f16vec4(0.0);
+  }
+  return texture(texture_sampler, coords, kDefaultMipBiasHalf);
 }
 
 /// Sample a texture, emulating a specific tile mode.
 ///
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
-/// The range of `coods` will be mapped from [0, 1] to [half_texel, 1 -
+/// The range of `coords` will be mapped from [0, 1] to [half_texel, 1 -
 /// half_texel]
 vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 vec2 coords,

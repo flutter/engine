@@ -24,6 +24,15 @@ void main() {
     ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
 
+  final FlutterView view = PlatformDispatcher.instance.implicitView!;
+  // Asserting that this is greater than zero since this app runs on different
+  // platforms with different sizes. If it is greater than zero, it has been
+  // initialized to some meaningful value at least.
+  assert(
+    view.display.size > Offset.zero,
+    'Expected ${view.display} to be initialized.',
+  );
+
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
   PlatformDispatcher.instance.sendPlatformMessage('waiting_for_status', data, null);
@@ -38,7 +47,6 @@ void _handleDriverMessage(Map<String, dynamic> call) {
     case 'set_scenario':
       assert(call['args'] != null);
       loadScenario(call['args'] as Map<String, dynamic>, _view);
-    break;
     default:
       throw 'Unimplemented method: $methodName.';
   }
@@ -55,11 +63,9 @@ Future<void> _handlePlatformMessage(
   switch (name) {
     case 'driver':
       _handleDriverMessage(json.decode(utf8.decode(data!.buffer.asUint8List())) as Map<String, dynamic>);
-    break;
     case 'write_timeline':
       final String timelineData = await _getTimelineData();
       callback!(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
-    break;
     default:
       currentScenario?.onPlatformMessage(name, data, callback);
   }

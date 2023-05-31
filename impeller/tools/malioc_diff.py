@@ -4,6 +4,7 @@
 # found in the LICENSE file.
 
 import argparse
+import difflib
 import json
 import os
 import sys
@@ -32,10 +33,22 @@ import sys
 # If there are differences between before and after, whether positive or
 # negative, the exit code for this script will be 1, and 0 otherwise.
 
+SRC_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+)
+
 CORES = [
     'Mali-G78',  # Pixel 6 / 2020
     'Mali-T880',  # 2016
 ]
+
+# Path to the engine root checkout. This is used to calculate absolute
+# paths if relative ones are passed to the script.
+BUILD_ROOT_DIR = os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
+)
 
 
 def parse_args(argv):
@@ -55,6 +68,29 @@ def parse_args(argv):
       help='The path to a json file containing existing malioc results.',
   )
   parser.add_argument(
+      '--after-relative-to-src',
+      type=str,
+      help=(
+          'A relative path calculated from the engine src directory to '
+          'a directory tree containing new malioc results in json files'
+      ),
+  )
+  parser.add_argument(
+      '--before-relative-to-src',
+      type=str,
+      help=(
+          'A relative path calculated from the engine src directory to '
+          'a json file containing existing malioc results in json files'
+      ),
+  )
+  parser.add_argument(
+      '--print-diff',
+      '-p',
+      default=False,
+      action='store_true',
+      help='Print a unified diff to stdout when differences are found.',
+  )
+  parser.add_argument(
       '--update',
       '-u',
       default=False,
@@ -72,6 +108,23 @@ def parse_args(argv):
 
 
 def validate_args(args):
+  if not args.after and not args.after_relative_to_src:
+    print('--after argument or --after-relative-to-src must be specified.')
+    return False
+
+  if not args.before and not args.before_relative_to_src:
+    print('--before argument or --before-relative-to-src must be specified.')
+    return False
+
+  # Generate full paths if relative ones are provided with before and
+  # after taking precedence.
+  args.before = (
+      args.before or os.path.join(BUILD_ROOT_DIR, args.before_relative_to_src)
+  )
+  args.after = (
+      args.after or os.path.join(BUILD_ROOT_DIR, args.after_relative_to_src)
+  )
+
   if not args.after or not os.path.isdir(args.after):
     print('The --after argument must refer to a directory.')
     return False
@@ -166,8 +219,12 @@ def read_malioc_tree(malioc_tree):
 # a space of `width` characters, and separated by `sep`. The separator does not
 # count against the `width`. If `width` is 0, then the width is unconstrained.
 def pretty_list(lst, fmt='s', sep='', width=12):
-  return (sep.join(['{:<{width}{fmt}}'] * len(lst))).format(
-      width='' if width == 0 else width, fmt=fmt, *lst
+  formats = [
+      '{:<{width}{fmt}}' if ele is not None else '{:<{width}s}' for ele in lst
+  ]
+  sanitized_list = [x if x is not None else 'null' for x in lst]
+  return (sep.join(formats)).format(
+      width='' if width == 0 else width, fmt=fmt, *sanitized_list
   )
 
 
@@ -278,6 +335,10 @@ def main(argv):
 
   changed = False
   for filename, shaders in before_json.items():
+    if filename not in after_json.keys():
+      print('Shader "{}" has been removed.'.format(filename))
+      changed = True
+      continue
     for core, before_shader in shaders.items():
       if core not in after_json[filename].keys():
         continue
@@ -287,11 +348,35 @@ def main(argv):
 
   for filename, shaders in after_json.items():
     if filename not in before_json:
-      print(
-          'Shader {} is new. Run with --update to update checked-in results'
-          .format(filename)
-      )
+      print('Shader "{}" is new.'.format(filename))
       changed = True
+
+  if changed:
+    print(
+        'There are new shaders, shaders have been removed, or performance '
+        'changes to existing shaders. The golden file must be updated after a '
+        'build of android_debug_unopt using the --malioc-path flag to the '
+        'flutter/tools/gn script.\n\n'
+        '$ ./flutter/impeller/tools/malioc_diff.py --before {} --after {} --update'
+        .format(args.before, args.after)
+    )
+    if args.print_diff:
+      before_lines = json.dumps(
+          before_json, sort_keys=True, indent=2
+      ).splitlines(keepends=True)
+      after_lines = json.dumps(
+          after_json, sort_keys=True, indent=2
+      ).splitlines(keepends=True)
+      before_path = os.path.relpath(
+          os.path.abspath(args.before), start=SRC_ROOT
+      )
+      diff = difflib.unified_diff(
+          before_lines, after_lines, fromfile=before_path
+      )
+      print('\nYou can alternately apply the diff below:')
+      print('patch -p0 <<DONE')
+      print(*diff, sep='')
+      print('DONE')
 
   return 1 if changed else 0
 

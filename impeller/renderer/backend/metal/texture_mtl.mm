@@ -5,7 +5,7 @@
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 
 #include "impeller/base/validation.h"
-#include "impeller/renderer/texture_descriptor.h"
+#include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
 
@@ -90,6 +90,17 @@ bool TextureMTL::IsValid() const {
 
 bool TextureMTL::IsWrapped() const {
   return is_wrapped_;
+}
+
+bool TextureMTL::GenerateMipmap(id<MTLBlitCommandEncoder> encoder) {
+  if (!texture_) {
+    return false;
+  }
+
+  [encoder generateMipmapsForTexture:texture_];
+  mipmap_generated_ = true;
+
+  return true;
 }
 
 }  // namespace impeller

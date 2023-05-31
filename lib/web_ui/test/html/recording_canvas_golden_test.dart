@@ -11,19 +11,17 @@ import 'package:ui/src/engine.dart' hide ColorSpace;
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../matchers.dart';
-import 'screenshot.dart';
+import '../common/matchers.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-  });
-
-  setUpStableTestFonts();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
@@ -418,7 +416,7 @@ Future<void> testMain() async {
     expect(
       rc.pictureBounds,
       within(
-          distance: 0.05, from: const Rect.fromLTRB(17.9, 28.5, 103.5, 114.1)),
+          distance: 0.05, from: const Rect.fromLTRB(0.0, 8.5, 123.5, 134.1)),
     );
     await checkScreenshot(rc, 'path_with_shadow');
   });

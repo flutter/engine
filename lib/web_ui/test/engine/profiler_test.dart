@@ -2,15 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:js/js.dart';
+import 'dart:js_interop';
+
+import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
-import '../spy.dart';
+import '../common/spy.dart';
 
 @JS('window._flutter_internal_on_benchmark')
-external set onBenchmark (Object? object);
+external set _onBenchmark (JSAny? object);
+set onBenchmark (Object? object) => _onBenchmark = object?.toJSAnyShallow;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -43,7 +46,7 @@ void _profilerTests() {
 
   test('can listen to benchmarks', () {
     final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
-    onBenchmark = allowInterop((String name, num value) {
+    onBenchmark = js_util.allowInterop((String name, num value) {
       data.add(BenchmarkDatapoint(name, value));
     });
 
@@ -66,7 +69,7 @@ void _profilerTests() {
     final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
 
     // Wrong callback signature.
-    onBenchmark = allowInterop((num value) {
+    onBenchmark = js_util.allowInterop((num value) {
       data.add(BenchmarkDatapoint('bad', value));
     });
     expect(

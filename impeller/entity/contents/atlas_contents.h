@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
 
@@ -118,9 +118,9 @@ class AtlasTextureContents final : public Contents {
   const AtlasContents& parent_;
   Scalar alpha_ = 1.0;
   Rect coverage_;
-  std::optional<std::shared_ptr<Texture>> texture_;
+  std::shared_ptr<Texture> texture_;
   bool use_destination_ = false;
-  std::optional<std::shared_ptr<SubAtlasResult>> subatlas_ = std::nullopt;
+  std::shared_ptr<SubAtlasResult> subatlas_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AtlasTextureContents);
 };

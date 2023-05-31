@@ -3,8 +3,14 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/paint.h"
+
+#include <memory>
+
+#include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
@@ -26,42 +32,23 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
 }
 
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    std::unique_ptr<Geometry> geometry) const {
-  if (color_source.has_value()) {
-    auto& source = color_source.value();
-    auto contents = source();
-    contents->SetGeometry(std::move(geometry));
-    contents->SetAlpha(color.alpha);
-    return contents;
+    std::shared_ptr<Geometry> geometry) const {
+  auto contents = color_source.GetContents(*this);
+  contents->SetGeometry(std::move(geometry));
+  if (mask_blur_descriptor.has_value()) {
+    return mask_blur_descriptor->CreateMaskBlur(contents);
   }
-  auto solid_color = std::make_shared<SolidColorContents>();
-  solid_color->SetGeometry(std::move(geometry));
-  solid_color->SetColor(color);
-  return solid_color;
-}
-
-std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    const std::shared_ptr<Geometry>& geometry) const {
-  if (color_source.has_value()) {
-    auto& source = color_source.value();
-    auto contents = source();
-    contents->SetGeometry(geometry);
-    contents->SetAlpha(color.alpha);
-    return contents;
-  }
-  auto solid_color = std::make_shared<SolidColorContents>();
-  solid_color->SetGeometry(geometry);
-  solid_color->SetColor(color);
-  return solid_color;
+  return contents;
 }
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input,
     std::optional<bool> is_solid_color) const {
-  bool is_solid_color_val = is_solid_color.value_or(!color_source);
-  input = WithColorFilter(input);
+  bool is_solid_color_val = is_solid_color.value_or(color_source.GetType() ==
+                                                    ColorSource::Type::kColor);
+  input = WithColorFilter(input, /*absorb_opacity=*/true);
   input = WithInvertFilter(input);
-  input = WithMaskBlur(input, is_solid_color_val, Matrix());
+  input = WithMaskBlur(input, is_solid_color_val);
   input = WithImageFilter(input, Matrix(), /*is_subpass=*/false);
   return input;
 }
@@ -74,13 +61,11 @@ std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
   return input;
 }
 
-std::shared_ptr<Contents> Paint::WithMaskBlur(
-    std::shared_ptr<Contents> input,
-    bool is_solid_color,
-    const Matrix& effect_transform) const {
+std::shared_ptr<Contents> Paint::WithMaskBlur(std::shared_ptr<Contents> input,
+                                              bool is_solid_color) const {
   if (mask_blur_descriptor.has_value()) {
-    input = mask_blur_descriptor->CreateMaskBlur(
-        FilterInput::Make(input), is_solid_color, effect_transform);
+    input = mask_blur_descriptor->CreateMaskBlur(FilterInput::Make(input),
+                                                 is_solid_color);
   }
   return input;
 }
@@ -101,7 +86,7 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     bool absorb_opacity) const {
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
-  if (color_source_type == ColorSourceType::kImage) {
+  if (color_source.GetType() == ColorSource::Type::kImage) {
     return input;
   }
   if (color_filter.has_value()) {
@@ -138,15 +123,46 @@ std::shared_ptr<Contents> Paint::WithInvertFilter(
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
+    std::shared_ptr<ColorSourceContents> color_source_contents) const {
+  /// 1. Create an opaque white mask of the original geometry.
+
+  auto mask = std::make_shared<SolidColorContents>();
+  mask->SetColor(Color::White());
+  mask->SetGeometry(color_source_contents->GetGeometry());
+
+  /// 2. Blur the mask.
+
+  auto blurred_mask = FilterContents::MakeGaussianBlur(
+      FilterInput::Make(mask), sigma, sigma, style, Entity::TileMode::kDecal,
+      Matrix());
+
+  /// 3. Replace the geometry of the original color source with a rectangle that
+  ///    covers the full region of the blurred mask. Note that geometry is in
+  ///    local bounds.
+
+  auto expanded_local_bounds = blurred_mask->GetCoverage({});
+  if (!expanded_local_bounds.has_value()) {
+    return nullptr;
+  }
+  color_source_contents->SetGeometry(
+      Geometry::MakeRect(*expanded_local_bounds));
+
+  /// 4. Composite the color source and mask together.
+
+  return ColorFilterContents::MakeBlend(
+      BlendMode::kSourceIn, {FilterInput::Make(blurred_mask),
+                             FilterInput::Make(color_source_contents)});
+}
+
+std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     const FilterInput::Ref& input,
-    bool is_solid_color,
-    const Matrix& effect_transform) const {
+    bool is_solid_color) const {
   if (is_solid_color) {
-    return FilterContents::MakeGaussianBlur(
-        input, sigma, sigma, style, Entity::TileMode::kDecal, effect_transform);
+    return FilterContents::MakeGaussianBlur(input, sigma, sigma, style,
+                                            Entity::TileMode::kDecal, Matrix());
   }
   return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style,
-                                            effect_transform);
+                                            Matrix());
 }
 
 bool Paint::HasColorFilter() const {

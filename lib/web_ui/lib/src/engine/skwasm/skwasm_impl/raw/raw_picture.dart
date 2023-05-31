@@ -9,10 +9,10 @@ import 'dart:ffi';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
-class RawPictureRecorder extends Opaque {}
+final class RawPictureRecorder extends Opaque {}
 typedef PictureRecorderHandle = Pointer<RawPictureRecorder>;
 
-class RawPicture extends Opaque {}
+final class RawPicture extends Opaque {}
 typedef PictureHandle = Pointer<RawPicture>;
 
 @Native<PictureRecorderHandle Function()>(
@@ -21,9 +21,9 @@ typedef PictureHandle = Pointer<RawPicture>;
 external PictureRecorderHandle pictureRecorderCreate();
 
 @Native<Void Function(PictureRecorderHandle)>(
-  symbol: 'pictureRecorder_destroy',
+  symbol: 'pictureRecorder_dispose',
   isLeaf: true)
-external void pictureRecorderDestroy(PictureRecorderHandle picture);
+external void pictureRecorderDispose(PictureRecorderHandle picture);
 
 @Native<CanvasHandle Function(PictureRecorderHandle, RawRect)>(
   symbol: 'pictureRecorder_beginRecording',
@@ -45,3 +45,8 @@ external void pictureDispose(PictureHandle handle);
   symbol: 'picture_approximateBytesUsed',
   isLeaf: true)
 external int pictureApproximateBytesUsed(PictureHandle handle);
+
+@Native<Void Function(PictureHandle, RawRect)>(
+  symbol: 'picture_getCullRect',
+  isLeaf: true)
+external void pictureGetCullRect(PictureHandle handle, RawRect outRect);

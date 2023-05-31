@@ -103,6 +103,8 @@ source_set("flutter_windows_source") {
     "window_proc_delegate_manager.cc",
     "window_proc_delegate_manager.h",
     "window_state.h",
+    "windows_lifecycle_manager.cc",
+    "windows_lifecycle_manager.h",
     "windows_proc_table.cc",
     "windows_proc_table.h",
     "windows_registry.cc",
@@ -127,6 +129,7 @@ source_set("flutter_windows_source") {
   public_deps = [
     "//flutter/fml:string_conversion",
     "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_enums",
   ]
 
   deps = [

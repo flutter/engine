@@ -6,6 +6,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 #include <Carbon/Carbon.h>
+#import <objc/message.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
@@ -163,6 +164,8 @@ NSData* currentKeyboardLayoutData() {
 
 - (void)setBackgroundColor:(NSColor*)color;
 
+- (BOOL)performKeyEquivalent:(NSEvent*)event;
+
 @end
 
 /**
@@ -239,6 +242,37 @@ NSData* currentKeyboardLayoutData() {
 
 @end
 
+#pragma mark - NSEvent (KeyEquivalentMarker) protocol
+
+@interface NSEvent (KeyEquivalentMarker)
+
+// Internally marks that the event was received through performKeyEquivalent:.
+// When text editing is active, keyboard events that have modifier keys pressed
+// are received through performKeyEquivalent: instead of keyDown:. If such event
+// is passed to TextInputContext but doesn't result in a text editing action it
+// needs to be forwarded by FlutterKeyboardManager to the next responder.
+- (void)markAsKeyEquivalent;
+
+// Returns YES if the event is marked as a key equivalent.
+- (BOOL)isKeyEquivalent;
+
+@end
+
+@implementation NSEvent (KeyEquivalentMarker)
+
+// This field doesn't need a value because only its address is used as a unique identifier.
+static char markerKey;
+
+- (void)markAsKeyEquivalent {
+  objc_setAssociatedObject(self, &markerKey, @true, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (BOOL)isKeyEquivalent {
+  return [objc_getAssociatedObject(self, &markerKey) boolValue] == YES;
+}
+
+@end
+
 #pragma mark - Private dependant functions
 
 namespace {
@@ -258,12 +292,15 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
 @implementation FlutterViewWrapper {
   FlutterView* _flutterView;
+  __weak FlutterViewController* _controller;
 }
 
-- (instancetype)initWithFlutterView:(FlutterView*)view {
+- (instancetype)initWithFlutterView:(FlutterView*)view
+                         controller:(FlutterViewController*)controller {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     _flutterView = view;
+    _controller = controller;
     view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [self addSubview:view];
   }
@@ -272,6 +309,24 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
 - (void)setBackgroundColor:(NSColor*)color {
   [_flutterView setBackgroundColor:color];
+}
+
+- (BOOL)performKeyEquivalent:(NSEvent*)event {
+  if ([_controller isDispatchingKeyEvent:event]) {
+    // When NSWindow is nextResponder, keyboard manager will send to it
+    // unhandled events (through [NSWindow keyDown:]). If event has both
+    // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)
+    // NSWindow will then send this event as performKeyEquivalent: to first
+    // responder, which might be FlutterTextInputPlugin. If that's the case, the
+    // plugin must not handle the event, otherwise the emoji picker would not
+    // work (due to first responder returning YES from performKeyEquivalent:)
+    // and there would be an infinite loop, because FlutterViewController will
+    // send the event back to [keyboardManager handleEvent:].
+    return NO;
+  }
+  [event markAsKeyEquivalent];
+  [_flutterView keyDown:event];
+  return YES;
 }
 
 - (NSArray*)accessibilityChildren {
@@ -315,10 +370,15 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
+
+  FlutterViewId _id;
+
+  // FlutterViewController does not actually uses the synchronizer, but only
+  // passes it to FlutterView.
+  FlutterThreadSynchronizer* _threadSynchronizer;
 }
 
 @synthesize viewId = _viewId;
-@dynamic view;
 @dynamic accessibilityBridge;
 
 /**
@@ -406,7 +466,8 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   if (_backgroundColor != nil) {
     [flutterView setBackgroundColor:_backgroundColor];
   }
-  FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView];
+  FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView
+                                                                         controller:self];
   self.view = wrapperView;
   _flutterView = flutterView;
 }
@@ -455,7 +516,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)viewId {
+- (FlutterViewId)viewId {
   NSAssert([self attached], @"This view controller is not attched.");
   return _viewId;
 }
@@ -484,14 +545,20 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
+- (void)setUpWithEngine:(FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+     threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
+  _threadSynchronizer = threadSynchronizer;
+  [_threadSynchronizer registerView:_viewId];
 }
 
 - (void)detachFromEngine {
   NSAssert(_engine != nil, @"Not attached to any engine.");
+  [_threadSynchronizer deregisterView:_viewId];
+  _threadSynchronizer = nil;
   _engine = nil;
 }
 
@@ -499,17 +566,19 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _engine != nil;
 }
 
-- (void)updateSemantics:(const FlutterSemanticsUpdate*)update {
+- (void)updateSemantics:(const FlutterSemanticsUpdate2*)update {
   NSAssert(_engine.semanticsEnabled, @"Semantics must be enabled.");
   if (!_engine.semanticsEnabled) {
     return;
   }
-  for (size_t i = 0; i < update->nodes_count; i++) {
-    _bridge->AddFlutterSemanticsNodeUpdate(update->nodes[i]);
+  for (size_t i = 0; i < update->node_count; i++) {
+    const FlutterSemanticsNode2* node = update->nodes[i];
+    _bridge->AddFlutterSemanticsNodeUpdate(*node);
   }
 
-  for (size_t i = 0; i < update->custom_actions_count; i++) {
-    _bridge->AddFlutterSemanticsCustomActionUpdate(update->custom_actions[i]);
+  for (size_t i = 0; i < update->custom_action_count; i++) {
+    const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
+    _bridge->AddFlutterSemanticsCustomActionUpdate(*action);
   }
 
   _bridge->CommitUpdates();
@@ -799,7 +868,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                           commandQueue:(id<MTLCommandQueue>)commandQueue {
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
-                                reshapeListener:self];
+                                reshapeListener:self
+                             threadSynchronizer:_threadSynchronizer
+                                         viewId:_viewId];
 }
 
 - (void)onKeyboardLayoutChanged {
@@ -807,6 +878,14 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   if (_keyboardLayoutNotifier != nil) {
     _keyboardLayoutNotifier();
   }
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 #pragma mark - FlutterViewReshapeListener

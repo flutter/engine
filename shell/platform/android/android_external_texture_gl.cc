@@ -8,13 +8,14 @@
 
 #include <utility>
 
-#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/effects/dl_color_source.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 namespace flutter {
 
@@ -60,7 +61,7 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_,
                                  GL_RGBA8_OES};
   GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
-  sk_sp<SkImage> image = SkImage::MakeFromTexture(
+  sk_sp<SkImage> image = SkImages::BorrowTextureFrom(
       context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
   if (image) {

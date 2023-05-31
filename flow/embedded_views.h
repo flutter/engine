@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
@@ -118,7 +118,7 @@ class Mutator {
     return *filter_mutation_;
   }
   const int& GetAlpha() const { return alpha_; }
-  float GetAlphaFloat() const { return (alpha_ / 255.0); }
+  float GetAlphaFloat() const { return (alpha_ / 255.0f); }
 
   bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {
@@ -352,6 +352,9 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const override;
   void render_into(DlCanvas* canvas) override;
+  void dispatch(DlOpReceiver& receiver);
+  bool is_empty();
+  bool recording_ended();
 
  private:
   std::unique_ptr<DisplayListBuilder> builder_;

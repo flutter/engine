@@ -11,6 +11,8 @@ impeller_shaders("entity_shaders") {
     vulkan_language_version = 130
   }
 
+  use_half_textures = true
+
   shaders = [
     "shaders/blending/advanced_blend.vert",
     "shaders/blending/advanced_blend_color.frag",
@@ -35,13 +37,14 @@ impeller_shaders("entity_shaders") {
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
     "shaders/conical_gradient_fill.frag",
-    "shaders/gaussian_blur.frag",
-    "shaders/gaussian_blur_decal.frag",
-    "shaders/gaussian_blur.vert",
+    "shaders/gaussian_blur/gaussian_blur.vert",
+    "shaders/gaussian_blur/gaussian_blur_alpha_decal.frag",
+    "shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag",
     "shaders/glyph_atlas.frag",
+    "shaders/glyph_atlas_color.frag",
     "shaders/glyph_atlas.vert",
-    "shaders/glyph_atlas_sdf.frag",
-    "shaders/glyph_atlas_sdf.vert",
     "shaders/gradient_fill.vert",
     "shaders/linear_to_srgb_filter.frag",
     "shaders/linear_to_srgb_filter.vert",
@@ -49,7 +52,6 @@ impeller_shaders("entity_shaders") {
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
     "shaders/position_color.vert",
-    "shaders/position_uv.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
@@ -62,11 +64,18 @@ impeller_shaders("entity_shaders") {
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
     "shaders/tiled_texture_fill.frag",
-    "shaders/tiled_texture_fill.vert",
     "shaders/vertices.frag",
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
+    "shaders/blending/porter_duff_blend.frag",
   ]
+
+  if (impeller_debug) {
+    shaders += [
+      "shaders/debug/checkerboard.frag",
+      "shaders/debug/checkerboard.vert",
+    ]
+  }
 }
 
 impeller_shaders("modern_entity_shaders") {
@@ -85,6 +94,8 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/linear_gradient_ssbo_fill.frag",
     "shaders/radial_gradient_ssbo_fill.frag",
     "shaders/sweep_gradient_ssbo_fill.frag",
+    "shaders/geometry/points.comp",
+    "shaders/geometry/uv.comp",
   ]
 }
 
@@ -128,6 +139,8 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
 
 impeller_component("entity") {
   sources = [
+    "contents/anonymous_contents.cc",
+    "contents/anonymous_contents.h",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
     "contents/clip_contents.cc",
@@ -182,14 +195,14 @@ impeller_component("entity") {
     "contents/linear_gradient_contents.h",
     "contents/radial_gradient_contents.cc",
     "contents/radial_gradient_contents.h",
-    "contents/rrect_shadow_contents.cc",
-    "contents/rrect_shadow_contents.h",
     "contents/runtime_effect_contents.cc",
     "contents/runtime_effect_contents.h",
     "contents/scene_contents.cc",
     "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
+    "contents/solid_rrect_blur_contents.cc",
+    "contents/solid_rrect_blur_contents.h",
     "contents/sweep_gradient_contents.cc",
     "contents/sweep_gradient_contents.h",
     "contents/text_contents.cc",
@@ -206,18 +219,39 @@ impeller_component("entity") {
     "entity_pass.h",
     "entity_pass_delegate.cc",
     "entity_pass_delegate.h",
-    "geometry.cc",
-    "geometry.h",
+    "entity_pass_target.cc",
+    "entity_pass_target.h",
+    "geometry/cover_geometry.cc",
+    "geometry/cover_geometry.h",
+    "geometry/fill_path_geometry.cc",
+    "geometry/fill_path_geometry.h",
+    "geometry/geometry.cc",
+    "geometry/geometry.h",
+    "geometry/point_field_geometry.cc",
+    "geometry/point_field_geometry.h",
+    "geometry/rect_geometry.cc",
+    "geometry/rect_geometry.h",
+    "geometry/stroke_path_geometry.cc",
+    "geometry/stroke_path_geometry.h",
+    "geometry/vertices_geometry.cc",
+    "geometry/vertices_geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
   ]
+
+  if (impeller_debug) {
+    sources += [
+      "contents/checkerboard_contents.cc",
+      "contents/checkerboard_contents.h",
+    ]
+  }
 
   public_deps = [
     ":entity_shaders",
     ":framebuffer_blend_entity_shaders",
     ":modern_entity_shaders",
     "../archivist",
-    "../image",
+    "../image:image_skia_backend",
     "../renderer",
     "../scene",
     "../typographer",
@@ -238,7 +272,7 @@ impeller_component("entity_unittests") {
 
   deps = [
     ":entity",
-    "../geometry:geometry_unittests",
+    "../geometry:geometry_asserts",
     "../playground:playground_test",
   ]
 }

@@ -7,6 +7,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path_builder.h"
 
 namespace impeller {
@@ -72,6 +73,13 @@ bool OpacityPeepholePassDelegate::CanElide() {
 // |EntityPassDelgate|
 bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
+  // OpacityPeepholePassDelegate will only get used if the pass's blend mode is
+  // SourceOver, so no need to check here.
+  if (paint_.color.alpha <= 0.0 || paint_.color.alpha >= 1.0 ||
+      paint_.image_filter.has_value() || paint_.color_filter.has_value()) {
+    return false;
+  }
+
   // Note: determing whether any coverage intersects has quadradic complexity in
   // the number of rectangles, and depending on whether or not we cache at
   // different levels of the entity tree may end up cubic. In the interest of
@@ -80,7 +88,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   // command wrapped in save layer. This would indicate something like an
   // Opacity or FadeTransition wrapping a very simple widget, like in the
   // CupertinoPicker.
-  if (entity_pass->GetEntityCount() > 3) {
+  if (entity_pass->GetElementCount() > 3) {
     // Single paint command with a save layer would be:
     // 1. clip
     // 2. draw command
@@ -92,7 +100,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
         auto contents = entity.GetContents();
-        if (!contents->CanAcceptOpacity(entity)) {
+        if (!entity.CanInheritOpacity()) {
           all_can_accept = false;
           return false;
         }
@@ -114,7 +122,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   }
   auto alpha = paint_.color.alpha;
   entity_pass->IterateUntilSubpass([&alpha](Entity& entity) {
-    entity.GetContents()->InheritOpacity(alpha);
+    entity.SetInheritedOpacity(alpha);
     return true;
   });
   return true;

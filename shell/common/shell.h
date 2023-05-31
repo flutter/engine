@@ -126,7 +126,8 @@ class Shell final : public PlatformView::Delegate,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-      std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)>
       EngineCreateCallback;
 
   //----------------------------------------------------------------------------
@@ -356,6 +357,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch.
+  // |Rasterizer::Delegate|
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
       const override;
 
@@ -374,8 +376,7 @@ class Shell final : public PlatformView::Delegate,
   //----------------------------------------------------------------------------
   /// @brief      Notifies the display manager of the updates.
   ///
-  void OnDisplayUpdates(DisplayUpdateType update_type,
-                        std::vector<std::unique_ptr<Display>> displays);
+  void OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays);
 
   //----------------------------------------------------------------------------
   /// @brief Queries the `DisplayManager` for the main display refresh rate.
@@ -402,6 +403,9 @@ class Shell final : public PlatformView::Delegate,
       const override;
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const;
 
  private:
   using ServiceProtocolHandler =

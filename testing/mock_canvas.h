@@ -9,8 +9,8 @@
 #include <variant>
 #include <vector>
 
-#include "flutter/display_list/display_list_matrix_clip_tracker.h"
 #include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkCanvasVirtualEnforcer.h"
@@ -158,8 +158,6 @@ class MockCanvas final : public DlCanvas {
   MockCanvas();
   MockCanvas(int width, int height);
   ~MockCanvas();
-
-  // SkNWayCanvas* internal_canvas() { return &internal_canvas_; }
 
   const std::vector<DrawCall>& draw_calls() const { return draw_calls_; }
   void reset_draw_calls() { draw_calls_.clear(); }

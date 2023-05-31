@@ -8,7 +8,6 @@ import 'package:meta/meta.dart';
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../safe_browser_api.dart';
 import 'semantics.dart';
 
 /// The maximum [semanticsActivationAttempts] before we give up waiting for
@@ -180,7 +179,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
-    placeholder.addEventListener('click', allowInterop((DomEvent event) {
+    placeholder.addEventListener('click', createDomEventListener((DomEvent event) {
       tryEnableSemantics(event);
     }), true);
 
@@ -327,17 +326,14 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       case 'click':
         final DomMouseEvent click = event as DomMouseEvent;
         activationPoint = click.offset;
-        break;
       case 'touchstart':
       case 'touchend':
         final DomTouchEvent touchEvent = event as DomTouchEvent;
         activationPoint = touchEvent.changedTouches.first.client;
-        break;
       case 'pointerdown':
       case 'pointerup':
         final DomPointerEvent touch = event as DomPointerEvent;
         activationPoint = touch.client;
-        break;
       default:
         // The event is not relevant, forward to framework as normal.
         return true;
@@ -377,7 +373,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
-    placeholder.addEventListener('click', allowInterop((DomEvent event) {
+    placeholder.addEventListener('click', createDomEventListener((DomEvent event) {
       tryEnableSemantics(event);
     }), true);
 

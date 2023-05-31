@@ -4,6 +4,10 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
@@ -26,18 +30,17 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/device_buffer_descriptor.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/sampler.h"
-#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 namespace testing {
@@ -163,7 +166,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     vertex_buffer.index_buffer = {
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
-    vertex_buffer.index_count = 36;
+    vertex_buffer.vertex_count = 36;
     vertex_buffer.index_type = IndexType::k16bit;
   }
 
@@ -309,9 +312,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(bridge && boston);
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
-
   std::shared_ptr<RenderPass> r2t_pass;
-
+  auto cmd_buffer = context->CreateCommandBuffer();
+  ASSERT_TRUE(cmd_buffer);
   {
     ColorAttachment color0;
     color0.load_action = LoadAction::kClear;
@@ -349,7 +352,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
     RenderTarget r2t_desc;
     r2t_desc.SetColorAttachment(color0, 0u);
     r2t_desc.SetStencilAttachment(stencil0);
-    auto cmd_buffer = context->CreateCommandBuffer();
     r2t_pass = cmd_buffer->CreateRenderPass(r2t_desc);
     ASSERT_TRUE(r2t_pass && r2t_pass->IsValid());
   }
@@ -380,10 +382,9 @@ TEST_P(RendererTest, CanRenderToTexture) {
   ASSERT_TRUE(r2t_pass->EncodeCommands());
 }
 
-#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("Instancing is only supported on Metal.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Instancing is not supported on OpenGL.");
   }
   using VS = InstancedDrawVertexShader;
   using FS = InstancedDrawFragmentShader;
@@ -445,7 +446,6 @@ TEST_P(RendererTest, CanRenderInstanced) {
     return true;
   }));
 }
-#endif  // IMPELLER_ENABLE_METAL
 
 TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto context = GetContext();
@@ -724,15 +724,14 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
-    const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
-                                     MipFilter::kLinear};
+    const char* mip_filter_names[] = {"Nearest", "Linear"};
+    const MipFilter mip_filters[] = {MipFilter::kNearest, MipFilter::kLinear};
     const char* min_filter_names[] = {"Nearest", "Linear"};
     const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
                                         MinMagFilter::kLinear};
 
     // UI state.
-    static int selected_mip_filter = 2;
+    static int selected_mip_filter = 1;
     static int selected_min_filter = 0;
     static float lod = 4.5;
 
@@ -969,8 +968,8 @@ TEST_P(RendererTest, InactiveUniforms) {
 }
 
 TEST_P(RendererTest, CanCreateCPUBackedTexture) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
   }
 
   auto context = GetContext();
@@ -1011,7 +1010,16 @@ TEST_P(RendererTest, DefaultIndexSize) {
   // Default to 16bit index buffer size, as this is a reasonable default and
   // supported on all backends without extensions.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.AppendIndex(0u);
   ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, DefaultIndexBehavior) {
+  using VS = BoxFadeVertexShader;
+
+  // Do not create any index buffer if no indices were provided.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::kNone);
 }
 
 TEST_P(RendererTest, VertexBufferBuilder) {
@@ -1038,3 +1046,5 @@ TEST_P(RendererTest, VertexBufferBuilder) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

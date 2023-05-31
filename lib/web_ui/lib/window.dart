@@ -4,6 +4,13 @@
 
 part of ui;
 
+abstract class Display {
+  int get id;
+  double get devicePixelRatio;
+  Size get size;
+  double get refreshRate;
+}
+
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
   Object get viewId;
@@ -16,6 +23,7 @@ abstract class FlutterView {
   ViewPadding get padding;
   GestureSettings get gestureSettings;
   List<DisplayFeature> get displayFeatures;
+  Display get display;
   void render(Scene scene) => platformDispatcher.render(scene, this);
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
@@ -173,11 +181,7 @@ class CallbackHandle {
 }
 
 // TODO(dit): see https://github.com/flutter/flutter/issues/33615.
-class PluginUtilities {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory PluginUtilities._() => throw UnsupportedError('Namespace');
-
+abstract final class PluginUtilities {
   static CallbackHandle? getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
@@ -187,11 +191,7 @@ class PluginUtilities {
   }
 }
 
-class IsolateNameServer {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory IsolateNameServer._() => throw UnsupportedError('Namespace');
-
+abstract final class IsolateNameServer {
   static dynamic lookupPortByName(String name) {
     throw UnimplementedError();
   }

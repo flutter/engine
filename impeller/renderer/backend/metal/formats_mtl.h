@@ -9,9 +9,9 @@
 #include <optional>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/geometry/color.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/texture_descriptor.h"
 
 namespace impeller {
 
@@ -332,8 +332,6 @@ constexpr MTLSamplerMinMagFilter ToMTLSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr MTLSamplerMipFilter ToMTLSamplerMipFilter(MipFilter filter) {
   switch (filter) {
-    case MipFilter::kNone:
-      return MTLSamplerMipFilterNotMipmapped;
     case MipFilter::kNearest:
       return MTLSamplerMipFilterNearest;
     case MipFilter::kLinear:
@@ -351,6 +349,8 @@ constexpr MTLSamplerAddressMode ToMTLSamplerAddressMode(
       return MTLSamplerAddressModeRepeat;
     case SamplerAddressMode::kMirror:
       return MTLSamplerAddressModeMirrorRepeat;
+    case SamplerAddressMode::kDecal:
+      return MTLSamplerAddressModeClampToZero;
   }
   return MTLSamplerAddressModeClampToEdge;
 }

@@ -6,8 +6,9 @@
 #define FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_SNIPPETS_H_
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 
+#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
@@ -69,7 +70,8 @@ static DlImageSampling kNearestSampling = DlImageSampling::kNearestNeighbor;
 static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
 
 static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
+  sk_sp<SkSurface> surface =
+      SkSurfaces::Raster(SkImageInfo::MakeN32Premul(w, h));
   SkCanvas* canvas = surface->getCanvas();
   SkPaint p0, p1;
   p0.setStyle(SkPaint::kFill_Style);
@@ -89,7 +91,7 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
 
 static auto TestImage1 = MakeTestImage(40, 40, 5);
 static auto TestImage2 = MakeTestImage(50, 50, 5);
-static auto TestSkImage = MakeTestImage(30, 30, 5) -> skia_image();
+static auto TestSkImage = MakeTestImage(30, 30, 5)->skia_image();
 
 static const DlImageColorSource kTestSource1(TestImage1,
                                              DlTileMode::kClamp,
@@ -178,11 +180,11 @@ static const std::shared_ptr<DlPathEffect> kTestPathEffect1 =
     DlDashPathEffect::Make(kTestDashes1, 2, 0.0f);
 static const std::shared_ptr<DlPathEffect> kTestPathEffect2 =
     DlDashPathEffect::Make(kTestDashes2, 2, 0.0f);
-static const DlBlurMaskFilter kTestMaskFilter1(kNormal_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter2(kNormal_SkBlurStyle, 5.0);
-static const DlBlurMaskFilter kTestMaskFilter3(kSolid_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter4(kInner_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter5(kOuter_SkBlurStyle, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter1(DlBlurStyle::kNormal, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
+static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter4(DlBlurStyle::kInner, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter5(DlBlurStyle::kOuter, 3.0);
 constexpr SkRect kTestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
 static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestBounds, 5, 5);
 static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestBounds);

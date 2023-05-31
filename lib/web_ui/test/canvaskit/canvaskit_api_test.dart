@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -12,7 +13,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -753,8 +754,8 @@ void _matrix4x4CompositionTests() {
       paint(canvas, (ui.Canvas canvas) {
         final Matrix4 matrix = Matrix4.identity();
         matrix.setEntry(3, 2, 0.001);
-        matrix.rotate(Vector3(1, 0, 0), rotateAroundX);
-        matrix.rotate(Vector3(0, 1, 0), rotateAroundY);
+        matrix.rotate(kUnitX, rotateAroundX);
+        matrix.rotate(kUnitY, rotateAroundY);
         canvas.transform(matrix.toFloat64());
       });
     }, width, height);
@@ -1431,16 +1432,11 @@ void _canvasTests() {
     builder.addText('Hello');
     final CkParagraph paragraph = builder.build();
 
-    paragraph.delete();
     paragraph.dispose();
     expect(paragraph.debugDisposed, true);
   });
 
   test('toImage.toByteData', () async {
-    // Pretend that FinalizationRegistry is supported, so we can run this
-    // test in older browsers (the test will use a TestCollector instead of
-    // ProductionCollector)
-    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
@@ -1449,7 +1445,7 @@ void _canvasTests() {
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData();
@@ -1531,11 +1527,6 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
-  setUpAll(() async {
-    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
-    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
-  });
-
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that
@@ -1590,9 +1581,9 @@ void _paragraphTests() {
       ..forceStrutHeight = false;
 
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
 
     builder.addText('Hello');
@@ -1624,7 +1615,7 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
-    if (canvasKitVariant == CanvasKitVariant.chromium) {
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
       injectClientICU(builder);
     }
     final SkParagraph paragraph = builder.build();
@@ -1674,7 +1665,7 @@ void _paragraphTests() {
         1,
         3,
         canvasKit.RectHeightStyle.Tight,
-        canvasKit.RectWidthStyle.Max).single! as SkRectWithDirection;
+        canvasKit.RectWidthStyle.Max).single;
     expect(
       rectWithDirection.rect,
       hasLength(4),
@@ -1683,7 +1674,7 @@ void _paragraphTests() {
     expect(paragraph.getLineMetrics(), hasLength(1));
 
     final SkLineMetrics lineMetrics =
-        paragraph.getLineMetrics().cast<SkLineMetrics>().single;
+        paragraph.getLineMetrics().single;
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
@@ -1736,13 +1727,13 @@ void _paragraphTests() {
       ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder =
-        canvasKit.ParagraphBuilder.MakeFromFontProvider(
+        canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
     builder.addText('hello');
 
-    if (canvasKitVariant == CanvasKitVariant.chromium) {
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
       injectClientICU(builder);
     }
 
@@ -1754,7 +1745,7 @@ void _paragraphTests() {
       1,
       canvasKit.RectHeightStyle.Strut,
       canvasKit.RectWidthStyle.Tight,
-    ).cast<SkRectWithDirection>();
+    );
     expect(rects.length, 1);
     final SkRectWithDirection rect = rects.first;
     expect(rect.rect, <double>[0, 0, 13.770000457763672, 75]);
@@ -1834,6 +1825,68 @@ void _paragraphTests() {
     expect(surface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
+  group('getCanvasKitJsFileNames', () {
+    dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldIntlSegmenter = intlSegmenter;
+
+    setUp(() {
+      oldV8BreakIterator = v8BreakIterator;
+      oldIntlSegmenter = intlSegmenter;
+    });
+    tearDown(() {
+      v8BreakIterator = oldV8BreakIterator;
+      intlSegmenter = oldIntlSegmenter;
+      debugResetBrowserSupportsImageDecoder();
+    });
+
+    test('in Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = Object(); // Any non-null value.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>[
+        'chromium/canvaskit.js',
+        'canvaskit.js',
+      ]);
+    });
+
+    test('in older versions of Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = null; // Older versions of Chromium didn't have the Intl.Segmenter API.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+
+    test('in other browsers', () {
+      intlSegmenter = Object(); // Any non-null value.
+
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = true;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+
+      v8BreakIterator = Object();
+      browserSupportsImageDecoder = false;
+      // TODO(mdebbar): we don't check image codecs for now.
+      // https://github.com/flutter/flutter/issues/122331
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
+
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = false;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+  });
+
   test('respects actual location of canvaskit files', () {
     expect(
       canvasKitWasmModuleUrl('canvaskit.wasm', 'https://example.com/'),
@@ -1848,4 +1901,26 @@ void _paragraphTests() {
       'http://localhost:1234/foo/canvaskit.wasm',
     );
   });
+
+  test('SkObjectFinalizationRegistry', () {
+    // There's no reliable way to test the actual functionality of
+    // FinalizationRegistry because it depends on GC, which cannot be controlled,
+    // So the test simply tests that a FinalizationRegistry can be constructed
+    // and its `register` method can be called.
+    final DomFinalizationRegistry registry = createDomFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object(), Object());
+  });
 }
+
+
+@JS('window.Intl.v8BreakIterator')
+external dynamic get v8BreakIterator;
+
+@JS('window.Intl.v8BreakIterator')
+external set v8BreakIterator(dynamic x);
+
+@JS('window.Intl.Segmenter')
+external dynamic get intlSegmenter;
+
+@JS('window.Intl.Segmenter')
+external set intlSegmenter(dynamic x);

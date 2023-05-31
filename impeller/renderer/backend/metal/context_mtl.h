@@ -9,27 +9,33 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
-#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
+#include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/device_capabilities.h"
-#include "impeller/renderer/sampler.h"
 
 namespace impeller {
 
 class ContextMTL final : public Context,
-                         public BackendCast<ContextMTL, Context> {
+                         public BackendCast<ContextMTL, Context>,
+                         public std::enable_shared_from_this<ContextMTL> {
  public:
   static std::shared_ptr<ContextMTL> Create(
-      const std::vector<std::string>& shader_library_paths);
+      const std::vector<std::string>& shader_library_paths,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
       const std::string& label);
 
   // |Context|
@@ -37,21 +43,8 @@ class ContextMTL final : public Context,
 
   id<MTLDevice> GetMTLDevice() const;
 
- private:
-  id<MTLDevice> device_ = nullptr;
-  id<MTLCommandQueue> command_queue_ = nullptr;
-  std::shared_ptr<ShaderLibraryMTL> shader_library_;
-  std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
-  std::shared_ptr<SamplerLibrary> sampler_library_;
-  std::shared_ptr<AllocatorMTL> resource_allocator_;
-  std::shared_ptr<WorkQueue> work_queue_;
-  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
-  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
-  bool is_valid_ = false;
-
-  ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
-
-  bool SupportsFramebufferFetch() const;
+  // |Context|
+  std::string DescribeGpuModel() const override;
 
   // |Context|
   bool IsValid() const override;
@@ -72,13 +65,34 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  std::shared_ptr<WorkQueue> GetWorkQueue() const override;
+  const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  std::shared_ptr<GPUTracer> GetGPUTracer() const override;
+  bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
 
-  // |Context|
-  const IDeviceCapabilities& GetDeviceCapabilities() const override;
+  id<MTLCommandBuffer> CreateMTLCommandBuffer() const;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>& GetWorkerTaskRunner() const;
+
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
+
+ private:
+  id<MTLDevice> device_ = nullptr;
+  id<MTLCommandQueue> command_queue_ = nullptr;
+  std::shared_ptr<ShaderLibraryMTL> shader_library_;
+  std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
+  std::shared_ptr<SamplerLibrary> sampler_library_;
+  std::shared_ptr<AllocatorMTL> resource_allocator_;
+  std::shared_ptr<const Capabilities> device_capabilities_;
+  std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
+  std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  bool is_valid_ = false;
+
+  ContextMTL(
+      id<MTLDevice> device,
+      NSArray<id<MTLLibrary>>* shader_libraries,
+      std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
+      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

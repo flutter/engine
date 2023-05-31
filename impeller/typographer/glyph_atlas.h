@@ -10,9 +10,9 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
 class SkBitmap;
@@ -32,13 +32,6 @@ class GlyphAtlas {
   //----------------------------------------------------------------------------
   /// @brief      Describes how the glyphs are represented in the texture.
   enum class Type {
-    //--------------------------------------------------------------------------
-    /// The glyphs are represented at a fixed size in an 8-bit grayscale texture
-    /// where the value of each pixel represents a signed-distance field that
-    /// stores the glyph outlines.
-    ///
-    kSignedDistanceField,
-
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
     /// alpha channel.
@@ -119,18 +112,7 @@ class GlyphAtlas {
   /// @return     The location of the font-glyph pair in the atlas.
   ///             `std::nullopt` of the pair in not in the atlas.
   ///
-  std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      whether this atlas contains all of the same font-glyph pairs
-  ///             as the vector.
-  ///
-  /// @param[in]  new_glyphs  The full set of new glyphs
-  ///
-  /// @return     A vector containing the glyphs from new_glyphs that are not
-  ///             present in the existing atlas. May be empty of there are none.
-  ///
-  FontGlyphPair::Vector HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
+  std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
  private:
   const Type type_;

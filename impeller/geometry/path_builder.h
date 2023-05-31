@@ -19,7 +19,7 @@ class PathBuilder {
   /// the angle. However, accuracy rapidly diminishes if magnified for obtuse
   /// angle arcs, and so multiple cubic curves should be used when approximating
   /// arcs greater than 90 degrees.
-  constexpr static const Scalar kArcApproximationMagic = 0.551915024494;
+  constexpr static const Scalar kArcApproximationMagic = 0.551915024494f;
 
   PathBuilder();
 
@@ -30,6 +30,8 @@ class PathBuilder {
   Path TakePath(FillType fill = FillType::kNonZero);
 
   const Path& GetCurrentPath() const;
+
+  PathBuilder& SetConvexity(Convexity value);
 
   PathBuilder& MoveTo(Point point, bool relative = false);
 
@@ -108,6 +110,15 @@ class PathBuilder {
   Point subpath_start_;
   Point current_;
   Path prototype_;
+  Convexity convexity_;
+
+  PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectTopRight(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectBottomRight(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectBottomLeft(Rect rect, RoundingRadii radii);
 
   Point ReflectedQuadraticControlPoint1() const;
 
