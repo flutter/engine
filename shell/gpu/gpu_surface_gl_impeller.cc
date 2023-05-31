@@ -51,7 +51,6 @@ bool GPUSurfaceGLImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
-    int64_t view_id,
     const SkISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "OpenGL surface was invalid.";

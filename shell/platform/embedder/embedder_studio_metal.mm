@@ -84,9 +84,8 @@ bool EmbedderStudioMetal::PresentDrawable(GrMTLHandle drawable) const {
   return false;
 }
 
-GPUMTLTextureInfo EmbedderStudioMetal::GetMTLTexture(int64_t view_id,
-                                                     const SkISize& frame_info) const {
-  return metal_dispatch_table_.get_texture(view_id, frame_info);
+GPUMTLTextureInfo EmbedderStudioMetal::GetMTLTexture(const SkISize& frame_info) const {
+  return metal_dispatch_table_.get_texture(frame_info);
 }
 
 bool EmbedderStudioMetal::PresentTexture(GPUMTLTextureInfo texture) const {

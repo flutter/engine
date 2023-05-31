@@ -164,8 +164,7 @@ bool ShellTestPlatformViewMetal::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(int64_t view_id,
-                                                            const SkISize& frame_info) const {
+GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(const SkISize& frame_info) const {
   return metal_context_->offscreen_texture_info();
 }
 

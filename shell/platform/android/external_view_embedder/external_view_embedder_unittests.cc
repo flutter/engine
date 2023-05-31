@@ -24,8 +24,6 @@
 namespace flutter {
 namespace testing {
 
-constexpr int64_t kDefaultViewId = 0ll;
-
 using ::testing::ByMove;
 using ::testing::Return;
 
@@ -53,7 +51,7 @@ class SurfaceMock : public Surface {
 
   MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
               AcquireFrame,
-              (int64_t view_id, const SkISize& size),
+              (const SkISize& size),
               (override));
 
   MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
@@ -274,7 +272,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .Times(2 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))))
             .WillOnce(Return(ByMove(std::move(surface_frame_2))));
@@ -475,7 +473,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -573,7 +571,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -676,7 +674,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -764,7 +762,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
@@ -852,7 +850,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
@@ -979,7 +977,7 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(kDefaultViewId, frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();

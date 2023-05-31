@@ -610,8 +610,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
-  auto frame =
-      surface->AcquireFrame(surface_record->view_id, layer_tree->frame_size());
+  auto frame = surface->AcquireFrame(layer_tree->frame_size());
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());

@@ -27,7 +27,6 @@ bool Surface::IsValid() {
 
 // |flutter::Surface|
 std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
-    int64_t view_id,
     const SkISize& size) {
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;

@@ -72,8 +72,7 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
   // |GPUSurfaceMetalDelegate|
-  GPUMTLTextureInfo GetMTLTexture(int64_t view_id,
-                                  const SkISize& frame_info) const override;
+  GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const override;
 
   // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;

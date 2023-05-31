@@ -478,9 +478,8 @@ InferMetalPlatformViewCreationCallback(
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
-      [ptr = config->metal.get_next_drawable_callback, user_data](
-          int64_t view_id,
-          const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
+      [ptr = config->metal.get_next_drawable_callback,
+       user_data](const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
     FlutterFrameInfo frame_info = {};
     frame_info.struct_size = sizeof(FlutterFrameInfo);
     frame_info.size = {static_cast<uint32_t>(frame_size.width()),
