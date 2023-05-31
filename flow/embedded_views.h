@@ -14,7 +14,6 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "impeller/aiks/aiks_context.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -23,6 +22,16 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
+#include "flutter/impeller/renderer/context.h"   // nogncheck
+#else                                            // IMPELLER_SUPPORTS_RENDERING
+namespace impeller {
+class Context;
+class AiksContext;
+}  // namespace impeller
+#endif                                           // !IMPELLER_SUPPORTS_RENDERING
 
 class GrDirectContext;
 
