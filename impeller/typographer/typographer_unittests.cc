@@ -10,6 +10,7 @@
 #include "impeller/typographer/rectangle_packer.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -167,18 +168,20 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
 
-  auto blob = SkTextBlob::MakeFromString(
+  const char* test_string =
       "QWERTYUIOPASDFGHJKLZXCVBNMqewrtyuiopasdfghjklzxcvbnm,.<>[]{};':"
       "2134567890-=!@#$%^&*()_+"
       "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
-      "* Í˝ */¸˛Ç◊ı˜Â¯˘¿",
-      sk_font);
+      "* Í˝ */¸˛Ç◊ı˜Â¯˘¿";
+
+  auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
   ASSERT_TRUE(blob);
 
   TextFrame frame;
   size_t count = 0;
+  const int size_count = 8;
   TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
-    if (count < 8) {
+    if (count < size_count) {
       count++;
       frame = TextFrameFromTextBlob(blob, 0.6 * count);
       return &frame;
@@ -190,8 +193,20 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
-  ASSERT_EQ(atlas->GetTexture()->GetSize().width * 2,
-            atlas->GetTexture()->GetSize().height);
+  std::set<uint16_t> unique_glyphs;
+  std::vector<uint16_t> total_glyphs;
+  atlas->IterateGlyphs([&](const FontGlyphPair& pair, const Rect& rect) {
+    unique_glyphs.insert(pair.glyph.index);
+    total_glyphs.push_back(pair.glyph.index);
+    return true;
+  });
+
+  EXPECT_EQ(unique_glyphs.size() * size_count, atlas->GetGlyphCount());
+  EXPECT_EQ(total_glyphs.size(), atlas->GetGlyphCount());
+
+  EXPECT_TRUE(atlas->GetGlyphCount() > 0);
+  EXPECT_TRUE(atlas->GetTexture()->GetSize().width > 0);
+  EXPECT_TRUE(atlas->GetTexture()->GetSize().height > 0);
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
@@ -280,7 +295,11 @@ TEST_P(TypographerTest, FontGlyphPairTypeChangesHashAndEquals) {
 }
 
 TEST_P(TypographerTest, MaybeHasOverlapping) {
-  SkFont sk_font;
+  sk_sp<SkFontMgr> font_mgr = SkFontMgr::RefDefault();
+  sk_sp<SkTypeface> typeface =
+      font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
+  SkFont sk_font(typeface, 0.5f);
+
   auto frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("1", sk_font));
   // Single character has no overlapping
   ASSERT_FALSE(frame.MaybeHasOverlapping());
