@@ -21,7 +21,7 @@ class ComputePipelineVK final
  public:
   ComputePipelineVK(std::weak_ptr<DeviceHolder> device_holder,
                     std::weak_ptr<PipelineLibrary> library,
-                    const PipelineDescriptor& desc,
+                    const ComputePipelineDescriptor& desc,
                     vk::UniquePipeline pipeline,
                     vk::UniquePipelineLayout layout,
                     vk::UniqueDescriptorSetLayout descriptor_set_layout);
@@ -47,10 +47,7 @@ class ComputePipelineVK final
   // |Pipeline|
   bool IsValid() const override;
 
-  std::unique_ptr<ComputePipelineVK> CreatePipeline(
-      const ComputePipelineDescriptor& desc);
-
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineVK);
+  FML_DISALLOW_COPY_AND_ASSIGN(ComputePipelineVK);
 };
 
 }  // namespace impeller

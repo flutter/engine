@@ -31,7 +31,10 @@ void main() {
     value = input_data.data[ident];
   }
 
-  memory[ident] = value;
+  if (ident < BLOCK_SIZE) {
+    memory[ident] = value;
+  }
+
   barrier();
 
   ExclusivePrefixSum(ident, memory, BLOCK_SIZE);

@@ -25,10 +25,7 @@ namespace testing {
 using ComputeTest = ComputePlaygroundTest;
 INSTANTIATE_COMPUTE_SUITE(ComputeTest);
 
-using ComputeMetalAndVulkanSubgroupTest = ComputePlaygroundTest;
-INSTANTIATE_COMPUTE_SUITE_WITH_VULKAN(ComputeMetalAndVulkanSubgroupTest);
-
-TEST_P(ComputeMetalAndVulkanSubgroupTest, CapabilitiesReportSupport) {
+TEST_P(ComputeTest, CapabilitiesReportSupport) {
   auto context = GetContext();
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());

@@ -55,18 +55,11 @@ class ComputePlaygroundTest
   FML_DISALLOW_COPY_AND_ASSIGN(ComputePlaygroundTest);
 };
 
-// TODO(dnfield): Remove this macro as Vulkan support reaches parith with Metal.
-#define INSTANTIATE_COMPUTE_SUITE_WITH_VULKAN(playground)                  \
+#define INSTANTIATE_COMPUTE_SUITE(playground)                              \
   INSTANTIATE_TEST_SUITE_P(                                                \
       Compute, playground,                                                 \
       ::testing::Values(PlaygroundBackend::kMetal,                         \
                         PlaygroundBackend::kVulkan),                       \
-      [](const ::testing::TestParamInfo<ComputePlaygroundTest::ParamType>& \
-             info) { return PlaygroundBackendToString(info.param); });
-
-#define INSTANTIATE_COMPUTE_SUITE(playground)                              \
-  INSTANTIATE_TEST_SUITE_P(                                                \
-      Compute, playground, ::testing::Values(PlaygroundBackend::kMetal),   \
       [](const ::testing::TestParamInfo<ComputePlaygroundTest::ParamType>& \
              info) { return PlaygroundBackendToString(info.param); });
 

@@ -9,7 +9,7 @@ namespace impeller {
 ComputePipelineVK::ComputePipelineVK(
     std::weak_ptr<DeviceHolder> device_holder,
     std::weak_ptr<PipelineLibrary> library,
-    const PipelineDescriptor& desc,
+    const ComputePipelineDescriptor& desc,
     vk::UniquePipeline pipeline,
     vk::UniquePipelineLayout layout,
     vk::UniqueDescriptorSetLayout descriptor_set_layout)

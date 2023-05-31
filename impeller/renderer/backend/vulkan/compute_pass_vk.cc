@@ -30,10 +30,46 @@ void ComputePassVK::OnSetLabel(const std::string& label) {
   label_ = label;
 }
 
+static bool UpdateBindingLayouts(const Bindings& bindings,
+                                 const vk::CommandBuffer& buffer) {
+  LayoutTransition transition;
+  transition.cmd_buffer = buffer;
+  transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                          vk::AccessFlagBits::eTransferWrite;
+  transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                         vk::PipelineStageFlagBits::eTransfer;
+  transition.dst_access = vk::AccessFlagBits::eShaderRead;
+  transition.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+  transition.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+  for (const auto& [_, texture] : bindings.textures) {
+    if (!TextureVK::Cast(*texture.resource).SetLayout(transition)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool UpdateBindingLayouts(const ComputeCommand& command,
+                                 const vk::CommandBuffer& buffer) {
+  return UpdateBindingLayouts(command.bindings, buffer);
+}
+
+static bool UpdateBindingLayouts(const std::vector<ComputeCommand>& commands,
+                                 const vk::CommandBuffer& buffer) {
+  for (const auto& command : commands) {
+    if (!UpdateBindingLayouts(command, buffer)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                                           const ComputeCommand& command,
                                           CommandEncoderVK& encoder,
-                                          const PipelineVK& pipeline) {
+                                          const ComputePipelineVK& pipeline) {
   auto desc_set =
       encoder.AllocateDescriptorSet(pipeline.GetDescriptorSetLayout());
   if (!desc_set) {
@@ -105,11 +141,6 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
         return false;
       }
 
-      // Reserved index used for per-vertex data.
-      if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
-        continue;
-      }
-
       if (!encoder.Track(device_buffer)) {
         return false;
       }
@@ -134,6 +165,10 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     }
     return true;
   };
+
+  if (!bind_buffers(command.bindings) || !bind_images(command.bindings)) {
+    return false;
+  }
 
   context.GetDevice().updateDescriptorSets(writes, {});
 
@@ -160,7 +195,7 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
   const auto& vk_context = ContextVK::Cast(context);
   auto encoder = encoder_.lock();
   if (!encoder) {
-    VALIDATION_LOG << "Command encoder died before commands could be encoded";
+    VALIDATION_LOG << "Command encoder died before commands could be encoded.";
     return false;
   }
 
@@ -175,11 +210,30 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
   auto cmd_buffer = encoder->GetCommandBuffer();
 
   if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
+    VALIDATION_LOG << "Could not update binding layouts for compute pass.";
     return false;
   }
 
   {
     TRACE_EVENT0("impeller", "EncodeComputePassCommands");
+
+    vk::CommandBufferBeginInfo pass_info;
+    pass_info.sType = vk::StructureType::eCommandBufferBeginInfo;
+
+    auto begin_result = cmd_buffer.begin(pass_info);
+    if (begin_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to begin compute pass: "
+                     << vk::to_string(begin_result) << ".";
+      return false;
+    }
+
+    fml::ScopedCleanupClosure end_compute_pass([cmd_buffer]() {
+      auto end_result = cmd_buffer.end();
+      if (end_result != vk::Result::eSuccess) {
+        VALIDATION_LOG << "Failed to end compute pass: "
+                       << vk::to_string(end_result) << ".";
+      }
+    });
 
     for (const auto& command : commands_) {
       if (!command.pipeline) {
@@ -188,18 +242,19 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
 
       const auto& pipeline_vk = ComputePipelineVK::Cast(*command.pipeline);
 
-      cmd_buffer.bindPipeline(vk::PipelineBindPoint::eCompute), pipeline_vk.GetPipeline());
+      cmd_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
+                              pipeline_vk.GetPipeline());
       if (!AllocateAndBindDescriptorSets(vk_context,  //
                                          command,     //
-                                         encoder,     //
+                                         *encoder,    //
                                          pipeline_vk  //
                                          )) {
         return false;
       }
 
-      cmd_buffer.dispatch(grid_size.x, grid_size.y, 0);
+      cmd_buffer.dispatch(grid_size.width, grid_size.height, 1);
       vk::Result result = cmd_buffer.end();
-      if (result != vk::Result::Success) {
+      if (result != vk::Result::eSuccess) {
         return false;
       }
     }
