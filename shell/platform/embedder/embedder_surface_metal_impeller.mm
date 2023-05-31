@@ -59,7 +59,8 @@ bool EmbedderSurfaceMetalImpeller::IsValid() const {
   return valid_;
 }
 
-std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface() {
+std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface()
+    IMPELLER_CA_METAL_LAYER_AVAILABLE {
   if (!IsValid()) {
     return nullptr;
   }

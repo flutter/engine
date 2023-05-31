@@ -18,7 +18,8 @@
 
 namespace flutter {
 
-class IMPELLER_METAL_AVAILABLE GPUSurfaceMetalImpeller : public Surface {
+class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
+    : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
                           const std::shared_ptr<impeller::Context>& context,
