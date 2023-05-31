@@ -105,14 +105,13 @@ bool SkylineRectanglePacker::rectangleFits(int skylineIndex,
   int widthLeft = width;
   int i = skylineIndex;
   int y = skyline_[skylineIndex].y_;
-  while (widthLeft > 0) {
+  while (widthLeft > 0 && i < (int)skyline_.size()) {
     y = std::max(y, skyline_[i].y_);
     if (y + height > this->height()) {
       return false;
     }
     widthLeft -= skyline_[i].width_;
     ++i;
-    FML_DCHECK(i < (int)skyline_.size() || widthLeft <= 0);
   }
 
   *ypos = y;
