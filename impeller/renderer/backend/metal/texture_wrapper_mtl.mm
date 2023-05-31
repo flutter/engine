@@ -6,6 +6,7 @@
 
 #include <Metal/Metal.h>
 
+#include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 
 namespace impeller {
@@ -13,8 +14,9 @@ namespace impeller {
 std::shared_ptr<Texture> WrapTextureMTL(TextureDescriptor desc,
                                         const void* mtl_texture,
                                         std::function<void()> deletion_proc) {
-  return TextureMTL::Wrapper(desc, (__bridge id<MTLTexture>)mtl_texture,
-                             std::move(deletion_proc));
+  auto texture = (__bridge id<MTLTexture>)mtl_texture;
+  desc.format = FromMTLPixelFormat(texture.pixelFormat);
+  return TextureMTL::Wrapper(desc, texture, std::move(deletion_proc));
 }
 
 }  // namespace impeller

@@ -93,11 +93,13 @@ source_set("flow") {
     "//flutter/common",
     "//flutter/common/graphics",
     "//flutter/fml",
-    "//flutter/impeller/aiks:aiks",
     "//third_party/skia",
   ]
 
-  public_deps = [ "//flutter/display_list" ]
+  public_deps = [
+    "//flutter/display_list",
+    "//flutter/impeller/aiks:aiks",
+  ]
 }
 
 if (enable_unittests) {

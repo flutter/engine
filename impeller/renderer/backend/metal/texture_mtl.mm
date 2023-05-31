@@ -39,9 +39,14 @@ std::shared_ptr<TextureMTL> TextureMTL::Wrapper(
     TextureDescriptor desc,
     id<MTLTexture> texture,
     std::function<void()> deletion_proc) {
-  return std::shared_ptr<TextureMTL>(new TextureMTL(desc, texture, true),
-                                     [deletion_proc = std::move(deletion_proc)](
-                                         TextureMTL* t) { deletion_proc(); });
+  if (deletion_proc) {
+    return std::shared_ptr<TextureMTL>(
+        new TextureMTL(desc, texture, true),
+        [deletion_proc = std::move(deletion_proc)](TextureMTL* t) {
+          deletion_proc();
+        });
+  }
+  return std::shared_ptr<TextureMTL>(new TextureMTL(desc, texture, true));
 }
 
 TextureMTL::~TextureMTL() = default;

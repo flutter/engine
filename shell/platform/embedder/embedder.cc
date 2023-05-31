@@ -928,13 +928,30 @@ MakeImpellerSurfaceFromBackingStore(
   }
 
   const auto size = impeller::ISize(config.size.width, config.size.height);
-  const auto color_format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+
+  impeller::TextureDescriptor resolve_tex_desc;
+  resolve_tex_desc.size = size;
+  resolve_tex_desc.sample_count = impeller::SampleCount::kCount1;
+  resolve_tex_desc.storage_mode = impeller::StorageMode::kDevicePrivate;
+  resolve_tex_desc.usage =
+      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget) |
+      static_cast<uint64_t>(impeller::TextureUsage::kShaderRead);
+
+  auto resolve_tex = impeller::WrapTextureMTL(
+      resolve_tex_desc, metal->texture.texture,
+      [callback = metal->texture.destruction_callback,
+       user_data = metal->texture.user_data]() { callback(user_data); });
+  if (!resolve_tex) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
+    return std::nullopt;
+  }
+  resolve_tex->SetLabel("ImpellerBackingStoreResolve");
 
   impeller::TextureDescriptor msaa_tex_desc;
   msaa_tex_desc.storage_mode = impeller::StorageMode::kDeviceTransient;
   msaa_tex_desc.type = impeller::TextureType::kTexture2DMultisample;
   msaa_tex_desc.sample_count = impeller::SampleCount::kCount4;
-  msaa_tex_desc.format = color_format;
+  msaa_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
   msaa_tex_desc.size = size;
   msaa_tex_desc.usage =
       static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget);
@@ -947,26 +964,6 @@ MakeImpellerSurfaceFromBackingStore(
     return std::nullopt;
   }
   msaa_tex->SetLabel("ImpellerBackingStoreColorMSAA");
-
-  impeller::TextureDescriptor resolve_tex_desc;
-  resolve_tex_desc.size = size;
-  resolve_tex_desc.format = color_format;
-  resolve_tex_desc.mip_count = 0;
-  resolve_tex_desc.sample_count = impeller::SampleCount::kCount1;
-  resolve_tex_desc.storage_mode = impeller::StorageMode::kDevicePrivate;
-  resolve_tex_desc.usage =
-      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget) |
-      static_cast<uint64_t>(impeller::TextureUsage::kShaderRead);
-  auto resolve_tex = impeller::WrapTextureMTL(
-      resolve_tex_desc, metal->texture.texture,
-      [callback = metal->texture.destruction_callback,
-       user_data = metal->texture.user_data]() { callback(user_data); });
-
-  if (!resolve_tex) {
-    FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
-    return std::nullopt;
-  }
-  resolve_tex->SetLabel("ImpellerBackingStoreResolve");
 
   impeller::ColorAttachment color0;
   color0.texture = msaa_tex;

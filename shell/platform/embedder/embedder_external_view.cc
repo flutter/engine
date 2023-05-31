@@ -95,8 +95,8 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
 
     auto dispatcher = impeller::DlDispatcher();
     dispatcher.drawDisplayList(dl_builder.Build(), 1);
-    aiks_context->Render(dispatcher.EndRecordingAsPicture(), *impeller_target);
-    return true;
+    return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
+                                *impeller_target);
   }
 
   auto skia_surface = render_target.GetRenderSurface();
