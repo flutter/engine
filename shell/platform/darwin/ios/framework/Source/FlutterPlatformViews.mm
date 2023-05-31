@@ -653,7 +653,6 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  const std::shared_ptr<IOSContext>& ios_context,
-                                                 int64_t render_view_id,
                                                  std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
@@ -728,7 +727,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         // Get a new host layer.
         std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
                                                                    ios_context,               //
-                                                                   render_view_id,            //
                                                                    slice,                     //
                                                                    joined_rect,               //
                                                                    current_platform_view_id,  //
@@ -800,7 +798,6 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
     const std::shared_ptr<IOSContext>& ios_context,
-    int64_t render_view_id,
     EmbedderViewSlice* slice,
     SkRect rect,
     int64_t view_id,
@@ -827,7 +824,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   overlay_view.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld].overlay_view[%lld]", view_id, overlay_id];
 
-  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(render_view_id, frame_size_);
+  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
   // If frame is null, AcquireFrame already printed out an error message.
   if (!frame) {
     return layer;

@@ -132,8 +132,7 @@ void FlatlandExternalViewEmbedder::EndFrame(
 
 void FlatlandExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<flutter::SurfaceFrame> frame,
-    int64_t window_view_id) {
+    std::unique_ptr<flutter::SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "FlatlandExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;

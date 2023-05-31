@@ -298,7 +298,13 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  void AddRenderSurface(int64_t view_id);
+  /// @brief  Add a non-implicit render surface. The implicit render surface
+  ///         is created in OnPlatformViewCreated.
+  /// @param view_id
+  /// @param external_view_embedder Must not be null.
+  void AddRenderSurface(
+      int64_t view_id,
+      std::unique_ptr<ExternalViewEmbedder> external_view_embedder);
   void RemoveRenderSurface(int64_t view_id);
 
   //----------------------------------------------------------------------------

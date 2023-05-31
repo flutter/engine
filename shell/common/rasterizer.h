@@ -206,6 +206,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Add a surface, implicit or not.
   void AddSurface(int64_t view_id,
                   std::unique_ptr<Surface> surface,
                   std::shared_ptr<ExternalViewEmbedder> view_embedder);
@@ -504,17 +506,22 @@ class Rasterizer final : public SnapshotDelegate,
   // front of the pipeline.
   struct DoDrawResult {
     RasterStatus raster_status = RasterStatus::kFailed;
-
+    int64_t view_id;
     std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
 
   struct SurfaceRecord {
-    SurfaceRecord(int64_t view_id, std::unique_ptr<Surface> surface)
-        : view_id(view_id), surface(std::move(surface)) {}
+    SurfaceRecord(int64_t view_id,
+                  std::shared_ptr<ExternalViewEmbedder> view_embedder,
+                  std::unique_ptr<Surface> surface)
+        : view_id(view_id),
+          view_embedder(std::move(view_embedder)),
+          surface(std::move(surface)) {}
 
     int64_t view_id;
-
+    std::shared_ptr<ExternalViewEmbedder> view_embedder;
     std::unique_ptr<Surface> surface;
+
     // This is the information for the last successfully drawing.
     //
     // Sometimes, it may be necessary to render the same frame again without
@@ -630,8 +637,12 @@ class Rasterizer final : public SnapshotDelegate,
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<SnapshotController> snapshot_controller_;
+  // The Rasterizer allows having no view embedder, but only in a legacy mode
+  // where there is only one surface (the implicit surface), and no view
+  // embedder is provided ever. In other cases, the Rasterizer should always
+  // have a view embedder.
+  bool requires_view_embedder_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;

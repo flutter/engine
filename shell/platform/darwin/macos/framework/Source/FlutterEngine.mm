@@ -47,6 +47,36 @@ static NSString* const kEnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
 static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
+static FlutterCompositor createFlutterCompositorFor(flutter::FlutterCompositor* macOSCompositor) {
+  FlutterCompositor compositor;
+  compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = macOSCompositor;
+
+  compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
+                                                FlutterBackingStore* backing_store_out,   //
+                                                void* user_data                           //
+                                             ) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CreateBackingStore(
+        config, backing_store_out);
+  };
+
+  compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
+                                                 void* user_data                            //
+                                              ) { return true; };
+
+  compositor.present_layers_callback = [](const FlutterLayer** layers,  //
+                                          size_t layers_count,          //
+                                          void* user_data               //
+                                       ) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(layers, layers_count);
+  };
+
+  compositor.avoid_backing_store_cache = true;
+
+  return compositor;
+}
+
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
 
@@ -79,7 +109,10 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 @interface FlutterEngineViewRecord : NSObject
 
-- (instancetype)initWithViewController:(nonnull FlutterViewController*)controller;
+- (nullable instancetype)initWithViewController:(nonnull FlutterViewController*)controller
+                                macOSCompositor:
+                                    (std::shared_ptr<flutter::FlutterCompositor>)macOSCompositor
+                                     compositor:(FlutterCompositor)compositor;
 
 @property(nonatomic, weak) FlutterViewController* controller;
 
@@ -87,14 +120,25 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 @implementation FlutterEngineViewRecord {
   __weak FlutterViewController* _controller;
+
+  // _macOSCompositor is created when the engine is created and its destruction is handled by ARC
+  // when the engine is destroyed.
+  std::shared_ptr<flutter::FlutterCompositor> _macOSCompositor;
+
+  // FlutterCompositor is copied and used in embedder.cc.
+  FlutterCompositor _compositor;
 }
 
 @synthesize controller = _controller;
 
-- (instancetype)initWithViewController:(FlutterViewController*)controller {
+- (instancetype)initWithViewController:(FlutterViewController*)controller
+                       macOSCompositor:(std::shared_ptr<flutter::FlutterCompositor>)macOSCompositor
+                            compositor:(FlutterCompositor)compositor {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _controller = controller;
+  _macOSCompositor = macOSCompositor;
+  _compositor = compositor;
   return self;
 }
 @end
@@ -385,15 +429,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
-  // _macOSCompositor is created when the engine is created and its destruction is handled by ARC
-  // when the engine is destroyed.
-  std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
-
   // The information of all views attached to this engine mapped from IDs.
   NSMutableDictionary<NSNumber*, FlutterEngineViewRecord*>* _viewRecords;
 
+  // _macOSCompositor is created when the engine is created and its destruction is handled by ARC
+  // when the engine is destroyed.
+  std::shared_ptr<flutter::FlutterCompositor> _implicitMacOSCompositor;
+
   // FlutterCompositor is copied and used in embedder.cc.
-  FlutterCompositor _compositor;
+  FlutterCompositor _implicitCompositor;
 
   // Method channel for platform view functions. These functions include creating, disposing and
   // mutating a platform view.
@@ -564,7 +608,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     flutterArguments.aot_data = _aotData;
   }
 
-  flutterArguments.compositor = [self createFlutterCompositor];
+  _implicitMacOSCompositor = std::make_shared<flutter::FlutterCompositor>(
+      [[FlutterViewEngineProvider alloc] initWithEngine:self], kFlutterDefaultViewId,
+      _platformViewController);
+  _implicitCompositor = createFlutterCompositorFor(_implicitMacOSCompositor.get());
+  flutterArguments.compositor = &_implicitCompositor;
 
   flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
@@ -632,7 +680,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(_viewRecords[@(viewId)] == nil, @"The requested view ID is occupied.");
   [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
-  _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller];
+  const bool isImplicitView = viewId == kFlutterDefaultViewId;
+  auto macOSCompositor = isImplicitView
+                             ? _implicitMacOSCompositor
+                             : std::make_shared<flutter::FlutterCompositor>(
+                                   [[FlutterViewEngineProvider alloc] initWithEngine:self], viewId,
+                                   _platformViewController);
+  auto compositor =
+      isImplicitView ? _implicitCompositor : createFlutterCompositorFor(macOSCompositor.get());
+  _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller
+                                                                    macOSCompositor:macOSCompositor
+                                                                         compositor:compositor];
 }
 
 - (void)deregisterViewControllerForId:(FlutterViewId)viewId {
@@ -691,40 +749,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (FlutterViewController*)viewController {
   return [self viewControllerForId:kFlutterDefaultViewId];
-}
-
-- (FlutterCompositor*)createFlutterCompositor {
-  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
-      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
-
-  _compositor = {};
-  _compositor.struct_size = sizeof(FlutterCompositor);
-  _compositor.user_data = _macOSCompositor.get();
-
-  _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
-                                                 FlutterBackingStore* backing_store_out,   //
-                                                 void* user_data                           //
-                                              ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CreateBackingStore(
-        config, backing_store_out);
-  };
-
-  _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
-                                                  void* user_data                            //
-                                               ) { return true; };
-
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           int64_t view_id,              //
-                                           void* user_data               //
-                                        ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(view_id, layers,
-                                                                             layers_count);
-  };
-
-  _compositor.avoid_backing_store_cache = true;
-
-  return &_compositor;
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {
@@ -1342,7 +1366,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 // Getter used by test harness, only exposed through the FlutterEngine(Test) category
 - (flutter::FlutterCompositor*)macOSCompositor {
-  return _macOSCompositor.get();
+  return _implicitMacOSCompositor.get();
 }
 
 @end

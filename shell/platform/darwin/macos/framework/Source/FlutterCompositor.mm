@@ -10,16 +10,18 @@
 namespace flutter {
 
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
+                                     int64_t view_id,
                                      FlutterPlatformViewController* platform_view_controller)
     : view_provider_(view_provider),
+      view_id_(view_id),
       platform_view_controller_(platform_view_controller),
       mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
-  FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
+  FML_CHECK(view_provider_ != nullptr) << "view provider cannot be nullptr";
 }
 
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                            FlutterBackingStore* backing_store_out) {
-  FlutterView* view = [view_provider_ viewForId:config->view_id];
+  FlutterView* view = [view_provider_ viewForId:view_id_];
   if (!view) {
     return false;
   }
@@ -34,10 +36,8 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
   return true;
 }
 
-bool FlutterCompositor::Present(FlutterViewId view_id,
-                                const FlutterLayer** layers,
-                                size_t layers_count) {
-  FlutterView* view = [view_provider_ viewForId:view_id];
+bool FlutterCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  FlutterView* view = [view_provider_ viewForId:view_id_];
   if (!view) {
     return false;
   }

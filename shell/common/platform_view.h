@@ -688,6 +688,12 @@ class PlatformView {
   ///        Shell::AddRenderSurface.
   virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
 
+  /// Whether the embedder should support dynamic thread merging.
+  ///
+  /// Returning `true` results a |RasterThreadMerger| instance to be created by
+  /// |Rasterizer|.
+  /// * See also |BegineFrame| and |EndFrame| of |ExternalViewEmbedder| for
+  /// getting the |RasterThreadMerger| instance.
   virtual bool SupportsDynamicThreadMerging();
 
   //--------------------------------------------------------------------------

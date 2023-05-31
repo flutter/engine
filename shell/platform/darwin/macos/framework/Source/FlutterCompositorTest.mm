@@ -87,7 +87,7 @@ id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
 
 TEST(FlutterCompositorTest, TestCreate) {
   std::unique_ptr<flutter::FlutterCompositor> macos_compositor =
-      std::make_unique<FlutterCompositor>(MockViewProvider(),
+      std::make_unique<FlutterCompositor>(MockViewProvider(), kFlutterDefaultViewId,
                                           /*platform_view_controller*/ nullptr);
 
   FlutterBackingStore backing_store;
@@ -95,7 +95,6 @@ TEST(FlutterCompositorTest, TestCreate) {
   config.struct_size = sizeof(FlutterBackingStoreConfig);
   config.size.width = 800;
   config.size.height = 600;
-  config.view_id = 0;
   ASSERT_TRUE(macos_compositor->CreateBackingStore(&config, &backing_store));
 
   ASSERT_EQ(backing_store.type, kFlutterBackingStoreTypeMetal);
@@ -113,7 +112,7 @@ TEST(FlutterCompositorTest, TestPresent) {
   };
 
   std::unique_ptr<flutter::FlutterCompositor> macos_compositor =
-      std::make_unique<FlutterCompositor>(MockViewProvider(onPresent),
+      std::make_unique<FlutterCompositor>(MockViewProvider(onPresent), kFlutterDefaultViewId,
                                           /*platform_view_controller*/ nullptr);
 
   FlutterBackingStore backing_store;
@@ -121,7 +120,6 @@ TEST(FlutterCompositorTest, TestPresent) {
   config.struct_size = sizeof(FlutterBackingStoreConfig);
   config.size.width = 800;
   config.size.height = 600;
-  config.view_id = 0;
   macos_compositor->CreateBackingStore(&config, &backing_store);
 
   FlutterLayer layers[] = {{
@@ -133,7 +131,7 @@ TEST(FlutterCompositorTest, TestPresent) {
   }};
   const FlutterLayer* layers_ptr = layers;
 
-  macos_compositor->Present(kFlutterDefaultViewId, &layers_ptr, 1);
+  macos_compositor->Present(&layers_ptr, 1);
 
   ASSERT_EQ(presentedSurfaces.count, 1ul);
 }

@@ -39,6 +39,7 @@ Rasterizer::Rasterizer(Delegate& delegate,
       user_override_resource_cache_bytes_(false),
       snapshot_controller_(
           SnapshotController::Make(*this, delegate.GetSettings())),
+      requires_view_embedder_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
 }
@@ -92,8 +93,9 @@ void Rasterizer::Setup(std::unique_ptr<Studio> studio,
 }
 
 void Rasterizer::TeardownExternalViewEmbedder() {
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
+  for (auto& surface_record : surfaces_) {
+    surface_record.second.view_embedder->Teardown();
+    surface_record.second.view_embedder = nullptr;
   }
 }
 
@@ -153,15 +155,20 @@ void Rasterizer::AddSurface(
     int64_t view_id,
     std::unique_ptr<Surface> surface,
     std::shared_ptr<ExternalViewEmbedder> view_embedder) {
-  if (!external_view_embedder_) {
-    external_view_embedder_ = view_embedder;
-  } else {
-    FML_DCHECK(external_view_embedder_ == view_embedder);
+  // Only allows having no view embedders if there is one surface and there has
+  // never been an view embedder.
+  if (!requires_view_embedder_) {
+    if (view_embedder || !surfaces_.empty()) {
+      requires_view_embedder_ = true;
+    }
+  }
+  if (requires_view_embedder_) {
+    FML_DCHECK(view_embedder);
   }
   bool insertion_happened =
       surfaces_
           .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id,
-                       std::move(surface))
+                       view_embedder, std::move(surface))
           .second;
   if (!insertion_happened) {
     FML_DLOG(INFO) << "Rasterizer::AddSurface called with an existing view ID "
@@ -202,6 +209,7 @@ int Rasterizer::DrawLastLayerTree(
   bool should_resubmit_frame = false;
   for (auto& [view_id, surface_record] : surfaces_) {
     Surface* surface = surface_record.surface.get();
+    auto view_embedder = surface_record.view_embedder;
     flutter::LayerTree* layer_tree = surface_record.last_tree.get();
     float device_pixel_ratio = surface_record.last_pixel_ratio;
     if (!surface || !layer_tree) {
@@ -219,14 +227,14 @@ int Rasterizer::DrawLastLayerTree(
     should_resubmit_frame =
         should_resubmit_frame || ShouldResubmitFrame(raster_status);
     success_count += 1;
+
+    // EndFrame should perform cleanups for the external_view_embedder.
+    if (view_embedder && view_embedder->GetUsedThisFrame()) {
+      view_embedder->SetUsedThisFrame(false);
+      view_embedder->EndFrame(should_resubmit_frame, raster_thread_merger_);
+    }
   }
 
-  // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    external_view_embedder_->SetUsedThisFrame(false);
-    external_view_embedder_->EndFrame(should_resubmit_frame,
-                                      raster_thread_merger_);
-  }
   return success_count;
 }
 
@@ -252,6 +260,7 @@ RasterStatus Rasterizer::Draw(
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
         int64_t view_id = item->view_id;
+        draw_result.view_id = view_id;
         if (discard_callback(view_id, *layer_tree.get())) {
           draw_result.raster_status = RasterStatus::kDiscarded;
         } else {
@@ -280,10 +289,12 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    external_view_embedder_->SetUsedThisFrame(false);
-    external_view_embedder_->EndFrame(should_resubmit_frame,
-                                      raster_thread_merger_);
+  auto surface_record = surfaces_.find(draw_result.view_id);
+  FML_DCHECK(surface_record != surfaces_.end());
+  auto view_embedder = surface_record->second.view_embedder;
+  if (view_embedder && view_embedder->GetUsedThisFrame()) {
+    view_embedder->SetUsedThisFrame(false);
+    view_embedder->EndFrame(should_resubmit_frame, raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -578,19 +589,19 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     float device_pixel_ratio,
     SurfaceRecord* surface_record) {
   Surface* surface = surface_record->surface.get();
+  auto view_embedder = surface_record->view_embedder;
   FML_DCHECK(surface);
 
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
   DlCanvas* embedder_root_canvas = nullptr;
-  if (external_view_embedder_) {
-    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        layer_tree->frame_size(), studio_->GetContext(), device_pixel_ratio,
-        raster_thread_merger_);
-    embedder_root_canvas = external_view_embedder_->GetRootCanvas();
+  if (view_embedder) {
+    FML_DCHECK(!view_embedder->GetUsedThisFrame());
+    view_embedder->SetUsedThisFrame(true);
+    view_embedder->BeginFrame(layer_tree->frame_size(), studio_->GetContext(),
+                              device_pixel_ratio, raster_thread_merger_);
+    embedder_root_canvas = view_embedder->GetRootCanvas();
   }
 
   frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
@@ -617,11 +628,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
-      studio_->GetContext(),          // skia GrContext
-      root_surface_canvas,            // root surface canvas
-      external_view_embedder_.get(),  // external view embedder
-      root_surface_transformation,    // root surface transformation
-      true,                           // instrumentation enabled
+      studio_->GetContext(),        // skia GrContext
+      root_surface_canvas,          // root surface canvas
+      view_embedder.get(),          // external view embedder
+      root_surface_transformation,  // root surface transformation
+      true,                         // instrumentation enabled
       frame->framebuffer_info()
           .supports_readback,                // surface supports pixel reads
       raster_thread_merger_,                 // thread merger
@@ -636,12 +647,12 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     // for accurate performance metrics.
     if (frame->framebuffer_info().supports_partial_repaint &&
         !layer_tree->is_leaf_layer_tracing_enabled()) {
-      // Disable partial repaint if external_view_embedder_ SubmitFrame is
+      // Disable partial repaint if view_embedder SubmitFrame is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
       // something that still need to be figured out.
       bool force_full_repaint =
-          external_view_embedder_ &&
+          view_embedder &&
           (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
       damage = std::make_unique<FrameDamage>();
@@ -687,11 +698,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
     frame->set_submit_info(submit_info);
 
-    if (external_view_embedder_ &&
+    if (view_embedder &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(
-          studio_->GetContext(), std::move(frame), surface_record->view_id);
+      view_embedder->SubmitFrame(studio_->GetContext(), std::move(frame));
     } else {
       frame->Submit();
     }

@@ -27,8 +27,9 @@ class FlutterCompositor {
   // The view_provider is used to query FlutterViews from view IDs,
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
-  explicit FlutterCompositor(id<FlutterViewProvider> view_provider,
-                             FlutterPlatformViewController* platform_views_controller);
+  FlutterCompositor(id<FlutterViewProvider> view_provider,
+                    int64_t view_id,
+                    FlutterPlatformViewController* platform_views_controller);
 
   ~FlutterCompositor() = default;
 
@@ -47,9 +48,9 @@ class FlutterCompositor {
   bool CreateBackingStore(const FlutterBackingStoreConfig* config,
                           FlutterBackingStore* backing_store_out);
 
-  // Presents the FlutterLayers by updating the FlutterView specified by
-  // `view_id` using the layer content. Sets frame_started_ to false.
-  bool Present(FlutterViewId view_id, const FlutterLayer** layers, size_t layers_count);
+  // Presents the FlutterLayers by updating the FlutterView. Sets frame_started_
+  // to false.
+  bool Present(const FlutterLayer** layers, size_t layers_count);
 
  private:
   void PresentPlatformViews(FlutterView* default_base_view,
@@ -63,8 +64,8 @@ class FlutterCompositor {
                                           const FlutterLayer* layer,
                                           size_t layer_position);
 
-  // Where the compositor can query FlutterViews. Must not be null.
   id<FlutterViewProvider> const view_provider_;
+  int64_t view_id_;
 
   // The controller used to manage creation and deletion of platform views.
   const FlutterPlatformViewController* platform_view_controller_;

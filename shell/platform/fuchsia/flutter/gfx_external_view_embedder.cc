@@ -231,8 +231,7 @@ void GfxExternalViewEmbedder::EndFrame(
 
 void GfxExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<flutter::SurfaceFrame> frame,
-    int64_t window_view_id) {
+    std::unique_ptr<flutter::SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "GfxExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;

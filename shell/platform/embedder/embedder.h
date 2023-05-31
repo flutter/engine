@@ -464,7 +464,6 @@ typedef struct {
   size_t struct_size;
   /// The size of the surface that will be backed by the fbo.
   FlutterUIntSize size;
-  int64_t view_id;
 } FlutterFrameInfo;
 
 /// Callback for when a frame buffer object is requested.
@@ -654,7 +653,6 @@ typedef struct {
   /// The callback invoked by the engine when it no longer needs this backing
   /// store.
   VoidCallback destruction_callback;
-  int64_t view_id;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
@@ -1560,7 +1558,6 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
-  int64_t view_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
@@ -1603,16 +1600,15 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
-                                             int64_t view_id,
                                              void* user_data);
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
   size_t struct_size;
-  /// A baton that in not interpreted by the engine in any way. If it passed
+  /// A baton that in not interpreted by the engine in any way. It is passed
   /// back to the embedder in `FlutterCompositor.create_backing_store_callback`,
   /// `FlutterCompositor.collect_backing_store_callback` and
-  /// `FlutterCompositor.present_layers_callback`
+  /// `FlutterCompositor.present_layers_callback`.
   void* user_data;
   /// A callback invoked by the engine to obtain a backing store for a specific
   /// `FlutterLayer`.
@@ -1625,12 +1621,16 @@ typedef struct {
   /// A callback invoked by the engine to release the backing store. The
   /// embedder may collect any resources associated with the backing store.
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
-  /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
 } FlutterCompositor;
+
+typedef struct {
+  int64_t view_id;
+  FlutterCompositor* compositor;
+} FlutterRenderSurfaceConfig;
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLocale).
@@ -2265,7 +2265,11 @@ FlutterEngineResult FlutterEngineRunInitialized(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineAddRenderSurface(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    void* user_data,
+    FlutterRenderSurfaceConfig* config);
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRemoveRenderSurface(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t view_id);
 
 FLUTTER_EXPORT
@@ -2845,7 +2849,9 @@ typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineAddRenderSurfaceFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    void* user_data,
+    FlutterRenderSurfaceConfig* config);
+typedef FlutterEngineResult (*FlutterEngineRemoveRenderSurfaceFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t view_id);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,

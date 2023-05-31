@@ -485,7 +485,6 @@ InferMetalPlatformViewCreationCallback(
     frame_info.struct_size = sizeof(FlutterFrameInfo);
     frame_info.size = {static_cast<uint32_t>(frame_size.width()),
                        static_cast<uint32_t>(frame_size.height())};
-    frame_info.view_id = view_id;
     flutter::GPUMTLTextureInfo texture_info;
 
     FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
@@ -1070,12 +1069,12 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor) {
           };
 
   flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback, user_data = compositor->user_data](
-          const auto& layers, int64_t window_view_id) {
+      [c_present_callback,
+       user_data = compositor->user_data](const auto& layers) {
         TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
         return c_present_callback(
             const_cast<const FlutterLayer**>(layers.data()), layers.size(),
-            window_view_id, user_data);
+            user_data);
       };
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(
@@ -2052,14 +2051,20 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineAddRenderSurface(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    void* user_data,
-    int64_t view_id) {
+    FlutterRenderSurfaceConfig* config) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
+  auto external_view_embedder_result =
+      InferExternalViewEmbedderFromArgs(config->compositor);
+  if (external_view_embedder_result.second) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Compositor arguments were invalid.");
+  }
   flutter::EmbedderEngine* embedder_engine =
       reinterpret_cast<flutter::EmbedderEngine*>(engine);
-  embedder_engine->GetShell().AddRenderSurface(view_id);
+  embedder_engine->GetShell().AddRenderSurface(
+      config->view_id, std::move(external_view_embedder_result.first));
 
   return kSuccess;
 }

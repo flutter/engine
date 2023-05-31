@@ -53,8 +53,6 @@ using ::testing::VariantWith;
 namespace flutter_runner::testing {
 namespace {
 
-constexpr int64_t kDefaultViewId = 0ll;
-
 constexpr static fuchsia::ui::composition::BlendMode kFirstLayerBlendMode{
     fuchsia::ui::composition::BlendMode::SRC};
 constexpr static fuchsia::ui::composition::BlendMode kUpperLayerBlendMode{
@@ -337,13 +335,11 @@ void DrawSimpleFrame(FlatlandExternalViewEmbedder& external_view_embedder,
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   external_view_embedder.SubmitFrame(
-      nullptr,
-      std::make_unique<flutter::SurfaceFrame>(
-          nullptr, std::move(framebuffer_info),
-          [](const flutter::SurfaceFrame& surface_frame,
-             flutter::DlCanvas* canvas) { return true; },
-          frame_size),
-      kDefaultViewId);
+      nullptr, std::make_unique<flutter::SurfaceFrame>(
+                   nullptr, std::move(framebuffer_info),
+                   [](const flutter::SurfaceFrame& surface_frame,
+                      flutter::DlCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 void DrawFrameWithView(
@@ -369,13 +365,11 @@ void DrawFrameWithView(
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   external_view_embedder.SubmitFrame(
-      nullptr,
-      std::make_unique<flutter::SurfaceFrame>(
-          nullptr, std::move(framebuffer_info),
-          [](const flutter::SurfaceFrame& surface_frame,
-             flutter::DlCanvas* canvas) { return true; },
-          frame_size),
-      kDefaultViewId);
+      nullptr, std::make_unique<flutter::SurfaceFrame>(
+                   nullptr, std::move(framebuffer_info),
+                   [](const flutter::SurfaceFrame& surface_frame,
+                      flutter::DlCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 };  // namespace

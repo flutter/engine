@@ -2001,17 +2001,16 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddRenderSurface(int64_t view_id) {
+void Shell::AddRenderSurface(
+    int64_t view_id,
+    std::unique_ptr<ExternalViewEmbedder> external_view_embedder) {
   TRACE_EVENT0("flutter", "Shell::AddRenderSurface");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(view_id != kFlutterDefaultViewId);
   if (!engine_) {
     return;
   }
-  if (view_id == kFlutterDefaultViewId) {
-    return;
-  }
-
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              view_id                          //
   ] { engine->AddView(view_id); });

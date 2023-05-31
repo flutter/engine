@@ -2272,8 +2272,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return false; },
       /*frame_size=*/SkISize::Make(800, 600));
-  XCTAssertFalse(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                             std::move(mock_surface)));
+  XCTAssertFalse(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
   auto embeddedViewParams_2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
@@ -2283,7 +2283,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
+  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
                                                             std::move(mock_surface_submit_true)));
 }
 
@@ -2457,8 +2457,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                            std::move(mock_surface)));
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
   UIView* clippingView2 = view2.superview.superview;
@@ -2484,8 +2484,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                            std::move(mock_surface)));
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
                     [flutterView.subviews indexOfObject:clippingView2],
                 @"The first clipping view should be added after the second clipping view.");
@@ -2555,8 +2555,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                            std::move(mock_surface)));
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
   UIView* clippingView2 = view2.superview.superview;
@@ -2582,8 +2582,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                            std::move(mock_surface)));
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
                     [flutterView.subviews indexOfObject:clippingView2],
                 @"The first clipping view should be added before the second clipping view.");
@@ -2921,8 +2921,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
-    XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                              std::move(mock_surface)));
+    XCTAssertTrue(
+        flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
@@ -2948,8 +2948,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
-    XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                                              std::move(mock_surface)));
+    XCTAssertTrue(
+        flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
@@ -3015,8 +3015,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
-  flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, kDefaultViewId,
-                                              std::move(mock_surface));
+  flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
 
   UIView* someView = [[[UIView alloc] init] autorelease];
   [mockFlutterView addSubview:someView];
