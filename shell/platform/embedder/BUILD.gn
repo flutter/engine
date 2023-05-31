@@ -110,8 +110,6 @@ template("embedder_source_set") {
       "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/fml",
-      "//flutter/impeller/aiks",
-      "//flutter/impeller/renderer",
       "//flutter/lib/ui",
       "//flutter/runtime:libdart",
       "//flutter/shell/common",
@@ -133,8 +131,6 @@ template("embedder_source_set") {
 
       cflags_objc = flutter_cflags_objc
       cflags_objcc = flutter_cflags_objcc
-
-      public_deps += [ "//flutter/impeller/renderer/backend/metal" ]
 
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
