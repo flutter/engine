@@ -77,6 +77,30 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 #pragma mark -
 
+@interface FlutterEngineViewRecord : NSObject
+
+- (instancetype)initWithViewController:(nonnull FlutterViewController*)controller;
+
+@property(nonatomic, weak) FlutterViewController* controller;
+
+@end
+
+@implementation FlutterEngineViewRecord {
+  __weak FlutterViewController* _controller;
+}
+
+@synthesize controller = _controller;
+
+- (instancetype)initWithViewController:(FlutterViewController*)controller {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _controller = controller;
+  return self;
+}
+@end
+
+#pragma mark -
+
 /**
  * Private interface declaration for FlutterEngine.
  */
@@ -366,9 +390,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
   // The information of all views attached to this engine mapped from IDs.
-  //
-  // It can't use NSDictionary, because the values need to be weak references.
-  NSMapTable* _viewControllers;
+  NSMutableDictionary<NSNumber*, FlutterEngineViewRecord*>* _viewRecords;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
@@ -429,7 +451,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  _viewControllers = [NSMapTable weakToWeakObjectsMapTable];
+  _viewRecords = [NSMutableDictionary dictionary];
   _renderer = [[FlutterRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
@@ -471,7 +493,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  if (!_allowHeadlessExecution && [_viewControllers count] == 0) {
+  if (!_allowHeadlessExecution && [_viewRecords count] == 0) {
     NSLog(@"Attempted to run an engine with no view controller without headless mode enabled.");
     return NO;
   }
@@ -566,10 +588,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self sendUserLocales];
 
   // Update window metric for all view controllers.
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [self updateWindowMetricsForViewController:nextViewController];
+  for (id viewId in _viewRecords) {
+    [self updateWindowMetricsForViewController:_viewRecords[viewId].controller];
   }
 
   [self updateDisplayConfig];
@@ -609,41 +629,40 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(controller != nil, @"The controller must not be nil.");
   NSAssert(![controller attached],
            @"The incoming view controller is already attached to an engine.");
-  NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
+  NSAssert(_viewRecords[@(viewId)] == nil, @"The requested view ID is occupied.");
   [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
-  [_viewControllers setObject:controller forKey:@(viewId)];
+  _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller];
 }
 
 - (void)deregisterViewControllerForId:(FlutterViewId)viewId {
-  FlutterViewController* oldController = [self viewControllerForId:viewId];
-  if (oldController != nil) {
-    [oldController detachFromEngine];
-    [_viewControllers removeObjectForKey:@(viewId)];
+  FlutterEngineViewRecord* oldRecord = _viewRecords[@(viewId)];
+  if (oldRecord.controller != nil) {
+    [oldRecord.controller detachFromEngine];
   }
+  [_viewRecords removeObjectForKey:@(viewId)];
 }
 
 - (void)shutDownIfNeeded {
-  if ([_viewControllers count] == 0 && !_allowHeadlessExecution) {
+  if ([_viewRecords count] == 0 && !_allowHeadlessExecution) {
     [self shutDownEngine];
   }
 }
 
 - (FlutterViewController*)viewControllerForId:(FlutterViewId)viewId {
-  FlutterViewController* controller = [_viewControllers objectForKey:@(viewId)];
-  NSAssert(controller == nil || controller.viewId == viewId,
+  FlutterEngineViewRecord* viewRecord = _viewRecords[@(viewId)];
+  NSAssert(viewRecord == nil || viewRecord.controller.viewId == viewId,
            @"The stored controller has unexpected view ID.");
-  return controller;
+  return viewRecord.controller;
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
-  FlutterViewController* currentController =
-      [_viewControllers objectForKey:@(kFlutterDefaultViewId)];
-  if (currentController == controller) {
+  FlutterEngineViewRecord* currentViewRecord = _viewRecords[@(kFlutterDefaultViewId)];
+  if (currentViewRecord.controller == controller) {
     // From nil to nil, or from non-nil to the same controller.
     return;
   }
-  if (currentController == nil && controller != nil) {
+  if (currentViewRecord == nil && controller != nil) {
     // From nil to non-nil.
     NSAssert(controller.engine == nil,
              @"Failed to set view controller to the engine: "
@@ -652,9 +671,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              @"you should use FlutterViewController#init(engine:, nibName, bundle:) instead.",
              controller.engine);
     [self registerViewController:controller forId:kFlutterDefaultViewId];
-  } else if (currentController != nil && controller == nil) {
-    NSAssert(currentController.viewId == kFlutterDefaultViewId,
-             @"The default controller has an unexpected ID %llu", currentController.viewId);
+  } else if (currentViewRecord != nil && controller == nil) {
+    NSAssert(currentViewRecord.controller.viewId == kFlutterDefaultViewId,
+             @"The default controller has an unexpected ID %llu",
+             currentViewRecord.controller.viewId);
     // From non-nil to nil.
     [self deregisterViewControllerForId:kFlutterDefaultViewId];
     [self shutDownIfNeeded];
@@ -665,7 +685,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              @"The engine already has a default view controller %@. "
              @"If you wanted to make the default view render in a different window, "
              @"you should attach the current view controller to the window instead.",
-             [_viewControllers objectForKey:@(kFlutterDefaultViewId)]);
+             currentViewRecord.controller);
   }
 }
 
@@ -842,10 +862,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _semanticsEnabled = enabled;
 
   // Update all view controllers' bridges.
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController notifySemanticsEnabledChanged];
+  for (id viewId in _viewRecords) {
+    [_viewRecords[viewId].controller notifySemanticsEnabledChanged];
   }
 
   _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
@@ -926,10 +944,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)engineCallbackOnPreEngineRestart {
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController onPreEngineRestart];
+  for (id viewId in _viewRecords) {
+    [_viewRecords[viewId].controller onPreEngineRestart];
   }
 }
 
@@ -1026,19 +1042,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)windowDidChangeScreen:(NSNotification*)notification {
   // Update window metric for all view controllers since the display_id has
   // changed.
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [self updateWindowMetricsForViewController:nextViewController];
+  for (id viewId in _viewRecords) {
+    [self updateWindowMetricsForViewController:_viewRecords[viewId].controller];
   }
 }
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
   BOOL enabled = [notification.userInfo[kEnhancedUserInterfaceKey] boolValue];
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController onAccessibilityStatusChanged:enabled];
+  for (id viewId in _viewRecords) {
+    [_viewRecords[viewId].controller onAccessibilityStatusChanged:enabled];
   }
 
   self.semanticsEnabled = enabled;
