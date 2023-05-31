@@ -68,7 +68,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #endif
 
-#ifdef SHELL_ENABLE_METAL
+#if defined(SHELL_ENABLE_METAL) && defined(IMPELLER_SUPPORTS_RENDERING)
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
 #include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
@@ -921,7 +921,7 @@ MakeImpellerSurfaceFromBackingStore(
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
-#ifdef SHELL_ENABLE_METAL
+#if defined(SHELL_ENABLE_METAL) && defined(IMPELLER_SUPPORTS_RENDERING)
   if (!metal->texture.texture) {
     FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
     return std::nullopt;

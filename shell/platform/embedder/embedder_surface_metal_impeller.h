@@ -12,7 +12,10 @@
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "fml/concurrent_message_loop.h"
-#include "impeller/renderer/context.h"
+
+namespace impeller {
+class Context;
+}
 
 namespace flutter {
 

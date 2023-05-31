@@ -119,15 +119,24 @@ template("embedder_source_set") {
       "//third_party/skia",
     ]
 
+    if (impeller_supports_rendering) {
+      deps += [ "//flutter/impeller" ]
+    }
+
     if (embedder_enable_metal) {
       sources += [
         "embedder_external_texture_metal.h",
         "embedder_external_texture_metal.mm",
         "embedder_surface_metal.h",
         "embedder_surface_metal.mm",
-        "embedder_surface_metal_impeller.h",
-        "embedder_surface_metal_impeller.mm",
       ]
+
+      if (impeller_supports_rendering) {
+        sources += [
+          "embedder_surface_metal_impeller.h",
+          "embedder_surface_metal_impeller.mm",
+        ]
+      }
 
       cflags_objc = flutter_cflags_objc
       cflags_objcc = flutter_cflags_objcc
