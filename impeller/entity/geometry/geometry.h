@@ -53,8 +53,14 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
 
 /// @brief Given a polyline created from a potential X or Y monotone filled
 /// path, perform a tessellation, or return std::nullopt.
-std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
-                                                 bool xaxis);
+std::optional<std::pair<size_t, size_t>> VerifyMonotone(
+    const Path::Polyline& polyline,
+    bool xaxis);
+
+/// @brief Given a polyline created from a potential X or Y monotone filled
+/// path, perform a tessellation, or return std::nullopt.
+std::optional<std::vector<Point>> ComputeMonotone(
+    const Path::Polyline& polyline);
 
 class Geometry {
  public:

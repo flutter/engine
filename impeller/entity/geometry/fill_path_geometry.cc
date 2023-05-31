@@ -40,19 +40,12 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
   auto polyline =
       path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-  auto verify_x = VerifyMonotone(polyline, true);
-  auto verify_y = VerifyMonotone(polyline, false);
-  if (verify_x.has_value() || verify_y.has_value()) {
-    std::vector<Point> points;
-    if (verify_x.has_value()) {
-      points = verify_x.value();
-    } else {
-      points = verify_y.value();
-    }
-
+  auto monotone_points = ComputeMonotone(polyline);
+  if (monotone_points.has_value()) {
     vertex_buffer.vertex_buffer = host_buffer.Emplace(
-        points.data(), points.size() * sizeof(Point), alignof(Point));
-    vertex_buffer.vertex_count = points.size();
+        monotone_points->data(), monotone_points->size() * sizeof(Point),
+        alignof(Point));
+    vertex_buffer.vertex_count = monotone_points->size();
     vertex_buffer.index_type = IndexType::kNone;
 
     return GeometryResult{

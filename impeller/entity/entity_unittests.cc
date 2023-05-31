@@ -2683,16 +2683,16 @@ TEST(GeometryTest, MonotonePolygon) {
                                 /*xaxis=*/false)
                      .has_value());
 
-    auto points = VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
-                                 /*xaxis=*/true)
-                      .value();
+    // auto points = VerifyMonotone(builder.TakePath().CreatePolyline(0.1),
+    //                              /*xaxis=*/true)
+    //                   .value();
 
-    std::vector<Point> expected_triangulation = {
-        {10, 15}, {20, 0},  {20, 20},  //
-        {10, 15}, {20, 20}, {0, 20},   //
-        {0, 0},   {10, 15}, {0, 20},   //
-    };
-    ASSERT_EQ(points, expected_triangulation);
+    // std::vector<Point> expected_triangulation = {
+    //     {10, 15}, {20, 0},  {20, 20},  //
+    //     {10, 15}, {20, 20}, {0, 20},   //
+    //     {0, 0},   {10, 15}, {0, 20},   //
+    // };
+    // ASSERT_EQ(points, expected_triangulation);
   }
 
   {

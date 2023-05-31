@@ -81,15 +81,62 @@ static bool IsConvex(const Point& a,
   return (ba.Cross(bc) * scale) > 0;
 }
 
-std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
-                                                 bool xaxis) {
+std::optional<std::vector<Point>> ComputeMonotone(
+    const Path::Polyline& polyline) {
   if (polyline.contours.size() > 1) {
     return std::nullopt;
   }
+  auto start_and_end = VerifyMonotone(polyline, /*xaxis=*/true);
+  if (!start_and_end.has_value()) {
+    start_and_end = VerifyMonotone(polyline, /*xaxis=*/false);
+  }
+  if (!start_and_end.has_value()) {
+    return std::nullopt;
+  }
 
+  auto [min_x_index, max_x_index] = start_and_end.value();
   auto [start, end] = polyline.GetContourPointBounds(0);
+  size_t vertex_count = end;
 
-  FML_DCHECK(start == 0u);  // Assumes single countour.
+  // At this point, we've verifed that the polygon is X or Y monotone.
+  // This allows for a simple triangulation where we walk one of the chains
+  // and greedly add triangles. This is done via a simplified ear clip.
+  //
+  // We traverse each monotone chain, and add triangles from a working set
+  // as long as the angle is convex. The working set begins with the first
+  // two vertices.
+
+  std::vector<Point> result_set;
+  std::vector<Point> candidate_set;
+  auto next_index_from_min = (min_x_index + 1) % vertex_count;
+  candidate_set.push_back(polyline.points[min_x_index]);
+  candidate_set.push_back(polyline.points[next_index_from_min]);
+  auto i = (min_x_index + 2) % vertex_count;
+
+  while (i != min_x_index) {
+    auto current = polyline.points[i];
+    if (IsConvex(candidate_set[candidate_set.size() - 2],
+                 candidate_set[candidate_set.size() - 1], current, -1.0)) {
+      result_set.push_back(candidate_set[candidate_set.size() - 2]);
+      result_set.push_back(candidate_set[candidate_set.size() - 1]);
+      result_set.push_back(current);
+      candidate_set.pop_back();
+      if (candidate_set.size() < 1) {
+        i = (i + 1) % vertex_count;
+      }
+    } else {
+      candidate_set.push_back(current);
+      i = (i + 1) % vertex_count;
+    }
+  }
+
+  return result_set;
+}
+
+std::optional<std::pair<size_t, size_t>> VerifyMonotone(
+    const Path::Polyline& polyline,
+    bool xaxis) {
+  auto [start, end] = polyline.GetContourPointBounds(0);
   size_t vertex_count = end;
 
   // To determine if this is horizontally monotone, first find the largest
@@ -151,40 +198,7 @@ std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
     }
     prev_x = x;
   }
-
-  // At this point, we've verifed that the polygon is X or Y monotone.
-  // This allows for a simple triangulation where we walk one of the chains
-  // and greedly add triangles. This is done via a simplified ear clip.
-  //
-  // We traverse each monotone chain, and add triangles from a working set
-  // as long as the angle is convex. The working set begins with the first
-  // two vertices.
-
-  std::vector<Point> result_set;
-  std::vector<Point> candidate_set;
-  auto next_index_from_min = (min_x_index + 1) % vertex_count;
-  candidate_set.push_back(polyline.points[min_x_index]);
-  candidate_set.push_back(polyline.points[next_index_from_min]);
-  auto i = (min_x_index + 2) % vertex_count;
-
-  while (i != min_x_index) {
-    auto current = polyline.points[i];
-    if (IsConvex(candidate_set[candidate_set.size() - 2],
-                 candidate_set[candidate_set.size() - 1], current, -1.0)) {
-      result_set.push_back(candidate_set[candidate_set.size() - 2]);
-      result_set.push_back(candidate_set[candidate_set.size() - 1]);
-      result_set.push_back(current);
-      candidate_set.pop_back();
-      if (candidate_set.size() < 1) {
-        i = (i + 1) % vertex_count;
-      }
-    } else {
-      candidate_set.push_back(current);
-      i = (i + 1) % vertex_count;
-    }
-  }
-
-  return result_set;
+  return std::make_pair(min_x_index, max_x_index);
 }
 
 VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
