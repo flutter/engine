@@ -338,6 +338,7 @@ ImageDecoderImpeller::UploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<SkBitmap> bitmap,
     const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -365,6 +366,7 @@ ImageDecoderImpeller::UploadTextureToPrivate(
 std::pair<sk_sp<DlImage>, std::string>
 ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<SkBitmap> bitmap,
     const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
     bool create_mips) {
