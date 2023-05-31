@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 
-#include <QuartzCore/CAMetalLayer.h>
+#include <Metal/Metal.h>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
@@ -17,7 +17,7 @@
 
 namespace flutter {
 
-class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
+class GPUSurfaceMetalImpeller : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
                           const std::shared_ptr<impeller::Context>& context,
