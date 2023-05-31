@@ -690,9 +690,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterCompositor compositor =
       isImplicitView ? _implicitCompositor : createFlutterCompositorFor(macOSCompositor.get());
   NSAssert(macOSCompositor, @"No macOSCompositor");
-  ;
   NSAssert(compositor.create_backing_store_callback, @"Invalid compositor");
-  ;
   _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller
                                                                     macOSCompositor:macOSCompositor
                                                                          compositor:compositor];
