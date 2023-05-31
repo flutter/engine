@@ -23,6 +23,7 @@ static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr int kHandledScanCode = 20;
 static constexpr int kUnhandledScanCode = 21;
 static constexpr char kTextPlainFormat[] = "text/plain";
+static constexpr int kDefaultClientId = 42;
 // Should be identical to constants in text_input_plugin.cc.
 static constexpr char kChannelName[] = "flutter/textinput";
 static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
@@ -49,7 +50,7 @@ static std::unique_ptr<rapidjson::Document> EncodedClientConfig(
     std::string input_action) {
   auto arguments = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = arguments->GetAllocator();
-  arguments->PushBack(42, allocator);
+  arguments->PushBack(kDefaultClientId, allocator);
 
   rapidjson::Value config(rapidjson::kObjectType);
   config.AddMember("inputAction", input_action, allocator);
@@ -71,7 +72,7 @@ static std::unique_ptr<rapidjson::Document> EncodedEditingState(
 
   auto arguments = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = arguments->GetAllocator();
-  arguments->PushBack(42, allocator);
+  arguments->PushBack(kDefaultClientId, allocator);
 
   rapidjson::Value editing_state(rapidjson::kObjectType);
   editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
@@ -167,7 +168,7 @@ TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
   // Call TextInput.setClient to initialize the TextInputModel.
   auto arguments = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = arguments->GetAllocator();
-  arguments->PushBack(42, allocator);
+  arguments->PushBack(kDefaultClientId, allocator);
   rapidjson::Value config(rapidjson::kObjectType);
   config.AddMember("inputAction", "done", allocator);
   config.AddMember("inputType", "text", allocator);
@@ -251,7 +252,7 @@ TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
   // TextInputClient.performAction should have been called.
   auto arguments = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = arguments->GetAllocator();
-  arguments->PushBack(42, allocator);
+  arguments->PushBack(kDefaultClientId, allocator);
   arguments->PushBack(
       rapidjson::Value("TextInputAction.newline", allocator).Move(), allocator);
   auto invoke_action_message = codec.EncodeMethodCall(
@@ -298,7 +299,7 @@ TEST(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
   // TextInputClient.performAction should have been called.
   auto arguments = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = arguments->GetAllocator();
-  arguments->PushBack(42, allocator);
+  arguments->PushBack(kDefaultClientId, allocator);
   arguments->PushBack(
       rapidjson::Value("TextInputAction.send", allocator).Move(), allocator);
   auto invoke_action_message = codec.EncodeMethodCall(
