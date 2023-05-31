@@ -41,7 +41,7 @@ DlPaint GetPaintForRun(unsigned attributes) {
   return paint;
 }
 
-static void FlushSubmitCpuSync(sk_sp<SkSurface> surface) {
+static void FlushSubmitCpuSync(const sk_sp<SkSurface>& surface) {
   if (!surface) {
     return;
   }
