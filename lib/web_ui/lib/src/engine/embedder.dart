@@ -252,6 +252,11 @@ class FlutterViewEmbedder {
     window.onResize.listen(_metricsDidChange);
   }
 
+  /// For tests only.
+  void debugOverrideAccessibilityAnnouncements(AccessibilityAnnouncements override) {
+    _accessibilityAnnouncements = override;
+  }
+
   /// The framework specifies semantics in physical pixels, but CSS uses
   /// logical pixels. To compensate, an inverse scale is injected at the root
   /// level.

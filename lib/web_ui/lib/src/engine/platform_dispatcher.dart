@@ -14,7 +14,6 @@ import 'package:ui/ui.dart' as ui;
 import '../engine.dart'  show flutterViewEmbedder, platformViewManager, registerHotRestartListener;
 import 'clipboard.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'mouse_cursor.dart';
 import 'platform_views/message_handler.dart';
 import 'plugins.dart';
