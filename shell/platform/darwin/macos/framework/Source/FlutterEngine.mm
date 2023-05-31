@@ -513,6 +513,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       reinterpret_cast<FlutterAppDelegate*>([[NSApplication sharedApplication] delegate]);
   [appDelegate addApplicationLifecycleDelegate:self];
 
+  _implicitMacOSCompositor = std::make_shared<flutter::FlutterCompositor>(
+      [[FlutterViewEngineProvider alloc] initWithEngine:self], kFlutterDefaultViewId,
+      _platformViewController);
+  _implicitCompositor = createFlutterCompositorFor(_implicitMacOSCompositor.get());
+
   return self;
 }
 
@@ -608,10 +613,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     flutterArguments.aot_data = _aotData;
   }
 
-  _implicitMacOSCompositor = std::make_shared<flutter::FlutterCompositor>(
-      [[FlutterViewEngineProvider alloc] initWithEngine:self], kFlutterDefaultViewId,
-      _platformViewController);
-  _implicitCompositor = createFlutterCompositorFor(_implicitMacOSCompositor.get());
   flutterArguments.compositor = &_implicitCompositor;
 
   flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
@@ -686,8 +687,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                              : std::make_shared<flutter::FlutterCompositor>(
                                    [[FlutterViewEngineProvider alloc] initWithEngine:self], viewId,
                                    _platformViewController);
-  auto compositor =
+  FlutterCompositor compositor =
       isImplicitView ? _implicitCompositor : createFlutterCompositorFor(macOSCompositor.get());
+  NSAssert(macOSCompositor, @"No macOSCompositor");
+  ;
+  NSAssert(compositor.create_backing_store_callback, @"Invalid compositor");
+  ;
   _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller
                                                                     macOSCompositor:macOSCompositor
                                                                          compositor:compositor];

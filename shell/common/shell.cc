@@ -2007,7 +2007,9 @@ void Shell::AddRenderSurface(
   TRACE_EVENT0("flutter", "Shell::AddRenderSurface");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  FML_DCHECK(view_id != kFlutterDefaultViewId);
+  if (view_id == kFlutterDefaultViewId) {
+    return;
+  }
   if (!engine_) {
     return;
   }
@@ -2017,13 +2019,15 @@ void Shell::AddRenderSurface(
 
   // TODO(dkwingsmt): platform_view_ is captured illegally here.
   // We need some mechanism from it being collected.
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      fml::MakeCopyable([platform_view = platform_view_.get(),    //
-                         rasterizer = rasterizer_->GetWeakPtr(),  //
-                         view_id                                  //
+  task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
+      [platform_view = platform_view_.get(),                  //
+       rasterizer = rasterizer_->GetWeakPtr(),                //
+       view_embedder_ptr = external_view_embedder.release(),  //
+       view_id                                                //
   ]() mutable {
         if (platform_view && rasterizer) {
-          auto view_embedder = platform_view->CreateExternalViewEmbedder();
+          std::shared_ptr<ExternalViewEmbedder> view_embedder(
+              view_embedder_ptr);
           std::unique_ptr<Surface> surface =
               platform_view->CreateSurface(view_id);
           if (surface) {
