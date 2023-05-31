@@ -41,6 +41,7 @@ executable("flutter_shell_native_unittests") {
   sources = [
     "android_context_gl_impeller_unittests.cc",
     "android_context_gl_unittests.cc",
+    "android_context_vulkan_impeller_unittests.cc",
     "android_shell_holder_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
@@ -249,6 +250,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
   "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
   "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
+  "io/flutter/embedding/engine/systemchannels/KeyboardChannel.java",
   "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
   "io/flutter/embedding/engine/systemchannels/LocalizationChannel.java",
   "io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java",
@@ -285,6 +287,7 @@ android_java_sources = [
   "io/flutter/plugin/editing/SpellCheckPlugin.java",
   "io/flutter/plugin/editing/TextEditingDelta.java",
   "io/flutter/plugin/editing/TextInputPlugin.java",
+  "io/flutter/plugin/keyboard/KeyboardPlugin.java",
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
   "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",

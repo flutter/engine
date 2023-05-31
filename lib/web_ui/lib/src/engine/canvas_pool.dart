@@ -963,10 +963,12 @@ class ContextStateHandle {
   ///
   /// [tearDownPaint] must be called after calling this method.
   void setUpPaint(SurfacePaintData paint, ui.Rect? shaderBounds) {
-    if (assertionsEnabled) {
-      assert(!_debugIsPaintSetUp);
+    assert(() {
+      final bool wasPaintSetUp = _debugIsPaintSetUp;
       _debugIsPaintSetUp = true;
-    }
+      // When setting up paint, the previous paint must be torn down.
+      return !wasPaintSetUp;
+    }());
 
     _lastUsedPaint = paint;
     lineWidth = paint.strokeWidth ?? 1.0;
@@ -1059,10 +1061,12 @@ class ContextStateHandle {
   ///
   /// Must be called after calling [setUpPaint].
   void tearDownPaint() {
-    if (assertionsEnabled) {
-      assert(_debugIsPaintSetUp);
+    assert(() {
+      final bool wasPaintSetUp = _debugIsPaintSetUp;
       _debugIsPaintSetUp = false;
-    }
+      // When tearing down paint, we expect that it was set up before.
+      return wasPaintSetUp;
+    }());
 
     final ui.MaskFilter? maskFilter = _lastUsedPaint?.maskFilter;
     if (maskFilter != null && _renderMaskFilterForWebkit) {
@@ -1128,9 +1132,6 @@ class ContextStateHandle {
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 class _SaveStackTracking {
-  // !Warning: this vector should not be mutated.
-  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
-
   final List<SaveStackEntry> _saveStack = <SaveStackEntry>[];
 
   /// The stack that maintains clipping operations used when text is painted
@@ -1189,7 +1190,7 @@ class _SaveStackTracking {
   /// Rotates the [currentTransform] matrix.
   @mustCallSuper
   void rotate(double radians) {
-    _currentTransform.rotate(_unitZ, radians);
+    _currentTransform.rotate(kUnitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.

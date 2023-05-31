@@ -13,16 +13,21 @@ final class RawCanvas extends Opaque {}
 
 typedef CanvasHandle = Pointer<RawCanvas>;
 
-@Native<Void Function(CanvasHandle)>(symbol: 'canvas_destroy', isLeaf: true)
-external void canvasDestroy(CanvasHandle canvas);
-
 @Native<Void Function(CanvasHandle)>(symbol: 'canvas_save', isLeaf: true)
 external void canvasSave(CanvasHandle canvas);
 
-@Native<Void Function(CanvasHandle, RawRect, PaintHandle)>(
-    symbol: 'canvas_saveLayer', isLeaf: true)
+@Native<Void Function(
+  CanvasHandle,
+  RawRect,
+  PaintHandle,
+  ImageFilterHandle,
+)>(symbol: 'canvas_saveLayer', isLeaf: true)
 external void canvasSaveLayer(
-    CanvasHandle canvas, RawRect rect, PaintHandle paint);
+  CanvasHandle canvas,
+  RawRect rect,
+  PaintHandle paint,
+  ImageFilterHandle handle,
+);
 
 @Native<Void Function(CanvasHandle)>(symbol: 'canvas_restore', isLeaf: true)
 external void canvasRestore(CanvasHandle canvas);
@@ -199,6 +204,57 @@ external void canvasDrawParagraph(
   ParagraphHandle paragraphHandle,
   double x,
   double y,
+);
+
+@Native<Void Function(
+  CanvasHandle,
+  VerticesHandle,
+  Int,
+  PaintHandle,
+)>(symbol: 'canvas_drawVertices', isLeaf: true)
+external void canvasDrawVertices(
+  CanvasHandle handle,
+  VerticesHandle vertices,
+  int blendMode,
+  PaintHandle paint,
+);
+
+@Native<Void Function(
+  CanvasHandle,
+  Int,
+  RawPointArray,
+  Int,
+  PaintHandle,
+)>(symbol: 'canvas_drawPoints', isLeaf: true)
+external void canvasDrawPoints(
+  CanvasHandle handle,
+  int pointMode,
+  RawPointArray points,
+  int pointCount,
+  PaintHandle paint,
+);
+
+@Native<Void Function(
+  CanvasHandle,
+  ImageHandle,
+  RawRSTransformArray,
+  RawRect,
+  RawColorArray,
+  Int,
+  Int,
+  RawRect,
+  PaintHandle,
+)>(symbol: 'canvas_drawAtlas', isLeaf: true)
+external void canvasDrawAtlas(
+  CanvasHandle handle,
+  ImageHandle atlas,
+  RawRSTransformArray transforms,
+  RawRect rects,
+  RawColorArray colors,
+  int spriteCount,
+  int blendMode,
+  RawRect cullRect,
+  PaintHandle paint,
 );
 
 @Native<Void Function(CanvasHandle, RawMatrix44)>(

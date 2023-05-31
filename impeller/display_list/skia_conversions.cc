@@ -4,6 +4,9 @@
 
 #include "impeller/display_list/skia_conversions.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 namespace skia_conversions {
 
@@ -22,6 +25,14 @@ std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
     result.push_back(ToRect(&tex[i]).value());
+  }
+  return result;
+}
+
+std::vector<Point> ToPoints(const SkPoint points[], int count) {
+  std::vector<Point> result(count);
+  for (auto i = 0; i < count; i++) {
+    result[i] = ToPoint(points[i]);
   }
   return result;
 }
@@ -169,3 +180,5 @@ std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 
 }  // namespace skia_conversions
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

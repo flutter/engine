@@ -224,6 +224,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
       const auto& external_view = pending_views_.at(view_id);
       if (external_view->HasPlatformView()) {
         presented_layers.PushPlatformViewLayer(
+            // Covered by HasPlatformView().
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
             external_view->GetViewIdentifier()
                 .platform_view_id.value(),           // view id
             *external_view->GetEmbeddedViewParams()  // view params

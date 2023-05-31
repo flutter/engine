@@ -9,7 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmCanvas implements ui.Canvas {
+class SkwasmCanvas implements SceneCanvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
       SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
           pictureRecorderBeginRecording(
@@ -18,9 +18,9 @@ class SkwasmCanvas implements ui.Canvas {
   SkwasmCanvas.fromHandle(this._handle);
   CanvasHandle _handle;
 
-  void delete() {
-    canvasDestroy(_handle);
-  }
+  // Note that we do not need to deal with the finalizer registry here, because
+  // the underlying native skia object is tied directly to the lifetime of the
+  // associated SkPictureRecorder.
 
   @override
   void save() {
@@ -32,10 +32,23 @@ class SkwasmCanvas implements ui.Canvas {
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle);
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
       });
     } else {
-      canvasSaveLayer(_handle, nullptr, paint.handle);
+      canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
+    }
+  }
+
+  @override
+  void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
+    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
+    paint as SkwasmPaint;
+    if (bounds != null) {
+      withStackScope((StackScope s) {
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nativeFilter.handle);
+      });
+    } else {
+      canvasSaveLayer(_handle, nullptr, paint.handle, nativeFilter.handle);
     }
   }
 
@@ -246,21 +259,47 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void drawPoints(
-      ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.PointMode pointMode,
+    List<ui.Offset> points,
+    ui.Paint paint
+  ) => withStackScope((StackScope scope) {
+    final RawPointArray rawPoints = scope.convertPointArrayToNative(points);
+    canvasDrawPoints(
+      _handle,
+      pointMode.index,
+      rawPoints,
+      points.length,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawRawPoints(
-      ui.PointMode pointMode, Float32List points, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.PointMode pointMode,
+    Float32List points,
+    ui.Paint paint
+  ) => withStackScope((StackScope scope) {
+    final RawPointArray rawPoints = scope.convertDoublesToNative(points);
+    canvasDrawPoints(
+      _handle,
+      pointMode.index,
+      rawPoints,
+      points.length ~/ 2,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
-    throw UnimplementedError();
-  }
+    ui.Vertices vertices,
+    ui.BlendMode blendMode,
+    ui.Paint paint,
+  ) => canvasDrawVertices(
+    _handle,
+    (vertices as SkwasmVertices).handle,
+    blendMode.index,
+    (paint as SkwasmPaint).handle,
+  );
 
   @override
   void drawAtlas(
@@ -271,9 +310,27 @@ class SkwasmCanvas implements ui.Canvas {
     ui.BlendMode? blendMode,
     ui.Rect? cullRect,
     ui.Paint paint,
-  ) {
-    throw UnimplementedError();
-  }
+  ) => withStackScope((StackScope scope) {
+    final RawRSTransformArray rawTransforms = scope.convertRSTransformsToNative(transforms);
+    final RawRect rawRects = scope.convertRectsToNative(rects);
+    final RawColorArray rawColors = colors != null
+      ? scope.convertColorArrayToNative(colors)
+      : nullptr;
+    final RawRect rawCullRect = cullRect != null
+      ? scope.convertRectToNative(cullRect)
+      : nullptr;
+    canvasDrawAtlas(
+      _handle,
+      (atlas as SkwasmImage).handle,
+      rawTransforms,
+      rawRects,
+      rawColors,
+      transforms.length,
+      (blendMode ?? ui.BlendMode.src).index,
+      rawCullRect,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawRawAtlas(
@@ -284,9 +341,27 @@ class SkwasmCanvas implements ui.Canvas {
     ui.BlendMode? blendMode,
     ui.Rect? cullRect,
     ui.Paint paint,
-  ) {
-    throw UnimplementedError();
-  }
+  ) => withStackScope((StackScope scope) {
+    final RawRSTransformArray rawTransforms = scope.convertDoublesToNative(rstTransforms);
+    final RawRect rawRects = scope.convertDoublesToNative(rects);
+    final RawColorArray rawColors = colors != null
+      ? scope.convertIntsToUint32Native(colors)
+      : nullptr;
+    final RawRect rawCullRect = cullRect != null
+      ? scope.convertRectToNative(cullRect)
+      : nullptr;
+    canvasDrawAtlas(
+      _handle,
+      (atlas as SkwasmImage).handle,
+      rawTransforms,
+      rawRects,
+      rawColors,
+      rstTransforms.length ~/ 4,
+      (blendMode ?? ui.BlendMode.src).index,
+      rawCullRect,
+      (paint as SkwasmPaint).handle,
+    );
+  });
 
   @override
   void drawShadow(

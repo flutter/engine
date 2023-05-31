@@ -7,6 +7,7 @@
 #include "wrappers.h"
 
 #include "third_party/skia/include/core/SkPoint3.h"
+#include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
@@ -31,8 +32,9 @@ constexpr SkScalar kShadowLightYOffset = -450;
 
 SKWASM_EXPORT void canvas_saveLayer(SkCanvas* canvas,
                                     SkRect* rect,
-                                    SkPaint* paint) {
-  canvas->saveLayer(SkCanvas::SaveLayerRec(rect, paint, 0));
+                                    SkPaint* paint,
+                                    SkImageFilter* backdrop) {
+  canvas->saveLayer(SkCanvas::SaveLayerRec(rect, paint, backdrop, 0));
 }
 
 SKWASM_EXPORT void canvas_save(SkCanvas* canvas) {
@@ -224,6 +226,34 @@ SKWASM_EXPORT void canvas_drawImageNine(SkCanvas* canvas,
                                         FilterQuality quality) {
   canvas->drawImageNine(image, *centerRect, *destinationRect,
                         filterModeForQuality(quality), paint);
+}
+
+SKWASM_EXPORT void canvas_drawVertices(SkCanvas* canvas,
+                                       SkVertices* vertices,
+                                       SkBlendMode mode,
+                                       SkPaint* paint) {
+  canvas->drawVertices(sk_ref_sp<SkVertices>(vertices), mode, *paint);
+}
+
+SKWASM_EXPORT void canvas_drawPoints(SkCanvas* canvas,
+                                     SkCanvas::PointMode mode,
+                                     SkPoint* points,
+                                     int pointCount,
+                                     SkPaint* paint) {
+  canvas->drawPoints(mode, pointCount, points, *paint);
+}
+
+SKWASM_EXPORT void canvas_drawAtlas(SkCanvas* canvas,
+                                    SkImage* atlas,
+                                    SkRSXform* transforms,
+                                    SkRect* rects,
+                                    SkColor* colors,
+                                    int spriteCount,
+                                    SkBlendMode mode,
+                                    SkRect* cullRect,
+                                    SkPaint* paint) {
+  canvas->drawAtlas(atlas, transforms, rects, colors, spriteCount, mode,
+                    SkSamplingOptions{}, cullRect, paint);
 }
 
 SKWASM_EXPORT void canvas_getTransform(SkCanvas* canvas, SkM44* outTransform) {

@@ -7,7 +7,6 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/host_debug/zip_archives/darwin-x64/artifacts.zip",
-                        "out/host_debug/zip_archives/darwin-x64/FlutterEmbedder.framework.zip",
                         "out/host_debug/zip_archives/dart-sdk-darwin-x64.zip"
                     ],
                     "name": "host_debug",
@@ -28,7 +27,9 @@
                 "debug",
                 "--no-lto",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--enable-impeller-vulkan",
+                "--use-glfw-swiftshader"
             ],
             "name": "host_debug",
             "ninja": {
@@ -52,7 +53,7 @@
                         "--variant",
                         "host_debug",
                         "--type",
-                        "dart",
+                        "dart,engine",
                         "--engine-capture-core-dump"
                     ],
                     "script": "flutter/testing/run_tests.py"
@@ -147,7 +148,8 @@
                 "--no-lto",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples",
-                "--enable-impeller-vulkan"
+                "--enable-impeller-vulkan",
+                "--use-glfw-swiftshader"
             ],
             "name": "host_release",
             "ninja": {
@@ -214,6 +216,7 @@
                     "flutter/build/archives:archive_gen_snapshot",
                     "flutter/build/archives:artifacts",
                     "flutter/build/archives:dart_sdk_archive",
+                    "flutter/build/archives:flutter_embedder_framework",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             }
@@ -299,6 +302,19 @@
     ],
     "generators": {
         "tasks": [
+            {
+                "name": "Debug-FlutterEmbedder.framework",
+                "parameters": [
+                    "--dst",
+                    "out/debug/framework",
+                    "--arm64-out-dir",
+                    "out/mac_debug_arm64",
+                    "--x64-out-dir",
+                    "out/host_debug",
+                    "--zip"
+                ],
+                "script": "flutter/sky/tools/create_embedder_framework.py"
+            },
             {
                 "name": "Release-FlutterMacOS.framework",
                 "parameters": [
@@ -390,6 +406,11 @@
         ]
     },
     "archives": [
+        {
+            "source": "out/debug/framework/FlutterEmbedder.framework.zip",
+            "destination": "darwin-x64/FlutterEmbedder.framework.zip",
+            "realm": "production"
+        },
         {
             "source": "out/release/framework/FlutterMacOS.dSYM.zip",
             "destination": "darwin-x64-release/FlutterMacOS.dSYM.zip",
