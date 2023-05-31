@@ -34,7 +34,7 @@ EmbedderRenderTarget::EmbedderRenderTarget(
     FML_DCHECK(aiks_context_);
     FML_DCHECK(!render_surface_);
   } else {
-    FML_CHECK(render_surface_);
+    FML_DCHECK(render_surface_);
   }
 }
 

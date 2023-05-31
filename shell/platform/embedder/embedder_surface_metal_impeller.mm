@@ -59,11 +59,7 @@ bool EmbedderSurfaceMetalImpeller::IsValid() const {
   return valid_;
 }
 
-std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface() API_AVAILABLE(ios(13.0)) {
-  if (@available(iOS 13.0, *)) {
-  } else {
-    return nullptr;
-  }
+std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface() {
   if (!IsValid()) {
     return nullptr;
   }

@@ -89,7 +89,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   if (impeller_target.has_value()) {
     auto aiks_context = render_target.GetAiksContext();
 
-    DisplayListBuilder dl_builder;
+    auto dl_builder = DisplayListBuilder();
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
 
