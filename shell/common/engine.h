@@ -309,8 +309,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
-         std::unique_ptr<RuntimeController> runtime_controller,
-         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
+         std::unique_ptr<RuntimeController> runtime_controller);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
@@ -365,8 +364,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -384,8 +382,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
       const fml::WeakPtr<IOManager>& io_manager,
-      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) const;
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task

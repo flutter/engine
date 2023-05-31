@@ -126,8 +126,7 @@ class Shell final : public PlatformView::Delegate,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)>
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
       EngineCreateCallback;
 
   //----------------------------------------------------------------------------
@@ -357,7 +356,6 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch.
-  // |Rasterizer::Delegate|
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
       const override;
 

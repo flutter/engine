@@ -16,16 +16,14 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Make(
     const Settings& settings,
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-    fml::WeakPtr<IOManager> io_manager,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+    fml::WeakPtr<IOManager> io_manager) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (settings.enable_impeller) {
     return std::make_unique<ImageDecoderImpeller>(
         runners,                            //
         std::move(concurrent_task_runner),  //
         std::move(io_manager),              //
-        settings.enable_wide_gamut,         //
-        gpu_disabled_switch);
+        settings.enable_wide_gamut);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
   return std::make_unique<ImageDecoderSkia>(

@@ -326,7 +326,7 @@ void onBeginFrameWithNotifyNativeMain() {
 }
 
 @pragma('vm:entry-point')
-void frameCallback(Object? image, int durationMilliseconds, String decodeError) {
+void frameCallback(Object? image, int durationMilliseconds) {
   if (image == null) {
     throw Exception('Expeccted image in frame callback to be non-null');
   }

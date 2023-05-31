@@ -79,11 +79,9 @@ ImageDecoderImpeller::ImageDecoderImpeller(
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     const fml::WeakPtr<IOManager>& io_manager,
-    bool supports_wide_gamut,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
+    bool supports_wide_gamut)
     : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager),
-      supports_wide_gamut_(supports_wide_gamut),
-      gpu_disabled_switch_(gpu_disabled_switch) {
+      supports_wide_gamut_(supports_wide_gamut) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -124,7 +122,7 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   return std::nullopt;
 }
 
-DecompressResult ImageDecoderImpeller::DecompressTexture(
+std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
     impeller::ISize max_texture_size,
@@ -132,9 +130,8 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     const std::shared_ptr<impeller::Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
-    std::string decode_error("Invalid descriptor (should never happen)");
-    FML_DLOG(ERROR) << decode_error;
-    return DecompressResult{.decode_error = decode_error};
+    FML_DLOG(ERROR) << "Invalid descriptor.";
+    return std::nullopt;
   }
 
   target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
@@ -179,11 +176,8 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
 
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format.has_value()) {
-    std::string decode_error(impeller::SPrintF(
-        "Codec pixel format is not supported (SkColorType=%d)",
-        image_info.colorType()));
-    FML_DLOG(ERROR) << decode_error;
-    return DecompressResult{.decode_error = decode_error};
+    FML_DLOG(ERROR) << "Codec pixel format not supported by Impeller.";
+    return std::nullopt;
   }
 
   auto bitmap = std::make_shared<SkBitmap>();
@@ -192,16 +186,14 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
 
   if (descriptor->is_compressed()) {
     if (!bitmap->tryAllocPixels(bitmap_allocator.get())) {
-      std::string decode_error(
-          "Could not allocate intermediate for image decompression.");
-      FML_DLOG(ERROR) << decode_error;
-      return DecompressResult{.decode_error = decode_error};
+      FML_DLOG(ERROR)
+          << "Could not allocate intermediate for image decompression.";
+      return std::nullopt;
     }
     // Decode the image into the image generator's closest supported size.
     if (!descriptor->get_pixels(bitmap->pixmap())) {
-      std::string decode_error("Could not decompress image.");
-      FML_DLOG(ERROR) << decode_error;
-      return DecompressResult{.decode_error = decode_error};
+      FML_DLOG(ERROR) << "Could not decompress image.";
+      return std::nullopt;
     }
   } else {
     auto temp_bitmap = std::make_shared<SkBitmap>();
@@ -211,10 +203,9 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     temp_bitmap->setPixelRef(pixel_ref, 0, 0);
 
     if (!bitmap->tryAllocPixels(bitmap_allocator.get())) {
-      std::string decode_error(
-          "Could not allocate intermediate for pixel conversion.");
-      FML_DLOG(ERROR) << decode_error;
-      return DecompressResult{.decode_error = decode_error};
+      FML_DLOG(ERROR)
+          << "Could not allocate intermediate for pixel conversion.";
+      return std::nullopt;
     }
     temp_bitmap->readPixels(bitmap->pixmap());
     bitmap->setImmutable();
@@ -223,7 +214,7 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
   if (bitmap->dimensions() == target_size) {
     auto buffer = bitmap_allocator->GetDeviceBuffer();
     if (!buffer.has_value()) {
-      return DecompressResult{.decode_error = "Unable to get device buffer"};
+      return std::nullopt;
     }
     return DecompressResult{.device_buffer = buffer.value(),
                             .sk_bitmap = bitmap,
@@ -241,10 +232,9 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
   auto scaled_allocator = std::make_shared<ImpellerAllocator>(allocator);
   scaled_bitmap->setInfo(scaled_image_info);
   if (!scaled_bitmap->tryAllocPixels(scaled_allocator.get())) {
-    std::string decode_error(
-        "Could not allocate scaled bitmap for image decompression.");
-    FML_DLOG(ERROR) << decode_error;
-    return DecompressResult{.decode_error = decode_error};
+    FML_LOG(ERROR)
+        << "Could not allocate scaled bitmap for image decompression.";
+    return std::nullopt;
   }
   if (!bitmap->pixmap().scalePixels(
           scaled_bitmap->pixmap(),
@@ -255,31 +245,25 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
 
   auto buffer = scaled_allocator->GetDeviceBuffer();
   if (!buffer.has_value()) {
-    return DecompressResult{.decode_error = "Unable to get device buffer"};
+    return std::nullopt;
   }
   return DecompressResult{.device_buffer = buffer.value(),
                           .sk_bitmap = scaled_bitmap,
                           .image_info = scaled_bitmap->info()};
 }
 
-/// Only call this method if the GPU is available.
-static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
+sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context) {
-    return std::make_pair(nullptr, "No Impeller context is available");
-  }
-  if (!buffer) {
-    return std::make_pair(nullptr, "No Impeller device buffer is available");
+  if (!context || !buffer) {
+    return nullptr;
   }
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
-    std::string decode_error(impeller::SPrintF(
-        "Unsupported pixel format (SkColorType=%d)", image_info.colorType()));
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
+    return nullptr;
   }
 
   impeller::TextureDescriptor texture_descriptor;
@@ -292,9 +276,8 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!dest_texture) {
-    std::string decode_error("Could not create Impeller texture.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Could not create Impeller texture.";
+    return nullptr;
   }
 
   dest_texture->SetLabel(
@@ -302,19 +285,15 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
 
   auto command_buffer = context->CreateCommandBuffer();
   if (!command_buffer) {
-    std::string decode_error(
-        "Could not create command buffer for mipmap generation.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Could not create command buffer for mipmap generation.";
+    return nullptr;
   }
   command_buffer->SetLabel("Mipmap Command Buffer");
 
   auto blit_pass = command_buffer->CreateBlitPass();
   if (!blit_pass) {
-    std::string decode_error(
-        "Could not create blit pass for mipmap generation.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
+    return nullptr;
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
   blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
@@ -324,64 +303,26 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
 
   blit_pass->EncodeCommands(context->GetResourceAllocator());
   if (!command_buffer->SubmitCommands()) {
-    std::string decode_error("Failed to submit blit pass command buffer.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+    return nullptr;
   }
 
-  return std::make_pair(
-      impeller::DlImageImpeller::Make(std::move(dest_texture)), std::string());
+  return impeller::DlImageImpeller::Make(std::move(dest_texture));
 }
 
-std::pair<sk_sp<DlImage>, std::string>
-ImageDecoderImpeller::UploadTextureToPrivate(
-    const std::shared_ptr<impeller::Context>& context,
-    const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-    const SkImageInfo& image_info,
-    std::shared_ptr<SkBitmap> bitmap,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context) {
-    return std::make_pair(nullptr, "No Impeller context is available");
-  }
-  if (!buffer) {
-    return std::make_pair(nullptr, "No Impeller device buffer is available");
-  }
-
-  std::pair<sk_sp<DlImage>, std::string> result;
-  gpu_disabled_switch->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfFalse([&result, context, buffer, image_info] {
-            result = UnsafeUploadTextureToPrivate(context, buffer, image_info);
-          })
-          .SetIfTrue([&result, context, bitmap, gpu_disabled_switch] {
-            // create_mips is false because we already know the GPU is disabled.
-            result = UploadTextureToShared(context, bitmap, gpu_disabled_switch,
-                                           /*create_mips=*/false);
-          }));
-  return result;
-}
-
-std::pair<sk_sp<DlImage>, std::string>
-ImageDecoderImpeller::UploadTextureToShared(
+sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<SkBitmap> bitmap,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
     bool create_mips) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context) {
-    return std::make_pair(nullptr, "No Impeller context is available");
-  }
-  if (!bitmap) {
-    return std::make_pair(nullptr, "No texture bitmap is available");
+  if (!context || !bitmap) {
+    return nullptr;
   }
   const auto image_info = bitmap->info();
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
-    std::string decode_error(impeller::SPrintF(
-        "Unsupported pixel format (SkColorType=%d)", image_info.colorType()));
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
+    return nullptr;
   }
 
   impeller::TextureDescriptor texture_descriptor;
@@ -394,9 +335,8 @@ ImageDecoderImpeller::UploadTextureToShared(
   auto texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!texture) {
-    std::string decode_error("Could not create Impeller texture.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Could not create Impeller texture.";
+    return nullptr;
   }
 
   auto mapping = std::make_shared<fml::NonOwnedMapping>(
@@ -406,51 +346,37 @@ ImageDecoderImpeller::UploadTextureToShared(
   );
 
   if (!texture->SetContents(mapping)) {
-    std::string decode_error("Could not copy contents into Impeller texture.");
-    FML_DLOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
+    FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
+    return nullptr;
   }
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
 
   if (texture_descriptor.mip_count > 1u && create_mips) {
-    std::optional<std::string> decode_error;
+    auto command_buffer = context->CreateCommandBuffer();
+    if (!command_buffer) {
+      FML_DLOG(ERROR)
+          << "Could not create command buffer for mipmap generation.";
+      return nullptr;
+    }
+    command_buffer->SetLabel("Mipmap Command Buffer");
 
-    // The only platform that needs mipmapping unconditionally is GL.
-    // GL based platforms never disable GPU access.
-    // This is only really needed for iOS.
-    gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
-        [context, &texture, &decode_error] {
-          auto command_buffer = context->CreateCommandBuffer();
-          if (!command_buffer) {
-            decode_error =
-                "Could not create command buffer for mipmap generation.";
-            return;
-          }
-          command_buffer->SetLabel("Mipmap Command Buffer");
+    auto blit_pass = command_buffer->CreateBlitPass();
+    if (!blit_pass) {
+      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
+      return nullptr;
+    }
+    blit_pass->SetLabel("Mipmap Blit Pass");
+    blit_pass->GenerateMipmap(texture);
 
-          auto blit_pass = command_buffer->CreateBlitPass();
-          if (!blit_pass) {
-            decode_error = "Could not create blit pass for mipmap generation.";
-            return;
-          }
-          blit_pass->SetLabel("Mipmap Blit Pass");
-          blit_pass->GenerateMipmap(texture);
-
-          blit_pass->EncodeCommands(context->GetResourceAllocator());
-          if (!command_buffer->SubmitCommands()) {
-            decode_error = "Failed to submit blit pass command buffer.";
-            return;
-          }
-        }));
-    if (decode_error.has_value()) {
-      FML_DLOG(ERROR) << decode_error.value();
-      return std::make_pair(nullptr, decode_error.value());
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+    if (!command_buffer->SubmitCommands()) {
+      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+      return nullptr;
     }
   }
 
-  return std::make_pair(impeller::DlImageImpeller::Make(std::move(texture)),
-                        std::string());
+  return impeller::DlImageImpeller::Make(std::move(texture));
 }
 
 // |ImageDecoder|
@@ -467,10 +393,10 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
   ImageResult result = [p_result,                               //
                         raw_descriptor,                         //
                         ui_runner = runners_.GetUITaskRunner()  //
-  ](auto image, auto decode_error) {
-    ui_runner->PostTask([raw_descriptor, p_result, image, decode_error]() {
+  ](auto image) {
+    ui_runner->PostTask([raw_descriptor, p_result, image]() {
       raw_descriptor->Release();
-      p_result(std::move(image), decode_error);
+      p_result(std::move(image));
     });
   };
 
@@ -480,10 +406,10 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        target_size = SkISize::Make(target_width, target_height),  //
        io_runner = runners_.GetIOTaskRunner(),                    //
        result,
-       supports_wide_gamut = supports_wide_gamut_,  //
-       gpu_disabled_switch = gpu_disabled_switch_]() {
+       supports_wide_gamut = supports_wide_gamut_  //
+  ]() {
         if (!context) {
-          result(nullptr, "No Impeller context is available");
+          result(nullptr);
           return;
         }
         auto max_size_supported =
@@ -493,32 +419,25 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         auto bitmap_result = DecompressTexture(
             raw_descriptor, target_size, max_size_supported,
             supports_wide_gamut, context->GetResourceAllocator());
-        if (!bitmap_result.device_buffer) {
-          result(nullptr, bitmap_result.decode_error);
+        if (!bitmap_result.has_value()) {
+          result(nullptr);
           return;
         }
-        auto upload_texture_and_invoke_result = [result, context, bitmap_result,
-                                                 gpu_disabled_switch]() {
-          // TODO(jonahwilliams): remove ifdef once blit from buffer
-          // to texture is implemented on other platforms.
-          sk_sp<DlImage> image;
-          std::string decode_error;
-
+        auto upload_texture_and_invoke_result = [result, context,
+                                                 bitmap_result =
+                                                     bitmap_result.value()]() {
+// TODO(jonahwilliams): remove ifdef once blit from buffer to texture is
+// implemented on other platforms.
 #ifdef FML_OS_IOS
-          std::tie(image, decode_error) = UploadTextureToPrivate(
-              context, bitmap_result.device_buffer, bitmap_result.image_info,
-              bitmap_result.sk_bitmap, gpu_disabled_switch);
+          result(UploadTextureToPrivate(context, bitmap_result.device_buffer,
+                                        bitmap_result.image_info));
 #else
-          std::tie(image, decode_error) =
-              UploadTextureToShared(context, bitmap_result.sk_bitmap,
-                                    gpu_disabled_switch, /*create_mips=*/true);
-#endif  // FML_OS_IOS
-          result(image, decode_error);
+          result(UploadTextureToShared(context, bitmap_result.sk_bitmap));
+#endif
         };
-        // TODO(jonahwilliams):
-        // https://github.com/flutter/flutter/issues/123058 Technically we
-        // don't need to post tasks to the io runner, but without this
-        // forced serialization we can end up overloading the GPU and/or
+        // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
+        // Technically we don't need to post tasks to the io runner, but without
+        // this forced serialization we can end up overloading the GPU and/or
         // competing with raster workloads.
         io_runner->PostTask(upload_texture_and_invoke_result);
       });
