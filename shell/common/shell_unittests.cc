@@ -735,6 +735,15 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
 
 TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   auto settings = CreateSettingsForFixture();
+
+  FrameTiming timing;
+  fml::AutoResetWaitableEvent timingLatch;
+  settings.frame_rasterized_callback = [&timing,
+                                        &timingLatch](const FrameTiming& t) {
+    timing = t;
+    timingLatch.Signal();
+  };
+
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Wait to make |start| bigger than zero
@@ -745,21 +754,12 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   // |DartVMInitializer::Initialize()| within |CreateShell()|.
   fml::TimePoint start = fml::TimePoint::Now();
 
-  fml::AutoResetWaitableEvent timingLatch;
-  FrameTiming timing;
-
   for (auto phase : FrameTiming::kPhases) {
     timing.Set(phase, fml::TimePoint());
     // Check that the time points are initially smaller than start, so
     // CheckFrameTimings will fail if they're not properly set later.
     ASSERT_TRUE(timing.Get(phase) < start);
   }
-
-  settings.frame_rasterized_callback = [&timing,
-                                        &timingLatch](const FrameTiming& t) {
-    timing = t;
-    timingLatch.Signal();
-  };
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
