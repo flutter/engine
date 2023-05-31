@@ -5,9 +5,11 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
+#include <chrono>
 #include <ctime>
 #include <future>
 #include <memory>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -50,6 +52,8 @@
 #ifdef SHELL_ENABLE_VULKAN
 #include "flutter/vulkan/vulkan_application.h"  // nogncheck
 #endif
+
+using namespace std::chrono_literals;
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
@@ -732,6 +736,9 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
 TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Wait to make |start| bigger than zero
+  std::this_thread::sleep_for(1ms);
 
   // We MUST put |start| after |CreateShell()| because the clock source will be
   // reset through |TimePoint::SetClockSource()| in
