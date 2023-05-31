@@ -21,6 +21,12 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/context.h"
 
+#if TARGET_OS_SIMULATOR
+#define IMPELLER_METAL_AVAILABLE @available(macos(10.11), ios(13.0))
+#else  // TARGET_OS_SIMULATOR
+#define IMPELLER_METAL_AVAILABLE @available(macos(10.11), ios(8.0))
+#endif  // TARGET_OS_SIMULATOR
+
 namespace impeller {
 
 class ContextMTL final : public Context,

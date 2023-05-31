@@ -11,13 +11,14 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
-class GPUSurfaceMetalImpeller : public Surface {
+class IMPELLER_METAL_AVAILABLE GPUSurfaceMetalImpeller : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
                           const std::shared_ptr<impeller::Context>& context,
