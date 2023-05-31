@@ -38,9 +38,34 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     };
   }
 
+  auto polyline =
+      path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+  auto verify_x = VerifyMonotone(polyline, true);
+  auto verify_y = VerifyMonotone(polyline, false);
+  if (verify_x.has_value() || verify_y.has_value()) {
+    std::vector<Point> points;
+    if (verify_x.has_value()) {
+      points = verify_x.value();
+    } else {
+      points = verify_y.value();
+    }
+
+    vertex_buffer.vertex_buffer = host_buffer.Emplace(
+        points.data(), points.size() * sizeof(Point), alignof(Point));
+    vertex_buffer.vertex_count = points.size();
+    vertex_buffer.index_type = IndexType::kNone;
+
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer = vertex_buffer,
+        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation(),
+        .prevent_overdraw = false,
+    };
+  }
+
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_.GetFillType(),
-      path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()),
+      path_.GetFillType(), polyline,
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {

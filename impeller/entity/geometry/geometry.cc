@@ -162,30 +162,11 @@ std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
 
   std::vector<Point> result_set;
   std::vector<Point> candidate_set;
+  auto next_index_from_min = (min_x_index + 1) % vertex_count;
   candidate_set.push_back(polyline.points[min_x_index]);
-  candidate_set.push_back(polyline.points[(min_x_index + 1) % vertex_count]);
+  candidate_set.push_back(polyline.points[next_index_from_min]);
   auto i = (min_x_index + 2) % vertex_count;
 
-  // min to max chain.
-  while (i != max_x_index) {
-    auto current = polyline.points[i];
-    if (IsConvex(candidate_set[candidate_set.size() - 2],
-                 candidate_set[candidate_set.size() - 1], current, 1.0)) {
-      result_set.push_back(candidate_set[candidate_set.size() - 2]);
-      result_set.push_back(candidate_set[candidate_set.size() - 1]);
-      result_set.push_back(current);
-      candidate_set.pop_back();
-      if (candidate_set.size() == 1) {
-        candidate_set.push_back(current);
-        i = (i + 1) % vertex_count;
-      }
-    } else {
-      candidate_set.push_back(current);
-      i = (i + 1) % vertex_count;
-    }
-  }
-
-  // max to min chain.
   while (i != min_x_index) {
     auto current = polyline.points[i];
     if (IsConvex(candidate_set[candidate_set.size() - 2],
@@ -194,8 +175,7 @@ std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
       result_set.push_back(candidate_set[candidate_set.size() - 1]);
       result_set.push_back(current);
       candidate_set.pop_back();
-      if (candidate_set.size() == 1) {
-        candidate_set.push_back(current);
+      if (candidate_set.size() < 1) {
         i = (i + 1) % vertex_count;
       }
     } else {
@@ -203,8 +183,6 @@ std::optional<std::vector<Point>> VerifyMonotone(Path::Polyline polyline,
       i = (i + 1) % vertex_count;
     }
   }
-
-  FML_DCHECK(candidate_set.size() == 0);
 
   return result_set;
 }
