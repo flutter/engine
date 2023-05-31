@@ -318,7 +318,6 @@ class FlutterPlatformViewsController {
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
-                                                     int64_t render_view_id,
                                                      EmbedderViewSlice* slice,
                                                      SkRect rect,
                                                      int64_t view_id,
