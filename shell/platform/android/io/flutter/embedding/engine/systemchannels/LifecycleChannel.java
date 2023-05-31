@@ -10,6 +10,7 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.StringCodec;
+import java.util.Locale;
 
 /**
  * A {@link BasicMessageChannel} that communicates lifecycle events to the framework.
@@ -102,7 +103,7 @@ public class LifecycleChannel {
       // No change in the resulting Flutter state, so don't report anything.
       return;
     }
-    String message = "AppLifecycleState." + newState.name().toLowerCase();
+    String message = "AppLifecycleState." + newState.name().toLowerCase(Locale.ROOT);
     Log.v(TAG, "Sending " + message + " message.");
     channel.send(message);
     lastFlutterState = newState;
