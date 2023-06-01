@@ -14,7 +14,7 @@ ComputePipelineVK::ComputePipelineVK(
     vk::UniquePipelineLayout layout,
     vk::UniqueDescriptorSetLayout descriptor_set_layout)
     : Pipeline(std::move(library), desc),
-      device_holder_(device_holder),
+      device_holder_(std::move(device_holder)),
       pipeline_(std::move(pipeline)),
       layout_(std::move(layout)),
       descriptor_set_layout_(std::move(descriptor_set_layout)) {

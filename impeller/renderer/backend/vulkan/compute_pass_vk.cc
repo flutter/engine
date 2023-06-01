@@ -242,7 +242,24 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
                                          )) {
         return false;
       }
-      cmd_buffer.dispatch(grid_size.width, grid_size.height, 1);
+
+      // TOOD(dnfield): This should be moved to caps. But for now keeping this
+      // in parallel with Metal.
+      auto device_properties = vk_context.GetPhysicalDevice().getProperties();
+
+      auto max_wg_size = device_properties.limits.maxComputeWorkGroupSize;
+
+      auto width = grid_size.width;
+      auto height = grid_size.height;
+
+      while (width > max_wg_size[0]) {
+        width = std::max(1LL, width / 2);
+      }
+      while (height > max_wg_size[1]) {
+        height = std::max(1LL, height / 2);
+      }
+
+      cmd_buffer.dispatch(width, height, 1);
     }
   }
 
