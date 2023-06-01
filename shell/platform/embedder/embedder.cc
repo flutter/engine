@@ -17,8 +17,6 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/thread.h"
-#include "impeller/core/texture.h"
-#include "impeller/renderer/render_target.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -73,7 +71,9 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
+#include "impeller/renderer/render_target.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
