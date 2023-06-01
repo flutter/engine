@@ -51,11 +51,9 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
   if (!callback) {
     return encoder_->Submit();
   }
-  return encoder_->Submit([callback](bool submit) {
-    if (!submit) {
-      callback(CommandBuffer::Status::kError);
-    }
-    callback(CommandBuffer::Status::kCompleted);
+  return encoder_->Submit([callback](bool submitted) {
+    callback(submitted ? CommandBuffer::Status::kCompleted
+                       : CommandBuffer::Status::kError);
   });
 }
 
