@@ -48,12 +48,15 @@ const std::shared_ptr<CommandEncoderVK>& CommandBufferVK::GetEncoder() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  const auto submit = encoder_->Submit();
-  if (callback) {
-    callback(submit ? CommandBuffer::Status::kCompleted
-                    : CommandBuffer::Status::kError);
+  if (!callback) {
+    return encoder_->Submit();
   }
-  return submit;
+  return encoder_->Submit([callback](bool submit) {
+    if (!submit) {
+      callback(CommandBuffer::Status::kError);
+    }
+    callback(CommandBuffer::Status::kCompleted);
+  });
 }
 
 void CommandBufferVK::OnWaitUntilScheduled() {}
