@@ -49,7 +49,8 @@ platform_properties:
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
-          {"dependency": "open_jdk", "version": "version:11"}
+          {"dependency": "open_jdk", "version": "version:11"},
+          {"dependency": "xcode", "version": "14a5294e"}
         ]
       device_type: none
       cpu: x86
