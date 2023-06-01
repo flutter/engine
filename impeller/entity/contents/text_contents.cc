@@ -146,7 +146,7 @@ static bool CommonRender(const ContentContext& renderer,
   }
   vertex_count *= 6;
 
-  auto buffer_view = host_buffer.EmplaceCallback(
+  auto buffer_view = host_buffer.Emplace(
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;

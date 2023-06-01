@@ -56,9 +56,12 @@ BufferView HostBuffer::Emplace(const void* buffer, size_t length) {
   return BufferView{shared_from_this(), GetBuffer(), Range{old_length, length}};
 }
 
-BufferView HostBuffer::EmplaceCallback(size_t length,
-                                       size_t align,
-                                       const EmplaceProc& cb) {
+BufferView HostBuffer::Emplace(size_t length,
+                               size_t align,
+                               const EmplaceProc& cb) {
+  if (!cb) {
+    return {};
+  }
   auto old_length = GetLength();
   if (!Truncate(old_length + length)) {
     return {};
