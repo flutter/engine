@@ -1236,7 +1236,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _onSemanticsAction, _onSemanticsActionZone, nodeId, action, args);
     invoke1<ui.SemanticsActionEvent>(
         _onSemanticsActionEvent, _onSemanticsActionEventZone, ui.SemanticsActionEvent(
-          type: ui.SemanticsAction.fromIndex(action)!,
+          type: action,
           nodeId: nodeId,
           viewId: 0, // TODO(goderbauer): Wire up the real view ID.
           arguments: args,
