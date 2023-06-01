@@ -37,6 +37,9 @@ sk_sp<DlImageImpeller> DlImageImpeller::MakeFromYUVTextures(
       std::nullopt,                       // sampler_descriptor
       true,                               // msaa_enabled
       "MakeYUVToRGBFilter Snapshot");     // label
+  if (!snapshot.has_value()) {
+    return nullptr;
+  }
   return impeller::DlImageImpeller::Make(snapshot->texture);
 }
 

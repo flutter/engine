@@ -13,11 +13,11 @@
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_text_contents.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path_builder.h"
 
 namespace impeller {
@@ -184,22 +184,22 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Scalar corner_radius,
                                      const Paint& paint) {
-  if (paint.color_source.GetType() != ColorSource::Type::kColor ||
-      paint.style != Paint::Style::kFill) {
-    return false;
-  }
-
-  if (!paint.mask_blur_descriptor.has_value() ||
-      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
-    return false;
-  }
-
   Paint new_paint = paint;
+  if (new_paint.color_source.GetType() != ColorSource::Type::kColor ||
+      new_paint.style != Paint::Style::kFill) {
+    return false;
+  }
+
+  if (!new_paint.mask_blur_descriptor.has_value() ||
+      new_paint.mask_blur_descriptor->style !=
+          FilterContents::BlurStyle::kNormal) {
+    return false;
+  }
 
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
-  auto contents = std::make_shared<RRectShadowContents>();
+  auto contents = std::make_shared<SolidRRectBlurContents>();
   contents->SetColor(new_paint.color);
   contents->SetSigma(new_paint.mask_blur_descriptor->sigma);
   contents->SetRRect(rect, corner_radius);
@@ -527,7 +527,11 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
     entity.SetTransformation(GetCurrentTransformation());
 
     Entity test;
-    auto cvg = text_contents->GetCoverage(test).value();
+    auto maybe_cvg = text_contents->GetCoverage(test);
+    FML_CHECK(maybe_cvg.has_value());
+    // Covered by FML_CHECK.
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    auto cvg = maybe_cvg.value();
     color_text_contents->SetTextPosition(cvg.origin + position);
 
     text_contents->SetOffset(-cvg.origin);
@@ -598,8 +602,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates() &&
-      paint.color_source.GetType() != ColorSource::Type::kImage) {
+  if (vertices->HasTextureCoordinates()) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large
@@ -610,8 +613,12 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     if (size.has_value()) {
       src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
     } else {
-      src_coverage = vertices->GetTextureCoordinateCoverge().value_or(
-          vertices->GetCoverage(Matrix{}).value());
+      auto cvg = vertices->GetCoverage(Matrix{});
+      FML_CHECK(cvg.has_value());
+      src_coverage =
+          // Covered by FML_CHECK.
+          // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+          vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
     }
     src_contents =
         src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));

@@ -29,7 +29,7 @@
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -201,7 +201,7 @@ static Paint::Style ToStyle(flutter::DlDrawStyle style) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStyle(flutter::DlDrawStyle style) {
+void DlDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
   paint_.style = ToStyle(style);
 }
 
