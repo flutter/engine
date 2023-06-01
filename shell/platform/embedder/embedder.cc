@@ -67,14 +67,16 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #endif
 
-#if defined(SHELL_ENABLE_METAL) && defined(IMPELLER_SUPPORTS_RENDERING)
-#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
+#ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#ifdef IMPELLER_SUPPORTS_RENDERING
+#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
 #include "impeller/renderer/render_target.h"
-#endif
+#endif  // IMPELLER_SUPPORTS_RENDERING
+#endif  // SHELL_ENABLE_METAL
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
