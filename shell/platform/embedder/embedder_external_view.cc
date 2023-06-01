@@ -7,7 +7,10 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
+
+#ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -86,6 +89,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
 
+#ifdef IMPELLER_SUPPORTS_RENDERING
   auto* impeller_target = render_target.GetImpellerRenderTarget();
   if (impeller_target) {
     auto aiks_context = render_target.GetAiksContext();
@@ -99,6 +103,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
                                 *impeller_target);
   }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
   auto skia_surface = render_target.GetSkiaSurface();
   if (!skia_surface) {
