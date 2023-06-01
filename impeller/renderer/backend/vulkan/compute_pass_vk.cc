@@ -34,12 +34,10 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
                                  const vk::CommandBuffer& buffer) {
   LayoutTransition transition;
   transition.cmd_buffer = buffer;
-  transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                          vk::AccessFlagBits::eTransferWrite;
-  transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                         vk::PipelineStageFlagBits::eTransfer;
+  transition.src_access = vk::AccessFlagBits::eTransferWrite;
+  transition.src_stage = vk::PipelineStageFlagBits::eTransfer;
   transition.dst_access = vk::AccessFlagBits::eShaderRead;
-  transition.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+  transition.dst_stage = vk::PipelineStageFlagBits::eComputeShader;
 
   transition.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
@@ -70,9 +68,10 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                                           const ComputeCommand& command,
                                           CommandEncoderVK& encoder,
                                           const ComputePipelineVK& pipeline) {
-  auto desc_set =
+  auto desc_set = pipeline.GetDescriptor().GetDescriptorSetLayouts();
+  auto vk_desc_set =
       encoder.AllocateDescriptorSet(pipeline.GetDescriptorSetLayout());
-  if (!desc_set) {
+  if (!vk_desc_set) {
     return false;
   }
 
@@ -82,10 +81,10 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
   std::unordered_map<uint32_t, vk::DescriptorImageInfo> images;
   std::vector<vk::WriteDescriptorSet> writes;
 
-  auto bind_images = [&encoder,  //
-                      &images,   //
-                      &writes,   //
-                      &desc_set  //
+  auto bind_images = [&encoder,     //
+                      &images,      //
+                      &writes,      //
+                      &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
     for (const auto& [index, sampler_handle] : bindings.samplers) {
       if (bindings.textures.find(index) == bindings.textures.end()) {
@@ -109,7 +108,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       image_info.imageView = texture_vk.GetImageView();
 
       vk::WriteDescriptorSet write_set;
-      write_set.dstSet = desc_set.value();
+      write_set.dstSet = vk_desc_set.value();
       write_set.dstBinding = slot.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -121,11 +120,12 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return true;
   };
 
-  auto bind_buffers = [&allocator,  //
-                       &encoder,    //
-                       &buffers,    //
-                       &writes,     //
-                       &desc_set    //
+  auto bind_buffers = [&allocator,   //
+                       &encoder,     //
+                       &buffers,     //
+                       &writes,      //
+                       &desc_set,    //
+                       &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
     for (const auto& [buffer_index, view] : bindings.buffers) {
       const auto& buffer_view = view.resource.buffer;
@@ -153,12 +153,22 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       buffer_info.range = view.resource.range.length;
 
       const ShaderUniformSlot& uniform = bindings.uniforms.at(buffer_index);
+      auto layout_it = std::find_if(desc_set.begin(), desc_set.end(),
+                                    [&uniform](DescriptorSetLayout& layout) {
+                                      return layout.binding == uniform.binding;
+                                    });
+      if (layout_it == desc_set.end()) {
+        VALIDATION_LOG << "Failed to get descriptor set layout for binding "
+                       << uniform.binding;
+        return false;
+      }
+      auto layout = *layout_it;
 
       vk::WriteDescriptorSet write_set;
-      write_set.dstSet = desc_set.value();
+      write_set.dstSet = vk_desc_set.value();
       write_set.dstBinding = uniform.binding;
       write_set.descriptorCount = 1u;
-      write_set.descriptorType = vk::DescriptorType::eUniformBuffer;
+      write_set.descriptorType = ToVKDescriptorType(layout.descriptor_type);
       write_set.pBufferInfo = &(buffers[uniform.binding] = buffer_info);
 
       writes.push_back(write_set);
@@ -173,11 +183,11 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
   context.GetDevice().updateDescriptorSets(writes, {});
 
   encoder.GetCommandBuffer().bindDescriptorSets(
-      vk::PipelineBindPoint::eCompute,  // bind point
-      pipeline.GetPipelineLayout(),     // layout
-      0,                                // first set
-      {vk::DescriptorSet{*desc_set}},   // sets
-      nullptr                           // offsets
+      vk::PipelineBindPoint::eCompute,    // bind point
+      pipeline.GetPipelineLayout(),       // layout
+      0,                                  // first set
+      {vk::DescriptorSet{*vk_desc_set}},  // sets
+      nullptr                             // offsets
   );
   return true;
 }
@@ -206,7 +216,6 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
   } else {
     pop_marker.Release();
   }
-
   auto cmd_buffer = encoder->GetCommandBuffer();
 
   if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
@@ -216,24 +225,6 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
 
   {
     TRACE_EVENT0("impeller", "EncodeComputePassCommands");
-
-    vk::CommandBufferBeginInfo pass_info;
-    pass_info.sType = vk::StructureType::eCommandBufferBeginInfo;
-
-    auto begin_result = cmd_buffer.begin(pass_info);
-    if (begin_result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Failed to begin compute pass: "
-                     << vk::to_string(begin_result) << ".";
-      return false;
-    }
-
-    fml::ScopedCleanupClosure end_compute_pass([cmd_buffer]() {
-      auto end_result = cmd_buffer.end();
-      if (end_result != vk::Result::eSuccess) {
-        VALIDATION_LOG << "Failed to end compute pass: "
-                       << vk::to_string(end_result) << ".";
-      }
-    });
 
     for (const auto& command : commands_) {
       if (!command.pipeline) {
@@ -251,12 +242,7 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
                                          )) {
         return false;
       }
-
       cmd_buffer.dispatch(grid_size.width, grid_size.height, 1);
-      vk::Result result = cmd_buffer.end();
-      if (result != vk::Result::eSuccess) {
-        return false;
-      }
     }
   }
 
