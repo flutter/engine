@@ -108,7 +108,9 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///
   /// @return     The buffer view.
   ///
-  BufferView EmplaceCallback(size_t length, size_t align, EmplaceProc cb);
+  BufferView EmplaceCallback(size_t length,
+                             size_t align,
+                             const EmplaceProc& cb);
 
  private:
   mutable std::shared_ptr<DeviceBuffer> device_buffer_;
