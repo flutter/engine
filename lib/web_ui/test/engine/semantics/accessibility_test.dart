@@ -27,11 +27,11 @@ void testMain() {
     accessibilityAnnouncements = embedder.accessibilityAnnouncements;
     setLiveMessageDurationForTest(const Duration(milliseconds: 10));
     expect(
-      embedder.glassPaneShadow.querySelector('ftl-announcement-polite'),
+      embedder.glassPaneShadow.querySelector('flt-announcement-polite'),
       accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite),
     );
     expect(
-      embedder.glassPaneShadow.querySelector('ftl-announcement-assertive'),
+      embedder.glassPaneShadow.querySelector('flt-announcement-assertive'),
       accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive),
     );
   });
