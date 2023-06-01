@@ -169,7 +169,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Returns the [FlutterView] with the provided ID if one exists, or null
   /// otherwise.
-  FlutterView? view({required int id}) => viewData[id];
+  ui.FlutterView? view({required int id}) => viewData[id];
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
@@ -1219,11 +1219,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   @override
-  SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
-  SemanticsActionEventCallback? _onSemanticsActionEvent;
+  ui.SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
+  ui.SemanticsActionEventCallback? _onSemanticsActionEvent;
   Zone _onSemanticsActionEventZone = Zone.root;
   @override
-  set onSemanticsActionEvent(SemanticsActionEventCallback? callback) {
+  set onSemanticsActionEvent(ui.SemanticsActionEventCallback? callback) {
     _onSemanticsActionEvent = callback;
     _onSemanticsActionEventZone = Zone.current;
   }
@@ -1234,9 +1234,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       int nodeId, ui.SemanticsAction action, ByteData? args) {
     invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, nodeId, action, args);
-    invoke1<SemanticsActionEvent>(
-        _onSemanticsActionEvent, _onSemanticsActionEventZone, SemanticsActionEvent(
-          type: SemanticsAction.fromIndex(action)!,
+    invoke1<ui.SemanticsActionEvent>(
+        _onSemanticsActionEvent, _onSemanticsActionEventZone, ui.SemanticsActionEvent(
+          type: ui.SemanticsAction.fromIndex(action)!,
           nodeId: nodeId,
           viewId: 0, // TODO(goderbauer): Wire up the real view ID.
           arguments: args,

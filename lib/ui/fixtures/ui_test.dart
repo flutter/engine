@@ -539,10 +539,11 @@ void hooksTests() async {
   });
 
   await test('PlatformDispatcher.view getter returns view with provided ID', () {
+    const int viewId = 123456789;
     _callHook(
       '_updateWindowMetrics',
       21,
-      1234567, // window Id
+      viewId, // window Id
       1.0, // devicePixelRatio
       800.0, // width
       600.0, // height
@@ -565,7 +566,7 @@ void hooksTests() async {
       0, // Display ID
     );
 
-    expectEquals(PlatformDispatcher.instance.view(id: 123456)?.viewId, 123456);
+    expectEquals(PlatformDispatcher.instance.view(id: viewId)?.viewId, viewId);
   });
 
   await test('View padding/insets/viewPadding/systemGestureInsets', () {
