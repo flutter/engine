@@ -253,10 +253,10 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
       int64_t height = grid_size.height;
 
       while (width > max_wg_size[0]) {
-        width = std::max(1LL, width / 2);
+        width = std::max(static_cast<int64_t>(1), width / 2);
       }
       while (height > max_wg_size[1]) {
-        height = std::max(1LL, height / 2);
+        height = std::max(static_cast<int64_t>(1), height / 2);
       }
 
       cmd_buffer.dispatch(width, height, 1);
