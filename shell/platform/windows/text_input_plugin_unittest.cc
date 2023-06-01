@@ -208,14 +208,14 @@ TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
 }
 
 TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
-  std::vector<std::vector<uint8_t>> messages;
+  // Store messages as std::string for convenience.
+  std::vector<std::string> messages;
 
   TestBinaryMessenger messenger(
       [&messages](const std::string& channel, const uint8_t* message,
                   size_t message_size, BinaryReply reply) {
-        int length = static_cast<int>(message_size);
-        std::vector<uint8_t> last_message(length);
-        memcpy(&last_message[0], &message[0], length * sizeof(uint8_t));
+        std::string last_message(reinterpret_cast<const char*>(message),
+                                 message_size);
         messages.push_back(last_message);
       });
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
