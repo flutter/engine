@@ -2796,6 +2796,10 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.cc + ../
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.h + ../../../flutter/LICENSE
@@ -5475,6 +5479,10 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h

@@ -56,6 +56,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
+#include "flutter/shell/platform/embedder/embedder_render_target_skia.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
@@ -69,6 +70,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif
 
 #if defined(SHELL_ENABLE_METAL) && defined(IMPELLER_SUPPORTS_RENDERING)
+#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
 #include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
@@ -916,15 +918,17 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #endif
 }
 
-static std::optional<impeller::RenderTarget>
-MakeImpellerSurfaceFromBackingStore(
+static std::unique_ptr<flutter::EmbedderRenderTarget>
+MakeRenderTargetFromBackingStoreImpeller(
+    FlutterBackingStore backing_store,
+    fml::closure on_release,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
 #if defined(SHELL_ENABLE_METAL) && defined(IMPELLER_SUPPORTS_RENDERING)
   if (!metal->texture.texture) {
     FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
-    return std::nullopt;
+    return nullptr;
   }
 
   const auto size = impeller::ISize(config.size.width, config.size.height);
@@ -943,7 +947,7 @@ MakeImpellerSurfaceFromBackingStore(
        user_data = metal->texture.user_data]() { callback(user_data); });
   if (!resolve_tex) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
-    return std::nullopt;
+    return nullptr;
   }
   resolve_tex->SetLabel("ImpellerBackingStoreResolve");
 
@@ -961,7 +965,7 @@ MakeImpellerSurfaceFromBackingStore(
           msaa_tex_desc);
   if (!msaa_tex) {
     FML_LOG(ERROR) << "Could not allocate MSAA color texture.";
-    return std::nullopt;
+    return nullptr;
   }
   msaa_tex->SetLabel("ImpellerBackingStoreColorMSAA");
 
@@ -975,9 +979,12 @@ MakeImpellerSurfaceFromBackingStore(
   impeller::RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
 
-  return render_target_desc;
+  return std::make_unique<flutter::EmbedderRenderTargetImpeller>(
+      backing_store, aiks_context,
+      std::make_unique<impeller::RenderTarget>(std::move(render_target_desc)),
+      std::move(on_release));
 #else
-  return std::nullopt;
+  return nullptr;
 #endif
 }
 
@@ -1035,6 +1042,17 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
+MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
+                              sk_sp<SkSurface> skia_surface,
+                              fml::closure on_release) {
+  if (!skia_surface) {
+    return nullptr;
+  }
+  return std::make_unique<flutter::EmbedderRenderTargetSkia>(
+      backing_store, std::move(skia_surface), std::move(on_release));
+}
+
+static std::unique_ptr<flutter::EmbedderRenderTarget>
 CreateEmbedderRenderTarget(
     const FlutterCompositor* compositor,
     const FlutterBackingStoreConfig& config,
@@ -1075,55 +1093,71 @@ CreateEmbedderRenderTarget(
   // No safe access checks on the renderer are necessary since we allocated
   // the struct.
 
-  sk_sp<SkSurface> skia_surface;
-  std::optional<impeller::RenderTarget> impeller_target;
+  std::unique_ptr<flutter::EmbedderRenderTarget> render_target;
 
   switch (backing_store.type) {
-    case kFlutterBackingStoreTypeOpenGL:
+    case kFlutterBackingStoreTypeOpenGL: {
       switch (backing_store.open_gl.type) {
-        case kFlutterOpenGLTargetTypeTexture:
-          skia_surface = MakeSkSurfaceFromBackingStore(
+        case kFlutterOpenGLTargetTypeTexture: {
+          auto skia_surface = MakeSkSurfaceFromBackingStore(
               context, config, &backing_store.open_gl.texture);
+          render_target = MakeRenderTargetFromSkSurface(
+              backing_store, std::move(skia_surface),
+              collect_callback.Release());
           break;
-        case kFlutterOpenGLTargetTypeFramebuffer:
-          skia_surface = MakeSkSurfaceFromBackingStore(
+        }
+        case kFlutterOpenGLTargetTypeFramebuffer: {
+          auto skia_surface = MakeSkSurfaceFromBackingStore(
               context, config, &backing_store.open_gl.framebuffer);
+          render_target = MakeRenderTargetFromSkSurface(
+              backing_store, std::move(skia_surface),
+              collect_callback.Release());
           break;
+        }
       }
       break;
-    case kFlutterBackingStoreTypeSoftware:
-      skia_surface = MakeSkSurfaceFromBackingStore(context, config,
-                                                   &backing_store.software);
+    }
+    case kFlutterBackingStoreTypeSoftware: {
+      auto skia_surface = MakeSkSurfaceFromBackingStore(
+          context, config, &backing_store.software);
+      render_target = MakeRenderTargetFromSkSurface(
+          backing_store, std::move(skia_surface), collect_callback.Release());
       break;
-    case kFlutterBackingStoreTypeSoftware2:
-      skia_surface = MakeSkSurfaceFromBackingStore(context, config,
-                                                   &backing_store.software2);
+    }
+    case kFlutterBackingStoreTypeSoftware2: {
+      auto skia_surface = MakeSkSurfaceFromBackingStore(
+          context, config, &backing_store.software2);
+      render_target = MakeRenderTargetFromSkSurface(
+          backing_store, std::move(skia_surface), collect_callback.Release());
       break;
-    case kFlutterBackingStoreTypeMetal:
+    }
+    case kFlutterBackingStoreTypeMetal: {
       if (enable_impeller) {
-        impeller_target = MakeImpellerSurfaceFromBackingStore(
-            aiks_context, config, &backing_store.metal);
+        auto impeller_target = MakeRenderTargetFromBackingStoreImpeller(
+            backing_store, collect_callback.Release(), aiks_context, config,
+            &backing_store.metal);
       } else {
-        skia_surface = MakeSkSurfaceFromBackingStore(context, config,
-                                                     &backing_store.metal);
+        auto skia_surface = MakeSkSurfaceFromBackingStore(context, config,
+                                                          &backing_store.metal);
+        render_target = MakeRenderTargetFromSkSurface(
+            backing_store, std::move(skia_surface), collect_callback.Release());
       }
       break;
-
-    case kFlutterBackingStoreTypeVulkan:
-      skia_surface =
+    }
+    case kFlutterBackingStoreTypeVulkan: {
+      auto skia_surface =
           MakeSkSurfaceFromBackingStore(context, config, &backing_store.vulkan);
+      render_target = MakeRenderTargetFromSkSurface(
+          backing_store, std::move(skia_surface), collect_callback.Release());
       break;
+    }
   };
 
-  if (!(skia_surface || impeller_target.has_value())) {
+  if (!render_target) {
     FML_LOG(ERROR) << "Could not create a surface from an embedder provided "
                       "render target.";
-    return nullptr;
   }
-
-  return std::make_unique<flutter::EmbedderRenderTarget>(
-      backing_store, std::move(skia_surface), aiks_context, impeller_target,
-      collect_callback.Release());
+  return render_target;
 }
 
 static std::pair<std::unique_ptr<flutter::EmbedderExternalViewEmbedder>,

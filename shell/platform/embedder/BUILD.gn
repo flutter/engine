@@ -76,6 +76,8 @@ template("embedder_source_set") {
       "embedder_render_target.h",
       "embedder_render_target_cache.cc",
       "embedder_render_target_cache.h",
+      "embedder_render_target_skia.cc",
+      "embedder_render_target_skia.h",
       "embedder_struct_macros.h",
       "embedder_surface.cc",
       "embedder_surface.h",
@@ -120,6 +122,11 @@ template("embedder_source_set") {
     ]
 
     if (impeller_supports_rendering) {
+      sources += [
+        "embedder_render_target_impeller.cc",
+        "embedder_render_target_impeller.h",
+      ]
+
       deps += [ "//flutter/impeller" ]
     }
 

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
+
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
@@ -85,8 +86,8 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
 
-  auto impeller_target = render_target.GetImpellerRenderTarget();
-  if (impeller_target.has_value()) {
+  auto* impeller_target = render_target.GetImpellerRenderTarget();
+  if (impeller_target) {
     auto aiks_context = render_target.GetAiksContext();
 
     auto dl_builder = DisplayListBuilder();
@@ -99,7 +100,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
                                 *impeller_target);
   }
 
-  auto skia_surface = render_target.GetRenderSurface();
+  auto skia_surface = render_target.GetSkiaSurface();
   if (!skia_surface) {
     return false;
   }
