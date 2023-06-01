@@ -249,14 +249,14 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
 
       auto max_wg_size = device_properties.limits.maxComputeWorkGroupSize;
 
-      auto width = grid_size.width;
-      auto height = grid_size.height;
+      int64_t width = grid_size.width;
+      int64_t height = grid_size.height;
 
       while (width > max_wg_size[0]) {
-        width = std::max(1L, width / 2);
+        width = std::max(1LL, width / 2);
       }
       while (height > max_wg_size[1]) {
-        height = std::max(1L, height / 2);
+        height = std::max(1LL, height / 2);
       }
 
       cmd_buffer.dispatch(width, height, 1);
