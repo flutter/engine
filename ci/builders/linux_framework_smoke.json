@@ -26,25 +26,9 @@
             "dependencies": [
                 "host_debug_unopt"
             ],
-            "tasks": [
-                {
-                    "name": "Framework analyze",
-                    "parameters": [
-                        "analyze",
-                        "--flutter-repo",
-                        "--local-engine=host_debug_unopt"
-                    ],
-                    "script": "flutter/bin/flutter"
-                },
-                {
-                    "name": "test: frameowrk smoke",
-                    "parameters": [
-                        "--local-engine=host_debug_unopt"
-                    ],
-                    "script": "flutter/bin/dart/dev/bots/test.dart",
-                    "language": "dart"
-                }
-            ]
+            "local_engine": "host_debug_unopt",
+            "shard": "framework_tests",
+            "subshard": "widgets"
         }
     ]
 }
