@@ -1,0 +1,50 @@
+{
+    "builds": [
+        {
+            "archives": [],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--unoptimized",
+                "--prebuilt-dart-sdk"
+            ],
+            "name": "host_debug_unopt",
+            "ninja": {
+                "config": "host_debug_unopt"
+            }
+        }
+    ],
+    "tests": [
+        {
+            "name": "test: lint host_debug",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "tasks": [
+                {
+                    "name": "Framework analyze",
+                    "parameters": [
+                        "analyze",
+                        "--flutter-repo",
+                        "--local-engine=host_debug_unopt"
+                    ],
+                    "script": "flutter/bin/flutter"
+                },
+                {
+                    "name": "test: frameowrk smoke",
+                    "parameters": [
+                        "--local-engine=host_debug_unopt"
+                    ],
+                    "script": "flutter/bin/dart/dev/bots/test.dart",
+                    "language": "dart"
+                }
+            ]
+        }
+    ]
+}
