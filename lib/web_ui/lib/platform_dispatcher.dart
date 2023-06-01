@@ -513,7 +513,7 @@ class SemanticsActionEvent {
   final int nodeId;
   final Object? arguments;
 
-  static const _noArgumentPlaceholder = Object();
+  static const Object _noArgumentPlaceholder = Object();
 
   SemanticsActionEvent copyWith({
     SemanticsAction? type,

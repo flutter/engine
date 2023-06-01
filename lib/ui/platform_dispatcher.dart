@@ -2414,7 +2414,7 @@ class SemanticsActionEvent {
   /// Optional arguments for the action.
   final Object? arguments;
 
-  static const _noArgumentPlaceholder = Object();
+  static const Object _noArgumentPlaceholder = Object();
 
   /// Create a clone of the [SemanticsActionEvent] but with provided parameters
   /// replaced.

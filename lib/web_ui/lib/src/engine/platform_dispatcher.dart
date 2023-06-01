@@ -169,6 +169,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Returns the [FlutterView] with the provided ID if one exists, or null
   /// otherwise.
+  @override
   ui.FlutterView? view({required int id}) => viewData[id];
 
   /// A map of opaque platform window identifiers to window configurations.
