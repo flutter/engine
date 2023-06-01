@@ -82,7 +82,7 @@ typedef PopStateListener = void Function(Object? state);
 ///
 /// By default, the [HashUrlStrategy] subclass is used if the app doesn't
 /// specify one.
-abstract interface class UrlStrategy {
+abstract class UrlStrategy {
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
   ui.VoidCallback addPopStateListener(PopStateListener fn);
