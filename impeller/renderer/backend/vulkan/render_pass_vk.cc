@@ -338,7 +338,8 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                        &encoder,    //
                        &buffers,    //
                        &writes,     //
-                       &desc_set    //
+                       &desc_set,   //
+                       &command     //
   ](const Bindings& bindings) -> bool {
     for (const auto& [buffer_index, view] : bindings.buffers) {
       const auto& buffer_view = view.resource.buffer;
@@ -355,7 +356,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       }
 
       // Reserved index used for per-vertex data.
-      if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
+      if (buffer_index >= command.last_vertex_index) {
         continue;
       }
 
@@ -464,32 +465,43 @@ static bool EncodeCommand(const Context& context,
       vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
       command.stencil_reference);
 
-  // Configure vertex and index and buffers for binding.
-  auto vertex_buffer_view = command.GetVertexBuffer();
-
-  if (!vertex_buffer_view) {
-    return false;
-  }
-
   auto& allocator = *context.GetResourceAllocator();
 
-  auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer(allocator);
+  // Configure vertex and index and buffers for binding.
+  auto vertex_buffer_count = VertexDescriptor::kReservedVertexBufferIndex -
+                             command.last_vertex_index + 1;
+  std::vector<vk::Buffer> vertex_buffers;
+  std::vector<vk::DeviceSize> vertex_buffer_offsets;
+  for (auto i = 0u; i < vertex_buffer_count; i++) {
+    auto vertex_buffer_view =
+        command.vertex_bindings.buffers
+            .find(VertexDescriptor::kReservedVertexBufferIndex - i)
+            ->second.resource;
 
-  if (!vertex_buffer) {
-    VALIDATION_LOG << "Failed to acquire device buffer"
-                   << " for vertex buffer view";
-    return false;
+    if (!vertex_buffer_view) {
+      return false;
+    }
+
+    auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer(allocator);
+
+    if (!vertex_buffer) {
+      VALIDATION_LOG << "Failed to acquire device buffer"
+                     << " for vertex buffer view";
+      return false;
+    }
+
+    if (!encoder.Track(vertex_buffer)) {
+      return false;
+    }
+
+    // Bind the vertex buffer.
+    auto vertex_buffer_handle =
+        DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
+    vertex_buffers.push_back(vertex_buffer_handle);
+    vertex_buffer_offsets.push_back(vertex_buffer_view.range.offset);
   }
-
-  if (!encoder.Track(vertex_buffer)) {
-    return false;
-  }
-
-  // Bind the vertex buffer.
-  auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
-  vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
-  vk::DeviceSize vertex_buffer_offsets[] = {vertex_buffer_view.range.offset};
-  cmd_buffer.bindVertexBuffers(0u, 1u, vertex_buffers, vertex_buffer_offsets);
+  cmd_buffer.bindVertexBuffers(0u, vertex_buffer_count, vertex_buffers.data(),
+                               vertex_buffer_offsets.data());
 
   if (command.index_type != IndexType::kNone) {
     // Bind the index buffer.

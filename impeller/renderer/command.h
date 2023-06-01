@@ -154,6 +154,8 @@ struct Command : public ResourceBinder {
   ///
   size_t instance_count = 1u;
 
+  size_t last_vertex_index = VertexDescriptor::kReservedVertexBufferIndex;
+
   //----------------------------------------------------------------------------
   /// @brief      Specify the vertex and index buffer to use for this command.
   ///
@@ -165,7 +167,16 @@ struct Command : public ResourceBinder {
 
   void BindIndexBuffer(IndexType index_type, BufferView index_buffer);
 
-  void BindVertexBuffer(BufferView vertex_buffer, size_t offset);
+  template <size_t N>
+  void BindVertexBuffers(
+      std::array<BufferView, N> vertex_buffers) {
+    for (auto i = 0u; i < N; i++) {
+      vertex_bindings
+          .buffers[VertexDescriptor::kReservedVertexBufferIndex - i] = {
+          nullptr, vertex_buffers[i]};
+    }
+    last_vertex_index = VertexDescriptor::kReservedVertexBufferIndex - N + 1;
+  };
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,

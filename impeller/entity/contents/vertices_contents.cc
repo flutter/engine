@@ -188,8 +188,8 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.BindVertexBuffer(geometry_result.position_buffer, 0u);
-  cmd.BindVertexBuffer(geometry_result.color_buffer, 1u);
+  cmd.BindVertexBuffers<2>(
+      {geometry_result.position_buffer, geometry_result.color_buffer});
   cmd.BindIndexBuffer(geometry_result.index_type, geometry_result.index_buffer);
   cmd.vertex_count = geometry_result.vertex_count;
 

@@ -246,6 +246,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   ///
   auto interleaved = desc.GetVertexDescriptor()->GetInterleavedVertexData();
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  std::vector<vk::VertexInputAttributeDescription> attr_descs;
+  std::vector<vk::VertexInputBindingDescription> binding_descs;
 
   if (interleaved) {
     vk::VertexInputBindingDescription binding_description;
@@ -276,12 +278,10 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
 
     pipeline_info.setPVertexInputState(&vertex_input_state);
   } else {
-    std::vector<vk::VertexInputAttributeDescription> attr_descs;
-    std::vector<vk::VertexInputBindingDescription> binding_descs;
-
+    size_t offset = 0u;
     for (const ShaderStageIOSlot& stage_in : stage_inputs) {
       vk::VertexInputAttributeDescription attr_desc;
-      attr_desc.setBinding(stage_in.binding);
+      attr_desc.setBinding(stage_in.binding + offset);
       attr_desc.setLocation(stage_in.location);
       attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
       attr_desc.setOffset(0);
@@ -289,11 +289,12 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
       uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
 
       vk::VertexInputBindingDescription binding_description;
-      binding_description.setBinding(stage_in.binding);
+      binding_description.setBinding(stage_in.binding + offset);
       binding_description.setInputRate(vk::VertexInputRate::eVertex);
       binding_description.setStride(len);
 
       binding_descs.push_back(binding_description);
+      offset++;
     }
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_state;
