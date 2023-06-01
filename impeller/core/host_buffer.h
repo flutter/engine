@@ -95,6 +95,21 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
                                    size_t length,
                                    size_t align);
 
+  using EmplaceProc = std::function<void(uint8_t* buffer)>;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Emplace non-uniform data (like contiguous vertices) onto the
+  ///             host buffer directly. The buffer ptr is guaranteed to have at
+  ///             least enough storage for the length of data.
+  ///
+  /// @param[in]  cb            A callback that will be passed a ptr to the
+  /// underlying
+  ///                           host buffer.
+  ///
+  /// @return     The buffer view.
+  ///
+  BufferView EmplaceCallback(size_t length, size_t align, EmplaceProc cb);
+
  private:
   mutable std::shared_ptr<DeviceBuffer> device_buffer_;
   mutable size_t device_buffer_generation_ = 0u;
