@@ -69,5 +69,5 @@ leak:g_realloc
 # not respect. Ignore leaks from egl::*
 leak:egl::*
 
-# TODO: fontconfig
-leak:Fc*
+# False positives in libfontconfig. http://crbug.com/39050
+leak:libfontconfig
