@@ -26,6 +26,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
+import io.flutter.embedding.engine.systemchannels.KeyboardChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -38,6 +39,7 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.ViewUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +78,7 @@ import java.util.Set;
  * {@link DartExecutor} is run. Each Isolate is a self-contained Dart environment and cannot
  * communicate with each other except via Isolate ports.
  */
-public class FlutterEngine {
+public class FlutterEngine implements ViewUtils.DisplayUpdater {
   private static final String TAG = "FlutterEngine";
 
   @NonNull private final FlutterJNI flutterJNI;
@@ -88,6 +90,7 @@ public class FlutterEngine {
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
   @NonNull private final DeferredComponentChannel deferredComponentChannel;
+  @NonNull private final KeyboardChannel keyboardChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
@@ -323,6 +326,7 @@ public class FlutterEngine {
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
     deferredComponentChannel = new DeferredComponentChannel(dartExecutor);
+    keyboardChannel = new KeyboardChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
@@ -379,6 +383,8 @@ public class FlutterEngine {
     if (automaticallyRegisterPlugins && flutterLoader.automaticallyRegisterPlugins()) {
       GeneratedPluginRegister.registerGeneratedPlugins(this);
     }
+
+    ViewUtils.calculateMaximumDisplayMetrics(context, this);
   }
 
   private void attachToJni() {
@@ -513,6 +519,12 @@ public class FlutterEngine {
     return accessibilityChannel;
   }
 
+  /** System channel that allows querying the keyboard pressed state. */
+  @NonNull
+  public KeyboardChannel getKeyboardChannel() {
+    return keyboardChannel;
+  }
+
   /** System channel that sends Android lifecycle events to Flutter. */
   @NonNull
   public LifecycleChannel getLifecycleChannel() {
@@ -644,5 +656,10 @@ public class FlutterEngine {
      * <p>For the duration of the call, the Flutter engine is still valid.
      */
     void onEngineWillDestroy();
+  }
+
+  @Override
+  public void updateDisplayMetrics(float width, float height, float density) {
+    flutterJNI.updateDisplayMetrics(0 /* display ID */, width, height, density);
   }
 }

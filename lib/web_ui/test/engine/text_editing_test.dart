@@ -12,7 +12,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
@@ -21,6 +20,7 @@ import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
 
 import '../common/spy.dart';
+import '../common/test_initialization.dart';
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -60,7 +60,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await initializeEngine();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false
+  );
 
   tearDown(() {
     lastEditingState = null;
@@ -2171,6 +2174,47 @@ Future<void> testMain() async {
           EngineAutofillForm.fromFrameworkMessage(null, fields);
 
       expect(autofillForm, isNull);
+    });
+
+    test('placeForm() should place element in correct position', () {
+      final List<dynamic> fields = createFieldValues(<String>[
+        'email',
+        'username',
+        'password',
+      ], <String>[
+        'field1',
+        'field2',
+        'field3'
+      ]);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('email', 'field1'), fields)!;
+
+      expect(autofillForm.elements, hasLength(2));
+
+      List<DomHTMLInputElement> formChildNodes =
+          autofillForm.formElement.childNodes.toList() as List<DomHTMLInputElement>;
+
+      // Only username, password, submit nodes are created
+      expect(formChildNodes, hasLength(3));
+      expect(formChildNodes[0].name, 'username');
+      expect(formChildNodes[1].name, 'current-password');
+      expect(formChildNodes[2].type, 'submit');
+      // insertion point for email should be before username
+      expect(autofillForm.insertionReferenceNode, formChildNodes[0]);
+
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
+      testInputElement.name = 'email';
+      autofillForm.placeForm(testInputElement);
+
+      formChildNodes = autofillForm.formElement.childNodes.toList()
+          as List<DomHTMLInputElement>;
+      // email node should be placed before username
+      expect(formChildNodes, hasLength(4));
+      expect(formChildNodes[0].name, 'email');
+      expect(formChildNodes[1].name, 'username');
+      expect(formChildNodes[2].name, 'current-password');
+      expect(formChildNodes[3].type, 'submit');
     });
 
     tearDown(() {

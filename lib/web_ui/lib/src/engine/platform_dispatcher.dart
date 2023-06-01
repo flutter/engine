@@ -73,6 +73,24 @@ class HighContrastSupport {
   }
 }
 
+class EngineFlutterDisplay extends ui.Display {
+  EngineFlutterDisplay({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  @override
+  final int id;
+  @override
+  final double devicePixelRatio;
+  @override
+  final ui.Size size;
+  @override
+  final double refreshRate;
+}
+
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -86,6 +104,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
+    _setAppLifecycleState(ui.AppLifecycleState.resumed);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -133,6 +152,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     invoke(
         _onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
+
+  @override
+  Iterable<ui.Display> get displays => <ui.Display>[
+    EngineFlutterDisplay(
+      id: 0,
+      size: ui.Size(domWindow.screen?.width ?? 0, domWindow.screen?.height ?? 0),
+      devicePixelRatio: domWindow.devicePixelRatio,
+      refreshRate: 60,
+    )
+  ];
 
   /// The current list of windows.
   @override
@@ -449,7 +478,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     ui.PlatformMessageResponseCallback? callback,
   ) {
     // In widget tests we want to bypass processing of platform messages.
-    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+    bool returnImmediately = false;
+    assert(() {
+      if (ui.debugEmulateFlutterTesterEnvironment) {
+        returnImmediately = true;
+      }
+      return true;
+    }());
+
+    if (returnImmediately) {
       return;
     }
 
@@ -457,7 +494,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       print('Sent platform message on channel: "$name"');
     }
 
-    if (assertionsEnabled && name == 'flutter/debug-echo') {
+    bool allowDebugEcho = false;
+    assert(() {
+      allowDebugEcho = true;
+      return true;
+    }());
+
+    if (allowDebugEcho && name == 'flutter/debug-echo') {
       // Echoes back the data unchanged. Used for testing purposes.
       replyToPlatformMessage(callback, data);
       return;
@@ -961,6 +1004,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _disconnectFontSizeObserver() {
     _fontSizeObserver?.disconnect();
     _fontSizeObserver = null;
+  }
+
+  void _setAppLifecycleState(ui.AppLifecycleState state) {
+    sendPlatformMessage(
+      'flutter/lifecycle',
+      Uint8List.fromList(utf8.encode(state.toString())).buffer.asByteData(),
+      null,
+    );
   }
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.

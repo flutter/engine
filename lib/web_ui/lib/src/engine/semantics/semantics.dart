@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart'  show registerHotRestartListener;
@@ -17,6 +18,8 @@ import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'checkable.dart';
+import 'dialog.dart';
+import 'focusable.dart';
 import 'image.dart';
 import 'incrementable.dart';
 import 'label_and_value.dart';
@@ -325,6 +328,10 @@ class SemanticsNodeUpdate {
 
 /// Identifies one of the roles a [SemanticsObject] plays.
 enum Role {
+  /// Supplies generic accessibility focus features to semantics nodes that have
+  /// [ui.SemanticsFlag.isFocusable] set.
+  focusable,
+
   /// Supports incrementing and/or decrementing its value.
   incrementable,
 
@@ -356,12 +363,45 @@ enum Role {
   /// with this role, they will be able to get the assistive technology's
   /// attention right away.
   liveRegion,
+
+  /// Adds the "dialog" ARIA role to the node.
+  ///
+  /// This corresponds to a semantics node that has `scopesRoute` bit set. While
+  /// in Flutter a named route is not necessarily a dialog, this is the closest
+  /// analog on the web.
+  ///
+  /// There are 3 possible situations:
+  ///
+  /// * The node also has the `namesRoute` bit set. This means that the node's
+  ///   `label` describes the dialog, which can be expressed by adding the
+  ///   `aria-label` attribute.
+  /// * A descendant node has the `namesRoute` bit set. This means that the
+  ///   child's content describes the dialog. The child may simply be labelled,
+  ///   or it may be a subtree of nodes that describe the dialog together. The
+  ///   nearest HTML equivalent is `aria-describedby`. The child acquires the
+  ///   [routeName] role, which manages the relevant ARIA attributes.
+  /// * There is no `namesRoute` bit anywhere in the sub-tree rooted at the
+  ///   current node. In this case it's likely not a dialog at all, and the node
+  ///   should not get a label or the "dialog" role. It's just a group of
+  ///   children. For example, a modal barrier has `scopesRoute` set but marking
+  ///   it as a dialog would be wrong.
+  dialog,
+
+  /// Provides a description for an ancestor dialog.
+  ///
+  /// This role is assigned to nodes that have `namesRoute` set but not
+  /// `scopesRoute`. When both flags are set the node only gets the dialog
+  /// role (see [dialog]).
+  ///
+  /// If the ancestor dialog is missing, this role does nothing useful.
+  routeName,
 }
 
 /// A function that creates a [RoleManager] for a [SemanticsObject].
 typedef RoleManagerFactory = RoleManager Function(SemanticsObject object);
 
 final Map<Role, RoleManagerFactory> _roleFactories = <Role, RoleManagerFactory>{
+  Role.focusable: (SemanticsObject object) => Focusable(object),
   Role.incrementable: (SemanticsObject object) => Incrementable(object),
   Role.scrollable: (SemanticsObject object) => Scrollable(object),
   Role.labelAndValue: (SemanticsObject object) => LabelAndValue(object),
@@ -370,6 +410,8 @@ final Map<Role, RoleManagerFactory> _roleFactories = <Role, RoleManagerFactory>{
   Role.checkable: (SemanticsObject object) => Checkable(object),
   Role.image: (SemanticsObject object) => ImageRoleManager(object),
   Role.liveRegion: (SemanticsObject object) => LiveRegion(object),
+  Role.dialog: (SemanticsObject object) => Dialog(object),
+  Role.routeName: (SemanticsObject object) => RouteName(object),
 };
 
 /// Provides the functionality associated with the role of the given
@@ -396,6 +438,10 @@ abstract class RoleManager {
   /// minimum DOM updates.
   void update();
 
+  /// Whether this role manager was disposed of.
+  bool get isDisposed => _isDisposed;
+  bool _isDisposed = false;
+
   /// Called when [semanticsObject] is removed, or when it changes its role such
   /// that this role is no longer relevant.
   ///
@@ -403,7 +449,10 @@ abstract class RoleManager {
   /// DOM. In particular, this method is the appropriate place to call
   /// [EngineSemanticsOwner.removeGestureModeListener] if this role reponds to
   /// gesture mode changes.
-  void dispose();
+  @mustCallSuper
+  void dispose() {
+    _isDisposed = true;
+  }
 }
 
 /// Instantiation of a framework-side semantics node in the DOM.
@@ -807,6 +856,15 @@ class SemanticsObject {
   DomElement? _childContainerElement;
 
   /// The parent of this semantics object.
+  ///
+  /// This value is not final until the tree is finalized. It is not safe to
+  /// rely on this value in the middle of a semantics tree update. It is safe to
+  /// use this value in post-update callback (see [SemanticsUpdatePhase] and
+  /// [EngineSemanticsOwner.addOneTimePostUpdateCallback]).
+  SemanticsObject? get parent {
+    assert(owner.phase == SemanticsUpdatePhase.postUpdate);
+    return _parent;
+  }
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
@@ -820,7 +878,23 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  /// Whether this object represents a widget that can receive input focus.
+  bool get isFocusable => hasFlag(ui.SemanticsFlag.isFocusable);
+
+  /// Whether this object currently has input focus.
+  ///
+  /// This value only makes sense if [isFocusable] is true.
   bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+
+  /// Whether this object can be in one of "enabled" or "disabled" state.
+  ///
+  /// If this is true, [isEnabled] communicates the state.
+  bool get hasEnabledState => hasFlag(ui.SemanticsFlag.hasEnabledState);
+
+  /// Whether this object is enabled.
+  ///
+  /// This field is only meaningful if [hasEnabledState] is true.
+  bool get isEnabled => hasFlag(ui.SemanticsFlag.isEnabled);
 
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
@@ -844,6 +918,16 @@ class SemanticsObject {
       hasFlag(ui.SemanticsFlag.isImage) &&
       !hasAction(ui.SemanticsAction.tap) &&
       !hasFlag(ui.SemanticsFlag.isButton);
+
+  /// Whether this node defines a scope for a route.
+  ///
+  /// See also [Role.dialog].
+  bool get scopesRoute => hasFlag(ui.SemanticsFlag.scopesRoute);
+
+  /// Whether this node describes a route.
+  ///
+  /// See also [Role.dialog].
+  bool get namesRoute => hasFlag(ui.SemanticsFlag.namesRoute);
 
   /// Whether this object carry enabled/disabled state (and if so whether it is
   /// enabled).
@@ -1231,7 +1315,20 @@ class SemanticsObject {
   /// spec:
   ///
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
-  final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
+  final Map<Role, RoleManager> _roleManagers = <Role, RoleManager>{};
+
+  /// The mapping of roles to role managers.
+  ///
+  /// This getter is only meant for testing.
+  Map<Role, RoleManager> get debugRoleManagers => _roleManagers;
+
+  /// Returns if this node has the given [role].
+  bool hasRole(Role role) => _roleManagers.containsKey(role);
+
+  /// Returns the role manager for the given [role] attached to this node.
+  ///
+  /// If [hasRole] is false for the given [role], throws an error.
+  R getRole<R extends RoleManager>(Role role) => _roleManagers[role]! as R;
 
   /// Returns the role manager for the given [role].
   ///
@@ -1239,10 +1336,20 @@ class SemanticsObject {
   RoleManager? debugRoleManagerFor(Role role) => _roleManagers[role];
 
   /// Detects the roles that this semantics object corresponds to and manages
-  /// the lifecycles of [SemanticsObjectRole] objects.
+  /// the lifecycles of [RoleManager] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue || hasTooltip) && !isTextField && !isVisualOnly);
+    // Some role managers manage labels themselves for various role-specific reasons.
+    final bool managesOwnLabel = isTextField || scopesRoute || isVisualOnly;
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue || hasTooltip) && !managesOwnLabel);
+
+    _updateRole(Role.dialog, scopesRoute);
+    _updateRole(Role.routeName, namesRoute && !scopesRoute);
     _updateRole(Role.textField, isTextField);
+
+    // The generic `Focusable` role manager can be used for everything except
+    // text fields and incrementables, which have special needs not satisfied by
+    // the generic implementation.
+    _updateRole(Role.focusable, isFocusable && !isTextField && !isIncrementable);
 
     final bool shouldUseTappableRole =
       (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
@@ -1393,17 +1500,28 @@ class SemanticsObject {
     }
   }
 
+  /// Recursively visits the tree rooted at `this` node in depth-first fashion.
+  ///
+  /// Calls the [callback] for `this` node, then for all of its descendants.
+  void visitDepthFirst(void Function(SemanticsObject) callback) {
+    callback(this);
+    _currentChildrenInRenderOrder?.forEach((SemanticsObject child) {
+      child.visitDepthFirst(callback);
+    });
+  }
+
   @override
   String toString() {
-    if (assertionsEnabled) {
+    String result = super.toString();
+    assert(() {
       final String children = _childrenInTraversalOrder != null &&
               _childrenInTraversalOrder!.isNotEmpty
           ? '[${_childrenInTraversalOrder!.join(', ')}]'
           : '<empty>';
-      return '$runtimeType(#$id, children: $children)';
-    } else {
-      return super.toString();
-    }
+      result = '$runtimeType(#$id, children: $children)';
+      return true;
+    }());
+    return result;
   }
 }
 
@@ -1436,6 +1554,30 @@ enum GestureMode {
   browserGestures,
 }
 
+/// The current phase of the semantic update.
+enum SemanticsUpdatePhase {
+  /// No update is in progress.
+  ///
+  /// When the semantics owner receives an update, it enters the [updating]
+  /// phase from the idle phase.
+  idle,
+
+  /// Updating individual [SemanticsObject] nodes by calling
+  /// [RoleManager.update] and fixing parent-child relationships.
+  ///
+  /// After this phase is done, the owner enters the [postUpdate] phase.
+  updating,
+
+  /// Post-update callbacks are being called.
+  ///
+  /// At this point all nodes have been updated, the parent child hierarchy has
+  /// been established, the DOM tree is in sync with the semantics tree, and
+  /// [RoleManager.dispose] has been called on removed nodes.
+  ///
+  /// After this phase is done, the owner switches back to [idle].
+  postUpdate,
+}
+
 /// The top-level service that manages everything semantics-related.
 class EngineSemanticsOwner {
   EngineSemanticsOwner._() {
@@ -1464,11 +1606,15 @@ class EngineSemanticsOwner {
     _instance = null;
   }
 
+  /// The current update phase of this semantics owner.
+  SemanticsUpdatePhase get phase => _phase;
+  SemanticsUpdatePhase _phase = SemanticsUpdatePhase.idle;
+
   final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
 
   /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
   /// this frame.
-  Map<int?, SemanticsObject> _attachments = <int?, SemanticsObject>{};
+  Map<int, SemanticsObject> _attachments = <int, SemanticsObject>{};
 
   /// Declares that the [child] must be attached to the [parent].
   ///
@@ -1484,17 +1630,19 @@ class EngineSemanticsOwner {
   ///
   /// The objects in this list will be detached permanently unless they are
   /// reattached via the [_attachObject] method.
-  List<SemanticsObject?> _detachments = <SemanticsObject?>[];
+  List<SemanticsObject> _detachments = <SemanticsObject>[];
 
   /// Declares that the [SemanticsObject] with the given [id] was detached from
   /// its current parent object.
   ///
   /// The object will be detached permanently unless it is reattached via the
   /// [_attachObject] method.
-  void _detachObject(int? id) {
-    assert(_semanticsTree.containsKey(id));
+  void _detachObject(int id) {
     final SemanticsObject? object = _semanticsTree[id];
-    _detachments.add(object);
+    assert(object != null);
+    if (object != null) {
+      _detachments.add(object);
+    }
   }
 
   /// Callbacks called after all objects in the tree have their properties
@@ -1513,26 +1661,41 @@ class EngineSemanticsOwner {
   /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
   /// method.
   void _finalizeTree() {
-    for (final SemanticsObject? object in _detachments) {
-      final SemanticsObject? parent = _attachments[object!.id];
-      if (parent == null) {
-        // Was not reparented and is removed permanently from the tree.
-        _semanticsTree.remove(object.id);
-        object._parent = null;
-        object.element.remove();
-      } else {
-        assert(object._parent == parent);
-        assert(object.element.parentNode == parent._childContainerElement);
+    for (final SemanticsObject detachmentRoot in _detachments) {
+      // A detached node may or may not have some of its descendants reattached
+      // elsewhere. Walk the descendant tree and find all descendants that were
+      // reattached to a parent. Those descendants need to be removed.
+      final List<SemanticsObject> removals = <SemanticsObject>[];
+      detachmentRoot.visitDepthFirst((SemanticsObject node) {
+        final SemanticsObject? parent = _attachments[node.id];
+        if (parent == null) {
+          // Was not reparented and is removed permanently from the tree.
+          removals.add(node);
+        } else {
+          assert(node._parent == parent);
+          assert(node.element.parentNode == parent._childContainerElement);
+        }
+      });
+
+      for (final SemanticsObject removal in removals) {
+        _semanticsTree.remove(removal.id);
+        removal._parent = null;
+        removal.element.remove();
       }
     }
-    _detachments = <SemanticsObject?>[];
-    _attachments = <int?, SemanticsObject>{};
+    _detachments = <SemanticsObject>[];
+    _attachments = <int, SemanticsObject>{};
 
-    if (_oneTimePostUpdateCallbacks.isNotEmpty) {
-      for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
-        callback();
+    _phase = SemanticsUpdatePhase.postUpdate;
+    try {
+      if (_oneTimePostUpdateCallbacks.isNotEmpty) {
+        for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
+          callback();
+        }
+        _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
       }
-      _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
+    } finally {
+      _phase = SemanticsUpdatePhase.idle;
     }
   }
 
@@ -1595,7 +1758,7 @@ class EngineSemanticsOwner {
         _gestureMode = GestureMode.pointerEvents;
         _notifyGestureModeListeners();
       }
-      final List<int?> keys = _semanticsTree.keys.toList();
+      final List<int> keys = _semanticsTree.keys.toList();
       final int len = keys.length;
       for (int i = 0; i < len; i++) {
         _detachObject(keys[i]);
@@ -1800,6 +1963,7 @@ class EngineSemanticsOwner {
       }
     }
 
+    _phase = SemanticsUpdatePhase.updating;
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
 
     // First, update each object's information about itself. This information is
@@ -1828,7 +1992,22 @@ class EngineSemanticsOwner {
 
     assert(_semanticsTree.containsKey(0)); // must contain root node
     assert(() {
-      // Validate tree
+      // Validate that the node map only contains live elements, i.e. descendants
+      // of the root node. If a node is not reachable from the root, it should
+      // have been removed from the map.
+      final List<int> liveIds = <int>[];
+      final SemanticsObject root = _semanticsTree[0]!;
+      root.visitDepthFirst((SemanticsObject child) {
+        liveIds.add(child.id);
+      });
+      assert(
+        _semanticsTree.keys.every(liveIds.contains),
+        'The semantics node map is inconsistent:\n'
+        '  Nodes in tree: [${liveIds.join(', ')}]\n'
+        '  Nodes in map : [${_semanticsTree.keys.join(', ')}]'
+      );
+
+      // Validate that each node in the final tree is self-consistent.
       _semanticsTree.forEach((int? id, SemanticsObject object) {
         assert(id == object.id);
 

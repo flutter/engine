@@ -15,10 +15,6 @@
 namespace impeller {
 
 using CommandPoolMap = std::map<uint64_t, std::shared_ptr<CommandPoolVK>>;
-
-// TODO(https://github.com/flutter/flutter/issues/125571): This is storing tons
-// of CommandPoolVK's in the test runner since many contexts are created on the
-// same thread. We need to come up with a different way to clean these up.
 FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool;
 
 static Mutex g_all_pools_mutex;
@@ -52,6 +48,9 @@ std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
 }
 
 void CommandPoolVK::ClearAllPools(const ContextVK* context) {
+  if (tls_command_pool.get()) {
+    tls_command_pool.get()->erase(context->GetHash());
+  }
   Lock pool_lock(g_all_pools_mutex);
   if (auto found = g_all_pools.find(context); found != g_all_pools.end()) {
     for (auto& weak_pool : found->second) {
@@ -79,7 +78,7 @@ CommandPoolVK::CommandPoolVK(const ContextVK* context)
     return;
   }
 
-  device_ = context->GetDevice();
+  device_holder_ = context->GetDeviceHolder();
   graphics_pool_ = std::move(pool.value);
   is_valid_ = true;
 }
@@ -102,6 +101,10 @@ vk::CommandPool CommandPoolVK::GetGraphicsCommandPool() const {
 }
 
 vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return {};
+  }
   if (std::this_thread::get_id() != owner_id_) {
     return {};
   }
@@ -113,7 +116,8 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
   alloc_info.commandPool = graphics_pool_.get();
   alloc_info.commandBufferCount = 1u;
   alloc_info.level = vk::CommandBufferLevel::ePrimary;
-  auto [result, buffers] = device_.allocateCommandBuffersUnique(alloc_info);
+  auto [result, buffers] =
+      strong_device->GetDevice().allocateCommandBuffersUnique(alloc_info);
   if (result != vk::Result::eSuccess) {
     return {};
   }
@@ -123,6 +127,11 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
 void CommandPoolVK::CollectGraphicsCommandBuffer(
     vk::UniqueCommandBuffer buffer) {
   Lock lock(buffers_to_collect_mutex_);
+  if (!graphics_pool_) {
+    // If the command pool has already been destroyed, then its command buffers
+    // have been freed and are now invalid.
+    buffer.release();
+  }
   buffers_to_collect_.insert(MakeSharedVK(std::move(buffer)));
   GarbageCollectBuffersIfAble();
 }

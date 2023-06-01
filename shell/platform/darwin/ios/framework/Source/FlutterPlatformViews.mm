@@ -622,8 +622,8 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  UIView* flutter_view = flutter_view_.get();
-  for (UIView* sub_view in [flutter_view subviews]) {
+  for (int64_t view_id : active_composition_order_) {
+    UIView* sub_view = root_views_[view_id].get();
     [sub_view removeFromSuperview];
   }
   root_views_.clear();
@@ -703,7 +703,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // TODO(egarciad): Consider making this configurable.
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect;
+        SkRect joined_rect = SkRect::MakeEmpty();
         for (const SkRect& rect : intersection_rects) {
           joined_rect.join(rect);
         }

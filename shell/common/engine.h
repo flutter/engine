@@ -309,7 +309,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
-         std::unique_ptr<RuntimeController> runtime_controller);
+         std::unique_ptr<RuntimeController> runtime_controller,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
@@ -364,7 +365,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -382,7 +384,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
       const fml::WeakPtr<IOManager>& io_manager,
-      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -686,6 +689,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetViewportMetrics(const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
+  /// @brief      Updates the display metrics for the currently running Flutter
+  ///             application.
+  ///
+  /// @param[in]  displays  A complete list of displays
+  ///
+  void SetDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a message.
   ///             This call originates in the platform view and has been
   ///             forwarded to the engine on the UI task runner here.
@@ -895,7 +906,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::shared_ptr<flutter::LayerTree> layer_tree) override;
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,

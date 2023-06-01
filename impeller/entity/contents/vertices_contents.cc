@@ -107,8 +107,13 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
 
   auto src_contents = parent_.GetSourceContents();
 
-  auto snapshot = src_contents->RenderToSnapshot(
-      renderer, entity, std::nullopt, true, "VerticesUVContents Snapshot");
+  auto snapshot =
+      src_contents->RenderToSnapshot(renderer,      // renderer
+                                     entity,        // entity
+                                     std::nullopt,  // coverage_limit
+                                     std::nullopt,  // sampler_descriptor
+                                     true,          // msaa_enabled
+                                     "VerticesUVContents Snapshot");  // label
   if (!snapshot.has_value()) {
     return false;
   }

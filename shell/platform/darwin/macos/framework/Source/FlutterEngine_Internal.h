@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
@@ -53,6 +55,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @interface FlutterEngineTerminationHandler : NSObject
 
 @property(nonatomic, readonly) BOOL shouldTerminate;
+@property(nonatomic, readwrite) BOOL acceptingRequests;
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                     terminator:(nullable FlutterTerminationCallback)terminator;
@@ -135,7 +138,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 /**
  * The |FlutterViewController| associated with the given view ID, if any.
  */
-- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.
@@ -171,6 +174,14 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 
 - (nonnull FlutterPlatformViewController*)platformViewController;
 
+/**
+ * Handles changes to the application state, sending them to the framework.
+ *
+ * @param state One of the lifecycle constants in app_lifecycle_state.h,
+ *              corresponding to the Dart enum AppLifecycleState.
+ */
+- (void)setApplicationState:(flutter::AppLifecycleState)state;
+
 // Accessibility API.
 
 /**
@@ -192,6 +203,10 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (void)announceAccessibilityMessage:(NSString*)message
                         withPriority:(NSAccessibilityPriorityLevel)priority;
 
+@end
+
+@interface FlutterEngine (Tests)
+- (nonnull FlutterThreadSynchronizer*)testThreadSynchronizer;
 @end
 
 NS_ASSUME_NONNULL_END

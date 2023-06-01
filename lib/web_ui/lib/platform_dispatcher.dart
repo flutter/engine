@@ -29,6 +29,8 @@ abstract class PlatformDispatcher {
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
 
+  Iterable<Display> get displays;
+
   Iterable<FlutterView> get views;
 
   FlutterView? get implicitView;
@@ -102,7 +104,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onLocaleChanged;
   set onLocaleChanged(VoidCallback? callback);
 
-  String get initialLifecycleState => 'AppLifecycleState.resumed';
+  String get initialLifecycleState => '';
 
   bool get alwaysUse24HourFormat;
 
@@ -245,10 +247,11 @@ class FrameTiming {
 }
 
 enum AppLifecycleState {
+  detached,
   resumed,
   inactive,
+  hidden,
   paused,
-  detached,
 }
 
 enum AppExitResponse {

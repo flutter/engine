@@ -16,6 +16,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
@@ -269,6 +270,10 @@ class FlutterWindowsEngine {
   // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
   void OnDwmCompositionChanged();
 
+  // Called in response to the framework registering a ServiceBindings.
+  // Registers the top level handler for the WM_CLOSE window message.
+  void OnApplicationLifecycleEnabled();
+
  protected:
   // Creates the keyboard key handler.
   //
@@ -301,6 +306,9 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  // Sends the current lifecycle state to the framework.
+  void SetLifecycleState(flutter::AppLifecycleState state);
 
   // Create the keyboard & text input sub-systems.
   //
