@@ -9,9 +9,9 @@
 
 set -ex
 
-$ENGINE_PATH/src/out/host_release/txt_benchmarks --benchmark_format=json > txt_benchmarks.json
-$ENGINE_PATH/src/out/host_release/fml_benchmarks --benchmark_format=json > fml_benchmarks.json
-$ENGINE_PATH/src/out/host_release/shell_benchmarks --benchmark_format=json > shell_benchmarks.json
-$ENGINE_PATH/src/out/host_release/ui_benchmarks --benchmark_format=json > ui_benchmarks.json
-$ENGINE_PATH/src/out/host_release/display_list_builder_benchmarks --benchmark_format=json > display_list_builder_benchmarks.json
-$ENGINE_PATH/src/out/host_release/geometry_benchmarks --benchmark_format=json > geometry_benchmarks.json
+$ENGINE_PATH/src/out/host_release/txt_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/txt_benchmarks.json
+$ENGINE_PATH/src/out/host_release/fml_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/fml_benchmarks.json
+$ENGINE_PATH/src/out/host_release/shell_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/shell_benchmarks.json
+$ENGINE_PATH/src/out/host_release/ui_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/ui_benchmarks.json
+$ENGINE_PATH/src/out/host_release/display_list_builder_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/display_list_builder_benchmarks.json
+$ENGINE_PATH/src/out/host_release/geometry_benchmarks --benchmark_format=json > $ENGINE_PATH/out/host_release/geometry_benchmarks.json
