@@ -9,7 +9,6 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/context.h"
 
 namespace flutter {
 

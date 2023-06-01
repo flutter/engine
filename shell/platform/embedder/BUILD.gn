@@ -167,6 +167,7 @@ template("embedder_source_set") {
       ":embedder_gpu_configuration_config",
       ":embedder_header_config",
       "//flutter:config",
+      "//flutter/impeller:impeller_public_config",
     ]
   }
 }
