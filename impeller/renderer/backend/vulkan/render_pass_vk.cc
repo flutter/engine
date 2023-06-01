@@ -355,7 +355,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
         return false;
       }
 
-      // Reserved index used for per-vertex data.
+      // Reserved indexes used for per-vertex data.
       if (buffer_index >= command.last_vertex_index) {
         continue;
       }

@@ -47,15 +47,27 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     }
     attrib.type = type.value();
     attrib.normalized = GL_FALSE;
-    attrib.offset = offset;
-    offset += (input.bit_width * input.vec_size) / 8;
+    auto width = (input.bit_width * input.vec_size) / 8;
+    if (interleaved_vertex_data_) {
+      attrib.offset = offset;
+      offset += width;
+    } else {
+      attrib.offset = 0u;
+      attrib.stride = width;
+    }
     vertex_attrib_arrays.emplace_back(attrib);
   }
-  for (auto& array : vertex_attrib_arrays) {
-    array.stride = offset;
+  if (interleaved_vertex_data_) {
+    for (auto& array : vertex_attrib_arrays) {
+      array.stride = offset;
+    }
   }
   vertex_attrib_arrays_ = std::move(vertex_attrib_arrays);
   return true;
+}
+
+void BufferBindingsGLES::SetInterleavedVertexData(bool value) {
+  interleaved_vertex_data_ = value;
 }
 
 static std::string NormalizeUniformKey(const std::string& key) {

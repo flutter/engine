@@ -355,37 +355,43 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
     ///
-    auto vertex_buffer_view = command.GetVertexBuffer();
+    auto vertex_buffer_count = VertexDescriptor::kReservedVertexBufferIndex -
+                               command.last_vertex_index + 1;
+    for (auto i = 0u; i < vertex_buffer_count; i++) {
+      auto vertex_buffer_view =
+          command.vertex_bindings.buffers
+              .find(VertexDescriptor::kReservedVertexBufferIndex - i)
+              ->second.resource;
+      if (!vertex_buffer_view) {
+        return false;
+      }
 
-    if (!vertex_buffer_view) {
-      return false;
-    }
+      auto vertex_buffer =
+          vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
 
-    auto vertex_buffer =
-        vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      if (!vertex_buffer) {
+        return false;
+      }
 
-    if (!vertex_buffer) {
-      return false;
-    }
+      const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
+      if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
+              DeviceBufferGLES::BindingType::kArrayBuffer)) {
+        return false;
+      }
 
-    const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
-    if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
-            DeviceBufferGLES::BindingType::kArrayBuffer)) {
-      return false;
+      //--------------------------------------------------------------------------
+      /// Bind vertex attribs.
+      ///
+      if (!vertex_desc_gles->BindVertexAttributes(
+              gl, vertex_buffer_view.range.offset)) {
+        return false;
+      }
     }
 
     //--------------------------------------------------------------------------
     /// Bind the pipeline program.
     ///
     if (!pipeline.BindProgram()) {
-      return false;
-    }
-
-    //--------------------------------------------------------------------------
-    /// Bind vertex attribs.
-    ///
-    if (!vertex_desc_gles->BindVertexAttributes(
-            gl, vertex_buffer_view.range.offset)) {
       return false;
     }
 

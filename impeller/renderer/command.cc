@@ -26,15 +26,6 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
   return true;
 }
 
-BufferView Command::GetVertexBuffer() const {
-  auto found = vertex_bindings.buffers.find(
-      VertexDescriptor::kReservedVertexBufferIndex);
-  if (found != vertex_bindings.buffers.end()) {
-    return found->second.resource;
-  }
-  return {};
-}
-
 void Command::BindIndexBuffer(IndexType type, BufferView buffer) {
   index_type = type;
   index_buffer = buffer;

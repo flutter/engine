@@ -207,8 +207,6 @@ struct Command : public ResourceBinder {
                     const std::shared_ptr<const Texture>& texture,
                     const std::shared_ptr<const Sampler>& sampler) override;
 
-  BufferView GetVertexBuffer() const;
-
   constexpr operator bool() const { return pipeline && pipeline->IsValid(); }
 
  private:
