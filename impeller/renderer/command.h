@@ -168,8 +168,7 @@ struct Command : public ResourceBinder {
   void BindIndexBuffer(IndexType index_type, BufferView index_buffer);
 
   template <size_t N>
-  void BindVertexBuffers(
-      std::array<BufferView, N> vertex_buffers) {
+  void BindVertexBuffers(std::array<BufferView, N> vertex_buffers) {
     for (auto i = 0u; i < N; i++) {
       vertex_bindings
           .buffers[VertexDescriptor::kReservedVertexBufferIndex - i] = {
