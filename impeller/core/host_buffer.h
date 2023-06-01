@@ -103,8 +103,7 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///             least enough storage for the length of data.
   ///
   /// @param[in]  cb            A callback that will be passed a ptr to the
-  /// underlying
-  ///                           host buffer.
+  ///                           underlying host buffer.
   ///
   /// @return     The buffer view.
   ///
