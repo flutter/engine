@@ -149,8 +149,10 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   // display_list or picture_list to calculate the memory they used, we
   // shouldn't cache the current node if the memory is more significant than the
   // limit.
+  auto id = GetId();
+  FML_DCHECK(id.has_value());
   if (cache_state_ == kNone || !context.raster_cache || parent_cached ||
-      !context.raster_cache->GenerateNewCacheInThisFrame()) {
+      !context.raster_cache->GenerateNewCacheInThisFrame() || !id.has_value()) {
     return false;
   }
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
@@ -164,8 +166,7 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       // clang-format on
   };
   return context.raster_cache->UpdateCacheEntry(
-      GetId().value(), r_context,
-      [display_list = display_list_](DlCanvas* canvas) {
+      id.value(), r_context, [display_list = display_list_](DlCanvas* canvas) {
         canvas->DrawDisplayList(display_list);
       });
 }
