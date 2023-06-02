@@ -1652,7 +1652,6 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
-../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc
@@ -2781,6 +2780,7 @@
 ../../../third_party/skia/src/codec/BUILD.bazel
 ../../../third_party/skia/src/core/BUILD.bazel
 ../../../third_party/skia/src/effects/BUILD.bazel
+../../../third_party/skia/src/effects/colorfilters/BUILD.bazel
 ../../../third_party/skia/src/effects/imagefilters/BUILD.bazel
 ../../../third_party/skia/src/encode/BUILD.bazel
 ../../../third_party/skia/src/fonts/BUILD.bazel

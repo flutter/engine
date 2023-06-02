@@ -15,13 +15,17 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
@@ -193,19 +197,18 @@ RasterStatus Rasterizer::Draw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
-  DoDrawResult draw_result;
+  RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
-      [this, &draw_result,
-       &discard_callback](std::unique_ptr<LayerTreeItem> item) {
+      [&](std::unique_ptr<LayerTreeItem> item) {
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
         if (discard_callback(*layer_tree.get())) {
-          draw_result.raster_status = RasterStatus::kDiscarded;
+          raster_status = RasterStatus::kDiscarded;
         } else {
-          draw_result = DoDraw(std::move(frame_timings_recorder),
-                               std::move(layer_tree), device_pixel_ratio);
+          raster_status = DoDraw(std::move(frame_timings_recorder),
+                                 std::move(layer_tree), device_pixel_ratio);
         }
       };
 
@@ -216,15 +219,18 @@ RasterStatus Rasterizer::Draw(
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  bool should_resubmit_frame = ShouldResubmitFrame(draw_result.raster_status);
+  bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
+    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_),
+        resubmitted_pixel_ratio_);
     auto front_continuation = pipeline->ProduceIfEmpty();
-    PipelineProduceResult pipeline_result = front_continuation.Complete(
-        std::move(draw_result.resubmitted_layer_tree_item));
-    if (pipeline_result.success) {
+    PipelineProduceResult result =
+        front_continuation.Complete(std::move(resubmitted_layer_tree_item));
+    if (result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
-  } else if (draw_result.raster_status == RasterStatus::kEnqueuePipeline) {
+  } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
@@ -253,7 +259,7 @@ RasterStatus Rasterizer::Draw(
       break;
   }
 
-  return draw_result.raster_status;
+  return raster_status;
 }
 
 bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
@@ -374,7 +380,7 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
   return delegate_.GetFrameBudget();
 };
 
-Rasterizer::DoDrawResult Rasterizer::DoDraw(
+RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree,
     float device_pixel_ratio) {
@@ -385,9 +391,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
                  ->RunsTasksOnCurrentThread());
 
   if (!layer_tree || !surface_) {
-    return DoDrawResult{
-        .raster_status = RasterStatus::kFailed,
-    };
+    return RasterStatus::kFailed;
   }
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -399,18 +403,13 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
-    return DoDrawResult{
-        .raster_status = raster_status,
-        .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-            std::move(layer_tree),
-            frame_timings_recorder->CloneUntil(
-                FrameTimingsRecorder::State::kBuildEnd),
-            device_pixel_ratio),
-    };
+    resubmitted_pixel_ratio_ = device_pixel_ratio;
+    resubmitted_layer_tree_ = std::move(layer_tree);
+    resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
+        FrameTimingsRecorder::State::kBuildEnd);
+    return raster_status;
   } else if (raster_status == RasterStatus::kDiscarded) {
-    return DoDrawResult{
-        .raster_status = raster_status,
-    };
+    return raster_status;
   }
 
   if (persistent_cache->IsDumpingSkp() &&
@@ -478,15 +477,11 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   if (raster_thread_merger_) {
     if (raster_thread_merger_->DecrementLease() ==
         fml::RasterThreadStatus::kUnmergedNow) {
-      return DoDrawResult{
-          .raster_status = RasterStatus::kEnqueuePipeline,
-      };
+      return RasterStatus::kEnqueuePipeline;
     }
   }
 
-  return DoDrawResult{
-      .raster_status = raster_status,
-  };
+  return raster_status;
 }
 
 RasterStatus Rasterizer::DrawToSurface(
@@ -631,8 +626,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
     } else {
       frame->Submit();
     }
