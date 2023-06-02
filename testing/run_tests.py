@@ -11,7 +11,6 @@ A top level harness to run all unit-tests in a specific engine build.
 from pathlib import Path
 
 import argparse
-import csv
 import errno
 import glob
 import multiprocessing
@@ -75,19 +74,23 @@ def run_cmd(
   print(f'Running command "{command_string}"')
 
   start_time = time.time()
-  collect_output = forbidden_output or allowed_failure_output
-  stdout_pipe = sys.stdout if not collect_output else subprocess.PIPE
-  stderr_pipe = sys.stderr if not collect_output else subprocess.PIPE
 
   process = subprocess.Popen(
       cmd,
-      stdout=stdout_pipe,
-      stderr=stderr_pipe,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
       env=env,
       universal_newlines=True,
       **kwargs
   )
-  stdout, stderr = process.communicate()
+  output = ''
+
+  for line in iter(process.stdout.readline, ''):
+    output += line
+    sys.stdout.write(line)
+
+  sys.stdout.flush()
+  process.wait()
   end_time = time.time()
 
   if process.returncode != 0 and not expect_failure:
@@ -97,18 +100,11 @@ def run_cmd(
         f'Failed Command:\n\n{command_string}\n\nExit Code: {process.returncode}\n'
     )
 
-    if stdout:
-      print(f'STDOUT: \n{stdout}')
-
-    if stderr:
-      print(f'STDERR: \n{stderr}')
-
     print_divider('!')
 
     allowed_failure = False
     for allowed_string in allowed_failure_output:
-      if (stdout and allowed_string in stdout) or (stderr and
-                                                   allowed_string in stderr):
+      if allowed_string in output:
         allowed_failure = True
 
     if not allowed_failure:
@@ -116,13 +112,8 @@ def run_cmd(
           f'Command "{command_string}" exited with code {process.returncode}.'
       )
 
-  if stdout or stderr:
-    print(stdout)
-    print(stderr)
-
   for forbidden_string in forbidden_output:
-    if (stdout and forbidden_string in stdout) or (stderr and
-                                                   forbidden_string in stderr):
+    if forbidden_string in output:
       raise RuntimeError(
           f'command "{command_string}" contained forbidden string {forbidden_string}'
       )
@@ -489,7 +480,12 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '1',  # Validates accesses to threadgroup memory.
         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
             '1',  # Validates that texture references are not nil.
+        # Note: built from //third_party/swiftshader
         'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+        # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+        # and //third_party/vulkan_validation_layers.
+        'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
+        'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
     }
     if is_aarm64():
       extra_env.update({
@@ -501,7 +497,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags,
+        shuffle_flags + ['--enable_vulkan_validation'],
         coverage=coverage,
         extra_env=extra_env,
         # TODO(117122): Remove this allowlist.
@@ -511,19 +507,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '[MTLCompiler pipelineStateWithVariant:',
         ]
     )
-
-
-def parse_impeller_vulkan_filter():
-  test_status_path = os.path.join(SCRIPT_DIR, 'impeller_vulkan_test_status.csv')
-  gtest_filter = '--gtest_filter="'
-  with open(test_status_path, 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
-    next(csvreader)  # Skip header.
-    for row in csvreader:
-      if row[1] == 'pass':
-        gtest_filter += '*%s:' % row[0]
-  gtest_filter += '"'
-  return gtest_filter
 
 
 def run_engine_benchmarks(build_dir, executable_filter):
@@ -1209,20 +1192,16 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     )
 
   # Use this type to exclusively run impeller vulkan tests.
-  # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
-  # impeller vulkan tests are stable.
   if 'impeller-vulkan' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
-      vulkan_gtest_filter = parse_impeller_vulkan_filter()
-      gtest_flags = shuffle_flags
-      gtest_flags.append(vulkan_gtest_filter)
       run_engine_executable(
           build_dir,
           'impeller_unittests',
           engine_filter,
-          gtest_flags,
+          shuffle_flags + ['--gtest_filter=-'
+                           '*/OpenGLES:'],
           coverage=args.coverage
       )
     finally:

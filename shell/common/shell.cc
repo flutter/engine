@@ -29,9 +29,20 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/skia/include/codec/SkBmpDecoder.h"
+#include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/codec/SkGifDecoder.h"
+#include "third_party/skia/include/codec/SkIcoDecoder.h"
+#include "third_party/skia/include/codec/SkJpegDecoder.h"
+#include "third_party/skia/include/codec/SkPngDecoder.h"
+#include "third_party/skia/include/codec/SkWbmpDecoder.h"
+#include "third_party/skia/include/codec/SkWebpDecoder.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 
@@ -54,19 +65,35 @@ std::unique_ptr<Engine> CreateEngine(
     const fml::WeakPtr<IOManager>& io_manager,
     const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
     const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
-    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
-  return std::make_unique<Engine>(delegate,             //
-                                  dispatcher_maker,     //
-                                  vm,                   //
-                                  isolate_snapshot,     //
-                                  task_runners,         //
-                                  platform_data,        //
-                                  settings,             //
-                                  std::move(animator),  //
-                                  io_manager,           //
-                                  unref_queue,          //
-                                  snapshot_delegate,    //
-                                  volatile_path_tracker);
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+  return std::make_unique<Engine>(delegate,               //
+                                  dispatcher_maker,       //
+                                  vm,                     //
+                                  isolate_snapshot,       //
+                                  task_runners,           //
+                                  platform_data,          //
+                                  settings,               //
+                                  std::move(animator),    //
+                                  io_manager,             //
+                                  unref_queue,            //
+                                  snapshot_delegate,      //
+                                  volatile_path_tracker,  //
+                                  gpu_disabled_switch);
+}
+
+void RegisterCodecsWithSkia() {
+  // These are in the order they will be attempted to be decoded from.
+  // If we have data to back it up, we can order these by "frequency used in
+  // the wild" for a very small performance bump, but for now we mirror the
+  // order Skia had them in.
+  SkCodecs::Register(SkPngDecoder::Decoder());
+  SkCodecs::Register(SkJpegDecoder::Decoder());
+  SkCodecs::Register(SkWebpDecoder::Decoder());
+  SkCodecs::Register(SkGifDecoder::Decoder());
+  SkCodecs::Register(SkBmpDecoder::Decoder());
+  SkCodecs::Register(SkWbmpDecoder::Decoder());
+  SkCodecs::Register(SkIcoDecoder::Decoder());
 }
 
 // Though there can be multiple shells, some settings apply to all components in
@@ -101,6 +128,7 @@ void PerformInitializationTasks(Settings& settings) {
     } else {
       FML_DLOG(INFO) << "Skia deterministic rendering is enabled.";
     }
+    RegisterCodecsWithSkia();
 
     if (settings.icu_initialization_required) {
       if (!settings.icu_data_path.empty()) {
@@ -301,7 +329,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                              weak_io_manager_future.get(),    //
                              unref_queue_future.get(),        //
                              snapshot_delegate_future.get(),  //
-                             shell->volatile_path_tracker_));
+                             shell->volatile_path_tracker_,
+                             shell->is_gpu_disabled_sync_switch_));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -538,7 +567,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::WeakPtr<IOManager>& io_manager,
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
+          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
         return engine->Spawn(
             /*delegate=*/delegate,
             /*dispatcher_maker=*/dispatcher_maker,
@@ -546,7 +576,8 @@ std::unique_ptr<Shell> Shell::Spawn(
             /*animator=*/std::move(animator),
             /*initial_route=*/initial_route,
             /*io_manager=*/io_manager,
-            /*snapshot_delegate=*/std::move(snapshot_delegate));
+            /*snapshot_delegate=*/std::move(snapshot_delegate),
+            /*gpu_disabled_switch=*/is_gpu_disabled_sync_switch);
       },
       is_gpu_disabled);
   result->RunEngine(std::move(run_configuration));
@@ -2116,3 +2147,5 @@ Shell::GetConcurrentWorkerTaskRunner() const {
 }
 
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)
