@@ -37,7 +37,7 @@ void main() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains('"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
+      expect('$e', contains('"indices" values must be valid indices in the positions list.'));//Cant have details like this in assert>>'"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
     Vertices( // This one does not throw.
       VertexMode.triangles,
@@ -68,7 +68,7 @@ void main() {
       );
       throw AssertionError('Vertices.raw did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains('"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
+      expect('$e', contains('"indices" values must be valid indices in the positions list.'));//cant have details like this>>'"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
     Vertices.raw( // This one does not throw.
       VertexMode.triangles,
