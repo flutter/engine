@@ -89,7 +89,10 @@ void testMain() {
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
       throw AssertionError('Vertices did not throw the expected error.');
-    } on AssertionError catch (e) {
+    } on AssertionError catch (e,st) {
+      if(!'$e'.contains(r'\"indices\" values must be valid indices in the positions list.')) {
+        print('FIND STACK $st');
+      }
       expect('$e', contains(r'\"indices\" values must be valid indices in the positions list.'));
     }
     ui.Vertices( // This one does not throw.
@@ -120,7 +123,10 @@ void testMain() {
         colors: Int32List.fromList(const <int>[0xffff0000]),
       );
       throw AssertionError('Vertices did not throw the expected error.');
-    } on AssertionError catch (e) {
+    } on AssertionError catch (e, st) {
+      if(!'$e'.contains(r'\"colors\" length must be half the length of "positions".')) {
+        print('FIND STACK $st');
+      }
       expect('$e', contains(r'\"colors\" length must be half the length of "positions".'));
     }
     try {
