@@ -256,7 +256,7 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
       if (height == 1) {
         int64_t threadGroups = std::max(
             static_cast<int64_t>(std::ceil(width * 1.0 / max_wg_size[0] * 1.0)),
-            1);
+            1LL);
         cmd_buffer.dispatch(threadGroups, 1, 1);
       } else {
         while (width > max_wg_size[0]) {
