@@ -440,7 +440,7 @@ extension DomProgressEventExtension on DomProgressEvent {
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
-  @JS('baseUri')
+  @JS('baseURI')
   external JSString? get _baseUri;
   String? get baseUri => _baseUri?.toDart;
 
@@ -3278,14 +3278,6 @@ extension DomIntlExtension on DomIntl {
   external JSAny? get v8BreakIterator;
 }
 
-/// Similar to [js_util.callMethod] but allows for providing a non-string method
-/// name.
-T _jsCallMethod<T>(Object o, Object method,
-    [List<Object?> args = const <Object?>[]]) {
-  final Object actualMethod = js_util.getProperty(o, method);
-  return js_util.callMethod<T>(actualMethod, 'apply', <Object?>[o, args]);
-}
-
 @JS('Intl.Segmenter')
 @staticInterop
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter
@@ -3310,7 +3302,7 @@ class DomSegments {}
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
     final DomIterator segmentIterator =
-        _jsCallMethod(this, domSymbol.iterator) as DomIterator;
+        js_util.callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
 }
@@ -3438,9 +3430,19 @@ extension DomTextDecoderExtension on DomTextDecoder {
 
 @JS('window.FinalizationRegistry')
 @staticInterop
-class DomFinalizationRegistry {
-  external factory DomFinalizationRegistry(JSFunction cleanup);
-}
+class DomFinalizationRegistry {}
+
+@JS('window.FinalizationRegistry')
+external JSAny? get _finalizationRegistryConstructor;
+
+// Note: We don't use a factory constructor here because there is an issue in
+// dart2js that causes a crash in the Google3 build if we do use a factory
+// constructor. See b/284478971
+DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
+  js_util.callConstructor(
+    _finalizationRegistryConstructor!.toObjectShallow,
+    <Object>[cleanup]
+  );
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
@@ -3460,9 +3462,6 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   external JSVoid _unregister(JSAny token);
   void unregister(Object token) => _unregister(token.toJSAnyShallow);
 }
-
-@JS('window.FinalizationRegistry')
-external JSAny? get _finalizationRegistryConstructor;
 
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =

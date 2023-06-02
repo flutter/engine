@@ -76,6 +76,9 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
 
   if (coverage_limit.has_value()) {
     coverage = coverage->Intersection(*coverage_limit);
+    if (!coverage.has_value()) {
+      return std::nullopt;
+    }
   }
 
   auto texture = renderer.MakeSubpass(
