@@ -15,8 +15,8 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         textureCoordinates: const <Offset>[Offset.zero],
       );
-      throw AssertionError('Vertices did not throw the expected error.');
-    } on AssertionError catch (e) {
+      throw ArgumentError('Vertices did not throw the expected error.');
+    } on ArgumentError catch (e) {
       expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
     }    
     try {
@@ -25,8 +25,8 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         colors: const <Color>[Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      throw AssertionError('Vertices did not throw the expected error.');
-    } on AssertionError catch (e) {
+      throw ArgumentError('Vertices did not throw the expected error.');
+    } on ArgumentError catch (e) {
       expect('$e', contains('"positions" and "colors" lengths must match.'));
     }    
     try {
