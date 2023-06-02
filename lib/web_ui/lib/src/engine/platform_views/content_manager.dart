@@ -65,6 +65,9 @@ class PlatformViewManager {
   /// Throws an [AssertionError] if [viewId] hasn't been rendered before.
   DomElement getViewById(int viewId) {
     assert(knowsViewId(viewId), 'No view has been rendered for viewId: $viewId');
+    // `_contents[viewId]` is the <flt-platform-view> element created by us. The
+    // first (and only) child of that is the element created by the user-supplied
+    // factory function.
     return _contents[viewId]!.firstElementChild!;
   }
 
