@@ -53,8 +53,6 @@
 #include "flutter/vulkan/vulkan_application.h"  // nogncheck
 #endif
 
-using namespace std::chrono_literals;
-
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
@@ -747,6 +745,7 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Wait to make |start| bigger than zero
+  using namespace std::chrono_literals;
   std::this_thread::sleep_for(1ms);
 
   // We MUST put |start| after |CreateShell()| because the clock source will be
