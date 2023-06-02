@@ -69,7 +69,7 @@ void testMain() {
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
       expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
-    }    
+    }
     try {
       ui.Vertices(
         ui.VertexMode.triangles,
@@ -79,7 +79,7 @@ void testMain() {
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
       expect('$e', contains('"colors" length must be half the length of "positions".'));
-    }    
+    }
     try {
       ui.Vertices(
         ui.VertexMode.triangles,
@@ -120,7 +120,7 @@ void testMain() {
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
       expect('$e', contains('"colors" length must be half the length of "positions".'));
-    }    
+    }
     try {
       ui.Vertices.raw(
         ui.VertexMode.triangles,

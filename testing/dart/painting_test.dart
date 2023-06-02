@@ -18,7 +18,7 @@ void main() {
       throw ArgumentError('Vertices did not throw the expected error.');
     } on ArgumentError catch (e) {
       expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
-    }    
+    }
     try {
       Vertices(
         VertexMode.triangles,
@@ -28,7 +28,7 @@ void main() {
       throw ArgumentError('Vertices did not throw the expected error.');
     } on ArgumentError catch (e) {
       expect('$e', contains('"positions" and "colors" lengths must match.'));
-    }    
+    }
     try {
       Vertices(
         VertexMode.triangles,
