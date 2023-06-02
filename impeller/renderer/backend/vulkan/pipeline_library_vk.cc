@@ -386,7 +386,6 @@ std::unique_ptr<ComputePipelineVK> PipelineLibraryVK::CreateComputePipeline(
   info.setPSpecializationInfo(&specialization_info);
   pipeline_info.setStage(info);
 
-
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
