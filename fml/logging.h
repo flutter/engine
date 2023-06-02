@@ -95,4 +95,10 @@ bool ShouldCreateLogMessage(LogSeverity severity);
     ::fml::KillProcess();                          \
   }
 
+// Asserts that a std::optional contains a value.  This can be used to satisfy
+// the clang-tidy bugprone-unchecked-optional-access check.
+#define ASSERT_OPTIONAL_HAS_VALUE(opt) \
+  if (!opt.has_value())                \
+    FML_UNREACHABLE();
+
 #endif  // FLUTTER_FML_LOGGING_H_
