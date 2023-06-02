@@ -182,7 +182,8 @@ class PointerData {
   /// The ID of the [FlutterView] this [PointerEvent] originated from.
   final int viewId;
 
-  /// Unique identifier that ties the [PointerEvent] to embedder event created
+  /// Unique identifier that ties the [PointerEvent] to the embedder
+  /// event that created it.
   /// it.
   ///
   /// No two pointer events can have the same [embedderId]. This is different
