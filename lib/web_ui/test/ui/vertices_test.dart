@@ -69,7 +69,7 @@ void testMain() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"positions\\" and \\"textureCoordinates\\" lengths must match.'));
+      expect('$e', contains(r'\"positions\" and \"textureCoordinates\" lengths must match.'));
     }
     */
     try {
@@ -80,7 +80,7 @@ void testMain() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"colors\\" length must be half the length of "positions".'));
+      expect('$e', contains(r'\"colors\" length must be half the length of "positions".'));
     }
     try {
       ui.Vertices(
@@ -90,7 +90,7 @@ void testMain() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"indices\\" values must be valid indices in the positions list.'));
+      expect('$e', contains(r'\"indices\" values must be valid indices in the positions list.'));
     }
     ui.Vertices( // This one does not throw.
       ui.VertexMode.triangles,
@@ -111,7 +111,7 @@ void testMain() {
       );
       throw AssertionError('Vertices.raw did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"positions\\" must have an even number of entries (each coordinate is an x,y pair).'));
+      expect('$e', contains(r'\"positions\" must have an even number of entries (each coordinate is an x,y pair).'));
     }
     try {
       ui.Vertices(
@@ -121,7 +121,7 @@ void testMain() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"colors\\" length must be half the length of "positions".'));
+      expect('$e', contains(r'\"colors\" length must be half the length of "positions".'));
     }
     try {
       ui.Vertices.raw(
@@ -131,7 +131,7 @@ void testMain() {
       );
       throw AssertionError('Vertices.raw did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\\"indices\\" values must be valid indices in the positions list.'));
+      expect('$e', contains(r'\"indices\" values must be valid indices in the positions list.'));
     }
     ui.Vertices.raw( // This one does not throw.
       ui.VertexMode.triangles,
