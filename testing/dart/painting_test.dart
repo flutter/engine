@@ -15,8 +15,8 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         textureCoordinates: const <Offset>[Offset.zero],
       );
-      throw ArgumentError('Vertices did not throw the expected error.');
-    } on ArgumentError catch (e) {
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
       expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
     }
     try {
@@ -25,8 +25,8 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         colors: const <Color>[Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      throw ArgumentError('Vertices did not throw the expected error.');
-    } on ArgumentError catch (e) {
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
       expect('$e', contains('"positions" and "colors" lengths must match.'));
     }
     try {
@@ -35,9 +35,9 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw 'Vertices did not throw the expected error.';
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.');
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
     Vertices( // This one does not throw.
       VertexMode.triangles,
@@ -56,9 +56,9 @@ void main() {
         VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw 'Vertices.raw did not throw the expected error.';
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
+      throw AssertionError('Vertices.raw did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"positions" must have an even number of entries (each coordinate is an x,y pair).'));
     }
     try {
       Vertices.raw(
@@ -66,9 +66,9 @@ void main() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw 'Vertices.raw did not throw the expected error.';
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.');
+      throw AssertionError('Vertices.raw did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
     Vertices.raw( // This one does not throw.
       VertexMode.triangles,

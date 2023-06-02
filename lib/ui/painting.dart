@@ -4744,7 +4744,10 @@ base class Vertices extends NativeFieldWrapperClass1 {
     List<Color>? colors,
     List<Offset>? textureCoordinates,
     List<int>? indices,
-  }) {
+  }) : assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
+    assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.'),
+    assert(indices==null || !indices.any((int i) => i<0 || i>=positions.length),'"indices" values must be valid indices in the positions list.') {
+    /* THESE CHECKS WILL BE OBSOLETE */
     if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
     }
@@ -4828,7 +4831,11 @@ base class Vertices extends NativeFieldWrapperClass1 {
     Int32List? colors,
     Float32List? textureCoordinates,
     Uint16List? indices,
-  }) {
+  }) : assert(positions.length.isEven,'"positions" must have an even number of entries (each coordinate is an x,y pair).'),
+    assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
+    assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".'),
+    assert(indices==null || !indices.any((int i) => i<0 || i*2>=positions.length),'"indices" values must be valid indices in the positions list.') {
+    /* THESE CHECKS WILL BE OBSOLETE */
     if (positions.length % 2 != 0) {
       throw ArgumentError('"positions" must have an even number of entries (each coordinate is an x,y pair).');
     }

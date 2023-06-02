@@ -19,7 +19,7 @@ class CkVertices implements ui.Vertices {
   }) {
     assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.');
     assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.');
-    assert(indices==null || !indices.any((int i) => i<0 && i>=positions.length),'"indices" values must be valid indices in the positions list.');
+    assert(indices==null || !indices.any((int i) => i<0 || i>=positions.length),'"indices" values must be valid indices in the positions list.');
     /*BEFORE ASSERTS
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length) {
@@ -54,7 +54,7 @@ class CkVertices implements ui.Vertices {
     assert(positions.length.isEven,'"positions" must have an even number of entries (each coordinate is an x,y pair).');
     assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.');
     assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".');
-    assert(indices==null || !indices.any((int i) => i<0 && i*2>=positions.length),'"indices" values must be valid indices in the positions list.');
+    assert(indices==null || !indices.any((int i) => i<0 || i*2>=positions.length),'"indices" values must be valid indices in the positions list.');
     Uint32List? unsignedColors;
     if (colors != null) {
       unsignedColors = colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
