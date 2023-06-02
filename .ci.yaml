@@ -424,6 +424,7 @@ targets:
     drone_dimensions:
       - os=Linux
       - device_type=none
+      - cores=32
     runIf:
       - DEPS
       - .ci.yaml
