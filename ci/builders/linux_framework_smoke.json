@@ -22,7 +22,10 @@
             ],
             "name": "host_debug_unopt",
             "ninja": {
-                "config": "host_debug_unopt"
+                "config": "host_debug_unopt",
+                "targets": [
+                    "flutter/build/archives:dart_sdk_archive"
+                ]
             }
         }
     ],
