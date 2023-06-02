@@ -8,6 +8,12 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+
   test('Vertices checks', () {
     try {
       Vertices(
@@ -15,7 +21,9 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         textureCoordinates: const <Offset>[Offset.zero],
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
     }
@@ -25,7 +33,9 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         colors: const <Color>[Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains('"positions" and "colors" lengths must match.'));
     }
@@ -35,7 +45,9 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains('"indices" values must be valid indices in the positions list.'));//Cant have details like this in assert>>'"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
@@ -56,7 +68,9 @@ void main() {
         VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw AssertionError('Vertices.raw did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices.raw did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains('"positions" must have an even number of entries (each coordinate is an x,y pair).'));
     }
@@ -66,7 +80,9 @@ void main() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw AssertionError('Vertices.raw did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices.raw did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains('"indices" values must be valid indices in the positions list.'));//cant have details like this>>'"indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.'));
     }
