@@ -1621,6 +1621,7 @@ typedef struct {
   /// A callback invoked by the engine to release the backing store. The
   /// embedder may collect any resources associated with the backing store.
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
+  /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
