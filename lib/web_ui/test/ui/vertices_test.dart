@@ -80,7 +80,7 @@ void testMain() {
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
-      expect('$e', contains(r'\"colors\" length must be half the length of "positions".'));
+      expect('$e', contains(r'\"positions\" and \"colors\" lengths must match.'));
     }
     try {
       ui.Vertices(
