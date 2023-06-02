@@ -101,10 +101,9 @@ void testMain() {
 
     setCursorKind('progress'); // reset to different cursor before testing '-webkit-image-set...'
 
+    // we do test for '-webkit-image-set' or 'image-set' prefix, browsers may change '-webkit-image-set' to 'image-set'.
     setCursorKind(webkitImageSetCss);
-    expect( getSetCursorCSSStyle(), startsWith('-webkit-image-set') );
-    
-    // we do not test the 'webkit-image-set' prefix because browsers currently throw that out.
+    expect( getSetCursorCSSStyle(), anyOf(startsWith('-webkit-image-set'),startsWith('image-set')) );
   });
 
   test('MouseCursor.activateSystemCursor allows url/-webkit-image-set (with datauri url) kind value prefix to pass', () {
@@ -118,9 +117,8 @@ void testMain() {
 
     setCursorKind('progress'); // reset to different cursor before testing '-webkit-image-set...'
 
+    // we do test for '-webkit-image-set' or 'image-set' prefix, browsers may change '-webkit-image-set' to 'image-set'.
     setCursorKind(webkitImageSetCss);
-    expect( getSetCursorCSSStyle(), startsWith('-webkit-image-set') );
-
-    // we do not test the 'webkit-image-set' prefix because browsers currently throw that out.
+    expect( getSetCursorCSSStyle(), anyOf(startsWith('-webkit-image-set'),startsWith('image-set')) );
   });
 }
