@@ -114,10 +114,10 @@ void testMain() {
       expect('$e', contains(r'\"positions\" must have an even number of entries (each coordinate is an x,y pair).'));
     }
     try {
-      ui.Vertices(
+      ui.Vertices.raw(
         ui.VertexMode.triangles,
-        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
-        colors: const <ui.Color>[ui.Color.fromRGBO(255, 0, 0, 1.0)],
+        Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        colors: Int32List.fromList(const <int>[0xffff0000]),
       );
       throw AssertionError('Vertices did not throw the expected error.');
     } on AssertionError catch (e) {
