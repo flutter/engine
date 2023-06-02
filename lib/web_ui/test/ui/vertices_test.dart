@@ -60,7 +60,7 @@ void testMain() {
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454
 
   test('Vertices assert checks', () {
-    /* HTML renderer's SurfaceVertices() does not support textureCoordinates, so we cant test this universally across web 
+    /* HTML renderer's SurfaceVertices() does not support textureCoordinates, so we cant test this universally across web
     try {
       ui.Vertices(
         ui.VertexMode.triangles,
