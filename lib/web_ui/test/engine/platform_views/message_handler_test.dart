@@ -136,6 +136,18 @@ void testMain() {
             completers.last.complete,
           );
 
+          completers.add(Completer<ByteData?>());
+          messageHandler.handlePlatformViewCall(
+            _getCreateMessage(viewType, 333, 'foobar'),
+            completers.last.complete,
+          );
+
+          completers.add(Completer<ByteData?>());
+          messageHandler.handlePlatformViewCall(
+            _getCreateMessage(viewType, 444, <dynamic>[1, null, 'str']),
+            completers.last.complete,
+          );
+
           final List<ByteData?> responses = await Future.wait(
             completers.map((Completer<ByteData?> c) => c.future),
           );
@@ -148,11 +160,15 @@ void testMain() {
             );
           }
 
-          expect(factoryCalls, hasLength(2));
+          expect(factoryCalls, hasLength(4));
           expect(factoryCalls[0].viewId, 111);
           expect(factoryCalls[0].params, isNull);
           expect(factoryCalls[1].viewId, 222);
           expect(factoryCalls[1].params, <dynamic, dynamic>{'foo': 'bar'});
+          expect(factoryCalls[2].viewId, 333);
+          expect(factoryCalls[2].params, 'foobar');
+          expect(factoryCalls[3].viewId, 444);
+          expect(factoryCalls[3].params, <dynamic>[1, null, 'str']);
         });
 
         test('fails if the factory returns a non-DOM object', () async {
