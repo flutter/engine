@@ -41,7 +41,7 @@
             ],
             "local_engine": "host_debug_unopt",
             "shard": "framework_tests",
-            "subshard": "library"
+            "subshard": "libraries"
         }
     ]
 }
