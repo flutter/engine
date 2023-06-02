@@ -18,6 +18,9 @@ class SkwasmVertices extends SkwasmObjectWrapper<RawVertices> implements ui.Vert
     List<ui.Color>? colors,
     List<int>? indices,
   }) => withStackScope((StackScope scope) {
+    assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.');
+    assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.');
+    assert(indices==null || !indices.any((int i) => i<0 && i>=positions.length),'"indices" values must be valid indices in the positions list.');
     final RawPointArray rawPositions = scope.convertPointArrayToNative(positions);
     final RawPointArray rawTextureCoordinates = textureCoordinates != null
       ? scope.convertPointArrayToNative(textureCoordinates)
@@ -47,6 +50,10 @@ class SkwasmVertices extends SkwasmObjectWrapper<RawVertices> implements ui.Vert
     Int32List? colors,
     Uint16List? indices,
   }) => withStackScope((StackScope scope) {
+    assert(positions.length.isEven,'"positions" must have an even number of entries (each coordinate is an x,y pair).');
+    assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.');
+    assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".');
+    assert(indices==null || !indices.any((int i) => i<0 && i*2>=positions.length),'"indices" values must be valid indices in the positions list.');
     final RawPointArray rawPositions = scope.convertDoublesToNative(positions);
     final RawPointArray rawTextureCoordinates = textureCoordinates != null
       ? scope.convertDoublesToNative(textureCoordinates)

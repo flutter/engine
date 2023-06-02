@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -60,53 +59,83 @@ void testMain() {
     await matchGoldenFile('ui_vertices_antialiased.png', region: region);
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454
 
-  test('Vertices checks (canvas kit only)', () {
+  test('Vertices assert checks', () {
     try {
-      CkVertices(
+      ui.Vertices(
+        ui.VertexMode.triangles,
+        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+        textureCoordinates: const <ui.Offset>[ui.Offset.zero],
+      );
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"positions" and "textureCoordinates" lengths must match.'));
+    }    
+    try {
+      ui.Vertices(
+        ui.VertexMode.triangles,
+        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+        colors: const <ui.Color>[ui.Color.fromRGBO(255, 0, 0, 1.0)],
+      );
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"colors" length must be half the length of "positions".'));
+    }    
+    try {
+      ui.Vertices(
         ui.VertexMode.triangles,
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw ArgumentError('Vertices did not throw the expected error.');
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"indices" values must be valid indices in the positions list.'));
     }
-    CkVertices( // This one does not throw.
+    ui.Vertices( // This one does not throw.
       ui.VertexMode.triangles,
       const <ui.Offset>[ui.Offset.zero],
     ).dispose();
-    CkVertices( // This one should not throw.
+    ui.Vertices( // This one should not throw.
       ui.VertexMode.triangles,
       const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
       indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]), // Uint16List implements List<int> so this is ok.
     ).dispose();
   });
 
-  test('Vertices.raw checks (canvas kit only)', () {
+  test('Vertices.raw assert checks', () {
     try {
-      CkVertices.raw(
+      ui.Vertices.raw(
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw ArgumentError('Vertices.raw did not throw the expected error.');
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
+      throw AssertionError('Vertices.raw did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"positions" must have an even number of entries (each coordinate is an x,y pair).'));
     }
     try {
-      CkVertices.raw(
+      ui.Vertices(
+        ui.VertexMode.triangles,
+        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+        colors: const <ui.Color>[ui.Color.fromRGBO(255, 0, 0, 1.0)],
+      );
+      throw AssertionError('Vertices did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"colors" length must be half the length of "positions".'));
+    }    
+    try {
+      ui.Vertices.raw(
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw ArgumentError('Vertices.raw did not throw the expected error.');
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
+      throw AssertionError('Vertices.raw did not throw the expected error.');
+    } on AssertionError catch (e) {
+      expect('$e', contains('"indices" values must be valid indices in the positions list.'));
     }
-    CkVertices.raw( // This one does not throw.
+    ui.Vertices.raw( // This one does not throw.
       ui.VertexMode.triangles,
       Float32List.fromList(const <double>[0.0, 0.0]),
     ).dispose();
-    CkVertices.raw( // This one should not throw.
+    ui.Vertices.raw( // This one should not throw.
       ui.VertexMode.triangles,
       Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
       indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]),

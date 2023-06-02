@@ -4833,7 +4833,7 @@ base class Vertices extends NativeFieldWrapperClass1 {
       throw ArgumentError('"positions" must have an even number of entries (each coordinate is an x,y pair).');
     }
     if (colors != null && colors.length * 2 != positions.length) {
-      throw ArgumentError('"positions" and "colors" lengths must match.');
+      throw ArgumentError('"colors" length must be half the length of "positions".');
     }
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
