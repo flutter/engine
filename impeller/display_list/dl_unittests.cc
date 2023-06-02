@@ -830,18 +830,12 @@ TEST_P(DisplayListTest, CanDrawShadow) {
 }
 
 TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
-  flutter::DisplayListBuilder builder;
-  {
-    builder.Save();
-    builder.Scale(1.618, 1.618);
-    builder.DrawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
-                       SK_ColorTRANSPARENT, 15, false, 1);
-    builder.Restore();
-  }
-  auto dl = builder.Build();
-
   DlDispatcher dispatcher;
-  dispatcher.drawDisplayList(dl, 1);
+  dispatcher.save();
+  dispatcher.scale(1.618, 1.618);
+  dispatcher.drawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+                        SK_ColorTRANSPARENT, 15, false, 1);
+  dispatcher.restore();
   auto picture = dispatcher.EndRecordingAsPicture();
 
   std::shared_ptr<SolidRRectBlurContents> rrect_blur;
@@ -1366,6 +1360,35 @@ TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
 
   paint.setColorSource(&image_source);
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest,
+       DrawVerticesImageSourceWithTextureCoordinatesAndColorBlending) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  auto dl_image = DlImageImpeller::Make(texture);
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
+                                          flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kWhite()};
+  std::vector<SkPoint> texture_coordinates = {
+      SkPoint::Make(0, 0), SkPoint::Make(100, 200), SkPoint::Make(200, 100)};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      texture_coordinates.data(), colors.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  auto image_source = flutter::DlImageColorSource(
+      dl_image, flutter::DlTileMode::kRepeat, flutter::DlTileMode::kRepeat);
+
+  paint.setColorSource(&image_source);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kModulate, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

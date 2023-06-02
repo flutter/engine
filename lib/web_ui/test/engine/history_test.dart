@@ -8,9 +8,8 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/dom.dart'
-    show DomEvent, createDomPopStateEvent;
-import 'package:ui/src/engine/navigation.dart';
+import 'package:ui/src/engine/dom.dart' show DomEvent, createDomPopStateEvent;
+import 'package:ui/src/engine/navigation/history.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
 import 'package:ui/ui_web/src/ui_web.dart';
@@ -716,6 +715,11 @@ void testMain() {
 
       // A listener that was never added.
       expect(() => location.removePopStateListener(myNonAddedListener), throwsAssertionError);
+    });
+
+    test('returns a non-empty baseUri', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      expect(location.getBaseHref(), isNotNull);
     });
   });
 }

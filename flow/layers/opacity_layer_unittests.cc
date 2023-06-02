@@ -18,6 +18,9 @@
 #include "flutter/testing/display_list_testing.h"
 #include "gtest/gtest.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 namespace testing {
 
@@ -656,7 +659,7 @@ using OpacityLayerDiffTest = DiffContextTest;
 
 TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
   auto picture = CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1));
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60)));
   auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
 
   MockLayerTree tree1;
@@ -669,7 +672,7 @@ TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
 
 TEST_F(OpacityLayerDiffTest, FractionalTranslationWithRasterCache) {
   auto picture = CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1));
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60)));
   auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
 
   MockLayerTree tree1;
@@ -742,3 +745,5 @@ TEST_F(OpacityLayerTest, FullyTransparentDoesNotCullPlatformView) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

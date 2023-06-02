@@ -43,9 +43,11 @@ struct Paint {
     Sigma sigma;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
+        std::shared_ptr<ColorSourceContents> color_source_contents) const;
+
+    std::shared_ptr<FilterContents> CreateMaskBlur(
         const FilterInput::Ref& input,
-        bool is_solid_color,
-        const Matrix& effect_matrix) const;
+        bool is_solid_color) const;
   };
 
   Color color = Color::Black();
@@ -94,18 +96,14 @@ struct Paint {
                                                     bool cover = false) const;
 
   std::shared_ptr<Contents> CreateContentsForGeometry(
-      std::unique_ptr<Geometry> geometry) const;
-
-  std::shared_ptr<Contents> CreateContentsForGeometry(
-      const std::shared_ptr<Geometry>& geometry) const;
+      std::shared_ptr<Geometry> geometry) const;
 
   /// @brief   Whether this paint has a color filter that can apply opacity
   bool HasColorFilter() const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
-                                         bool is_solid_color,
-                                         const Matrix& effect_transform) const;
+                                         bool is_solid_color) const;
 
   std::shared_ptr<Contents> WithImageFilter(std::shared_ptr<Contents> input,
                                             const Matrix& effect_transform,
