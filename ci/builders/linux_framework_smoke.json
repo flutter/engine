@@ -1,7 +1,17 @@
 {
     "builds": [
         {
-            "archives": [],
+            "archives": [
+                {
+                    "name": "host_debug_unopt",
+                    "base_path": "out/host_debug_unopt/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                        "out/host_debug_unopt/zip_archives/dart-sdk-linux-x64.zip"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
