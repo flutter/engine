@@ -470,6 +470,19 @@ public class PlatformPluginTest {
   }
 
   @Test
+  public void setFrameworkHandlesBacksFlutterActivity() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBacks(true);
+
+    verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBacks(true);
+  }
+
+  @Test
   public void popSystemNavigatorFlutterActivity() {
     Activity mockActivity = mock(Activity.class);
     PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
