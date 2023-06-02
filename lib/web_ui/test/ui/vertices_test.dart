@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart' show renderer;
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -17,6 +18,12 @@ void main() {
 }
 
 void testMain() {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+
   group('Vertices', () {
     setUpUnitTests(setUpTestViewDimensions: false);
 
@@ -60,25 +67,30 @@ void testMain() {
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454
 
   test('Vertices assert checks', () {
-    /* HTML renderer's SurfaceVertices() does not support textureCoordinates, so we cant test this universally across web
-    try {
-      ui.Vertices(
-        ui.VertexMode.triangles,
-        const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
-        textureCoordinates: const <ui.Offset>[ui.Offset.zero],
-      );
-      throw AssertionError('Vertices did not throw the expected error.');
-    } on AssertionError catch (e) {
-      expect('$e', contains(r'\"positions\" and \"textureCoordinates\" lengths must match.'));
+    // We don't test textureCoordinate assert checks on html render because HTML renderer's SurfaceVertices() does not support textureCoordinates
+    if(renderer.rendererTag != 'html') {
+      try {
+        ui.Vertices(
+          ui.VertexMode.triangles,
+          const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
+          textureCoordinates: const <ui.Offset>[ui.Offset.zero],
+        );
+        if(assertsEnabled) {
+          throw AssertionError('Vertices did not throw the expected assert error.');
+        }
+      } on AssertionError catch (e) {
+        expect('$e', contains(r'\"positions\" and \"textureCoordinates\" lengths must match.'));
+      }
     }
-    */
     try {
       ui.Vertices(
         ui.VertexMode.triangles,
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         colors: const <ui.Color>[ui.Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"positions\" and \"colors\" lengths must match.'));
     }
@@ -88,7 +100,9 @@ void testMain() {
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"indices\" values must be valid indices in the positions list.'));
     }
@@ -109,9 +123,26 @@ void testMain() {
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw AssertionError('Vertices.raw did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices.raw did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"positions\" must have an even number of entries (each coordinate is an x,y pair).'));
+    }
+    // We don't test textureCoordinate assert checks on html render because HTML renderer's SurfaceVertices() does not support textureCoordinates
+    if(renderer.rendererTag != 'html') {
+      try {
+        ui.Vertices.raw(
+          ui.VertexMode.triangles,
+          Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+          textureCoordinates: Float32List.fromList(const <double>[0.0, 0.0]),
+        );
+        if(assertsEnabled) {
+          throw AssertionError('Vertices did not throw the expected assert error.');
+        }
+      } on AssertionError catch (e) {
+        expect('$e', contains(r'\"positions\" and \"textureCoordinates\" lengths must match.'));
+      }
     }
     try {
       ui.Vertices.raw(
@@ -119,7 +150,9 @@ void testMain() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         colors: Int32List.fromList(const <int>[0xffff0000]),
       );
-      throw AssertionError('Vertices did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"colors\" length must be half the length of \"positions\".'));
     }
@@ -129,7 +162,9 @@ void testMain() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      throw AssertionError('Vertices.raw did not throw the expected error.');
+      if(assertsEnabled) {
+        throw AssertionError('Vertices.raw did not throw the expected assert error.');
+      }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"indices\" values must be valid indices in the positions list.'));
     }

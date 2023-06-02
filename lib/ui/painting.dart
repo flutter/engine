@@ -4747,24 +4747,6 @@ base class Vertices extends NativeFieldWrapperClass1 {
   }) : assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
     assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.'),
     assert(indices==null || !indices.any((int i) => i<0 || i>=positions.length),'"indices" values must be valid indices in the positions list.') {
-    /* THESE CHECKS WILL BE OBSOLETE
-    if (colors != null && colors.length != positions.length) {
-      throw ArgumentError('"positions" and "colors" lengths must match.');
-    }
-    if (textureCoordinates != null && textureCoordinates.length != positions.length) {
-      throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
-    }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
-        }
-      }
-    }*/
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
@@ -4835,30 +4817,6 @@ base class Vertices extends NativeFieldWrapperClass1 {
     assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
     assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".'),
     assert(indices==null || !indices.any((int i) => i<0 || i*2>=positions.length),'"indices" values must be valid indices in the positions list.') {
-    /* THESE CHECKS WILL BE OBSOLETE
-    if (positions.length % 2 != 0) {
-      throw ArgumentError('"positions" must have an even number of entries (each coordinate is an x,y pair).');
-    }
-    if (colors != null && colors.length * 2 != positions.length) {
-      throw ArgumentError('"colors" length must be half the length of "positions".');
-    }
-    if (textureCoordinates != null && textureCoordinates.length != positions.length) {
-      throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
-    }
-    if (indices != null) {
-      final int halfPositions = positions.length >> 1;  // len/2 - we already checked that positions.length is even
-      for (int index = 0; index < indices.length; index += 1) {
-        // we need to check that `indices[index] * 2 >= positions.length`, so do it without multiplying
-        if (indices[index] >= halfPositions) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
-        }
-      }
-    }
-    */
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
