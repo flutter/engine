@@ -166,12 +166,15 @@ std::list<SkRect> DlRTree::searchAndConsolidateRects(const SkRect& query,
   std::vector<int> intermediary_results;
   search(query, &intermediary_results);
 
-  DlRegion region;
+  std::vector<SkIRect> rects;
+  rects.reserve(intermediary_results.size());
   for (int index : intermediary_results) {
     SkIRect current_record_rect;
     bounds(index).roundOut(&current_record_rect);
-    region.addRect(current_record_rect);
+    rects.push_back(current_record_rect);
   }
+  DlRegion region;
+  region.addRects(std::move(rects));
 
   auto non_overlapping_rects = region.getRects(deband);
   std::list<SkRect> final_results;
