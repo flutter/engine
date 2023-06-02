@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -59,9 +60,9 @@ void testMain() {
     await matchGoldenFile('ui_vertices_antialiased.png', region: region);
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454
 
-  test('Vertices checks', () {
+  test('Vertices checks (canvas kit only)', () {
     try {
-      ui.Vertices(
+      CkVertices(
         ui.VertexMode.triangles,
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
@@ -70,20 +71,20 @@ void testMain() {
     } on ArgumentError catch (e) {
       expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
     }
-    ui.Vertices( // This one does not throw.
+    CkVertices( // This one does not throw.
       ui.VertexMode.triangles,
       const <ui.Offset>[ui.Offset.zero],
     ).dispose();
-    ui.Vertices( // This one should not throw.
+    CkVertices( // This one should not throw.
       ui.VertexMode.triangles,
       const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
       indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]), // Uint16List implements List<int> so this is ok.
     ).dispose();
   });
 
-  test('Vertices.raw checks', () {
+  test('Vertices.raw checks (canvas kit only)', () {
     try {
-      ui.Vertices.raw(
+      CkVertices.raw(
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
@@ -92,7 +93,7 @@ void testMain() {
       expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
     }
     try {
-      ui.Vertices.raw(
+      CkVertices.raw(
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
@@ -101,11 +102,11 @@ void testMain() {
     } on ArgumentError catch (e) {
       expect('$e', 'Invalid argument(s): "indices" values must be valid indices in the positions list.');
     }
-    ui.Vertices.raw( // This one does not throw.
+    CkVertices.raw( // This one does not throw.
       ui.VertexMode.triangles,
       Float32List.fromList(const <double>[0.0, 0.0]),
     ).dispose();
-    ui.Vertices.raw( // This one should not throw.
+    CkVertices.raw( // This one should not throw.
       ui.VertexMode.triangles,
       Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
       indices: Uint16List.fromList(const <int>[0, 2, 1, 2, 0, 1, 2, 0]),
