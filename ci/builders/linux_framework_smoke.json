@@ -18,7 +18,7 @@
     ],
     "tests": [
         {
-            "name": "test: lint host_debug",
+            "name": "test: lint host_debug widgets",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -29,6 +29,19 @@
             "local_engine": "host_debug_unopt",
             "shard": "framework_tests",
             "subshard": "widgets"
+        },
+        {
+            "name": "test: lint host_debug library",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "local_engine": "host_debug_unopt",
+            "shard": "framework_tests",
+            "subshard": "library"
         }
     ]
 }
