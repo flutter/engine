@@ -57,8 +57,13 @@ class PlatformViewManager {
   /// `factoryFunction` needs to be a [PlatformViewFactory].
   bool registerFactory(String viewType, Function factoryFunction,
       {bool isVisible = true}) {
-    assert(factoryFunction is ui_web.PlatformViewFactory ||
-        factoryFunction is ui_web.ParameterizedPlatformViewFactory);
+    assert(
+      factoryFunction is ui_web.PlatformViewFactory ||
+          factoryFunction is ui_web.ParameterizedPlatformViewFactory,
+      'Factory signature is invalid. Expected either '
+      '{${ui_web.PlatformViewFactory}} or {${ui_web.ParameterizedPlatformViewFactory}} '
+      'but got: {${factoryFunction.runtimeType}}',
+    );
 
     if (_factories.containsKey(viewType)) {
       return false;
