@@ -34,7 +34,8 @@
 
 - (BOOL)isFlipped {
   // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
-  // coordinate values increasing downwards.
+  // coordinate values increasing downwards. This affects the view, view transforms, and
+  // sublayerTransforms.
   return YES;
 }
 
@@ -58,7 +59,8 @@
 
 - (BOOL)isFlipped {
   // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
-  // coordinate values increasing downwards.
+  // coordinate values increasing downwards. This affects the view, view transforms, and
+  // sublayerTransforms.
   return YES;
 }
 
