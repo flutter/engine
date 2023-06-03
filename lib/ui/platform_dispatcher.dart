@@ -33,7 +33,11 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
+// TODO(goderbauer): Deprecate/remove this when the framework has migrated to SemanticsActionEventCallback.
 typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
+
+/// Signature for [PlatformDispatcher.onSemanticsActionEvent].
+typedef SemanticsActionEventCallback = void Function(SemanticsActionEvent action);
 
 /// Signature for responses to platform messages.
 ///
@@ -174,7 +178,11 @@ class PlatformDispatcher {
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
   Iterable<FlutterView> get views => _views.values;
-  final Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  final Map<int, FlutterView> _views = <int, FlutterView>{};
+
+  /// Returns the [FlutterView] with the provided ID if one exists, or null
+  /// otherwise.
+  FlutterView? view({required int id}) => _views[id];
 
   // A map of opaque platform view identifiers to view configurations.
   final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
@@ -250,7 +258,7 @@ class PlatformDispatcher {
   //
   // Updates the metrics of the window with the given id.
   void _updateWindowMetrics(
-    Object id,
+    int id,
     double devicePixelRatio,
     double width,
     double height,
@@ -436,6 +444,7 @@ class PlatformDispatcher {
     for (int i = 0; i < length; ++i) {
       int offset = i * _kPointerDataFieldCount;
       data.add(PointerData(
+        // TODO(goderbauer): Wire up viewId.
         embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
         change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
@@ -1150,12 +1159,29 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
+  // TODO(goderbauer): Deprecate/remove this when the framework has migrated to onSemanticsActionEvent.
   SemanticsActionCallback? get onSemanticsAction => _onSemanticsAction;
   SemanticsActionCallback? _onSemanticsAction;
   Zone _onSemanticsActionZone = Zone.root;
   set onSemanticsAction(SemanticsActionCallback? callback) {
     _onSemanticsAction = callback;
     _onSemanticsActionZone = Zone.current;
+  }
+
+  /// A callback that is invoked whenever the user requests an action to be
+  /// performed on a semantics node.
+  ///
+  /// This callback is used when the user expresses the action they wish to
+  /// perform based on the semantics node supplied by updateSemantics.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
+  SemanticsActionEventCallback? _onSemanticsActionEvent;
+  Zone _onSemanticsActionEventZone = Zone.root;
+  set onSemanticsActionEvent(SemanticsActionEventCallback? callback) {
+    _onSemanticsActionEvent = callback;
+    _onSemanticsActionEventZone = Zone.current;
   }
 
   // Called from the engine via hooks.dart.
@@ -1189,6 +1215,16 @@ class PlatformDispatcher {
       nodeId,
       SemanticsAction.fromIndex(action)!,
       args,
+    );
+    _invoke1<SemanticsActionEvent>(
+      onSemanticsActionEvent,
+      _onSemanticsActionEventZone,
+      SemanticsActionEvent(
+        type: SemanticsAction.fromIndex(action)!,
+        nodeId: nodeId,
+        viewId: 0, // TODO(goderbauer): Wire up the real view ID.
+        arguments: args,
+      ),
     );
   }
 
@@ -1679,13 +1715,15 @@ class FrameTiming {
   }
 }
 
-/// States that an application can be in.
+/// States that an application can be in once it is running.
 ///
-/// The values below describe notifications from the operating system.
-/// Applications should not expect to always receive all possible notifications.
-/// For example, if the users pulls out the battery from the device, no
-/// notification will be sent before the application is suddenly terminated,
-/// along with the rest of the operating system.
+/// States not supported on a platform will be synthesized by the framework when
+/// transitioning between states which are supported, so that all
+/// implementations share the same state machine.
+///
+/// The initial value for the state is the [detached] state, updated to the
+/// current state (usually [resumed]) as soon as the first lifecycle update is
+/// received from the platform.
 ///
 /// For historical and name collision reasons, Flutter's application state names
 /// do not correspond one to one with the state names on all platforms. On
@@ -1696,15 +1734,52 @@ class FrameTiming {
 /// Flutter enters the [paused] state. See the individual state's documentation
 /// for descriptions of what they mean on each platform.
 ///
+/// The current application state can be obtained from
+/// [SchedulerBinding.instance.lifecycleState], and changes to the state can be
+/// observed by creating an [AppLifecycleListener], or by using a
+/// [WidgetsBindingObserver] by overriding the
+/// [WidgetsBindingObserver.didChangeAppLifecycleState] method.
+///
+/// Applications should not rely on always receiving all possible notifications.
+///
+/// For example, if the application is killed with a task manager, a kill
+/// signal, the user pulls the power from the device, or there is a rapid
+/// unscheduled disassembly of the device, no notification will be sent before
+/// the application is suddenly terminated, and some states may be skipped.
+///
 /// See also:
 ///
+/// * [AppLifecycleListener], an object used observe the lifecycle state that
+///   provides state transition callbacks.
 /// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
 ///   from the widgets layer.
-/// * iOS's [IOKit activity lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc) documentation.
-/// * Android's [activity lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle) documentation.
-/// * macOS's [AppKit activity lifecycle](https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc) documentation.
+/// * iOS's [IOKit activity
+///   lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc)
+///   documentation.
+/// * Android's [activity
+///   lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle)
+///   documentation.
+/// * macOS's [AppKit activity
+///   lifecycle](https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc)
+///   documentation.
 enum AppLifecycleState {
-  /// The application is visible and responsive to user input.
+  /// The application is still hosted by a Flutter engine but is detached from
+  /// any host views.
+  ///
+  /// The application defaults to this state before it initializes, and can be
+  /// in this state (on Android and iOS only) after all views have been
+  /// detached.
+  ///
+  /// When the application is in this state, the engine is running without a
+  /// view.
+  ///
+  /// This state is only entered on iOS and Android, although on all platforms
+  /// it is the default state before the application begins running.
+  detached,
+
+  /// On all platforms, this state indicates that the application is in the
+  /// default running mode for a running application that has input focus and is
+  /// visible.
   ///
   /// On Android, this state corresponds to the Flutter host view having focus
   /// ([`Activity.onWindowFocusChanged`](https://developer.android.com/reference/android/app/Activity#onWindowFocusChanged(boolean))
@@ -1717,54 +1792,71 @@ enum AppLifecycleState {
   /// was called with false), but hasn't had
   /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
   /// called on it.
+  ///
+  /// On iOS and macOS, this corresponds to the app running in the foreground
+  /// active state.
   resumed,
 
-  /// The application is in an inactive state and is not receiving user input.
+  /// At least one view of the application is visible, but none have input
+  /// focus. The application is otherwise running normally.
   ///
-  /// On iOS, this state corresponds to an app or the Flutter host view running
-  /// in the foreground inactive state. Apps transition to this state when in a
-  /// phone call, responding to a TouchID request, when entering the app
-  /// switcher or the control center, or when the UIViewController hosting the
-  /// Flutter app is transitioning.
+  /// On non-web desktop platforms, this corresponds to an application that is
+  /// not in the foreground, but still has visible windows.
   ///
-  /// On Android, this corresponds to an app or the Flutter host view running in
-  /// Android's paused state (i.e.
+  /// On the web, this corresponds to an application that is running in a
+  /// window or tab that does not have input focus.
+  ///
+  /// On iOS and macOS, this state corresponds to the Flutter host view running in the
+  /// foreground inactive state. Apps transition to this state when in a phone
+  /// call, when responding to a TouchID request, when entering the app switcher
+  /// or the control center, or when the UIViewController hosting the Flutter
+  /// app is transitioning.
+  ///
+  /// On Android, this corresponds to the Flutter host view running in Android's
+  /// paused state (i.e.
   /// [`Activity.onPause`](https://developer.android.com/reference/android/app/Activity#onPause())
   /// has been called), or in Android's "resumed" state (i.e.
   /// [`Activity.onResume`](https://developer.android.com/reference/android/app/Activity#onResume())
-  /// has been called) but it has lost window focus. Examples of when apps
+  /// has been called) but does not have window focus. Examples of when apps
   /// transition to this state include when the app is partially obscured or
-  /// another activity is focused, such as: a split-screen app, a phone call, a
-  /// picture-in-picture app, a system dialog, another view, when the
+  /// another activity is focused, a app running in a split screen that isn't
+  /// the current app, an app interrupted by a phone call, a picture-in-picture
+  /// app, a system dialog, another view. It will also be inactive when the
   /// notification window shade is down, or the application switcher is visible.
   ///
-  /// Apps in this state should assume that they may be [paused] at any time.
+  /// On Android and iOS, apps in this state should assume that they may be
+  /// [hidden] and [paused] at any time.
   inactive,
 
-  /// The application is not currently visible to the user, not responding to
-  /// user input, and running in the background.
+  /// All views of an application are hidden, either because the application is
+  /// about to be paused (on iOS and Android), or because it has been minimized
+  /// or placed on a desktop that is no longer visible (on non-web desktop), or
+  /// is running in a window or tab that is no longer visible (on the web).
+  ///
+  /// On iOS and Android, in order to keep the state machine the same on all
+  /// platforms, a transition to this state is synthesized before the [paused]
+  /// state is entered when coming from [inactive], and before the [inactive]
+  /// state is entered when coming from [paused]. This allows cross-platform
+  /// implementations that want to know when an app is conceptually "hidden" to
+  /// only write one handler.
+  hidden,
+
+  /// The application is not currently visible to the user, and not responding
+  /// to user input.
   ///
   /// When the application is in this state, the engine will not call the
   /// [PlatformDispatcher.onBeginFrame] and [PlatformDispatcher.onDrawFrame]
   /// callbacks.
-  paused,
-
-  /// The application is still hosted on a flutter engine but is detached from
-  /// any host views.
   ///
-  /// When the application is in this state, the engine is running without
-  /// a view. It can either be in the progress of attaching a view when engine
-  /// was first initializes, or after the view being destroyed due to a Navigator
-  /// pop.
-  detached,
+  /// This state is only entered on iOS and Android.
+  paused,
 }
 
 /// The possible responses to a request to exit the application.
 ///
-/// The request is typically responded to by a [WidgetsBindingObserver].
-// TODO(gspencergoog): Insert doc references here to AppLifecycleListener and to
-// the actual function called on WidgetsBindingObserver once those have landed
-// in the framework. https://github.com/flutter/flutter/issues/121721
+/// The request is typically responded to by creating an [AppLifecycleListener]
+/// and supplying an [AppLifecycleListener.onExitRequested] callback, or by
+/// overriding [WidgetsBindingObserver.didRequestAppExit].
 enum AppExitResponse {
   /// Exiting the application can proceed.
   exit,
@@ -1773,10 +1865,7 @@ enum AppExitResponse {
 }
 
 /// The type of application exit to perform when calling
-/// `ServicesBinding.exitApplication`.
-// TODO(gspencergoog): Insert doc references here to
-// ServicesBinding.exitApplication that has landed in the framework.
-// https://github.com/flutter/flutter/issues/121721
+/// [ServicesBinding.exitApplication].
 enum AppExitType {
   /// Requests that the application start an orderly exit, sending a request
   /// back to the framework through the [WidgetsBinding]. If that responds
@@ -2296,4 +2385,50 @@ enum DartPerformanceMode {
   /// Optimize for low memory, at the expensive of throughput and latency by more
   /// frequently performing work.
   memory,
+}
+
+/// An event to request a [SemanticsAction] of [type] to be performed on the
+/// [SemanticsNode] identified by [nodeId] owned by the [FlutterView] identified
+/// by [viewId].
+///
+/// Used by [SemanticsBinding.performSemanticsAction].
+class SemanticsActionEvent {
+  /// Creates a [SemanticsActionEvent].
+  const SemanticsActionEvent({
+    required this.type,
+    required this.viewId,
+    required this.nodeId,
+    this.arguments,
+  });
+
+  /// The type of action to be performed.
+  final SemanticsAction type;
+
+  /// The id of the [FlutterView] the [SemanticsNode] identified by [nodeId] is
+  /// associated with.
+  final int viewId;
+
+  /// The id of the [SemanticsNode] on which the action is to be performed.
+  final int nodeId;
+
+  /// Optional arguments for the action.
+  final Object? arguments;
+
+  static const Object _noArgumentPlaceholder = Object();
+
+  /// Create a clone of the [SemanticsActionEvent] but with provided parameters
+  /// replaced.
+  SemanticsActionEvent copyWith({
+    SemanticsAction? type,
+    int? viewId,
+    int? nodeId,
+    Object? arguments = _noArgumentPlaceholder,
+  }) {
+    return SemanticsActionEvent(
+      type: type ?? this.type,
+      viewId: viewId ?? this.viewId,
+      nodeId: nodeId ?? this.nodeId,
+      arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
+    );
+  }
 }

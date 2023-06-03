@@ -40,11 +40,11 @@ bool ComputePassMTL::IsValid() const {
   return is_valid_;
 }
 
-void ComputePassMTL::OnSetLabel(std::string label) {
+void ComputePassMTL::OnSetLabel(const std::string& label) {
   if (label.empty()) {
     return;
   }
-  label_ = std::move(label);
+  label_ = label;
 }
 
 bool ComputePassMTL::OnEncodeCommands(const Context& context,
@@ -55,7 +55,7 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context,
     return false;
   }
 
-  FML_DCHECK(!grid_size_.IsEmpty() && !thread_group_size_.IsEmpty());
+  FML_DCHECK(!grid_size.IsEmpty() && !thread_group_size.IsEmpty());
 
   // TODO(dnfield): Support non-serial dispatch type on higher iOS versions.
   auto compute_command_encoder = [buffer_ computeCommandEncoder];
@@ -258,8 +258,10 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
     // Special case for linear processing.
     if (height == 1) {
-      int64_t threadGroups =
-          std::max(width / maxTotalThreadsPerThreadgroup, 1LL);
+      int64_t threadGroups = std::max(
+          static_cast<int64_t>(
+              std::ceil(width * 1.0 / maxTotalThreadsPerThreadgroup * 1.0)),
+          1LL);
       [encoder dispatchThreadgroups:MTLSizeMake(threadGroups, 1, 1)
               threadsPerThreadgroup:MTLSizeMake(maxTotalThreadsPerThreadgroup,
                                                 1, 1)];

@@ -45,9 +45,8 @@ struct ComputePipelineBuilder {
     ComputePipelineDescriptor desc;
     if (InitializePipelineDescriptorDefaults(context, desc)) {
       return {std::move(desc)};
-    } else {
-      return std::nullopt;
     }
+    return std::nullopt;
   }
 
   [[nodiscard]] static bool InitializePipelineDescriptorDefaults(
@@ -66,6 +65,14 @@ struct ComputePipelineBuilder {
                        << ComputeShader::kEntrypointName
                        << "' for pipeline named '" << ComputeShader::kLabel
                        << "'.";
+        return false;
+      }
+
+      if (!desc.RegisterDescriptorSetLayouts(
+              ComputeShader::kDescriptorSetLayouts)) {
+        VALIDATION_LOG << "Could not configure compute descriptor set layout "
+                          "for pipeline named '"
+                       << ComputeShader::kLabel << "'.";
         return false;
       }
 

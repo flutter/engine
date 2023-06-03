@@ -54,7 +54,6 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 14e222b
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e222b"
@@ -111,7 +110,7 @@ targets:
     properties:
       dependencies: >-
         [
-          {"dependency": "android_virtual_device", "version": "31"},
+          {"dependency": "android_virtual_device", "version": "33"},
           {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
         ]
       upload_packages: "true"
@@ -197,6 +196,7 @@ targets:
 
   - name: Linux Benchmarks (no-upload)
     recipe: engine/engine_metrics
+    bringup: true
     properties:
       build_host: "true"
       upload_metrics: "false"
@@ -268,7 +268,6 @@ targets:
     timeout: 60
 
   - name: Linux Host clang-tidy
-    bringup: true
     recipe: engine/engine_lint
     properties:
       cores: "32"
@@ -289,7 +288,6 @@ targets:
       - "**.vert"
 
   - name: Linux Android clang-tidy
-    bringup: true
     recipe: engine/engine_lint
     properties:
       cores: "32"
@@ -328,6 +326,7 @@ targets:
       - os=Linux
 
   - name: Linux linux_clang_tidy
+    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
@@ -468,23 +467,11 @@ targets:
       - os=Linux
 
   - name: Mac mac_clang_tidy
+    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       config_name: mac_clang_tidy
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - tools/**
-      - ci/**
-      - "**.h"
-      - "**.c"
-      - "**.cc"
-      - "**.fbs"
-      - "**.frag"
-      - "**.vert"
-      - "**.m"
-      - "**.mm"
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
@@ -498,10 +485,6 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
         ]
-      $flutter/osx_sdk : >-
-        {
-          "sdk_version": "14e222b"
-        }
     drone_dimensions:
       - os=Mac-12
 
@@ -516,11 +499,6 @@ targets:
     bringup: true
     recipe: engine/engine_unopt
     properties:
-      runtime_versions: >-
-        [
-          "ios-16-4_14e222b",
-          "ios-16-2_14c18"
-        ]
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e222b",
@@ -533,7 +511,6 @@ targets:
     timeout: 75
 
   - name: Mac Host clang-tidy
-    bringup: true
     recipe: engine/engine_lint
     properties:
       cpu: arm64
@@ -556,7 +533,6 @@ targets:
       - "**.mm"
 
   - name: Mac iOS clang-tidy
-    bringup: true
     recipe: engine/engine_lint
     properties:
       cpu: arm64
@@ -593,16 +569,13 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      $flutter/osx_sdk : >-
-        {
-          "sdk_version": "14e222b"
-        }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
     drone_dimensions:
       - os=Mac-12
+      - cpu=x86
 
   - name: Mac impeller-cmake-example
     bringup: true
