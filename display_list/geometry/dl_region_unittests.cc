@@ -169,8 +169,7 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
 
   for (const auto& settings : all_settings) {
     std::random_device d;
-    // std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
-    std::seed_seq seed{4};
+    std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
     std::mt19937 rng(seed);
 
     SkRegion sk_region;
