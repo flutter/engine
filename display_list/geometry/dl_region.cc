@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/geometry/dl_region.h"
 
-#include <cassert>
+#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -43,9 +43,9 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
           if (iter->bottom() < rect.top()) {
             // Went all the way to previous span line.
             break;
-          } else if (iter->bottom() == rect.top() &&
-                     iter->left() == rect.left() &&
+          } else if (iter->left() == rect.left() &&
                      iter->right() == rect.right()) {
+            FML_DCHECK(iter->bottom() == rect.top());
             rect.fTop = iter->fTop;
             rects.erase(iter);
             break;
@@ -89,7 +89,7 @@ void DlRegion::SpanLine::insertSpan(int32_t left, int32_t right) {
 bool DlRegion::SpanLine::spansEqual(const SpanLine& l2) const {
   SpanVec& spans = *this->spans;
   SpanVec& otherSpans = *l2.spans;
-  assert(this != &l2);
+  FML_DCHECK(this != &l2);
 
   if (spans.size() != otherSpans.size()) {
     return false;
@@ -195,7 +195,7 @@ void DlRegion::addRects(std::vector<SkIRect>&& rects) {
         insertLine(i + 1, makeLine(y1, prevLineEnd, *line.spans));
         continue;
       }
-      assert(y1 == line.top);
+      FML_DCHECK(y1 == line.top);
       if (y2 < line.bottom) {
         // duplicate line
         auto newLine = makeLine(y2, line.bottom, *line.spans);
@@ -206,7 +206,7 @@ void DlRegion::addRects(std::vector<SkIRect>&& rects) {
         mark_dirty(i);
         break;
       }
-      assert(y2 >= line.bottom);
+      FML_DCHECK(y2 >= line.bottom);
       line.insertSpan(rect.fLeft, rect.fRight);
       mark_dirty(i);
       y1 = line.bottom;
