@@ -48,6 +48,7 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
             FML_DCHECK(iter->bottom() == rect.top());
             rect.fTop = iter->fTop;
             rects.erase(iter);
+            --previous_span_end;
             break;
           }
         }
