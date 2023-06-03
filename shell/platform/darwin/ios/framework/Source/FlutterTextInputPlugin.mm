@@ -1708,8 +1708,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // For both cases, return a zero-width rectangle along the downstream edge of the character
   // before the caret position.
   CGRect characterBeforeCaret = rects[0].rect;
-  // Return a zero-width rectangle along the downstream edge of the character before the caret
-  // position.
   if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] && ((FlutterTextSelectionRect*)rects[0]).isRTL) {
     return CGRectMake(characterBeforeCaret.origin.x, characterBeforeCaret.origin.y, 0,
                       characterBeforeCaret.size.height);
