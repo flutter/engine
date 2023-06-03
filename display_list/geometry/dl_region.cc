@@ -8,6 +8,22 @@
 
 namespace flutter {
 
+DlRegion::DlRegion() {
+  // If SpanLines can not be memmoved `addRect` would be signifantly slower
+  // due to cost of inserting and removing elements from the `lines_` vector.
+  static_assert(std::is_trivially_constructible<SpanLine>::value,
+                "SpanLine must be trivially constructible.");
+}
+
+DlRegion::~DlRegion() {
+  for (auto& spanvec : spanvec_pool_) {
+    delete spanvec;
+  }
+  for (auto& line : lines_) {
+    delete line.spans;
+  }
+}
+
 std::vector<SkIRect> DlRegion::getRects(bool deband) const {
   std::vector<SkIRect> rects;
   size_t previous_span_end = 0;

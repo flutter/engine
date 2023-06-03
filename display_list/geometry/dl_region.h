@@ -16,6 +16,9 @@ namespace flutter {
 /// converting set of overlapping rectangles to non-overlapping rectangles.
 class DlRegion {
  public:
+  DlRegion();
+  ~DlRegion();
+
   /// Bulks adds rectangles to current region.
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
   void addRects(std::vector<SkIRect>&& rects);
