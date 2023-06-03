@@ -2,7 +2,15 @@
     "builds": [
         {
             "archives": [
-                
+                {
+                    "name": "wasm_release",
+                    "base_path": "out/wasm_release/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                      "out/wasm_release/zip_archives/flutter-web-sdk.zip"
+                    ],
+                    "realm": "production"
+                }
             ],
             "drone_dimensions": [
                 "device_type=none",
@@ -30,7 +38,7 @@
     "tests": [
         {
             "name": "run test.dart for web_tests shard and subshard 0",
-            "recipe": "engine_v2/tester",
+            "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
