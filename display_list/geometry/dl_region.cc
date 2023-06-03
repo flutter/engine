@@ -14,12 +14,14 @@ DlRegion::DlRegion(std::vector<SkIRect>&& rects) {
   static_assert(std::is_trivially_constructible<SpanLine>::value,
                 "SpanLine must be trivially constructible.");
   addRects(std::move(rects));
-}
 
-DlRegion::~DlRegion() {
   for (auto& spanvec : spanvec_pool_) {
     delete spanvec;
   }
+  spanvec_pool_.clear();
+}
+
+DlRegion::~DlRegion() {
   for (auto& line : lines_) {
     delete line.spans;
   }
