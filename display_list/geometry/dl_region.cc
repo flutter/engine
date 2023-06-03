@@ -148,19 +148,14 @@ void DlRegion::addRects(std::vector<SkIRect>&& rects) {
 
   size_t start_index = 0;
 
-  size_t dirty_start = -1;
-  size_t dirty_end = 1;
+  size_t dirty_start = std::numeric_limits<size_t>::max();
+  size_t dirty_end = 0;
 
   // Marks line as dirty. Dirty lines will be checked for equality
   // later and merged as needed.
   auto mark_dirty = [&](size_t line) {
-    if (dirty_start == static_cast<size_t>(-1)) {
-      dirty_start = line;
-      dirty_end = line;
-    } else {
-      dirty_start = std::min(dirty_start, line);
-      dirty_end = std::max(dirty_end, line);
-    }
+    dirty_start = std::min(dirty_start, line);
+    dirty_end = std::max(dirty_end, line);
   };
 
   for (const SkIRect& rect : rects) {
@@ -223,7 +218,7 @@ void DlRegion::addRects(std::vector<SkIRect>&& rects) {
     }
 
     // Check for duplicate lines and merge them.
-    if (dirty_start != static_cast<size_t>(-1)) {
+    if (dirty_start <= dirty_end) {
       // Expand the region by one if possible.
       if (dirty_start > 0) {
         --dirty_start;
@@ -244,8 +239,8 @@ void DlRegion::addRects(std::vector<SkIRect>&& rects) {
         }
       }
     }
-    dirty_start = -1;
-    dirty_end = -1;
+    dirty_start = std::numeric_limits<size_t>::max();
+    dirty_end = 0;
   }
 }
 
