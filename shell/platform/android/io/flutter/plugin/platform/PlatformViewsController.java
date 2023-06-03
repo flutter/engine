@@ -226,6 +226,97 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
+        public void createForOpaqueHybridComposition(
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          ensureValidRequest(request);
+          final int viewId = request.viewId;
+          if (viewWrappers.get(viewId) != null) {
+            throw new IllegalStateException(
+                "Trying to create an already created platform view, view id: " + viewId);
+          }
+
+          if (flutterView == null) {
+            throw new IllegalStateException(
+                "Flutter view is null. This means the platform views controller doesn't have an attached view, view id: "
+                    + viewId);
+          }
+
+          final PlatformView platformView = createPlatformView(request, true);
+
+          final View embeddedView = platformView.getView();
+          if (embeddedView.getParent() != null) {
+            throw new IllegalStateException(
+                "The Android view returned from PlatformView#getView() was already added to a parent view.");
+          }
+          
+          configureForOpaqueHybridComposition(platformView, request);
+        }
+
+        private void configureForOpaqueHybridComposition(
+          @NonNull PlatformView platformView,
+          @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          Log.i(TAG, "Hosting opaque view in view hierarchy for platform view: " + request.viewId);
+
+          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          OpaqueHCPlatformViewWrapper viewWrapper;
+          viewWrapper = new OpaqueHCPlatformViewWrapper(context);
+          // viewWrapper.setTouchProcessor(androidTouchProcessor);
+          viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+
+          final FrameLayout.LayoutParams viewWrapperLayoutParams =
+              new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
+
+          // Size and position the view wrapper.
+          final int physicalTop = toPhysicalPixels(request.logicalTop);
+          final int physicalLeft = toPhysicalPixels(request.logicalLeft);
+          viewWrapperLayoutParams.topMargin = physicalTop;
+          viewWrapperLayoutParams.leftMargin = physicalLeft;
+          viewWrapper.setLayoutParams(viewWrapperLayoutParams);
+
+          // Size the embedded view.
+          final View embeddedView = platformView.getView();
+          embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
+
+          // Accessibility in the embedded view is initially disabled because if a Flutter app
+          // disabled accessibility in the first frame, the embedding won't receive an update to
+          // disable accessibility since the embedding never received an update to enable it.
+          // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas
+          // when the framework sends a new a11y tree to the embedding.
+          // To prevent races, the framework populate the SemanticsNode after the platform view has
+          // been created.
+          embeddedView.setImportantForAccessibility(
+              View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+
+          // Add the embedded view to the wrapper.
+          viewWrapper.addView(embeddedView);
+
+          // Listen for focus changed in any subview, so the framework is notified when the platform
+          // view is focused.
+          viewWrapper.setOnDescendantFocusChangeListener(
+              (v, hasFocus) -> {
+                if (hasFocus) {
+                  platformViewsChannel.invokeViewFocused(request.viewId);
+                } else if (textInputPlugin != null) {
+                  textInputPlugin.clearPlatformViewClient(request.viewId);
+                }
+              });
+          insertNewOpaqueHCView(flutterView, viewWrapper);
+          viewWrappers.append(request.viewId, viewWrapper);
+        }
+
+        private void insertNewOpaqueHCView(FlutterView flutterView, OpaqueHCPlatformViewWrapper viewWrapper) {
+          int index = 0;
+          for (int i = 0; i < flutterView.getChildCount(); i++) {
+            View child = flutterView.getChildAt(i);
+            if (child instanceof OpaqueHCPlatformViewWrapper) {
+                index = i+1;
+            }
+          }
+          flutterView.addView(viewWrapper, index);
+        }
+
+        @Override
         public void dispose(int viewId) {
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView == null) {
@@ -594,15 +685,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     final int physicalWidth = toPhysicalPixels(request.logicalWidth);
     final int physicalHeight = toPhysicalPixels(request.logicalHeight);
-    PlatformViewWrapper viewWrapper;
+    TextureLayerPlatformViewWrapper viewWrapper;
     long textureId;
     if (usesSoftwareRendering) {
-      viewWrapper = new PlatformViewWrapper(context);
+      viewWrapper = new TextureLayerPlatformViewWrapper(context);
       textureId = -1;
     } else {
       final TextureRegistry.SurfaceTextureEntry textureEntry =
           textureRegistry.createSurfaceTexture();
-      viewWrapper = new PlatformViewWrapper(context, textureEntry);
+      viewWrapper = new TextureLayerPlatformViewWrapper(context, textureEntry);
       textureId = textureEntry.id();
     }
     viewWrapper.setTouchProcessor(androidTouchProcessor);

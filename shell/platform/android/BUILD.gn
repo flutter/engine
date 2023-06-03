@@ -298,6 +298,8 @@ android_java_sources = [
   "io/flutter/plugin/platform/PlatformViewRegistry.java",
   "io/flutter/plugin/platform/PlatformViewRegistryImpl.java",
   "io/flutter/plugin/platform/PlatformViewWrapper.java",
+  "io/flutter/plugin/platform/OpaqueHCPlatformViewWrapper.java",
+  "io/flutter/plugin/platform/TextureLayerPlatformViewWrapper.java",
   "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
   "io/flutter/plugin/platform/PlatformViewsController.java",
   "io/flutter/plugin/platform/SingleViewPresentation.java",
