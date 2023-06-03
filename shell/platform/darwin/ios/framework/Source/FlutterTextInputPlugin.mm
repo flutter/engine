@@ -1680,7 +1680,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     CGRect characterAfterCaret = rects[0].rect;
     // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
-    if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] && ((FlutterTextSelectionRect*)rects[0]).isRTL) {
+    if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[0]).isRTL) {
       return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
@@ -1693,7 +1694,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     CGRect characterAfterCaret = rects[1].rect;
     // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
-    if ([rects[1] isKindOfClass:[FlutterTextSelectionRect class]] && ((FlutterTextSelectionRect*)rects[1]).isRTL) {
+    if ([rects[1] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[1]).isRTL) {
       return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
@@ -1708,7 +1710,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // For both cases, return a zero-width rectangle along the downstream edge of the character
   // before the caret position.
   CGRect characterBeforeCaret = rects[0].rect;
-  if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] && ((FlutterTextSelectionRect*)rects[0]).isRTL) {
+  if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+      ((FlutterTextSelectionRect*)rects[0]).isRTL) {
     return CGRectMake(characterBeforeCaret.origin.x, characterBeforeCaret.origin.y, 0,
                       characterBeforeCaret.size.height);
   } else {
