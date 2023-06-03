@@ -16,12 +16,10 @@ namespace flutter {
 /// converting set of overlapping rectangles to non-overlapping rectangles.
 class DlRegion {
  public:
-  DlRegion();
+  /// Creates region by bulk adding the rectangles./// Matches
+  /// SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
+  explicit DlRegion(std::vector<SkIRect>&& rects);
   ~DlRegion();
-
-  /// Bulks adds rectangles to current region.
-  /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
-  void addRects(std::vector<SkIRect>&& rects);
 
   /// Returns list of non-overlapping rectangles that cover current region.
   /// If |deband| is false, each span line will result in separate rectangles,
@@ -31,6 +29,8 @@ class DlRegion {
   std::vector<SkIRect> getRects(bool deband = true) const;
 
  private:
+  void addRects(std::vector<SkIRect>&& rects);
+
   struct Span {
     int32_t left;
     int32_t right;

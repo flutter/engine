@@ -54,8 +54,7 @@ std::list<SkRect> RTree::searchNonOverlappingDrawnRects(
     rects.push_back(current_record_rect);
   }
 
-  DlRegion region;
-  region.addRects(std::move(rects));
+  DlRegion region(std::move(rects));
   auto non_overlapping_rects = region.getRects(true);
   std::list<SkRect> final_results;
   for (const auto& rect : non_overlapping_rects) {

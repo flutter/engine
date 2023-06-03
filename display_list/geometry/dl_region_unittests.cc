@@ -13,13 +13,12 @@ namespace flutter {
 namespace testing {
 
 TEST(DisplayListRegion, EmptyRegion) {
-  DlRegion region;
+  DlRegion region({});
   EXPECT_TRUE(region.getRects().empty());
 }
 
 TEST(DisplayListRegion, SingleRectangle) {
-  DlRegion region;
-  region.addRects({SkIRect::MakeLTRB(10, 10, 50, 50)});
+  DlRegion region({SkIRect::MakeLTRB(10, 10, 50, 50)});
   auto rects = region.getRects();
   ASSERT_EQ(rects.size(), 1u);
   EXPECT_EQ(rects.front(), SkIRect::MakeLTRB(10, 10, 50, 50));
@@ -31,8 +30,7 @@ TEST(DisplayListRegion, NonOverlappingRectangles1) {
     SkIRect rect = SkIRect::MakeXYWH(50 * i, 50 * i, 50, 50);
     rects_in.push_back(rect);
   }
-  DlRegion region;
-  region.addRects(std::move(rects_in));
+  DlRegion region(std::move(rects_in));
   auto rects = region.getRects();
   std::vector<SkIRect> expected{
       {0, 0, 50, 50},       {50, 50, 100, 100},   {100, 100, 150, 150},
@@ -44,8 +42,7 @@ TEST(DisplayListRegion, NonOverlappingRectangles1) {
 }
 
 TEST(DisplayListRegion, NonOverlappingRectangles2) {
-  DlRegion region;
-  region.addRects({
+  DlRegion region({
       SkIRect::MakeXYWH(5, 5, 10, 10),
       SkIRect::MakeXYWH(25, 5, 10, 10),
       SkIRect::MakeXYWH(5, 25, 10, 10),
@@ -62,8 +59,7 @@ TEST(DisplayListRegion, NonOverlappingRectangles2) {
 }
 
 TEST(DisplayListRegion, NonOverlappingRectangles3) {
-  DlRegion region;
-  region.addRects({
+  DlRegion region({
       SkIRect::MakeXYWH(0, 0, 10, 10),
       SkIRect::MakeXYWH(-11, -11, 10, 10),
       SkIRect::MakeXYWH(11, 11, 10, 10),
@@ -90,8 +86,7 @@ TEST(DisplayListRegion, NonOverlappingRectangles3) {
 }
 
 TEST(DisplayListRegion, MergeTouchingRectangles) {
-  DlRegion region;
-  region.addRects({
+  DlRegion region({
       SkIRect::MakeXYWH(0, 0, 10, 10),
       SkIRect::MakeXYWH(-10, -10, 10, 10),
       SkIRect::MakeXYWH(10, 10, 10, 10),
@@ -116,8 +111,7 @@ TEST(DisplayListRegion, OverlappingRectangles) {
     SkIRect rect = SkIRect::MakeXYWH(10 * i, 10 * i, 50, 50);
     rects_in.push_back(rect);
   }
-  DlRegion region;
-  region.addRects(std::move(rects_in));
+  DlRegion region(std::move(rects_in));
   auto rects = region.getRects();
   std::vector<SkIRect> expected{
       {0, 0, 50, 10},      {0, 10, 60, 20},     {0, 20, 70, 30},
@@ -131,8 +125,7 @@ TEST(DisplayListRegion, OverlappingRectangles) {
 }
 
 TEST(DisplayListRegion, Deband) {
-  DlRegion region;
-  region.addRects({
+  DlRegion region({
       SkIRect::MakeXYWH(0, 0, 50, 50),
       SkIRect::MakeXYWH(60, 0, 20, 20),
       SkIRect::MakeXYWH(90, 0, 50, 50),
@@ -194,8 +187,7 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
       sk_region.op(rect, SkRegion::kUnion_Op);
     }
 
-    DlRegion region;
-    region.addRects(std::move(rects_in));
+    DlRegion region(std::move(rects_in));
 
     // Do not deband the rectangles - identical to SkRegion::Iterator
     auto rects = region.getRects(false);

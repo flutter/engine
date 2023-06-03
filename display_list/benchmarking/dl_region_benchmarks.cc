@@ -32,8 +32,7 @@ class DlRegionAdapter {
   void addRect(const SkIRect& rect) { rects_.push_back(rect); }
 
   std::vector<SkIRect> getRects() {
-    flutter::DlRegion region;
-    region.addRects(std::move(rects_));
+    flutter::DlRegion region(std::move(rects_));
     return region.getRects(false);
   }
 

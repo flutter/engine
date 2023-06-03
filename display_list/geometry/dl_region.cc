@@ -8,11 +8,12 @@
 
 namespace flutter {
 
-DlRegion::DlRegion() {
+DlRegion::DlRegion(std::vector<SkIRect>&& rects) {
   // If SpanLines can not be memmoved `addRect` would be signifantly slower
   // due to cost of inserting and removing elements from the `lines_` vector.
   static_assert(std::is_trivially_constructible<SpanLine>::value,
                 "SpanLine must be trivially constructible.");
+  addRects(std::move(rects));
 }
 
 DlRegion::~DlRegion() {
