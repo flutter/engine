@@ -15,7 +15,6 @@ import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.view.Surface;
-import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;

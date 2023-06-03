@@ -248,13 +248,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             throw new IllegalStateException(
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
-          
+
           configureForOpaqueHybridComposition(platformView, request);
         }
 
         private void configureForOpaqueHybridComposition(
-          @NonNull PlatformView platformView,
-          @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+            @NonNull PlatformView platformView,
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           Log.i(TAG, "Hosting opaque view in view hierarchy for platform view: " + request.viewId);
 
           final int physicalWidth = toPhysicalPixels(request.logicalWidth);
@@ -305,12 +305,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           viewWrappers.append(request.viewId, viewWrapper);
         }
 
-        private void insertNewOpaqueHCView(FlutterView flutterView, OpaqueHCPlatformViewWrapper viewWrapper) {
+        private void insertNewOpaqueHCView(
+            FlutterView flutterView, OpaqueHCPlatformViewWrapper viewWrapper) {
           int index = 0;
           for (int i = 0; i < flutterView.getChildCount(); i++) {
             View child = flutterView.getChildAt(i);
             if (child instanceof OpaqueHCPlatformViewWrapper) {
-                index = i+1;
+              index = i + 1;
             }
           }
           flutterView.addView(viewWrapper, index);

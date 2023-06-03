@@ -330,8 +330,8 @@ public class PlatformViewsChannel {
      * The Flutter application would like to display a new Android {@code View}, i.e., platform
      * view.
      *
-     * <p>The Android View is added to the view hierarchy and placed below the FlutterView. 
-     * In order for the Android View to be visible, the content below it needs to be clipped.
+     * <p>The Android View is added to the view hierarchy and placed below the FlutterView. In order
+     * for the Android View to be visible, the content below it needs to be clipped.
      *
      * @param request The metadata sent from the framework.
      */

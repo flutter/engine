@@ -9,8 +9,8 @@ import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
@@ -21,10 +21,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
-import android.util.AttributeSet;
 
 /**
- * Base class for wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
+ * Base class for wraps a platform view to intercept gestures and project this view onto a {@link
+ * SurfaceTexture}.
  */
 class PlatformViewWrapper extends FrameLayout {
 
