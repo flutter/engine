@@ -57,7 +57,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   if (requires_blit) {
     if (!clip_rect.has_value()) {
       VALIDATION_LOG << "Missing clip rectangle.";
-      return std::nullopt;
+      return nullptr;
     }
     root_size = ISize(clip_rect->size.width, clip_rect->size.height);
   } else {
