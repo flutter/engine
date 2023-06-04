@@ -182,7 +182,7 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
-        ShadowViewGroup.class,
+        io.flutter.embedding.engine.mutatorsstack.FlutterMutatorViewTest.ShadowViewGroup.class,
       })
   public void sendAccessibilityEvents() {
     final PlatformViewWrapper wrapperView = new PlatformViewWrapper(ctx);
