@@ -1236,6 +1236,12 @@ class PlatformDispatcher {
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
+
+  /// Dump Skia SKP file for the current screen.
+  String dumpSkp() => _dumpSkp();
+
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DumpSkp')
+  external static String _dumpSkp();
 }
 
 /// Configuration of the platform.

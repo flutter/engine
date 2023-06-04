@@ -579,6 +579,10 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
   }
 }
 
+Dart_Handle Engine::DumpSkp() {
+  return delegate_.DumpSkp();
+}
+
 const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
 }

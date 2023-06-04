@@ -110,6 +110,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
+  V(PlatformConfigurationNativeApi::DumpSkp, 0)                       \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \

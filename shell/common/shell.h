@@ -401,6 +401,9 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const override;
 
+  // |Engine::Delegate|
+  Dart_Handle DumpSkp() override;
+
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:

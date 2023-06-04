@@ -2085,6 +2085,19 @@ Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
 }
 
+Dart_Handle Shell::DumpSkp() {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  auto screenshot = rasterizer_->ScreenshotLastLayerTree(
+      Rasterizer::ScreenshotType::SkiaPicture, true);
+  if (screenshot.data) {
+    rapidjson::Value skp;
+    skp.SetString(static_cast<const char*>(screenshot.data->data()),
+                  screenshot.data->size());
+    return skp;  // TODO type conversion
+  }
+  return null;  // TODO type conversion
+}
+
 const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
   return engine_->GetVsyncWaiter();
 }

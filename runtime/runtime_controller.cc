@@ -499,6 +499,11 @@ void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return client_.RequestDartDeferredLibrary(loading_unit_id);
 }
 
+// |PlatformConfigurationClient|
+Dart_Handle RuntimeController::DumpSkp() {
+  return client_.DumpSkp();
+}
+
 RuntimeController::Locale::Locale(std::string language_code_,
                                   std::string country_code_,
                                   std::string script_code_,

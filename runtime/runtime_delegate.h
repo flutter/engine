@@ -55,6 +55,8 @@ class RuntimeDelegate {
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const = 0;
 
+  virtual Dart_Handle DumpSkp() = 0;
+
  protected:
   virtual ~RuntimeDelegate();
 };

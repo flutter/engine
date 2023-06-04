@@ -373,6 +373,11 @@ void PlatformConfigurationNativeApi::RespondToPlatformMessage(
   }
 }
 
+Dart_Handle PlatformConfigurationNativeApi::DumpSkp() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()->platform_configuration()->client()->DumpSkp();
+}
+
 void PlatformConfigurationNativeApi::SetIsolateDebugName(
     const std::string& name) {
   UIDartState::ThrowIfUIOperationsProhibited();

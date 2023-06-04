@@ -216,6 +216,11 @@ class PlatformConfigurationClient {
   ///
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Dumps the Skia SKP picture for the current screen.
+  ///
+  virtual Dart_Handle DumpSkp() = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -509,6 +514,8 @@ class PlatformConfigurationNativeApi {
 
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
+
+  static Dart_Handle DumpSkp();
 
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on

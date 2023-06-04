@@ -294,6 +294,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///        Flutter to the host platform (and its responses).
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Dumps the Skia SKP picture for the current screen.
+    ///
+    virtual Dart_Handle DumpSkp() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -921,6 +926,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override;
+
+  // |RuntimeDelegate|
+  virtual Dart_Handle DumpSkp() override;
 
   void SetNeedsReportTimings(bool value) override;
 
