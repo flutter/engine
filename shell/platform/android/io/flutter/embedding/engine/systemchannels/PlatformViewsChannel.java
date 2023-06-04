@@ -108,6 +108,9 @@ public class PlatformViewsChannel {
               final boolean hybridFallback =
                   createArgs.containsKey("hybridFallback")
                       && (boolean) createArgs.get("hybridFallback");
+              final boolean opaqueHybridComposition =
+                  createArgs.containsKey("opaqueHybridComposition")
+                      && (boolean) createArgs.get("opaqueHybridComposition");
               final PlatformViewCreationRequest.RequestedDisplayMode displayMode =
                   hybridFallback
                       ? PlatformViewCreationRequest.RequestedDisplayMode
@@ -125,16 +128,21 @@ public class PlatformViewsChannel {
                       (int) createArgs.get("direction"),
                       displayMode,
                       additionalParams);
-              long textureId = handler.createForTextureLayer(request);
-              if (textureId == PlatformViewsHandler.NON_TEXTURE_FALLBACK) {
-                if (!hybridFallback) {
-                  throw new AssertionError(
-                      "Platform view attempted to fall back to hybrid mode when not requested.");
-                }
-                // A fallback to hybrid mode is indicated with a null texture ID.
+              if (opaqueHybridComposition) {
+                handler.createForOpaqueHybridComposition(request);
                 result.success(null);
               } else {
-                result.success(textureId);
+                long textureId = handler.createForTextureLayer(request);
+                if (textureId == PlatformViewsHandler.NON_TEXTURE_FALLBACK) {
+                  if (!hybridFallback) {
+                    throw new AssertionError(
+                        "Platform view attempted to fall back to hybrid mode when not requested.");
+                  }
+                  // A fallback to hybrid mode is indicated with a null texture ID.
+                  result.success(null);
+                } else {
+                  result.success(textureId);
+                }
               }
             }
           } catch (IllegalStateException exception) {
@@ -317,6 +325,17 @@ public class PlatformViewsChannel {
      * @return The texture ID.
      */
     long createForTextureLayer(@NonNull PlatformViewCreationRequest request);
+
+    /**
+     * The Flutter application would like to display a new Android {@code View}, i.e., platform
+     * view.
+     *
+     * <p>The Android View is added to the view hierarchy and placed below the FlutterView. In order
+     * for the Android View to be visible, the content below it needs to be clipped.
+     *
+     * @param request The metadata sent from the framework.
+     */
+    void createForOpaqueHybridComposition(@NonNull PlatformViewCreationRequest request);
 
     /** The Flutter application would like to dispose of an existing Android {@code View}. */
     void dispose(int viewId);
