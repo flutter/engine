@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/common/constants.h"
+#include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
@@ -26,10 +27,16 @@ namespace flutter {
 
 RasterCacheResult::RasterCacheResult(sk_sp<DlImage> image,
                                      const SkRect& logical_rect,
-                                     const char* type)
-    : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
+                                     const char* type,
+                                     sk_sp<const DlRTree> rtree)
+    : image_(std::move(image)),
+      logical_rect_(logical_rect),
+      flow_(type),
+      rtree_(std::move(rtree)) {}
 
-void RasterCacheResult::draw(DlCanvas& canvas, const DlPaint* paint) const {
+void RasterCacheResult::draw(DlCanvas& canvas,
+                             const DlPaint* paint,
+                             bool is_root_canvas) const {
   DlAutoCanvasRestore auto_restore(&canvas, true);
 
   auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.GetTransform());
@@ -39,8 +46,21 @@ void RasterCacheResult::draw(DlCanvas& canvas, const DlPaint* paint) const {
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.TransformReset();
   flow_.Step();
-  canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
-                   DlImageSampling::kNearestNeighbor, paint);
+  if (is_root_canvas || !rtree_) {
+    canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
+                     DlImageSampling::kNearestNeighbor, paint);
+  } else {
+    // On some platforms RTree from overlay layers is used for unobstructed
+    // platform views and hit testing. To preserve the RTree raster cache must
+    // paint individual rects instead of the whole image.
+    auto rects = rtree_->searchAndConsolidateRects(kGiantRect);
+    for (auto rect : rects) {
+      SkRect dst(rect);
+      dst.offset(bounds.fLeft, bounds.fTop);
+      canvas.DrawImageRect(image_, rect, dst, DlImageSampling::kNearestNeighbor,
+                           paint);
+    }
+  }
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -73,8 +93,12 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     return nullptr;
   }
 
-  DlSkCanvasAdapter canvas(surface->getCanvas());
-  canvas.Clear(DlColor::kTransparent());
+  // Clear the surface canvas directly to avoid RTree storing a giant clear
+  // rect.
+  auto surfaceCanvas = surface->getCanvas();
+  surfaceCanvas->clear(SK_ColorTRANSPARENT);
+
+  DisplayListBuilder canvas(true);
   canvas.Translate(-dest_rect.left(), -dest_rect.top());
   canvas.Transform(matrix);
   draw_function(&canvas);
@@ -83,9 +107,13 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     draw_checkerboard(&canvas, context.logical_rect);
   }
 
+  auto display_list = canvas.Build();
+  DlSkCanvasDispatcher dispatcher(surfaceCanvas);
+  display_list->Dispatch(dispatcher);
+  auto rtree = display_list->rtree();
   auto image = DlImage::Make(surface->makeImageSnapshot());
   return std::make_unique<RasterCacheResult>(image, context.logical_rect,
-                                             context.flow_type);
+                                             context.flow_type, rtree);
 }
 
 bool RasterCache::UpdateCacheEntry(
@@ -146,7 +174,8 @@ bool RasterCache::HasEntry(const RasterCacheKeyID& id,
 
 bool RasterCache::Draw(const RasterCacheKeyID& id,
                        DlCanvas& canvas,
-                       const DlPaint* paint) const {
+                       const DlPaint* paint,
+                       bool is_root_canvas) const {
   auto it = cache_.find(RasterCacheKey(id, canvas.GetTransform()));
   if (it == cache_.end()) {
     return false;
@@ -155,7 +184,7 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   Entry& entry = it->second;
 
   if (entry.image) {
-    entry.image->draw(canvas, paint);
+    entry.image->draw(canvas, paint, is_root_canvas);
     return true;
   }
 

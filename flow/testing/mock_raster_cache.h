@@ -29,7 +29,9 @@ class MockRasterCacheResult : public RasterCacheResult {
  public:
   explicit MockRasterCacheResult(SkRect device_rect);
 
-  void draw(DlCanvas& canvas, const DlPaint* paint = nullptr) const override{};
+  void draw(DlCanvas& canvas,
+            const DlPaint* paint = nullptr,
+            bool is_root_canvas = true) const override{};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();

@@ -106,6 +106,11 @@ struct PaintContext {
   LayerStateStack& state_stack;
   DlCanvas* canvas;
 
+  // Whether current canvas is root canvas. Used to determine if the raster
+  // cache is painting to bottom-most surface, in which case it will not attempt
+  // to preserve the RTree.
+  bool is_root_canvas = true;
+
   GrDirectContext* gr_context;
   SkColorSpace* dst_color_space;
   ExternalViewEmbedder* view_embedder;

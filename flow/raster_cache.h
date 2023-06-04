@@ -30,11 +30,14 @@ class RasterCacheResult {
  public:
   RasterCacheResult(sk_sp<DlImage> image,
                     const SkRect& logical_rect,
-                    const char* type);
+                    const char* type,
+                    sk_sp<const DlRTree> rtree = nullptr);
 
   virtual ~RasterCacheResult() = default;
 
-  virtual void draw(DlCanvas& canvas, const DlPaint* paint) const;
+  virtual void draw(DlCanvas& canvas,
+                    const DlPaint* paint,
+                    bool is_root_canvas) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
@@ -48,6 +51,7 @@ class RasterCacheResult {
   sk_sp<DlImage> image_;
   SkRect logical_rect_;
   fml::tracing::TraceFlow flow_;
+  sk_sp<const DlRTree> rtree_;
 };
 
 class Layer;
@@ -143,9 +147,12 @@ class RasterCache {
   // if the item was disabled due to conditions discovered during |Preroll|
   // or if the attempt to populate the entry failed due to bounds overflow
   // conditions.
+  // If |is_root_canvas| is false, the raster cache will preserve the original
+  // RTree of cached content.
   bool Draw(const RasterCacheKeyID& id,
             DlCanvas& canvas,
-            const DlPaint* paint) const;
+            const DlPaint* paint,
+            bool is_root_canvas = true) const;
 
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 

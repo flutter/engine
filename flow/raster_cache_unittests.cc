@@ -886,6 +886,56 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
   ASSERT_EQ(ids, expected_ids);
 }
 
+TEST(RasterCache, PreservesRTree) {
+  flutter::RasterCache cache(1);
+  LayerStateStack preroll_state_stack;
+  SkMatrix matrix = SkMatrix::I();
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  auto& paint_context = paint_context_holder.paint_context;
+  RasterCache::Context r_context = {
+      // clang-format off
+      .gr_context         = paint_context.gr_context,
+      .dst_color_space    = paint_context.dst_color_space,
+      .matrix             = matrix,
+      .logical_rect       = SkRect::MakeWH(100, 100),
+      .flow_type          = "RasterCacheFlow::DisplayList",
+      // clang-format on
+  };
+
+  RasterCacheKeyID id(10, RasterCacheKeyType::kLayer);
+  cache.UpdateCacheEntry(id, r_context, [&](DlCanvas* canvas) {
+    canvas->DrawRect(SkRect::MakeXYWH(0, 0, 100, 10), DlPaint());
+    canvas->DrawRect(SkRect::MakeXYWH(0, 40, 100, 10), DlPaint());
+  });
+
+  {
+    DisplayListBuilder canvas(true);
+    cache.Draw(id, canvas, nullptr, true);
+    auto display_list = canvas.Build();
+    auto rtree = display_list->rtree();
+    auto rects = rtree->searchAndConsolidateRects(kGiantRect);
+    // For root canvas the display may clober the RTree.
+    ASSERT_EQ(rects.size(), 1u);
+    ASSERT_EQ(rects.front(), SkRect::MakeWH(100, 100));
+  }
+  {
+    DisplayListBuilder canvas(true);
+    cache.Draw(id, canvas, nullptr, false);
+    auto display_list = canvas.Build();
+    auto rtree = display_list->rtree();
+    auto rects = rtree->searchAndConsolidateRects(kGiantRect);
+    // For non-root canvas the RTree must be preserved
+    ASSERT_EQ(rects.size(), 2u);
+    ASSERT_EQ(rects.front(), SkRect::MakeXYWH(0, 0, 100, 10));
+    ASSERT_EQ(*std::next(rects.begin(), 1), SkRect::MakeXYWH(0, 40, 100, 10));
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter
 

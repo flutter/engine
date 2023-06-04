@@ -133,7 +133,8 @@ bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
     return false;
   }
   if (cache_state_ == CacheState::kCurrent) {
-    return context.raster_cache->Draw(key_id_, *canvas, paint);
+    return context.raster_cache->Draw(key_id_, *canvas, paint,
+                                      context.is_root_canvas);
   }
   return false;
 }
