@@ -140,7 +140,8 @@ static const auto* flow_type = "RasterCacheFlow::Layer";
 
 bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
                                                    bool parent_cached) const {
-  if (!context.raster_cache || parent_cached) {
+  auto maybe_id = GetId();
+  if (!maybe_id.has_value() || !context.raster_cache || parent_cached) {
     return false;
   }
   if (cache_state_ != kNone) {
@@ -154,8 +155,9 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
           .flow_type          = flow_type,
           // clang-format on
       };
+      auto id = maybe_id.value();
       return context.raster_cache->UpdateCacheEntry(
-          GetId().value(), r_context,
+          id, r_context,
           [ctx = context, cache_state = cache_state_,
            layer = layer_](DlCanvas* canvas) {
             Rasterize(cache_state, layer, ctx, canvas);
@@ -173,7 +175,7 @@ bool LayerRasterCacheItem::Draw(const PaintContext& context,
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
                                 DlCanvas* canvas,
                                 const DlPaint* paint) const {
-  if (!context.raster_cache || !canvas) {
+  if (!layer_children_id_.has_value() || !context.raster_cache || !canvas) {
     return false;
   }
   switch (cache_state_) {

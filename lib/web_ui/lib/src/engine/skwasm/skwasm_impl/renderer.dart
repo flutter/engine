@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -10,7 +11,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-// TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
   late DomCanvasElement sceneElement;
   late SkwasmSurface surface;
@@ -25,18 +25,8 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
-    throw UnimplementedError('composeImageFilters not yet implemented');
-  }
-
-  @override
   ui.Path copyPath(ui.Path src) {
     return SkwasmPath.from(src as SkwasmPath);
-  }
-
-  @override
-  ui.ImageFilter createBlurImageFilter({double sigmaX = 0.0, double sigmaY = 0.0, ui.TileMode tileMode = ui.TileMode.clamp}) {
-    throw UnimplementedError('createBlurImageFilter not yet implemented');
   }
 
   @override
@@ -65,19 +55,66 @@ class SkwasmRenderer implements Renderer {
     );
 
   @override
-  ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    throw UnimplementedError('createDilateImageFilter not yet implemented');
-  }
+  ui.ImageFilter createBlurImageFilter({
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
+    ui.TileMode tileMode = ui.TileMode.clamp
+  }) => SkwasmImageFilter.blur(
+    sigmaX: sigmaX,
+    sigmaY: sigmaY,
+    tileMode: tileMode
+  );
 
   @override
-  ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    throw UnimplementedError('createErodeImageFilter not yet implemented');
-  }
+  ui.ImageFilter createDilateImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0
+  }) => SkwasmImageFilter.dilate(
+    radiusX: radiusX,
+    radiusY: radiusY,
+  );
 
   @override
-  ui.ImageShader createImageShader(ui.Image image, ui.TileMode tmx, ui.TileMode tmy, Float64List matrix4, ui.FilterQuality? filterQuality) {
-    throw UnimplementedError('createImageShader not yet implemented');
-  }
+  ui.ImageFilter createErodeImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0
+  }) => SkwasmImageFilter.erode(
+    radiusX: radiusX,
+    radiusY: radiusY,
+  );
+
+  @override
+  ui.ImageFilter composeImageFilters({
+    required ui.ImageFilter outer,
+    required ui.ImageFilter inner
+  }) => SkwasmImageFilter.compose(
+    SkwasmImageFilter.fromUiFilter(outer),
+    SkwasmImageFilter.fromUiFilter(inner),
+  );
+
+  @override
+  ui.ImageFilter createMatrixImageFilter(
+    Float64List matrix4, {
+    ui.FilterQuality filterQuality = ui.FilterQuality.low
+  }) => SkwasmImageFilter.matrix(
+    matrix4,
+    filterQuality: filterQuality
+  );
+
+  @override
+  ui.ImageShader createImageShader(
+    ui.Image image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
+    Float64List matrix4,
+    ui.FilterQuality? filterQuality
+  ) => SkwasmImageShader.imageShader(
+    image as SkwasmImage,
+    tmx,
+    tmy,
+    matrix4,
+    filterQuality
+  );
 
   @override
   ui.Gradient createLinearGradient(
@@ -96,10 +133,6 @@ class SkwasmRenderer implements Renderer {
     matrix4: matrix4,
   );
 
-  @override
-  ui.ImageFilter createMatrixImageFilter(Float64List matrix4, {ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
-    throw UnimplementedError('createMatrixImageFilter not yet implemented');
-  }
 
   @override
   ui.Paint createPaint() => SkwasmPaint();
@@ -286,8 +319,30 @@ class SkwasmRenderer implements Renderer {
     );
 
   @override
-  void decodeImageFromPixels(Uint8List pixels, int width, int height, ui.PixelFormat format, ui.ImageDecoderCallback callback, {int? rowBytes, int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    throw UnimplementedError('decodeImageFromPixels not yet implemented');
+  void decodeImageFromPixels(
+    Uint8List pixels,
+    int width,
+    int height,
+    ui.PixelFormat format,
+    ui.ImageDecoderCallback callback, {
+    int? rowBytes,
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true
+  }) {
+    final SkwasmImage pixelImage = SkwasmImage.fromPixels(
+      pixels,
+      width,
+      height,
+      format
+    );
+    final ui.Image scaledImage = scaleImageIfNeeded(
+      pixelImage,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling,
+    );
+    callback(scaledImage);
   }
 
   @override
@@ -303,13 +358,47 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List list, {int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    throw UnimplementedError('instantiateImageCodec not yet implemented');
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List list, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true
+  }) async {
+    final String? contentType = detectContentType(list);
+    if (contentType == null) {
+      throw Exception('Could not determine content type of image from data');
+    }
+    final ui.Codec baseDecoder = SkwasmImageDecoder(
+      contentType: contentType,
+      dataSource: list.toJS,
+      debugSource: 'encoded image bytes',
+    );
+    if (targetWidth == null && targetHeight == null) {
+      return baseDecoder;
+    }
+    return ResizingCodec(
+      baseDecoder,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling
+    );
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {WebOnlyImageCodecChunkCallback? chunkCallback}) {
-    throw UnimplementedError('instantiateImageCodecFromUrl not yet implemented');
+  Future<ui.Codec> instantiateImageCodecFromUrl(
+    Uri uri, {
+    WebOnlyImageCodecChunkCallback? chunkCallback
+  }) async {
+    final DomResponse response = await rawHttpGet(uri.toString());
+    final String? contentType = response.headers.get('Content-Type');
+    if (contentType == null) {
+      throw Exception('Could not determine content type of image at url $uri');
+    }
+    return SkwasmImageDecoder(
+      contentType: contentType,
+      dataSource: response.body as JSAny,
+      debugSource: uri.toString(),
+    );
   }
 
   @override

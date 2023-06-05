@@ -11,6 +11,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
@@ -29,13 +30,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetSampleCount(sample_count);
 
   ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
-  if (!color_attachment_pixel_format.has_value()) {
-    VALIDATION_LOG << "Color attachment pixel format must be set.";
-    color0.format = PixelFormat::kB8G8R8A8UNormInt;
-  } else {
-    color0.format = *color_attachment_pixel_format;
-  }
-  color0.format = *color_attachment_pixel_format;
+  color0.format = color_attachment_pixel_format.value_or(PixelFormat::kUnknown);
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
@@ -133,9 +128,9 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     desc.ClearStencilAttachments();
   }
 
-  if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
-    StencilAttachmentDescriptor stencil =
-        desc.GetFrontStencilAttachmentDescriptor().value();
+  auto maybe_stencil = desc.GetFrontStencilAttachmentDescriptor();
+  if (maybe_stencil.has_value()) {
+    StencilAttachmentDescriptor stencil = maybe_stencil.value();
     stencil.stencil_compare = stencil_compare;
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
@@ -296,9 +291,21 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   porter_duff_blend_pipelines_[{}] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
 
-  if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
-    auto clip_pipeline_descriptor =
-        solid_fill_pipelines_[{}]->GetDescriptor().value();
+  if (context_->GetCapabilities()->SupportsCompute()) {
+    auto pipeline_desc =
+        PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    point_field_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+
+    auto uv_pipeline_desc =
+        UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
+    uv_compute_pipelines_ =
+        context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
+  }
+
+  auto maybe_pipeline_desc = solid_fill_pipelines_[{}]->GetDescriptor();
+  if (maybe_pipeline_desc.has_value()) {
+    auto clip_pipeline_descriptor = maybe_pipeline_desc.value();
     clip_pipeline_descriptor.SetLabel("Clip Pipeline");
     // Disable write to all color attachments.
     auto color_attachments =
@@ -362,11 +369,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands()) {
-    return nullptr;
-  }
-
-  if (!sub_command_buffer->SubmitCommands()) {
+  if (!sub_command_buffer->SubmitCommandsAsync(std::move(sub_renderpass))) {
     return nullptr;
   }
 

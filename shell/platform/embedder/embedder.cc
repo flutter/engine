@@ -20,6 +20,8 @@
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -67,6 +69,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "third_party/skia/include/ports/SkCFObject.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -695,7 +698,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                      // context
       backend_texture,              // back-end texture
       kBottomLeft_GrSurfaceOrigin,  // surface origin
@@ -703,7 +706,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kN32_SkColorType,             // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           texture->destruction_callback),  // release proc
       texture->user_data                   // release context
   );
@@ -738,14 +741,14 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendRenderTarget(
+  auto surface = SkSurfaces::WrapBackendRenderTarget(
       context,                      //  context
       backend_render_target,        // backend render target
       kBottomLeft_GrSurfaceOrigin,  // surface origin
       kN32_SkColorType,             // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
-      static_cast<SkSurface::RenderTargetReleaseProc>(
+      static_cast<SkSurfaces::RenderTargetReleaseProc>(
           framebuffer->destruction_callback),  // release proc
       framebuffer->user_data                   // release context
   );
@@ -782,13 +785,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     delete captures;
   };
 
-  auto surface = SkSurface::MakeRasterDirectReleaseProc(
-      image_info,                               // image info
-      const_cast<void*>(software->allocation),  // pixels
-      software->row_bytes,                      // row bytes
-      release_proc,                             // release proc
-      captures.get()                            // get context
-  );
+  auto surface =
+      SkSurfaces::WrapPixels(image_info,  // image info
+                             const_cast<void*>(software->allocation),  // pixels
+                             software->row_bytes,  // row bytes
+                             release_proc,         // release proc
+                             captures.get()        // get context
+      );
 
   if (!surface) {
     FML_LOG(ERROR)
@@ -830,13 +833,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     }
   };
 
-  auto surface = SkSurface::MakeRasterDirectReleaseProc(
-      image_info,                               // image info
-      const_cast<void*>(software->allocation),  // pixels
-      software->row_bytes,                      // row bytes
-      release_proc,                             // release proc
-      captures.release()                        // release context
-  );
+  auto surface =
+      SkSurfaces::WrapPixels(image_info,  // image info
+                             const_cast<void*>(software->allocation),  // pixels
+                             software->row_bytes,  // row bytes
+                             release_proc,         // release proc
+                             captures.release()    // release context
+      );
 
   if (!surface) {
     FML_LOG(ERROR)
@@ -870,7 +873,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
@@ -880,7 +883,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kBGRA_8888_SkColorType,  // color type
       nullptr,                 // color space
       &surface_properties,     // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
       metal->texture.user_data                   // release context
   );
@@ -924,7 +927,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendTexture(
+  auto surface = SkSurfaces::WrapBackendTexture(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
@@ -933,7 +936,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
           static_cast<VkFormat>(vulkan->image->format)),  // color type
       SkColorSpace::MakeSRGB(),                           // color space
       &surface_properties,                                // surface properties
-      static_cast<SkSurface::TextureReleaseProc>(
+      static_cast<SkSurfaces::TextureReleaseProc>(
           vulkan->destruction_callback),  // release proc
       vulkan->user_data                   // release context
   );
@@ -2062,6 +2065,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
       SAFE_ACCESS(flutter_metrics, physical_view_inset_bottom, 0.0);
   metrics.physical_view_inset_left =
       SAFE_ACCESS(flutter_metrics, physical_view_inset_left, 0.0);
+  metrics.display_id = SAFE_ACCESS(flutter_metrics, display_id, 0);
 
   if (metrics.device_pixel_ratio <= 0.0) {
     return LOG_EMBEDDER_ERROR(
@@ -2997,12 +3001,16 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
   switch (update_type) {
     case kFlutterEngineDisplaysUpdateTypeStartup: {
       std::vector<std::unique_ptr<flutter::Display>> displays;
+      const auto* display = embedder_displays;
       for (size_t i = 0; i < display_count; i++) {
         displays.push_back(std::make_unique<flutter::Display>(
-            embedder_displays[i].display_id, embedder_displays[i].refresh_rate,
-            // TODO(dnfield): Supply real values
-            // https://github.com/flutter/flutter/issues/125939
-            -1, -1, -1));
+            SAFE_ACCESS(display, display_id, i),    //
+            SAFE_ACCESS(display, refresh_rate, 0),  //
+            SAFE_ACCESS(display, width, 0),         //
+            SAFE_ACCESS(display, height, 0),        //
+            SAFE_ACCESS(display, device_pixel_ratio, 1)));
+        display = reinterpret_cast<const FlutterEngineDisplay*>(
+            reinterpret_cast<const uint8_t*>(display) + display->struct_size);
       }
       engine->GetShell().OnDisplayUpdates(std::move(displays));
       return kSuccess;

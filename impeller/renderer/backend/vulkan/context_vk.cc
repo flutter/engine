@@ -107,8 +107,8 @@ uint64_t CalculateHash(void* ptr) {
 ContextVK::ContextVK() : hash_(CalculateHash(this)) {}
 
 ContextVK::~ContextVK() {
-  if (device_) {
-    [[maybe_unused]] auto result = device_->waitIdle();
+  if (device_holder_->device) {
+    [[maybe_unused]] auto result = device_holder_->device->waitIdle();
   }
   CommandPoolVK::ClearAllPools(this);
 }
@@ -119,6 +119,13 @@ void ContextVK::Setup(Settings settings) {
   if (!settings.proc_address_callback) {
     return;
   }
+
+  if (!settings.worker_task_runner) {
+    VALIDATION_LOG
+        << "Cannot set up a Vulkan context without a worker task runner.";
+    return;
+  }
+  worker_task_runner_ = settings.worker_task_runner;
 
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
@@ -184,14 +191,17 @@ void ContextVK::Setup(Settings settings) {
   instance_info.setPApplicationInfo(&application_info);
   instance_info.setFlags(instance_flags);
 
-  auto instance = vk::createInstanceUnique(instance_info);
-  if (instance.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create Vulkan instance: "
-                   << vk::to_string(instance.result);
-    return;
+  auto device_holder = std::make_shared<DeviceHolderImpl>();
+  {
+    auto instance = vk::createInstanceUnique(instance_info);
+    if (instance.result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not create Vulkan instance: "
+                     << vk::to_string(instance.result);
+      return;
+    }
+    device_holder->instance = std::move(instance.value);
   }
-
-  dispatcher.init(instance.value.get());
+  dispatcher.init(device_holder->instance.get());
 
   //----------------------------------------------------------------------------
   /// Setup the debug report.
@@ -200,7 +210,7 @@ void ContextVK::Setup(Settings settings) {
   /// initialization issues.
   ///
   auto debug_report =
-      std::make_unique<DebugReportVK>(*caps, instance.value.get());
+      std::make_unique<DebugReportVK>(*caps, device_holder->instance.get());
 
   if (!debug_report->IsValid()) {
     VALIDATION_LOG << "Could not setup debug report.";
@@ -210,21 +220,25 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Pick the physical device.
   ///
-  auto physical_device = PickPhysicalDevice(*caps, instance.value.get());
-  if (!physical_device.has_value()) {
-    VALIDATION_LOG << "No valid Vulkan device found.";
-    return;
+  {
+    auto physical_device =
+        PickPhysicalDevice(*caps, device_holder->instance.get());
+    if (!physical_device.has_value()) {
+      VALIDATION_LOG << "No valid Vulkan device found.";
+      return;
+    }
+    device_holder->physical_device = physical_device.value();
   }
 
   //----------------------------------------------------------------------------
   /// Pick device queues.
   ///
   auto graphics_queue =
-      PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
+      PickQueue(device_holder->physical_device, vk::QueueFlagBits::eGraphics);
   auto transfer_queue =
-      PickQueue(physical_device.value(), vk::QueueFlagBits::eTransfer);
+      PickQueue(device_holder->physical_device, vk::QueueFlagBits::eTransfer);
   auto compute_queue =
-      PickQueue(physical_device.value(), vk::QueueFlagBits::eCompute);
+      PickQueue(device_holder->physical_device, vk::QueueFlagBits::eCompute);
 
   if (!graphics_queue.has_value()) {
     VALIDATION_LOG << "Could not pick graphics queue.";
@@ -243,7 +257,7 @@ void ContextVK::Setup(Settings settings) {
   /// Create the logical device.
   ///
   auto enabled_device_extensions =
-      caps->GetRequiredDeviceExtensions(physical_device.value());
+      caps->GetRequiredDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
     // This shouldn't happen since we already did device selection. But doesn't
     // hurt to check again.
@@ -259,7 +273,7 @@ void ContextVK::Setup(Settings settings) {
       {graphics_queue.value(), compute_queue.value(), transfer_queue.value()});
 
   const auto required_features =
-      caps->GetRequiredDeviceFeatures(physical_device.value());
+      caps->GetRequiredDeviceFeatures(device_holder->physical_device);
   if (!required_features.has_value()) {
     // This shouldn't happen since the device can't be picked if this was not
     // true. But doesn't hurt to check.
@@ -273,14 +287,17 @@ void ContextVK::Setup(Settings settings) {
   device_info.setPEnabledFeatures(&required_features.value());
   // Device layers are deprecated and ignored.
 
-  auto device_result = physical_device->createDeviceUnique(device_info);
-  if (device_result.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create logical device.";
-    return;
+  {
+    auto device_result =
+        device_holder->physical_device.createDeviceUnique(device_info);
+    if (device_result.result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not create logical device.";
+      return;
+    }
+    device_holder->device = std::move(device_result.value);
   }
-  vk::UniqueDevice device = std::move(device_result.value);
 
-  if (!caps->SetDevice(physical_device.value())) {
+  if (!caps->SetDevice(device_holder->physical_device)) {
     VALIDATION_LOG << "Capabilities could not be updated.";
     return;
   }
@@ -291,9 +308,9 @@ void ContextVK::Setup(Settings settings) {
   auto allocator = std::shared_ptr<AllocatorVK>(new AllocatorVK(
       weak_from_this(),                  //
       application_info.apiVersion,       //
-      physical_device.value(),           //
-      device.get(),                      //
-      instance.value.get(),              //
+      device_holder->physical_device,    //
+      device_holder,                     //
+      device_holder->instance.get(),     //
       dispatcher.vkGetInstanceProcAddr,  //
       dispatcher.vkGetDeviceProcAddr     //
       ));
@@ -307,11 +324,10 @@ void ContextVK::Setup(Settings settings) {
   /// Setup the pipeline library.
   ///
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
-      new PipelineLibraryVK(weak_from_this(),                     //
-                            device.get(),                         //
+      new PipelineLibraryVK(device_holder,                        //
                             caps,                                 //
                             std::move(settings.cache_directory),  //
-                            settings.worker_task_runner           //
+                            worker_task_runner_                   //
                             ));
 
   if (!pipeline_library->IsValid()) {
@@ -320,10 +336,10 @@ void ContextVK::Setup(Settings settings) {
   }
 
   auto sampler_library =
-      std::shared_ptr<SamplerLibraryVK>(new SamplerLibraryVK(device.get()));
+      std::shared_ptr<SamplerLibraryVK>(new SamplerLibraryVK(device_holder));
 
   auto shader_library = std::shared_ptr<ShaderLibraryVK>(
-      new ShaderLibraryVK(device.get(),                    //
+      new ShaderLibraryVK(device_holder,                   //
                           settings.shader_libraries_data)  //
   );
 
@@ -336,7 +352,7 @@ void ContextVK::Setup(Settings settings) {
   /// Create the fence waiter.
   ///
   auto fence_waiter =
-      std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device.get()));
+      std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device_holder));
   if (!fence_waiter->IsValid()) {
     VALIDATION_LOG << "Could not create fence waiter.";
     return;
@@ -345,10 +361,10 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
-  QueuesVK queues(device.get(),            //
-                  graphics_queue.value(),  //
-                  compute_queue.value(),   //
-                  transfer_queue.value()   //
+  QueuesVK queues(device_holder->device.get(),  //
+                  graphics_queue.value(),       //
+                  compute_queue.value(),        //
+                  transfer_queue.value()        //
   );
   if (!queues.IsValid()) {
     VALIDATION_LOG << "Could not fetch device queues.";
@@ -356,16 +372,14 @@ void ContextVK::Setup(Settings settings) {
   }
 
   VkPhysicalDeviceProperties physical_device_properties;
-  dispatcher.vkGetPhysicalDeviceProperties(physical_device.value(),
+  dispatcher.vkGetPhysicalDeviceProperties(device_holder->physical_device,
                                            &physical_device_properties);
 
   //----------------------------------------------------------------------------
   /// All done!
   ///
-  instance_ = std::move(instance.value);
+  device_holder_ = std::move(device_holder);
   debug_report_ = std::move(debug_report);
-  physical_device_ = physical_device.value();
-  device_ = std::move(device);
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
@@ -380,7 +394,7 @@ void ContextVK::Setup(Settings settings) {
   /// Label all the relevant objects. This happens after setup so that the debug
   /// messengers have had a chance to be setup.
   ///
-  SetDebugName(GetDevice(), device_.get(), "ImpellerDevice");
+  SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }
 
 // |Context|
@@ -420,11 +434,16 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
 }
 
 vk::Instance ContextVK::GetInstance() const {
-  return *instance_;
+  return *device_holder_->instance;
 }
 
 const vk::Device& ContextVK::GetDevice() const {
-  return device_.get();
+  return device_holder_->device.get();
+}
+
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+ContextVK::GetConcurrentWorkerTaskRunner() const {
+  return worker_task_runner_;
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
@@ -440,12 +459,13 @@ std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
 
 vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
     ANativeWindow* window) const {
-  if (!instance_) {
+  if (!device_holder_->instance) {
     return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
   }
 
   auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
-  auto surface_res = instance_->createAndroidSurfaceKHRUnique(create_info);
+  auto surface_res =
+      device_holder_->instance->createAndroidSurfaceKHRUnique(create_info);
 
   if (surface_res.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create Android surface, error: "
@@ -477,7 +497,7 @@ const std::shared_ptr<QueueVK>& ContextVK::GetGraphicsQueue() const {
 }
 
 vk::PhysicalDevice ContextVK::GetPhysicalDevice() const {
-  return physical_device_;
+  return device_holder_->physical_device;
 }
 
 std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
@@ -491,7 +511,7 @@ std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     return nullptr;
   }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      weak_from_this(),        //
+      device_holder_,          //
       queues_.graphics_queue,  //
       tls_pool,                //
       fence_waiter_            //

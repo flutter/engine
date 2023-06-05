@@ -55,6 +55,10 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   // rendering but also creates smaller intermediate passes.
   ISize root_size;
   if (requires_blit) {
+    if (!clip_rect.has_value()) {
+      VALIDATION_LOG << "Missing clip rectangle.";
+      return nullptr;
+    }
     root_size = ISize(clip_rect->size.width, clip_rect->size.height);
   } else {
     root_size = {static_cast<ISize::Type>(drawable.texture.width),
@@ -153,6 +157,20 @@ IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
 
+static bool ShouldWaitForCommandBuffer() {
+#if ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
+  // If a transaction is present, `presentDrawable` will present too early. And
+  // so we wait on an empty command buffer to get scheduled instead, which
+  // forces us to also wait for all of the previous command buffers in the queue
+  // to get scheduled.
+  return true;
+#else
+  // On Physical iOS devices we still need to wait if we're taking a frame
+  // capture.
+  return [[MTLCaptureManager sharedCaptureManager] isCapturing];
+#endif  // ((FML_OS_MACOSX && !FML_OS_IOS) || FML_OS_IOS_SIMULATOR)
+}
+
 // |Surface|
 bool SurfaceMTL::Present() const {
   if (drawable_ == nil) {
@@ -170,6 +188,10 @@ bool SurfaceMTL::Present() const {
       return false;
     }
     auto blit_pass = blit_command_buffer->CreateBlitPass();
+    if (!clip_rect_.has_value()) {
+      VALIDATION_LOG << "Missing clip rectangle.";
+      return false;
+    }
     auto current = TextureMTL::Wrapper({}, drawable_.texture);
     blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
                        clip_rect_->origin);
@@ -179,14 +201,12 @@ bool SurfaceMTL::Present() const {
     }
   }
 
-  // If a transaction is present, `presentDrawable` will present too early. And
-  // so we wait on an empty command buffer to get scheduled instead, which
-  // forces us to also wait for all of the previous command buffers in the queue
-  // to get scheduled.
-  id<MTLCommandBuffer> command_buffer =
-      ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
-  [command_buffer commit];
-  [command_buffer waitUntilScheduled];
+  if (ShouldWaitForCommandBuffer()) {
+    id<MTLCommandBuffer> command_buffer =
+        ContextMTL::Cast(context.get())->CreateMTLCommandBuffer();
+    [command_buffer commit];
+    [command_buffer waitUntilScheduled];
+  }
   [drawable_ present];
 
   return true;

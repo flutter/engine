@@ -65,15 +65,22 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+
   size_t bytes = used_;
   int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
+  bool compatible = layer_stack_.back().is_group_opacity_compatible();
+  bool is_safe = is_ui_thread_safe_;
+
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
-  bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  bool is_safe = is_ui_thread_safe_;
+  layer_stack_.pop_back();
+  layer_stack_.emplace_back();
+  tracker_.reset();
+  current_ = DlPaint();
+
   return sk_sp<DisplayList>(
       new DisplayList(std::move(storage_), bytes, count, nested_bytes,
                       nested_count, bounds(), compatible, is_safe, rtree()));
@@ -129,7 +136,7 @@ void DisplayListBuilder::onSetStrokeJoin(DlStrokeJoin join) {
   current_.setStrokeJoin(join);
   Push<SetStrokeJoinOp>(0, 0, join);
 }
-void DisplayListBuilder::onSetStyle(DlDrawStyle style) {
+void DisplayListBuilder::onSetDrawStyle(DlDrawStyle style) {
   current_.setDrawStyle(style);
   Push<SetStyleOp>(0, 0, style);
 }
@@ -346,7 +353,7 @@ void DisplayListBuilder::SetAttributesFromPaint(
     setBlendMode(paint.getBlendMode());
   }
   if (flags.applies_style()) {
-    setStyle(paint.getDrawStyle());
+    setDrawStyle(paint.getDrawStyle());
   }
   if (flags.is_stroked(paint.getDrawStyle())) {
     setStrokeWidth(paint.getStrokeWidth());
@@ -744,7 +751,7 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   Push<DrawRectOp>(0, 1, rect);
   CheckLayerOpacityCompatibility();
-  AccumulateOpBounds(rect, kDrawRectFlags);
+  AccumulateOpBounds(rect.makeSorted(), kDrawRectFlags);
 }
 void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawRectFlags);
@@ -753,7 +760,7 @@ void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
   Push<DrawOvalOp>(0, 1, bounds);
   CheckLayerOpacityCompatibility();
-  AccumulateOpBounds(bounds, kDrawOvalFlags);
+  AccumulateOpBounds(bounds.makeSorted(), kDrawOvalFlags);
 }
 void DisplayListBuilder::DrawOval(const SkRect& bounds, const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawOvalFlags);
@@ -1099,7 +1106,8 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
     case BoundsAccumulatorType::kRTree:
       auto rtree = display_list->rtree();
       if (rtree) {
-        std::list<SkRect> rects = rtree->searchAndConsolidateRects(bounds);
+        std::list<SkRect> rects =
+            rtree->searchAndConsolidateRects(bounds, false);
         for (const SkRect& rect : rects) {
           // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
           // are not necessarily `kDrawDisplayListFlags`.

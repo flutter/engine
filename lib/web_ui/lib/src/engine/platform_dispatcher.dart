@@ -11,10 +11,9 @@ import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart'  show platformViewManager, registerHotRestartListener;
+import '../engine.dart'  show flutterViewEmbedder, platformViewManager, registerHotRestartListener;
 import 'clipboard.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'mouse_cursor.dart';
 import 'platform_views/message_handler.dart';
 import 'plugins.dart';
@@ -73,6 +72,24 @@ class HighContrastSupport {
   }
 }
 
+class EngineFlutterDisplay extends ui.Display {
+  EngineFlutterDisplay({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  @override
+  final int id;
+  @override
+  final double devicePixelRatio;
+  @override
+  final ui.Size size;
+  @override
+  final double refreshRate;
+}
+
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -86,6 +103,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
+    _setAppLifecycleState(ui.AppLifecycleState.resumed);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -135,12 +153,24 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  Iterable<ui.Display> get displays => <ui.Display>[];
+  Iterable<ui.Display> get displays => <ui.Display>[
+    EngineFlutterDisplay(
+      id: 0,
+      size: ui.Size(domWindow.screen?.width ?? 0, domWindow.screen?.height ?? 0),
+      devicePixelRatio: domWindow.devicePixelRatio,
+      refreshRate: 60,
+    )
+  ];
 
   /// The current list of windows.
   @override
   Iterable<ui.FlutterView> get views => viewData.values;
-  final Map<Object, ui.FlutterView> viewData = <Object, ui.FlutterView>{};
+  final Map<int, ui.FlutterView> viewData = <int, ui.FlutterView>{};
+
+  /// Returns the [FlutterView] with the provided ID if one exists, or null
+  /// otherwise.
+  @override
+  ui.FlutterView? view({required int id}) => viewData[id];
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
@@ -452,7 +482,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     ui.PlatformMessageResponseCallback? callback,
   ) {
     // In widget tests we want to bypass processing of platform messages.
-    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+    bool returnImmediately = false;
+    assert(() {
+      if (ui.debugEmulateFlutterTesterEnvironment) {
+        returnImmediately = true;
+      }
+      return true;
+    }());
+
+    if (returnImmediately) {
       return;
     }
 
@@ -460,7 +498,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       print('Sent platform message on channel: "$name"');
     }
 
-    if (assertionsEnabled && name == 'flutter/debug-echo') {
+    bool allowDebugEcho = false;
+    assert(() {
+      allowDebugEcho = true;
+      return true;
+    }());
+
+    if (allowDebugEcho && name == 'flutter/debug-echo') {
       // Echoes back the data unchanged. Used for testing purposes.
       replyToPlatformMessage(callback, data);
       return;
@@ -605,7 +649,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         const StandardMessageCodec codec = StandardMessageCodec();
-        accessibilityAnnouncements.handleMessage(codec, data);
+        flutterViewEmbedder.accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
@@ -966,6 +1010,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _fontSizeObserver = null;
   }
 
+  void _setAppLifecycleState(ui.AppLifecycleState state) {
+    sendPlatformMessage(
+      'flutter/lifecycle',
+      Uint8List.fromList(utf8.encode(state.toString())).buffer.asByteData(),
+      null,
+    );
+  }
+
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
   /// The framework invokes this callback in the same zone in which the
@@ -1159,12 +1211,38 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _onSemanticsActionZone = Zone.current;
   }
 
+  /// A callback that is invoked whenever the user requests an action to be
+  /// performed on a semantics node.
+  ///
+  /// This callback is used when the user expresses the action they wish to
+  /// perform based on the semantics node supplied by updateSemantics.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  @override
+  ui.SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
+  ui.SemanticsActionEventCallback? _onSemanticsActionEvent;
+  Zone _onSemanticsActionEventZone = Zone.root;
+  @override
+  set onSemanticsActionEvent(ui.SemanticsActionEventCallback? callback) {
+    _onSemanticsActionEvent = callback;
+    _onSemanticsActionEventZone = Zone.current;
+  }
+
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(
       int nodeId, ui.SemanticsAction action, ByteData? args) {
     invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, nodeId, action, args);
+    invoke1<ui.SemanticsActionEvent>(
+        _onSemanticsActionEvent, _onSemanticsActionEventZone, ui.SemanticsActionEvent(
+          type: action,
+          nodeId: nodeId,
+          viewId: 0, // TODO(goderbauer): Wire up the real view ID.
+          arguments: args,
+        ),
+    );
   }
 
   // TODO(dnfield): make this work on web.

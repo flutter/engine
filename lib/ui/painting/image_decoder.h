@@ -27,11 +27,12 @@ class ImageDecoder {
       const Settings& settings,
       const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-      fml::WeakPtr<IOManager> io_manager);
+      fml::WeakPtr<IOManager> io_manager,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   virtual ~ImageDecoder();
 
-  using ImageResult = std::function<void(sk_sp<DlImage>)>;
+  using ImageResult = std::function<void(sk_sp<DlImage>, std::string)>;
 
   // Takes an image descriptor and returns a handle to a texture resident on the
   // GPU. All image decompression and resizes are done on a worker thread

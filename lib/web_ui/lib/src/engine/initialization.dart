@@ -132,10 +132,6 @@ Future<void> initializeEngineServices({
   // Store `jsConfiguration` so user settings are available to the engine.
   configuration.setUserConfiguration(jsConfiguration);
 
-  // Setup the hook that allows users to customize URL strategy before running
-  // the app.
-  _addUrlStrategyListener();
-
   // Called by the Web runtime just before hot restarting the app.
   //
   // This extension cleans up resources that are registered with browser's
@@ -227,7 +223,6 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
-  initializeAccessibilityAnnouncements();
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
@@ -260,26 +255,6 @@ Future<void> _downloadAssetFonts() async {
   if (_assetManager != null) {
     await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(assetManager));
   }
-}
-
-void _addUrlStrategyListener() {
-  jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
-    if (jsStrategy == null) {
-      customUrlStrategy = null;
-    } else {
-      // Because `JSStrategy` could be anything, we check for the
-      // `addPopStateListener` property and throw if it is missing.
-      if (!hasJsProperty(jsStrategy, 'addPopStateListener')) {
-        throw StateError(
-            'Unexpected JsUrlStrategy: $jsStrategy is missing '
-            '`addPopStateListener` property');
-      }
-      customUrlStrategy = CustomUrlStrategy.fromJs(jsStrategy);
-    }
-  });
-  registerHotRestartListener(() {
-    jsSetUrlStrategy = null;
-  });
 }
 
 /// Whether to disable the font fallback system.

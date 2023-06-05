@@ -6,11 +6,13 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/shader_types.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
@@ -383,10 +385,13 @@ static bool Bind(PassBindingsCache& pass,
   }
 
   if (texture.NeedsMipmapGeneration()) {
+    // TODO(127697): generate mips when the GPU is available on iOS.
+#if !FML_OS_IOS
     VALIDATION_LOG
         << "Texture at binding index " << bind_index
         << " has a mip count > 1, but the mipmap has not been generated.";
     return false;
+#endif  // !FML_OS_IOS
   }
 
   return pass.SetTexture(stage, bind_index,

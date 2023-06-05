@@ -2,13 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:ffi';
+import 'dart:js_interop';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmLineMetrics implements ui.LineMetrics {
+const int _kSoftLineBreak = 0;
+const int _kHardLineBreak = 100;
+
+class SkwasmLineMetrics extends SkwasmObjectWrapper<RawLineMetrics> implements ui.LineMetrics {
   factory SkwasmLineMetrics({
     required bool hardBreak,
     required double ascent,
@@ -31,10 +36,10 @@ class SkwasmLineMetrics implements ui.LineMetrics {
     lineNumber,
   ));
 
-  SkwasmLineMetrics._(this.handle);
+  SkwasmLineMetrics._(LineMetricsHandle handle) : super(handle, _registry);
 
-  final LineMetricsHandle handle;
-  bool _isDisposed = false;
+  static final SkwasmFinalizationRegistry<RawLineMetrics> _registry =
+    SkwasmFinalizationRegistry<RawLineMetrics>(lineMetricsDispose);
 
   @override
   bool get hardBreak => lineMetricsGetHardBreak(handle);
@@ -62,20 +67,15 @@ class SkwasmLineMetrics implements ui.LineMetrics {
 
   @override
   int get lineNumber => lineMetricsGetLineNumber(handle);
-
-  void dispose() {
-    if (_isDisposed) {
-      lineMetricsDispose(handle);
-      _isDisposed = true;
-    }
-  }
 }
 
-class SkwasmParagraph implements ui.Paragraph {
-  SkwasmParagraph(this.handle);
+class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Paragraph {
+  SkwasmParagraph(ParagraphHandle handle) : super(handle, _registry);
 
-  ParagraphHandle handle;
-  bool _isDisposed = false;
+  static final SkwasmFinalizationRegistry<RawParagraph> _registry =
+    SkwasmFinalizationRegistry<RawParagraph>(paragraphDispose);
+
+  bool _hasCheckedForMissingCodePoints = false;
 
   @override
   double get width => paragraphGetWidth(handle);
@@ -102,8 +102,30 @@ class SkwasmParagraph implements ui.Paragraph {
   bool get didExceedMaxLines => paragraphGetDidExceedMaxLines(handle);
 
   @override
-  void layout(ui.ParagraphConstraints constraints) =>
+  void layout(ui.ParagraphConstraints constraints) {
     paragraphLayout(handle, constraints.width);
+    if (!_hasCheckedForMissingCodePoints) {
+      _hasCheckedForMissingCodePoints = true;
+      final int missingCodePointCount = paragraphGetUnresolvedCodePoints(handle, nullptr, 0);
+      if (missingCodePointCount > 0) {
+        withStackScope((StackScope scope) {
+          final Pointer<Uint32> codePointBuffer = scope.allocUint32Array(missingCodePointCount);
+          final int returnedCodePointCount = paragraphGetUnresolvedCodePoints(
+            handle,
+            codePointBuffer,
+            missingCodePointCount
+          );
+          assert(missingCodePointCount == returnedCodePointCount);
+          renderer.fontCollection.fontFallbackManager!.addMissingCodePoints(
+            List<int>.generate(
+              missingCodePointCount,
+              (int index) => codePointBuffer[index]
+            )
+          );
+        });
+      }
+    }
+  }
 
   List<ui.TextBox> _convertTextBoxList(TextBoxListHandle listHandle) {
     final int length = textBoxListGetLength(listHandle);
@@ -192,17 +214,6 @@ class SkwasmParagraph implements ui.Paragraph {
       (int index) => SkwasmLineMetrics._(paragraphGetLineMetricsAtIndex(handle, index))
     );
   }
-
-  @override
-  bool get debugDisposed => _isDisposed;
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      paragraphDispose(handle);
-      _isDisposed = true;
-    }
-  }
 }
 
 void withScopedFontList(
@@ -221,6 +232,19 @@ void withScopedFontList(
       skStringFree(familiesPtr[i]);
     }
   });
+}
+
+class SkwasmNativeTextStyle extends SkwasmObjectWrapper<RawTextStyle> {
+  SkwasmNativeTextStyle(TextStyleHandle handle) : super(handle, _registry);
+
+  factory SkwasmNativeTextStyle.defaultTextStyle() => SkwasmNativeTextStyle(textStyleCreate());
+
+  static final SkwasmFinalizationRegistry<RawTextStyle> _registry =
+    SkwasmFinalizationRegistry<RawTextStyle>(textStyleDispose);
+
+  SkwasmNativeTextStyle copy() {
+    return SkwasmNativeTextStyle(textStyleCopy(handle));
+  }
 }
 
 class SkwasmTextStyle implements ui.TextStyle {
@@ -248,7 +272,8 @@ class SkwasmTextStyle implements ui.TextStyle {
     this.fontVariations,
   });
 
-  void applyToHandle(TextStyleHandle handle) {
+  void applyToNative(SkwasmNativeTextStyle style) {
+    final TextStyleHandle handle = style.handle;
     if (color != null) {
       textStyleSetColor(handle, color!.value);
     }
@@ -381,7 +406,7 @@ class SkwasmTextStyle implements ui.TextStyle {
   final List<ui.FontVariation>? fontVariations;
 }
 
-class SkwasmStrutStyle implements ui.StrutStyle {
+class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implements ui.StrutStyle {
   factory SkwasmStrutStyle({
     String? fontFamily,
     List<String>? fontFamilyFallback,
@@ -430,12 +455,13 @@ class SkwasmStrutStyle implements ui.StrutStyle {
     return SkwasmStrutStyle._(handle);
   }
 
-  SkwasmStrutStyle._(this.handle);
+  SkwasmStrutStyle._(StrutStyleHandle handle) : super(handle, _registry);
 
-  final StrutStyleHandle handle;
+  static final SkwasmFinalizationRegistry<RawStrutStyle> _registry =
+    SkwasmFinalizationRegistry<RawStrutStyle>(strutStyleDispose);
 }
 
-class SkwasmParagraphStyle implements ui.ParagraphStyle {
+class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implements ui.ParagraphStyle {
   factory SkwasmParagraphStyle({
     ui.TextAlign? textAlign,
     ui.TextDirection? textDirection,
@@ -479,9 +505,10 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
       strutStyle as SkwasmStrutStyle;
       paragraphStyleSetStrutStyle(handle, strutStyle.handle);
     }
-    final TextStyleHandle textStyleHandle = textStyleCopy(
-      (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle,
-    );
+    final SkwasmNativeTextStyle textStyle =
+      (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle.copy();
+    final TextStyleHandle textStyleHandle = textStyle.handle;
+
     if (fontFamily != null) {
       withScopedFontList(<String>[fontFamily],
         (Pointer<SkStringHandle> families, int count) =>
@@ -508,24 +535,23 @@ class SkwasmParagraphStyle implements ui.ParagraphStyle {
       skStringFree(localeHandle);
     }
     paragraphStyleSetTextStyle(handle, textStyleHandle);
-    return SkwasmParagraphStyle._(handle, textStyleHandle, fontFamily);
+    return SkwasmParagraphStyle._(handle, textStyle, fontFamily);
   }
 
-  SkwasmParagraphStyle._(this.handle, this.textStyleHandle, this.defaultFontFamily);
+  SkwasmParagraphStyle._(
+    ParagraphStyleHandle handle,
+    this.textStyle,
+    this.defaultFontFamily
+  ) : super(handle, _registry);
 
-  final ParagraphStyleHandle handle;
-  final TextStyleHandle textStyleHandle;
+  static final SkwasmFinalizationRegistry<RawParagraphStyle> _registry =
+    SkwasmFinalizationRegistry<RawParagraphStyle>(paragraphStyleDispose);
+
+  final SkwasmNativeTextStyle textStyle;
   final String? defaultFontFamily;
 }
 
-class _TextStyleStackEntry {
-  _TextStyleStackEntry(this.style, this.handle);
-
-  SkwasmTextStyle style;
-  TextStyleHandle handle;
-}
-
-class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
+class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> implements ui.ParagraphBuilder {
   factory SkwasmParagraphBuilder(
     SkwasmParagraphStyle style,
     SkwasmFontCollection collection,
@@ -534,10 +560,13 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
       collection.handle,
     ), style);
 
-  SkwasmParagraphBuilder._(this.handle, this.style);
-  final ParagraphBuilderHandle handle;
+  SkwasmParagraphBuilder._(ParagraphBuilderHandle handle, this.style) : super(handle, _registry);
+
+  static final SkwasmFinalizationRegistry<RawParagraphBuilder> _registry =
+    SkwasmFinalizationRegistry<RawParagraphBuilder>(paragraphBuilderDispose);
+
   final SkwasmParagraphStyle style;
-  final List<_TextStyleStackEntry> textStyleStack = <_TextStyleStackEntry>[];
+  final List<SkwasmNativeTextStyle> textStyleStack = <SkwasmNativeTextStyle>[];
 
   @override
   List<double> placeholderScales = <double>[];
@@ -562,37 +591,103 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
     placeholderScales.add(scale);
   }
 
-  List<String> _getEffectiveFonts() {
-    final List<String> fallbackFonts = renderer.fontCollection.fontFallbackManager!.globalFontFallbacks;
-    final List<String>? currentFonts =
-      textStyleStack.isEmpty ? null : textStyleStack.last.style.fontFamilies;
-    if (currentFonts != null) {
-      return <String>[
-        ...currentFonts,
-        ...fallbackFonts,
-      ];
-    } else if (style.defaultFontFamily != null) {
-      return <String>[
-        style.defaultFontFamily!,
-        ...fallbackFonts,
-      ];
-    } else {
-      return fallbackFonts;
-    }
-  }
-
   @override
   void addText(String text) {
-    renderer.fontCollection.fontFallbackManager!.ensureFontsSupportText(
-      text, _getEffectiveFonts()
-    );
     final SkString16Handle stringHandle = skString16FromDartString(text);
     paragraphBuilderAddText(handle, stringHandle);
     skString16Free(stringHandle);
   }
 
+  static final DomV8BreakIterator _v8BreakIterator = createV8BreakIterator();
+  static final DomSegmenter _graphemeSegmenter = createIntlSegmenter(granularity: 'grapheme');
+  static final DomSegmenter _wordSegmenter = createIntlSegmenter(granularity: 'word');
+  static final DomTextDecoder _utf8Decoder = DomTextDecoder();
+
+  void _addSegmenterData() => withStackScope((StackScope scope) {
+    // Because some of the string processing is dealt with manually in dart,
+    // and some is handled by the browser, we actually need both a dart string
+    // and a JS string. Converting from linear memory to Dart strings or JS
+    // strings is more efficient than directly converting to each other, so we
+    // just create both up front here.
+    final Pointer<Uint32> outSize = scope.allocUint32Array(1);
+    final Pointer<Uint8> utf8Data = paragraphBuilderGetUtf8Text(handle, outSize);
+    if (utf8Data == nullptr) {
+      return;
+    }
+
+    // TODO(jacksongardner): We could make a subclass of `List<int>` here to
+    // avoid this copy.
+    final List<int> codeUnitList = List<int>.generate(
+      outSize.value,
+      (int index) => utf8Data[index]
+    );
+    final String text = utf8.decode(codeUnitList);
+    final JSString jsText = _utf8Decoder.decode(
+      // In an ideal world we would just use a subview of wasm memory rather
+      // than a slice, but the TextDecoder API doesn't work on shared buffer
+      // sources yet.
+      // See https://bugs.chromium.org/p/chromium/issues/detail?id=1012656
+      createUint8ArrayFromBuffer(skwasmInstance.wasmMemory.buffer).slice(
+        utf8Data.address.toJS,
+        (utf8Data.address + outSize.value).toJS
+      ));
+
+    _addGraphemeBreakData(text, jsText);
+    _addWordBreakData(text, jsText);
+    _addLineBreakData(text, jsText);
+  });
+
+  UnicodePositionBufferHandle _createBreakPositionBuffer(String text, JSString jsText, DomSegmenter segmenter) {
+    final DomIteratorWrapper<DomSegment> iterator = segmenter.segmentRaw(jsText).iterator();
+    final List<int> breaks = <int>[];
+    while (iterator.moveNext()) {
+      breaks.add(iterator.current.index);
+    }
+    breaks.add(text.length);
+
+    final UnicodePositionBufferHandle positionBuffer = unicodePositionBufferCreate(breaks.length);
+    final Pointer<Uint32> buffer = unicodePositionBufferGetDataPointer(positionBuffer);
+    for (int i = 0; i < breaks.length; i++) {
+      buffer[i] = breaks[i];
+    }
+    return positionBuffer;
+  }
+
+  void _addGraphemeBreakData(String text, JSString jsText) {
+    final UnicodePositionBufferHandle positionBuffer =
+      _createBreakPositionBuffer(text, jsText, _graphemeSegmenter);
+    paragraphBuilderSetGraphemeBreaksUtf16(handle, positionBuffer);
+    unicodePositionBufferFree(positionBuffer);
+  }
+
+  void _addWordBreakData(String text, JSString jsText) {
+    final UnicodePositionBufferHandle positionBuffer =
+      _createBreakPositionBuffer(text, jsText, _wordSegmenter);
+    paragraphBuilderSetWordBreaksUtf16(handle, positionBuffer);
+    unicodePositionBufferFree(positionBuffer);
+  }
+
+  void _addLineBreakData(String text, JSString jsText) {
+    final List<LineBreakFragment> lineBreaks = breakLinesUsingV8BreakIterator(text, jsText, _v8BreakIterator);
+    final LineBreakBufferHandle lineBreakBuffer = lineBreakBufferCreate(lineBreaks.length + 1);
+    final Pointer<LineBreak> lineBreakPointer = lineBreakBufferGetDataPointer(lineBreakBuffer);
+
+    // First line break is always zero. The buffer is zero initialized, so we can just
+    // skip the first one.
+    for (int i = 0; i < lineBreaks.length; i++) {
+      final LineBreakFragment fragment = lineBreaks[i];
+      lineBreakPointer[i + 1].position = fragment.end;
+      lineBreakPointer[i + 1].lineBreakType = fragment.type == LineBreakType.mandatory
+        ? _kHardLineBreak
+        : _kSoftLineBreak;
+    }
+    paragraphBuilderSetLineBreaksUtf16(handle, lineBreakBuffer);
+    lineBreakBufferFree(lineBreakBuffer);
+  }
+
   @override
   ui.Paragraph build() {
+    _addSegmenterData();
     return SkwasmParagraph(paragraphBuilderBuild(handle));
   }
 
@@ -601,28 +696,20 @@ class SkwasmParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pop() {
-    final TextStyleHandle textStyleHandle = textStyleStack.removeLast().handle;
-    textStyleDispose(textStyleHandle);
+    final SkwasmNativeTextStyle style = textStyleStack.removeLast();
+    style.dispose();
     paragraphBuilderPop(handle);
   }
 
   @override
   void pushStyle(ui.TextStyle textStyle) {
     textStyle as SkwasmTextStyle;
-    TextStyleHandle sourceStyleHandle = nullptr;
-    if (textStyleStack.isNotEmpty) {
-      sourceStyleHandle = textStyleStack.last.handle;
-    }
-    if (sourceStyleHandle == nullptr) {
-      sourceStyleHandle = style.textStyleHandle;
-    }
-    if (sourceStyleHandle == nullptr) {
-      sourceStyleHandle =
-        (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle;
-    }
-    final TextStyleHandle styleHandle = textStyleCopy(sourceStyleHandle);
-    textStyle.applyToHandle(styleHandle);
-    textStyleStack.add(_TextStyleStackEntry(textStyle, styleHandle));
-    paragraphBuilderPushStyle(handle, styleHandle);
+    final SkwasmNativeTextStyle baseStyle = textStyleStack.isNotEmpty
+      ? textStyleStack.last
+      : style.textStyle;
+    final SkwasmNativeTextStyle nativeStyle = baseStyle.copy();
+    textStyle.applyToNative(nativeStyle);
+    textStyleStack.add(nativeStyle);
+    paragraphBuilderPushStyle(handle, nativeStyle.handle);
   }
 }

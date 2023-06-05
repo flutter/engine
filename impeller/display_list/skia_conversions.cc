@@ -21,7 +21,15 @@ std::optional<Rect> ToRect(const SkRect* rect) {
 std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
-    result.push_back(ToRect(&tex[i]).value());
+    result.push_back(ToRect(tex[i]));
+  }
+  return result;
+}
+
+std::vector<Point> ToPoints(const SkPoint points[], int count) {
+  std::vector<Point> result(count);
+  for (auto i = 0; i < count; i++) {
+    result[i] = ToPoint(points[i]);
   }
   return result;
 }

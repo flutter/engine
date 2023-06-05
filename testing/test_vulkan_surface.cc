@@ -11,6 +11,8 @@
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceProps.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 namespace testing {
@@ -49,7 +51,7 @@ std::unique_ptr<TestVulkanSurface> TestVulkanSurface::Create(
 
   auto result = std::unique_ptr<TestVulkanSurface>(
       new TestVulkanSurface(std::move(image_result.value())));
-  result->surface_ = SkSurface::MakeFromBackendTexture(
+  result->surface_ = SkSurfaces::WrapBackendTexture(
       context.GetGrDirectContext().get(),  // context
       backend_texture,                     // back-end texture
       kTopLeft_GrSurfaceOrigin,            // surface origin
