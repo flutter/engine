@@ -519,7 +519,7 @@ class Rasterizer final : public SnapshotDelegate,
   fml::Milliseconds GetFrameBudget() const override;
 
   // |SnapshotController::Delegate|
-  const std::unique_ptr<Surface>& GetSurface() const override {
+  const std::shared_ptr<Surface>& GetSurface() const override {
     return surface_;
   }
 
@@ -575,7 +575,7 @@ class Rasterizer final : public SnapshotDelegate,
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
-  std::unique_ptr<Surface> surface_;
+  std::shared_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
