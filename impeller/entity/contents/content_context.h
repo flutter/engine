@@ -299,7 +299,7 @@ struct ContentContextOptions {
   std::optional<PixelFormat> color_attachment_pixel_format;
   bool has_stencil_attachment = true;
   bool wireframe = false;
-  bool interleaved_vertex_data = false;
+  bool interleaved_vertex_data = true;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
@@ -817,7 +817,6 @@ class ContentContext {
     if (wireframe_) {
       opts.wireframe = true;
     }
-
     if (auto found = container.find(opts); found != container.end()) {
       return found->second->WaitAndGet();
     }

@@ -107,8 +107,6 @@ struct PipelineBuilder {
                        << VertexShader::kLabel << "'.";
         return false;
       }
-      vertex_descriptor->SetInterleavedVertexData(
-          desc.GetInterleavedVertexData());
       desc.SetVertexDescriptor(std::move(vertex_descriptor));
     }
 

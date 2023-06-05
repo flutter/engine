@@ -213,6 +213,7 @@ PipelineDescriptor::GetColorAttachmentDescriptors() const {
 
 const std::shared_ptr<VertexDescriptor>&
 PipelineDescriptor::GetVertexDescriptor() const {
+  vertex_descriptor_->SetInterleavedVertexData(interleaved_vertex_data_);
   return vertex_descriptor_;
 }
 

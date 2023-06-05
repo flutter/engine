@@ -43,7 +43,7 @@ class VertexDescriptorMTL {
     };
   };
   std::set<StageInput, StageInput::Compare> stage_inputs_;
-  bool interleaved_vertex_data_ = false;
+  bool interleaved_vertex_data_ = true;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptorMTL);
 };
