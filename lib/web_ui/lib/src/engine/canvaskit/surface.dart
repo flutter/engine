@@ -163,18 +163,6 @@ class Surface {
     createOrUpdateSurface(size);
   }
 
-  /// This method is not supported if software rendering is used.
-  CkSurface createRenderTargetSurface(ui.Size size) {
-    assert(!usingSoftwareBackend);
-
-    final SkSurface skSurface = canvasKit.MakeRenderTarget(
-      _grContext!,
-      size.width.ceil(),
-      size.height.ceil(),
-    )!;
-    return CkSurface(skSurface, _glContext);
-  }
-
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
     if (size.isEmpty) {
