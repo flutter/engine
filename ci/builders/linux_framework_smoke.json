@@ -39,7 +39,6 @@
             "dependencies": [
                 "host_debug_unopt"
             ],
-            "local_engine": "host_debug_unopt",
             "shard": "framework_tests",
             "subshard": "widgets"
         },
@@ -52,9 +51,20 @@
             "dependencies": [
                 "host_debug_unopt"
             ],
-            "local_engine": "host_debug_unopt",
             "shard": "framework_tests",
             "subshard": "libraries"
+        },
+        {
+            "name": "test: flutter analyze",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "validation": "analyze",
+            "validation_name": "Analyze"
         }
     ]
 }
