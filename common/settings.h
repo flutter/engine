@@ -217,6 +217,9 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
+  // Hardcodes a particular backend to be used.
+  std::optional<std::string> impeller_backend;
+
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
   bool enable_vulkan_validation = false;
