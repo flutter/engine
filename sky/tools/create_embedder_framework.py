@@ -26,7 +26,7 @@ out_dir = os.path.join(buildroot_dir, 'out')
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Creates FlutterMacOS.framework for macOS'
+      description='Creates FlutterEmbedder.framework for macOS'
   )
 
   parser.add_argument('--dst', type=str, required=True)
@@ -52,12 +52,12 @@ def main():
       os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
-  fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
-  arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
-  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
+  fat_framework = os.path.join(dst, 'FlutterEmbedder.framework')
+  arm64_framework = os.path.join(arm64_out_dir, 'FlutterEmbedder.framework')
+  x64_framework = os.path.join(x64_out_dir, 'FlutterEmbedder.framework')
 
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
+  arm64_dylib = os.path.join(arm64_framework, 'FlutterEmbedder')
+  x64_dylib = os.path.join(x64_framework, 'FlutterEmbedder')
 
   if not os.path.isdir(arm64_framework):
     print('Cannot find macOS arm64 Framework at %s' % arm64_framework)
@@ -84,7 +84,7 @@ def main():
   regenerate_symlinks(fat_framework)
 
   fat_framework_binary = os.path.join(
-      fat_framework, 'Versions', 'A', 'FlutterMacOS'
+      fat_framework, 'Versions', 'A', 'FlutterEmbedder'
   )
 
   # Create the arm64/x64 fat framework.
@@ -102,9 +102,9 @@ def regenerate_symlinks(fat_framework):
   Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
   This logic regenerates the symlinks in the expected structure.
   """
-  if os.path.islink(os.path.join(fat_framework, 'FlutterMacOS')):
+  if os.path.islink(os.path.join(fat_framework, 'FlutterEmbedder')):
     return
-  os.remove(os.path.join(fat_framework, 'FlutterMacOS'))
+  os.remove(os.path.join(fat_framework, 'FlutterEmbedder'))
   shutil.rmtree(os.path.join(fat_framework, 'Headers'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Modules'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
@@ -112,8 +112,8 @@ def regenerate_symlinks(fat_framework):
   shutil.rmtree(current_version_path, True)
   os.symlink('A', current_version_path)
   os.symlink(
-      os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(fat_framework, 'FlutterMacOS')
+      os.path.join('Versions', 'Current', 'FlutterEmbedder'),
+      os.path.join(fat_framework, 'FlutterEmbedder')
   )
   os.symlink(
       os.path.join('Versions', 'Current', 'Headers'),
@@ -129,82 +129,41 @@ def regenerate_symlinks(fat_framework):
   )
 
 
-def embed_codesign_configuration(config_path, content):
-  with open(config_path, 'w') as file:
-    file.write(content)
-
-
 def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
-      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'],
-                            cwd=dsym_dst)
-      # Double zip to make it consistent with legacy artifacts.
-      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
+      dsym_dst = os.path.join(dst, 'FlutterEmbedder.dSYM')
       subprocess.check_call([
-          'zip',
-          '-y',
-          'FlutterMacOS.dSYM_.zip',
-          'FlutterMacOS.dSYM.zip',
+          'zip', '-r', '-y', 'FlutterEmbedder.dSYM.zip', '.'
       ],
                             cwd=dsym_dst)
-      # Use doubled zipped file.
-      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
-      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
+      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterEmbedder.dSYM.zip')
+      dsym_final_dst_path = os.path.join(dst, 'FlutterEmbedder.dSYM.zip')
       shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
   if args.strip:
     # copy unstripped
-    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
+    unstripped_out = os.path.join(dst, 'FlutterEmbedder.unstripped')
     shutil.copyfile(fat_framework_binary, unstripped_out)
-
     subprocess.check_call(['strip', '-x', '-S', fat_framework_binary])
 
-  # Zip FlutterMacOS.framework.
+  # Zip FlutterEmbedder.framework.
   if args.zip:
-    filepath_with_entitlements = ''
-
-    framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
-    # TODO(xilaizhang): Remove the zip file from the path when outer zip is removed.
-    filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
-
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'entitlements.txt'),
-        filepath_with_entitlements
-    )
-
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'without_entitlements.txt'),
-        filepath_without_entitlements
-    )
+    framework_dst = os.path.join(dst, 'FlutterEmbedder.framework')
     subprocess.check_call([
         'zip',
         '-r',
         '-y',
-        'FlutterMacOS.framework.zip',
+        'FlutterEmbedder.framework.zip',
         '.',
     ],
                           cwd=framework_dst)
-    # Double zip to make it consistent with legacy artifacts.
-    # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-    subprocess.check_call(
-        [
-            'zip',
-            '-y',
-            'FlutterMacOS.framework_.zip',
-            'FlutterMacOS.framework.zip',
-            # TODO(xilaizhang): Move these files to inner zip before removing the outer zip.
-            'entitlements.txt',
-            'without_entitlements.txt',
-        ],
-        cwd=framework_dst
+    final_src_path = os.path.join(
+        framework_dst, 'FlutterEmbedder.framework.zip'
     )
-    # Use doubled zipped file.
-    final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
-    final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
+    final_dst_path = os.path.join(dst, 'FlutterEmbedder.framework.zip')
     shutil.move(final_src_path, final_dst_path)
 
 
