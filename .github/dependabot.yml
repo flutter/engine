@@ -8,6 +8,6 @@ updates:
     schedule:
       interval: "weekly"
       time: "22:00" # 10 PM MTV
-      timezone: "	America/Los_Angeles"
+      timezone: "America/Los_Angeles"
     labels:
       - "autosubmit"
