@@ -1107,7 +1107,7 @@ void _testVerticalScrolling() {
       idLogController.add(event.nodeId);
       actionLogController.add(event.type);
       testZone.run(() {
-        expect(args, null);
+        expect(event.arguments, null);
       });
     };
     semantics()
@@ -2634,7 +2634,7 @@ void _testDialog() {
   });
 }
 
-typedef CapturedAction = (int nodeId, ui.SemanticsAction action, ByteData? args);
+typedef CapturedAction = (int nodeId, ui.SemanticsAction action, Object? args);
 
 void _testFocusable() {
   test('AccessibilityFocusManager can manage element focus', () async {
