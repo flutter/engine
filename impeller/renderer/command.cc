@@ -28,7 +28,7 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
 
 void Command::BindIndexBuffer(IndexType type, BufferView buffer) {
   index_type = type;
-  index_buffer = buffer;
+  index_buffer = std::move(buffer);
 }
 
 bool Command::BindResource(ShaderStage stage,
