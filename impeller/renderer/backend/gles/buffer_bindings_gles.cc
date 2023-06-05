@@ -53,7 +53,7 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
       offset += width;
     } else {
       attrib.offset = 0u;
-      attrib.stride = width;
+      attrib.stride = 0u;
     }
     vertex_attrib_arrays.emplace_back(attrib);
   }
@@ -143,16 +143,31 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 }
 
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
+                                              size_t vertex_index,
                                               size_t vertex_offset) const {
-  for (const auto& array : vertex_attrib_arrays_) {
+  if (interleaved_vertex_data_) {
+    for (const auto& array : vertex_attrib_arrays_) {
+      gl.EnableVertexAttribArray(array.index);
+      gl.VertexAttribPointer(
+          array.index,       // index
+          array.size,        // size (must be 1, 2, 3, or 4)
+          array.type,        // type
+          array.normalized,  // normalized
+          array.stride,      // stride
+          reinterpret_cast<const GLvoid*>(
+              static_cast<GLsizei>(vertex_offset + array.offset))  // pointer
+      );
+    }
+  } else {
+    auto array = vertex_attrib_arrays_[vertex_index];
     gl.EnableVertexAttribArray(array.index);
     gl.VertexAttribPointer(array.index,       // index
                            array.size,        // size (must be 1, 2, 3, or 4)
                            array.type,        // type
                            array.normalized,  // normalized
                            array.stride,      // stride
-                           reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                               vertex_offset + array.offset))  // pointer
+                           reinterpret_cast<const GLvoid*>(
+                               static_cast<GLsizei>(vertex_offset))  // pointer
     );
   }
 

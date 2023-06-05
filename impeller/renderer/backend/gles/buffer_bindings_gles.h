@@ -33,6 +33,7 @@ class BufferBindingsGLES {
   bool ReadUniformsBindings(const ProcTableGLES& gl, GLuint program);
 
   bool BindVertexAttributes(const ProcTableGLES& gl,
+                            size_t vertex_index,
                             size_t vertex_offset) const;
 
   bool BindUniformData(const ProcTableGLES& gl,

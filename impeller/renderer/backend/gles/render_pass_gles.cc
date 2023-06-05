@@ -383,7 +383,7 @@ struct RenderPassData {
       /// Bind vertex attribs.
       ///
       if (!vertex_desc_gles->BindVertexAttributes(
-              gl, vertex_buffer_view.range.offset)) {
+              gl, i, vertex_buffer_view.range.offset)) {
         return false;
       }
     }
