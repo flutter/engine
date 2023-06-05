@@ -1102,10 +1102,10 @@ void _testVerticalScrolling() {
     // fired.
     final Zone testZone = Zone.current;
 
-    ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData? args) {
-      idLogController.add(id);
-      actionLogController.add(action);
+    ui.PlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
+      idLogController.add(event.nodeId);
+      actionLogController.add(event.type);
       testZone.run(() {
         expect(args, null);
       });
@@ -1459,8 +1459,8 @@ void _testIncrementables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -1814,8 +1814,8 @@ void _testCheckables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -1973,8 +1973,8 @@ void _testTappable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -2656,8 +2656,8 @@ void _testFocusable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
     expect(capturedActions, isEmpty);
 
