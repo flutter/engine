@@ -374,7 +374,7 @@ be relative to the checkout directory.
 
 ### Global Tests
 
-Tests in this section run on a separate bot as an independent sub-builds.
+Tests in this section run on a separate bot as independent sub-builds.
 As opposed to tests running within builds, global tests have access to the
 the outputs of all the builds running in the same orchestrator build. A
 use case for global tests is to run flutter/framework tests using the
@@ -390,7 +390,8 @@ Global tests currently support two different scenarios:
   This workflow checks out [flutter/engine] and operates over the dependencies passed to it using cas.
 
 Note: the supported scenarios can be later extended to support running devicelab tests although a
-smart scheduler is a prerequisite for it to be scalable.
+[smart scheduler](https://github.com/flutter/flutter/issues/128294) is a prerequisite for
+it to be scalable(build/test separation model).
 
 Framework test example:
 
@@ -415,8 +416,11 @@ Framework test example:
 The property's description is as follows:
 
 * **name** the name that will be assigned to the sub-build.
-* **shard** the flutter/flutter shard test to run.
-* **subshard** one of the accepted subshard values for shard.
+* **shard** the flutter/flutter shard test to run. The supported shard names can be found
+on the flutter framework [test.dart](https://github.com/flutter/flutter/blob/master/dev/bots/test.dart#L244).
+* **subshard** one of the accepted subshard values for shard. Sub-shards are defined as part
+of the shard implementation, please look at the corresponding shard implementation to find the
+accepted values.
 * **test_dependencies** a list of [dependencies](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#75)
   required for the test to run.
 
