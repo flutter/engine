@@ -1192,6 +1192,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   NSParameterAssert(channel);
   NSAssert(_shell && _shell->IsSetup(),
            @"Sending a message before the FlutterEngine has been run.");
+  NSAssert(_binaryMessenger.parent,
+           @"Sending without a working channel, maybe FlutterEngine was dealloc'd?");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
       (callback == nil) ? nullptr
                         : fml::MakeRefCounted<flutter::PlatformMessageResponseDarwin>(
