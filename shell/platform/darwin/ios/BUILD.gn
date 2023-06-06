@@ -72,6 +72,8 @@ source_set("flutter_framework_source") {
   deps = []
 
   sources = [
+    "../../../common/shorebird.cc",
+    "../../../common/shorebird.h",
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterBinaryMessengerRelay.mm",
     "framework/Source/FlutterCallbackCache.mm",
@@ -188,6 +190,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/profiling:profiling",
     "//flutter/third_party/spring_animation",
+    "//third_party/dart/runtime/bin:elf_loader",
     "//third_party/skia",
   ]
 
@@ -195,6 +198,16 @@ source_set("flutter_framework_source") {
     ":ios_gpu_configuration_config",
     "//flutter:config",
   ]
+
+  if (target_cpu == "arm64") {
+    libs =
+        [ "//third_party/updater/target/aarch64-apple-ios/debug/libupdater.a" ]
+  } else if (target_cpu == "x64") {
+    libs =
+        [ "//third_party/updater/target/x86_64-apple-ios/debug/libupdater.a" ]
+  } else {
+    assert(false, "Unsupported target_cpu")
+  }
 
   frameworks = [
     "AudioToolbox.framework",
