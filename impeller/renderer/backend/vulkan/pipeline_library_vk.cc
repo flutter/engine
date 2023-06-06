@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
-#include <iostream>
 #include <optional>
 
 #include "flutter/fml/container.h"
@@ -248,14 +247,9 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
   std::vector<vk::VertexInputBindingDescription> binding_descs;
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
 
   if (interleaved) {
-    vk::VertexInputBindingDescription binding_description;
-    // Only 1 stream of data is supported for now.
-    binding_description.setBinding(0);
-    binding_description.setInputRate(vk::VertexInputRate::eVertex);
-
-    std::vector<vk::VertexInputAttributeDescription> attr_descs;
     uint32_t offset = 0;
 
     for (const ShaderStageIOSlot& stage_in : stage_inputs) {
@@ -269,14 +263,16 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
       offset += len;
     }
 
+    vk::VertexInputBindingDescription binding_description;
+
+    binding_description.setBinding(0);
+    binding_description.setInputRate(vk::VertexInputRate::eVertex);
     binding_description.setStride(offset);
+    binding_descs.push_back(binding_description);
 
-    vk::PipelineVertexInputStateCreateInfo vertex_input_state;
     vertex_input_state.setVertexAttributeDescriptions(attr_descs);
-    vertex_input_state.setVertexBindingDescriptionCount(1);
-    vertex_input_state.setPVertexBindingDescriptions(&binding_description);
+    vertex_input_state.setVertexBindingDescriptions(binding_descs);
 
-    pipeline_info.setPVertexInputState(&vertex_input_state);
   } else {
     size_t offset = 0u;
     for (const ShaderStageIOSlot& stage_in : stage_inputs) {
@@ -297,12 +293,10 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
       offset++;
     }
 
-    vk::PipelineVertexInputStateCreateInfo vertex_input_state;
     vertex_input_state.setVertexAttributeDescriptions(attr_descs);
     vertex_input_state.setVertexBindingDescriptions(binding_descs);
-
-    pipeline_info.setPVertexInputState(&vertex_input_state);
   }
+  pipeline_info.setPVertexInputState(&vertex_input_state);
 
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
