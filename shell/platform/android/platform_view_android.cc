@@ -94,7 +94,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
             std::make_unique<impeller::egl::Display>());
       case AndroidRenderingAPI::kVulkan:
         return std::make_unique<AndroidContextVulkanImpeller>(
-            enable_vulkan_validation, std::move(worker_task_runner));
+            enable_vulkan_validation, worker_task_runner);
       default:
         FML_UNREACHABLE();
     }
