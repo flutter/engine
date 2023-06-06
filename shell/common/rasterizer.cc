@@ -551,81 +551,77 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       !!frame->GetDisplayListBuilder(),  // display list enabled
       surface_->GetAiksContext().get()   // aiks context
   );
-  if (compositor_frame) {
-    compositor_context_->raster_cache().BeginFrame();
 
-    std::unique_ptr<FrameDamage> damage;
-    // when leaf layer tracing is enabled we wish to repaint the whole frame
-    // for accurate performance metrics.
-    if (frame->framebuffer_info().supports_partial_repaint &&
-        !layer_tree.is_leaf_layer_tracing_enabled()) {
-      bool force_full_repaint =
-          !agent_->AllowsPartialRepaint() &&
-          (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+  compositor_context_->raster_cache().BeginFrame();
 
-      damage = std::make_unique<FrameDamage>();
-      auto existing_damage = frame->framebuffer_info().existing_damage;
-      if (existing_damage.has_value() && !force_full_repaint) {
-        damage->SetPreviousLayerTree(last_layer_tree_.get());
-        damage->AddAdditionalDamage(existing_damage.value());
-        damage->SetClipAlignment(
-            frame->framebuffer_info().horizontal_clip_alignment,
-            frame->framebuffer_info().vertical_clip_alignment);
-      }
+  std::unique_ptr<FrameDamage> damage;
+  // when leaf layer tracing is enabled we wish to repaint the whole frame
+  // for accurate performance metrics.
+  if (frame->framebuffer_info().supports_partial_repaint &&
+      !layer_tree.is_leaf_layer_tracing_enabled()) {
+    bool force_full_repaint =
+        !agent_->AllowsPartialRepaint() &&
+        (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+
+    damage = std::make_unique<FrameDamage>();
+    auto existing_damage = frame->framebuffer_info().existing_damage;
+    if (existing_damage.has_value() && !force_full_repaint) {
+      damage->SetPreviousLayerTree(last_layer_tree_.get());
+      damage->AddAdditionalDamage(existing_damage.value());
+      damage->SetClipAlignment(
+          frame->framebuffer_info().horizontal_clip_alignment,
+          frame->framebuffer_info().vertical_clip_alignment);
     }
+  }
 
-    bool ignore_raster_cache = true;
-    if (surface_->EnableRasterCache() &&
-        !layer_tree.is_leaf_layer_tracing_enabled()) {
-      ignore_raster_cache = false;
-    }
+  bool ignore_raster_cache = true;
+  if (surface_->EnableRasterCache() &&
+      !layer_tree.is_leaf_layer_tracing_enabled()) {
+    ignore_raster_cache = false;
+  }
 
-    RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree,           // layer tree
-                                 ignore_raster_cache,  // ignore raster cache
-                                 damage.get()          // frame damage
-        );
-    if (raster_status == RasterStatus::kFailed ||
-        raster_status == RasterStatus::kSkipAndRetry) {
-      return raster_status;
-    }
-
-    SurfaceFrame::SubmitInfo submit_info;
-    // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
-    // the past and might need to get snapped to future as this frame could
-    // have been resubmitted. `presentation_time` on `submit_info` is not set
-    // in this case.
-    const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
-    if (presentation_time > fml::TimePoint::Now()) {
-      submit_info.presentation_time = presentation_time;
-    }
-    if (damage) {
-      submit_info.frame_damage = damage->GetFrameDamage();
-      submit_info.buffer_damage = damage->GetBufferDamage();
-    }
-
-    frame->set_submit_info(submit_info);
-
-    agent_->SubmitFrame(std::move(frame), raster_thread_merger_);
-
-    // Do not update raster cache metrics for kResubmit because that status
-    // indicates that the frame was not actually painted.
-    if (raster_status != RasterStatus::kResubmit) {
-      compositor_context_->raster_cache().EndFrame();
-    }
-
-    frame_timings_recorder.RecordRasterEnd(
-        &compositor_context_->raster_cache());
-    FireNextFrameCallbackIfPresent();
-
-    if (surface_->GetContext()) {
-      surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
-    }
-
+  RasterStatus raster_status =
+      compositor_frame->Raster(layer_tree,           // layer tree
+                               ignore_raster_cache,  // ignore raster cache
+                               damage.get()          // frame damage
+      );
+  if (raster_status == RasterStatus::kFailed ||
+      raster_status == RasterStatus::kSkipAndRetry) {
     return raster_status;
   }
 
-  return RasterStatus::kFailed;
+  SurfaceFrame::SubmitInfo submit_info;
+  // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
+  // the past and might need to get snapped to future as this frame could
+  // have been resubmitted. `presentation_time` on `submit_info` is not set
+  // in this case.
+  const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
+  if (presentation_time > fml::TimePoint::Now()) {
+    submit_info.presentation_time = presentation_time;
+  }
+  if (damage) {
+    submit_info.frame_damage = damage->GetFrameDamage();
+    submit_info.buffer_damage = damage->GetBufferDamage();
+  }
+
+  frame->set_submit_info(submit_info);
+
+  agent_->SubmitFrame(std::move(frame), raster_thread_merger_);
+
+  // Do not update raster cache metrics for kResubmit because that status
+  // indicates that the frame was not actually painted.
+  if (raster_status != RasterStatus::kResubmit) {
+    compositor_context_->raster_cache().EndFrame();
+  }
+
+  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
+  FireNextFrameCallbackIfPresent();
+
+  if (surface_->GetContext()) {
+    surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
+  }
+
+  return raster_status;
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
