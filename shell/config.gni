@@ -10,6 +10,7 @@ declare_args() {
   shell_enable_vulkan = false
 
   shell_enable_software = true
+  enable_vulkan_validation_layers = false
 }
 
 declare_args() {

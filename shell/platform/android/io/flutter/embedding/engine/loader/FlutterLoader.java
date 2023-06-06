@@ -41,6 +41,13 @@ public class FlutterLoader {
       "io.flutter.embedding.android.OldGenHeapSize";
   private static final String ENABLE_IMPELLER_META_DATA_KEY =
       "io.flutter.embedding.android.EnableImpeller";
+<<<<<<< HEAD
+=======
+  private static final String IMPELLER_BACKEND_META_DATA_KEY =
+      "io.flutter.embedding.android.ImpellerBackend";
+  private static final String ENABLE_VULKAN_VALIDATION_META_DATA_KEY =
+      "io.flutter.embedding.android.EnableVulkanValidation";
+>>>>>>> 2e93fc1cf8 ([Impeller] made a switch for turning on validation layers)
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -316,8 +323,18 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData != null && metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
-        shellArgs.add("--enable-impeller");
+      if (metaData != null) {
+        if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
+          shellArgs.add("--enable-impeller");
+        }
+        String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY, "opengles");
+        shellArgs.add("--impeller-backend=" + backend);
+
+        Log.d(TAG, "foobar has metadata");
+        if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
+          Log.d(TAG, "foobar has validation flag");
+          shellArgs.add("--enable-vulkan-validation");
+        }
       }
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";

@@ -478,6 +478,24 @@ action("android_jar") {
     ":pom_libflutter",
   ]
 
+  if (enable_vulkan_validation_layers) {
+    deps += [ "//third_party/vulkan_validation_layers" ]
+    args += [
+      "--native_lib",
+      rebase_path("libVkLayer_khronos_validation.so",
+                  root_build_dir,
+                  root_build_dir),
+    ]
+    if (current_cpu == "arm64") {
+      args += [
+        "--native_lib",
+        rebase_path("$android_libcpp_root/libs/arm64-v8a/libc++_shared.so", root_build_dir),
+    ]
+    } else {
+      assert(false, "Validation layers not supported for arch.")
+    }
+  }
+
   if (flutter_runtime_mode == "profile") {
     deps += [ "//flutter/shell/vmservice:vmservice_snapshot" ]
     args += [
