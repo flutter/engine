@@ -26,7 +26,7 @@ void testMain() {
       final Surface? surface = SurfaceFactory.instance.getSurface();
       final CkSurface originalSurface =
           surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final DomCanvasElement original = surface.htmlCanvas!;
+      final DomCanvasElement original = surface.offscreenCanvas!;
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
@@ -41,7 +41,7 @@ void testMain() {
       // Skia renders into the visible area.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomCanvasElement shrunk = surface.htmlCanvas!;
+      final DomCanvasElement shrunk = surface.offscreenCanvas!;
       expect(shrunk, same(original));
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
@@ -54,7 +54,7 @@ void testMain() {
       // by 40% to accommodate future increases.
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
-      final DomCanvasElement firstIncrease = surface.htmlCanvas!;
+      final DomCanvasElement firstIncrease = surface.offscreenCanvas!;
       expect(firstIncrease, same(original));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
@@ -70,7 +70,7 @@ void testMain() {
       // Subsequent increases within 40% reuse the old canvas.
       final CkSurface secondIncreaseSurface =
           surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
-      final DomCanvasElement secondIncrease = surface.htmlCanvas!;
+      final DomCanvasElement secondIncrease = surface.offscreenCanvas!;
       expect(secondIncrease, same(firstIncrease));
       expect(secondIncrease.style.transform, _isTranslate('0', '-6'));
       expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
@@ -79,7 +79,7 @@ void testMain() {
 
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
-      final DomCanvasElement huge = surface.htmlCanvas!;
+      final DomCanvasElement huge = surface.offscreenCanvas!;
       expect(huge, same(secondIncrease));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
@@ -95,7 +95,7 @@ void testMain() {
       // Shrink again. Reuse the last allocated surface.
       final CkSurface shrunkSurface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomCanvasElement shrunk2 = surface.htmlCanvas!;
+      final DomCanvasElement shrunk2 = surface.offscreenCanvas!;
       expect(shrunk2, same(huge));
       expect(shrunk2.style.width, '28px');
       expect(shrunk2.style.height, '56px');
@@ -109,7 +109,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(2.0);
       final CkSurface dpr2Surface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomCanvasElement dpr2Canvas = surface.htmlCanvas!;
+      final DomCanvasElement dpr2Canvas = surface.offscreenCanvas!;
       expect(dpr2Canvas, same(huge));
       expect(dpr2Canvas.style.width, '14px');
       expect(dpr2Canvas.style.height, '28px');
@@ -183,9 +183,9 @@ void testMain() {
 
       expect(original.width(), 10);
       expect(original.height(), 16);
-      expect(surface.htmlCanvas!.style.width, '10px');
-      expect(surface.htmlCanvas!.style.height, '16px');
-      expect(surface.htmlCanvas!.style.transform, _isTranslate('0', '0'));
+      expect(surface.offscreenCanvas!.style.width, '10px');
+      expect(surface.offscreenCanvas!.style.height, '16px');
+      expect(surface.offscreenCanvas!.style.transform, _isTranslate('0', '0'));
 
       // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
       // fewer of them to cover the browser window.
@@ -194,9 +194,9 @@ void testMain() {
           surface.acquireFrame(const ui.Size(10, 16)).skiaSurface;
       expect(highDpr.width(), 10);
       expect(highDpr.height(), 16);
-      expect(surface.htmlCanvas!.style.width, '5px');
-      expect(surface.htmlCanvas!.style.height, '8px');
-      expect(surface.htmlCanvas!.style.transform, _isTranslate('0', '0'));
+      expect(surface.offscreenCanvas!.style.width, '5px');
+      expect(surface.offscreenCanvas!.style.height, '8px');
+      expect(surface.offscreenCanvas!.style.transform, _isTranslate('0', '0'));
 
       // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
       // more of them to cover the browser window.
@@ -205,9 +205,9 @@ void testMain() {
           surface.acquireFrame(const ui.Size(10, 16)).skiaSurface;
       expect(lowDpr.width(), 10);
       expect(lowDpr.height(), 16);
-      expect(surface.htmlCanvas!.style.width, '20px');
-      expect(surface.htmlCanvas!.style.height, '32px');
-      expect(surface.htmlCanvas!.style.transform, _isTranslate('0', '0'));
+      expect(surface.offscreenCanvas!.style.width, '20px');
+      expect(surface.offscreenCanvas!.style.height, '32px');
+      expect(surface.offscreenCanvas!.style.transform, _isTranslate('0', '0'));
 
       // See https://github.com/flutter/flutter/issues/77084#issuecomment-1120151172
       window.debugOverrideDevicePixelRatio(2.0);
@@ -215,9 +215,9 @@ void testMain() {
           surface.acquireFrame(const ui.Size(9.9, 15.9)).skiaSurface;
       expect(changeRatioAndSize.width(), 10);
       expect(changeRatioAndSize.height(), 16);
-      expect(surface.htmlCanvas!.style.width, '5px');
-      expect(surface.htmlCanvas!.style.height, '8px');
-      expect(surface.htmlCanvas!.style.transform, _isTranslate('0', '0'));
+      expect(surface.offscreenCanvas!.style.width, '5px');
+      expect(surface.offscreenCanvas!.style.height, '8px');
+      expect(surface.offscreenCanvas!.style.transform, _isTranslate('0', '0'));
     });
   });
 }

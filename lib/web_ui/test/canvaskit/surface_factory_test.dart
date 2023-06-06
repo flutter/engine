@@ -72,7 +72,7 @@ void testMain() {
 
     test('hot restart', () {
       void expectDisposed(Surface surface) {
-        expect(surface.htmlCanvas!.isConnected, isFalse);
+        expect(surface.offscreenCanvas!.isConnected, isFalse);
       }
 
       final SurfaceFactory originalFactory = SurfaceFactory.instance;
@@ -81,7 +81,7 @@ void testMain() {
       // Cause the surface and its canvas to be attached to the page
       originalFactory.baseSurface.acquireFrame(const ui.Size(10, 10));
       originalFactory.baseSurface.addToScene();
-      expect(originalFactory.baseSurface.htmlCanvas!.isConnected, isTrue);
+      expect(originalFactory.baseSurface.offscreenCanvas!.isConnected, isTrue);
 
       // Create a few overlay surfaces
       final List<Surface> overlays = <Surface>[];

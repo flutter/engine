@@ -94,7 +94,7 @@ class Surface {
   final DomElement htmlElement = createDomElement('flt-canvas-container');
 
   /// The underlying `<canvas>` element used for this surface.
-  DomCanvasElement? htmlCanvas;
+  DomOffscreenCanvas? offscreenCanvas;
   int _pixelWidth = -1;
   int _pixelHeight = -1;
   int _sampleCount = -1;
@@ -193,8 +193,8 @@ class Surface {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        htmlCanvas!.width = newSize.width;
-        htmlCanvas!.height = newSize.height;
+        offscreenCanvas!.width = newSize.width;
+        offscreenCanvas!.height = newSize.height;
         _currentCanvasPhysicalSize = newSize;
         _pixelWidth = newSize.width.ceil();
         _pixelHeight = newSize.height.ceil();
@@ -237,7 +237,7 @@ class Surface {
   void _updateLogicalHtmlCanvasSize() {
     final double logicalWidth = _pixelWidth / window.devicePixelRatio;
     final double logicalHeight = _pixelHeight / window.devicePixelRatio;
-    final DomCSSStyleDeclaration style = htmlCanvas!.style;
+    final DomCSSStyleDeclaration style = offscreenCanvas!.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
   }
@@ -254,7 +254,7 @@ class Surface {
     final int surfaceHeight = _currentSurfaceSize!.height.ceil();
     final double offset =
         (_pixelHeight - surfaceHeight) / window.devicePixelRatio;
-    htmlCanvas!.style.transform = 'translate(0, -${offset}px)';
+    offscreenCanvas!.style.transform = 'translate(0, -${offset}px)';
   }
 
   JSVoid _contextRestoredListener(DomEvent event) {
@@ -270,7 +270,7 @@ class Surface {
   }
 
   JSVoid _contextLostListener(DomEvent event) {
-    assert(event.target == htmlCanvas,
+    assert(event.target == offscreenCanvas,
         'Received a context lost event for a disposed canvas');
     final SurfaceFactory factory = SurfaceFactory.instance;
     _contextLost = true;
@@ -287,18 +287,18 @@ class Surface {
   /// It's better to reuse canvas if possible.
   void _createNewCanvas(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    if (this.htmlCanvas != null) {
-      this.htmlCanvas!.removeEventListener(
+    if (this.offscreenCanvas != null) {
+      this.offscreenCanvas!.removeEventListener(
             'webglcontextrestored',
             _cachedContextRestoredListener,
             false,
           );
-      this.htmlCanvas!.removeEventListener(
+      this.offscreenCanvas!.removeEventListener(
             'webglcontextlost',
             _cachedContextLostListener,
             false,
           );
-      this.htmlCanvas!.remove();
+      this.offscreenCanvas!.remove();
       _cachedContextRestoredListener = null;
       _cachedContextLostListener = null;
     }
@@ -311,7 +311,7 @@ class Surface {
       width: _pixelWidth,
       height: _pixelHeight,
     );
-    this.htmlCanvas = htmlCanvas;
+    this.offscreenCanvas = htmlCanvas;
 
     // The DOM elements used to render pictures are used purely to put pixels on
     // the screen. They have no semantic information. If an assistive technology
@@ -380,22 +380,22 @@ class Surface {
   }
 
   void _initWebglParams() {
-    final WebGLContext gl = htmlCanvas!.getGlContext(webGLVersion);
+    final WebGLContext gl = offscreenCanvas!.getGlContext(webGLVersion);
     _sampleCount = gl.getParameter(gl.samples);
     _stencilBits = gl.getParameter(gl.stencilBits);
   }
 
   CkSurface _createNewSurface(ui.Size size) {
-    assert(htmlCanvas != null);
+    assert(offscreenCanvas != null);
     if (webGLVersion == -1) {
       return _makeSoftwareCanvasSurface(
-          htmlCanvas!, 'WebGL support not detected');
+          offscreenCanvas!, 'WebGL support not detected');
     } else if (configuration.canvasKitForceCpuOnly) {
       return _makeSoftwareCanvasSurface(
-          htmlCanvas!, 'CPU rendering forced by application');
+          offscreenCanvas!, 'CPU rendering forced by application');
     } else if (_glContext == 0) {
       return _makeSoftwareCanvasSurface(
-          htmlCanvas!, 'Failed to initialize WebGL context');
+          offscreenCanvas!, 'Failed to initialize WebGL context');
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
@@ -408,7 +408,7 @@ class Surface {
 
       if (skSurface == null) {
         return _makeSoftwareCanvasSurface(
-            htmlCanvas!, 'Failed to initialize WebGL surface');
+            offscreenCanvas!, 'Failed to initialize WebGL surface');
       }
 
       return CkSurface(skSurface, _glContext);
@@ -435,9 +435,9 @@ class Surface {
   }
 
   void dispose() {
-    htmlCanvas?.removeEventListener(
+    offscreenCanvas?.removeEventListener(
         'webglcontextlost', _cachedContextLostListener, false);
-    htmlCanvas?.removeEventListener(
+    offscreenCanvas?.removeEventListener(
         'webglcontextrestored', _cachedContextRestoredListener, false);
     _cachedContextLostListener = null;
     _cachedContextRestoredListener = null;
