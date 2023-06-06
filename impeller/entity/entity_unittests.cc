@@ -13,6 +13,7 @@
 #include "fml/logging.h"
 #include "fml/time/time_point.h"
 #include "gtest/gtest.h"
+#include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
@@ -2636,6 +2637,81 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Caps at 140.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+}
+
+TEST_P(EntityTest, CanCustomizeVertexLayout) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) {
+    using VS = GeometryColorPipeline::VertexShader;
+    using FS = GeometryColorPipeline::FragmentShader;
+
+    auto contents = AnonymousContents::Make(
+        [](const ContentContext& renderer, const Entity& entity,
+           RenderPass& pass) {
+          auto r = Rect::MakeLTRB(0, 0, 400, 400).GetLTRB();
+
+          std::vector<Point> position_data = {
+              {Point(r[0], r[1])},  //
+              {Point(r[2], r[1])},  //
+              {Point(r[2], r[3])},  //
+              {Point(r[0], r[1])},  //
+              {Point(r[2], r[3])},  //
+              {Point(r[0], r[3])}   //
+          };
+          std::vector<Color> color_data = {
+              Color::Red(),    //
+              Color::Green(),  //
+              Color::Red(),    //
+              Color::Green(),  //
+              Color::Red(),    //
+              Color::Green()   //
+          };
+
+          auto& host_buffer = pass.GetTransientsBuffer();
+          auto position_view = host_buffer.Emplace(
+              reinterpret_cast<const uint8_t*>(position_data.data()),
+              position_data.size() * sizeof(Point), alignof(Point));
+
+          auto color_view = host_buffer.Emplace(
+              reinterpret_cast<const uint8_t*>(color_data.data()),
+              color_data.size() * sizeof(Color), alignof(Color));
+
+          Command cmd;
+          cmd.label = "Per Vertex Colors";
+          auto options = OptionsFromPass(pass);
+          options.primitive_type = PrimitiveType::kTriangle;
+          options.interleaved_vertex_data = false;
+
+          cmd.pipeline = renderer.GetGeometryColorPipeline(options);
+          cmd.BindVertexBuffers<2>({
+              position_view,
+              color_view,
+          });
+          cmd.BindIndexBuffer(IndexType::kNone, {});
+          cmd.vertex_count = 6;
+
+          VS::FrameInfo frame_info;
+          frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+          VS::BindFrameInfo(
+              cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+
+          FS::FragInfo frag_info;
+          frag_info.alpha = 1.0;
+          FS::BindFragInfo(
+              cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+
+          return pass.AddCommand(std::move(cmd));
+        },
+        [](const Entity& entity) {
+          return Rect::MakeLTRB(0, 0, 400, 400)
+              .TransformBounds(entity.GetTransformation());
+        });
+
+    Entity entity;
+    entity.SetContents(contents);
+    return entity.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing
