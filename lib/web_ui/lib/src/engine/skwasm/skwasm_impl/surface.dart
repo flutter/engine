@@ -7,14 +7,14 @@ import 'dart:ffi';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmSurface {
-  factory SkwasmSurface(String canvasQuerySelector) {
+  factory SkwasmSurface() {
     final SurfaceHandle surfaceHandle = withStackScope((StackScope scope) {
-      final Pointer<Int8> pointer = scope.convertStringToNative(canvasQuerySelector);
-      return surfaceCreateFromCanvas(pointer);
+      return surfaceCreate();
     });
     final SkwasmSurface surface = SkwasmSurface._fromHandle(surfaceHandle);
     surface._initialize();
@@ -28,8 +28,7 @@ class SkwasmSurface {
 
   final int threadId;
 
-  int _currentObjectId = 0;
-  int acquireObjectId() => ++_currentObjectId;
+  int acquireObjectId() => skwasmInstance.skwasmGenerateUniqueId().toDart.toInt();
 
   void _initialize() {
     _callbackHandle =
@@ -42,12 +41,10 @@ class SkwasmSurface {
     surfaceSetCallbackHandler(handle, _callbackHandle);
   }
 
-  void setSize(int width, int height) =>
-    surfaceSetCanvasSize(handle, width, height);
-
-  Future<void> renderPicture(SkwasmPicture picture) {
+  Future<DomImageBitmap> renderPicture(SkwasmPicture picture) async {
     final int callbackId = surfaceRenderPicture(handle, picture.handle);
-    return _registerCallback(callbackId);
+    await _registerCallback(callbackId);
+    return skwasmInstance.skwasmGetObject(callbackId.toJS) as DomImageBitmap;
   }
 
   Future<ByteData> rasterizeImage(SkwasmImage image, ui.ImageByteFormat format) async {

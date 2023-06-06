@@ -14,7 +14,6 @@ import 'package:ui/ui.dart' as ui;
 class SkwasmRenderer implements Renderer {
   late DomCanvasElement sceneElement;
   late SkwasmSurface surface;
-  ui.Size? surfaceSize;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -352,9 +351,7 @@ class SkwasmRenderer implements Renderer {
     // to deal with those cases.
     sceneElement = createDomCanvasElement();
     sceneElement.id = 'flt-scene';
-    domDocument.body!.appendChild(sceneElement);
-    surface = SkwasmSurface('#flt-scene');
-    domDocument.body!.removeChild(sceneElement);
+    surface = SkwasmSurface();
   }
 
   @override
@@ -403,19 +400,22 @@ class SkwasmRenderer implements Renderer {
 
   @override
   Future<void> renderScene(ui.Scene scene) async {
-    final ui.Size frameSize = ui.window.physicalSize;
-    if (frameSize != surfaceSize) {
-      final double logicalWidth = frameSize.width.ceil() / window.devicePixelRatio;
-      final double logicalHeight = frameSize.height.ceil() / window.devicePixelRatio;
-      final DomCSSStyleDeclaration style = sceneElement.style;
-      style.width = '${logicalWidth}px';
-      style.height = '${logicalHeight}px';
-
-      surface.setSize(frameSize.width.ceil(), frameSize.height.ceil());
-      surfaceSize = frameSize;
-    }
     final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    await surface.renderPicture(picture);
+    final DomImageBitmap bitmap = await surface.renderPicture(picture);
+
+    final DomCSSStyleDeclaration style = sceneElement.style;
+    final ui.Rect pictureRect = picture.cullRect;
+    final double logicalWidth = pictureRect.width / window.devicePixelRatio;
+    final double logicalHeight = pictureRect.height / window.devicePixelRatio;
+    style.width = '${logicalWidth}px';
+    style.height = '${logicalHeight}px';
+    style.position = 'absolute';
+    style.left = '${pictureRect.left}px';
+    style.top = '${pictureRect.top}px';
+    sceneElement.width = pictureRect.width;
+    sceneElement.height = pictureRect.height;
+    final DomCanvasRenderingContextBitmapRenderer context = sceneElement.contextBitmapRenderer;
+    context.transferFromImageBitmap(bitmap);
   }
 
   @override

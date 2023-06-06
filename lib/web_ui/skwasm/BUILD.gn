@@ -43,7 +43,7 @@ wasm_lib("skwasm") {
     "-sUSE_PTHREADS=1",
     "-lexports.js",
     "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction,skwasm_registerObject,skwasm_unregisterObject,skwasm_getObject,skwasm_transferObjectToThread]",
+    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction,skwasm_registerObject,skwasm_unregisterObject,skwasm_getObject,skwasm_transferObjectToThread,skwasm_generateUniqueId]",
     "-Wno-pthreads-mem-growth",
     "--js-library",
     rebase_path("library_skwasm_support.js"),

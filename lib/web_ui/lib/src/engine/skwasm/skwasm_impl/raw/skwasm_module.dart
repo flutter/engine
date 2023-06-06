@@ -20,6 +20,9 @@ extension SkwasmInstanceExtension on SkwasmInstance {
   external JSNumber addFunction(JSFunction function, JSString signature);
   external void removeFunction(JSNumber functionPointer);
 
+  @JS('skwasm_generateUniqueId')
+  external JSNumber skwasmGenerateUniqueId();
+
   @JS('skwasm_registerObject')
   external void skwasmRegisterObject(JSNumber objectId, JSAny object);
 

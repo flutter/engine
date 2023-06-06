@@ -1071,6 +1071,9 @@ extension DomCanvasElementExtension on DomCanvasElement {
     }
     return getContext('webgl2')! as WebGLContext;
   }
+
+  DomCanvasRenderingContextBitmapRenderer get contextBitmapRenderer =>
+      getContext('bitmaprenderer')! as DomCanvasRenderingContextBitmapRenderer;
 }
 
 @JS()
@@ -1360,6 +1363,15 @@ extension DomCanvasRenderingContextWebGlExtension
   bool isContextLost() => _isContextLost().toDart;
 }
 
+@JS()
+@staticInterop
+class DomCanvasRenderingContextBitmapRenderer {}
+
+extension DomCanvasRenderingContextBitmapRendererExtension
+  on DomCanvasRenderingContextBitmapRenderer {
+  external void transferFromImageBitmap(DomImageBitmap bitmap);
+}
+
 @JS('ImageData')
 @staticInterop
 class DomImageData {
@@ -1374,6 +1386,10 @@ extension DomImageDataExtension on DomImageData {
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
 }
+
+@JS('ImageBitmap')
+@staticInterop
+class DomImageBitmap {}
 
 @JS()
 @staticInterop
