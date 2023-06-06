@@ -212,7 +212,7 @@ void FlutterSkiaVulkanMemoryAllocator::getAllocInfo(
   if (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT & memFlags) {
     flags |= skgpu::VulkanAlloc::kMappable_Flag;
   }
-  if (!SkToBool(VK_MEMORY_PROPERTY_HOST_COHERENT_BIT & memFlags)) {
+  if (!(VK_MEMORY_PROPERTY_HOST_COHERENT_BIT & memFlags)) {
     flags |= skgpu::VulkanAlloc::kNoncoherent_Flag;
   }
   if (VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT & memFlags) {
@@ -259,16 +259,12 @@ VkResult FlutterSkiaVulkanMemoryAllocator::invalidateMemory(
   return vmaInvalidateAllocation(allocator_, allocation, offset, size);
 }
 
-uint64_t FlutterSkiaVulkanMemoryAllocator::totalUsedMemory() const {
+std::pair<uint64_t, uint64_t>
+FlutterSkiaVulkanMemoryAllocator::totalAllocatedAndUsedMemory() const {
   VmaTotalStatistics stats;
   vmaCalculateStatistics(allocator_, &stats);
-  return stats.total.statistics.allocationBytes;
-}
-
-uint64_t FlutterSkiaVulkanMemoryAllocator::totalAllocatedMemory() const {
-  VmaTotalStatistics stats;
-  vmaCalculateStatistics(allocator_, &stats);
-  return stats.total.statistics.blockBytes;
+  return {stats.total.statistics.blockBytes,
+          stats.total.statistics.allocationBytes};
 }
 
 }  // namespace flutter

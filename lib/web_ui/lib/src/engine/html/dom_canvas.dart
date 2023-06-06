@@ -14,6 +14,7 @@ import '../svg.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
+import 'bitmap_canvas.dart';
 import 'painting.dart';
 import 'path/path.dart';
 import 'path/path_to_svg.dart';
@@ -59,7 +60,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       ..right = '0'
       ..bottom = '0'
       ..left = '0'
-      ..backgroundColor = colorToCssString(color)!;
+      ..backgroundColor = color.toCssString();
     currentElement.append(box);
   }
 
@@ -256,8 +257,7 @@ DomHTMLElement buildDrawRectElement(
     ..transformOrigin = '0 0 0'
     ..transform = effectiveTransform;
 
-  String cssColor =
-      paint.color == null ? '#000000' : colorValueToCssString(paint.color)!;
+  String cssColor = colorValueToCssString(paint.color);
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
@@ -265,7 +265,7 @@ DomHTMLElement buildDrawRectElement(
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
-      cssColor = colorToCssString(blurColor(ui.Color(paint.color), sigma))!;
+      cssColor = blurColor(ui.Color(paint.color), sigma).toCssString();
     } else {
       style.filter = 'blur(${sigma}px)';
     }
@@ -333,14 +333,11 @@ String _borderStrokeToCssUnit(double value) {
   return '${value.toStringAsFixed(3)}px';
 }
 
-SVGSVGElement pathToSvgElement(
-    SurfacePath path, SurfacePaintData paint, String width, String height) {
+SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
   final SVGSVGElement root = createSVGSVGElement()
-    ..setAttribute('width', '${width}px')
-    ..setAttribute('height', '${height}px')
-    ..setAttribute('viewBox', '0 0 $width $height');
+    ..setAttribute('overflow', 'visible');
 
   final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
@@ -348,13 +345,14 @@ SVGSVGElement pathToSvgElement(
       (paint.style != ui.PaintingStyle.fill &&
           paint.strokeWidth != 0 &&
           paint.strokeWidth != null)) {
-    svgPath.setAttribute('stroke', colorValueToCssString(paint.color)!);
+    svgPath.setAttribute('stroke', colorValueToCssString(paint.color));
     svgPath.setAttribute('stroke-width', '${paint.strokeWidth ?? 1.0}');
+    if (paint.strokeCap != null) {
+      svgPath.setAttribute('stroke-linecap', '${stringForStrokeCap(paint.strokeCap)}');
+    }
     svgPath.setAttribute('fill', 'none');
-  } else if (paint.color != null) {
-    svgPath.setAttribute('fill', colorValueToCssString(paint.color)!);
   } else {
-    svgPath.setAttribute('fill', '#000000');
+    svgPath.setAttribute('fill', colorValueToCssString(paint.color));
   }
   if (path.fillType == ui.PathFillType.evenOdd) {
     svgPath.setAttribute('fill-rule', 'evenodd');

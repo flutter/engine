@@ -38,7 +38,7 @@ _framework_binary_subpath = "Versions/A/$_flutter_framework_name"
 # the Flutter engine source root.
 _flutter_framework_headers = [
   "framework/Headers/FlutterAppDelegate.h",
-  "framework/Headers/FlutterDartProject.h",
+  "framework/Headers/FlutterAppLifecycleDelegate.h",
   "framework/Headers/FlutterEngine.h",
   "framework/Headers/FlutterMacOS.h",
   "framework/Headers/FlutterPlatformViews.h",
@@ -57,6 +57,7 @@ source_set("flutter_framework_source") {
     "framework/Source/AccessibilityBridgeMac.h",
     "framework/Source/AccessibilityBridgeMac.mm",
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterAppLifecycleDelegate.mm",
     "framework/Source/FlutterBackingStore.h",
     "framework/Source/FlutterBackingStore.mm",
     "framework/Source/FlutterChannelKeyResponder.h",
@@ -71,8 +72,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTexture.h",
     "framework/Source/FlutterExternalTexture.mm",
-    "framework/Source/FlutterIOSurfaceHolder.h",
-    "framework/Source/FlutterIOSurfaceHolder.mm",
     "framework/Source/FlutterKeyPrimaryResponder.h",
     "framework/Source/FlutterKeyboardManager.h",
     "framework/Source/FlutterKeyboardManager.mm",
@@ -82,16 +81,16 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMenuPlugin_Internal.h",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterMutatorView.h",
+    "framework/Source/FlutterMutatorView.mm",
     "framework/Source/FlutterPlatformNodeDelegateMac.h",
     "framework/Source/FlutterPlatformNodeDelegateMac.mm",
     "framework/Source/FlutterPlatformViewController.h",
     "framework/Source/FlutterPlatformViewController.mm",
     "framework/Source/FlutterRenderer.h",
     "framework/Source/FlutterRenderer.mm",
-    "framework/Source/FlutterResizableBackingStoreProvider.h",
-    "framework/Source/FlutterResizableBackingStoreProvider.mm",
-    "framework/Source/FlutterResizeSynchronizer.h",
-    "framework/Source/FlutterResizeSynchronizer.mm",
+    "framework/Source/FlutterSurface.h",
+    "framework/Source/FlutterSurface.mm",
     "framework/Source/FlutterSurfaceManager.h",
     "framework/Source/FlutterSurfaceManager.mm",
     "framework/Source/FlutterTextInputPlugin.h",
@@ -100,6 +99,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterTextInputSemanticsObject.mm",
     "framework/Source/FlutterTextureRegistrar.h",
     "framework/Source/FlutterTextureRegistrar.mm",
+    "framework/Source/FlutterThreadSynchronizer.h",
+    "framework/Source/FlutterThreadSynchronizer.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
@@ -149,7 +150,10 @@ shared_library("flutter_framework_dylib") {
   visibility = [ ":*" ]
   output_name = "$_flutter_framework_name"
 
-  ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
+  ldflags = [
+    "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath",
+    "-fapplication-extension",
+  ]
 
   deps = [ ":flutter_framework_source" ]
 }
@@ -165,6 +169,7 @@ executable("flutter_desktop_darwin_unittests") {
 
   sources = [
     "framework/Source/AccessibilityBridgeMacTest.mm",
+    "framework/Source/FlutterAppLifecycleDelegateTest.mm",
     "framework/Source/FlutterChannelKeyResponderTest.mm",
     "framework/Source/FlutterCompositorTest.mm",
     "framework/Source/FlutterEmbedderExternalTextureTest.mm",
@@ -174,16 +179,18 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterEngineTestUtils.mm",
     "framework/Source/FlutterKeyboardManagerTest.mm",
     "framework/Source/FlutterMenuPluginTest.mm",
+    "framework/Source/FlutterMutatorViewTest.mm",
     "framework/Source/FlutterPlatformNodeDelegateMacTest.mm",
     "framework/Source/FlutterPlatformViewControllerTest.mm",
-    "framework/Source/FlutterRendererTest.mm",
     "framework/Source/FlutterSurfaceManagerTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterTextInputSemanticsObjectTest.mm",
+    "framework/Source/FlutterThreadSynchronizerTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",
     "framework/Source/FlutterViewEngineProviderTest.mm",
+    "framework/Source/FlutterViewTest.mm",
     "framework/Source/TestFlutterPlatformView.h",
     "framework/Source/TestFlutterPlatformView.mm",
   ]
@@ -295,7 +302,7 @@ action("_generate_symlinks") {
 }
 
 group("flutter_framework") {
-  deps = [ ":_generate_symlinks" ]
+  deps = [ ":_generate_symlinks_and_verify_framework_module" ]
 }
 
 if (build_glfw_shell) {
@@ -329,6 +336,24 @@ generated_file("macos_framework_without_entitlement_config") {
   outputs = [ "$target_gen_dir/framework_without_entitlements.txt" ]
 
   data_keys = [ "macos_framework_without_entitlement" ]
+
+  deps = [ ":_generate_symlinks" ]
+}
+
+shared_library("_generate_symlinks_and_verify_framework_module") {
+  framework_search_path = rebase_path("$root_out_dir")
+  visibility = [ ":*" ]
+  cflags_objc = [ "-F$framework_search_path" ]
+
+  ldflags = [
+    "-F$framework_search_path",
+    "-fapplication-extension",
+    "-Xlinker",
+    "-fatal_warnings",
+  ]
+  frameworks = [ "FlutterMacOS.framework" ]
+
+  sources = [ "framework/Source/FlutterUmbrellaImportTests.m" ]
 
   deps = [ ":_generate_symlinks" ]
 }

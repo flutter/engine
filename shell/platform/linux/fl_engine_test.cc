@@ -5,10 +5,12 @@
 // Included first as it collides with the X11 headers.
 #include "gtest/gtest.h"
 
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
 // MOCK_ENGINE_PROC is leaky by design
@@ -358,5 +360,126 @@ TEST(FlEngineTest, DartEntrypointArgs) {
 
   EXPECT_TRUE(called);
 }
+
+TEST(FlEngineTest, Locales) {
+  gchar* initial_language = g_strdup(g_getenv("LANGUAGE"));
+  g_setenv("LANGUAGE", "de:en_US", TRUE);
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+
+  g_autoptr(FlEngine) engine = make_mock_engine_with_project(project);
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+
+  bool called = false;
+  embedder_api->UpdateLocales = MOCK_ENGINE_PROC(
+      UpdateLocales, ([&called](auto engine, const FlutterLocale** locales,
+                                size_t locales_count) {
+        called = true;
+
+        EXPECT_EQ(locales_count, static_cast<size_t>(4));
+
+        EXPECT_STREQ(locales[0]->language_code, "de");
+        EXPECT_STREQ(locales[0]->country_code, nullptr);
+        EXPECT_STREQ(locales[0]->script_code, nullptr);
+        EXPECT_STREQ(locales[0]->variant_code, nullptr);
+
+        EXPECT_STREQ(locales[1]->language_code, "en");
+        EXPECT_STREQ(locales[1]->country_code, "US");
+        EXPECT_STREQ(locales[1]->script_code, nullptr);
+        EXPECT_STREQ(locales[1]->variant_code, nullptr);
+
+        EXPECT_STREQ(locales[2]->language_code, "en");
+        EXPECT_STREQ(locales[2]->country_code, nullptr);
+        EXPECT_STREQ(locales[2]->script_code, nullptr);
+        EXPECT_STREQ(locales[2]->variant_code, nullptr);
+
+        EXPECT_STREQ(locales[3]->language_code, "C");
+        EXPECT_STREQ(locales[3]->country_code, nullptr);
+        EXPECT_STREQ(locales[3]->script_code, nullptr);
+        EXPECT_STREQ(locales[3]->variant_code, nullptr);
+
+        return kSuccess;
+      }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
+  EXPECT_EQ(error, nullptr);
+
+  EXPECT_TRUE(called);
+
+  if (initial_language) {
+    g_setenv("LANGUAGE", initial_language, TRUE);
+  } else {
+    g_unsetenv("LANGUAGE");
+  }
+  g_free(initial_language);
+}
+
+TEST(FlEngineTest, SwitchesEmpty) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+
+  // Clear the main environment variable, since test order is not guaranteed.
+  unsetenv("FLUTTER_ENGINE_SWITCHES");
+
+  g_autoptr(GPtrArray) switches = fl_engine_get_switches(engine);
+
+  EXPECT_EQ(switches->len, 0U);
+}
+
+TEST(FlEngineTest, SendWindowStateEvent) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+
+  bool called = false;
+  std::string state;
+  embedder_api->SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage,
+      ([&called, &state](auto engine, const FlutterPlatformMessage* message) {
+        EXPECT_STREQ(message->channel, "flutter/lifecycle");
+        called = true;
+        g_autoptr(FlStringCodec) codec = fl_string_codec_new();
+        g_autoptr(GBytes) data =
+            g_bytes_new(message->message, message->message_size);
+        g_autoptr(GError) error = nullptr;
+        g_autoptr(FlValue) parsed_state = fl_message_codec_decode_message(
+            FL_MESSAGE_CODEC(codec), data, &error);
+
+        state = fl_value_get_string(parsed_state);
+        return kSuccess;
+      }));
+  fl_engine_send_window_state_event(engine, false, false);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kHidden));
+  fl_engine_send_window_state_event(engine, false, true);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kHidden));
+  fl_engine_send_window_state_event(engine, true, false);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kInactive));
+  fl_engine_send_window_state_event(engine, true, true);
+  EXPECT_STREQ(state.c_str(), flutter::AppLifecycleStateToString(
+                                  flutter::AppLifecycleState::kResumed));
+  EXPECT_TRUE(called);
+}
+
+#ifndef FLUTTER_RELEASE
+TEST(FlEngineTest, Switches) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+
+  setenv("FLUTTER_ENGINE_SWITCHES", "2", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_1", "abc", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_2", "foo=\"bar, baz\"", 1);
+
+  g_autoptr(GPtrArray) switches = fl_engine_get_switches(engine);
+  EXPECT_EQ(switches->len, 2U);
+  EXPECT_STREQ(static_cast<const char*>(g_ptr_array_index(switches, 0)),
+               "--abc");
+  EXPECT_STREQ(static_cast<const char*>(g_ptr_array_index(switches, 1)),
+               "--foo=\"bar, baz\"");
+
+  unsetenv("FLUTTER_ENGINE_SWITCHES");
+  unsetenv("FLUTTER_ENGINE_SWITCH_1");
+  unsetenv("FLUTTER_ENGINE_SWITCH_2");
+}
+#endif  // !FLUTTER_RELEASE
 
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)

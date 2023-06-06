@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/fml/string_conversion.h"
 #include "flutter/shell/platform/common/text_editing_delta.h"
+#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 #include <windows.h>
 
@@ -57,6 +58,8 @@ static constexpr char kChannelName[] = "flutter/textinput";
 static constexpr char kBadArgumentError[] = "Bad Arguments";
 static constexpr char kInternalConsistencyError[] =
     "Internal Consistency Error";
+
+static constexpr char kInputActionNewline[] = "TextInputAction.newline";
 
 namespace flutter {
 
@@ -445,7 +448,8 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
 }
 
 void TextInputPlugin::EnterPressed(TextInputModel* model) {
-  if (input_type_ == kMultilineInputType) {
+  if (input_type_ == kMultilineInputType &&
+      input_action_ == kInputActionNewline) {
     std::u16string text_before_change = fml::Utf8ToUtf16(model->GetText());
     TextRange selection_before_change = model->selection();
     model->AddText(u"\n");

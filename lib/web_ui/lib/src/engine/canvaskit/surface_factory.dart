@@ -11,14 +11,15 @@ import '../../engine.dart';
 class SurfaceFactory {
   SurfaceFactory(int maximumSurfaces)
       : maximumSurfaces = math.max(maximumSurfaces, 1) {
-    if (assertionsEnabled) {
+    assert(() {
       if (maximumSurfaces < 1) {
         printWarning('Attempted to create a $SurfaceFactory with '
             '$maximumSurfaces maximum surfaces. At least 1 surface is required '
             'for rendering.');
       }
       registerHotRestartListener(debugClear);
-    }
+      return true;
+    }());
   }
 
   /// The lazy-initialized singleton surface factory.
@@ -46,12 +47,12 @@ class SurfaceFactory {
   /// all painting commands.
   final Surface baseSurface = Surface();
 
-  /// A surface used specifically for `Picture.toImage` calls, which can be
-  /// reused in order to avoid creating too many WebGL contexts.
-  late final Surface pictureToImageSurface = Surface();
-
   /// The maximum number of surfaces which can be live at once.
   final int maximumSurfaces;
+
+  /// A surface used specifically for `Picture.toImage` when software rendering
+  /// is supported.
+  late final Surface pictureToImageSurface = Surface();
 
   /// The maximum number of assignable overlays.
   ///

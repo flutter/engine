@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 from urllib import request
+from compatibility_helper import byte_str_decode
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -27,15 +28,20 @@ OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
 SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
 
-failed_deps = []  # deps which fail to be be cloned or git-merge based
+failed_deps = []  # deps which fail to be cloned or git-merge based
 
 sarif_log = {
     '$schema':
         'https://json.schemastore.org/sarif-2.1.0.json', 'version':
-            '2.1.0', 'runs': [{
-                'tool': {'driver': {'name': 'OSV Scan', 'rules': []}},
-                'results': []
-            }]
+            '2.1.0',
+    'runs': [{
+        'tool': {
+            'driver': {
+                'name': 'OSV Scan', 'informationUri': 'https://osv.dev/',
+                'semanticVersion': '1.0.0', 'rules': []
+            }
+        }, 'results': []
+    }]
 }
 
 
@@ -48,9 +54,7 @@ def sarif_result():
       'ruleId':
           'N/A', 'message': {'text': 'OSV Scan Finding'}, 'locations': [{
               'physicalLocation': {
-                  'artifactLocation': {
-                      'uri': 'No location associated with this finding'
-                  },
+                  'artifactLocation': {'uri': 'DEPS'},
                   'region': {'startLine': 1, 'startColumn': 1, 'endColumn': 1}
               }
           }]
@@ -183,9 +187,8 @@ def get_common_ancestor_commit(dep, deps_list):
     upstream = deps_list.get(UPSTREAM_PREFIX + dep_name)
     temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
     # clone dependency from mirror
-    subprocess.check_output([
-        'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
-    ])
+    subprocess.check_output(['git', 'clone', '--quiet', '--', dep[0], dep_name],
+                            cwd=DEP_CLONE_DIR)
 
     # create branch that will track the upstream dep
     print(
@@ -193,50 +196,53 @@ def get_common_ancestor_commit(dep, deps_list):
             upstream=upstream
         )
     )
-    subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add', 'upstream',
-        upstream
-    ])
-    subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
-        'upstream'
-    ])
+    subprocess.check_output(['git', 'remote', 'add', 'upstream', upstream],
+                            cwd=temp_dep_dir)
+    subprocess.check_output(['git', 'fetch', '--quiet', 'upstream'],
+                            cwd=temp_dep_dir)
     # get name of the default branch for upstream (e.g. main/master/etc.)
     default_branch = subprocess.check_output(
-        'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
-        "| sed -n \'/HEAD branch/s/.*: //p\'",
+        'git remote show upstream ' + "| sed -n \'/HEAD branch/s/.*: //p\'",
+        cwd=temp_dep_dir,
         shell=True
-    ).decode().strip()
-    print(
-        'default_branch found: {default_branch}'.format(
-            default_branch=default_branch
-        )
     )
+    default_branch = byte_str_decode(default_branch)
+    default_branch = default_branch.strip()
+
     # make upstream branch track the upstream dep
     subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b',
-        'upstream', '--track', 'upstream/' + default_branch
-    ])
+        'git', 'checkout', '--force', '-b', 'upstream', '--track',
+        'upstream/' + default_branch
+    ],
+                            cwd=temp_dep_dir)
     # get the most recent commit from default branch of upstream
     commit = subprocess.check_output(
-        'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
+        'git for-each-ref ' +
         "--format=\'%(objectname:short)\' refs/heads/upstream",
+        cwd=temp_dep_dir,
         shell=True
     )
-    commit = commit.decode().strip()
+    commit = byte_str_decode(commit)
+    commit = commit.strip()
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
-        'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
-            temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
-        ),
+        'git merge-base {commit} {depUrl}'.format(commit=commit, depUrl=dep[1]),
+        cwd=temp_dep_dir,
         shell=True
     )
-    ancestor_commit = ancestor_commit.decode().strip()
+    ancestor_commit = byte_str_decode(ancestor_commit)
+    ancestor_commit = ancestor_commit.strip()
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
   except subprocess.CalledProcessError as error:
-    print("Subprocess error '{0}' occured.".format(error.output))
+    print(
+        "Subprocess command '{0}' failed with exit code: {1}.".format(
+            error.cmd, str(error.returncode)
+        )
+    )
+    if error.output:
+      print("Subprocess error output: '{0}'".format(error.output))
   return {}
 
 

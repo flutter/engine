@@ -6,21 +6,21 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import '../engine.dart'  show registerHotRestartListener;
+import 'browser_detection.dart';
 import 'dom.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
-import 'safe_browser_api.dart';
 import 'services.dart';
 
 /// Provides keyboard bindings, such as the `flutter/keyevent` channel.
 class RawKeyboard {
   RawKeyboard._(this._onMacOs) {
-    _keydownListener = allowInterop((DomEvent event) {
+    _keydownListener = createDomEventListener((DomEvent event) {
       _handleHtmlEvent(event);
     });
     domWindow.addEventListener('keydown', _keydownListener);
 
-    _keyupListener = allowInterop((DomEvent event) {
+    _keyupListener = createDomEventListener((DomEvent event) {
       _handleHtmlEvent(event);
     });
     domWindow.addEventListener('keyup', _keyupListener);
@@ -134,6 +134,9 @@ class RawKeyboard {
         _lastMetaState |= modifierNumLock;
       } else if (event.key == 'ScrollLock') {
         _lastMetaState |= modifierScrollLock;
+      } else if (event.key == 'Meta' && operatingSystem == OperatingSystem.linux) {
+        // On Chrome Linux, metaState can be wrong when a Meta key is pressed.
+        _lastMetaState |= _modifierMeta;
       }
     }
     final Map<String, dynamic> eventData = <String, dynamic>{

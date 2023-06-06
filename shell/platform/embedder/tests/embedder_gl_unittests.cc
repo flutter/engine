@@ -11,6 +11,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include "GLES3/gl3.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -34,7 +35,6 @@
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
@@ -2977,7 +2977,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
   builder.SetCompositor();
-  builder.SetDartEntrypoint("render_targets_are_recycled");
+  builder.SetDartEntrypoint("render_targets_are_in_stable_order");
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
 
@@ -4018,11 +4018,15 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   TestGLSurface surface(SkISize::Make(100, 100));
   auto context = surface.GetGrContext();
 
-  typedef void (*glGenTexturesProc)(uint32_t n, uint32_t * textures);
+  typedef void (*glGenTexturesProc)(uint32_t n, uint32_t* textures);
+  typedef void (*glFinishProc)();
+
   glGenTexturesProc glGenTextures;
+  glFinishProc glFinish;
 
   glGenTextures = reinterpret_cast<glGenTexturesProc>(
       surface.GetProcAddress("glGenTextures"));
+  glFinish = reinterpret_cast<glFinishProc>(surface.GetProcAddress("glFinish"));
 
   uint32_t name;
   glGenTextures(1, &name);
@@ -4033,9 +4037,9 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
       [&](int64_t, size_t, size_t) {
         resolve_called = true;
         auto res = std::make_unique<FlutterOpenGLTexture>();
-        res->target = GR_GL_TEXTURE_2D;
+        res->target = GL_TEXTURE_2D;
         res->name = name;
-        res->format = GR_GL_RGBA8;
+        res->format = GL_RGBA8;
         res->user_data = nullptr;
         res->destruction_callback = [](void*) {};
         res->width = res->height = 100;
@@ -4044,29 +4048,31 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   EmbedderExternalTextureGL texture(1, callback);
 
   auto skia_surface = surface.GetOnscreenSurface();
-  auto canvas = skia_surface->getCanvas();
+  DlSkCanvasAdapter canvas(skia_surface->getCanvas());
 
   Texture* texture_ = &texture;
   Texture::PaintContext ctx{
-      .canvas = canvas,
+      .canvas = &canvas,
       .gr_context = context.get(),
   };
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_TRUE(resolve_called);
   resolve_called = false;
 
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_FALSE(resolve_called);
 
   texture_->MarkNewFrameAvailable();
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_TRUE(resolve_called);
+
+  glFinish();
 }
 
 TEST_F(EmbedderTest,

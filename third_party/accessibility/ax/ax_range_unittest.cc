@@ -68,6 +68,7 @@ class TestAXRangeScreenRectDelegate : public AXRangeRectDelegate {
       AXNode::AXID node_id,
       int start_offset,
       int end_offset,
+      ui::AXClippingBehavior clipping_behavior,
       AXOffscreenResult* offscreen_result) override {
     if (tree_manager_->GetTreeID() != tree_id)
       return gfx::Rect();
@@ -80,7 +81,7 @@ class TestAXRangeScreenRectDelegate : public AXRangeRectDelegate {
         TestAXNodeHelper::GetOrCreate(tree_manager_->GetTree(), node);
     return wrapper->GetInnerTextRangeBoundsRect(
         start_offset, end_offset, AXCoordinateSystem::kScreenDIPs,
-        AXClippingBehavior::kClipped, offscreen_result);
+        clipping_behavior, offscreen_result);
   }
 
   gfx::Rect GetBoundsRect(AXTreeID tree_id,
@@ -204,7 +205,7 @@ void AXRangeTest::SetUp() {
   check_box2_.AddIntAttribute(ax::mojom::IntAttribute::kPreviousOnLineId,
                               check_box1_.id);
 
-  text_field_.role = ax::mojom::Role::kTextField;
+  text_field_.role = ax::mojom::Role::kGroup;
   text_field_.AddState(ax::mojom::State::kEditable);
   text_field_.SetValue(TEXT_FIELD);
   text_field_.AddIntListAttribute(

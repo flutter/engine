@@ -109,18 +109,15 @@ AndroidShellHolder::AndroidShellHolder(
       [&jni_facade, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         platform_view_android = std::make_unique<PlatformViewAndroid>(
-            shell,                   // delegate
-            shell.GetTaskRunners(),  // task runners
-            jni_facade,              // JNI interop
+            shell,                                  // delegate
+            shell.GetTaskRunners(),                 // task runners
+            shell.GetConcurrentWorkerTaskRunner(),  // worker task runner
+            jni_facade,                             // JNI interop
             shell.GetSettings()
                 .enable_software_rendering,   // use software rendering
             shell.GetSettings().msaa_samples  // msaa sample count
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
-        std::vector<std::unique_ptr<Display>> displays;
-        displays.push_back(std::make_unique<AndroidDisplay>(jni_facade));
-        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
-                               std::move(displays));
         return platform_view_android;
       };
 
@@ -180,12 +177,14 @@ AndroidShellHolder::AndroidShellHolder(
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     const std::shared_ptr<ThreadHost>& thread_host,
     std::unique_ptr<Shell> shell,
+    std::unique_ptr<APKAssetProvider> apk_asset_provider,
     const fml::WeakPtr<PlatformViewAndroid>& platform_view)
     : settings_(settings),
       jni_facade_(jni_facade),
       platform_view_(platform_view),
       thread_host_(thread_host),
-      shell_(std::move(shell)) {
+      shell_(std::move(shell)),
+      apk_asset_provider_(std::move(apk_asset_provider)) {
   FML_DCHECK(jni_facade);
   FML_DCHECK(shell_);
   FML_DCHECK(shell_->IsSetup());
@@ -246,10 +245,6 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
             android_context          // Android context
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
-        std::vector<std::unique_ptr<Display>> displays;
-        displays.push_back(std::make_unique<AndroidDisplay>(jni_facade));
-        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
-                               std::move(displays));
         return platform_view_android;
       };
 
@@ -270,9 +265,9 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
       shell_->Spawn(std::move(config.value()), initial_route,
                     on_create_platform_view, on_create_rasterizer);
 
-  return std::unique_ptr<AndroidShellHolder>(
-      new AndroidShellHolder(GetSettings(), jni_facade, thread_host_,
-                             std::move(shell), weak_platform_view));
+  return std::unique_ptr<AndroidShellHolder>(new AndroidShellHolder(
+      GetSettings(), jni_facade, thread_host_, std::move(shell),
+      apk_asset_provider_->Clone(), weak_platform_view));
 }
 
 void AndroidShellHolder::Launch(
@@ -289,6 +284,7 @@ void AndroidShellHolder::Launch(
   if (!config) {
     return;
   }
+  UpdateDisplayMetrics();
   shell_->RunEngine(std::move(config.value()));
 }
 
@@ -296,7 +292,7 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
   if (!IsValid()) {
-    return {nullptr, SkISize::MakeEmpty()};
+    return {nullptr, SkISize::MakeEmpty(), ""};
   }
   return shell_->Screenshot(type, base64_encode);
 }
@@ -344,6 +340,12 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     }
   }
   return config;
+}
+
+void AndroidShellHolder::UpdateDisplayMetrics() {
+  std::vector<std::unique_ptr<Display>> displays;
+  displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
+  shell_->OnDisplayUpdates(std::move(displays));
 }
 
 }  // namespace flutter

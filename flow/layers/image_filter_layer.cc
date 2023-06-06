@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
-#include "flutter/display_list/display_list_comparable.h"
+
+#include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache_util.h"
 
@@ -29,12 +30,11 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
   if (context->has_raster_cache()) {
-    context->SetTransform(
-        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+    context->WillPaintWithIntegralTransform();
   }
 
   if (filter_) {
-    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
+    auto filter = filter_->makeWithLocalMatrix(context->GetTransform3x3());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
@@ -99,22 +99,24 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   auto mutator = context.state_stack.save();
-  mutator.translate(offset_);
 
   if (context.raster_cache) {
-    // Always apply the integral transform in the presence of a raster cache
-    // whether or not we will draw from the cache
-    mutator.integralTransform();
-
     // Try drawing the layer cache item from the cache before applying the
     // image filter if it was cached with the filter applied.
     if (!layer_raster_cache_item_->IsCacheChildren()) {
-      SkPaint sk_paint;
+      DlPaint paint;
       if (layer_raster_cache_item_->Draw(context,
-                                         context.state_stack.fill(sk_paint))) {
+                                         context.state_stack.fill(paint))) {
         return;
       }
     }
+  }
+
+  // Only apply the offset if not being raster-cached to avoid the offset being
+  // applied twice.
+  mutator.translate(offset_);
+  if (context.raster_cache) {
+    mutator.integralTransform();
   }
 
   if (context.raster_cache && layer_raster_cache_item_->IsCacheChildren()) {
@@ -122,10 +124,10 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     // transformed version of the filter so we must process it into the
     // cache paint object manually.
     FML_DCHECK(transformed_filter_ != nullptr);
-    SkPaint sk_paint;
-    context.state_stack.fill(sk_paint);
-    sk_paint.setImageFilter(transformed_filter_->skia_object());
-    if (layer_raster_cache_item_->Draw(context, &sk_paint)) {
+    DlPaint paint;
+    context.state_stack.fill(paint);
+    paint.setImageFilter(transformed_filter_);
+    if (layer_raster_cache_item_->Draw(context, &paint)) {
       return;
     }
   }

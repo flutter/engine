@@ -11,6 +11,9 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+@protocol FlutterTaskQueue <NSObject>
+@end
+
 @interface MockBinaryMessenger : NSObject <FlutterBinaryMessenger>
 @property(nonatomic, copy) NSString* channel;
 @property(nonatomic, strong) NSData* message;
@@ -214,7 +217,7 @@
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMClassMock([NSObject class]);
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
   FlutterBasicMessageChannel* channel =
       [[FlutterBasicMessageChannel alloc] initWithName:channelName
                                        binaryMessenger:binaryMessenger
@@ -234,12 +237,84 @@
   OCMVerify([binaryMessenger cleanUpConnection:connection]);
 }
 
+- (void)testBasicMessageChannelInvokeHandlerAfterChannelReleased {
+  NSString* channelName = @"foo";
+  __block NSString* handlerMessage;
+  __block FlutterBinaryMessageHandler messageHandler;
+  @autoreleasepool {
+    FlutterBinaryMessengerConnection connection = 123;
+    id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+    id codec = OCMProtocolMock(@protocol(FlutterMessageCodec));
+    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+    FlutterBasicMessageChannel* channel =
+        [[FlutterBasicMessageChannel alloc] initWithName:channelName
+                                         binaryMessenger:binaryMessenger
+                                                   codec:codec
+                                               taskQueue:taskQueue];
+
+    FlutterMessageHandler handler = ^(id _Nullable message, FlutterReply callback) {
+      handlerMessage = message;
+    };
+    OCMStub([binaryMessenger
+                setMessageHandlerOnChannel:channelName
+                      binaryMessageHandler:[OCMArg checkWithBlock:^BOOL(
+                                                       FlutterBinaryMessageHandler handler) {
+                        messageHandler = handler;
+                        return YES;
+                      }]
+                                 taskQueue:taskQueue])
+        .andReturn(connection);
+    OCMStub([codec decode:[OCMArg any]]).andReturn(@"decoded message");
+    [channel setMessageHandler:handler];
+  }
+  // Channel is released, messageHandler should still retain the codec. The codec
+  // internally makes a `decode` call and updates the `handlerMessage` to "decoded message".
+  messageHandler([NSData data], ^(NSData* data){
+                 });
+  XCTAssertEqualObjects(handlerMessage, @"decoded message");
+}
+
+- (void)testMethodChannelInvokeHandlerAfterChannelReleased {
+  NSString* channelName = @"foo";
+  FlutterBinaryMessengerConnection connection = 123;
+  __block FlutterMethodCall* decodedMethodCall;
+  __block FlutterBinaryMessageHandler messageHandler;
+  @autoreleasepool {
+    id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+    id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
+    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+    FlutterMethodChannel* channel = [[FlutterMethodChannel alloc] initWithName:channelName
+                                                               binaryMessenger:binaryMessenger
+                                                                         codec:codec
+                                                                     taskQueue:taskQueue];
+    FlutterMethodCallHandler handler = ^(FlutterMethodCall* call, FlutterResult result) {
+      decodedMethodCall = call;
+    };
+    OCMStub([binaryMessenger
+                setMessageHandlerOnChannel:channelName
+                      binaryMessageHandler:[OCMArg checkWithBlock:^BOOL(
+                                                       FlutterBinaryMessageHandler handler) {
+                        messageHandler = handler;
+                        return YES;
+                      }]
+                                 taskQueue:taskQueue])
+        .andReturn(connection);
+    OCMStub([codec decodeMethodCall:[OCMArg any]])
+        .andReturn([FlutterMethodCall methodCallWithMethodName:@"decoded method call"
+                                                     arguments:nil]);
+    [channel setMethodCallHandler:handler];
+  }
+  messageHandler([NSData data], ^(NSData* data){
+                 });
+  XCTAssertEqualObjects(decodedMethodCall.method, @"decoded method call");
+}
+
 - (void)testMethodChannelTaskQueue {
   NSString* channelName = @"foo";
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMClassMock([NSObject class]);
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
   FlutterMethodChannel* channel = [[FlutterMethodChannel alloc] initWithName:channelName
                                                              binaryMessenger:binaryMessenger
                                                                        codec:codec
@@ -264,7 +339,7 @@
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMClassMock([NSObject class]);
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
   id handler = OCMProtocolMock(@protocol(FlutterStreamHandler));
   FlutterEventChannel* channel = [[FlutterEventChannel alloc] initWithName:channelName
                                                            binaryMessenger:binaryMessenger

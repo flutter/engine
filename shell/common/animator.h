@@ -54,7 +54,8 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
-  void Render(std::shared_ptr<flutter::LayerTree> layer_tree);
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              float device_pixel_ratio);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
@@ -78,7 +79,7 @@ class Animator final {
 
   // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The flow event will be
   // ended at either the next frame, or the next vsync interval with no active
-  // active rendering.
+  // rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
  private:

@@ -4,12 +4,14 @@
 
 #include "flutter/flow/layers/offscreen_surface.h"
 
-#include "third_party/skia/include/core/SkImageEncoder.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkSerialProcs.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
-#include "third_party/skia/include/utils/SkBase64.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
@@ -20,14 +22,13 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
   if (surface_context) {
     // There is a rendering surface that may contain textures that are going to
     // be referenced in the layer tree about to be drawn.
-    return SkSurface::MakeRenderTarget(
-        reinterpret_cast<GrRecordingContext*>(surface_context), SkBudgeted::kNo,
-        image_info);
+    return SkSurfaces::RenderTarget(surface_context, skgpu::Budgeted::kNo,
+                                    image_info);
   }
 
   // There is no rendering surface, assume no GPU textures are present and
   // create a raster surface.
-  return SkSurface::MakeRaster(image_info);
+  return SkSurfaces::Raster(image_info);
 }
 
 /// Returns a buffer containing a snapshot of the surface.
@@ -53,7 +54,7 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
   // If the caller want the pixels to be compressed, there is a Skia utility to
   // compress to PNG. Use that.
   if (compressed) {
-    return cpu_snapshot->encodeToData();
+    return SkPngEncoder::Encode(nullptr, cpu_snapshot.get(), {});
   }
 
   // Copy it into a bitmap and return the same.
@@ -68,14 +69,17 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
 OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
                                    const SkISize& size) {
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
+  if (offscreen_surface_) {
+    adapter_.set_canvas(offscreen_surface_->getCanvas());
+  }
 }
 
 sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) const {
   return flutter::GetRasterData(offscreen_surface_, compressed);
 }
 
-SkCanvas* OffscreenSurface::GetCanvas() const {
-  return offscreen_surface_->getCanvas();
+DlCanvas* OffscreenSurface::GetCanvas() {
+  return &adapter_;
 }
 
 bool OffscreenSurface::IsValid() const {

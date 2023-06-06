@@ -211,17 +211,17 @@ Future<void> testMain() async {
     EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
   });
 
-  test('onSemanticsAction preserves the zone', () {
+  test('onSemanticsActionEvent preserves the zone', () {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      void callback(int _, ui.SemanticsAction __, ByteData? ___) {
+      void callback(ui.SemanticsActionEvent _) {
         expect(Zone.current, innerZone);
       }
-      window.onSemanticsAction = callback;
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onSemanticsAction, same(callback));
+      expect(ui.PlatformDispatcher.instance.onSemanticsActionEvent, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
@@ -332,11 +332,11 @@ Future<void> testMain() async {
       'orientation': <Object?, Object?>{
         'lock': allowInterop((String lockType) {
           lockCalls.add(lockType);
-          return JsPromise(allowInterop((Function(Object? value) resolve, Function reject) {
+          return Promise<Object?>(allowInterop((PromiseResolver<Object?> resolve, PromiseRejecter reject) {
             if (!simulateError) {
-              resolve(null);
+              resolve.resolve(null);
             } else {
-              reject('Simulating error');
+              reject.reject('Simulating error');
             }
           }));
         }),
@@ -437,7 +437,7 @@ Future<void> testMain() async {
   test('dispatches browser event on flutter/service_worker channel', () async {
     final Completer<void> completer = Completer<void>();
     domWindow.addEventListener('flutter-first-frame',
-        allowInterop((DomEvent e) => completer.complete()));
+        createDomEventListener((DomEvent e) => completer.complete()));
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {

@@ -214,8 +214,12 @@ public class FlutterJNI {
    */
   private static float refreshRateFPS = 60.0f;
 
+  private static float displayWidth = -1.0f;
+  private static float displayHeight = -1.0f;
+  private static float displayDensity = -1.0f;
+
   // This is set from native code via JNI.
-  @Nullable private static String observatoryUri;
+  @Nullable private static String vmServiceUri;
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
@@ -230,14 +234,28 @@ public class FlutterJNI {
   }
 
   /**
-   * Observatory URI for the VM instance.
+   * VM Service URI for the VM instance.
    *
    * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
    * String, long)} is run.
    */
   @Nullable
+  public static String getVMServiceUri() {
+    return vmServiceUri;
+  }
+
+  /**
+   * VM Service URI for the VM instance.
+   *
+   * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
+   * String, long)} is run.
+   *
+   * @deprecated replaced by {@link #getVMServiceUri()}.
+   */
+  @Deprecated
+  @Nullable
   public static String getObservatoryUri() {
-    return observatoryUri;
+    return vmServiceUri;
   }
 
   /**
@@ -259,6 +277,18 @@ public class FlutterJNI {
     FlutterJNI.refreshRateFPS = refreshRateFPS;
     updateRefreshRate();
   }
+
+  public void updateDisplayMetrics(int displayId, float width, float height, float density) {
+    FlutterJNI.displayWidth = width;
+    FlutterJNI.displayHeight = height;
+    FlutterJNI.displayDensity = density;
+    if (!FlutterJNI.loadLibraryCalled) {
+      return;
+    }
+    nativeUpdateDisplayMetrics(nativeShellHolderId);
+  }
+
+  private native void nativeUpdateDisplayMetrics(long nativeShellHolderId);
 
   public void updateRefreshRate() {
     if (!FlutterJNI.loadLibraryCalled) {
@@ -787,13 +817,13 @@ public class FlutterJNI {
   }
 
   /** Sends a semantics action to Flutter's engine, without any additional arguments. */
-  public void dispatchSemanticsAction(int id, @NonNull AccessibilityBridge.Action action) {
-    dispatchSemanticsAction(id, action, null);
+  public void dispatchSemanticsAction(int nodeId, @NonNull AccessibilityBridge.Action action) {
+    dispatchSemanticsAction(nodeId, action, null);
   }
 
   /** Sends a semantics action to Flutter's engine, with additional arguments. */
   public void dispatchSemanticsAction(
-      int id, @NonNull AccessibilityBridge.Action action, @Nullable Object args) {
+      int nodeId, @NonNull AccessibilityBridge.Action action, @Nullable Object args) {
     ensureAttachedToNative();
 
     ByteBuffer encodedArgs = null;
@@ -802,7 +832,7 @@ public class FlutterJNI {
       encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
       position = encodedArgs.position();
     }
-    dispatchSemanticsAction(id, action.value, encodedArgs, position);
+    dispatchSemanticsAction(nodeId, action.value, encodedArgs, position);
   }
 
   /**
@@ -815,14 +845,18 @@ public class FlutterJNI {
    */
   @UiThread
   public void dispatchSemanticsAction(
-      int id, int action, @Nullable ByteBuffer args, int argsPosition) {
+      int nodeId, int action, @Nullable ByteBuffer args, int argsPosition) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeDispatchSemanticsAction(nativeShellHolderId, id, action, args, argsPosition);
+    nativeDispatchSemanticsAction(nativeShellHolderId, nodeId, action, args, argsPosition);
   }
 
   private native void nativeDispatchSemanticsAction(
-      long nativeShellHolderId, int id, int action, @Nullable ByteBuffer args, int argsPosition);
+      long nativeShellHolderId,
+      int nodeId,
+      int action,
+      @Nullable ByteBuffer args,
+      int argsPosition);
 
   /**
    * Instructs Flutter to enable/disable its semantics tree, which is used by Flutter to support

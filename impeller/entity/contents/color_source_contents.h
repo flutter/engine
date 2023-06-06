@@ -6,7 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 
@@ -18,11 +18,13 @@ class ColorSourceContents : public Contents {
 
   ~ColorSourceContents() override;
 
-  void SetGeometry(std::unique_ptr<Geometry> geometry);
+  void SetGeometry(std::shared_ptr<Geometry> geometry);
 
-  void SetMatrix(Matrix matrix);
+  void SetEffectTransform(Matrix matrix);
 
-  void SetAlpha(Scalar alpha);
+  const Matrix& GetInverseMatrix() const;
+
+  void SetOpacity(Scalar opacity);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -31,17 +33,21 @@ class ColorSourceContents : public Contents {
   bool ShouldRender(const Entity& entity,
                     const std::optional<Rect>& stencil_coverage) const override;
 
- protected:
-  const std::unique_ptr<Geometry>& GetGeometry() const;
+  // |Contents|
+  bool CanInheritOpacity(const Entity& entity) const override;
 
-  const Matrix& GetInverseMatrix() const;
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
-  Scalar GetAlpha() const;
+  Scalar GetOpacity() const;
+
+  const std::shared_ptr<Geometry>& GetGeometry() const;
 
  private:
-  std::unique_ptr<Geometry> geometry_;
+  std::shared_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
-  Scalar alpha_ = 1.0;
+  Scalar opacity_ = 1.0;
+  Scalar inherited_opacity_ = 1.0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorSourceContents);
 };

@@ -4,14 +4,18 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-
+#include "flutter/fml/time/time_delta.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
+#include "impeller/image/compressed_image.h"
+#include "impeller/image/decompressed_image.h"
+#include "impeller/playground/switches.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
@@ -30,11 +34,9 @@ class Playground {
  public:
   using SinglePassCallback = std::function<bool(RenderPass& pass)>;
 
-  explicit Playground();
+  explicit Playground(PlaygroundSwitches switches);
 
   virtual ~Playground();
-
-  static constexpr bool is_enabled() { return is_enabled_; }
 
   static bool ShouldOpenNewPlaygrounds();
 
@@ -50,14 +52,26 @@ class Playground {
 
   Point GetContentScale() const;
 
+  /// @brief Get the amount of time elapsed from the start of the playground's
+  /// execution.
+  Scalar GetSecondsElapsed() const;
+
   std::shared_ptr<Context> GetContext() const;
 
   bool OpenPlaygroundHere(const Renderer::RenderCallback& render_callback);
 
   bool OpenPlaygroundHere(SinglePassCallback pass_callback);
 
-  std::optional<DecompressedImage> LoadFixtureImageRGBA(
-      const char* fixture_name) const;
+  static std::shared_ptr<CompressedImage> LoadFixtureImageCompressed(
+      std::shared_ptr<fml::Mapping> mapping);
+
+  static std::optional<DecompressedImage> DecodeImageRGBA(
+      const std::shared_ptr<CompressedImage>& compressed);
+
+  static std::shared_ptr<Texture> CreateTextureForMapping(
+      const std::shared_ptr<Context>& context,
+      std::shared_ptr<fml::Mapping> mapping,
+      bool enable_mipmapping = false);
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
@@ -73,14 +87,15 @@ class Playground {
 
   virtual std::string GetWindowTitle() const = 0;
 
- private:
-#if IMPELLER_ENABLE_PLAYGROUND
-  static const bool is_enabled_ = true;
-#else
-  static const bool is_enabled_ = false;
-#endif  // IMPELLER_ENABLE_PLAYGROUND
+ protected:
+  const PlaygroundSwitches switches_;
 
+  virtual bool ShouldKeepRendering() const;
+
+ private:
   struct GLFWInitializer;
+
+  fml::TimeDelta start_time_;
   std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
   std::shared_ptr<Context> context_;

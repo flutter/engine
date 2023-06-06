@@ -7,6 +7,7 @@
 #include <string>
 
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
@@ -63,6 +64,8 @@ class RenderPass {
   std::vector<Command> commands_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
+
+  const std::weak_ptr<const Context>& GetContext() const;
 
   virtual void OnSetLabel(std::string label) = 0;
 

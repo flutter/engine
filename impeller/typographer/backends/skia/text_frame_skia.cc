@@ -27,6 +27,9 @@ static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
   Font::Metrics metrics;
   metrics.scale = scale;
   metrics.point_size = font.getSize();
+  metrics.embolden = font.isEmbolden();
+  metrics.skewX = font.getSkewX();
+  metrics.scaleX = font.getScaleX();
 
   return Font{std::move(typeface), metrics};
 }

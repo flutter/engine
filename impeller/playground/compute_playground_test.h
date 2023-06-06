@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/testing/testing.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/playground/playground.h"
 
@@ -36,9 +37,17 @@ class ComputePlaygroundTest
   // |Playground|
   std::string GetWindowTitle() const override;
 
-  /// @brief Get the amount of time elapsed from the start of the playground
-  ///        test's execution.
-  Scalar GetSecondsElapsed() const;
+  template <typename T>
+  std::shared_ptr<DeviceBuffer> CreateHostVisibleDeviceBuffer(
+      std::shared_ptr<Context> context,
+      const std::string& label) {
+    DeviceBufferDescriptor desc;
+    desc.storage_mode = StorageMode::kHostVisible;
+    desc.size = sizeof(T);
+    auto buffer = context->GetResourceAllocator()->CreateBuffer(desc);
+    buffer->SetLabel(label);
+    return buffer;
+  }
 
  private:
   fml::TimeDelta start_time_;
@@ -48,7 +57,9 @@ class ComputePlaygroundTest
 
 #define INSTANTIATE_COMPUTE_SUITE(playground)                              \
   INSTANTIATE_TEST_SUITE_P(                                                \
-      Compute, playground, ::testing::Values(PlaygroundBackend::kMetal),   \
+      Compute, playground,                                                 \
+      ::testing::Values(PlaygroundBackend::kMetal,                         \
+                        PlaygroundBackend::kVulkan),                       \
       [](const ::testing::TestParamInfo<ComputePlaygroundTest::ParamType>& \
              info) { return PlaygroundBackendToString(info.param); });
 

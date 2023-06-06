@@ -5,7 +5,7 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/display_list_dispatcher.h"
+#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
@@ -56,22 +56,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   }
 
   auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
-  std::unique_ptr<impeller::Surface> surface =
-      context_vk.AcquireSurface(frame_num_++);
-
-  auto swap_callback = [weak = weak_factory_.GetWeakPtr()]() -> bool {
-    if (weak) {
-      // TODO (kaushikiska@): Invoke the clean-up callback.
-      // Blocked by - https://github.com/flutter/flutter/issues/112387
-    }
-    return true;
-  };
+  std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
                          surface = std::move(surface)    //
-  ](SurfaceFrame& surface_frame, SkCanvas* canvas) mutable -> bool {
+  ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
         }
@@ -82,7 +73,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
           return false;
         }
 
-        impeller::DisplayListDispatcher impeller_dispatcher;
+        impeller::DlDispatcher impeller_dispatcher;
         display_list->Dispatch(impeller_dispatcher);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
@@ -131,8 +122,9 @@ bool GPUSurfaceVulkanImpeller::EnableRasterCache() const {
 }
 
 // |Surface|
-impeller::AiksContext* GPUSurfaceVulkanImpeller::GetAiksContext() const {
-  return aiks_context_.get();
+std::shared_ptr<impeller::AiksContext>
+GPUSurfaceVulkanImpeller::GetAiksContext() const {
+  return aiks_context_;
 }
 
 }  // namespace flutter

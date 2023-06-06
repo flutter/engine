@@ -2,24 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
+
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
 import 'slots.dart';
-
-/// A function which takes a unique `id` and some `params` and creates an HTML element.
-///
-/// This is made available to end-users through dart:ui in web.
-typedef ParameterizedPlatformViewFactory = DomElement Function(
-  int viewId, {
-  Object? params,
-});
-
-/// A function which takes a unique `id` and creates an HTML element.
-///
-/// This is made available to end-users through dart:ui in web.
-typedef PlatformViewFactory = DomElement Function(int viewId);
 
 /// This class handles the lifecycle of Platform Views in the DOM of a Flutter Web App.
 ///
@@ -60,6 +49,17 @@ class PlatformViewManager {
     return _contents.containsKey(viewId);
   }
 
+  /// Returns the HTML element created by a registered factory for [viewId].
+  ///
+  /// Throws an [AssertionError] if [viewId] hasn't been rendered before.
+  DomElement getViewById(int viewId) {
+    assert(knowsViewId(viewId), 'No view has been rendered for viewId: $viewId');
+    // `_contents[viewId]` is the <flt-platform-view> element created by us. The
+    // first (and only) child of that is the element created by the user-supplied
+    // factory function.
+    return _contents[viewId]!.firstElementChild!;
+  }
+
   /// Registers a `factoryFunction` that knows how to render a Platform View of `viewType`.
   ///
   /// `viewType` is selected by the programmer, but it can't be overridden once
@@ -68,8 +68,13 @@ class PlatformViewManager {
   /// `factoryFunction` needs to be a [PlatformViewFactory].
   bool registerFactory(String viewType, Function factoryFunction,
       {bool isVisible = true}) {
-    assert(factoryFunction is PlatformViewFactory ||
-        factoryFunction is ParameterizedPlatformViewFactory);
+    assert(
+      factoryFunction is ui_web.PlatformViewFactory ||
+          factoryFunction is ui_web.ParameterizedPlatformViewFactory,
+      'Factory signature is invalid. Expected either '
+      '{${ui_web.PlatformViewFactory}} or {${ui_web.ParameterizedPlatformViewFactory}} '
+      'but got: {${factoryFunction.runtimeType}}',
+    );
 
     if (_factories.containsKey(viewType)) {
       return false;
@@ -119,17 +124,19 @@ class PlatformViewManager {
             ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;
-      late DomElement content;
+      final DomElement content;
 
-      if (factoryFunction is ParameterizedPlatformViewFactory) {
-        content = factoryFunction(viewId, params: params);
+      if (factoryFunction is ui_web.ParameterizedPlatformViewFactory) {
+        content = factoryFunction(viewId, params: params) as DomElement;
       } else {
-        content = (factoryFunction as PlatformViewFactory).call(viewId);
+        factoryFunction as ui_web.PlatformViewFactory;
+        content = factoryFunction(viewId) as DomElement;
       }
 
       _ensureContentCorrectlySized(content, viewType);
+      wrapper.append(content);
 
-      return wrapper..append(content);
+      return wrapper;
     });
   }
 
@@ -161,7 +168,7 @@ class PlatformViewManager {
     final DomElement slot = domDocument.createElement('slot')
       ..style.display = 'none'
       ..setAttribute('name', tombstoneName);
-    flutterViewEmbedder.glassPaneShadow!.append(slot);
+    flutterViewEmbedder.glassPaneShadow.append(slot);
     // Link the element to the new slot
     element.setAttribute('slot', tombstoneName);
     // Delete both the element, and the new slot

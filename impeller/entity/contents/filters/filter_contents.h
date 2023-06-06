@@ -9,10 +9,10 @@
 #include <variant>
 #include <vector>
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/sigma.h"
-#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -78,7 +78,9 @@ class FilterContents : public Contents {
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
       FilterInput::Ref input,
       const Matrix& matrix,
-      const SamplerDescriptor& desc);
+      const SamplerDescriptor& desc,
+      const Matrix& effect_transform,
+      bool is_subpass);
 
   static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
       FilterInput::Ref input,
@@ -100,12 +102,15 @@ class FilterContents : public Contents {
   ///         particular filter's implementation.
   void SetInputs(FilterInput::Vector inputs);
 
-  /// @brief  Screen space bounds to use for cropping the filter output.
-  void SetCoverageCrop(std::optional<Rect> coverage_crop);
-
   /// @brief  Sets the transform which gets appended to the effect of this
   ///         filter. Note that this is in addition to the entity's transform.
   void SetEffectTransform(Matrix effect_transform);
+
+  /// @brief  Create an Entity that renders this filter's output.
+  std::optional<Entity> GetEntity(
+      const ContentContext& renderer,
+      const Entity& entity,
+      const std::optional<Rect>& coverage_hint) const;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -116,8 +121,13 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
-                                           const Entity& entity) const override;
+  std::optional<Snapshot> RenderToSnapshot(
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true,
+      const std::string& label = "Filter Snapshot") const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
@@ -129,18 +139,18 @@ class FilterContents : public Contents {
       const Entity& entity,
       const Matrix& effect_transform) const;
 
-  /// @brief  Converts zero or more filter inputs into a new texture.
-  virtual std::optional<Snapshot> RenderFilter(
+  /// @brief  Converts zero or more filter inputs into a render instruction.
+  virtual std::optional<Entity> RenderFilter(
       const FilterInput::Vector& inputs,
       const ContentContext& renderer,
       const Entity& entity,
       const Matrix& effect_transform,
-      const Rect& coverage) const = 0;
+      const Rect& coverage,
+      const std::optional<Rect>& coverage_hint) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
-  std::optional<Rect> coverage_crop_;
   Matrix effect_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);

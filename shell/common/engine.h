@@ -309,7 +309,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
-         std::unique_ptr<RuntimeController> runtime_controller);
+         std::unique_ptr<RuntimeController> runtime_controller,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
@@ -364,7 +365,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -382,7 +384,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
       const fml::WeakPtr<IOManager>& io_manager,
-      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -686,6 +689,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetViewportMetrics(const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
+  /// @brief      Updates the display metrics for the currently running Flutter
+  ///             application.
+  ///
+  /// @param[in]  displays  A complete list of displays
+  ///
+  void SetDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a message.
   ///             This call originates in the platform view and has been
   ///             forwarded to the engine on the UI task runner here.
@@ -707,7 +718,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  trace_flow_id  The trace flow identifier associated with the
   ///                            pointer data packet. The engine uses this trace
   ///                            identifier to connect trace flows in the
-  ///                            timeline from the input event event to the
+  ///                            timeline from the input event to the
   ///                            frames generated due to those input events.
   ///                            These flows are tagged as "PointerEvent" in the
   ///                            timeline and allow grouping frames and input
@@ -722,12 +733,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             originates on the platform view and has been forwarded to the
   ///             engine here on the UI task runner by the shell.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int id,
+  void DispatchSemanticsAction(int node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -870,7 +881,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
@@ -889,10 +900,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
  private:
   // |RuntimeDelegate|
+  bool ImplicitViewEnabled() override;
+
+  // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::shared_ptr<flutter::LayerTree> layer_tree) override;
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,

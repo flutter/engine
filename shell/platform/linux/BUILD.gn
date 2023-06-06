@@ -158,6 +158,7 @@ source_set("flutter_linux_sources") {
   ]
 
   deps = [
+    "//flutter/shell/platform/common:common_cpp_enums",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/common:common_cpp_switches",
     "//flutter/shell/platform/embedder:embedder_headers",
@@ -212,6 +213,7 @@ executable("flutter_linux_unittests") {
     "fl_method_codec_test.cc",
     "fl_method_response_test.cc",
     "fl_pixel_buffer_texture_test.cc",
+    "fl_platform_plugin_test.cc",
     "fl_plugin_registrar_test.cc",
     "fl_scrolling_manager_test.cc",
     "fl_settings_plugin_test.cc",
@@ -256,6 +258,7 @@ executable("flutter_linux_unittests") {
     ":flutter_linux_gschemas",
     ":flutter_linux_sources",
     "//flutter/runtime:libdart",
+    "//flutter/shell/platform/common:common_cpp_enums",
     "//flutter/shell/platform/embedder:embedder_headers",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
@@ -276,11 +279,7 @@ copy("publish_headers_linux") {
 }
 
 zip_bundle("flutter_gtk") {
-  prefix = "$full_target_platform_name/"
-  if (flutter_runtime_mode != "debug" ||
-      (flutter_runtime_mode == "debug" && target_cpu != "x64")) {
-    prefix = "$full_target_platform_name-$flutter_runtime_mode/"
-  }
+  prefix = "$full_target_platform_name-$flutter_runtime_mode/"
   output = "${prefix}${full_target_platform_name}-flutter-gtk.zip"
   deps = [
     ":flutter_linux_gtk",

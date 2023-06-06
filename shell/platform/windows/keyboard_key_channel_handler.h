@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
@@ -38,9 +39,13 @@ class KeyboardKeyChannelHandler
                     bool was_down,
                     std::function<void(bool)> callback);
 
+  void SyncModifiersIfNeeded(int modifiers_state);
+
  private:
   // The Flutter system channel for key event messages.
   std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyboardKeyChannelHandler);
 };
 
 }  // namespace flutter

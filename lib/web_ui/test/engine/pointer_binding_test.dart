@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../keyboard_converter_test.dart';
+import 'keyboard_converter_test.dart';
 
 const int _kNoButtonChange = -1;
 const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
@@ -23,13 +23,15 @@ typedef _ContextTestBody<T> = void Function(T);
 void _testEach<T extends _BasicEventContext>(
   Iterable<T> contexts,
   String description,
-  _ContextTestBody<T> body,
+  _ContextTestBody<T> body, {
+    Object? skip,
+  }
 ) {
   for (final T context in contexts) {
     if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
-      });
+      }, skip: skip);
     }
   }
 }
@@ -40,7 +42,7 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final DomElement glassPane = flutterViewEmbedder.glassPaneElement!;
+  final DomElement flutterViewElement = flutterViewEmbedder.flutterViewElement;
   late double dpi;
 
   setUp(() {
@@ -280,10 +282,10 @@ void testMain() {
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(100));
-    expect(event.changedTouches![0].client.y, equals(101));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(100));
+    expect(event.changedTouches.first.client.y, equals(101));
 
     events = expectCorrectTypes(context.multiTouchDown(const <_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
@@ -291,20 +293,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchstart'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(100));
-    expect(events[0].changedTouches![0].client.x, equals(120));
-    expect(events[0].changedTouches![0].client.y, equals(121));
-    expect(events[0].changedTouches![1].identifier, equals(101));
-    expect(events[0].changedTouches![1].client.x, equals(122));
-    expect(events[0].changedTouches![1].client.y, equals(123));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(100));
+    expect(events[0].changedTouches.first.client.x, equals(120));
+    expect(events[0].changedTouches.first.client.y, equals(121));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(101));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(122));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(123));
 
     event = expectCorrectType(context.primaryMove(clientX: 200, clientY: 201));
     expect(event.type, equals('touchmove'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(200));
-    expect(event.changedTouches![0].client.y, equals(201));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(200));
+    expect(event.changedTouches.first.client.y, equals(201));
 
     events = expectCorrectTypes(context.multiTouchMove(const <_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
@@ -312,20 +314,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchmove'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(102));
-    expect(events[0].changedTouches![0].client.x, equals(220));
-    expect(events[0].changedTouches![0].client.y, equals(221));
-    expect(events[0].changedTouches![1].identifier, equals(103));
-    expect(events[0].changedTouches![1].client.x, equals(222));
-    expect(events[0].changedTouches![1].client.y, equals(223));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(102));
+    expect(events[0].changedTouches.first.client.x, equals(220));
+    expect(events[0].changedTouches.first.client.y, equals(221));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(103));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(222));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(223));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('touchend'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(300));
-    expect(event.changedTouches![0].client.y, equals(301));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(300));
+    expect(event.changedTouches.first.client.y, equals(301));
 
     events = expectCorrectTypes(context.multiTouchUp(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -333,13 +335,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchend'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     events = expectCorrectTypes(context.multiTouchCancel(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -347,13 +349,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchcancel'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     context.pressAllModifiers();
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
@@ -388,6 +390,8 @@ void testMain() {
     expect(event.buttons, equals(1));
     expect(event.client.x, equals(100));
     expect(event.client.y, equals(101));
+    expect(event.offset.x, equals(100));
+    expect(event.offset.y, equals(101));
 
     event = expectCorrectType(
         context.mouseDown(clientX: 110, clientY: 111, button: 2, buttons: 2));
@@ -479,7 +483,7 @@ void testMain() {
       _MouseEventContext(),
       _TouchEventContext(),
     ],
-    'can receive pointer events on the glass pane',
+    'can receive pointer events on the app root',
     (_BasicEventContext context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       ui.PointerDataPacket? receivedPacket;
@@ -487,7 +491,7 @@ void testMain() {
         receivedPacket = packet;
       };
 
-      glassPane.dispatchEvent(context.primaryDown());
+      flutterViewElement.dispatchEvent(context.primaryDown());
 
       expect(receivedPacket, isNotNull);
       expect(receivedPacket!.data[0].buttons, equals(1));
@@ -508,7 +512,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.primaryDown());
+      flutterViewElement.dispatchEvent(context.primaryDown());
 
       expect(packets, hasLength(1));
       expect(packets.single.data, hasLength(2));
@@ -540,9 +544,9 @@ void testMain() {
         final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
-        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 1);
         expectKeyData(keyDataList.last,
           type: ui.KeyEventType.down,
@@ -590,11 +594,11 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
-        glassPane.dispatchEvent(context.primaryDown());
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 0);
       }
 
@@ -610,11 +614,11 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), true);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
-        glassPane.dispatchEvent(context.primaryDown());
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 0);
       }
 
@@ -660,11 +664,11 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
-        glassPane.dispatchEvent(context.primaryDown());
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 1);
         expectKeyData(keyDataList.last,
           type: ui.KeyEventType.up,
@@ -673,7 +677,7 @@ void testMain() {
           character: null,
           synthesized: true,
         );
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
       }
 
       // Should synthesize a modifier right key up event when DOM event indicates
@@ -689,11 +693,11 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), true);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
-        glassPane.dispatchEvent(context.primaryDown());
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 1);
         expectKeyData(keyDataList.last,
           type: ui.KeyEventType.up,
@@ -702,7 +706,7 @@ void testMain() {
           character: null,
           synthesized: true,
         );
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
       }
 
       context.altPressed = false;
@@ -741,11 +745,11 @@ void testMain() {
         final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
-        glassPane.dispatchEvent(context.primaryDown());
+        flutterViewElement.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 0);
       }
 
@@ -779,10 +783,10 @@ void testMain() {
 
       // Simulate pressing `AltGr` key.
       keyboardConverter.handleEvent(keyDownEvent('AltRight', 'AltGraph'));
-      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), true);
+      expect(keyboardConverter.keyIsPressed(physicalAltRight), true);
       keyDataList.clear(); // Remove key data generated by handleEvent.
 
-      glassPane.dispatchEvent(context.primaryDown());
+      flutterViewElement.dispatchEvent(context.primaryDown());
       expect(keyDataList.length, 1);
       expectKeyData(keyDataList.last,
         type: ui.KeyEventType.up,
@@ -791,7 +795,7 @@ void testMain() {
         character: null,
         synthesized: true,
       );
-      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), false);
+      expect(keyboardConverter.keyIsPressed(physicalAltRight), false);
     },
   );
 
@@ -810,7 +814,7 @@ void testMain() {
 
       final DomElement semanticsPlaceholder =
           createDomElement('flt-semantics-placeholder');
-      glassPane.append(semanticsPlaceholder);
+      flutterViewElement.append(semanticsPlaceholder);
 
       // Press on the semantics placeholder.
       semanticsPlaceholder.dispatchEvent(context.primaryDown(
@@ -849,7 +853,7 @@ void testMain() {
       packets.clear();
 
       // Release the pointer on the semantics placeholder.
-      domWindow.dispatchEvent(context.primaryUp(
+      flutterViewElement.dispatchEvent(context.primaryUp(
         clientX: 100.0,
         clientY: 200.0,
       ));
@@ -865,6 +869,7 @@ void testMain() {
 
       semanticsPlaceholder.remove();
     },
+    skip: isFirefox, // https://bugzilla.mozilla.org/show_bug.cgi?id=1804190
   );
 
   // BUTTONED ADAPTERS
@@ -882,7 +887,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.hover());
+      flutterViewElement.dispatchEvent(context.hover());
 
       expect(packets, hasLength(1));
       expect(packets.single.data, hasLength(2));
@@ -906,7 +911,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.primaryDown(
+      flutterViewElement.dispatchEvent(context.primaryDown(
         clientX: 10.0,
         clientY: 10.0,
       ));
@@ -918,7 +923,7 @@ void testMain() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       packets.clear();
 
-      glassPane.dispatchEvent(context.primaryDown(
+      flutterViewElement.dispatchEvent(context.primaryDown(
         clientX: 20.0,
         clientY: 20.0,
       ));
@@ -943,7 +948,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.wheel(
+      flutterViewElement.dispatchEvent(context.wheel(
         buttons: 0,
         clientX: 10,
         clientY: 10,
@@ -951,7 +956,7 @@ void testMain() {
         deltaY: 10,
       ));
 
-      glassPane.dispatchEvent(context.wheel(
+      flutterViewElement.dispatchEvent(context.wheel(
         buttons: 0,
         clientX: 20,
         clientY: 50,
@@ -959,14 +964,14 @@ void testMain() {
         deltaY: 10,
       ));
 
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 0,
         buttons: 1,
         clientX: 20.0,
         clientY: 50.0,
       ));
 
-      glassPane.dispatchEvent(context.wheel(
+      flutterViewElement.dispatchEvent(context.wheel(
         buttons: 1,
         clientX: 30,
         clientY: 60,
@@ -1068,7 +1073,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.wheel(
+      flutterViewElement.dispatchEvent(context.wheel(
         buttons: 0,
         clientX: 10,
         clientY: 10,
@@ -1117,7 +1122,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.wheel(
+      flutterViewElement.dispatchEvent(context.wheel(
         buttons: 0,
         clientX: 10,
         clientY: 10,
@@ -1150,6 +1155,357 @@ void testMain() {
   _testEach<_ButtonedEventMixin>(
     <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'does set pointer device kind based on delta precision and wheelDelta',
+    (_ButtonedEventMixin context) {
+      if (isFirefox) {
+        // Firefox does not support trackpad events, as they cannot be
+        // disambiguated from smoothed mouse wheel events.
+        return;
+      }
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 119,
+        deltaY: 119,
+        wheelDeltaX: -357,
+        wheelDeltaY: -357,
+        timeStamp: 0,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 120,
+        deltaY: 120,
+        wheelDeltaX: -360,
+        wheelDeltaY: -360,
+        timeStamp: 10,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 120,
+        deltaY: 120,
+        wheelDeltaX: -360,
+        wheelDeltaY: -360,
+        timeStamp: 20,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 119,
+        deltaY: 119,
+        wheelDeltaX: -357,
+        wheelDeltaY: -357,
+        timeStamp: 1000,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: -120,
+        deltaY: -120,
+        wheelDeltaX: 360,
+        wheelDeltaY: 360,
+        timeStamp: 1010,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: -120,
+        wheelDeltaX: 0,
+        wheelDeltaY: 360,
+        timeStamp: 2000,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 40,
+        wheelDeltaX: 0,
+        wheelDeltaY: -360,
+        timeStamp: 3000,
+      ));
+
+      expect(packets, hasLength(7));
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      // Because the delta is not in increments of 120 and has matching wheelDelta,
+      // it will be a trackpad event.
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[0].data[1].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[0].data[1].device, equals(-2));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaX, equals(119.0));
+      expect(packets[0].data[1].scrollDeltaY, equals(119.0));
+
+      // Because the delta is in increments of 120, but is similar to the
+      // previous event, it will be a trackpad event.
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[1].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[1].data[0].device, equals(-2));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, isFalse);
+      expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[1].data[0].scrollDeltaX, equals(120.0));
+      expect(packets[1].data[0].scrollDeltaY, equals(120.0));
+
+      // Because the delta is in increments of 120, but is again similar to the
+      // previous event, it will be a trackpad event.
+      expect(packets[2].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[2].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[2].data[0].device, equals(-2));
+      expect(packets[2].data[0].pointerIdentifier, equals(0));
+      expect(packets[2].data[0].synthesized, isFalse);
+      expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaX, equals(120.0));
+      expect(packets[2].data[0].scrollDeltaY, equals(120.0));
+
+      // Because the delta is not in increments of 120 and has matching wheelDelta,
+      // it will be a trackpad event.
+      expect(packets[3].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[3].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[3].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[3].data[0].device, equals(-2));
+      expect(packets[3].data[0].pointerIdentifier, equals(0));
+      expect(packets[3].data[0].synthesized, isFalse);
+      expect(packets[3].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[3].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[3].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[3].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[3].data[0].scrollDeltaX, equals(119.0));
+      expect(packets[3].data[0].scrollDeltaY, equals(119.0));
+
+      // Because the delta is in increments of 120, and is not similar to the
+      // previous event, but occurred soon after the previous event, it will be
+      // a trackpad event.
+      expect(packets[4].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[4].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[4].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[4].data[0].device, equals(-2));
+      expect(packets[4].data[0].pointerIdentifier, equals(0));
+      expect(packets[4].data[0].synthesized, isFalse);
+      expect(packets[4].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[4].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[4].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[4].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[4].data[0].scrollDeltaX, equals(-120.0));
+      expect(packets[4].data[0].scrollDeltaY, equals(-120.0));
+
+      // An add will be synthesized.
+      expect(packets[5].data, hasLength(2));
+      expect(packets[5].data[0].change, equals(ui.PointerChange.add));
+      expect(
+          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.none));
+      expect(
+          packets[5].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[0].device, equals(-1));
+      expect(packets[5].data[0].pointerIdentifier, equals(0));
+      expect(packets[5].data[0].synthesized, isTrue);
+      expect(packets[5].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[5].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[5].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[5].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[5].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[5].data[0].scrollDeltaY, equals(-120.0));
+      // Because the delta is in increments of 120, and is not similar to
+      // the previous event, and occurred long after the previous event, it will
+      // be a mouse event.
+      expect(packets[5].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[5].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[5].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[1].device, equals(-1));
+      expect(packets[5].data[1].pointerIdentifier, equals(0));
+      expect(packets[5].data[1].synthesized, isFalse);
+      expect(packets[5].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[5].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaY, equals(-120.0));
+
+      // Because the delta is not in increments of 120 and has non-matching
+      // wheelDelta, it will be a mouse event.
+      expect(packets[6].data, hasLength(1));
+      expect(packets[6].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[6].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[6].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[6].data[0].device, equals(-1));
+      expect(packets[6].data[0].pointerIdentifier, equals(0));
+      expect(packets[6].data[0].synthesized, isFalse);
+      expect(packets[6].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[6].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[6].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[6].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[6].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[6].data[0].scrollDeltaY, equals(40.0));
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'does choose scroll vs scale based on ctrlKey',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 120,
+      ));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 100,
+        ctrlKey: true,
+      ));
+
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      KeyboardBinding.instance?.converter.handleEvent(keyDownEvent('ControlLeft', 'Control', kCtrl));
+
+      flutterViewElement.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 240,
+        ctrlKey: true,
+      ));
+
+      KeyboardBinding.instance?.converter.handleEvent(keyUpEvent('ControlLeft', 'Control', kCtrl));
+
+      expect(packets, hasLength(3));
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      // Because ctrlKey is not pressed, it will be a scroll.
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[0].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaY, equals(120.0));
+
+      // Because ctrlKey is pressed, it will be a scale.
+      expect(packets[1].data, hasLength(1));
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scale));
+      expect(
+          packets[1].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, isFalse);
+      expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[1].data[0].scale, closeTo(0.60653065971, 1e-10)); // math.exp(-100/200)
+
+      // [macOS only]: Because ctrlKey is true, but the key is pressed physically, it will be a scroll.
+      expect(packets[2].data, hasLength(1));
+      expect(packets[2].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[2].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[2].data[0].pointerIdentifier, equals(0));
+      expect(packets[2].data[0].synthesized, isFalse);
+      expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaY, equals(240.0));
+
+      debugOperatingSystemOverride = null;
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
@@ -1160,7 +1516,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.hover(
+      flutterViewElement.dispatchEvent(context.hover(
         clientX: 10.0,
         clientY: 10.0,
       ));
@@ -1183,7 +1539,7 @@ void testMain() {
       expect(packets[0].data[1].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      glassPane.dispatchEvent(context.hover(
+      flutterViewElement.dispatchEvent(context.hover(
         clientX: 20.0,
         clientY: 20.0,
       ));
@@ -1198,7 +1554,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(10.0 * dpi));
       packets.clear();
 
-      glassPane.dispatchEvent(context.primaryDown(
+      flutterViewElement.dispatchEvent(context.primaryDown(
         clientX: 20.0,
         clientY: 20.0,
       ));
@@ -1213,7 +1569,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      glassPane.dispatchEvent(context.primaryMove(
+      flutterViewElement.dispatchEvent(context.primaryMove(
         clientX: 40.0,
         clientY: 30.0,
       ));
@@ -1228,7 +1584,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(10.0 * dpi));
       packets.clear();
 
-      glassPane.dispatchEvent(context.primaryUp(
+      flutterViewElement.dispatchEvent(context.primaryUp(
         clientX: 40.0,
         clientY: 30.0,
       ));
@@ -1243,7 +1599,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      glassPane.dispatchEvent(context.hover(
+      flutterViewElement.dispatchEvent(context.hover(
         clientX: 20.0,
         clientY: 10.0,
       ));
@@ -1258,7 +1614,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(-20.0 * dpi));
       packets.clear();
 
-      glassPane.dispatchEvent(context.primaryDown(
+      flutterViewElement.dispatchEvent(context.primaryDown(
         clientX: 20.0,
         clientY: 10.0,
       ));
@@ -1290,7 +1646,7 @@ void testMain() {
 
       // Add and hover
 
-      glassPane.dispatchEvent(context.hover(
+      flutterViewElement.dispatchEvent(context.hover(
         clientX: 10,
         clientY: 11,
       ));
@@ -1309,7 +1665,7 @@ void testMain() {
       expect(packets[0].data[1].buttons, equals(0));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 0,
         buttons: 1,
         clientX: 10.0,
@@ -1324,7 +1680,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 1,
         clientX: 20.0,
@@ -1339,7 +1695,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 0,
         clientX: 20.0,
         clientY: 21.0,
@@ -1354,7 +1710,7 @@ void testMain() {
       packets.clear();
 
       // Drag with secondary button
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 20.0,
@@ -1369,7 +1725,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 2,
         clientX: 30.0,
@@ -1384,7 +1740,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 30.0,
         clientY: 31.0,
@@ -1399,7 +1755,7 @@ void testMain() {
       packets.clear();
 
       // Drag with middle button
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 1,
         buttons: 4,
         clientX: 30.0,
@@ -1414,7 +1770,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(4));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 4,
         clientX: 40.0,
@@ -1429,7 +1785,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(4));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 1,
         clientX: 40.0,
         clientY: 41.0,
@@ -1445,7 +1801,7 @@ void testMain() {
 
       // Leave
 
-      glassPane.dispatchEvent(context.mouseLeave(
+      flutterViewElement.dispatchEvent(context.mouseLeave(
         buttons: 1,
         clientX: 1000.0,
         clientY: 2000.0,
@@ -1453,7 +1809,7 @@ void testMain() {
       expect(packets, isEmpty);
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseLeave(
+      flutterViewElement.dispatchEvent(context.mouseLeave(
         buttons: 0,
         clientX: 1000.0,
         clientY: 2000.0,
@@ -1483,7 +1839,7 @@ void testMain() {
       };
 
       // Press LMB.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 0,
         buttons: 1,
       ));
@@ -1498,7 +1854,7 @@ void testMain() {
       packets.clear();
 
       // Press MMB.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: 1,
         buttons: 5,
       ));
@@ -1510,7 +1866,7 @@ void testMain() {
       packets.clear();
 
       // Release LMB.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: 0,
         buttons: 4,
       ));
@@ -1522,7 +1878,7 @@ void testMain() {
       packets.clear();
 
       // Release MMB.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 1,
       ));
       expect(packets, hasLength(1));
@@ -1550,7 +1906,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10,
@@ -1571,7 +1927,7 @@ void testMain() {
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 2,
         clientX: 20.0,
@@ -1586,7 +1942,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 2,
         clientX: 20.0,
@@ -1601,7 +1957,7 @@ void testMain() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 20.0,
         clientY: 21.0,
@@ -1637,7 +1993,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
       ));
@@ -1654,7 +2010,7 @@ void testMain() {
       // Press LMB. The event will have "button: -1" here, despite the change
       // in "buttons", probably because the "press" gesture was absorbed by
       // dismissing the context menu.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 3,
       ));
@@ -1666,7 +2022,7 @@ void testMain() {
       packets.clear();
 
       // Release LMB.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: 0,
         buttons: 2,
       ));
@@ -1678,7 +2034,7 @@ void testMain() {
       packets.clear();
 
       // Release RMB.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
       ));
       expect(packets, hasLength(1));
@@ -1710,7 +2066,7 @@ void testMain() {
 
       // Press RMB popping up the context menu, then release by LMB down and up.
       // Browser won't send up event in that case.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
       ));
@@ -1725,7 +2081,7 @@ void testMain() {
       packets.clear();
 
       // User now hovers.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: _kNoButtonChange,
         buttons: 0,
       ));
@@ -1759,7 +2115,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseMove(
+      flutterViewElement.dispatchEvent(context.mouseMove(
         button: -1,
         buttons: 2,
         clientX: 10.0,
@@ -1796,7 +2152,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10.0,
@@ -1815,7 +2171,7 @@ void testMain() {
       // Move the mouse. The event will have "buttons: 0" because RMB was
       // released but the browser didn't send a pointerup/mouseup event.
       // The hover is also triggered at a different position.
-      glassPane.dispatchEvent(context.hover(
+      flutterViewElement.dispatchEvent(context.hover(
         clientX: 20.0,
         clientY: 20.0,
       ));
@@ -1859,7 +2215,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10.0,
@@ -1876,7 +2232,7 @@ void testMain() {
       packets.clear();
 
       // Press LMB.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 0,
         buttons: 3,
         clientX: 20.0,
@@ -1890,7 +2246,7 @@ void testMain() {
       packets.clear();
 
       // Release LMB.
-      glassPane.dispatchEvent(context.primaryUp(
+      flutterViewElement.dispatchEvent(context.primaryUp(
         clientX: 20.0,
         clientY: 20.0,
       ));
@@ -1922,7 +2278,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10.0,
@@ -1940,7 +2296,7 @@ void testMain() {
       // Press RMB again. In Chrome, when RMB is clicked again while the
       // context menu is still active, it sends a pointerdown/mousedown event
       // with "buttons:0". We convert this to pointer up, pointer down.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 0,
         clientX: 20.0,
@@ -1962,7 +2318,7 @@ void testMain() {
       packets.clear();
 
       // Release RMB.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 20.0,
         clientY: 20.0,
@@ -1997,7 +2353,7 @@ void testMain() {
       };
 
       // Press RMB, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10.0,
@@ -2013,7 +2369,7 @@ void testMain() {
       packets.clear();
 
       // RMB up.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 10.0,
         clientY: 10.0,
@@ -2028,7 +2384,7 @@ void testMain() {
       // Press RMB again. In Chrome, when RMB is clicked again while the
       // context menu is still active, it sends a pointerdown/mousedown event
       // with "buttons:0".
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 0,
         clientX: 20.0,
@@ -2045,7 +2401,7 @@ void testMain() {
       packets.clear();
 
       // Release RMB.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 20.0,
         clientY: 20.0,
@@ -2083,7 +2439,7 @@ void testMain() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 10.0,
@@ -2099,7 +2455,7 @@ void testMain() {
       packets.clear();
 
       // Release RMB.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 10.0,
         clientY: 10.0,
@@ -2111,7 +2467,7 @@ void testMain() {
       packets.clear();
 
       // Press RMB again, in a different location.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 2,
         clientX: 20.0,
@@ -2149,7 +2505,7 @@ void testMain() {
       };
 
       // Press and hold LMB.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 0,
         buttons: 1,
         clientX: 5.0,
@@ -2168,7 +2524,7 @@ void testMain() {
 
       // Press and hold RMB. The pointer is already down, so we only send a move
       // to update the position of the pointer.
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         button: 2,
         buttons: 3,
         clientX: 20.0,
@@ -2184,7 +2540,7 @@ void testMain() {
 
       // Release LMB. The pointer is still down (RMB), so we only send a move to
       // update the position of the pointer.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 0,
         buttons: 2,
         clientX: 30.0,
@@ -2199,7 +2555,7 @@ void testMain() {
       packets.clear();
 
       // Release RMB. There's no more buttons down, so we send an up event.
-      glassPane.dispatchEvent(context.mouseUp(
+      flutterViewElement.dispatchEvent(context.mouseUp(
         button: 2,
         buttons: 0,
         clientX: 30.0,
@@ -2218,7 +2574,7 @@ void testMain() {
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
-    'correctly detects up event outside of glasspane',
+    'correctly detects up event outside of flutterViewElement',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen when the up event occurs while the mouse is outside the
@@ -2230,26 +2586,26 @@ void testMain() {
       };
 
       // Press and drag around.
-      glassPane.dispatchEvent(context.primaryDown(
+      flutterViewElement.dispatchEvent(context.primaryDown(
         clientX: 10.0,
         clientY: 10.0,
       ));
-      glassPane.dispatchEvent(context.primaryMove(
+      flutterViewElement.dispatchEvent(context.primaryMove(
         clientX: 12.0,
         clientY: 10.0,
       ));
-      glassPane.dispatchEvent(context.primaryMove(
+      flutterViewElement.dispatchEvent(context.primaryMove(
         clientX: 15.0,
         clientY: 10.0,
       ));
-      glassPane.dispatchEvent(context.primaryMove(
+      flutterViewElement.dispatchEvent(context.primaryMove(
         clientX: 20.0,
         clientY: 10.0,
       ));
       packets.clear();
 
-      // Move outside the glasspane.
-      domWindow.dispatchEvent(context.primaryMove(
+      // Move outside the flutterViewElement.
+      flutterViewElement.dispatchEvent(context.primaryMove(
         clientX: 900.0,
         clientY: 1900.0,
       ));
@@ -2260,8 +2616,8 @@ void testMain() {
       expect(packets[0].data[0].physicalY, equals(1900.0 * dpi));
       packets.clear();
 
-      // Release outside the glasspane.
-      domWindow.dispatchEvent(context.primaryUp(
+      // Release outside the flutterViewElement.
+      flutterViewElement.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
         clientY: 2000.0,
       ));
@@ -2297,7 +2653,7 @@ void testMain() {
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
         _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       if (context.runtimeType == _PointerEventContext) {
         expect(packets.length, 2);
         expect(packets[0].data.length, 2);
@@ -2344,7 +2700,7 @@ void testMain() {
       context.multiTouchMove(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       if (context.runtimeType == _PointerEventContext) {
         expect(packets.length, 2);
         expect(packets[0].data.length, 1);
@@ -2378,7 +2734,7 @@ void testMain() {
       // One pointer up
       context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -2401,7 +2757,7 @@ void testMain() {
       // Another pointer up
       context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -2425,7 +2781,7 @@ void testMain() {
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 500, clientY: 501),
         _TouchDetails(pointer: 2, clientX: 600, clientY: 601),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       if (context.runtimeType == _PointerEventContext) {
         expect(packets.length, 2);
         expect(packets[0].data.length, 2);
@@ -2487,13 +2843,13 @@ void testMain() {
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
         _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       packets.clear(); // Down event is tested in other tests.
 
       // One pointer cancel
       context.multiTouchCancel(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets.length, 1);
       expect(packets[0].data.length, 2);
       expect(packets[0].data[0].change, equals(ui.PointerChange.cancel));
@@ -2531,7 +2887,7 @@ void testMain() {
 
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 100, clientY: 101),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       // An add will be synthesized.
       expect(packets[0].data, hasLength(2));
@@ -2544,7 +2900,7 @@ void testMain() {
 
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 200, clientY: 202),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       // An add will be synthesized.
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
@@ -2571,12 +2927,12 @@ void testMain() {
 
       context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 23, clientX: 200, clientY: 202),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(0));
 
       context.multiTouchCancel(const <_TouchDetails>[
         _TouchDetails(pointer: 24, clientX: 200, clientY: 202),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(0));
     },
   );
@@ -2599,7 +2955,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.mouseDown(
+      flutterViewElement.dispatchEvent(context.mouseDown(
         pointerId: 12,
         button: 0,
         buttons: 1,
@@ -2617,7 +2973,7 @@ void testMain() {
 
       expect(
         () {
-          glassPane.dispatchEvent(context.mouseUp(
+          flutterViewElement.dispatchEvent(context.mouseUp(
             pointerId: 41,
             button: 0,
             buttons: 0,
@@ -2652,7 +3008,7 @@ void testMain() {
 
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 20, clientY: 20),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -2674,7 +3030,7 @@ void testMain() {
 
       context.multiTouchMove(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 40, clientY: 30),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -2688,7 +3044,7 @@ void testMain() {
 
       context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 40, clientY: 30),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -2710,7 +3066,7 @@ void testMain() {
 
       context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 20, clientY: 10),
-      ]).forEach(glassPane.dispatchEvent);
+      ]).forEach(flutterViewElement.dispatchEvent);
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -2854,22 +3210,37 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? clientY,
     required double? deltaX,
     required double? deltaY,
+    double? wheelDeltaX,
+    double? wheelDeltaY,
+    int? timeStamp,
+    bool ctrlKey = false,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      'wheel',
-      <String, dynamic>{
-        'buttons': buttons,
-        'clientX': clientX,
-        'clientY': clientY,
-        'deltaX': deltaX,
-        'deltaY': deltaY,
-      }
-    ];
-    return js_util.callConstructor<DomEvent>(
-      jsWheelEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    final DomEvent event = createDomWheelEvent('wheel', <String, Object>{
+        if (buttons != null) 'buttons': buttons,
+        if (clientX != null) 'clientX': clientX,
+        if (clientY != null) 'clientY': clientY,
+        if (deltaX != null) 'deltaX': deltaX,
+        if (deltaY != null) 'deltaY': deltaY,
+        if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
+        if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
+        'ctrlKey': ctrlKey,
+    });
+    // timeStamp can't be set in the constructor, need to override the getter.
+    if (timeStamp != null) {
+      js_util.callMethod(
+        objectConstructor,
+        'defineProperty',
+        <dynamic>[
+          event,
+          'timeStamp',
+          js_util.jsify(<String, dynamic>{
+            'value': timeStamp,
+            'configurable': true
+          })
+        ]
+      );
+    }
+    return event;
   }
 }
 
@@ -3102,25 +3473,17 @@ class _MouseEventContext extends _BasicEventContext
     double? clientX,
     double? clientY,
   }) {
-    final Function jsMouseEvent =
-        js_util.getProperty<Function>(domWindow, 'MouseEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      type,
-      <String, dynamic>{
-        'buttons': buttons,
-        'button': button,
-        'clientX': clientX,
-        'clientY': clientY,
-        'altKey': altPressed,
-        'ctrlKey': ctrlPressed,
-        'metaKey': metaPressed,
-        'shiftKey': shiftPressed,
-      }
-    ];
-    return js_util.callConstructor<DomMouseEvent>(
-      jsMouseEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    return createDomMouseEvent(type, <String, Object>{
+      if (buttons != null) 'buttons': buttons,
+      if (button != null) 'button': button,
+      if (clientX != null) 'clientX': clientX,
+      if (clientY != null) 'clientY': clientY,
+      'bubbles': true,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shiftPressed,
+    });
   }
 }
 
@@ -3325,6 +3688,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointerup', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,

@@ -11,9 +11,6 @@
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
 namespace testing {
@@ -57,7 +54,7 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
   const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer =
       std::make_shared<BackdropFilterLayer>(nullptr, DlBlendMode::kSrcOver);
@@ -72,27 +69,42 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, SkPaint(),
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  parent->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)parent::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(child_bounds, DlCanvas::ClipOp::kIntersect,
+                                false);
+      /* (BackdropFilter)layer::Paint */ {
+        expected_builder.Save();
+        {
+          expected_builder.SaveLayer(&child_bounds, nullptr, nullptr);
+          {
+            /* mock_layer::Paint */ {
+              expected_builder.DrawPath(child_path, child_paint);
+            }
+          }
+          expected_builder.Restore();
+        }
+        expected_builder.Restore();
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(BackdropFilterLayerTest, SimpleFilter) {
   const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  auto layer_filter = SkImageFilters::Shader(
-      SkShaders::Color(SkColors::kMagenta, /*colorSpace=*/nullptr));
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
+  auto layer_filter =
+      std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<BackdropFilterLayer>(
-      DlImageFilter::From(layer_filter), DlBlendMode::kSrcOver);
+  auto layer = std::make_shared<BackdropFilterLayer>(layer_filter,
+                                                     DlBlendMode::kSrcOver);
   layer->Add(mock_layer);
   auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
   parent->Add(layer);
@@ -104,27 +116,43 @@ TEST_F(BackdropFilterLayerTest, SimpleFilter) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, SkPaint(),
-                                                    layer_filter, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  parent->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)parent::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(child_bounds, DlCanvas::ClipOp::kIntersect,
+                                false);
+      /* (BackdropFilter)layer::Paint */ {
+        expected_builder.Save();
+        {
+          expected_builder.SaveLayer(&child_bounds, nullptr,
+                                     layer_filter.get());
+          {
+            /* mock_layer::Paint */ {
+              expected_builder.DrawPath(child_path, child_paint);
+            }
+          }
+          expected_builder.Restore();
+        }
+        expected_builder.Restore();
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
   const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  auto layer_filter = SkImageFilters::Shader(
-      SkShaders::Color(SkColors::kMagenta, /*colorSpace=*/nullptr));
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
+  auto layer_filter =
+      std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<BackdropFilterLayer>(
-      DlImageFilter::From(layer_filter), DlBlendMode::kSrc);
+  auto layer =
+      std::make_shared<BackdropFilterLayer>(layer_filter, DlBlendMode::kSrc);
   layer->Add(mock_layer);
   auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
   parent->Add(layer);
@@ -136,18 +164,35 @@ TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
-  SkPaint filter_paint = SkPaint();
-  filter_paint.setBlendMode(SkBlendMode::kSrc);
+  DlPaint filter_paint = DlPaint();
+  filter_paint.setBlendMode(DlBlendMode::kSrc);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                    layer_filter, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  parent->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)parent::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(child_bounds, DlCanvas::ClipOp::kIntersect,
+                                false);
+      /* (BackdropFilter)layer::Paint */ {
+        expected_builder.Save();
+        {
+          DlPaint save_paint = DlPaint().setBlendMode(DlBlendMode::kSrc);
+          expected_builder.SaveLayer(&child_bounds, &save_paint,
+                                     layer_filter.get());
+          {
+            /* mock_layer::Paint */ {
+              expected_builder.DrawPath(child_path, child_paint);
+            }
+          }
+          expected_builder.Restore();
+        }
+        expected_builder.Restore();
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(BackdropFilterLayerTest, MultipleChildren) {
@@ -156,16 +201,16 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   const SkPath child_path1 = SkPath().addRect(child_bounds);
   const SkPath child_path2 =
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
-  const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
-  const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
+  const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
+  const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  auto layer_filter = SkImageFilters::Shader(
-      SkShaders::Color(SkColors::kMagenta, /*colorSpace=*/nullptr));
+  auto layer_filter =
+      std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer = std::make_shared<BackdropFilterLayer>(
-      DlImageFilter::From(layer_filter), DlBlendMode::kSrcOver);
+  auto layer = std::make_shared<BackdropFilterLayer>(layer_filter,
+                                                     DlBlendMode::kSrcOver);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
   auto parent =
@@ -184,17 +229,34 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                    layer_filter, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  parent->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)parent::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(children_bounds, DlCanvas::ClipOp::kIntersect,
+                                false);
+      /* (BackdropFilter)layer::Paint */ {
+        expected_builder.Save();
+        {
+          expected_builder.SaveLayer(&children_bounds, nullptr,
+                                     layer_filter.get());
+          {
+            /* mock_layer1::Paint */ {
+              expected_builder.DrawPath(child_path1, child_paint1);
+            }
+            /* mock_layer2::Paint */ {
+              expected_builder.DrawPath(child_path2, child_paint2);
+            }
+          }
+          expected_builder.Restore();
+        }
+        expected_builder.Restore();
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(BackdropFilterLayerTest, Nested) {
@@ -203,20 +265,20 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   const SkPath child_path1 = SkPath().addRect(child_bounds);
   const SkPath child_path2 =
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
-  const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
-  const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
+  const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
+  const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  auto layer_filter1 = SkImageFilters::Shader(
-      SkShaders::Color(SkColors::kMagenta, /*colorSpace=*/nullptr));
-  auto layer_filter2 = SkImageFilters::Shader(
-      SkShaders::Color(SkColors::kDkGray, /*colorSpace=*/nullptr));
+  auto layer_filter1 =
+      std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
+  auto layer_filter2 =
+      std::make_shared<DlBlurImageFilter>(2.7, 3.1, DlTileMode::kDecal);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer1 = std::make_shared<BackdropFilterLayer>(
-      DlImageFilter::From(layer_filter1), DlBlendMode::kSrcOver);
-  auto layer2 = std::make_shared<BackdropFilterLayer>(
-      DlImageFilter::From(layer_filter2), DlBlendMode::kSrcOver);
+  auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter1,
+                                                      DlBlendMode::kSrcOver);
+  auto layer2 = std::make_shared<BackdropFilterLayer>(layer_filter2,
+                                                      DlBlendMode::kSrcOver);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
@@ -238,21 +300,45 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-  layer1->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                    layer_filter1, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                    layer_filter2, 2}},
-                   MockCanvas::DrawCall{
-                       2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  parent->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (ClipRect)parent::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.ClipRect(children_bounds, DlCanvas::ClipOp::kIntersect,
+                                false);
+      /* (BackdropFilter)layer1::Paint */ {
+        expected_builder.Save();
+        {
+          expected_builder.SaveLayer(&children_bounds, nullptr,
+                                     layer_filter1.get());
+          {
+            /* mock_layer1::Paint */ {
+              expected_builder.DrawPath(child_path1, child_paint1);
+            }
+            /* (BackdropFilter)layer2::Paint */ {
+              expected_builder.Save();
+              {
+                expected_builder.SaveLayer(&children_bounds, nullptr,
+                                           layer_filter2.get());
+                {
+                  /* mock_layer2::Paint */ {
+                    expected_builder.DrawPath(child_path2, child_paint2);
+                  }
+                }
+                expected_builder.Restore();
+              }
+              expected_builder.Restore();
+            }
+          }
+          expected_builder.Restore();
+        }
+        expected_builder.Restore();
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(BackdropFilterLayerTest, Readback) {
@@ -281,7 +367,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
   EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter blocks child with readback
-  auto mock_layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
+  auto mock_layer = std::make_shared<MockLayer>(SkPath(), DlPaint());
   mock_layer->set_fake_reads_surface(true);
   layer2->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
@@ -292,7 +378,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
 TEST_F(BackdropFilterLayerTest, OpacityInheritance) {
   auto backdrop_filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   const SkPath mock_path = SkPath().addRect(SkRect::MakeLTRB(0, 0, 10, 10));
-  const SkPaint mock_paint = SkPaint(SkColors::kRed);
+  const DlPaint mock_paint = DlPaint(DlColor::kRed());
   const SkRect clip_rect = SkRect::MakeLTRB(0, 0, 100, 100);
 
   auto clip = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
@@ -310,27 +396,27 @@ TEST_F(BackdropFilterLayerTest, OpacityInheritance) {
 
   DisplayListBuilder expected_builder(clip_rect);
   /* ClipRectLayer::Paint */ {
-    expected_builder.save();
+    expected_builder.Save();
     {
-      expected_builder.clipRect(clip_rect, SkClipOp::kIntersect, false);
+      expected_builder.ClipRect(clip_rect, DlCanvas::ClipOp::kIntersect, false);
       /* OpacityLayer::Paint */ {
         // NOP - it hands opacity down to BackdropFilterLayer
         /* BackdropFilterLayer::Paint */ {
           DlPaint save_paint;
           save_paint.setAlpha(128);
-          expected_builder.saveLayer(&clip_rect, &save_paint, &backdrop_filter);
+          expected_builder.SaveLayer(&clip_rect, &save_paint, &backdrop_filter);
           {
             /* MockLayer::Paint */ {
               DlPaint child_paint;
               child_paint.setColor(DlColor::kRed());
-              expected_builder.drawPath(mock_path, child_paint);
+              expected_builder.DrawPath(mock_path, child_paint);
             }
           }
-          expected_builder.restore();
+          expected_builder.Restore();
         }
       }
     }
-    expected_builder.restore();
+    expected_builder.Restore();
   }
   EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
@@ -383,6 +469,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   auto path1 = SkPath().addRect(SkRect::MakeLTRB(180, 180, 190, 190));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
+
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
 
   MockLayerTree l5;

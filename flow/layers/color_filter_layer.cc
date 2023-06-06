@@ -4,8 +4,8 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 
-#include "flutter/display_list/display_list_comparable.h"
-#include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_util.h"
 
@@ -28,8 +28,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   if (context->has_raster_cache()) {
-    context->SetTransform(
-        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+    context->WillPaintWithIntegralTransform();
   }
 
   DiffChildren(context, prev);
@@ -75,9 +74,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
     // Try drawing the layer cache item from the cache before applying the
     // color filter if it was cached with the filter applied.
     if (!layer_raster_cache_item_->IsCacheChildren()) {
-      SkPaint sk_paint;
+      DlPaint paint;
       if (layer_raster_cache_item_->Draw(context,
-                                         context.state_stack.fill(sk_paint))) {
+                                         context.state_stack.fill(paint))) {
         return;
       }
     }
@@ -88,9 +87,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   mutator.applyColorFilter(paint_bounds(), filter_);
 
   if (context.raster_cache && layer_raster_cache_item_->IsCacheChildren()) {
-    SkPaint sk_paint;
+    DlPaint paint;
     if (layer_raster_cache_item_->Draw(context,
-                                       context.state_stack.fill(sk_paint))) {
+                                       context.state_stack.fill(paint))) {
       return;
     }
   }

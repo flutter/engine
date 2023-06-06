@@ -149,7 +149,8 @@ import java.util.List;
  *
  * <pre>{@code
  * // Create and pre-warm a FlutterEngine.
- * FlutterEngine flutterEngine = new FlutterEngine(context);
+ * FlutterEngineGroup group = new FlutterEngineGroup(context);
+ * FlutterEngine flutterEngine = group.createAndRunDefaultEngine(context);
  * flutterEngine.getDartExecutor().executeDartEntrypoint(DartEntrypoint.createDefault());
  *
  * // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
@@ -945,6 +946,14 @@ public class FlutterActivity extends Activity
   public void onUserLeaveHint() {
     if (stillAttachedForEvent("onUserLeaveHint")) {
       delegate.onUserLeaveHint();
+    }
+  }
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+    if (stillAttachedForEvent("onWindowFocusChanged")) {
+      delegate.onWindowFocusChanged(hasFocus);
     }
   }
 

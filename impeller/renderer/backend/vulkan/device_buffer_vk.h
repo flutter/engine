@@ -8,46 +8,34 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/device_buffer.h"
 
 namespace impeller {
-
-// https://github.com/flutter/flutter/issues/112387
-// This buffer can be freed once the command buffer is disposed.
-// vmaDestroyBuffer(allocator_, buffer_, allocation_);
-struct BackingAllocationVK {
-  VmaAllocator* allocator = nullptr;
-  VmaAllocation allocation = nullptr;
-  VmaAllocationInfo allocation_info = {};
-};
-
-struct DeviceBufferAllocationVK {
-  vk::Buffer buffer = VK_NULL_HANDLE;
-  BackingAllocationVK backing_allocation = {};
-
-  void* GetMapping() const;
-
-  vk::Buffer GetBufferHandle() const;
-};
 
 class DeviceBufferVK final : public DeviceBuffer,
                              public BackendCast<DeviceBufferVK, DeviceBuffer> {
  public:
   DeviceBufferVK(DeviceBufferDescriptor desc,
-                 ContextVK& context,
-                 std::unique_ptr<DeviceBufferAllocationVK> device_allocation);
+                 std::weak_ptr<Context> context,
+                 VmaAllocator allocator,
+                 VmaAllocation allocation,
+                 VmaAllocationInfo info,
+                 vk::Buffer buffer);
 
   // |DeviceBuffer|
   ~DeviceBufferVK() override;
 
-  vk::Buffer GetVKBufferHandle() const;
+  vk::Buffer GetBuffer() const;
 
  private:
   friend class AllocatorVK;
 
-  ContextVK& context_;
-  std::unique_ptr<DeviceBufferAllocationVK> device_allocation_;
+  std::weak_ptr<Context> context_;
+  VmaAllocator allocator_ = {};
+  VmaAllocation allocation_ = {};
+  VmaAllocationInfo info_ = {};
+  vk::Buffer buffer_ = {};
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;

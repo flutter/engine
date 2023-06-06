@@ -38,6 +38,12 @@ struct TPoint {
 
   static constexpr TPoint<Type> MakeXY(Type x, Type y) { return {x, y}; }
 
+  template <class U>
+  static constexpr TPoint Round(const TPoint<U>& other) {
+    return TPoint{static_cast<Type>(std::round(other.x)),
+                  static_cast<Type>(std::round(other.y))};
+  }
+
   constexpr bool operator==(const TPoint& p) const {
     return p.x == x && p.y == y;
   }
@@ -177,6 +183,12 @@ struct TPoint {
   constexpr TPoint Max(const TPoint& p) const {
     return {std::max<Type>(x, p.x), std::max<Type>(y, p.y)};
   }
+
+  constexpr TPoint Floor() const { return {std::floor(x), std::floor(y)}; }
+
+  constexpr TPoint Ceil() const { return {std::ceil(x), std::ceil(y)}; }
+
+  constexpr TPoint Round() const { return {std::round(x), std::round(y)}; }
 
   constexpr Type GetDistance(const TPoint& p) const {
     return sqrt(GetDistanceSquared(p));

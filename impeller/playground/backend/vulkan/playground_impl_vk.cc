@@ -4,6 +4,7 @@
 
 #include "impeller/playground/backend/vulkan/playground_impl_vk.h"
 
+#include "flutter/fml/paths.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -19,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/vk/compute_shaders_vk.h"
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace impeller {
@@ -37,7 +39,8 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_imgui_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
                                              impeller_scene_shaders_vk_length),
-
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_compute_shaders_vk_data, impeller_compute_shaders_vk_length),
   };
 }
 
@@ -48,22 +51,28 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
   ::glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(handle));
 }
 
-PlaygroundImplVK::PlaygroundImplVK()
-    : concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
+PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
+    : PlaygroundImpl(switches),
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
       handle_(nullptr, &DestroyWindowHandle) {
   if (!::glfwVulkanSupported()) {
+#ifdef TARGET_OS_MAC
+    VALIDATION_LOG << "Attempted to initialize a Vulkan playground on macOS "
+                      "where Vulkan cannot be found. It can be installed via "
+                      "MoltenVK and make sure to install it globally so "
+                      "dlopen can find it.";
+#else
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on a system "
                       "that does not support Vulkan.";
+#endif
     return;
   }
 
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-  auto window =
-      ::glfwCreateWindow(800, 600, "Test Vulkan Window", nullptr, nullptr);
+  auto window = ::glfwCreateWindow(1, 1, "Test", nullptr, nullptr);
   if (!window) {
     VALIDATION_LOG << "Unable to create glfw window";
     return;
@@ -71,38 +80,42 @@ PlaygroundImplVK::PlaygroundImplVK()
 
   handle_.reset(window);
 
-  auto context = ContextVK::Create(reinterpret_cast<PFN_vkGetInstanceProcAddr>(
-                                       &::glfwGetInstanceProcAddress),    //
-                                   ShaderLibraryMappingsForPlayground(),  //
-                                   nullptr,                               //
-                                   concurrent_loop_->GetTaskRunner(),     //
-                                   "Playground Library"                   //
-  );
+  ContextVK::Settings context_settings;
+  context_settings.proc_address_callback =
+      reinterpret_cast<PFN_vkGetInstanceProcAddr>(
+          &::glfwGetInstanceProcAddress);
+  context_settings.shader_libraries_data = ShaderLibraryMappingsForPlayground();
+  context_settings.cache_directory = fml::paths::GetCachesDirectory();
+  context_settings.worker_task_runner = concurrent_loop_->GetTaskRunner();
+  context_settings.enable_validation = switches_.enable_vulkan_validation;
+
+  auto context = ContextVK::Create(std::move(context_settings));
 
   if (!context || !context->IsValid()) {
     VALIDATION_LOG << "Could not create Vulkan context in the playground.";
     return;
   }
 
-  context_ = std::move(context);
-
-  SetupSwapchain();
-}
-
-void PlaygroundImplVK::SetupSwapchain() {
-  ContextVK* context_vk = reinterpret_cast<ContextVK*>(context_.get());
-  auto window = reinterpret_cast<GLFWwindow*>(handle_.get());
-  vk::Instance instance = context_vk->GetInstance();
-  VkSurfaceKHR surface_tmp;
-  auto res = vk::Result{
-      ::glfwCreateWindowSurface(instance, window, nullptr, &surface_tmp)};
+  VkSurfaceKHR vk_surface;
+  auto res =
+      vk::Result{::glfwCreateWindowSurface(context->GetInstance(),  // instance
+                                           window,                  // window
+                                           nullptr,                 // allocator
+                                           &vk_surface              // surface
+                                           )};
   if (res != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create surface for GLFW window: "
                    << vk::to_string(res);
     return;
   }
-  vk::UniqueSurfaceKHR surface{surface_tmp, instance};
-  context_vk->SetupSwapchain(std::move(surface));
+
+  vk::UniqueSurfaceKHR surface{vk_surface, context->GetInstance()};
+  if (!context->SetWindowSurface(std::move(surface))) {
+    VALIDATION_LOG << "Could not setup surface for context.";
+    return;
+  }
+
+  context_ = std::move(context);
 }
 
 PlaygroundImplVK::~PlaygroundImplVK() = default;
@@ -121,7 +134,7 @@ PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
   ContextVK* context_vk = reinterpret_cast<ContextVK*>(context_.get());
-  return context_vk->AcquireSurface(current_frame_++);
+  return context_vk->AcquireNextSurface();
 }
 
 }  // namespace impeller

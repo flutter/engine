@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
-import 'package:fuchsia_services/services.dart';
 import 'package:zircon/zircon.dart';
 
 void main() {
@@ -21,8 +19,6 @@ class TestApp {
   static const _pink = Color.fromARGB(255, 255, 0, 255);
 
   Color _backgroundColor = _pink;
-
-  final _responseListener = test_touch.TouchInputListenerProxy();
 
   void run() {
     // Set up window callbacks.
@@ -69,25 +65,31 @@ class TestApp {
     for (PointerData data in packet.data) {
       print('touch-input-view received tap: ${data.toStringFull()}');
 
-      if (data.change == PointerChange.down || data.change == PointerChange.move) {
-        Incoming.fromSvcPath()
-          ..connectToService(_responseListener)
-          ..close();
+      if (data.change == PointerChange.down) {
+        this._backgroundColor = _yellow;
+      }
 
-        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+      if (data.change == PointerChange.down || data.change == PointerChange.move) {
+        _reportTouchInput(
           localX: data.physicalX,
           localY: data.physicalY,
           timeReceived: nowNanos,
-          componentName: 'touch-input-view',
-        ));
+        );
       }
     }
 
     window.scheduleFrame();
   }
 
-  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+  void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('touch-input-view reporting touch input to TouchInputListener');
-    await _responseListener.reportTouchInput(request);
+    final message = utf8.encoder.convert(json.encode({
+      'method': 'TouchInputListener.ReportTouchInput',
+      'local_x': localX,
+      'local_y': localY,
+      'time_received': timeReceived,
+      'component_name': 'touch-input-view',
+    })).buffer.asByteData();
+    PlatformDispatcher.instance.sendPlatformMessage('fuchsia/input_test', message, null);
   }
 }

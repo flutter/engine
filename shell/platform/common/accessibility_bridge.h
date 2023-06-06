@@ -14,6 +14,7 @@
 #include "flutter/third_party/accessibility/ax/ax_tree.h"
 #include "flutter/third_party/accessibility/ax/ax_tree_observer.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h"
 
 #include "flutter_platform_node_delegate.h"
 
@@ -39,6 +40,7 @@ namespace flutter {
 class AccessibilityBridge
     : public std::enable_shared_from_this<AccessibilityBridge>,
       public FlutterPlatformNodeDelegate::OwnerBridge,
+      public ui::AXPlatformTreeManager,
       private ui::AXTreeObserver {
  public:
   //-----------------------------------------------------------------------------
@@ -46,18 +48,13 @@ class AccessibilityBridge
   AccessibilityBridge();
   virtual ~AccessibilityBridge();
 
-  //-----------------------------------------------------------------------------
-  /// @brief      The ID of the root node in the accessibility tree. In Flutter,
-  //              this is always 0.
-  static constexpr int32_t kRootNodeId = 0;
-
   //------------------------------------------------------------------------------
   /// @brief      Adds a semantics node update to the pending semantics update.
   ///             Calling this method alone will NOT update the semantics tree.
   ///             To flush the pending updates, call the CommitUpdates().
   ///
-  /// @param[in]  node           A pointer to the semantics node update.
-  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node);
+  /// @param[in]  node           A reference to the semantics node update.
+  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode2& node);
 
   //------------------------------------------------------------------------------
   /// @brief      Adds a custom semantics action update to the pending semantics
@@ -65,10 +62,10 @@ class AccessibilityBridge
   ///             semantics tree. To flush the pending updates, call the
   ///             CommitUpdates().
   ///
-  /// @param[in]  action           A pointer to the custom semantics action
+  /// @param[in]  action           A reference to the custom semantics action
   ///                              update.
   void AddFlutterSemanticsCustomActionUpdate(
-      const FlutterSemanticsCustomAction* action);
+      const FlutterSemanticsCustomAction2& action);
 
   //------------------------------------------------------------------------------
   /// @brief      Flushes the pending updates and applies them to this
@@ -105,6 +102,39 @@ class AccessibilityBridge
   ///             all pending events.
   const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents()
       const;
+
+  // |AXTreeManager|
+  ui::AXNode* GetNodeFromTree(const ui::AXTreeID tree_id,
+                              const ui::AXNode::AXID node_id) const override;
+
+  // |AXTreeManager|
+  ui::AXNode* GetNodeFromTree(const ui::AXNode::AXID node_id) const override;
+
+  // |AXTreeManager|
+  ui::AXTreeID GetTreeID() const override;
+
+  // |AXTreeManager|
+  ui::AXTreeID GetParentTreeID() const override;
+
+  // |AXTreeManager|
+  ui::AXNode* GetRootAsAXNode() const override;
+
+  // |AXTreeManager|
+  ui::AXNode* GetParentNodeFromParentTreeAsAXNode() const override;
+
+  // |AXTreeManager|
+  ui::AXTree* GetTree() const override;
+
+  // |AXPlatformTreeManager|
+  ui::AXPlatformNode* GetPlatformNodeFromTree(
+      const ui::AXNode::AXID node_id) const override;
+
+  // |AXPlatformTreeManager|
+  ui::AXPlatformNode* GetPlatformNodeFromTree(
+      const ui::AXNode& node) const override;
+
+  // |AXPlatformTreeManager|
+  ui::AXPlatformNodeDelegate* RootDelegate() const override;
 
  protected:
   //---------------------------------------------------------------------------
@@ -176,7 +206,7 @@ class AccessibilityBridge
   std::unordered_map<AccessibilityNodeId,
                      std::shared_ptr<FlutterPlatformNodeDelegate>>
       id_wrapper_map_;
-  ui::AXTree tree_;
+  std::unique_ptr<ui::AXTree> tree_;
   ui::AXEventGenerator event_generator_;
   std::unordered_map<int32_t, SemanticsNode> pending_semantics_node_updates_;
   std::unordered_map<int32_t, SemanticsCustomAction>
@@ -215,9 +245,9 @@ class AccessibilityBridge
                                    const SemanticsNode& node);
   void SetTreeData(const SemanticsNode& node, ui::AXTreeUpdate& tree_update);
   SemanticsNode FromFlutterSemanticsNode(
-      const FlutterSemanticsNode* flutter_node);
+      const FlutterSemanticsNode2& flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(
-      const FlutterSemanticsCustomAction* flutter_custom_action);
+      const FlutterSemanticsCustomAction2& flutter_custom_action);
 
   // |AXTreeObserver|
   void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;

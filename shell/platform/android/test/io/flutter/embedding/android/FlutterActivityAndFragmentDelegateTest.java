@@ -39,6 +39,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.embedding.engine.systemchannels.KeyboardChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -107,13 +108,36 @@ public class FlutterActivityAndFragmentDelegateTest {
     // By the time an Activity/Fragment is started, we don't expect any lifecycle messages
     // to have been sent to Flutter.
     delegate.onStart();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsResumed();
-    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
 
     // When the Activity/Fragment is resumed, a resumed message should have been sent to Flutter.
     delegate.onResume();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).noWindowsAreFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
+
+    // When the app loses focus because something else has it (e.g. notification
+    // windowshade or app switcher), it should go to inactive.
+    delegate.onWindowFocusChanged(false);
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsDetached();
+
+    // When the app regains focus, it should go to resumed again.
+    delegate.onWindowFocusChanged(true);
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
@@ -121,6 +145,8 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // When the Activity/Fragment is paused, an inactive message should have been sent to Flutter.
     delegate.onPause();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
@@ -130,6 +156,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Notice that Flutter uses the term "paused" in a different way, and at a different time
     // than the Android OS.
     delegate.onStop();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsPaused();
@@ -137,6 +165,8 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // When activity detaches, a detached message should have been sent to Flutter.
     delegate.onDetach();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), times(1)).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsPaused();
@@ -157,10 +187,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
+    delegate.onWindowFocusChanged(false);
+    delegate.onWindowFocusChanged(true);
     delegate.onPause();
     delegate.onStop();
     delegate.onDetach();
 
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).aWindowIsFocused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).noWindowsAreFocused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
     verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
@@ -237,6 +271,47 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Expect IllegalStateException.
   }
 
+  // Bug: b/271100292
+  @Test
+  public void flutterEngineGroupGetsInitialRouteFromIntent() {
+    // ---- Test setup ----
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    Activity mockActivity = mock(Activity.class);
+    Intent mockIntent = mock(Intent.class);
+    when(mockFlutterLoader.findAppBundlePath()).thenReturn("default_flutter_assets/path");
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+    FlutterEngineGroup flutterEngineGroup = mock(FlutterEngineGroup.class);
+    FlutterEngineGroupCache.getInstance().put("my_flutter_engine_group", flutterEngineGroup);
+
+    List<String> entryPointArgs = new ArrayList<>();
+    entryPointArgs.add("entrypoint-arg");
+
+    // Adjust fake host to request cached engine group.
+    when(mockHost.getInitialRoute()).thenReturn(null);
+    when(mockHost.getCachedEngineGroupId()).thenReturn("my_flutter_engine_group");
+    when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(null);
+    when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
+    when(mockHost.getDartEntrypointArgs()).thenReturn(entryPointArgs);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    when(mockHost.getActivity()).thenReturn(mockActivity);
+    when(mockActivity.getIntent()).thenReturn(mockIntent);
+    when(mockIntent.getData()).thenReturn(Uri.parse("foo://example.com/initial_route"));
+
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is obtained in onAttach().
+    delegate.onAttach(ctx);
+
+    DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint("/fake/path", "main");
+    ArgumentCaptor<FlutterEngineGroup.Options> optionsCaptor =
+        ArgumentCaptor.forClass(FlutterEngineGroup.Options.class);
+    verify(flutterEngineGroup, times(1)).createAndRunEngine(optionsCaptor.capture());
+    assertEquals("foo://example.com/initial_route", optionsCaptor.getValue().getInitialRoute());
+  }
+
   @Test
   public void itUsesNewEngineInGroupWhenProvided() {
     // ---- Test setup ----
@@ -247,10 +322,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     FlutterEngineGroup flutterEngineGroup = mock(FlutterEngineGroup.class);
     FlutterEngineGroupCache.getInstance().put("my_flutter_engine_group", flutterEngineGroup);
 
+    List<String> entryPointArgs = new ArrayList<>();
+    entryPointArgs.add("entrypoint-arg");
+
     // Adjust fake host to request cached engine group.
     when(mockHost.getCachedEngineGroupId()).thenReturn("my_flutter_engine_group");
     when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(null);
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
+    when(mockHost.getDartEntrypointArgs()).thenReturn(entryPointArgs);
 
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -263,8 +342,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     // event.
     // Note: "/fake/path" and "main" come from `setUp()`.
     DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint("/fake/path", "main");
-    verify(flutterEngineGroup, times(1))
-        .createAndRunEngine(mockHost.getContext(), entrypoint, mockHost.getInitialRoute());
+    ArgumentCaptor<FlutterEngineGroup.Options> optionsCaptor =
+        ArgumentCaptor.forClass(FlutterEngineGroup.Options.class);
+    verify(flutterEngineGroup, times(1)).createAndRunEngine(optionsCaptor.capture());
+    assertEquals(mockHost.getContext(), optionsCaptor.getValue().getContext());
+    assertEquals(entrypoint, optionsCaptor.getValue().getDartEntrypoint());
+    assertEquals(mockHost.getInitialRoute(), optionsCaptor.getValue().getInitialRoute());
+    assertNotNull(optionsCaptor.getValue().getDartEntrypointArgs());
+    assertEquals(1, optionsCaptor.getValue().getDartEntrypointArgs().size());
+    assertEquals("entrypoint-arg", optionsCaptor.getValue().getDartEntrypointArgs().get(0));
   }
 
   @Test(expected = IllegalStateException.class)
@@ -602,7 +688,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route?query=test");
+        .setInitialRoute("http://myApp/custom/route?query=test");
   }
 
   @Test
@@ -630,7 +716,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route?query=test#fragment");
+        .setInitialRoute("http://myApp/custom/route?query=test#fragment");
   }
 
   @Test
@@ -658,7 +744,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route#fragment");
+        .setInitialRoute("http://myApp/custom/route#fragment");
   }
 
   @Test
@@ -685,7 +771,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onStart();
 
     // Verify that the navigation channel was given the initial route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).setInitialRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .setInitialRoute("http://myApp/custom/route");
   }
 
   @Test
@@ -715,7 +802,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntent() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntent() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -723,19 +810,19 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route?query=test";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route?query=test"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route?query=test");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
-  public void itDoesNotSendPushRouteMessageWhenOnNewIntentIsNonHierarchicalUri() {
+  public void itDoesSendPushRouteInformationMessageWhenOnNewIntentIsNonHierarchicalUri() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -753,32 +840,12 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was not given a push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(0)).pushRoute("mailto:test@test.com");
-  }
-
-  @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentWithQueryParameterAndFragment() {
-    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
-    // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
-
-    // --- Execute the behavior under test ---
-    // The FlutterEngine is set up in onAttach().
-    delegate.onAttach(ctx);
-
-    Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData())
-        .thenReturn(Uri.parse("http://myApp/custom/route?query=test#fragment"));
-    // Emulate the host and call the method that we expect to be forwarded.
-    delegate.onNewIntent(mockIntent);
-
-    // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route?query=test#fragment");
+        .pushRouteInformation("mailto:test@test.com");
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentWithFragmentNoQueryParameter() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentWithQueryParameterAndFragment() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -786,18 +853,19 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route?query=test#fragment";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route#fragment"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentNoQueryParameter() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentWithFragmentNoQueryParameter() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -805,14 +873,35 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route#fragment";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
+  }
+
+  @Test
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentNoQueryParameter() {
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route#fragment";
+
+    Intent mockIntent = mock(Intent.class);
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
+    // Emulate the host and call the method that we expect to be forwarded.
+    delegate.onNewIntent(mockIntent);
+
+    // Verify that the navigation channel was given the push route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -1159,6 +1248,22 @@ public class FlutterActivityAndFragmentDelegateTest {
     assertNull(delegate.activePreDrawListener);
   }
 
+  @Test
+  public void usesFlutterEngineGroup() {
+    FlutterEngineGroup mockEngineGroup = mock(FlutterEngineGroup.class);
+    when(mockEngineGroup.createAndRunEngine(any(FlutterEngineGroup.Options.class)))
+        .thenReturn(mockFlutterEngine);
+    FlutterActivityAndFragmentDelegate.Host host =
+        mock(FlutterActivityAndFragmentDelegate.Host.class);
+    when(mockHost.getContext()).thenReturn(ctx);
+
+    FlutterActivityAndFragmentDelegate delegate =
+        new FlutterActivityAndFragmentDelegate(mockHost, mockEngineGroup);
+    delegate.onAttach(ctx);
+    FlutterEngine engineUnderTest = delegate.getFlutterEngine();
+    assertEquals(engineUnderTest, mockFlutterEngine);
+  }
+
   /**
    * Creates a mock {@link io.flutter.embedding.engine.FlutterEngine}.
    *
@@ -1189,6 +1294,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(engine.getAccessibilityChannel()).thenReturn(mock(AccessibilityChannel.class));
     when(engine.getActivityControlSurface()).thenReturn(mock(ActivityControlSurface.class));
     when(engine.getDartExecutor()).thenReturn(mock(DartExecutor.class));
+    when(engine.getKeyboardChannel()).thenReturn(mock(KeyboardChannel.class));
     when(engine.getLifecycleChannel()).thenReturn(mock(LifecycleChannel.class));
     when(engine.getLocalizationChannel()).thenReturn(mock(LocalizationChannel.class));
     when(engine.getLocalizationPlugin()).thenReturn(mock(LocalizationPlugin.class));

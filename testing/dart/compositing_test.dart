@@ -83,7 +83,6 @@ void main() {
     }
 
     final Scene scene = builder.build();
-    expect(scene != null, true);
     scene.dispose();
   });
 
@@ -402,10 +401,6 @@ void main() {
         BlendMode.color,
         oldLayer: oldLayer as ShaderMaskEngineLayer?,
       );
-    });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
-      // ignore: deprecated_member_use
-      return builder.pushPhysicalShape(path: Path(), color: const Color.fromARGB(0, 0, 0, 0), oldLayer: oldLayer as PhysicalShapeEngineLayer?, elevation: 0.0);
     });
     testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushColorFilter(

@@ -3,6 +3,13 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
+
+#import <AppKit/AppKit.h>
+
+#include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
 
@@ -11,12 +18,18 @@
  */
 - (NSString*)applicationName;
 
+@property(nonatomic) FlutterAppLifecycleRegistrar* lifecycleRegistrar;
 @end
 
 @implementation FlutterAppDelegate
 
-// TODO(stuartmorgan): Implement application lifecycle forwarding to plugins here, as is done
-// on iOS. Currently macOS plugins don't have access to lifecycle messages.
+- (instancetype)init {
+  if (self = [super init]) {
+    _terminationHandler = nil;
+    _lifecycleRegistrar = [[FlutterAppLifecycleRegistrar alloc] init];
+  }
+  return self;
+}
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
   // Update UI elements to match the application name.
@@ -28,6 +41,16 @@
   }
 }
 
+#pragma mark - Delegate handling
+
+- (void)addApplicationLifecycleDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  [[self lifecycleRegistrar] addDelegate:delegate];
+}
+
+- (void)removeApplicationLifecycleDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  [[self lifecycleRegistrar] removeDelegate:delegate];
+}
+
 #pragma mark Private Methods
 
 - (NSString*)applicationName {
@@ -37,6 +60,24 @@
     applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
   }
   return applicationName;
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication* _Nonnull)sender {
+  // If the framework has already told us to terminate, terminate immediately.
+  if ([self terminationHandler] == nil || [[self terminationHandler] shouldTerminate]) {
+    return NSTerminateNow;
+  }
+
+  // Send a termination request to the framework.
+  FlutterEngineTerminationHandler* terminationHandler = [self terminationHandler];
+  [terminationHandler requestApplicationTermination:sender
+                                           exitType:kFlutterAppExitTypeCancelable
+                                             result:nil];
+
+  // Cancel termination to allow the framework to handle the request asynchronously. When the
+  // termination request returns from the app, if termination is desired, this method will be
+  // reinvoked with self.terminationHandler.shouldTerminate set to YES.
+  return NSTerminateCancel;
 }
 
 @end

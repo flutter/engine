@@ -45,7 +45,8 @@ Engine::Engine(
     std::unique_ptr<Animator> animator,
     fml::WeakPtr<IOManager> io_manager,
     const std::shared_ptr<FontCollection>& font_collection,
-    std::unique_ptr<RuntimeController> runtime_controller)
+    std::unique_ptr<RuntimeController> runtime_controller,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
     : delegate_(delegate),
       settings_(settings),
       animator_(std::move(animator)),
@@ -54,7 +55,8 @@ Engine::Engine(
       image_decoder_(ImageDecoder::Make(settings_,
                                         task_runners,
                                         std::move(image_decoder_task_runner),
-                                        std::move(io_manager))),
+                                        std::move(io_manager),
+                                        gpu_disabled_switch)),
       task_runners_(task_runners),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
@@ -71,7 +73,8 @@ Engine::Engine(Delegate& delegate,
                fml::WeakPtr<IOManager> io_manager,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
                fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-               std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
+               std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+               const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
     : Engine(delegate,
              dispatcher_maker,
              vm.GetConcurrentWorkerTaskRunner(),
@@ -80,7 +83,8 @@ Engine::Engine(Delegate& delegate,
              std::move(animator),
              io_manager,
              std::make_shared<FontCollection>(),
-             nullptr) {
+             nullptr,
+             gpu_disabled_switch) {
   runtime_controller_ = std::make_unique<RuntimeController>(
       *this,                                 // runtime delegate
       &vm,                                   // VM
@@ -112,7 +116,8 @@ std::unique_ptr<Engine> Engine::Spawn(
     std::unique_ptr<Animator> animator,
     const std::string& initial_route,
     const fml::WeakPtr<IOManager>& io_manager,
-    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
@@ -123,7 +128,8 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*animator=*/std::move(animator),
       /*io_manager=*/io_manager,
       /*font_collection=*/font_collection_,
-      /*runtime_controller=*/nullptr);
+      /*runtime_controller=*/nullptr,
+      /*gpu_disabled_switch=*/gpu_disabled_switch);
   result->runtime_controller_ = runtime_controller_->Spawn(
       /*p_client=*/*result,
       /*advisory_script_uri=*/settings.advisory_script_uri,
@@ -331,7 +337,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
       state == "AppLifecycleState.inactive") {
     ScheduleFrame();
   }
-  runtime_controller_->SetLifecycleState(state);
+  runtime_controller_->SetInitialLifecycleState(state);
   // Always forward these messages to the framework by returning false.
   return false;
 }
@@ -416,10 +422,11 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
-void Engine::DispatchSemanticsAction(int id,
+void Engine::DispatchSemanticsAction(int node_id,
                                      SemanticsAction action,
                                      fml::MallocMapping args) {
-  runtime_controller_->DispatchSemanticsAction(id, action, std::move(args));
+  runtime_controller_->DispatchSemanticsAction(node_id, action,
+                                               std::move(args));
 }
 
 void Engine::SetSemanticsEnabled(bool enabled) {
@@ -428,6 +435,14 @@ void Engine::SetSemanticsEnabled(bool enabled) {
 
 void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
+}
+
+bool Engine::ImplicitViewEnabled() {
+  // TODO(loicsharma): This value should be provided by the embedder
+  // when it launches the engine. For now, assume the embedder always creates a
+  // view.
+  // See: https://github.com/flutter/flutter/issues/120306
+  return true;
 }
 
 std::string Engine::DefaultRouteName() {
@@ -441,18 +456,18 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
+void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+                    float device_pixel_ratio) {
   if (!layer_tree) {
     return;
   }
 
   // Ensure frame dimensions are sane.
-  if (layer_tree->frame_size().isEmpty() ||
-      layer_tree->device_pixel_ratio() <= 0.0f) {
+  if (layer_tree->frame_size().isEmpty() || device_pixel_ratio <= 0.0f) {
     return;
   }
 
-  animator_->Render(std::move(layer_tree));
+  animator_->Render(std::move(layer_tree), device_pixel_ratio);
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,
@@ -572,6 +587,11 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
 
 const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
+}
+
+void Engine::SetDisplays(const std::vector<DisplayData>& displays) {
+  runtime_controller_->SetDisplays(displays);
+  ScheduleFrame();
 }
 
 }  // namespace flutter

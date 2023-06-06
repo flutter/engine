@@ -6,21 +6,18 @@
 library window;
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../engine.dart' show registerHotRestartListener, renderer;
-import 'browser_detection.dart';
+import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'dom.dart';
 import 'navigation/history.dart';
-import 'navigation/js_url_strategy.dart';
-import 'navigation/url_strategy.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
-import 'test_embedding.dart';
 import 'util.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
@@ -28,37 +25,33 @@ typedef _HandleMessageCallBack = Future<bool> Function();
 /// When set to true, all platform messages will be printed to the console.
 const bool debugPrintPlatformMessages = false;
 
-/// Whether [_customUrlStrategy] has been set or not.
-///
-/// It is valid to set [_customUrlStrategy] to null, so we can't use a null
-/// check to determine whether it was set or not. We need an extra boolean.
-bool _isUrlStrategySet = false;
-
-/// A custom URL strategy set by the app before running.
-UrlStrategy? _customUrlStrategy;
-set customUrlStrategy(UrlStrategy? strategy) {
-  assert(!_isUrlStrategySet, 'Cannot set URL strategy more than once.');
-  _isUrlStrategySet = true;
-  _customUrlStrategy = strategy;
-}
+/// The view ID for the implicit flutter view provided by the platform.
+const int kImplicitViewId = 0;
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
-  EngineFlutterWindow(this._windowId, this.platformDispatcher) {
+  EngineFlutterWindow(this.viewId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.windows[_windowId] = this;
-    engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
-    if (_isUrlStrategySet) {
-      _browserHistory = createHistoryForExistingState(_customUrlStrategy);
+    engineDispatcher.viewData[viewId] = this;
+    engineDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
+    if (ui_web.isCustomUrlStrategySet) {
+      _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
     registerHotRestartListener(() {
       _browserHistory?.dispose();
       renderer.clearFragmentProgramCache();
+      _dimensionsProvider.close();
     });
   }
 
-  final Object _windowId;
+  @override
+  ui.Display get display {
+    return ui.PlatformDispatcher.instance.displays.first;
+  }
+
+  @override
+  final int viewId;
 
   @override
   final ui.PlatformDispatcher platformDispatcher;
@@ -70,12 +63,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         createHistoryForExistingState(_urlStrategyForInitialization);
   }
 
-  UrlStrategy? get _urlStrategyForInitialization {
-    final UrlStrategy? urlStrategy =
-        _isUrlStrategySet ? _customUrlStrategy : _createDefaultUrlStrategy();
+  ui_web.UrlStrategy? get _urlStrategyForInitialization {
     // Prevent any further customization of URL strategy.
-    _isUrlStrategySet = true;
-    return urlStrategy;
+    ui_web.preventCustomUrlStrategy();
+    return ui_web.urlStrategy;
   }
 
   BrowserHistory?
@@ -100,7 +91,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     // At this point, we know that `_browserHistory` is a non-null
     // `MultiEntriesBrowserHistory` instance.
-    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
   }
@@ -124,19 +115,19 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     // At this point, we know that `_browserHistory` is a non-null
     // `SingleEntryBrowserHistory` instance.
-    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
 
   @visibleForTesting
   Future<void> debugInitializeHistory(
-    UrlStrategy? strategy, {
+    ui_web.UrlStrategy? strategy, {
     required bool useSingle,
   }) async {
-    // Prevent any further customization of URL strategy.
-    _isUrlStrategySet = true;
     await _browserHistory?.tearDown();
+
+    ui_web.urlStrategy = strategy;
     if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
     } else {
@@ -147,9 +138,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   Future<void> resetHistory() async {
     await _browserHistory?.tearDown();
     _browserHistory = null;
-    // Reset the globals too.
-    _isUrlStrategySet = false;
-    _customUrlStrategy = null;
+    ui_web.debugResetCustomUrlStrategy();
   }
 
   Future<void> _endOfTheLine = Future<void>.value();
@@ -187,8 +176,23 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
           return true;
         case 'routeInformationUpdated':
           assert(arguments != null);
+          final String? uriString = arguments!.tryString('uri');
+          final String path;
+          if (uriString != null) {
+            final Uri uri = Uri.parse(uriString);
+            // Need to remove scheme and authority.
+            path = Uri.decodeComponent(
+              Uri(
+                path: uri.path.isEmpty ? '/' : uri.path,
+                queryParameters: uri.queryParametersAll.isEmpty ? null : uri.queryParametersAll,
+                fragment: uri.fragment.isEmpty ? null : uri.fragment,
+              ).toString(),
+            );
+          } else {
+            path = arguments.tryString('location')!;
+          }
           browserHistory.setRouteName(
-            arguments!.tryString('location'),
+            path,
             state: arguments['state'],
             replace: arguments.tryBool('replace') ?? false,
           );
@@ -198,14 +202,41 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     });
   }
 
-  @override
-  ui.ViewConfiguration get viewConfiguration {
+  ViewConfiguration get _viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_windowId));
-    return engineDispatcher.windowConfigurations[_windowId] ??
-        const ui.ViewConfiguration();
+    assert(engineDispatcher.windowConfigurations.containsKey(viewId));
+    return engineDispatcher.windowConfigurations[viewId] ??
+        const ViewConfiguration();
   }
+
+  @override
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
+
+  @override
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
+
+  @override
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
+
+  @override
+  ViewPadding get padding => _viewConfiguration.padding;
+
+  @override
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
+
+  late DimensionsProvider _dimensionsProvider;
+  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
+    _dimensionsProvider = dimensionsProvider;
+  }
+
+  @override
+  double get devicePixelRatio => _dimensionsProvider.getDevicePixelRatio();
+
+  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
 
   @override
   ui.Size get physicalSize {
@@ -232,38 +263,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }());
 
     if (!override) {
-      double windowInnerWidth;
-      double windowInnerHeight;
-      final DomVisualViewport? viewport = domWindow.visualViewport;
-
-      if (viewport != null) {
-        if (operatingSystem == OperatingSystem.iOs) {
-          /// Chrome on iOS reports incorrect viewport.height when app
-          /// starts in portrait orientation and the phone is rotated to
-          /// landscape.
-          ///
-          /// We instead use documentElement clientWidth/Height to read
-          /// accurate physical size. VisualViewport api is only used during
-          /// text editing to make sure inset is correctly reported to
-          /// framework.
-          final double docWidth =
-              domDocument.documentElement!.clientWidth;
-          final double docHeight =
-              domDocument.documentElement!.clientHeight;
-          windowInnerWidth = docWidth * devicePixelRatio;
-          windowInnerHeight = docHeight * devicePixelRatio;
-        } else {
-          windowInnerWidth = viewport.width! * devicePixelRatio;
-          windowInnerHeight = viewport.height! * devicePixelRatio;
-        }
-      } else {
-        windowInnerWidth = domWindow.innerWidth! * devicePixelRatio;
-        windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
-      }
-      _physicalSize = ui.Size(
-        windowInnerWidth,
-        windowInnerHeight,
-      );
+      _physicalSize = _dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -273,21 +273,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    double windowInnerHeight;
-    final DomVisualViewport? viewport = domWindow.visualViewport;
-    if (viewport != null) {
-      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
-        windowInnerHeight =
-            domDocument.documentElement!.clientHeight * devicePixelRatio;
-      } else {
-        windowInnerHeight = viewport.height! * devicePixelRatio;
-      }
-    } else {
-      windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
-    }
-    final double bottomPadding = _physicalSize!.height - windowInnerHeight;
-    _viewInsets =
-        WindowPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
+    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
+      _physicalSize!.height,
+      isEditingOnMobile,
+    );
   }
 
   /// Uses the previous physical size and current innerHeight/innerWidth
@@ -305,26 +294,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   /// height: 658 width: 393
   /// height: 368 width: 393
   bool isRotation() {
-    double height = 0;
-    double width = 0;
-    if (domWindow.visualViewport != null) {
-      height =
-          domWindow.visualViewport!.height! * devicePixelRatio;
-      width = domWindow.visualViewport!.width! * devicePixelRatio;
-    } else {
-      height = domWindow.innerHeight! * devicePixelRatio;
-      width = domWindow.innerWidth! * devicePixelRatio;
-    }
-
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
+      final ui.Size current = _dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
-      if (_physicalSize!.height != height && _physicalSize!.width != width) {
+      if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
         // opposite after the rotation and vice versa.
-        if ((_physicalSize!.height > _physicalSize!.width && height < width) ||
-            (_physicalSize!.width > _physicalSize!.height && width < height)) {
+        if ((_physicalSize!.height > _physicalSize!.width && current.height < current.width) ||
+            (_physicalSize!.width > _physicalSize!.height && current.width < current.height)) {
           // Rotation detected
           return true;
         }
@@ -334,31 +313,14 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   @override
-  WindowPadding get viewInsets => _viewInsets;
-  WindowPadding _viewInsets = ui.WindowPadding.zero as WindowPadding;
+  ViewPadding get viewInsets => _viewInsets;
+  ViewPadding _viewInsets = ui.ViewPadding.zero as ViewPadding;
 
   /// Lazily populated and cleared at the end of the frame.
   ui.Size? _physicalSize;
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size? webOnlyDebugPhysicalSizeOverride;
-}
-
-typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
-
-/// A JavaScript hook to customize the URL strategy of a Flutter app.
-//
-// Keep this js name in sync with flutter_web_plugins. Find it at:
-// https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
-//
-// TODO(mdebbar): Add integration test https://github.com/flutter/flutter/issues/66852
-@JS('_flutter_web_set_location_strategy')
-external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
-
-UrlStrategy? _createDefaultUrlStrategy() {
-  return ui.debugEmulateFlutterTesterEnvironment
-      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
-      : const HashUrlStrategy();
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -381,36 +343,17 @@ class EngineSingletonFlutterWindow extends EngineFlutterWindow {
   double? _debugDevicePixelRatio;
 }
 
-/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-class EngineFlutterWindowView extends ui.FlutterWindow {
-  EngineFlutterWindowView._(this._viewId, this.platformDispatcher);
-
-  final Object _viewId;
-
-  @override
-  final ui.PlatformDispatcher platformDispatcher;
-
-  @override
-  ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher =
-        platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
-    return engineDispatcher.windowConfigurations[_viewId] ??
-        const ui.ViewConfiguration();
-  }
-}
-
 /// The window singleton.
 ///
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
 final EngineSingletonFlutterWindow window =
-    EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
+    EngineSingletonFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
 
-/// The Web implementation of [ui.WindowPadding].
-class WindowPadding implements ui.WindowPadding {
-  const WindowPadding({
+/// The Web implementation of [ui.ViewPadding].
+class ViewPadding implements ui.ViewPadding {
+  const ViewPadding({
     required this.left,
     required this.top,
     required this.right,

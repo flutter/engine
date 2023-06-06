@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 enum ColorFilterType {
@@ -19,7 +20,7 @@ enum ColorFilterType {
 ///
 /// Instances of this class are used with [Paint.colorFilter] on [Paint]
 /// objects.
-class EngineColorFilter implements ui.ColorFilter {
+class EngineColorFilter implements SceneImageFilter, ui.ColorFilter {
   /// Creates a color filter that applies the blend mode given as the second
   /// argument. The source color is the one given as the first argument, and the
   /// destination color is the one from the layer being composited.
@@ -34,14 +35,14 @@ class EngineColorFilter implements ui.ColorFilter {
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
   ///
-  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
   /// ```text
   /// | R' |   | a00 a01 a02 a03 a04 |   | R |
-  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
-  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
-  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// | G' |   | a10 a11 a12 a13 a14 |   | G |
+  /// | B' | = | a20 a21 a22 a23 a24 | * | B |
+  /// | A' |   | a30 a31 a32 a33 a34 |   | A |
   /// | 1  |   |  0   0   0   0   1  |   | 1 |
   /// ```
   ///
@@ -116,4 +117,8 @@ class EngineColorFilter implements ui.ColorFilter {
   final ui.BlendMode? blendMode;
   final List<double>? matrix;
   final ColorFilterType type;
+
+  /// Color filters don't affect the image bounds
+  @override
+  ui.Rect filterBounds(ui.Rect inputBounds) => inputBounds;
 }

@@ -44,7 +44,11 @@ class PortableUITest : public ::loop_fixture::RealLoop {
       "flutter_jit_runner.cm";
   static constexpr auto kFlutterRunnerEnvironment = "flutter_runner_env";
 
-  void SetUp();
+  void SetUp(bool build_realm = true);
+
+  // Calls the Build method for Realm Builder to build the realm
+  // Can only be called once, panics otherwise
+  void BuildRealm();
 
   // Attaches a client view to the scene, and waits for it to render.
   void LaunchClient();
@@ -110,10 +114,10 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   virtual void ExtendRealm() = 0;
 
   // Returns the test-specific test-ui-stack component url to use.
-  // Usually overriden to return a value from gtest GetParam()
+  // Usually overridden to return a value from gtest GetParam()
   virtual std::string GetTestUIStackUrl() = 0;
 
-  // Helper method to watch watch for view geometry updates.
+  // Helper method to watch for view geometry updates.
   void WatchViewGeometry();
 
   // Helper method to process a view geometry update.

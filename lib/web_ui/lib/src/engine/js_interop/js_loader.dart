@@ -5,7 +5,8 @@
 @JS()
 library js_loader;
 
-import 'package:js/js.dart';
+import 'dart:js_interop';
+
 import 'package:js/js_util.dart' as js_util;
 
 import '../configuration.dart';
@@ -54,7 +55,7 @@ abstract class FlutterEngineInitializer{
 /// [JsFlutterConfiguration] comes from `../configuration.dart`. It is the same
 /// object that can be used to configure flutter "inline", through the
 /// (to be deprecated) `window.flutterConfiguration` object.
-typedef InitializeEngineFn = Promise<FlutterAppRunner?> Function([JsFlutterConfiguration?]);
+typedef InitializeEngineFn = Promise<FlutterAppRunner> Function([JsFlutterConfiguration?]);
 
 /// Typedef for the `autoStart` function that can be called straight from an engine initializer instance.
 /// (Similar to [RunAppFn], but taking no specific "runApp" parameters).

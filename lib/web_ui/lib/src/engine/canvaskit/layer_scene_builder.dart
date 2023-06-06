@@ -147,7 +147,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
     return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
@@ -157,7 +156,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilterEngineLayer? oldLayer,
     ui.Offset offset = ui.Offset.zero,
   }) {
-    assert(filter != null);
     return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter, offset));
   }
 
@@ -177,24 +175,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
   }) {
     return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(alpha, offset));
-  }
-
-  @override
-  PhysicalShapeEngineLayer pushPhysicalShape({
-    required ui.Path path,
-    required double elevation,
-    required ui.Color color,
-    ui.Color? shadowColor,
-    ui.Clip clipBehavior = ui.Clip.none,
-    ui.EngineLayer? oldLayer,
-  }) {
-    return pushLayer<PhysicalShapeEngineLayer>(PhysicalShapeEngineLayer(
-      elevation,
-      color,
-      shadowColor,
-      path as CkPath,
-      clipBehavior,
-    ));
   }
 
   @override

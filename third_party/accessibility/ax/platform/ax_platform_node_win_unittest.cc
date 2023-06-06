@@ -3509,11 +3509,13 @@ TEST_F(AXPlatformNodeWinTest, GetPatternProviderSupportedPatterns) {
 
   Init(update);
 
-  EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId}),
+  EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_TextPatternId,
+                        UIA_TextEditPatternId}),
             GetSupportedPatternsFromNodeId(root_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
-                        UIA_ExpandCollapsePatternId}),
+                        UIA_ExpandCollapsePatternId, UIA_TextPatternId,
+                        UIA_TextEditPatternId}),
             GetSupportedPatternsFromNodeId(text_field_with_combo_box_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
@@ -4670,6 +4672,22 @@ TEST_F(AXPlatformNodeWinTest, IScrollProviderSetScrollPercent) {
   EXPECT_HRESULT_SUCCEEDED(
       scroll_provider->get_VerticalScrollPercent(&y_scroll_percent));
   EXPECT_EQ(y_scroll_percent, 34);
+}
+
+TEST_F(AXPlatformNodeWinTest, MojoEventToUIAPropertyTest) {
+  AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kCheckBox;
+  root.AddIntAttribute(ax::mojom::IntAttribute::kCheckedState,
+                       static_cast<int>(ax::mojom::CheckedState::kMixed));
+
+  Init(root);
+
+  ComPtr<AXPlatformNodeWin> platform_node =
+      QueryInterfaceFromNode<AXPlatformNodeWin>(GetRootAsAXNode());
+  EXPECT_EQ(
+      platform_node->MojoEventToUIAProperty(ax::mojom::Event::kValueChanged),
+      UIA_ToggleToggleStatePropertyId);
 }
 
 }  // namespace ui

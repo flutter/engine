@@ -16,7 +16,7 @@
 
 /**
  * The protocol for an object managing registration for a plugin. It provides access to application
- * context, as as allowing registering for callbacks for handling various conditions.
+ * context, as allowing registering for callbacks for handling various conditions.
  *
  * Currently the macOS PluginRegistrar has very limited functionality, but is expected to expand
  * over time to more closely match the functionality of FlutterPluginRegistrar.
@@ -36,10 +36,11 @@ FLUTTER_DARWIN_EXPORT
 @property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
- * The view displaying Flutter content. May return |nil|, for instance in a headless environment.
+ * The default view displaying Flutter content.
  *
- * WARNING: If/when multiple Flutter views within the same application are supported (#30701), this
- * API will change.
+ * This method may return |nil|, for instance in a headless environment.
+ *
+ * The default view is a special view operated by single-view APIs.
  */
 @property(nullable, readonly) NSView* view;
 
@@ -60,6 +61,27 @@ FLUTTER_DARWIN_EXPORT
  */
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId;
+
+/**
+ * Returns the file name for the given asset.
+ * The returned file name can be used to access the asset in the application's main bundle.
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @return the file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset;
+
+/**
+ * Returns the file name for the given asset which originates from the specified package.
+ * The returned file name can be used to access the asset in the application's main bundle.
+ *
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @param package The name of the package from which the asset originates.
+ * @return the file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                           fromPackage:(nonnull NSString*)package;
 
 @end
 

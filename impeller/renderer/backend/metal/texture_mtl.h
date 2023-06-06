@@ -8,7 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/texture.h"
+#include "impeller/core/texture.h"
 
 namespace impeller {
 
@@ -19,8 +19,10 @@ class TextureMTL final : public Texture,
              id<MTLTexture> texture,
              bool wrapped = false);
 
-  static std::shared_ptr<TextureMTL> Wrapper(TextureDescriptor desc,
-                                             id<MTLTexture> texture);
+  static std::shared_ptr<TextureMTL> Wrapper(
+      TextureDescriptor desc,
+      id<MTLTexture> texture,
+      std::function<void()> deletion_proc = nullptr);
 
   // |Texture|
   ~TextureMTL() override;
@@ -28,6 +30,8 @@ class TextureMTL final : public Texture,
   id<MTLTexture> GetMTLTexture() const;
 
   bool IsWrapped() const;
+
+  bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder);
 
  private:
   id<MTLTexture> texture_ = nullptr;

@@ -311,7 +311,7 @@ class AX_EXPORT AXPlatformNodeDelegate {
   // produce appropriate results. It may optionally return no value, indicating
   // that the delegate does not have all the information required to calculate
   // this value and it is the responsibility of the AXPlatformNode itself to
-  // to calculate it.
+  // calculate it.
   virtual std::optional<int> FindTextBoundary(
       ax::mojom::TextBoundary boundary,
       int offset,
@@ -415,6 +415,14 @@ class AX_EXPORT AXPlatformNodeDelegate {
   // the test behaves differently when the mouse happens to be over an
   // element. The default value should be false if not in testing mode.
   virtual bool ShouldIgnoreHoveredStateForTesting() = 0;
+
+  // If this object is exposed to the platform's accessibility layer, returns
+  // this object. Otherwise, returns the platform leaf or lowest unignored
+  // ancestor under which this object is found.
+  //
+  // (An ignored node means that the node should not be exposed to platform
+  // APIs: See `IsIgnored`.)
+  virtual gfx::NativeViewAccessible GetLowestPlatformAncestor() const = 0;
 
   // Creates a string representation of this delegate's data.
   std::string ToString() { return GetData().ToString(); }

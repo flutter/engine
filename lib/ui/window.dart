@@ -3,10 +3,44 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+/// A configurable display that a [FlutterView] renders on.
+///
+/// Use [FlutterView.display] to get the current display for that view.
+class Display {
+  const Display._({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  /// A unique identifier for this display.
+  ///
+  /// This identifier is unique among a list of displays the Flutter framework
+  /// is aware of, and is not derived from any platform specific identifiers for
+  /// displays.
+  final int id;
+
+  /// The device pixel ratio of this display.
+  ///
+  /// This value is the same as the value of [FlutterView.devicePixelRatio] for
+  /// all view objects attached to this display.
+  final double devicePixelRatio;
+
+  /// The physical size of this display.
+  final Size size;
+
+  /// The refresh rate in FPS of this display.
+  final double refreshRate;
+
+  @override
+  String toString() => 'Display(id: $id, size: $size, devicePixelRatio: $devicePixelRatio, refreshRate: $refreshRate)';
+}
+
 /// A view into which a Flutter [Scene] is drawn.
 ///
-/// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of a [FlutterWindow] whenever [render] is called with a [Scene].
+/// Each [FlutterView] has its own layer tree that is rendered
+/// whenever [render] is called on it with a [Scene].
 ///
 /// ## Insets and Padding
 ///
@@ -51,18 +85,27 @@ part of dart.ui;
 /// the [viewPadding] anyway, so there is no need to account for
 /// that in the [padding], which is always safe to use for such
 /// calculations.
-///
-/// See also:
-///
-///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
-///    the platform as a separate window which can host other [FlutterView]s.
-abstract class FlutterView {
+class FlutterView {
+  FlutterView._(this.viewId, this.platformDispatcher);
+
+  /// The opaque ID for this view.
+  final int viewId;
+
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
-  PlatformDispatcher get platformDispatcher;
+  final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  ViewConfiguration get viewConfiguration;
+  _ViewConfiguration get _viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(viewId));
+    return platformDispatcher._viewConfigurations[viewId]!;
+  }
+
+  /// The [Display] this view is drawn in.
+  Display get display {
+    assert(platformDispatcher._displays.containsKey(_viewConfiguration.displayId));
+    return platformDispatcher._displays[_viewConfiguration.displayId]!;
+  }
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
@@ -83,18 +126,20 @@ abstract class FlutterView {
   /// The Flutter framework operates in logical pixels, so it is rarely
   /// necessary to directly deal with this property.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get devicePixelRatio => viewConfiguration.devicePixelRatio;
+  ///  * [Display.devicePixelRatio], which reports the DPR of the display.
+  ///    The value here is equal to the value exposed on [display].
+  double get devicePixelRatio => _viewConfiguration.devicePixelRatio;
 
   /// The dimensions and location of the rectangle into which the scene rendered
   /// in this view will be drawn on the screen, in physical pixels.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// At startup, the size and location of the view may not be known before Dart
   /// code runs. If this value is observed early in the application lifecycle,
@@ -108,12 +153,12 @@ abstract class FlutterView {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Rect get physicalGeometry => viewConfiguration.geometry;
+  Rect get physicalGeometry => _viewConfiguration.geometry;
 
   /// The dimensions of the rectangle into which the scene rendered in this view
   /// will be drawn on the screen, in physical pixels.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// At startup, the size of the view may not be known before Dart code runs.
   /// If this value is observed early in the application lifecycle, it may
@@ -131,13 +176,13 @@ abstract class FlutterView {
   ///    its size.
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Size get physicalSize => viewConfiguration.geometry.size;
+  Size get physicalSize => _viewConfiguration.geometry.size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
   /// place system UI, such as the keyboard, that fully obscures any content.
   ///
-  /// When this property changes, [onMetricsChanged] is called.
+  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// The relationship between this [viewInsets],
   /// [viewPadding], and [padding] are described in
@@ -150,7 +195,7 @@ abstract class FlutterView {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the view insets in material
   ///    design applications.
-  WindowPadding get viewInsets => viewConfiguration.viewInsets;
+  ViewPadding get viewInsets => _viewConfiguration.viewInsets;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
@@ -163,7 +208,7 @@ abstract class FlutterView {
   /// change in response to the soft keyboard being visible or hidden, whereas
   /// [padding] will.
   ///
-  /// When this property changes, [onMetricsChanged] is called.
+  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// The relationship between this [viewInsets],
   /// [viewPadding], and [padding] are described in
@@ -176,7 +221,7 @@ abstract class FlutterView {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
-  WindowPadding get viewPadding => viewConfiguration.viewPadding;
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but where the operating system will consume
@@ -186,14 +231,14 @@ abstract class FlutterView {
   /// screen, where swiping inwards from the edges takes users backward
   /// through the history of screens they previously visited.
   ///
-  /// When this property changes, [onMetricsChanged] is called.
+  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
-  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
@@ -209,7 +254,7 @@ abstract class FlutterView {
   /// not drawn (to account for the bottom soft button area), but will be `0.0`
   /// when the soft keyboard is visible.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// The relationship between this [viewInsets], [viewPadding], and [padding]
   /// are described in more detail in the documentation for [FlutterView].
@@ -221,18 +266,42 @@ abstract class FlutterView {
   /// * [MediaQuery.of], a simpler mechanism for the same.
   /// * [Scaffold], which automatically applies the padding in material design
   ///   applications.
-  WindowPadding get padding => viewConfiguration.padding;
+  ViewPadding get padding => _viewConfiguration.padding;
 
-  /// {@macro dart.ui.ViewConfiguration.displayFeatures}
+  /// Additional configuration for touch gestures performed on this view.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// For example, the touch slop defined in physical pixels may be provided
+  /// by the gesture settings and should be preferred over the framework
+  /// touch slop constant.
+  GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  /// {@template dart.ui.ViewConfiguration.displayFeatures}
+  /// Areas of the display that are obstructed by hardware features.
+  ///
+  /// This list is populated only on Android. If the device has no display
+  /// features, this list is empty.
+  ///
+  /// The coordinate space in which the [DisplayFeature.bounds] are defined spans
+  /// across the screens currently in use. This means that the space between the screens
+  /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
+  /// of the display feature as an obstructed area. The [DisplayFeature.type] can
+  /// be used to determine if this display feature obstructs the screen or not.
+  /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both
+  /// obstruct the display, while [DisplayFeatureType.fold] is a crease in the display.
+  ///
+  /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
+  /// used to determine the posture the device is in.
+  /// {@endtemplate}
+  ///
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   ///  * [MediaQuery.of], a simpler mechanism to access this data.
-  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
+  List<DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
 
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
@@ -262,10 +331,10 @@ abstract class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene);
+  void render(Scene scene) => _render(scene as _NativeScene);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::Render')
-  external static void _render(Scene scene);
+  @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
+  external static void _render(_NativeScene scene);
 
   /// Change the retained semantics data about this [FlutterView].
   ///
@@ -275,60 +344,42 @@ abstract class FlutterView {
   ///
   /// This function disposes the given update, which means the semantics update
   /// cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update as _NativeSemanticsUpdate);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
-  external static void _updateSemantics(SemanticsUpdate update);
+  @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
+  external static void _updateSemantics(_NativeSemanticsUpdate update);
 }
 
-/// A top-level platform window displaying a Flutter layer tree drawn from a
-/// [Scene].
+/// Deprecated. Will be removed in a future version of Flutter.
 ///
-/// The current list of all Flutter views for the application is available from
-/// `WidgetsBinding.instance.platformDispatcher.views`. Only views that are of type
-/// [FlutterWindow] are top level platform windows.
+/// This class is deprecated to prepare for Flutter's upcoming support for
+/// multiple views and eventually multiple windows.
 ///
-/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
-/// if `WidgetsBinding` is unavailable, but we strongly advise avoiding a static
-/// reference to it. See the documentation for [PlatformDispatcher.instance] for
-/// more details about why it should be avoided.
+/// This class has been split into two classes: [FlutterView] and
+/// [PlatformDispatcher]. A [FlutterView] gives an application access to
+/// view-specific functionality while the [PlatformDispatcher] contains
+/// platform-specific functionality that applies to all views.
+///
+/// This class backs the global [window] singleton, which is also deprecated.
+/// See the docs on [window] for migration options.
 ///
 /// See also:
 ///
-/// * [PlatformDispatcher], which manages the current list of [FlutterView] (and
-///   thus [FlutterWindow]) instances.
-class FlutterWindow extends FlutterView {
-  FlutterWindow._(this._windowId, this.platformDispatcher);
-
-  /// The opaque ID for this view.
-  final Object _windowId;
-
-  @override
-  final PlatformDispatcher platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(_windowId));
-    return platformDispatcher._viewConfigurations[_windowId]!;
-  }
-}
-
-/// A [FlutterWindow] that includes access to setting callbacks and retrieving
-/// properties that reside on the [PlatformDispatcher].
-///
-/// It is the type of the global [window] singleton used by applications that
-/// only have a single main window.
-///
-/// In addition to the properties of [FlutterView], this class provides access
-/// to platform-specific properties. To modify or retrieve these properties,
-/// applications designed for more than one main window should prefer using
-/// `WidgetsBinding.instance.platformDispatcher` instead.
-///
-/// Prefer access through `WidgetsBinding.instance.window` or
-/// `WidgetsBinding.instance.platformDispatcher` over a static reference to
-/// [window], or [PlatformDispatcher.instance]. See the documentation for
-/// [PlatformDispatcher.instance] for more details about this recommendation.
-class SingletonFlutterWindow extends FlutterWindow {
+/// * [FlutterView], which gives an application access to view-specific
+///   functionality.
+/// * [PlatformDispatcher], which gives an application access to
+///   platform-specific functionality.
+@Deprecated(
+  'Use FlutterView or PlatformDispatcher instead. '
+  'Deprecated to prepare for the upcoming multi-window support. '
+  'This feature was deprecated after v3.7.0-32.0.pre.'
+)
+class SingletonFlutterWindow extends FlutterView {
+  @Deprecated(
+    'Use FlutterView or PlatformDispatcher instead. '
+    'Deprecated to prepare for the upcoming multi-window support. '
+    'This feature was deprecated after v3.7.0-32.0.pre.'
+  )
   SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
       : super._();
 
@@ -581,7 +632,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
-  /// [SingletonFlutterWindow.onReportTimings] directly because
+  /// [PlatformDispatcher.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
   /// This can be used to see if the window has missed frames (through
@@ -705,21 +756,6 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onFrameDataChanged = callback;
   }
 
-  /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
-  ///
-  /// {@macro dart.ui.window.accessorForwardWarning}
-  ///
-  /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
-  }
-
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
@@ -822,7 +858,7 @@ class AccessibilityFeatures {
 
   /// The platform is requesting that text be rendered at a bold font weight.
   ///
-  /// Only supported on iOS.
+  /// Only supported on iOS and Android API 31+.
   bool get boldText => _kBoldTextIndex & _index != 0;
 
   /// The platform is requesting that certain animations be simplified and
@@ -896,35 +932,51 @@ enum Brightness {
   light,
 }
 
-/// The [SingletonFlutterWindow] representing the main window for applications
-/// where there is only one window, such as applications designed for
-/// single-display mobile devices.
+/// Deprecated. Will be removed in a future version of Flutter.
 ///
-/// Applications that are designed to use more than one window should interact
-/// with the `WidgetsBinding.instance.platformDispatcher` instead.
+/// This global property is deprecated to prepare for Flutter's upcoming support
+/// for multiple views and multiple windows.
 ///
-/// Consider avoiding static references to this singleton through
-/// [PlatformDispatcher.instance] and instead prefer using a binding for
-/// dependency resolution such as `WidgetsBinding.instance.window`.
+/// It represents the main view for applications where there is only one
+/// view, such as applications designed for single-display mobile devices.
+/// If the embedder supports multiple views, it points to the first view
+/// created which is assumed to be the main view. It throws if no view has
+/// been created yet or if the first view has been removed again.
 ///
-/// Static access of this `window` object means that Flutter has few, if any
-/// options to fake or mock the given object in tests. Even in cases where Dart
-/// offers special language constructs to forcefully shadow such properties,
-/// those mechanisms would only be reasonable for tests and they would not be
-/// reasonable for a future of Flutter where we legitimately want to select an
-/// appropriate implementation at runtime.
+/// The following options exists to migrate code that relies on accessing
+/// this deprecated property:
 ///
-/// The only place that `WidgetsBinding.instance.window` is inappropriate is if
-/// access to these APIs is required before the binding is initialized by
-/// invoking `runApp()` or `WidgetsFlutterBinding.instance.ensureInitialized()`.
-/// In that case, it is necessary (though unfortunate) to use the
-/// [PlatformDispatcher.instance] object statically.
+/// If a [BuildContext] is available, consider looking up the current
+/// [FlutterView] associated with that context via [View.of]. It gives access
+/// to the same functionality as this deprecated property. However, the
+/// platform-specific functionality has moved to the [PlatformDispatcher],
+/// which may be accessed from the view returned by [View.of] via
+/// [FlutterView.platformDispatcher]. Using [View.of] with a [BuildContext] is
+/// the preferred option to migrate away from this deprecated [window]
+/// property.
+///
+/// If no context is available to look up a [FlutterView], the
+/// [PlatformDispatcher] can be used directly for platform-specific
+/// functionality. It also maintains a list of all available [FlutterView]s in
+/// [PlatformDispatcher.views] to access view-specific functionality without a
+/// context. If possible, consider accessing the [PlatformDispatcher] via the
+/// binding (e.g. `WidgetsBinding.instance.platformDispatcher`) instead of the
+/// static singleton [PlatformDispatcher.instance]. See
+/// [PlatformDispatcher.instance] for more information about why this is
+/// preferred.
 ///
 /// See also:
 ///
-/// * [PlatformDispatcher.views], contains the current list of Flutter windows
-///   belonging to the application, including top level application windows like
-///   this one.
+/// * [FlutterView], which gives an application access to view-specific
+///   functionality.
+/// * [PlatformDispatcher], which gives an application access to
+///   platform-specific functionality.
+/// * [PlatformDispatcher.views], for a list of all available views.
+@Deprecated(
+  'Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead. '
+  'Deprecated to prepare for the upcoming multi-window support. '
+  'This feature was deprecated after v3.7.0-32.0.pre.'
+)
 final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
 
 /// Additional data available on each flutter frame.
@@ -942,8 +994,9 @@ class FrameData {
 
 /// Platform specific configuration for gesture behavior, such as touch slop.
 ///
-/// These settings are provided via [ViewConfiguration] to each window, and should
-/// be favored for configuring gesture behavior over the framework constants.
+/// These settings are provided via [FlutterView.gestureSettings] to each
+/// view, and should be favored for configuring gesture behavior over the
+/// framework constants.
 ///
 /// A `null` field indicates that the platform or view does not have a preference
 /// and the fallback constants should be used instead.
@@ -971,7 +1024,7 @@ class GestureSettings {
   /// instead.
   final double? physicalDoubleTapSlop;
 
-  /// Create a new [GestureSetting]s object from an existing value, overwriting
+  /// Create a new [GestureSettings] object from an existing value, overwriting
   /// all of the provided fields.
   GestureSettings copyWith({
     double? physicalTouchSlop,

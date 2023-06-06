@@ -25,8 +25,8 @@ class ImageShader : public Shader {
   static void Create(Dart_Handle wrapper);
 
   Dart_Handle initWithImage(CanvasImage* image,
-                            SkTileMode tmx,
-                            SkTileMode tmy,
+                            DlTileMode tmx,
+                            DlTileMode tmy,
                             int filter_quality_index,
                             Dart_Handle matrix_handle);
 
@@ -43,7 +43,7 @@ class ImageShader : public Shader {
   sk_sp<const DlImage> image_;
   bool sampling_is_locked_;
 
-  flutter::SkiaGPUObject<DlImageColorSource> cached_shader_;
+  std::shared_ptr<DlImageColorSource> cached_shader_;
 };
 
 }  // namespace flutter

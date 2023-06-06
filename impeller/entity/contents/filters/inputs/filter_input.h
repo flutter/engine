@@ -36,7 +36,7 @@ class FilterInput {
 
   virtual ~FilterInput();
 
-  static FilterInput::Ref Make(Variant input);
+  static FilterInput::Ref Make(Variant input, bool msaa_enabled = true);
 
   static FilterInput::Ref Make(std::shared_ptr<Texture> input,
                                Matrix local_transform);
@@ -45,8 +45,11 @@ class FilterInput {
 
   virtual Variant GetInput() const = 0;
 
-  virtual std::optional<Snapshot> GetSnapshot(const ContentContext& renderer,
-                                              const Entity& entity) const = 0;
+  virtual std::optional<Snapshot> GetSnapshot(
+      const std::string& label,
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 

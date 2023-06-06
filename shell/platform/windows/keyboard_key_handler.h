@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "rapidjson/document.h"
@@ -47,6 +48,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                               bool was_down,
                               KeyEventCallback callback) = 0;
 
+    virtual void SyncModifiersIfNeeded(int modifiers_state) = 0;
+
     virtual ~KeyboardKeyHandlerDelegate();
   };
 
@@ -58,6 +61,9 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // Add a delegate that handles events received by |KeyboardHook|.
   void AddDelegate(std::unique_ptr<KeyboardKeyHandlerDelegate> delegate);
 
+  // Synthesize modifier keys events if needed.
+  void SyncModifiersIfNeeded(int modifiers_state) override;
+
   // Handles a key event.
   //
   // Returns whether this handler claims to handle the event, which is true if
@@ -66,7 +72,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // Windows requires a synchronous response of whether a key event should be
   // handled, while the query to Flutter is always asynchronous. This is
   // resolved by the "redispatching" algorithm: by default, the response to a
-  // fresh event is always always true. The event is then sent to the framework.
+  // fresh event is always true. The event is then sent to the framework.
   // If the framework later decides not to handle the event, this class will
   // create an identical event and dispatch it to the system, and remember all
   // synthesized events. The fist time an exact event (by |ComputeEventHash|) is
@@ -116,6 +122,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
 
   // The sequence_id attached to the last event sent to the framework.
   uint64_t last_sequence_id_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyboardKeyHandler);
 };
 
 }  // namespace flutter

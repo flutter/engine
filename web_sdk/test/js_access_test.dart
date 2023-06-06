@@ -4,13 +4,13 @@
 
 // ignore_for_file: avoid_print
 
-/// Checks that JavaScript API is accessed properly.
-///
-/// JavaScript access needs to be audited to make sure it follows security best
-/// practices. To do that, all JavaScript access is consolidated into a small
-/// number of libraries that change infrequently. These libraries are manually
-/// audited on every change. All other code accesses JavaScript through these
-/// libraries and does not require audit.
+// Checks that JavaScript API is accessed properly.
+//
+// JavaScript access needs to be audited to make sure it follows security best
+// practices. To do that, all JavaScript access is consolidated into a small
+// number of libraries that change infrequently. These libraries are manually
+// audited on every change. All other code accesses JavaScript through these
+// libraries and does not require audit.
 
 import 'dart:io';
 
@@ -31,13 +31,13 @@ const List<String> _auditedLibraries = <String>[
 ];
 
 Future<void> main(List<String> args) async {
-  bool areAssertionsEnabled = false;
+  bool shouldThrow = true;
   assert(() {
-    areAssertionsEnabled = true;
+    shouldThrow = false;
     return true;
   }());
 
-  if (!areAssertionsEnabled) {
+  if (shouldThrow) {
     throw ArgumentError(
       'This test must run with --enable-asserts',
     );

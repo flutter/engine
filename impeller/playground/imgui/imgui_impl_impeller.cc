@@ -15,24 +15,24 @@
 #include "impeller/playground/imgui/imgui_raster.vert.h"
 #include "third_party/imgui/imgui.h"
 
+#include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/range.h"
+#include "impeller/core/sampler.h"
+#include "impeller/core/texture.h"
+#include "impeller/core/texture_descriptor.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
-#include "impeller/renderer/allocator.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/range.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/texture.h"
-#include "impeller/renderer/texture_descriptor.h"
-#include "impeller/renderer/vertex_buffer.h"
 
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
@@ -94,11 +94,11 @@ bool ImGui_ImplImpeller_Init(
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    auto stencil = desc->GetFrontStencilAttachmentDescriptor();
-    if (stencil.has_value()) {
-      stencil->stencil_compare = impeller::CompareFunction::kAlways;
-      stencil->depth_stencil_pass = impeller::StencilOperation::kKeep;
-      desc->SetStencilAttachmentDescriptors(stencil.value());
+    IM_ASSERT(desc.has_value() && "Could not create Impeller pipeline");
+    if (desc.has_value()) {  // Needed to silence clang-tidy check
+                             // bugprone-unchecked-optional-access.
+      desc->ClearStencilAttachments();
+      desc->ClearDepthAttachment();
     }
 
     bd->pipeline =
@@ -260,7 +260,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             .range = impeller::Range(
                 index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
-        vertex_buffer.index_count = pcmd->ElemCount;
+        vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;

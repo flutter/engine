@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import '../dom.dart';
-import '../util.dart';
 
 DomHTMLElement _createContainer() {
   final DomHTMLElement container = createDomHTMLDivElement();
@@ -65,7 +64,8 @@ class DebugCanvasReuseOverlay {
             ..append(
               createDomHTMLButtonElement()
                 ..text = 'Reset'
-                ..addEventListener('click', (_) => _reset()),
+                ..addEventListener('click',
+                    createDomEventListener((_) => _reset())),
             ),
         ),
     );
@@ -76,9 +76,10 @@ class DebugCanvasReuseOverlay {
     if (_instance == null) {
       // Only call the constructor when assertions are enabled to guard against
       // mistakingly including this class in a release build.
-      if (assertionsEnabled) {
+      assert(() {
         _instance = DebugCanvasReuseOverlay._();
-      }
+        return true;
+      }());
     }
     return _instance!;
   }

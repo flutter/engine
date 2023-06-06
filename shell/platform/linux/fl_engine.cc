@@ -7,7 +7,11 @@
 #include <gmodule.h>
 
 #include <cstring>
+#include <string>
+#include <vector>
 
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
@@ -20,6 +24,7 @@
 #include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
@@ -28,6 +33,8 @@ static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 // differentiate the actual device (mouse v.s. trackpad)
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
+static constexpr const char* kFlutterLifecycleChannel = "flutter/lifecycle";
 
 struct _FlEngine {
   GObject parent_instance;
@@ -86,29 +93,56 @@ static void parse_locale(const gchar* locale,
   // Locales are in the form "language[_territory][.codeset][@modifier]"
   gchar* match = strrchr(l, '@');
   if (match != nullptr) {
-    *modifier = g_strdup(match + 1);
+    if (modifier != nullptr) {
+      *modifier = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (modifier != nullptr) {
     *modifier = nullptr;
   }
 
   match = strrchr(l, '.');
   if (match != nullptr) {
-    *codeset = g_strdup(match + 1);
+    if (codeset != nullptr) {
+      *codeset = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (codeset != nullptr) {
     *codeset = nullptr;
   }
 
   match = strrchr(l, '_');
   if (match != nullptr) {
-    *territory = g_strdup(match + 1);
+    if (territory != nullptr) {
+      *territory = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (territory != nullptr) {
     *territory = nullptr;
   }
 
-  *language = l;
+  if (language != nullptr) {
+    *language = l;
+  }
+}
+
+static void set_app_lifecycle_state(FlEngine* self,
+                                    const flutter::AppLifecycleState state) {
+  FlBinaryMessenger* binary_messenger = fl_engine_get_binary_messenger(self);
+
+  g_autoptr(FlValue) value =
+      fl_value_new_string(flutter::AppLifecycleStateToString(state));
+  g_autoptr(FlStringCodec) codec = fl_string_codec_new();
+  g_autoptr(GBytes) message =
+      fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, nullptr);
+
+  if (message == nullptr) {
+    return;
+  }
+
+  fl_binary_messenger_send_on_channel(binary_messenger,
+                                      kFlutterLifecycleChannel, message,
+                                      nullptr, nullptr, nullptr);
 }
 
 // Passes locale information to the Flutter engine.
@@ -118,19 +152,13 @@ static void setup_locales(FlEngine* self) {
   // Helper array to take ownership of the strings passed to Flutter.
   g_autoptr(GPtrArray) locale_strings = g_ptr_array_new_with_free_func(g_free);
   for (int i = 0; languages[i] != nullptr; i++) {
-    gchar *language, *territory, *codeset, *modifier;
-    parse_locale(languages[i], &language, &territory, &codeset, &modifier);
+    gchar *language, *territory;
+    parse_locale(languages[i], &language, &territory, nullptr, nullptr);
     if (language != nullptr) {
       g_ptr_array_add(locale_strings, language);
     }
     if (territory != nullptr) {
       g_ptr_array_add(locale_strings, territory);
-    }
-    if (codeset != nullptr) {
-      g_ptr_array_add(locale_strings, codeset);
-    }
-    if (modifier != nullptr) {
-      g_ptr_array_add(locale_strings, modifier);
     }
 
     FlutterLocale* locale =
@@ -139,8 +167,8 @@ static void setup_locales(FlEngine* self) {
     locale->struct_size = sizeof(FlutterLocale);
     locale->language_code = language;
     locale->country_code = territory;
-    locale->script_code = codeset;
-    locale->variant_code = modifier;
+    locale->script_code = nullptr;
+    locale->variant_code = nullptr;
   }
   FlutterLocale** locales =
       reinterpret_cast<FlutterLocale**>(locales_array->pdata);
@@ -481,8 +509,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.platform_task_runner = &platform_task_runner;
   custom_task_runners.render_task_runner = &platform_task_runner;
 
-  g_autoptr(GPtrArray) command_line_args =
-      fl_dart_project_get_switches(self->project);
+  g_autoptr(GPtrArray) command_line_args = fl_engine_get_switches(self);
   // FlutterProjectArgs expects a full argv, so when processing it for flags
   // the first item is treated as the executable and ignored. Add a dummy value
   // so that all switches are used.
@@ -717,6 +744,18 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
   return static_cast<GBytes*>(g_task_propagate_pointer(G_TASK(result), error));
 }
 
+void fl_engine_send_window_state_event(FlEngine* self,
+                                       gboolean visible,
+                                       gboolean focused) {
+  if (visible && focused) {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kResumed);
+  } else if (visible) {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kInactive);
+  } else {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kHidden);
+  }
+}
+
 void fl_engine_send_window_metrics_event(FlEngine* self,
                                          size_t width,
                                          size_t height,
@@ -882,4 +921,12 @@ void fl_engine_update_accessibility_features(FlEngine* self, int32_t flags) {
 
   self->embedder_api.UpdateAccessibilityFeatures(
       self->engine, static_cast<FlutterAccessibilityFeature>(flags));
+}
+
+GPtrArray* fl_engine_get_switches(FlEngine* self) {
+  GPtrArray* switches = g_ptr_array_new_with_free_func(g_free);
+  for (const auto& env_switch : flutter::GetSwitchesFromEnvironment()) {
+    g_ptr_array_add(switches, g_strdup(env_switch.c_str()));
+  }
+  return switches;
 }

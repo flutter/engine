@@ -330,7 +330,8 @@ class ChannelBuffers {
         'framework has had an opportunity to register a listener. See the ChannelBuffers '
         'API documentation for details on how to configure the channel to expect more '
         'messages, or to expect messages to get discarded:\n'
-        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html'
+        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html\n'
+        'The capacity of the $name channel is ${channel._capacity} message${channel._capacity != 1 ? 's' : ''}.',
       );
     }
   }
@@ -468,7 +469,6 @@ class ChannelBuffers {
           }
           index += 1;
           resize(channelName, data.getUint32(index, Endian.host));
-          break;
         case 'overflow':
           if (bytes[index] != 0x0C) { // 12 = value code for list
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)");
@@ -493,7 +493,6 @@ class ChannelBuffers {
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (second argument must be a boolean)");
           }
           allowOverflow(channelName, bytes[index] == 0x01);
-          break;
         default:
           throw Exception("Unrecognized method '$methodName' sent to $kControlChannelName");
       }

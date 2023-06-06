@@ -2,20 +2,40 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
-import 'package:fuchsia_services/services.dart';
+import 'package:args/args.dart';
+import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:zircon/zircon.dart';
 
-void main(List<String> args) {
+final _argsCsvFilePath = '/config/data/args.csv';
+
+void main(List<String> args) async {
   print('Launching embedding-flutter-view');
-  TestApp app = TestApp(ChildView.gfx(_launchGfxChildView()));
+
+  args = args + _GetArgsFromConfigFile();
+  final parser = ArgParser()
+    ..addFlag('showOverlay', defaultsTo: false)
+    ..addFlag('hitTestable', defaultsTo: true)
+    ..addFlag('focusable', defaultsTo: true);
+
+  final arguments = parser.parse(args);
+  for (final option in arguments.options) {
+    print('embedding-flutter-view args: $option: ${arguments[option]}');
+  }
+
+  // TODO(fxbug.dev/125514): Support Flatland Child View.
+  TestApp app = TestApp(
+    ChildView(await _launchChildView(false)),
+    showOverlay: arguments['showOverlay'],
+    hitTestable: arguments['hitTestable'],
+    focusable: arguments['focusable'],
+  );
+
   app.run();
 }
 
@@ -24,14 +44,21 @@ class TestApp {
   static const _blue = Color.fromARGB(255, 0, 0, 255);
 
   final ChildView childView;
-  final _responseListener = test_touch.TouchInputListenerProxy();
+  final bool showOverlay;
+  final bool hitTestable;
+  final bool focusable;
 
   Color _backgroundColor = _blue;
 
-  TestApp(this.childView) {}
+  TestApp(
+    this.childView,
+    {this.showOverlay = false,
+    this.hitTestable = true,
+    this.focusable = true}) {
+  }
 
   void run() {
-    childView.create((ByteData reply) {
+    childView.create(hitTestable, focusable, (ByteData reply) {
         // Set up window callbacks.
         window.onPointerDataPacket = (PointerDataPacket packet) {
           this.pointerDataPacket(packet);
@@ -67,13 +94,52 @@ class TestApp {
     final sceneBuilder = SceneBuilder()
       ..pushClipRect(physicalBounds)
       ..addPicture(Offset.zero, picture);
-    // Child view should take up half the screen
-    final childPhysicalSize = window.physicalSize * 0.5;
+
+    final childPhysicalSize = window.physicalSize * 0.25;
+    // Alignment.center
+    final windowCenter = size.center(Offset.zero);
+    final windowPhysicalCenter = window.physicalSize.center(Offset.zero);
+    final childPhysicalOffset = windowPhysicalCenter - childPhysicalSize.center(Offset.zero);
+
     sceneBuilder
+      ..pushTransform(
+        vector_math_64.Matrix4.translationValues(childPhysicalOffset.dx,
+                                                 childPhysicalOffset.dy,
+                                                 0.0).storage)
       ..addPlatformView(childView.viewId,
                         width: childPhysicalSize.width,
-                        height: size.height)
+                        height: childPhysicalSize.height)
       ..pop();
+
+    if (showOverlay) {
+      final containerSize = size * 0.5;
+      // Alignment.center
+      final containerOffset = windowCenter - containerSize.center(Offset.zero);
+
+      final overlaySize = containerSize * 0.5;
+      // Alignment.topRight
+      final overlayOffset = Offset(
+        containerOffset.dx + containerSize.width - overlaySize.width,
+        containerOffset.dy);
+      final overlayPhysicalSize = overlaySize * pixelRatio;
+      final overlayPhysicalOffset = overlayOffset * pixelRatio;
+      final overlayPhysicalBounds = overlayPhysicalOffset & overlayPhysicalSize;
+
+      final recorder = PictureRecorder();
+      final overlayCullRect = Offset.zero & overlayPhysicalSize; // in canvas physical coordinates
+      final canvas = Canvas(recorder, overlayCullRect);
+      canvas.scale(pixelRatio);
+
+      final paint = Paint()..color = Color.fromARGB(255, 0, 255, 0);
+      canvas.drawRect(Offset.zero & overlaySize, paint);
+
+      final overlayPicture = recorder.endRecording();
+      sceneBuilder
+        ..pushClipRect(overlayPhysicalBounds) // in window physical coordinates
+        ..addPicture(overlayPhysicalOffset, overlayPicture)
+        ..pop();
+    }
+
     sceneBuilder.pop();
     window.render(sceneBuilder.build());
   }
@@ -89,50 +155,47 @@ class TestApp {
       }
 
       if (data.change == PointerChange.down || data.change == PointerChange.move) {
-        Incoming.fromSvcPath()
-          ..connectToService(_responseListener)
-          ..close();
-
-        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+        _reportTouchInput(
           localX: data.physicalX,
           localY: data.physicalY,
           timeReceived: nowNanos,
-          componentName: 'embedding-flutter-view',
-        ));
+        );
       }
     }
 
     window.scheduleFrame();
   }
 
-  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+  void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
-    await _responseListener.reportTouchInput(request);
+    final message = utf8.encoder.convert(json.encode({
+      'method': 'TouchInputListener.ReportTouchInput',
+      'local_x': localX,
+      'local_y': localY,
+      'time_received': timeReceived,
+      'component_name': 'embedding-flutter-view',
+    })).buffer.asByteData();
+    PlatformDispatcher.instance.sendPlatformMessage('fuchsia/input_test', message, null);
   }
 }
 
 class ChildView {
-  final ViewHolderToken viewHolderToken;
-  final ViewportCreationToken viewportCreationToken;
   final int viewId;
 
-  ChildView(this.viewportCreationToken) : viewHolderToken = null, viewId = viewportCreationToken.value.handle.handle {
-    assert(viewId != null);
-  }
+  ChildView(this.viewId);
 
-  ChildView.gfx(this.viewHolderToken) : viewportCreationToken = null, viewId = viewHolderToken.value.handle.handle {
-    assert(viewId != null);
-  }
-
-  void create(PlatformMessageResponseCallback callback) {
+  void create(
+    bool hitTestable,
+    bool focusable,
+    PlatformMessageResponseCallback callback) {
     // Construct the dart:ui platform message to create the view, and when the
     // return callback is invoked, build the scene. At that point, it is safe
     // to embed the child view in the scene.
     final viewOcclusionHint = Rect.zero;
     final Map<String, dynamic> args = <String, dynamic>{
       'viewId': viewId,
-      'hitTestable': true,
-      'focusable': true,
+      'hitTestable': hitTestable,
+      'focusable': focusable,
       'viewOcclusionHintLTRB': <double>[
         viewOcclusionHint.left,
         viewOcclusionHint.top,
@@ -157,19 +220,26 @@ class ChildView {
   }
 }
 
-ViewHolderToken _launchGfxChildView() {
-  ViewProviderProxy viewProvider = ViewProviderProxy();
-  Incoming.fromSvcPath()
-    ..connectToService(viewProvider)
-    ..close();
+Future<int> _launchChildView(bool useFlatland) async {
+  final message = Int8List.fromList([useFlatland ? 0x31 : 0x30]);
+  final completer = new Completer<ByteData>();
+  PlatformDispatcher.instance.sendPlatformMessage(
+      'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {
+    completer.complete(reply);
+  });
 
-  final viewTokens = EventPairPair();
-  assert(viewTokens.status == ZX.OK);
-  final viewHolderToken = ViewHolderToken(value: viewTokens.first);
-  final viewToken = ViewToken(value: viewTokens.second);
+  return int.parse(
+      ascii.decode(((await completer.future).buffer.asUint8List())));
+}
 
-  viewProvider.createView(viewToken.value, null, null);
-  viewProvider.ctrl.close();
 
-  return viewHolderToken;
+List<String> _GetArgsFromConfigFile() {
+  List<String> args;
+  final f = File(_argsCsvFilePath);
+  if (!f.existsSync()) {
+    return List.empty();
+  }
+  final fileContentCsv = f.readAsStringSync();
+  args = fileContentCsv.split('\n');
+  return args;
 }

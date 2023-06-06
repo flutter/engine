@@ -15,6 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
@@ -25,8 +26,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
+import io.flutter.embedding.engine.FlutterEngineGroup;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.List;
@@ -39,6 +43,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.robolectric.Robolectric;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 
@@ -93,6 +99,21 @@ public class FlutterEngineTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
     assertEquals(flutterEngine, registeredEngines.get(0));
+  }
+
+  @Test
+  public void itUpdatesDisplayMetricsOnConstructionWithActivityContext() {
+    // Needs an activity. ApplicationContext won't work for this.
+    ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    FlutterEngine flutterEngine =
+        new FlutterEngine(activityController.get(), mockFlutterLoader, mockFlutterJNI);
+
+    verify(mockFlutterJNI, times(1))
+        .updateDisplayMetrics(eq(0), any(Float.class), any(Float.class), any(Float.class));
   }
 
   @Test
@@ -322,5 +343,35 @@ public class FlutterEngineTest {
             /*automaticallyRegisterPlugins=*/ false);
 
     assertTrue(engineUnderTest.getDartExecutor().isExecutingDart());
+  }
+
+  @Test
+  public void passesEngineGroupToPlugins() throws NameNotFoundException {
+    Context packageContext = mock(Context.class);
+
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(flutterJNI.isAttached()).thenReturn(true);
+
+    FlutterEngineGroup mockGroup = mock(FlutterEngineGroup.class);
+
+    FlutterEngine engineUnderTest =
+        new FlutterEngine(
+            mockContext,
+            mock(FlutterLoader.class),
+            flutterJNI,
+            new PlatformViewsController(),
+            /*dartVmArgs=*/ new String[] {},
+            /*automaticallyRegisterPlugins=*/ false,
+            /*waitForRestorationData=*/ false,
+            mockGroup);
+
+    PluginRegistry registry = engineUnderTest.getPlugins();
+    FlutterPlugin mockPlugin = mock(FlutterPlugin.class);
+    ArgumentCaptor<FlutterPlugin.FlutterPluginBinding> pluginBindingCaptor =
+        ArgumentCaptor.forClass(FlutterPlugin.FlutterPluginBinding.class);
+    registry.add(mockPlugin);
+    verify(mockPlugin).onAttachedToEngine(pluginBindingCaptor.capture());
+    assertNotNull(pluginBindingCaptor.getValue());
+    assertEquals(mockGroup, pluginBindingCaptor.getValue().getEngineGroup());
   }
 }

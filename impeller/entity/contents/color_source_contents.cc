@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "color_source_contents.h"
+#include "impeller/entity/contents/color_source_contents.h"
 
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -13,23 +14,23 @@ ColorSourceContents::ColorSourceContents() = default;
 
 ColorSourceContents::~ColorSourceContents() = default;
 
-void ColorSourceContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+void ColorSourceContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
 }
 
-const std::unique_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
+const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
   return geometry_;
 }
 
-void ColorSourceContents::SetAlpha(Scalar alpha) {
-  alpha_ = alpha;
+void ColorSourceContents::SetOpacity(Scalar alpha) {
+  opacity_ = alpha;
 }
 
-Scalar ColorSourceContents::GetAlpha() const {
-  return alpha_;
+Scalar ColorSourceContents::GetOpacity() const {
+  return opacity_ * inherited_opacity_;
 }
 
-void ColorSourceContents::SetMatrix(Matrix matrix) {
+void ColorSourceContents::SetEffectTransform(Matrix matrix) {
   inverse_matrix_ = matrix.Invert();
 }
 
@@ -41,6 +42,14 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransformation());
 };
+
+bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
+  return true;
+}
+
+void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
+  inherited_opacity_ = opacity;
+}
 
 bool ColorSourceContents::ShouldRender(
     const Entity& entity,

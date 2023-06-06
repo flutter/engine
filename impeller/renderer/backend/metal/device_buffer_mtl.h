@@ -8,13 +8,12 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/device_buffer.h"
+#include "impeller/core/device_buffer.h"
 
 namespace impeller {
 
-class DeviceBufferMTL final
-    : public DeviceBuffer,
-      public BackendCast<DeviceBufferMTL, DeviceBuffer> {
+class DeviceBufferMTL final : public DeviceBuffer,
+                              public BackendCast<DeviceBufferMTL, Buffer> {
  public:
   DeviceBufferMTL();
 

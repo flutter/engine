@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -41,7 +41,8 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
-                     int32_t device_id) override;
+                     int32_t device_id,
+                     int modifiers_state) override;
 
   // |Window|
   void OnPointerDown(double x,
@@ -150,7 +151,13 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void SendInitialAccessibilityFeatures() override;
 
   // |WindowBindingHandler|
-  AccessibilityRootNode* GetAccessibilityRootNode() override;
+  AlertPlatformNodeDelegate* GetAlertDelegate() override;
+
+  // |WindowBindingHandler|
+  ui::AXPlatformNodeWin* GetAlert() override;
+
+  // |WindowBindingHandler|
+  bool NeedsVSync() override;
 
   // |Window|
   ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
@@ -165,6 +172,8 @@ class FlutterWindow : public Window, public WindowBindingHandler {
 
   // The cursor rect set by Flutter.
   RECT cursor_rect_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindow);
 };
 
 }  // namespace flutter

@@ -5,14 +5,18 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_H_
 
-#include "flutter/display_list/display_list_image.h"
-#include "flutter/flow/skia_gpu_object.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
+
+// Must be kept in sync with painting.dart.
+enum ColorSpace {
+  kSRGB,
+  kExtendedSRGB,
+};
 
 class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
   DEFINE_WRAPPERTYPEINFO();
@@ -35,7 +39,12 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
 
   sk_sp<DlImage> image() const { return image_; }
 
-  void set_image(sk_sp<DlImage> image) { image_ = image; }
+  void set_image(sk_sp<DlImage> image) {
+    FML_DCHECK(image->isUIThreadSafe());
+    image_ = image;
+  }
+
+  int colorSpace();
 
  private:
   CanvasImage();
