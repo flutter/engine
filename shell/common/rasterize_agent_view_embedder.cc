@@ -9,7 +9,7 @@ namespace flutter {
 RasterizeAgentViewEmbedder::RasterizeAgentViewEmbedder(
     std::shared_ptr<ExternalViewEmbedder> view_embedder,
     std::shared_ptr<Surface> surface)
-    : view_embedder_(view_embedder), surface_(surface) {
+    : view_embedder_(std::move(view_embedder)), surface_(std::move(surface)) {
   FML_DCHECK(view_embedder_);
 }
 

@@ -2193,12 +2193,12 @@ ORIGIN: ../../../flutter/shell/common/platform_view.cc + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/shell/common/platform_view.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/pointer_data_dispatcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/pointer_data_dispatcher.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/rasterizer.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/rasterizer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterize_agent_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterize_agent_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterize_agent_view_embedder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterize_agent_view_embedder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterizer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterizer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/resource_cache_limit_calculator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/resource_cache_limit_calculator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/run_configuration.cc + ../../../flutter/LICENSE
@@ -4873,12 +4873,12 @@ FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
-FILE: ../../../flutter/shell/common/rasterizer.cc
-FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/rasterize_agent_surface.cc
 FILE: ../../../flutter/shell/common/rasterize_agent_surface.h
 FILE: ../../../flutter/shell/common/rasterize_agent_view_embedder.cc
 FILE: ../../../flutter/shell/common/rasterize_agent_view_embedder.h
+FILE: ../../../flutter/shell/common/rasterizer.cc
+FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
 FILE: ../../../flutter/shell/common/run_configuration.cc

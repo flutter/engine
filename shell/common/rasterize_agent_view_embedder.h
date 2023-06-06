@@ -51,7 +51,6 @@ class RasterizeAgentViewEmbedder : public RasterizeAgent {
  private:
   std::shared_ptr<ExternalViewEmbedder> view_embedder_;
   std::shared_ptr<Surface> surface_;
-  bool supports_thread_merging_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RasterizeAgentViewEmbedder);
 };
