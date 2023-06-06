@@ -56,16 +56,7 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 }
 
 // |PlatformView|
-std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
-  if (!offscreen_context_) {
-    offscreen_context_ = std::make_shared<OffScreenContext>(proc_table_);
-  }
-  return std::make_unique<OffScreenStudio>(offscreen_context_);
-}
-
-// |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
-    int64_t view_id) {
+std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface() {
   if (!offscreen_context_) {
     offscreen_context_ = std::make_shared<OffScreenContext>(proc_table_);
   }

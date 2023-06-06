@@ -6,7 +6,6 @@
 
 #include "flutter/impeller/renderer/backend/metal/formats_mtl.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/shell/gpu/gpu_studio_metal_impeller.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 
 namespace flutter {
@@ -34,15 +33,6 @@ bool IOSSurfaceMetalImpeller::IsValid() const {
 // |IOSSurface|
 void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
   // Nothing to do.
-}
-
-// |IOSSurface|
-std::unique_ptr<Studio> IOSSurfaceMetalImpeller::CreateGPUStudio(GrDirectContext*) {
-  impeller_context_->UpdateOffscreenLayerPixelFormat(
-      impeller::FromMTLPixelFormat(layer_.get().pixelFormat));
-  return std::make_unique<GPUStudioMetalImpeller>(this,              //
-                                                  impeller_context_  //
-  );
 }
 
 // |IOSSurface|

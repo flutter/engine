@@ -9,6 +9,7 @@
 
 #include <utility>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -50,17 +51,14 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
 }
 }  // namespace
 
-GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(
-    GPUSurfaceMetalDelegate* delegate,
-    sk_sp<GrDirectContext> context,
-    MsaaSampleCount msaa_samples,
-    std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler,
-    bool render_to_surface)
+GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
+                                         sk_sp<GrDirectContext> context,
+                                         MsaaSampleCount msaa_samples,
+                                         bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
-      sksl_precompiler_(std::move(sksl_precompiler)),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
@@ -75,6 +73,16 @@ GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 // |Surface|
 bool GPUSurfaceMetalSkia::IsValid() {
   return context_ != nullptr;
+}
+
+void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
+  auto* current_context = GetContext();
+  if (current_context == precompiled_sksl_context_) {
+    // Known SkSLs have already been prepared in this context.
+    return;
+  }
+  precompiled_sksl_context_ = current_context;
+  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(precompiled_sksl_context_);
 }
 
 // |Surface|
@@ -95,7 +103,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
   }
 
-  sksl_precompiler_->PrecompileKnownSkSLsIfNecessary(context_.get());
+  PrecompileKnownSkSLsIfNecessary();
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
@@ -238,6 +246,25 @@ SkMatrix GPUSurfaceMetalSkia::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
+}
+
+// |Surface|
+GrDirectContext* GPUSurfaceMetalSkia::GetContext() {
+  return context_.get();
+}
+
+// |Surface|
+std::unique_ptr<GLContextResult> GPUSurfaceMetalSkia::MakeRenderContextCurrent() {
+  // A context may either be necessary to render to the surface or to snapshot an offscreen
+  // surface. Either way, SkSL precompilation must be attempted.
+  PrecompileKnownSkSLsIfNecessary();
+
+  // This backend has no such concept.
+  return std::make_unique<GLContextDefaultResult>(true);
+}
+
+bool GPUSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
+  return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 
 }  // namespace flutter

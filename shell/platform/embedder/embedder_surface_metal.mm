@@ -9,26 +9,32 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
-#include "flutter/shell/platform/embedder/embedder_studio_metal.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 FLUTTER_ASSERT_NOT_ARC
 namespace flutter {
 
 EmbedderSurfaceMetal::EmbedderSurfaceMetal(
-    sk_sp<GrDirectContext> main_context,
-    EmbedderStudioMetal* studio,
-    std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler,
-    bool render_to_surface)
-    : main_context_(std::move(main_context)),
-      studio_(studio),
-      sksl_precompiler_(std::move(sksl_precompiler)),
-      render_to_surface_(render_to_surface) {}
+    GPUMTLDeviceHandle device,
+    GPUMTLCommandQueueHandle command_queue,
+    MetalDispatchTable metal_dispatch_table,
+    std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
+      metal_dispatch_table_(std::move(metal_dispatch_table)),
+      external_view_embedder_(std::move(external_view_embedder)) {
+  main_context_ =
+      [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device
+                                        commandQueue:(id<MTLCommandQueue>)command_queue];
+  resource_context_ =
+      [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device
+                                        commandQueue:(id<MTLCommandQueue>)command_queue];
+  valid_ = main_context_ && resource_context_;
+}
 
 EmbedderSurfaceMetal::~EmbedderSurfaceMetal() = default;
 
 bool EmbedderSurfaceMetal::IsValid() const {
-  return studio_->IsValid();
+  return valid_;
 }
 
 std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(ios(13.0)) {
@@ -40,14 +46,37 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceMetalSkia>(
-      studio_, main_context_, MsaaSampleCount::kNone, sksl_precompiler_, render_to_surface_);
+  const bool render_to_surface = !external_view_embedder_;
+  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, MsaaSampleCount::kNone,
+                                                       render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;
   }
 
   return surface;
+}
+
+sk_sp<GrDirectContext> EmbedderSurfaceMetal::CreateResourceContext() const {
+  return resource_context_;
+}
+
+GPUCAMetalLayerHandle EmbedderSurfaceMetal::GetCAMetalLayer(const SkISize& frame_info) const {
+  FML_CHECK(false) << "Only rendering to MTLTexture is supported.";
+  return nullptr;
+}
+
+bool EmbedderSurfaceMetal::PresentDrawable(GrMTLHandle drawable) const {
+  FML_CHECK(false) << "Only rendering to MTLTexture is supported.";
+  return false;
+}
+
+GPUMTLTextureInfo EmbedderSurfaceMetal::GetMTLTexture(const SkISize& frame_info) const {
+  return metal_dispatch_table_.get_texture(frame_info);
+}
+
+bool EmbedderSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
+  return metal_dispatch_table_.present(texture);
 }
 
 }  // namespace flutter

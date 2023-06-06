@@ -7,7 +7,6 @@
 
 #include <memory>
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/android/context/android_context.h"
@@ -31,9 +30,6 @@ class AndroidSurface {
 
   virtual void TeardownOnScreenContext() = 0;
 
-  virtual std::unique_ptr<Studio> CreateGPUStudio(
-      GrDirectContext* gr_context = nullptr) = 0;
-
   virtual std::unique_ptr<Surface> CreateGPUSurface(
       GrDirectContext* gr_context = nullptr) = 0;
 
@@ -45,7 +41,7 @@ class AndroidSurface {
 
   virtual bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) = 0;
 
-  virtual std::unique_ptr<Studio> CreateSnapshotStudio();
+  virtual std::unique_ptr<Surface> CreateSnapshotSurface();
 
   virtual std::shared_ptr<impeller::Context> GetImpellerContext();
 

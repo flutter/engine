@@ -5,10 +5,7 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
 
-#ifndef QUARTSCORE_CAMETALLAYER_H
-#define QUARTSCORE_CAMETALLAYER_H
 #include <QuartzCore/CAMetalLayer.h>
-#endif
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
@@ -48,6 +45,21 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
+
+  // |Surface|
+  GrDirectContext* GetContext() override;
+
+  // |Surface|
+  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
+
+  // |Surface|
+  bool AllowsDrawingWhenGpuDisabled() const override;
+
+  // |Surface|
+  bool EnableRasterCache() const override;
+
+  // |Surface|
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalImpeller);
 };

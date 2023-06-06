@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "flutter/flow/studio.h"
+#include "flutter/flow/surface.h"
 
 namespace flutter {
 
@@ -15,7 +15,7 @@ class SnapshotSurfaceProducer {
  public:
   virtual ~SnapshotSurfaceProducer() = default;
 
-  virtual std::unique_ptr<Studio> CreateSnapshotStudio() = 0;
+  virtual std::unique_ptr<Surface> CreateSnapshotSurface() = 0;
 };
 
 }  // namespace flutter

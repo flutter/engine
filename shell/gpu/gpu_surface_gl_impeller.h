@@ -40,6 +40,24 @@ class GPUSurfaceGLImpeller final : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
+  // |Surface|
+  GrDirectContext* GetContext() override;
+
+  // |Surface|
+  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
+
+  // |Surface|
+  bool ClearRenderContext() override;
+
+  // |Surface|
+  bool AllowsDrawingWhenGpuDisabled() const override;
+
+  // |Surface|
+  bool EnableRasterCache() const override;
+
+  // |Surface|
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGLImpeller);
 };
 

@@ -16,7 +16,6 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
-#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -157,21 +156,21 @@ class Rasterizer final : public SnapshotDelegate,
   void SetImpellerContext(std::weak_ptr<impeller::Context> impeller_context);
 
   //----------------------------------------------------------------------------
-  /// @brief      Rasterizers may be created well before an on-screen studio is
+  /// @brief      Rasterizers may be created well before an on-screen surface is
   ///             available for rendering. Shells usually create a rasterizer in
-  ///             their constructors. Once an on-screen studio is available
+  ///             their constructors. Once an on-screen surface is available
   ///             however, one may be provided to the rasterizer using this
-  ///             call. No rendering may occur before this call. The studio is
+  ///             call. No rendering may occur before this call. The surface is
   ///             held till the balancing call to `Rasterizer::Teardown` is
-  ///             made. Calling a setup before tearing down the studio
+  ///             made. Calling a setup before tearing down the previous surface
   ///             (if this is not the first time the surface has been set up) is
   ///             user error.
   ///
   /// @see        `Rasterizer::Teardown`
   ///
-  /// @param[in]  studio  The on-screen render studio.
+  /// @param[in]  surface  The on-screen render surface.
   ///
-  void Setup(std::unique_ptr<Studio> studio, bool support_thread_merging);
+  void Setup(std::unique_ptr<Surface> surface, bool support_thread_merging);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and
@@ -209,7 +208,6 @@ class Rasterizer final : public SnapshotDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Add a surface, implicit or not.
   void AddSurface(int64_t view_id,
-                  std::unique_ptr<Surface> surface,
                   std::shared_ptr<ExternalViewEmbedder> view_embedder);
 
   void RemoveSurface(int64_t view_id);
@@ -512,15 +510,11 @@ class Rasterizer final : public SnapshotDelegate,
 
   struct SurfaceRecord {
     SurfaceRecord(int64_t view_id,
-                  std::shared_ptr<ExternalViewEmbedder> view_embedder,
-                  std::unique_ptr<Surface> surface)
-        : view_id(view_id),
-          view_embedder(std::move(view_embedder)),
-          surface(std::move(surface)) {}
+                  std::shared_ptr<ExternalViewEmbedder> view_embedder)
+        : view_id(view_id), view_embedder(std::move(view_embedder)) {}
 
     int64_t view_id;
     std::shared_ptr<ExternalViewEmbedder> view_embedder;
-    std::unique_ptr<Surface> surface;
 
     // This is the information for the last successfully drawing.
     //
@@ -534,7 +528,7 @@ class Rasterizer final : public SnapshotDelegate,
     float last_pixel_ratio;
   };
 
-  SurfaceRecord* GetSurface(int64_t view_id) {
+  SurfaceRecord* GetSurfaceRecord(int64_t view_id) {
     auto found_surface = surfaces_.find(view_id);
     if (found_surface == surfaces_.end()) {
       return nullptr;
@@ -544,7 +538,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   SurfaceRecord* GetFirstSurface() {
     // TODO(dkwingsmt)
-    return GetSurface(0ll);
+    return GetSurfaceRecord(0ll);
   }
 
   // |SnapshotDelegate|
@@ -566,13 +560,15 @@ class Rasterizer final : public SnapshotDelegate,
   fml::Milliseconds GetFrameBudget() const override;
 
   // |SnapshotController::Delegate|
-  Studio* GetStudio() const override { return studio_.get(); }
+  const std::unique_ptr<Surface>& GetSurface() const override {
+    return surface_;
+  }
 
   // |SnapshotController::Delegate|
   std::shared_ptr<impeller::AiksContext> GetAiksContext() const override {
 #if IMPELLER_SUPPORTS_RENDERING
-    if (studio_) {
-      return studio_->GetAiksContext();
+    if (surface_) {
+      return surface_->GetAiksContext();
     }
     if (auto context = impeller_context_.lock()) {
       return std::make_shared<impeller::AiksContext>(context);
@@ -629,7 +625,7 @@ class Rasterizer final : public SnapshotDelegate,
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
-  std::unique_ptr<Studio> studio_;
+  std::unique_ptr<Surface> surface_;
   std::unordered_map<int64_t, SurfaceRecord> surfaces_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;

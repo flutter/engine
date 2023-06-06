@@ -11,7 +11,7 @@ AndroidSurface::AndroidSurface() = default;
 
 AndroidSurface::~AndroidSurface() = default;
 
-std::unique_ptr<Studio> AndroidSurface::CreateSnapshotStudio() {
+std::unique_ptr<Surface> AndroidSurface::CreateSnapshotSurface() {
   return nullptr;
 }
 

@@ -54,20 +54,20 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
 
-  std::unique_ptr<Studio> pbuffer_studio;
-  Studio* snapshot_studio = nullptr;
+  std::unique_ptr<Surface> pbuffer_surface;
+  Surface* snapshot_surface = nullptr;
   auto& delegate = GetDelegate();
-  if (delegate.GetStudio() && delegate.GetStudio()->GetContext()) {
-    snapshot_studio = delegate.GetStudio();
+  if (delegate.GetSurface() && delegate.GetSurface()->GetContext()) {
+    snapshot_surface = delegate.GetSurface().get();
   } else if (delegate.GetSnapshotSurfaceProducer()) {
-    pbuffer_studio =
-        delegate.GetSnapshotSurfaceProducer()->CreateSnapshotStudio();
-    if (pbuffer_studio && pbuffer_studio->GetContext()) {
-      snapshot_studio = pbuffer_studio.get();
+    pbuffer_surface =
+        delegate.GetSnapshotSurfaceProducer()->CreateSnapshotSurface();
+    if (pbuffer_surface && pbuffer_surface->GetContext()) {
+      snapshot_surface = pbuffer_surface.get();
     }
   }
 
-  if (!snapshot_studio) {
+  if (!snapshot_surface) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
     sk_sp<SkSurface> sk_surface = SkSurfaces::Raster(image_info);
@@ -80,13 +80,14 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               result = DrawSnapshot(surface, draw_callback);
             })
             .SetIfFalse([&] {
-              FML_DCHECK(snapshot_studio);
-              auto context_switch = snapshot_studio->MakeRenderContextCurrent();
+              FML_DCHECK(snapshot_surface);
+              auto context_switch =
+                  snapshot_surface->MakeRenderContextCurrent();
               if (!context_switch->GetResult()) {
                 return;
               }
 
-              GrRecordingContext* context = snapshot_studio->GetContext();
+              GrRecordingContext* context = snapshot_surface->GetContext();
               auto max_size = context->maxRenderTargetSize();
               double scale_factor = std::min(
                   1.0, static_cast<double>(max_size) /
@@ -138,8 +139,8 @@ sk_sp<SkImage> SnapshotControllerSkia::ConvertToRasterImage(
   // If the rasterizer does not have a surface with a GrContext, then it will
   // be unable to render a cross-context SkImage.  The caller will need to
   // create the raster image on the IO thread.
-  if (GetDelegate().GetStudio() == nullptr ||
-      GetDelegate().GetStudio()->GetContext() == nullptr) {
+  if (GetDelegate().GetSurface() == nullptr ||
+      GetDelegate().GetSurface()->GetContext() == nullptr) {
     return nullptr;
   }
 

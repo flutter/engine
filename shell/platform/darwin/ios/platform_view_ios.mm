@@ -154,7 +154,7 @@ std::unique_ptr<Studio> PlatformViewIOS::CreateRenderingStudio() {
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface(int64_t view_id) {
+std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {

@@ -33,7 +33,6 @@
 #include "fakes/platform_message.h"
 #include "fakes/touch_source.h"
 #include "fakes/view_ref_focused.h"
-#include "flutter/shell/platform/fuchsia/flutter/studio.h"
 #include "flutter/shell/platform/fuchsia/flutter/surface.h"
 #include "flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h"
 #include "platform/assert.h"
@@ -76,7 +75,11 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
 
   // |flutter::PlatformView::Delegate|
-  void OnPlatformViewCreated() {}
+  void OnPlatformViewCreated(std::unique_ptr<flutter::Surface> surface) {
+    ASSERT_EQ(surface_.get(), nullptr);
+
+    surface_ = std::move(surface);
+  }
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDestroyed() {}
   // |flutter::PlatformView::Delegate|
@@ -145,6 +148,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
       std::unique_ptr<flutter::AssetResolver> updated_asset_resolver,
       flutter::AssetResolver::AssetResolverType type) {}
 
+  flutter::Surface* surface() const { return surface_.get(); }
   flutter::PlatformMessage* message() const { return message_.get(); }
   const flutter::ViewportMetrics& metrics() const { return metrics_; }
   int32_t semantics_features() const { return semantics_features_; }
@@ -161,6 +165,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
 
  private:
+  std::unique_ptr<flutter::Surface> surface_;
   std::unique_ptr<flutter::PlatformMessage> message_;
   flutter::ViewportMetrics metrics_;
   std::vector<std::unique_ptr<flutter::PointerDataPacket>> pointer_packets_;
@@ -404,11 +409,6 @@ class PlatformViewBuilder {
     return *this;
   }
 
-  PlatformViewBuilder& SetCreateStudioCallback(OnCreateStudio callback) {
-    on_create_studio_callback_ = std::move(callback);
-    return *this;
-  }
-
   PlatformViewBuilder& SetCreateSurfaceCallback(OnCreateSurface callback) {
     on_create_surface_callback_ = std::move(callback);
     return *this;
@@ -434,7 +434,6 @@ class PlatformViewBuilder {
         std::move(on_create_view_callback_),
         std::move(on_update_view_callback_),
         std::move(on_destroy_view_callback_),
-        std::move(on_create_studio_callback_),
         std::move(on_create_surface_callback_),
         std::move(on_semantics_node_update_callback_),
         std::move(on_request_announce_callback_),
@@ -465,7 +464,6 @@ class PlatformViewBuilder {
   OnCreateFlatlandView on_create_view_callback_;
   OnDestroyFlatlandView on_destroy_view_callback_;
   OnUpdateView on_update_view_callback_;
-  OnCreateStudio on_create_studio_callback_;
   OnCreateSurface on_create_surface_callback_;
   OnSemanticsNodeUpdate on_semantics_node_update_callback_;
   OnRequestAnnounce on_request_announce_callback_;
@@ -621,16 +619,12 @@ TEST_F(FlatlandPlatformViewTests, CreateSurfaceTest) {
       flutter::MakeDefaultContextOptions(flutter::ContextType::kRender));
   std::shared_ptr<MockExternalViewEmbedder> external_view_embedder =
       std::make_shared<MockExternalViewEmbedder>();
-  auto CreateStudioCallback = [gr_context]() {
-    return std::make_unique<flutter_runner::Studio>(gr_context.get());
-  };
   auto CreateSurfaceCallback = [&external_view_embedder, gr_context]() {
     return std::make_unique<flutter_runner::Surface>(
         "PlatformViewTest", external_view_embedder, gr_context.get());
   };
 
   auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
-                           .SetCreateStudioCallback(CreateStudioCallback)
                            .SetCreateSurfaceCallback(CreateSurfaceCallback)
                            .SetExternalViewEmbedder(external_view_embedder)
                            .Build();
@@ -638,8 +632,7 @@ TEST_F(FlatlandPlatformViewTests, CreateSurfaceTest) {
 
   RunLoopUntilIdle();
 
-  // TODO(dkwingsmt)
-  // EXPECT_EQ(gr_context.get(), delegate.surface()->GetContext());
+  EXPECT_EQ(gr_context.get(), delegate.surface()->GetContext());
   EXPECT_EQ(external_view_embedder.get(),
             platform_view.CreateExternalViewEmbedder().get());
 }

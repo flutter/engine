@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "flutter/shell/gpu/gpu_studio_gl_skia.h"
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 
 namespace flutter {
@@ -40,20 +39,8 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 }
 
 // |PlatformView|
-std::unique_ptr<Studio> ShellTestPlatformViewGL::CreateRenderingStudio() {
-  if (main_context_ == nullptr) {
-    main_context_ = GPUStudioGLSkia::MakeGLContext(this);
-  }
-  return std::make_unique<GPUStudioGLSkia>(main_context_, this);
-}
-
-// |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface(
-    int64_t view_id) {
-  if (main_context_ == nullptr) {
-    main_context_ = GPUStudioGLSkia::MakeGLContext(this);
-  }
-  return std::make_unique<GPUSurfaceGLSkia>(main_context_, this, true);
+std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
+  return std::make_unique<GPUSurfaceGLSkia>(this, true);
 }
 
 // |PlatformView|

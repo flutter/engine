@@ -844,8 +844,6 @@ ORIGIN: ../../../flutter/flow/raster_cache_util.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/rtree.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/rtree.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/skia_gpu_object.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/flow/studio.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/flow/studio.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/surface_frame.cc + ../../../flutter/LICENSE
@@ -2243,20 +2241,6 @@ ORIGIN: ../../../flutter/shell/common/vsync_waiter_fallback.cc + ../../../flutte
 ORIGIN: ../../../flutter/shell/common/vsync_waiter_fallback.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiters_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiters_test.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_skia.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_skia.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_skia.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_skia.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_software.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_software.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_impeller.cc + ../../../flutter/LICENSE
@@ -2821,15 +2805,6 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.h + ../.
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_gl.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_gl.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_metal.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_metal.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_software.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_software.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc + ../../../flutter/LICENSE
@@ -2958,8 +2933,6 @@ ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.cc + ..
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/studio.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/studio.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface_producer.h + ../../../flutter/LICENSE
@@ -3540,8 +3513,6 @@ FILE: ../../../flutter/flow/raster_cache_util.h
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h
 FILE: ../../../flutter/flow/skia_gpu_object.h
-FILE: ../../../flutter/flow/studio.cc
-FILE: ../../../flutter/flow/studio.h
 FILE: ../../../flutter/flow/surface.cc
 FILE: ../../../flutter/flow/surface.h
 FILE: ../../../flutter/flow/surface_frame.cc
@@ -4941,20 +4912,6 @@ FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
 FILE: ../../../flutter/shell/common/vsync_waiters_test.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.cc
-FILE: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_gl_skia.cc
-FILE: ../../../flutter/shell/gpu/gpu_studio_gl_skia.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.mm
-FILE: ../../../flutter/shell/gpu/gpu_studio_metal_skia.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_metal_skia.mm
-FILE: ../../../flutter/shell/gpu/gpu_studio_software.cc
-FILE: ../../../flutter/shell/gpu/gpu_studio_software.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan.cc
-FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan.h
-FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.cc
-FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_impeller.cc
@@ -5533,15 +5490,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_gl.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_gl.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_metal.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_metal.mm
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_software.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_software.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc
@@ -5673,8 +5621,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/studio.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/studio.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface_producer.h

@@ -33,7 +33,6 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
 
  private:
   const std::unique_ptr<DarwinContextMetal> metal_context_;
-  std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler_;
   const CreateVsyncWaiter create_vsync_waiter_;
   const std::shared_ptr<ShellTestVsyncClock> vsync_clock_;
   const std::shared_ptr<ShellTestExternalViewEmbedder>
@@ -56,10 +55,7 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |PlatformView|
-  std::unique_ptr<Studio> CreateRenderingStudio() override;
-
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
+  std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override;

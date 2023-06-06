@@ -133,4 +133,36 @@ SkMatrix GPUSurfaceGLImpeller::GetRootTransformation() const {
   return {};
 }
 
+// |Surface|
+GrDirectContext* GPUSurfaceGLImpeller::GetContext() {
+  // Impeller != Skia.
+  return nullptr;
+}
+
+// |Surface|
+std::unique_ptr<GLContextResult>
+GPUSurfaceGLImpeller::MakeRenderContextCurrent() {
+  return delegate_->GLContextMakeCurrent();
+}
+
+// |Surface|
+bool GPUSurfaceGLImpeller::ClearRenderContext() {
+  return delegate_->GLContextClearCurrent();
+}
+
+bool GPUSurfaceGLImpeller::AllowsDrawingWhenGpuDisabled() const {
+  return delegate_->AllowsDrawingWhenGpuDisabled();
+}
+
+// |Surface|
+bool GPUSurfaceGLImpeller::EnableRasterCache() const {
+  return false;
+}
+
+// |Surface|
+std::shared_ptr<impeller::AiksContext> GPUSurfaceGLImpeller::GetAiksContext()
+    const {
+  return aiks_context_;
+}
+
 }  // namespace flutter

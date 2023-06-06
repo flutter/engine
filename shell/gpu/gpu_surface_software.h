@@ -28,6 +28,9 @@ class GPUSurfaceSoftware : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
+  // |Surface|
+  GrDirectContext* GetContext() override;
+
  private:
   GPUSurfaceSoftwareDelegate* delegate_;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an

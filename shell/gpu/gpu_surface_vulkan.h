@@ -45,6 +45,9 @@ class GPUSurfaceVulkan : public Surface {
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
+  // |Surface|
+  GrDirectContext* GetContext() override;
+
   static SkColorType ColorTypeFromFormat(const VkFormat format);
 
  private:

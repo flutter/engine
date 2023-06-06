@@ -162,6 +162,31 @@ SkMatrix GPUSurfaceMetalImpeller::GetRootTransformation() const {
   return {};
 }
 
+// |Surface|
+GrDirectContext* GPUSurfaceMetalImpeller::GetContext() {
+  return nullptr;
+}
+
+// |Surface|
+std::unique_ptr<GLContextResult> GPUSurfaceMetalImpeller::MakeRenderContextCurrent() {
+  // This backend has no such concept.
+  return std::make_unique<GLContextDefaultResult>(true);
+}
+
+bool GPUSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
+  return delegate_->AllowsDrawingWhenGpuDisabled();
+}
+
+// |Surface|
+bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
+  return false;
+}
+
+// |Surface|
+std::shared_ptr<impeller::AiksContext> GPUSurfaceMetalImpeller::GetAiksContext() const {
+  return aiks_context_;
+}
+
 Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
   if (!(last_drawable_ && [last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)])) {
     return {};

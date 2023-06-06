@@ -48,12 +48,12 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    std::unique_ptr<EmbedderStudio> embedder_studio,
+    std::unique_ptr<EmbedderSurface> embedder_surface,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : PlatformView(delegate, task_runners),
       external_view_embedder_(std::move(external_view_embedder)),
-      embedder_studio_(std::move(embedder_studio)),
+      embedder_surface_(std::move(embedder_surface)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
           task_runners.GetPlatformTaskRunner())),
@@ -88,21 +88,12 @@ void PlatformViewEmbedder::HandlePlatformMessage(
 }
 
 // |PlatformView|
-std::unique_ptr<Studio> PlatformViewEmbedder::CreateRenderingStudio() {
-  return embedder_studio_->CreateGPUStudio();
-}
-
-// |PlatformView|
-std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface(
-    int64_t view_id) {
-  auto found_iter = embedder_surfaces_.find(view_id);
-  if (found_iter != embedder_surfaces_.end()) {
-    FML_LOG(ERROR) << "Embedder surface " << view_id << " already exists.";
+std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
+  if (embedder_surface_ == nullptr) {
+    FML_LOG(ERROR) << "Embedder surface was null.";
     return nullptr;
   }
-  auto& embedder_surface = embedder_surfaces_[view_id] =
-      embedder_studio_->CreateSurface();
-  return embedder_surface->CreateGPUSurface();
+  return embedder_surface_->CreateGPUSurface();
 }
 
 // |PlatformView|
@@ -113,7 +104,11 @@ PlatformViewEmbedder::CreateExternalViewEmbedder() {
 
 // |PlatformView|
 sk_sp<GrDirectContext> PlatformViewEmbedder::CreateResourceContext() const {
-  return embedder_studio_->CreateResourceContext();
+  if (embedder_surface_ == nullptr) {
+    FML_LOG(ERROR) << "Embedder surface was null.";
+    return nullptr;
+  }
+  return embedder_surface_->CreateResourceContext();
 }
 
 // |PlatformView|

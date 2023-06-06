@@ -23,6 +23,8 @@ class Surface final : public flutter::Surface {
 
  private:
   const std::string debug_label_;
+  std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_;
+  GrDirectContext* gr_context_;
 
   // |flutter::Surface|
   bool IsValid() override;
@@ -30,6 +32,9 @@ class Surface final : public flutter::Surface {
   // |flutter::Surface|
   std::unique_ptr<flutter::SurfaceFrame> AcquireFrame(
       const SkISize& size) override;
+
+  // |flutter::Surface|
+  GrDirectContext* GetContext() override;
 
   // |flutter::Surface|
   SkMatrix GetRootTransformation() const override;

@@ -501,9 +501,6 @@ void Engine::Initialize(
       std::bind(&Engine::DestroyFlatlandView, this, std::placeholders::_1,
                 std::placeholders::_2);
 
-  OnCreateStudio on_create_studio_callback =
-      std::bind(&Engine::CreateStudio, this);
-
   OnCreateSurface on_create_surface_callback =
       std::bind(&Engine::CreateSurface, this);
 
@@ -563,7 +560,6 @@ void Engine::Initialize(
                std::move(on_destroy_gfx_view_callback),
            on_destroy_flatland_view_callback =
                std::move(on_destroy_flatland_view_callback),
-           on_create_studio_callback = std::move(on_create_studio_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
            on_semantics_node_update_callback =
                std::move(on_semantics_node_update_callback),
@@ -635,7 +631,6 @@ void Engine::Initialize(
                       std::move(on_create_flatland_view_callback),
                       std::move(on_update_view_callback),
                       std::move(on_destroy_flatland_view_callback),
-                      std::move(on_create_studio_callback),
                       std::move(on_create_surface_callback),
                       std::move(on_semantics_node_update_callback),
                       std::move(on_request_announce_callback),
@@ -657,7 +652,6 @@ void Engine::Initialize(
                   std::move(on_create_gfx_view_callback),
                   std::move(on_update_view_callback),
                   std::move(on_destroy_gfx_view_callback),
-                  std::move(on_create_studio_callback),
                   std::move(on_create_surface_callback),
                   std::move(on_semantics_node_update_callback),
                   std::move(on_request_announce_callback),
@@ -974,10 +968,6 @@ void Engine::DestroyFlatlandView(int64_t view_id,
         flatland_view_embedder_->DestroyView(view_id,
                                              std::move(on_view_unbound));
       });
-}
-
-std::unique_ptr<flutter::Studio> Engine::CreateStudio() {
-  return std::make_unique<Studio>(surface_producer_->gr_context());
 }
 
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {

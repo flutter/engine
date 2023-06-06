@@ -103,4 +103,28 @@ SkMatrix GPUSurfaceVulkanImpeller::GetRootTransformation() const {
   return {};
 }
 
+// |Surface|
+GrDirectContext* GPUSurfaceVulkanImpeller::GetContext() {
+  // Impeller != Skia.
+  return nullptr;
+}
+
+// |Surface|
+std::unique_ptr<GLContextResult>
+GPUSurfaceVulkanImpeller::MakeRenderContextCurrent() {
+  // This backend has no such concept.
+  return std::make_unique<GLContextDefaultResult>(true);
+}
+
+// |Surface|
+bool GPUSurfaceVulkanImpeller::EnableRasterCache() const {
+  return false;
+}
+
+// |Surface|
+std::shared_ptr<impeller::AiksContext>
+GPUSurfaceVulkanImpeller::GetAiksContext() const {
+  return aiks_context_;
+}
+
 }  // namespace flutter

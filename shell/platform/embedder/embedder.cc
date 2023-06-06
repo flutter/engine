@@ -56,7 +56,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
-#include "flutter/shell/platform/embedder/embedder_studio_software.h"
+#include "flutter/shell/platform/embedder/embedder_surface_software.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/pixel_formats.h"
@@ -66,16 +66,16 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
-#include "flutter/shell/platform/embedder/embedder_studio_gl.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #endif
 
 #ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/platform/embedder/embedder_studio_metal.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
-#include "flutter/shell/platform/embedder/embedder_studio_vulkan.h"
+#include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -424,7 +424,7 @@ InferOpenGLPlatformViewCreationCallback(
   bool fbo_reset_after_present =
       SAFE_ACCESS(open_gl_config, fbo_reset_after_present, false);
 
-  flutter::EmbedderStudioGL::GLDispatchTable gl_dispatch_table = {
+  flutter::EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table = {
       gl_make_current,                     // gl_make_current_callback
       gl_clear_current,                    // gl_clear_current_callback
       gl_present,                          // gl_present_callback
@@ -444,7 +444,7 @@ InferOpenGLPlatformViewCreationCallback(
     return std::make_unique<flutter::PlatformViewEmbedder>(
         shell,                   // delegate
         shell.GetTaskRunners(),  // task runners
-        std::make_unique<flutter::EmbedderStudioGL>(
+        std::make_unique<flutter::EmbedderSurfaceGL>(
             gl_dispatch_table, fbo_reset_after_present, shared_view_embedder),
         platform_dispatch_table,  // embedder platform dispatch table
         shared_view_embedder      // external view embedder
@@ -496,7 +496,7 @@ InferMetalPlatformViewCreationCallback(
     return texture_info;
   };
 
-  flutter::EmbedderStudioMetal::MetalDispatchTable metal_dispatch_table = {
+  flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
       .present = metal_present,
       .get_texture = metal_get_texture,
   };
@@ -512,7 +512,7 @@ InferMetalPlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
-            std::make_unique<flutter::EmbedderStudioMetal>(
+            std::make_unique<flutter::EmbedderSurfaceMetal>(
                 const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
                 const_cast<flutter::GPUMTLCommandQueueHandle>(
                     config->metal.present_command_queue),
@@ -573,7 +573,7 @@ InferVulkanPlatformViewCreationCallback(
   auto proc_addr =
       vulkan_get_instance_proc_address(vk_instance, "vkGetInstanceProcAddr");
 
-  flutter::EmbedderStudioVulkan::VulkanDispatchTable vulkan_dispatch_table = {
+  flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
       .get_instance_proc_address =
           reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc_addr),
       .get_next_image = vulkan_get_next_image,
@@ -589,7 +589,7 @@ InferVulkanPlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
-            std::make_unique<flutter::EmbedderStudioVulkan>(
+            std::make_unique<flutter::EmbedderSurfaceVulkan>(
                 config->vulkan.version, vk_instance,
                 config->vulkan.enabled_instance_extension_count,
                 config->vulkan.enabled_instance_extensions,
@@ -627,7 +627,7 @@ InferSoftwarePlatformViewCreationCallback(
     return ptr(user_data, allocation, row_bytes, height);
   };
 
-  flutter::EmbedderStudioSoftware::SoftwareDispatchTable
+  flutter::EmbedderSurfaceSoftware::SoftwareDispatchTable
       software_dispatch_table = {
           software_present_backing_store,  // required
       };
@@ -641,7 +641,7 @@ InferSoftwarePlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
-            std::make_unique<flutter::EmbedderStudioSoftware>(
+            std::make_unique<flutter::EmbedderSurfaceSoftware>(
                 software_dispatch_table, shared_view_embedder),
             platform_dispatch_table,  // platform dispatch table
             shared_view_embedder      // external view embedder

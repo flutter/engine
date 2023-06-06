@@ -773,20 +773,13 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
-constexpr int64_t kFlutterDefaultViewId = 0ll;
+static constexpr int64_t kFlutterDefaultViewId = 0ll;
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewCreated() {
+void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  std::unique_ptr<Studio> studio = platform_view_->CreateStudio();
-  if (studio == nullptr) {
-    // TODO(dkwingsmt): This case is observed in windows unit tests. Anyway,
-    // we're probably not creating the surface in this callback eventually.
-    return;
-  }
 
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being created.
@@ -812,24 +805,23 @@ void Shell::OnPlatformViewCreated() {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
+  bool supports_thread_merging = platform_view_->SupportsDynamicThreadMerging();
+  auto view_embedder = platform_view_->CreateExternalViewEmbedder();
+
   fml::AutoResetWaitableEvent latch;
   auto raster_task = fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,  //
        rasterizer = rasterizer_->GetWeakPtr(),               //
-       platform_view = platform_view_.get(),                 //
-       studio = std::move(studio)                            //
+       supports_thread_merging,                              //
+       view_embedder,
+       surface = std::move(surface)  //
   ]() mutable {
-        std::unique_ptr<Surface> surface =
-            platform_view->CreateSurface(kFlutterDefaultViewId);
-        auto view_embedder = platform_view->CreateExternalViewEmbedder();
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
-          rasterizer->Setup(std::move(studio),
-                            platform_view->SupportsDynamicThreadMerging());
-          rasterizer->AddSurface(kFlutterDefaultViewId, std::move(surface),
-                                 view_embedder);
+          rasterizer->Setup(std::move(surface), supports_thread_merging);
+          rasterizer->AddSurface(kFlutterDefaultViewId, view_embedder);
         }
 
         waiting_for_first_frame.store(true);
@@ -2039,22 +2031,15 @@ void Shell::AddRenderSurface(
                                              view_id                          //
   ] { engine->AddView(view_id); });
 
-  // TODO(dkwingsmt): platform_view_ is captured illegally here.
-  // We need some mechanism from it being collected.
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
-      [platform_view = platform_view_.get(),                  //
-       rasterizer = rasterizer_->GetWeakPtr(),                //
+      [rasterizer = rasterizer_->GetWeakPtr(),                //
        view_embedder_ptr = external_view_embedder.release(),  //
        view_id                                                //
   ]() mutable {
-        if (platform_view && rasterizer) {
+        if (rasterizer) {
           std::shared_ptr<ExternalViewEmbedder> view_embedder(
               view_embedder_ptr);
-          std::unique_ptr<Surface> surface =
-              platform_view->CreateSurface(view_id);
-          if (surface) {
-            rasterizer->AddSurface(view_id, std::move(surface), view_embedder);
-          }
+          rasterizer->AddSurface(view_id, view_embedder);
         }
       }));
 }

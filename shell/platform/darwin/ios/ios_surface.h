@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -35,8 +34,6 @@ class IOSSurface {
   virtual bool IsValid() const = 0;
 
   virtual void UpdateStorageSizeIfNecessary() = 0;
-
-  virtual std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context = nullptr) = 0;
 
   // Creates a GPU surface. If no GrDirectContext is supplied and the rendering mode
   // supports one, a new one will be created; otherwise, the software backend

@@ -16,7 +16,9 @@ namespace flutter_runner {
 Surface::Surface(std::string debug_label,
                  std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                  GrDirectContext* gr_context)
-    : debug_label_(std::move(debug_label)) {}
+    : debug_label_(std::move(debug_label)),
+      view_embedder_(view_embedder),
+      gr_context_(gr_context) {}
 
 Surface::~Surface() = default;
 
@@ -35,6 +37,11 @@ std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
       [](const flutter::SurfaceFrame& surface_frame,
          flutter::DlCanvas* canvas) { return true; },
       size);
+}
+
+// |flutter::Surface|
+GrDirectContext* Surface::GetContext() {
+  return gr_context_;
 }
 
 // |flutter::Surface|

@@ -117,10 +117,7 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
   bool support_thread_merging_;
 
   // |PlatformView|
-  std::unique_ptr<Studio> CreateRenderingStudio() override;
-
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
+  std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;

@@ -11,7 +11,6 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
@@ -61,10 +60,15 @@ class PlatformView {
    public:
     using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate that the platform view was created.
-    ///             This is usually a sign to the rasterizer to set up.
+    /// @brief      Notifies the delegate that the platform view was created
+    ///             with the given render surface. This surface is platform
+    ///             (iOS, Android) and client-rendering API (OpenGL, Software,
+    ///             Metal, Vulkan) specific. This is usually a sign to the
+    ///             rasterizer to set up and begin rendering to that surface.
     ///
-    virtual void OnPlatformViewCreated() = 0;
+    /// @param[in]  surface           The surface
+    ///
+    virtual void OnPlatformViewCreated(std::unique_ptr<Surface> surface) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was destroyed.
@@ -495,9 +499,6 @@ class PlatformView {
   ///
   virtual void NotifyDestroyed();
 
-  std::unique_ptr<Studio> CreateStudio();
-  std::unique_ptr<Surface> CreateSurface(int64_t view_id);
-
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to schedule a frame. In response to this
   ///             call, the framework may need to start generating a new frame.
@@ -843,10 +844,8 @@ class PlatformView {
   const Settings& GetSettings() const;
 
  protected:
-  virtual std::unique_ptr<Studio> CreateRenderingStudio();
-
-  // This is called on the raster task runner.
-  virtual std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id);
+  // This is the only method called on the raster task runner.
+  virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;

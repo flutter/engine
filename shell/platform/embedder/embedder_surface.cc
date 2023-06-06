@@ -10,4 +10,8 @@ EmbedderSurface::EmbedderSurface() = default;
 
 EmbedderSurface::~EmbedderSurface() = default;
 
+sk_sp<GrDirectContext> EmbedderSurface::CreateResourceContext() const {
+  return nullptr;
+}
+
 }  // namespace flutter

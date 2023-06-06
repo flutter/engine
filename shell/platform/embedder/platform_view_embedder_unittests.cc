@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/embedder/embedder_studio.h"
 #include "flutter/testing/testing.h"
 
 #include "gmock/gmock.h"
@@ -17,7 +16,7 @@ namespace flutter {
 namespace testing {
 namespace {
 class MockDelegate : public PlatformView::Delegate {
-  MOCK_METHOD0(OnPlatformViewCreated, void());
+  MOCK_METHOD1(OnPlatformViewCreated, void(std::unique_ptr<Surface>));
   MOCK_METHOD0(OnPlatformViewDestroyed, void());
   MOCK_METHOD0(OnPlatformViewScheduleFrame, void());
   MOCK_METHOD1(OnPlatformViewSetNextFrameCallback,
@@ -59,11 +58,10 @@ class MockResponse : public PlatformMessageResponse {
   MOCK_METHOD0(CompleteEmpty, void());
 };
 
-class MockStudio : public EmbedderStudio {
+class MockSurface : public EmbedderSurface {
  public:
   MOCK_CONST_METHOD0(IsValid, bool());
-  MOCK_METHOD0(CreateGPUStudio, std::unique_ptr<Studio>());
-  MOCK_METHOD0(CreateSurface, std::unique_ptr<EmbedderSurface>());
+  MOCK_METHOD0(CreateGPUSurface, std::unique_ptr<Surface>());
   MOCK_CONST_METHOD0(CreateResourceContext, sk_sp<GrDirectContext>());
 };
 }  // namespace
@@ -80,7 +78,7 @@ TEST(PlatformViewEmbedderTest, HasPlatformMessageHandler) {
     PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
     auto embedder = std::make_unique<PlatformViewEmbedder>(
-        delegate, task_runners, std::make_unique<MockStudio>(),
+        delegate, task_runners, std::make_unique<MockSurface>(),
         platform_dispatch_table, external_view_embedder);
 
     ASSERT_TRUE(embedder->GetPlatformMessageHandler());
@@ -109,7 +107,7 @@ TEST(PlatformViewEmbedderTest, Dispatches) {
               };
           std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
           embedder = std::make_unique<PlatformViewEmbedder>(
-              delegate, task_runners, std::make_unique<MockStudio>(),
+              delegate, task_runners, std::make_unique<MockSurface>(),
               platform_dispatch_table, external_view_embedder);
           auto platform_message_handler = embedder->GetPlatformMessageHandler();
           fml::RefPtr<PlatformMessageResponse> response =
@@ -152,7 +150,7 @@ TEST(PlatformViewEmbedderTest, DeletionDisabledDispatch) {
               };
           std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
           auto embedder = std::make_unique<PlatformViewEmbedder>(
-              delegate, task_runners, std::make_unique<MockStudio>(),
+              delegate, task_runners, std::make_unique<MockSurface>(),
               platform_dispatch_table, external_view_embedder);
           auto platform_message_handler = embedder->GetPlatformMessageHandler();
           fml::RefPtr<PlatformMessageResponse> response =

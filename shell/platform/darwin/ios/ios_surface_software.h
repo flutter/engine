@@ -32,9 +32,6 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
   void UpdateStorageSizeIfNecessary() override;
 
   // |IOSSurface|
-  std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context = nullptr) override;
-
-  // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) override;
 
   // |GPUSurfaceSoftwareDelegate|

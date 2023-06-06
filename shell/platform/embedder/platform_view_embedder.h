@@ -6,13 +6,12 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_PLATFORM_VIEW_EMBEDDER_H_
 
 #include <functional>
-#include <unordered_map>
 
 #include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/embedder_studio.h"
+#include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
@@ -43,7 +42,7 @@ class PlatformViewEmbedder final : public PlatformView {
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
       const flutter::TaskRunners& task_runners,
-      std::unique_ptr<EmbedderStudio> embedder_studio,
+      std::unique_ptr<EmbedderSurface> embedder_surface,
       PlatformDispatchTable platform_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
@@ -64,17 +63,12 @@ class PlatformViewEmbedder final : public PlatformView {
  private:
   class EmbedderPlatformMessageHandler;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
-  std::unique_ptr<EmbedderStudio> embedder_studio_;
-  std::unordered_map<int64_t, std::unique_ptr<EmbedderSurface>>
-      embedder_surfaces_;
+  std::unique_ptr<EmbedderSurface> embedder_surface_;
   std::shared_ptr<EmbedderPlatformMessageHandler> platform_message_handler_;
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
-  std::unique_ptr<Studio> CreateRenderingStudio() override;
-
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
+  std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;

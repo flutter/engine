@@ -10,8 +10,9 @@ AndroidSnapshotSurfaceProducer::AndroidSnapshotSurfaceProducer(
     AndroidSurface& android_surface)
     : android_surface_(android_surface) {}
 
-std::unique_ptr<Studio> AndroidSnapshotSurfaceProducer::CreateSnapshotStudio() {
-  return android_surface_.CreateSnapshotStudio();
+std::unique_ptr<Surface>
+AndroidSnapshotSurfaceProducer::CreateSnapshotSurface() {
+  return android_surface_.CreateSnapshotSurface();
 }
 
 }  // namespace flutter

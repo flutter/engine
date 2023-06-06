@@ -9,8 +9,6 @@
 #include <utility>
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/gpu/gpu_studio_metal_impeller.h"
-#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
@@ -88,7 +86,6 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(std::move(shell_test_external_view_embedder)),
       support_thread_merging_(support_thread_merging) {
-  sksl_precompiler_ = std::make_shared<GPUSurfaceMetalDelegate::SkSLPrecompiler>();
   if (GetSettings().enable_impeller) {
     FML_CHECK([metal_context_->impeller_context() context] != nil);
   } else {
@@ -125,23 +122,13 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
 }
 
 // |PlatformView|
-std::unique_ptr<Studio> ShellTestPlatformViewMetal::CreateRenderingStudio() {
-  if (GetSettings().enable_impeller) {
-    return std::make_unique<GPUStudioMetalImpeller>(this,
-                                                    [metal_context_->impeller_context() context]);
-  }
-  return std::make_unique<GPUStudioMetalSkia>(this, [metal_context_->context() mainContext],
-                                              sksl_precompiler_);
-}
-
-// |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformViewMetal::CreateRenderingSurface(int64_t view_id) {
+std::unique_ptr<Surface> ShellTestPlatformViewMetal::CreateRenderingSurface() {
   if (GetSettings().enable_impeller) {
     return std::make_unique<GPUSurfaceMetalImpeller>(this,
                                                      [metal_context_->impeller_context() context]);
   }
   return std::make_unique<GPUSurfaceMetalSkia>(this, [metal_context_->context() mainContext],
-                                               MsaaSampleCount::kNone, sksl_precompiler_);
+                                               MsaaSampleCount::kNone);
 }
 
 // |PlatformView|

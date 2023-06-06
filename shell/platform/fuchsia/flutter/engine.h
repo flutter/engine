@@ -19,6 +19,7 @@
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
@@ -30,8 +31,6 @@
 #include "gfx_external_view_embedder.h"
 #include "gfx_session_connection.h"
 #include "isolate_configurator.h"
-#include "studio.h"
-#include "surface.h"
 #include "surface_producer.h"
 
 namespace flutter_runner {
@@ -146,8 +145,6 @@ class Engine final : public fuchsia::memorypressure::Watcher {
                           callback) override;
 
   std::shared_ptr<flutter::ExternalViewEmbedder> GetExternalViewEmbedder();
-
-  std::unique_ptr<flutter::Studio> CreateStudio();
 
   std::unique_ptr<flutter::Surface> CreateSurface();
 
