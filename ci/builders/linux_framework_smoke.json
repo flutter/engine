@@ -51,6 +51,7 @@
             "dependencies": [
                 "host_debug_unopt"
             ],
+            "_comment": "shard/subshard strings are defined in framework test runner: dev/bots/test.dart, and are consistent with properties defined in framework .ciyaml targets",
             "shard": "framework_tests",
             "subshard": "libraries"
         },
@@ -63,6 +64,7 @@
             "dependencies": [
                 "host_debug_unopt"
             ],
+            "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
             "validation": "analyze",
             "validation_name": "Analyze"
         }
