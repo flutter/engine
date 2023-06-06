@@ -20,8 +20,10 @@ vars = {
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'd58324bf653df78837bcf46685ca6141d86540ba',
 
+  'dart_sdk_revision': '96ac26bd7342b38251866bb669128f432fb14fda',
+  'dart_sdk_git': 'https://github.com/shorebirdtech/dart-sdk.git',
   'updater_git': 'https://github.com/shorebirdtech/updater.git',
-  'updater_rev': '11d8c2280539f08d55c5bd0b019adbd5cfa373dc',
+  'updater_rev': '4d2ec2e148f5205cf018f0eb854113d9d8b380b3',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -327,7 +329,7 @@ deps = {
    Var('fuchsia_git') + '/protobuf-gn' + '@' + Var('dart_protobuf_gn_rev'),
 
   'src/third_party/dart':
-   Var('dart_git') + '/sdk.git' + '@' + Var('dart_revision'),
+   Var('dart_sdk_git') + '@' + Var('dart_sdk_revision'),
 
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
 

@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include <third_party/dart/runtime/bin/elf_loader.h>
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
@@ -56,6 +57,45 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
     const std::vector<std::string>& native_library_path,
     const char* native_library_symbol_name,
     bool is_executable) {
+  // Quick hack to make this only included in device builds.
+#if FML_OS_IOS
+  static Dart_LoadedElf* leaked_elf = nullptr;
+  static const uint8_t* vm_snapshot_data = nullptr;
+  static const uint8_t* vm_snapshot_instrs = nullptr;
+  static const uint8_t* vm_isolate_data = nullptr;
+  static const uint8_t* vm_isolate_instrs = nullptr;
+  if (leaked_elf == nullptr) {
+    const char* error = nullptr;
+    leaked_elf = Dart_LoadELF(native_library_path.back().c_str(), 0, &error,
+                              &vm_snapshot_data, &vm_snapshot_instrs,
+                              &vm_isolate_data, &vm_isolate_instrs);
+    if (leaked_elf != nullptr) {
+      FML_LOG(INFO) << "Loaded ELF";
+    } else {
+      FML_LOG(FATAL) << "Failed to load ELF" << error;
+      abort();
+    }
+  }
+
+  FML_LOG(INFO) << "Loading symbol from ELF " << native_library_symbol_name;
+
+  if (native_library_symbol_name == DartSnapshot::kVMDataSymbol) {
+    return std::make_unique<const fml::NonOwnedMapping>(vm_snapshot_data, 0,
+                                                        nullptr, true);
+  } else if (native_library_symbol_name ==
+             DartSnapshot::kVMInstructionsSymbol) {
+    return std::make_unique<const fml::NonOwnedMapping>(vm_snapshot_instrs, 0,
+                                                        nullptr, true);
+  } else if (native_library_symbol_name == DartSnapshot::kIsolateDataSymbol) {
+    return std::make_unique<const fml::NonOwnedMapping>(vm_isolate_data, 0,
+                                                        nullptr, true);
+  } else if (native_library_symbol_name ==
+             DartSnapshot::kIsolateInstructionsSymbol) {
+    return std::make_unique<const fml::NonOwnedMapping>(vm_isolate_instrs, 0,
+                                                        nullptr, true);
+  }
+#endif
+
   // Ask the embedder. There is no fallback as we expect the embedders (via
   // their embedding APIs) to just specify the mappings directly.
   if (embedder_mapping_callback) {
