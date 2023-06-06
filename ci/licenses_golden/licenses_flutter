@@ -714,6 +714,7 @@ ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_gl.h + ../../..
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_helper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_attributes.h + ../../../flutter/LICENSE
@@ -748,6 +749,8 @@ ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.cc + ../../../flutt
 ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_region.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_region.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/image/dl_image.cc + ../../../flutter/LICENSE
@@ -865,6 +868,7 @@ ORIGIN: ../../../flutter/fml/command_line.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/compiler_specific.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/concurrent_message_loop.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/concurrent_message_loop.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/concurrent_message_loop_factory.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/container.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.h + ../../../flutter/LICENSE
@@ -923,6 +927,7 @@ ORIGIN: ../../../flutter/fml/platform/android/scoped_java_ref.cc + ../../../flut
 ORIGIN: ../../../flutter/fml/platform/android/scoped_java_ref.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/cf_utils.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/cf_utils.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/concurrent_message_loop_factory.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/message_loop_darwin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/message_loop_darwin.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/paths_darwin.mm + ../../../flutter/LICENSE
@@ -1498,6 +1503,10 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc 
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc + ../../../flutter/LICENSE
@@ -1597,6 +1606,7 @@ ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_descriptor.cc + ../../../flutter/LICENSE
@@ -1679,6 +1689,8 @@ ORIGIN: ../../../flutter/impeller/typographer/glyph_atlas.cc + ../../../flutter/
 ORIGIN: ../../../flutter/impeller/typographer/glyph_atlas.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/lazy_glyph_atlas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/lazy_glyph_atlas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/rectangle_packer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/rectangle_packer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/text_frame.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/text_frame.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/text_render_context.cc + ../../../flutter/LICENSE
@@ -1975,10 +1987,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/js_interop/js_typed_data.dart
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/key_map.g.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/keyboard_binding.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/navigation.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/navigation/history.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/navigation/js_url_strategy.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/navigation/url_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/noto_font.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart + ../../../flutter/LICENSE
@@ -3401,6 +3410,7 @@ FILE: ../../../flutter/display_list/benchmarking/dl_complexity_gl.h
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_helper.h
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h
+FILE: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
 FILE: ../../../flutter/display_list/dl_attributes.h
@@ -3435,6 +3445,8 @@ FILE: ../../../flutter/display_list/effects/dl_path_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_path_effect.h
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.h
+FILE: ../../../flutter/display_list/geometry/dl_region.cc
+FILE: ../../../flutter/display_list/geometry/dl_region.h
 FILE: ../../../flutter/display_list/geometry/dl_rtree.cc
 FILE: ../../../flutter/display_list/geometry/dl_rtree.h
 FILE: ../../../flutter/display_list/image/dl_image.cc
@@ -3552,6 +3564,7 @@ FILE: ../../../flutter/fml/command_line.h
 FILE: ../../../flutter/fml/compiler_specific.h
 FILE: ../../../flutter/fml/concurrent_message_loop.cc
 FILE: ../../../flutter/fml/concurrent_message_loop.h
+FILE: ../../../flutter/fml/concurrent_message_loop_factory.cc
 FILE: ../../../flutter/fml/container.h
 FILE: ../../../flutter/fml/dart/dart_converter.cc
 FILE: ../../../flutter/fml/dart/dart_converter.h
@@ -3610,6 +3623,7 @@ FILE: ../../../flutter/fml/platform/android/scoped_java_ref.cc
 FILE: ../../../flutter/fml/platform/android/scoped_java_ref.h
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.cc
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.h
+FILE: ../../../flutter/fml/platform/darwin/concurrent_message_loop_factory.mm
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.h
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.mm
 FILE: ../../../flutter/fml/platform/darwin/paths_darwin.mm
@@ -4185,6 +4199,10 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc
@@ -4284,6 +4302,7 @@ FILE: ../../../flutter/impeller/renderer/snapshot.h
 FILE: ../../../flutter/impeller/renderer/stroke.comp
 FILE: ../../../flutter/impeller/renderer/surface.cc
 FILE: ../../../flutter/impeller/renderer/surface.h
+FILE: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.h
 FILE: ../../../flutter/impeller/renderer/vertex_descriptor.cc
@@ -4367,6 +4386,8 @@ FILE: ../../../flutter/impeller/typographer/glyph_atlas.cc
 FILE: ../../../flutter/impeller/typographer/glyph_atlas.h
 FILE: ../../../flutter/impeller/typographer/lazy_glyph_atlas.cc
 FILE: ../../../flutter/impeller/typographer/lazy_glyph_atlas.h
+FILE: ../../../flutter/impeller/typographer/rectangle_packer.cc
+FILE: ../../../flutter/impeller/typographer/rectangle_packer.h
 FILE: ../../../flutter/impeller/typographer/text_frame.cc
 FILE: ../../../flutter/impeller/typographer/text_frame.h
 FILE: ../../../flutter/impeller/typographer/text_render_context.cc
@@ -4664,10 +4685,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/js_interop/js_typed_data.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/key_map.g.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/history.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/js_url_strategy.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/url_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/noto_font.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart

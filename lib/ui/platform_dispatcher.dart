@@ -32,8 +32,8 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 /// framework and should not be propagated further.
 typedef KeyDataCallback = bool Function(KeyData data);
 
-/// Signature for [PlatformDispatcher.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
+/// Signature for [PlatformDispatcher.onSemanticsActionEvent].
+typedef SemanticsActionEventCallback = void Function(SemanticsActionEvent action);
 
 /// Signature for responses to platform messages.
 ///
@@ -186,7 +186,11 @@ class PlatformDispatcher {
   /// this list will not include the implicit view, but [implicitView] will
   /// still be a non-null value.
   Iterable<FlutterView> get views => _views.values;
-  final Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  final Map<int, FlutterView> _views = <int, FlutterView>{};
+
+  /// Returns the [FlutterView] with the provided ID if one exists, or null
+  /// otherwise.
+  FlutterView? view({required int id}) => _views[id];
 
   // A map of opaque platform view identifiers to view configurations.
   final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
@@ -263,12 +267,12 @@ class PlatformDispatcher {
       assert(_implicitViewEnabled());
       return implicitView!;
     }
-    return FlutterView._(id, this);
+    return FlutterView._(id as int, this);
   }
 
   void _addView(Object id) {
     assert(!_views.containsKey(id));
-    _views[id] = _createView(id);
+    _views[id as int] = _createView(id);
     _viewConfigurations[id] = const _ViewConfiguration();
   }
 
@@ -298,7 +302,7 @@ class PlatformDispatcher {
   //
   // Updates the metrics of the window with the given id.
   void _updateWindowMetrics(
-    Object id,
+    int id,
     double devicePixelRatio,
     double width,
     double height,
@@ -482,6 +486,7 @@ class PlatformDispatcher {
     for (int i = 0; i < length; ++i) {
       int offset = i * _kPointerDataFieldCount;
       data.add(PointerData(
+        // TODO(goderbauer): Wire up viewId.
         embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
         change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
@@ -1196,12 +1201,12 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => _onSemanticsAction;
-  SemanticsActionCallback? _onSemanticsAction;
-  Zone _onSemanticsActionZone = Zone.root;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    _onSemanticsAction = callback;
-    _onSemanticsActionZone = Zone.current;
+  SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
+  SemanticsActionEventCallback? _onSemanticsActionEvent;
+  Zone _onSemanticsActionEventZone = Zone.root;
+  set onSemanticsActionEvent(SemanticsActionEventCallback? callback) {
+    _onSemanticsActionEvent = callback;
+    _onSemanticsActionEventZone = Zone.current;
   }
 
   // Called from the engine via hooks.dart.
@@ -1229,12 +1234,15 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _dispatchSemanticsAction(int nodeId, int action, ByteData? args) {
-    _invoke3<int, SemanticsAction, ByteData?>(
-      onSemanticsAction,
-      _onSemanticsActionZone,
-      nodeId,
-      SemanticsAction.fromIndex(action)!,
-      args,
+    _invoke1<SemanticsActionEvent>(
+      onSemanticsActionEvent,
+      _onSemanticsActionEventZone,
+      SemanticsActionEvent(
+        type: SemanticsAction.fromIndex(action)!,
+        nodeId: nodeId,
+        viewId: 0, // TODO(goderbauer): Wire up the real view ID.
+        arguments: args,
+      ),
     );
   }
 
@@ -2395,4 +2403,50 @@ enum DartPerformanceMode {
   /// Optimize for low memory, at the expensive of throughput and latency by more
   /// frequently performing work.
   memory,
+}
+
+/// An event to request a [SemanticsAction] of [type] to be performed on the
+/// [SemanticsNode] identified by [nodeId] owned by the [FlutterView] identified
+/// by [viewId].
+///
+/// Used by [SemanticsBinding.performSemanticsAction].
+class SemanticsActionEvent {
+  /// Creates a [SemanticsActionEvent].
+  const SemanticsActionEvent({
+    required this.type,
+    required this.viewId,
+    required this.nodeId,
+    this.arguments,
+  });
+
+  /// The type of action to be performed.
+  final SemanticsAction type;
+
+  /// The id of the [FlutterView] the [SemanticsNode] identified by [nodeId] is
+  /// associated with.
+  final int viewId;
+
+  /// The id of the [SemanticsNode] on which the action is to be performed.
+  final int nodeId;
+
+  /// Optional arguments for the action.
+  final Object? arguments;
+
+  static const Object _noArgumentPlaceholder = Object();
+
+  /// Create a clone of the [SemanticsActionEvent] but with provided parameters
+  /// replaced.
+  SemanticsActionEvent copyWith({
+    SemanticsAction? type,
+    int? viewId,
+    int? nodeId,
+    Object? arguments = _noArgumentPlaceholder,
+  }) {
+    return SemanticsActionEvent(
+      type: type ?? this.type,
+      viewId: viewId ?? this.viewId,
+      nodeId: nodeId ?? this.nodeId,
+      arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
+    );
+  }
 }

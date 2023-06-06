@@ -55,6 +55,10 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::WrapCurrentMetalLayerDrawable(
   // rendering but also creates smaller intermediate passes.
   ISize root_size;
   if (requires_blit) {
+    if (!clip_rect.has_value()) {
+      VALIDATION_LOG << "Missing clip rectangle.";
+      return nullptr;
+    }
     root_size = ISize(clip_rect->size.width, clip_rect->size.height);
   } else {
     root_size = {static_cast<ISize::Type>(drawable.texture.width),
@@ -184,6 +188,10 @@ bool SurfaceMTL::Present() const {
       return false;
     }
     auto blit_pass = blit_command_buffer->CreateBlitPass();
+    if (!clip_rect_.has_value()) {
+      VALIDATION_LOG << "Missing clip rectangle.";
+      return false;
+    }
     auto current = TextureMTL::Wrapper({}, drawable_.texture);
     blit_pass->AddCopy(resolve_texture_, current, std::nullopt,
                        clip_rect_->origin);
