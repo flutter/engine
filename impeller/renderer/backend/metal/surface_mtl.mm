@@ -120,20 +120,51 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromMetalLayerDrawable(
     const std::shared_ptr<Context>& context,
     id<CAMetalDrawable> drawable,
     std::optional<IRect> clip_rect) {
-  bool requires_blit = ShouldPerformPartialRepaint(clip_rect);
+  return SurfaceMTL::MakeFromTexture(context, drawable.texture, clip_rect,
+                                     drawable);
+}
 
+std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
+    const std::shared_ptr<Context>& context,
+    id<MTLTexture> texture,
+    std::optional<IRect> clip_rect,
+    id<CAMetalDrawable> drawable) {
+  bool partial_repaint_blit_required = ShouldPerformPartialRepaint(clip_rect);
+
+  // The returned render target is the texture that Impeller will render the
+  // root pass to. If partial repaint is in use, this may be a new texture which
+  // is smaller than the given MTLTexture.
   auto render_target =
-      WrapTextureWithRenderTarget(*context->GetResourceAllocator(),
-                                  drawable.texture, requires_blit, clip_rect);
+      WrapTextureWithRenderTarget(*context->GetResourceAllocator(), texture,
+                                  partial_repaint_blit_required, clip_rect);
   if (!render_target) {
     return nullptr;
   }
 
-  auto source_texture =
-      requires_blit ? render_target->GetRenderTargetTexture() : nullptr;
-  auto destination_texture = TextureMTL::Wrapper(
-      render_target->GetRenderTargetTexture()->GetTextureDescriptor(),
-      drawable.texture);
+  // If partial repainting, set a "source" texture. The presence of a source
+  // texture and clip rect instructs the surface to blit this texture to the
+  // destination texture.
+  auto source_texture = partial_repaint_blit_required
+                            ? render_target->GetRenderTargetTexture()
+                            : nullptr;
+
+  // The final "destination" texture is the texture that will be presented. In
+  // this case, it's always the given drawable.
+  std::shared_ptr<Texture> destination_texture;
+  if (partial_repaint_blit_required) {
+    // If blitting for partial repaint, we need to wrap the drawable. Simply
+    // reuse the texture descriptor that was already formed for the new render
+    // target, but override the size with the drawable's size.
+    auto destination_descriptor =
+        render_target->GetRenderTargetTexture()->GetTextureDescriptor();
+    destination_descriptor.size = {static_cast<ISize::Type>(texture.width),
+                                   static_cast<ISize::Type>(texture.height)};
+    destination_texture = TextureMTL::Wrapper(destination_descriptor, texture);
+  } else {
+    // When not partial repaint blit is needed, the render target texture _is_
+    // the drawable texture.
+    destination_texture = render_target->GetRenderTargetTexture();
+  }
 
   return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(
       context,                                  // context
@@ -142,36 +173,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromMetalLayerDrawable(
       drawable,                                 // drawable
       source_texture,                           // source_texture
       destination_texture,                      // destination_texture
-      requires_blit,                            // requires_blit
-      clip_rect                                 // clip_rect
-      ));
-}
-
-std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
-    const std::shared_ptr<Context>& context,
-    id<MTLTexture> texture,
-    std::optional<IRect> clip_rect) {
-  bool requires_blit = ShouldPerformPartialRepaint(clip_rect);
-
-  auto render_target = WrapTextureWithRenderTarget(
-      *context->GetResourceAllocator(), texture, requires_blit, clip_rect);
-  if (!render_target) {
-    return nullptr;
-  }
-
-  auto source_texture =
-      requires_blit ? render_target->GetRenderTargetTexture() : nullptr;
-  auto destination_texture = TextureMTL::Wrapper(
-      render_target->GetRenderTargetTexture()->GetTextureDescriptor(), texture);
-
-  return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(
-      context,                                  // context
-      *render_target,                           // target
-      render_target->GetRenderTargetTexture(),  // resolve_texture
-      nil,                                      // drawable
-      source_texture,                           // source_texture
-      destination_texture,                      // destination_texture
-      requires_blit,                            // requires_blit
+      partial_repaint_blit_required,            // requires_blit
       clip_rect                                 // clip_rect
       ));
 }
