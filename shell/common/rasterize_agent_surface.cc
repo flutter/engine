@@ -7,7 +7,7 @@
 namespace flutter {
 
 RasterizeAgentSurface::RasterizeAgentSurface(std::shared_ptr<Surface> surface)
-    : surface_(surface) {}
+    : surface_(std::move(surface)) {}
 
 RasterizeAgentSurface::~RasterizeAgentSurface() = default;
 
