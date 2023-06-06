@@ -45,10 +45,24 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
     id<MTLTexture> texture,
     bool requires_blit,
     std::optional<IRect> clip_rect) {
+  // compositor_context.cc will offset the rendering by the clip origin. Here we
+  // shrink to the size of the clip. This has the same effect as clipping the
+  // rendering but also creates smaller intermediate passes.
+  ISize root_size;
+  if (requires_blit) {
+    if (!clip_rect.has_value()) {
+      VALIDATION_LOG << "Missing clip rectangle.";
+      return std::nullopt;
+    }
+    root_size = ISize(clip_rect->size.width, clip_rect->size.height);
+  } else {
+    root_size = {static_cast<ISize::Type>(texture.width),
+                 static_cast<ISize::Type>(texture.height)};
+  }
+
   TextureDescriptor resolve_tex_desc;
   resolve_tex_desc.format = FromMTLPixelFormat(texture.pixelFormat);
-  resolve_tex_desc.size = {static_cast<ISize::Type>(texture.width),
-                           static_cast<ISize::Type>(texture.height)};
+  resolve_tex_desc.size = root_size;
   resolve_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                            static_cast<uint64_t>(TextureUsage::kShaderRead);
   resolve_tex_desc.sample_count = SampleCount::kCount1;
@@ -96,8 +110,8 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   color0.store_action = StoreAction::kMultisampleResolve;
   color0.resolve_texture = std::move(resolve_tex);
 
-  auto render_target_desc = std::make_optional<RenderTarget>();
-  render_target_desc->SetColorAttachment(color0, 0u);
+  RenderTarget render_target_desc;
+  render_target_desc.SetColorAttachment(color0, 0u);
 
   return render_target_desc;
 }
