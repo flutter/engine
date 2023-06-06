@@ -15,6 +15,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/rasterize_agent.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -168,8 +169,10 @@ class Rasterizer final : public SnapshotDelegate,
   /// @see        `Rasterizer::Teardown`
   ///
   /// @param[in]  surface  The on-screen render surface.
+  /// @param[in]  agent
   ///
-  void Setup(std::unique_ptr<Surface> surface);
+  void Setup(std::shared_ptr<Surface> surface,
+             std::unique_ptr<RasterizeAgent> agent);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and
@@ -398,16 +401,6 @@ class Rasterizer final : public SnapshotDelegate,
   void SetNextFrameCallback(const fml::closure& callback);
 
   //----------------------------------------------------------------------------
-  /// @brief Set the External View Embedder. This is done on shell
-  ///        initialization. This is non-null on platforms that support
-  ///        embedding externally composited views.
-  ///
-  /// @param[in] view_embedder The external view embedder object.
-  ///
-  void SetExternalViewEmbedder(
-      const std::shared_ptr<ExternalViewEmbedder>& view_embedder);
-
-  //----------------------------------------------------------------------------
   /// @brief Set the snapshot surface producer. This is done on shell
   ///        initialization. This is non-null on platforms that support taking
   ///        GPU accelerated raster snapshots in the background.
@@ -591,7 +584,7 @@ class Rasterizer final : public SnapshotDelegate,
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+  std::unique_ptr<RasterizeAgent> agent_;
   std::unique_ptr<SnapshotController> snapshot_controller_;
 
   // WeakPtrFactory must be the last member.

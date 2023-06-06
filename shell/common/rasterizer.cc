@@ -63,8 +63,10 @@ void Rasterizer::SetImpellerContext(
   impeller_context_ = std::move(impeller_context);
 }
 
-void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
+void Rasterizer::Setup(std::shared_ptr<Surface> surface,
+                       std::unique_ptr<RasterizeAgent> agent) {
   surface_ = std::move(surface);
+  agent_ = std::move(agent);
 
   if (max_cache_bytes_.has_value()) {
     SetResourceCacheMaxBytes(max_cache_bytes_.value(),
@@ -76,9 +78,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     compositor_context_->OnGrContextCreated();
   }
 
-  if (external_view_embedder_ &&
-      external_view_embedder_->SupportsDynamicThreadMerging() &&
-      !raster_thread_merger_) {
+  if (agent_->SupportsDynamicThreadMerging() && !raster_thread_merger_) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
@@ -97,8 +97,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
 }
 
 void Rasterizer::TeardownExternalViewEmbedder() {
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
+  if (agent_) {
+    agent_->PreTearDown();
   }
 }
 
@@ -169,19 +169,14 @@ flutter::LayerTree* Rasterizer::GetLastLayerTree() {
 
 void Rasterizer::DrawLastLayerTree(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  if (!last_layer_tree_ || !surface_) {
+  if (!last_layer_tree_ || !surface_ || !agent_) {
     return;
   }
   RasterStatus raster_status = DrawToSurface(
       *frame_timings_recorder, *last_layer_tree_, last_device_pixel_ratio_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
-    external_view_embedder_->SetUsedThisFrame(false);
-    external_view_embedder_->EndFrame(should_resubmit_frame,
-                                      raster_thread_merger_);
-  }
+  agent_->OnEndFrame(ShouldResubmitFrame(raster_status), raster_thread_merger_);
 }
 
 RasterStatus Rasterizer::Draw(
@@ -235,10 +230,8 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    external_view_embedder_->SetUsedThisFrame(false);
-    external_view_embedder_->EndFrame(should_resubmit_frame,
-                                      raster_thread_merger_);
+  if (agent_) {
+    agent_->OnEndFrame(should_resubmit_frame, raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -516,19 +509,13 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
   FML_DCHECK(surface_);
+  FML_DCHECK(agent_);
 
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
-  DlCanvas* embedder_root_canvas = nullptr;
-  if (external_view_embedder_) {
-    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
-        raster_thread_merger_);
-    embedder_root_canvas = external_view_embedder_->GetRootCanvas();
-  }
+  DlCanvas* embedder_root_canvas = agent_->OnBeginFrame(
+      layer_tree.frame_size(), device_pixel_ratio, raster_thread_merger_);
 
   frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
@@ -553,11 +540,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
-      surface_->GetContext(),         // skia GrContext
-      root_surface_canvas,            // root surface canvas
-      external_view_embedder_.get(),  // external view embedder
-      root_surface_transformation,    // root surface transformation
-      true,                           // instrumentation enabled
+      surface_->GetContext(),       // skia GrContext
+      root_surface_canvas,          // root surface canvas
+      agent_.get(),                 // rasterize agent
+      root_surface_transformation,  // root surface transformation
+      true,                         // instrumentation enabled
       frame->framebuffer_info()
           .supports_readback,                // surface supports pixel reads
       raster_thread_merger_,                 // thread merger
@@ -572,12 +559,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     // for accurate performance metrics.
     if (frame->framebuffer_info().supports_partial_repaint &&
         !layer_tree.is_leaf_layer_tracing_enabled()) {
-      // Disable partial repaint if external_view_embedder_ SubmitFrame is
-      // involved - ExternalViewEmbedder unconditionally clears the entire
-      // surface and also partial repaint with platform view present is
-      // something that still need to be figured out.
       bool force_full_repaint =
-          external_view_embedder_ &&
+          !agent_->AllowsPartialRepaint() &&
           (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
       damage = std::make_unique<FrameDamage>();
@@ -623,14 +606,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
     frame->set_submit_info(submit_info);
 
-    if (external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
-      FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(
-          surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
-    } else {
-      frame->Submit();
-    }
+    agent_->SubmitFrame(std::move(frame), raster_thread_merger_);
 
     // Do not update raster cache metrics for kResubmit because that status
     // indicates that the frame was not actually painted.
@@ -719,7 +695,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   auto frame = compositor_context.AcquireFrame(
       surface_context,              // skia context
       canvas,                       // canvas
-      nullptr,                      // view embedder
+      nullptr,                      // rasterize agent
       root_surface_transformation,  // root surface transformation
       false,                        // instrumentation enabled
       true,                         // render buffer readback supported
@@ -789,11 +765,6 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
 
 void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
   next_frame_callback_ = callback;
-}
-
-void Rasterizer::SetExternalViewEmbedder(
-    const std::shared_ptr<ExternalViewEmbedder>& view_embedder) {
-  external_view_embedder_ = view_embedder;
 }
 
 void Rasterizer::SetSnapshotSurfaceProducer(

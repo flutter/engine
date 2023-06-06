@@ -19,6 +19,10 @@ void RasterizeAgentViewEmbedder::PreTearDown() {
   view_embedder_->Teardown();
 }
 
+bool RasterizeAgentViewEmbedder::SupportsDynamicThreadMerging() {
+  return view_embedder_->SupportsDynamicThreadMerging();
+}
+
 DlCanvas* RasterizeAgentViewEmbedder::OnBeginFrame(
     const SkISize& frame_size,
     float pixel_ratio,
@@ -33,7 +37,6 @@ DlCanvas* RasterizeAgentViewEmbedder::OnBeginFrame(
 void RasterizeAgentViewEmbedder::OnEndFrame(
     bool should_resubmit_frame,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  printf("RasterizeAgentViewEmbedder::OnEndFrame %d\n", !!raster_thread_merger);
   if (view_embedder_->GetUsedThisFrame()) {
     view_embedder_->SetUsedThisFrame(false);
     view_embedder_->EndFrame(should_resubmit_frame, raster_thread_merger);

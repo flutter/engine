@@ -20,9 +20,7 @@ class RasterizeAgentViewEmbedder : public RasterizeAgent {
 
   void PreTearDown() override;
 
-  bool SupportsDynamicThreadMerging() override {
-    return view_embedder->SupportsDynamicThreadMerging();
-  }
+  bool SupportsDynamicThreadMerging() override;
 
   bool AllowsPartialRepaint() override {
     // Disable partial repaint if ExternalViewEmbedder::SubmitFrame is

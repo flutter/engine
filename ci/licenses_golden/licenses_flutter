@@ -838,6 +838,7 @@ ORIGIN: ../../../flutter/flow/raster_cache_key.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/raster_cache_key.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/raster_cache_util.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/raster_cache_util.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/flow/rasterize_agent.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/rtree.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/rtree.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/skia_gpu_object.h + ../../../flutter/LICENSE
@@ -2194,6 +2195,10 @@ ORIGIN: ../../../flutter/shell/common/pointer_data_dispatcher.cc + ../../../flut
 ORIGIN: ../../../flutter/shell/common/pointer_data_dispatcher.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterizer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/rasterizer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterize_agent_surface.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterize_agent_surface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterize_agent_view_embedder.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/rasterize_agent_view_embedder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/resource_cache_limit_calculator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/resource_cache_limit_calculator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/run_configuration.cc + ../../../flutter/LICENSE
@@ -3511,6 +3516,7 @@ FILE: ../../../flutter/flow/raster_cache_key.cc
 FILE: ../../../flutter/flow/raster_cache_key.h
 FILE: ../../../flutter/flow/raster_cache_util.cc
 FILE: ../../../flutter/flow/raster_cache_util.h
+FILE: ../../../flutter/flow/rasterize_agent.h
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h
 FILE: ../../../flutter/flow/skia_gpu_object.h
@@ -4869,6 +4875,10 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
+FILE: ../../../flutter/shell/common/rasterize_agent_surface.cc
+FILE: ../../../flutter/shell/common/rasterize_agent_surface.h
+FILE: ../../../flutter/shell/common/rasterize_agent_view_embedder.cc
+FILE: ../../../flutter/shell/common/rasterize_agent_view_embedder.h
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
 FILE: ../../../flutter/shell/common/run_configuration.cc

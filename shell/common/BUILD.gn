@@ -97,6 +97,8 @@ source_set("common") {
     "platform_view.h",
     "pointer_data_dispatcher.cc",
     "pointer_data_dispatcher.h",
+    "rasterize_agent_surface.cc",
+    "rasterize_agent_view_embedder.cc",
     "rasterizer.cc",
     "rasterizer.h",
     "resource_cache_limit_calculator.cc",

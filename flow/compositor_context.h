@@ -14,6 +14,7 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/rasterize_agent.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -118,7 +119,7 @@ class CompositorContext {
     ScopedFrame(CompositorContext& context,
                 GrDirectContext* gr_context,
                 DlCanvas* canvas,
-                ExternalViewEmbedder* view_embedder,
+                RasterizeAgent* agent,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
@@ -134,7 +135,9 @@ class CompositorContext {
       return display_list_builder_;
     }
 
-    ExternalViewEmbedder* view_embedder() { return view_embedder_; }
+    ExternalViewEmbedder* view_embedder() {
+      return agent_ ? agent_->ViewEmbedder() : nullptr;
+    }
 
     CompositorContext& context() const { return context_; }
 
@@ -167,7 +170,7 @@ class CompositorContext {
     DlCanvas* canvas_;
     DisplayListBuilder* display_list_builder_;
     impeller::AiksContext* aiks_context_;
-    ExternalViewEmbedder* view_embedder_;
+    RasterizeAgent* agent_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
     const bool surface_supports_readback_;
@@ -185,7 +188,7 @@ class CompositorContext {
   virtual std::unique_ptr<ScopedFrame> AcquireFrame(
       GrDirectContext* gr_context,
       DlCanvas* canvas,
-      ExternalViewEmbedder* view_embedder,
+      RasterizeAgent* agent,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
       bool surface_supports_readback,

@@ -23,6 +23,8 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
+#include "flutter/shell/common/rasterize_agent_surface.h"
+#include "flutter/shell/common/rasterize_agent_view_embedder.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -704,9 +706,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   rasterizer_ = std::move(rasterizer);
   io_manager_ = io_manager;
 
-  // Set the external view embedder for the rasterizer.
-  auto view_embedder = platform_view_->CreateExternalViewEmbedder();
-  rasterizer_->SetExternalViewEmbedder(view_embedder);
   rasterizer_->SetSnapshotSurfaceProducer(
       platform_view_->CreateSnapshotSurfaceProducer());
 
@@ -808,16 +807,27 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
+  // Set the external view embedder for the rasterizer.
+  auto view_embedder = platform_view_->CreateExternalViewEmbedder();
+
   fml::AutoResetWaitableEvent latch;
-  auto raster_task =
-      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
-                         rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface)]() mutable {
+  auto raster_task = fml::MakeCopyable(
+      [&waiting_for_first_frame = waiting_for_first_frame_,
+       rasterizer = rasterizer_->GetWeakPtr(),  //
+       surface_ptr = std::move(surface), view_embedder]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
-          rasterizer->Setup(std::move(surface));
+          std::unique_ptr<RasterizeAgent> agent;
+          std::shared_ptr<Surface> surface(surface_ptr.release());
+          if (view_embedder) {
+            agent = std::make_unique<RasterizeAgentViewEmbedder>(view_embedder,
+                                                                 surface);
+          } else {
+            agent = std::make_unique<RasterizeAgentSurface>(surface);
+          }
+          rasterizer->Setup(surface, std::move(agent));
         }
 
         waiting_for_first_frame.store(true);

@@ -74,7 +74,7 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
 std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     GrDirectContext* gr_context,
     DlCanvas* canvas,
-    ExternalViewEmbedder* view_embedder,
+    RasterizeAgent* agent,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
@@ -83,7 +83,7 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     DisplayListBuilder* display_list_builder,
     impeller::AiksContext* aiks_context) {
   return std::make_unique<ScopedFrame>(
-      *this, gr_context, canvas, view_embedder, root_surface_transformation,
+      *this, gr_context, canvas, agent, root_surface_transformation,
       instrumentation_enabled, surface_supports_readback, raster_thread_merger,
       display_list_builder, aiks_context);
 }
@@ -92,7 +92,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
     CompositorContext& context,
     GrDirectContext* gr_context,
     DlCanvas* canvas,
-    ExternalViewEmbedder* view_embedder,
+    RasterizeAgent* agent,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
@@ -104,7 +104,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
       canvas_(canvas),
       display_list_builder_(display_list_builder),
       aiks_context_(aiks_context),
-      view_embedder_(view_embedder),
+      agent_(agent),
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
       surface_supports_readback_(surface_supports_readback),
@@ -137,9 +137,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
       *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
-  if (view_embedder_ && raster_thread_merger_) {
-    post_preroll_result =
-        view_embedder_->PostPrerollAction(raster_thread_merger_);
+  if (agent_ && raster_thread_merger_) {
+    post_preroll_result = agent_->PostPrerollAction(raster_thread_merger_);
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
