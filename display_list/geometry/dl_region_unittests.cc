@@ -13,7 +13,7 @@ namespace flutter {
 namespace testing {
 
 TEST(DisplayListRegion, EmptyRegion) {
-  DlRegion region({});
+  DlRegion region;
   EXPECT_TRUE(region.getRects().empty());
 }
 
@@ -150,12 +150,43 @@ TEST(DisplayListRegion, Deband) {
   EXPECT_EQ(rects_without_deband, expected_without_deband);
 }
 
+void CheckEquality(const DlRegion& dl_region, const SkRegion& sk_region) {
+  EXPECT_EQ(dl_region.bounds(), sk_region.getBounds());
+
+  // Do not deband the rectangles - identical to SkRegion::Iterator
+  auto rects = dl_region.getRects(false);
+
+  std::vector<SkIRect> skia_rects;
+
+  auto iterator = SkRegion::Iterator(sk_region);
+  while (!iterator.done()) {
+    skia_rects.push_back(iterator.rect());
+    iterator.next();
+  }
+
+  if (rects != skia_rects) {
+    fprintf(stderr, "----- %zu %zu\n", rects.size(), skia_rects.size());
+    for (size_t i = 0; i < std::min(rects.size(), skia_rects.size()); ++i) {
+      if (rects[i] != skia_rects[i]) {
+        fprintf(stderr, "A %d %d %d %d\n", rects[i].fLeft, rects[i].fTop,
+                rects[i].fRight, rects[i].fBottom);
+        fprintf(stderr, "B %d %d %d %d\n", skia_rects[i].fLeft,
+                skia_rects[i].fTop, skia_rects[i].fRight,
+                skia_rects[i].fBottom);
+      }
+    }
+  }
+
+  EXPECT_EQ(rects, skia_rects);
+}
+
 TEST(DisplayListRegion, TestAgainstSkRegion) {
   struct Settings {
     int max_size;
     size_t iteration_count;
   };
   std::vector<Settings> all_settings{
+      {100, 1},     //
       {100, 10},    //
       {100, 100},   //
       {100, 1000},  //
@@ -170,36 +201,52 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
   for (const auto& settings : all_settings) {
     std::random_device d;
     std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
+    // std::seed_seq seed{133};
     std::mt19937 rng(seed);
 
-    SkRegion sk_region;
+    SkRegion sk_region1;
+    SkRegion sk_region2;
 
     std::uniform_int_distribution pos(0, 4000);
     std::uniform_int_distribution size(1, settings.max_size);
 
-    std::vector<SkIRect> rects_in;
+    std::vector<SkIRect> rects_in1;
+    std::vector<SkIRect> rects_in2;
 
     for (size_t i = 0; i < settings.iteration_count; ++i) {
       SkIRect rect =
           SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
-      rects_in.push_back(rect);
-      sk_region.op(rect, SkRegion::kUnion_Op);
+      rects_in1.push_back(rect);
+      sk_region1.op(rect, SkRegion::kUnion_Op);
+
+      rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+      rects_in2.push_back(rect);
+      sk_region2.op(rect, SkRegion::kUnion_Op);
     }
 
-    DlRegion region(std::move(rects_in));
+    DlRegion region1(std::move(rects_in1));
+    CheckEquality(region1, sk_region1);
 
-    // Do not deband the rectangles - identical to SkRegion::Iterator
-    auto rects = region.getRects(false);
+    DlRegion region2(std::move(rects_in2));
+    CheckEquality(region2, sk_region2);
 
-    std::vector<SkIRect> skia_rects;
+    auto intersects_1 = region1.intersects(region2);
+    auto intersects_2 = region2.intersects(region1);
+    auto sk_intesects = sk_region1.intersects(sk_region2);
+    EXPECT_EQ(intersects_1, intersects_2);
+    EXPECT_EQ(intersects_1, sk_intesects);
 
-    auto iterator = SkRegion::Iterator(sk_region);
-    while (!iterator.done()) {
-      skia_rects.push_back(iterator.rect());
-      iterator.next();
+    {
+      auto rects = region2.getRects(true);
+      for (const auto& r : rects) {
+        EXPECT_EQ(region1.intersects(r), sk_region1.intersects(r));
+      }
     }
 
-    EXPECT_EQ(rects, skia_rects);
+    region1.addRegion(region2);
+    sk_region1.op(sk_region2, SkRegion::kUnion_Op);
+
+    CheckEquality(region1, sk_region1);
   }
 }
 
