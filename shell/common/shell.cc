@@ -2063,6 +2063,7 @@ bool Shell::ReloadSystemFonts() {
   if (!engine_) {
     return false;
   }
+  engine_->SetupDefaultFontManager();
   engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
   // After system fonts are reloaded, we send a system channel message
   // to notify flutter framework.
