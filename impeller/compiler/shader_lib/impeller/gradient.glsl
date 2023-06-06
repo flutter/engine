@@ -19,6 +19,9 @@ mat3 IPMapToUnitX(vec2 p0, vec2 p1) {
 /// circles defined by (c0, r0) and (c1, r1). The returned vec2 encapsulates 't'
 /// as its x component and validity status as its y component, with positive y
 /// indicating a valid result.
+///
+/// The code is migrated from Skia Graphite. See
+/// https://github.com/google/skia/blob/ddf987d2ab3314ee0e80ac1ae7dbffb44a87d394/src/sksl/sksl_graphite_frag.sksl#L541-L666.
 vec2 IPComputeConicalT(vec2 c0, float r0, vec2 c1, float r1, vec2 pos) {
   const float scalar_nearly_zero = 1.0 / float(1 << 12);
   float d_center = distance(c0, c1);
