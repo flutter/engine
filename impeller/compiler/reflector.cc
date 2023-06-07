@@ -226,8 +226,8 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
 
   {
     auto& stage_inputs = root["stage_inputs"] = nlohmann::json::array_t{};
-    if (auto stage_inputs_json =
-            ReflectResources(shader_resources.stage_inputs);
+    if (auto stage_inputs_json = ReflectResources(shader_resources.stage_inputs,
+                                                  /*compute_offsets=*/true);
         stage_inputs_json.has_value()) {
       stage_inputs = std::move(stage_inputs_json.value());
     } else {
@@ -402,8 +402,22 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
       inflated_template->size(), [inflated_template](auto, auto) {});
 }
 
+std::vector<size_t> Reflector::ComputeOffsets(
+    const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const {
+  std::vector<size_t> offsets(resources.size());
+  size_t offset = 0u;
+  for (auto i = 0u; i < resources.size(); i++) {
+    offsets[i] = offset;
+    const auto resource = resources[i];
+    const auto type = compiler_->get_type(resource.type_id);
+    offset += (type.width * type.vecsize) / 8;
+  }
+  return offsets;
+}
+
 std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
-    const spirv_cross::Resource& resource) const {
+    const spirv_cross::Resource& resource,
+    std::optional<size_t> offset) const {
   nlohmann::json::object_t result;
 
   result["name"] = resource.name;
@@ -426,6 +440,9 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
     return std::nullopt;
   }
   result["type"] = std::move(type.value());
+  if (offset.has_value()) {
+    result["offset"] = offset.value();
+  }
   return result;
 }
 
@@ -462,12 +479,24 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
 }
 
 std::optional<nlohmann::json::array_t> Reflector::ReflectResources(
-    const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const {
+    const spirv_cross::SmallVector<spirv_cross::Resource>& resources,
+    bool compute_offsets) const {
   nlohmann::json::array_t result;
   result.reserve(resources.size());
+  std::vector<size_t> offsets;
+  if (compute_offsets) {
+    offsets = ComputeOffsets(resources);
+  }
+  size_t index = 0u;
   for (const auto& resource : resources) {
-    if (auto reflected = ReflectResource(resource); reflected.has_value()) {
+    std::optional<size_t> maybe_offset = std::nullopt;
+    if (compute_offsets) {
+      maybe_offset = offsets[index];
+    }
+    if (auto reflected = ReflectResource(resource, maybe_offset);
+        reflected.has_value()) {
       result.emplace_back(std::move(reflected.value()));
+      index++;
     } else {
       return std::nullopt;
     }
