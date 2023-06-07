@@ -200,7 +200,7 @@ targets:
     recipe: engine_v2/builder
     presubmit: false
     properties:
-      config_name: linux_fuchsia
+      config_name: linux_benchmarks
     timeout: 60
 
   - name: Linux Benchmarks (no-upload)
