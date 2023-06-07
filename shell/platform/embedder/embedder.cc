@@ -1797,6 +1797,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     PopulateJITSnapshotMappingCallbacks(args, settings);
   }
 
+  settings.enable_impeller = SAFE_ACCESS(args, enable_impeller, false);
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);

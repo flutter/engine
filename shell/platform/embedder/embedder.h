@@ -2113,6 +2113,10 @@ typedef struct {
   /// and `update_semantics_callback2` may be provided; the others must be set
   /// to null.
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
+
+  /// If true, the Impeller rendering backend will be enabled. It is the callers
+  /// responsibility to verify that Impeller supports the currently selected backend.
+  bool enable_impeller;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

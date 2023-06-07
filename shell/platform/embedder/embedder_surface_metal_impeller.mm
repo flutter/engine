@@ -75,6 +75,10 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface()
   return surface;
 }
 
+std::shared_ptr<impeller::Context> EmbedderSurfaceMetalImpeller::CreateImpellerContext() const {
+  return context_;
+}
+
 GPUCAMetalLayerHandle EmbedderSurfaceMetalImpeller::GetCAMetalLayer(
     const SkISize& frame_info) const {
   FML_CHECK(false) << "Only rendering to MTLTexture is supported.";

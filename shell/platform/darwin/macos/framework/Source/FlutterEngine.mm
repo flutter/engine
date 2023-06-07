@@ -491,6 +491,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   FlutterProjectArgs flutterArguments = {};
   flutterArguments.struct_size = sizeof(FlutterProjectArgs);
+  flutterArguments.enable_impeller = _project.enableImpeller;
   flutterArguments.assets_path = _project.assetsPath.UTF8String;
   flutterArguments.icu_data_path = _project.ICUDataPath.UTF8String;
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
