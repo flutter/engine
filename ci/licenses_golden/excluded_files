@@ -39,6 +39,7 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
+../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_paint_dispatcher_unittests.cc
@@ -993,6 +994,7 @@
 ../../../third_party/angle/src/common/BinaryStream_unittest.cpp
 ../../../third_party/angle/src/common/CircularBuffer_unittest.cpp
 ../../../third_party/angle/src/common/FastVector_unittest.cpp
+../../../third_party/angle/src/common/FixedQueue_unittest.cpp
 ../../../third_party/angle/src/common/FixedVector_unittest.cpp
 ../../../third_party/angle/src/common/Float16ToFloat32.py
 ../../../third_party/angle/src/common/Optional_unittest.cpp
@@ -1027,9 +1029,11 @@
 ../../../third_party/angle/src/feature_support_util/feature_support_util_unittest.cpp
 ../../../third_party/angle/src/gpu_info_util/SystemInfo_unittest.cpp
 ../../../third_party/angle/src/image_util/AstcDecompressor_unittest.cpp
+../../../third_party/angle/src/libANGLE/BlendStateExt_unittest.cpp
 ../../../third_party/angle/src/libANGLE/BlobCache_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Config_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Fence_unittest.cpp
+../../../third_party/angle/src/libANGLE/GlobalMutex_unittest.cpp
 ../../../third_party/angle/src/libANGLE/HandleAllocator_unittest.cpp
 ../../../third_party/angle/src/libANGLE/ImageIndexIterator_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Image_unittest.cpp
@@ -1040,9 +1044,9 @@
 ../../../third_party/angle/src/libANGLE/SizedMRUCache_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Surface_unittest.cpp
 ../../../third_party/angle/src/libANGLE/TransformFeedback_unittest.cpp
+../../../third_party/angle/src/libANGLE/UnlockedTailCall_unittest.cpp
 ../../../third_party/angle/src/libANGLE/VaryingPacking_unittest.cpp
 ../../../third_party/angle/src/libANGLE/VertexArray_unittest.cpp
-../../../third_party/angle/src/libANGLE/angletypes_unittest.cpp
 ../../../third_party/angle/src/libANGLE/capture/OWNERS
 ../../../third_party/angle/src/libANGLE/gen_copy_conversion_table.py
 ../../../third_party/angle/src/libANGLE/gen_extensions.py
@@ -1068,7 +1072,6 @@
 ../../../third_party/angle/src/libANGLE/renderer/gl/generate_gl_dispatch_table.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/doc
 ../../../third_party/angle/src/libANGLE/renderer/metal/gen_mtl_format_table.py
-../../../third_party/angle/src/libANGLE/renderer/metal/shaders/create_mtl_internal_shaders.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py
 ../../../third_party/angle/src/libANGLE/renderer/serial_utils_unittest.cpp
 ../../../third_party/angle/src/libANGLE/renderer/vulkan/OWNERS
@@ -1652,7 +1655,6 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
-../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc

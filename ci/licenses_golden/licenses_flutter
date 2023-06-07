@@ -714,6 +714,7 @@ ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_gl.h + ../../..
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_helper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_attributes.h + ../../../flutter/LICENSE
@@ -748,6 +749,8 @@ ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.cc + ../../../flutt
 ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_region.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_region.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/image/dl_image.cc + ../../../flutter/LICENSE
@@ -863,6 +866,7 @@ ORIGIN: ../../../flutter/fml/command_line.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/compiler_specific.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/concurrent_message_loop.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/concurrent_message_loop.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/concurrent_message_loop_factory.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/container.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.h + ../../../flutter/LICENSE
@@ -921,6 +925,7 @@ ORIGIN: ../../../flutter/fml/platform/android/scoped_java_ref.cc + ../../../flut
 ORIGIN: ../../../flutter/fml/platform/android/scoped_java_ref.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/cf_utils.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/cf_utils.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/concurrent_message_loop_factory.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/message_loop_darwin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/message_loop_darwin.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/paths_darwin.mm + ../../../flutter/LICENSE
@@ -1480,8 +1485,6 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/surface_mtl.h + ../../.
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/surface_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/texture_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/texture_mtl.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/metal/texture_wrapper_mtl.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/metal/texture_wrapper_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc + ../../../flutter/LICENSE
@@ -1498,6 +1501,10 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc 
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc + ../../../flutter/LICENSE
@@ -1597,6 +1604,7 @@ ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_descriptor.cc + ../../../flutter/LICENSE
@@ -2796,10 +2804,6 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.cc + ../
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.h + ../../../flutter/LICENSE
@@ -2807,8 +2811,6 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc + ../../
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_gl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_metal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_metal.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_metal_impeller.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_metal_impeller.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_software.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_vulkan.cc + ../../../flutter/LICENSE
@@ -3381,6 +3383,7 @@ FILE: ../../../flutter/display_list/benchmarking/dl_complexity_gl.h
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_helper.h
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.cc
 FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h
+FILE: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
 FILE: ../../../flutter/display_list/dl_attributes.h
@@ -3415,6 +3418,8 @@ FILE: ../../../flutter/display_list/effects/dl_path_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_path_effect.h
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.h
+FILE: ../../../flutter/display_list/geometry/dl_region.cc
+FILE: ../../../flutter/display_list/geometry/dl_region.h
 FILE: ../../../flutter/display_list/geometry/dl_rtree.cc
 FILE: ../../../flutter/display_list/geometry/dl_rtree.h
 FILE: ../../../flutter/display_list/image/dl_image.cc
@@ -3530,6 +3535,7 @@ FILE: ../../../flutter/fml/command_line.h
 FILE: ../../../flutter/fml/compiler_specific.h
 FILE: ../../../flutter/fml/concurrent_message_loop.cc
 FILE: ../../../flutter/fml/concurrent_message_loop.h
+FILE: ../../../flutter/fml/concurrent_message_loop_factory.cc
 FILE: ../../../flutter/fml/container.h
 FILE: ../../../flutter/fml/dart/dart_converter.cc
 FILE: ../../../flutter/fml/dart/dart_converter.h
@@ -3588,6 +3594,7 @@ FILE: ../../../flutter/fml/platform/android/scoped_java_ref.cc
 FILE: ../../../flutter/fml/platform/android/scoped_java_ref.h
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.cc
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.h
+FILE: ../../../flutter/fml/platform/darwin/concurrent_message_loop_factory.mm
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.h
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.mm
 FILE: ../../../flutter/fml/platform/darwin/paths_darwin.mm
@@ -4147,8 +4154,6 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/surface_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/surface_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/texture_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/texture_mtl.mm
-FILE: ../../../flutter/impeller/renderer/backend/metal/texture_wrapper_mtl.h
-FILE: ../../../flutter/impeller/renderer/backend/metal/texture_wrapper_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
@@ -4165,6 +4170,10 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pass_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/compute_pipeline_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc
@@ -4264,6 +4273,7 @@ FILE: ../../../flutter/impeller/renderer/snapshot.h
 FILE: ../../../flutter/impeller/renderer/stroke.comp
 FILE: ../../../flutter/impeller/renderer/surface.cc
 FILE: ../../../flutter/impeller/renderer/surface.h
+FILE: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.h
 FILE: ../../../flutter/impeller/renderer/vertex_descriptor.cc
@@ -5479,10 +5489,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
@@ -5490,8 +5496,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.mm
-FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal_impeller.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal_impeller.mm
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_vulkan.cc
