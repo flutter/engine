@@ -41,10 +41,7 @@
                 "metric_center_token"
             ],
             "language": "bash",
-            "name": "Upload metrics dry-run",
-            "parameters": [
-                "--upload"
-            ],
+            "name": "Upload metrics",
             "script": "flutter/testing/benchmark/upload_metrics.sh"
         }
     ]
