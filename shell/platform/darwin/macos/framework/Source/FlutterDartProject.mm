@@ -60,7 +60,8 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
 }
 
 - (BOOL)enableImpeller {
-  NSNumber* enableImpeller = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+  NSNumber* enableImpeller =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTEnableImpeller"];
   if (enableImpeller != nil) {
     return enableImpeller.boolValue;
   }
