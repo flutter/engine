@@ -77,13 +77,13 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     // Default value is OpenGLES.
     AndroidRenderingAPI backend = AndroidRenderingAPI::kOpenGLES;
     if (impeller_backend.has_value()) {
-      if (impeller_backend.value() == "opengl") {
+      if (impeller_backend.value() == "opengles") {
         backend = AndroidRenderingAPI::kOpenGLES;
       } else if (impeller_backend.value() == "vulkan") {
         backend = AndroidRenderingAPI::kVulkan;
       } else {
         FML_CHECK(impeller_backend.value() == "vulkan" ||
-                  impeller_backend.value() == "opengl");
+                  impeller_backend.value() == "opengles");
       }
     }
     switch (backend) {

@@ -322,7 +322,7 @@ public class FlutterLoader {
         if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
           shellArgs.add("--enable-impeller");
         }
-        String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY, "opengl");
+        String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY, "opengles");
         shellArgs.add("--impeller-backend=" + backend);
       }
 

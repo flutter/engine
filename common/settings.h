@@ -217,7 +217,7 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
-  // Requests a particular backend to be used (ex "opengl" or "vulkan")
+  // Requests a particular backend to be used (ex "opengles" or "vulkan")
   std::optional<std::string> impeller_backend;
 
   // Enable Vulkan validation on backends that support it. The validation layers
