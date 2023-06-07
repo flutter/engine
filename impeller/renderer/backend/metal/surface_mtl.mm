@@ -110,8 +110,8 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   color0.store_action = StoreAction::kMultisampleResolve;
   color0.resolve_texture = std::move(resolve_tex);
 
-  RenderTarget render_target_desc;
-  render_target_desc.SetColorAttachment(color0, 0u);
+  auto render_target_desc = std::make_optional<RenderTarget>();
+  render_target_desc->SetColorAttachment(color0, 0u);
 
   return render_target_desc;
 }
