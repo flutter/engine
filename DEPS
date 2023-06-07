@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'e8a71c76b88f44e08806d7661d474718a81ad5dd',
+  'skia_revision': 'cef18d10b3633c30ab0cde8996b0a981b5a61079',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -635,7 +635,7 @@ deps = {
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '5f9ed9b16931c7155171d31f75004f73f0a3abc8',
 
    'src/third_party/angle':
-   Var('chromium_git') + '/angle/angle.git' + '@' + 'e21ecd1b59f768a78b09823f6b6156d84e50d62b',
+   Var('chromium_git') + '/angle/angle.git' + '@' + '16841d6256da06de381fee62da7117b2a6f0ee6d',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
@@ -889,7 +889,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'tCxDcZ3yi0rnKGVHtewA43tSzczIoVq_FtLB-U8WQgUC'
+        'version': 'atrYtfHWi2cmV9B_CjFnRtabTc27pFICq6wNpLMKXNEC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -899,7 +899,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'vAwdggqMrL1yoH_ZneUmvbWLwC--mU9X4Uk4lddoxm0C'
+        'version': 'lpbkSRJBMkPs0FM7_lXKc78a93s5nemNNdY4qQYCw4kC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
