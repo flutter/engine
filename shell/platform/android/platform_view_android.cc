@@ -41,7 +41,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
     case AndroidRenderingAPI::kSoftware:
       return std::make_unique<AndroidSurfaceSoftware>();
     case AndroidRenderingAPI::kOpenGLES:
-      FML_DLOG(ERROR) << "using opengl";
       if (enable_impeller_) {
         return std::make_unique<AndroidSurfaceGLImpeller>(
             std::static_pointer_cast<AndroidContextGLImpeller>(
@@ -52,7 +51,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
       }
     case AndroidRenderingAPI::kVulkan:
       FML_DCHECK(enable_impeller_);
-      FML_DLOG(ERROR) << "using vulkan";
       return std::make_unique<AndroidSurfaceVulkanImpeller>(
           std::static_pointer_cast<AndroidContextVulkanImpeller>(
               android_context_));

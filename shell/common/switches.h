@@ -263,8 +263,8 @@ DEF_SWITCH(EnableImpeller,
            "Impeller is not supported on the platform.")
 DEF_SWITCH(ImpellerBackend,
            "impeller-backend",
-           "Hardcodes a selection of which impeller backend to use. (ex "
-           "`opengl` or `vulkan`)")
+           "Requests a particular Impeller backend on platforms that support "
+           "multiple backends. (ex `opengl` or `vulkan`)")
 DEF_SWITCH(EnableVulkanValidation,
            "enable-vulkan-validation",
            "Enable loading Vulkan validation layers. The layers must be "
