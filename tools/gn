@@ -80,7 +80,7 @@ def to_command_line(gn_args):
   def merge(key, value):
     if isinstance(value, bool):
       return '%s=%s' % (key, 'true' if value else 'false')
-    elif isinstance(value, int):
+    if isinstance(value, int):
       return '%s=%d' % (key, value)
     return '%s="%s"' % (key, value)
 
