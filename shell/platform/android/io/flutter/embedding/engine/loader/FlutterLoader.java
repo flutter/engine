@@ -330,9 +330,7 @@ public class FlutterLoader {
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY, "opengles");
         shellArgs.add("--impeller-backend=" + backend);
 
-        Log.d(TAG, "foobar has metadata");
         if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
-          Log.d(TAG, "foobar has validation flag");
           shellArgs.add("--enable-vulkan-validation");
         }
       }
