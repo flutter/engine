@@ -9,7 +9,6 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/graphics/persistent_cache.h"
@@ -276,8 +275,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         if (parent_io_manager) {
           io_manager = parent_io_manager;
         } else {
-          std::cerr << "Create child platform view: " << std::endl;
-          std::cerr << "has impeller context: " << (!!(platform_view_ptr->GetImpellerContext()) ? "yes" : "no") << std::endl;
           io_manager = std::make_shared<ShellIOManager>(
               platform_view_ptr->CreateResourceContext(),  // resource context
               is_backgrounded_sync_switch,                 // sync switch
