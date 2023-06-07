@@ -194,6 +194,15 @@ targets:
       upload_metrics: "true"
     timeout: 60
 
+  - name: Linux linux_benchmarks
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_fuchsia
+    timeout: 60
+
   - name: Linux Benchmarks (no-upload)
     recipe: engine/engine_metrics
     bringup: true
