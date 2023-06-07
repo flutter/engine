@@ -1862,17 +1862,17 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 //
 // Notice that during the move gesture, the framework only animate the cursor visually. It's only
 // after the gesture is complete, will the framework update the selection to the cursor's
-// new position (with zero selection length). This means during the animation, the selection
-// in framework and the engine can be temporarily out of sync. But it will be in sync again
-// after the animation is complete.
+// new position (with zero selection length). This means during the animation, the visual effect
+// of the cursor is temporarily out of sync with the selection state in both framework and engine.
+// But it will be in sync again after the animation is complete.
 //
 // Floating cursor's "selection" gesture also starts with 1 finger to force press the space bar,
 // so exactly the same functions as the "move gesture" discussed above will be called. When the
-// second finger is pressed, `setSelectedText` will be called, which indicates the beginning of
-// the selection gesture. (This mechanism requires `closestPositionFromPoint` to be implemented, so
-// that UIKit can determine the selected text range based on points.) When the selection is
-// completed (i.e. when both of the 2 fingers are released), similar to "move" gesture,
-// the `endFloatingCursor` will be called.
+// second finger is pressed, `setSelectedText` will be called. This mechanism requires
+// `closestPositionFromPoint` to be implemented, so that UIKit can determine which text position
+// is the closest to any arbitrary screen point, hence determine the selected text range based on
+// those points. When the selection is completed (i.e. when both of the 2 fingers
+// are released), similar to "move" gesture, the `endFloatingCursor` will be called.
 //
 // Whenever a selection is updated, the engine sends the new selection to the framework. So unlike
 // the move gesture, the selections in the framework and the engine are always kept in sync.
