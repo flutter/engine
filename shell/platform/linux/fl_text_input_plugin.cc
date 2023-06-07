@@ -307,9 +307,11 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
   if (priv->enable_delta_model) {
     flutter::TextEditingDelta* delta;
     if (wasComposing) {
-      delta = new flutter::TextEditingDelta(text_before_change, composing_before_change, text);
+      delta = new flutter::TextEditingDelta(text_before_change,
+      					    composing_before_change, text);
     } else {
-      delta = new flutter::TextEditingDelta(text_before_change, selection_before_change, text);
+      delta = new flutter::TextEditingDelta(text_before_change,
+         				    selection_before_change, text);
     }
     // flutter::TextEditingDelta delta = flutter::TextEditingDelta(
     //     text_before_change, selection_before_change, text);
