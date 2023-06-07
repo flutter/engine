@@ -102,6 +102,11 @@ PlatformViewEmbedder::CreateExternalViewEmbedder() {
   return external_view_embedder_;
 }
 
+std::shared_ptr<impeller::Context> PlatformViewEmbedder::GetImpellerContext()
+    const {
+  return embedder_surface_->CreateImpellerContext();
+}
+
 // |PlatformView|
 sk_sp<GrDirectContext> PlatformViewEmbedder::CreateResourceContext() const {
   if (embedder_surface_ == nullptr) {

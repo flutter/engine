@@ -10,6 +10,11 @@ EmbedderSurface::EmbedderSurface() = default;
 
 EmbedderSurface::~EmbedderSurface() = default;
 
+std::shared_ptr<impeller::Context> EmbedderSurface::CreateImpellerContext()
+    const {
+  return nullptr;
+}
+
 sk_sp<GrDirectContext> EmbedderSurface::CreateResourceContext() const {
   return nullptr;
 }

@@ -416,6 +416,8 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  bool EnableImpeller() const { return settings_.enable_impeller; }
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
