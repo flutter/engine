@@ -217,7 +217,7 @@ public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host, LifecycleOwner {
   private static final String TAG = "FlutterActivity";
 
-  private boolean hasRegisteredCallback = false;
+  private boolean hasRegisteredBackCallback = false;
 
   /**
    * The ID of the {@code FlutterView} created by this activity.
@@ -668,7 +668,7 @@ public class FlutterActivity extends Activity
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
-      hasRegisteredCallback = true;
+      hasRegisteredBackCallback = true;
     }
   }
 
@@ -682,7 +682,7 @@ public class FlutterActivity extends Activity
   public void unregisterOnBackInvokedCallback() {
     if (Build.VERSION.SDK_INT >= 33) {
       getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
-      hasRegisteredCallback = false;
+      hasRegisteredBackCallback = false;
     }
   }
 
@@ -702,9 +702,9 @@ public class FlutterActivity extends Activity
 
   @Override
   public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
-    if (frameworkHandlesBacks && !hasRegisteredCallback) {
+    if (frameworkHandlesBacks && !hasRegisteredBackCallback) {
       registerOnBackInvokedCallback();
-    } else if (!frameworkHandlesBacks && hasRegisteredCallback) {
+    } else if (!frameworkHandlesBacks && hasRegisteredBackCallback) {
       unregisterOnBackInvokedCallback();
     }
   }
