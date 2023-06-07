@@ -103,6 +103,13 @@ typedef struct MouseState {
 @property(nonatomic, retain)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
 
+// Whether the status bar is prefered hidden.
+//
+// The |UIViewController:prefersStatusBarHidden| of this ViewController is overriden and returns
+// `flutterPreferesStatusBarHidden`. Only works when `UIViewControllerBasedStatusBarAppearance` in
+// info.plist of the app project is `true`.
+@property(nonatomic, assign) BOOL flutterPreferesStatusBarHidden;
+
 /**
  * Creates and registers plugins used by this view controller.
  */
@@ -298,6 +305,10 @@ typedef struct MouseState {
   [center addObserver:self
              selector:@selector(onPreferredStatusBarStyleUpdated:)
                  name:@(flutter::kOverlayStyleUpdateNotificationName)
+               object:nil];
+  [center addObserver:self
+             selector:@selector(onPreferredStatusBarHiddenUpdated:)
+                 name:@(flutter::kStatusBarHiddenUpdateNotificationName)
                object:nil];
 
   [center addObserver:self
@@ -2079,6 +2090,31 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [self setNeedsStatusBarAppearanceUpdate];
     }
   });
+}
+
+- (void)onPreferredStatusBarHiddenUpdated:(NSNotification*)notification {
+  FML_DCHECK(
+      [notification.name isEqualToString:@(flutter::kStatusBarHiddenUpdateNotificationName)]);
+  // Notifications may not be on the iOS UI thread
+  fml::TaskRunner::RunNowOrPostTask([_engine.get() platformTaskRunner], [&]() {
+    NSDictionary* info = notification.userInfo;
+
+    NSNumber* update = info[@(flutter::kStatusBarHiddenUpdateNotificationKey)];
+
+    if (update == nil) {
+      return;
+    }
+
+    BOOL hidden = [update boolValue];
+    if (hidden != self.flutterPreferesStatusBarHidden) {
+      self.flutterPreferesStatusBarHidden = hidden;
+      [self setNeedsStatusBarAppearanceUpdate];
+    }
+  });
+}
+
+- (BOOL)prefersStatusBarHidden {
+  return self.flutterPreferesStatusBarHidden;
 }
 
 #pragma mark - Platform views

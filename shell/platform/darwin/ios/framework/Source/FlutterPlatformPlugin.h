@@ -23,6 +23,8 @@ extern const char* const kOrientationUpdateNotificationName;
 extern const char* const kOrientationUpdateNotificationKey;
 extern const char* const kOverlayStyleUpdateNotificationName;
 extern const char* const kOverlayStyleUpdateNotificationKey;
+extern const char* const kStatusBarHiddenUpdateNotificationName;
+extern const char* const kStatusBarHiddenUpdateNotificationKey;
 
 }  // namespace flutter
 
