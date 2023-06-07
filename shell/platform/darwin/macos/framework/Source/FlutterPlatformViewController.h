@@ -22,10 +22,10 @@
  * FlutterResult is updated to contain nil for success or to contain
  * a FlutterError if there is an error.
  */
-- (void)onCreateWithViewID:(int64_t)viewId
-                  viewType:(nonnull NSString*)viewType
-                 arguments:(id _Nullable)args
-                    result:(nonnull FlutterResult)result;
+- (void)onCreateWithViewIdentifier:(int64_t)viewId
+                          viewType:(nonnull NSString*)viewType
+                         arguments:(nullable id)args
+                            result:(nonnull FlutterResult)result;
 
 /**
  * Disposes the platform view with `viewId`.

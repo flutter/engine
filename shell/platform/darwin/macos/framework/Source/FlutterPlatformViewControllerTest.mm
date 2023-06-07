@@ -43,22 +43,22 @@ TEST(FlutterPlatformViewController, TestRegisterPlatformViewFactoryAndCreate) {
 
   [platformViewController registerViewFactory:factory withId:@"MockPlatformView"];
 
-  NSDictionary* params = @{
+  NSDictionary* creationArgs = @{
     @"album" : @"スコットとリバース",
     @"releaseYear" : @2013,
     @"artists" : @[ @"Scott Murphy", @"Rivers Cuomo" ],
     @"playlist" : @[ @"おかしいやつ", @"ほどけていたんだ" ],
   };
   NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
-  FlutterStandardTypedData* paramData =
-      [FlutterStandardTypedData typedDataWithBytes:[codec encode:params]];
+  FlutterStandardTypedData* creationArgsData =
+      [FlutterStandardTypedData typedDataWithBytes:[codec encode:creationArgs]];
 
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"create"
                                         arguments:@{
                                           @"id" : @2,
                                           @"viewType" : @"MockPlatformView",
-                                          @"params" : paramData,
+                                          @"params" : creationArgsData,
                                         }];
 
   __block bool success = false;
