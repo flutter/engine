@@ -23,7 +23,7 @@ void testMain() {
     });
 
     test('Surface allocates canvases efficiently', () {
-      final Surface? surface = SurfaceFactory.instance.getSurface();
+      final Surface? surface = RenderCanvasFactory.instance.getCanvas();
       final CkSurface originalSurface =
           surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
       final DomCanvasElement original = surface.offscreenCanvas!;
@@ -128,7 +128,7 @@ void testMain() {
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface? surface = SurfaceFactory.instance.getSurface();
+        final Surface? surface = RenderCanvasFactory.instance.getCanvas();
         expect(surface!.debugForceNewContext, isTrue);
         final CkSurface before =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;

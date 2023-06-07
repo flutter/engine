@@ -18,7 +18,7 @@ class Rasterizer {
   final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
 
   void setSkiaResourceCacheMaxBytes(int bytes) =>
-      SurfaceFactory.instance.baseSurface.setSkiaResourceCacheMaxBytes(bytes);
+      RenderCanvasFactory.instance.baseCanvas.setSkiaResourceCacheMaxBytes(bytes);
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
@@ -30,14 +30,14 @@ class Rasterizer {
       }
 
       final SurfaceFrame frame =
-          SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
+          RenderCanvasFactory.instance.baseCanvas.acquireFrame(layerTree.frameSize);
       HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
       final CkCanvas canvas = frame.skiaCanvas;
       final Frame compositorFrame =
           context.acquireFrame(canvas, HtmlViewEmbedder.instance);
 
       compositorFrame.raster(layerTree, ignoreRasterCache: true);
-      SurfaceFactory.instance.baseSurface.addToScene();
+      RenderCanvasFactory.instance.baseCanvas.addToScene();
       frame.submit();
       HtmlViewEmbedder.instance.submitFrame();
     } finally {

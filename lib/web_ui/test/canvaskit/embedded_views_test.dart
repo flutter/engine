@@ -292,7 +292,7 @@ void testMain() {
     });
 
     test('renders overlays on top of platform views', () async {
-      expect(SurfaceFactory.instance.debugCacheSize, 0);
+      expect(RenderCanvasFactory.instance.debugCacheSize, 0);
       expect(configuration.canvasKitMaximumSurfaces, 8);
       final CkPicture testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
@@ -477,7 +477,7 @@ void testMain() {
       //   Render: Views 1-10
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-      expect(SurfaceFactory.instance.numAvailableOverlays, 0);
+      expect(RenderCanvasFactory.instance.numAvailableOverlays, 0);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -504,7 +504,7 @@ void testMain() {
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-      expect(SurfaceFactory.instance.numAvailableOverlays, 0);
+      expect(RenderCanvasFactory.instance.numAvailableOverlays, 0);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -813,10 +813,10 @@ void testMain() {
           }) as JsFlutterConfiguration);
       debugSetConfiguration(config);
 
-      SurfaceFactory.instance.debugClear();
+      RenderCanvasFactory.instance.debugClear();
 
-      expect(SurfaceFactory.instance.maximumSurfaces, 2);
-      expect(SurfaceFactory.instance.maximumOverlays, 1);
+      expect(RenderCanvasFactory.instance.maximumSurfaces, 2);
+      expect(RenderCanvasFactory.instance.maximumOverlays, 1);
 
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',

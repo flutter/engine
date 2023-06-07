@@ -17,9 +17,10 @@ import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
 import 'picture_recorder.dart';
+import 'render_canvas.dart';
+import 'render_canvas_factory.dart';
 import 'renderer.dart';
 import 'surface.dart';
-import 'surface_factory.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -29,42 +30,6 @@ class HtmlViewEmbedder {
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
   DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
-
-  /// Force the view embedder to disable overlays.
-  ///
-  /// This should never be used outside of tests.
-  static set debugDisableOverlays(bool disable) {
-    // Short circuit if the value is the same as what we already have.
-    if (disable == _debugOverlaysDisabled) {
-      return;
-    }
-    _debugOverlaysDisabled = disable;
-    final SurfaceFactory? instance = SurfaceFactory.debugUninitializedInstance;
-    if (instance != null) {
-      instance.releaseSurfaces();
-      instance.removeSurfacesFromDom();
-      instance.debugClear();
-    }
-    if (disable) {
-      // If we are disabling overlays then get the current [SurfaceFactory]
-      // instance, clear it, and overwrite it with a new instance with only
-      // one surface for the base surface.
-      SurfaceFactory.debugSetInstance(SurfaceFactory(1));
-    } else {
-      // If we are re-enabling overlays then replace the current
-      // [SurfaceFactory]instance with one with
-      // [configuration.canvasKitMaximumSurfaces] overlays.
-      SurfaceFactory.debugSetInstance(
-          SurfaceFactory(configuration.canvasKitMaximumSurfaces));
-    }
-  }
-
-  static bool _debugOverlaysDisabled = false;
-
-  /// Whether or not we have issues a warning to the user about having too many
-  /// surfaces on screen at once. This is so we only warn once, instead of every
-  /// frame.
-  bool _warnedAboutTooManySurfaces = false;
 
   /// The context for the current frame.
   EmbedderFrameContext _context = EmbedderFrameContext();
@@ -85,10 +50,8 @@ class HtmlViewEmbedder {
   /// * The number of clipping elements used last time the view was composited.
   final Map<int, ViewClipChain> _viewClipChains = <int, ViewClipChain>{};
 
-  /// Surfaces used to draw on top of platform views, keyed by platform view ID.
-  ///
-  /// These surfaces are cached in the [OverlayCache] and reused.
-  final Map<int, Surface> _overlays = <int, Surface>{};
+  /// Canvases used to draw on top of platform views, keyed by platform view ID.
+  final Map<int, RenderCanvas> _overlays = <int, RenderCanvas>{};
 
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
@@ -123,20 +86,10 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    final bool hasAvailableOverlay =
-        _context.pictureRecordersCreatedDuringPreroll.length <
-            SurfaceFactory.instance.maximumOverlays;
-    if (!hasAvailableOverlay && !_warnedAboutTooManySurfaces) {
-      _warnedAboutTooManySurfaces = true;
-      printWarning('Flutter was unable to create enough overlay surfaces. '
-          'This is usually caused by too many platform views being '
-          'displayed at once. '
-          'You may experience incorrect rendering.');
-    }
     // We need an overlay for each visible platform view. Invisible platform
     // views will be grouped with (at most) one visible platform view later.
     final bool needNewOverlay = platformViewManager.isVisible(viewId);
-    if (needNewOverlay && hasAvailableOverlay) {
+    if (needNewOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
       pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
@@ -513,7 +466,7 @@ class HtmlViewEmbedder {
         }
       }
     } else {
-      SurfaceFactory.instance.removeSurfacesFromDom();
+      RenderCanvasFactory.instance.removeSurfacesFromDom();
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
 
@@ -567,8 +520,8 @@ class HtmlViewEmbedder {
 
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
-      final Surface overlay = _overlays[viewId]!;
-      SurfaceFactory.instance.releaseSurface(overlay);
+      final RenderCanvas overlay = _overlays[viewId]!;
+      RenderCanvasFactory.instance.releaseCanvas(overlay);
       _overlays.remove(viewId);
     }
   }
@@ -607,15 +560,15 @@ class HtmlViewEmbedder {
         overlayGroups.map((OverlayGroup group) => group.last).toList();
     // If there were more visible views than overlays, then the last group
     // doesn't have an overlay.
-    if (viewsNeedingOverlays.length > SurfaceFactory.instance.maximumOverlays) {
+    if (viewsNeedingOverlays.length > RenderCanvasFactory.instance.maximumOverlays) {
       assert(viewsNeedingOverlays.length ==
-          SurfaceFactory.instance.maximumOverlays + 1);
+          RenderCanvasFactory.instance.maximumOverlays + 1);
       viewsNeedingOverlays.removeLast();
     }
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to all the surfaces needing one.
-      SurfaceFactory.instance.releaseSurfaces();
+      RenderCanvasFactory.instance.releaseCanvases();
       _overlays.clear();
       viewsNeedingOverlays.forEach(_initializeOverlay);
     } else {
@@ -645,7 +598,7 @@ class HtmlViewEmbedder {
   // be assigned an overlay are grouped together and will be rendered on top of
   // the rest of the scene.
   List<OverlayGroup> getOverlayGroups(List<int> views) {
-    final int maxOverlays = SurfaceFactory.instance.maximumOverlays;
+    final int maxOverlays = RenderCanvasFactory.instance.maximumOverlays;
     if (maxOverlays == 0) {
       return const <OverlayGroup>[];
     }
@@ -695,7 +648,7 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final Surface overlay = SurfaceFactory.instance.getSurface()!;
+    final Surface overlay = RenderCanvasFactory.instance.getCanvas()!;
     overlay.createOrUpdateSurface(_frameSize);
     _overlays[viewId] = overlay;
   }

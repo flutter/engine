@@ -14,8 +14,8 @@ import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
+import 'render_canvas_factory.dart';
 import 'renderer.dart';
-import 'surface_factory.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
@@ -35,6 +35,7 @@ class SurfaceFrame {
 
   /// Submit this frame to be drawn.
   bool submit() {
+
     if (_submitted) {
       return false;
     }
@@ -159,7 +160,7 @@ class Surface {
     }
     // TODO(jonahwilliams): this is somewhat wasteful. We should probably
     // eagerly setup this surface instead of delaying until the first frame?
-    // Or at least cache the estimated window size.
+    // Or at least cache the estimated window sizeThis is the first frame we have rendered with this canvas.
     createOrUpdateSurface(size);
   }
 
@@ -272,7 +273,7 @@ class Surface {
   JSVoid _contextLostListener(DomEvent event) {
     assert(event.target == offscreenCanvas,
         'Received a context lost event for a disposed canvas');
-    final SurfaceFactory factory = SurfaceFactory.instance;
+    final RenderCanvasFactory factory = RenderCanvasFactory.instance;
     _contextLost = true;
     if (factory.isLive(this)) {
       _forceNewContext = true;

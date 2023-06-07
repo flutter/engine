@@ -95,7 +95,7 @@ class CkPicture implements ui.Picture {
   CkImage toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
 
-    final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
+    final Surface surface = RenderCanvasFactory.instance.pictureToImageSurface;
     final CkSurface ckSurface =
       surface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
     final CkCanvas ckCanvas = ckSurface.getCanvas();
