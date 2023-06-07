@@ -15,13 +15,19 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
@@ -280,7 +286,7 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
             std::to_string(image_info.height()));
   };
 
-  sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+  sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
   canvas.Clear(DlColor::kTransparent());
   canvas.DrawDisplayList(display_list);
@@ -341,7 +347,7 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
               return;
             }
 
-            sk_sp<SkSurface> sk_surface = SkSurface::MakeFromBackendTexture(
+            sk_sp<SkSurface> sk_surface = SkSurfaces::WrapBackendTexture(
                 context, texture, kTopLeft_GrSurfaceOrigin, /*sampleCnt=*/0,
                 image_info.colorType(), image_info.refColorSpace(), nullptr);
             if (!sk_surface) {
@@ -576,9 +582,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
           (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
       damage = std::make_unique<FrameDamage>();
-      if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
+      auto existing_damage = frame->framebuffer_info().existing_damage;
+      if (existing_damage.has_value() && !force_full_repaint) {
         damage->SetPreviousLayerTree(last_layer_tree_.get());
-        damage->AddAdditionalDamage(*frame->framebuffer_info().existing_damage);
+        damage->AddAdditionalDamage(existing_damage.value());
         damage->SetClipAlignment(
             frame->framebuffer_info().horizontal_clip_alignment,
             frame->framebuffer_info().vertical_clip_alignment);
@@ -620,8 +627,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
     } else {
       frame->Submit();
     }

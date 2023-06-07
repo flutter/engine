@@ -30,7 +30,7 @@ class ComputePassMTL final : public ComputePass {
   bool IsValid() const override;
 
   // |ComputePass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(const std::string& label) override;
 
   // |ComputePass|
   bool OnEncodeCommands(const Context& context,

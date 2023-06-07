@@ -4,10 +4,46 @@
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'platform_location.dart';
+
+UrlStrategy _realDefaultUrlStrategy = ui.debugEmulateFlutterTesterEnvironment
+      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
+      : const HashUrlStrategy();
+
+UrlStrategy get _defaultUrlStrategy => debugDefaultUrlStrategyOverride ?? _realDefaultUrlStrategy;
+
+/// Overrides the default URL strategy.
+///
+/// Setting this to null allows the real default URL strategy to be used.
+///
+/// This is intended to be used for testing and debugging only.
+@visibleForTesting
+UrlStrategy? debugDefaultUrlStrategyOverride;
+
+/// Whether a custom URL strategy has been set or not.
+//
+// It is valid to set [_customUrlStrategy] to null, so we can't use a null
+// check to determine whether it was set or not. We need an extra boolean.
+bool isCustomUrlStrategySet = false;
+
+/// Whether a custom URL strategy can be set or not.
+///
+/// This is used to prevent setting a custom URL strategy for a second time or
+/// after the app has already started running.
+bool _customUrlStrategyCanBeSet = true;
+
+/// A custom URL strategy set by the app before running.
+UrlStrategy? _customUrlStrategy;
+
+/// Returns the present [UrlStrategy] for handling the browser URL.
+///
+/// Returns null when the browser integration has been manually disabled.
+UrlStrategy? get urlStrategy =>
+    isCustomUrlStrategySet ? _customUrlStrategy : _defaultUrlStrategy;
 
 /// Sets a custom URL strategy instead of the default one.
 ///
@@ -16,7 +52,27 @@ import 'platform_location.dart';
 /// This setter can only be called once. Subsequent calls will throw an error
 /// in debug mode.
 set urlStrategy(UrlStrategy? strategy) {
-  customUrlStrategy = strategy;
+  assert(
+    _customUrlStrategyCanBeSet,
+    'Cannot set URL strategy a second time or after the app has been initialized.',
+  );
+  preventCustomUrlStrategy();
+  isCustomUrlStrategySet = true;
+  _customUrlStrategy = strategy;
+}
+
+/// From this point on, prevents setting a custom URL strategy.
+void preventCustomUrlStrategy() {
+  _customUrlStrategyCanBeSet = false;
+}
+
+/// Resets everything to do with custom URL strategy.
+///
+/// This should only be used in tests to reset things back after each test.
+void debugResetCustomUrlStrategy() {
+  isCustomUrlStrategySet = false;
+  _customUrlStrategyCanBeSet = true;
+  _customUrlStrategy = null;
 }
 
 /// Callback that receives the new state of the browser history entry.
@@ -27,10 +83,6 @@ typedef PopStateListener = void Function(Object? state);
 /// By default, the [HashUrlStrategy] subclass is used if the app doesn't
 /// specify one.
 abstract class UrlStrategy {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const UrlStrategy();
-
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
   ui.VoidCallback addPopStateListener(PopStateListener fn);
@@ -83,7 +135,7 @@ abstract class UrlStrategy {
 /// // Somewhere before calling `runApp()` do:
 /// setUrlStrategy(const HashUrlStrategy());
 /// ```
-class HashUrlStrategy extends UrlStrategy {
+class HashUrlStrategy implements UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
@@ -95,10 +147,10 @@ class HashUrlStrategy extends UrlStrategy {
 
   @override
   ui.VoidCallback addPopStateListener(PopStateListener fn) {
-    final DomEventListener wrappedFn = createDomEventListener((DomEvent event) {
+    void wrappedFn(Object event) {
       // `fn` expects `event.state`, not a `DomEvent`.
       fn((event as DomPopStateEvent).state);
-    });
+    }
     _platformLocation.addPopStateListener(wrappedFn);
     return () => _platformLocation.removePopStateListener(wrappedFn);
   }
@@ -127,8 +179,17 @@ class HashUrlStrategy extends UrlStrategy {
     // if the empty URL is pushed it won't replace any existing fragment. So
     // when the hash path is empty, we still return the location's path and
     // query.
-    return '${_platformLocation.pathname}${_platformLocation.search}'
-        '${internalUrl.isEmpty ? '' : '#$internalUrl'}';
+    final String hash;
+    if (internalUrl.isEmpty || internalUrl == '/') {
+      // Let's not add the hash at all when the app is in the home page. That
+      // way, the URL of the home page is cleaner.
+      //
+      // See: https://github.com/flutter/flutter/issues/127608
+      hash = '';
+    } else {
+      hash = '#$internalUrl';
+    }
+    return '${_platformLocation.pathname}${_platformLocation.search}$hash';
   }
 
   @override
@@ -143,7 +204,7 @@ class HashUrlStrategy extends UrlStrategy {
 
   @override
   Future<void> go(int count) {
-    _platformLocation.go(count.toDouble());
+    _platformLocation.go(count);
     return _waitForPopState();
   }
 

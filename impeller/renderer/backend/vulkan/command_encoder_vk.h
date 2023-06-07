@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <set>
 
@@ -34,11 +35,13 @@ class FenceWaiterVK;
 
 class CommandEncoderVK {
  public:
+  using SubmitCallback = std::function<void(bool)>;
+
   ~CommandEncoderVK();
 
   bool IsValid() const;
 
-  bool Submit();
+  bool Submit(SubmitCallback callback = {});
 
   bool Track(std::shared_ptr<SharedObjectVK> object);
 
@@ -80,7 +83,7 @@ class CommandEncoderVK {
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   bool is_valid_ = false;
 
-  CommandEncoderVK(std::weak_ptr<const DeviceHolder> device_holder,
+  CommandEncoderVK(const std::weak_ptr<const DeviceHolder>& device_holder,
                    const std::shared_ptr<QueueVK>& queue,
                    const std::shared_ptr<CommandPoolVK>& pool,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);

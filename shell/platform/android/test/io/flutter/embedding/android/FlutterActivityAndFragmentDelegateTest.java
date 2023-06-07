@@ -308,7 +308,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     ArgumentCaptor<FlutterEngineGroup.Options> optionsCaptor =
         ArgumentCaptor.forClass(FlutterEngineGroup.Options.class);
     verify(flutterEngineGroup, times(1)).createAndRunEngine(optionsCaptor.capture());
-    assertEquals("/initial_route", optionsCaptor.getValue().getInitialRoute());
+    assertEquals("foo://example.com/initial_route", optionsCaptor.getValue().getInitialRoute());
   }
 
   @Test
@@ -687,7 +687,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route?query=test");
+        .setInitialRoute("http://myApp/custom/route?query=test");
   }
 
   @Test
@@ -715,7 +715,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route?query=test#fragment");
+        .setInitialRoute("http://myApp/custom/route?query=test#fragment");
   }
 
   @Test
@@ -743,7 +743,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route#fragment");
+        .setInitialRoute("http://myApp/custom/route#fragment");
   }
 
   @Test
@@ -770,7 +770,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onStart();
 
     // Verify that the navigation channel was given the initial route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).setInitialRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .setInitialRoute("http://myApp/custom/route");
   }
 
   @Test
@@ -808,19 +809,19 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route?query=test";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route?query=test"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route?query=test");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
-  public void itDoesNotSendPushRouteInformationMessageWhenOnNewIntentIsNonHierarchicalUri() {
+  public void itDoesSendPushRouteInformationMessageWhenOnNewIntentIsNonHierarchicalUri() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -838,7 +839,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was not given a push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(0))
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
         .pushRouteInformation("mailto:test@test.com");
   }
 
@@ -851,16 +852,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route?query=test#fragment";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData())
-        .thenReturn(Uri.parse("http://myApp/custom/route?query=test#fragment"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route?query=test#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -872,15 +872,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route#fragment";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route#fragment"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test
@@ -892,15 +892,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(ctx);
+    String expected = "http://myApp/custom/route#fragment";
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route"));
+    when(mockIntent.getData()).thenReturn(Uri.parse(expected));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRouteInformation("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRouteInformation(expected);
   }
 
   @Test

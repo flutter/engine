@@ -14,8 +14,9 @@ namespace impeller {
 
 class TrackedObjectsVK {
  public:
-  explicit TrackedObjectsVK(std::weak_ptr<const DeviceHolder> device_holder,
-                            const std::shared_ptr<CommandPoolVK>& pool)
+  explicit TrackedObjectsVK(
+      const std::weak_ptr<const DeviceHolder>& device_holder,
+      const std::shared_ptr<CommandPoolVK>& pool)
       : desc_pool_(device_holder) {
     if (!pool) {
       return;
@@ -96,7 +97,7 @@ class TrackedObjectsVK {
 };
 
 CommandEncoderVK::CommandEncoderVK(
-    std::weak_ptr<const DeviceHolder> device_holder,
+    const std::weak_ptr<const DeviceHolder>& device_holder,
     const std::shared_ptr<QueueVK>& queue,
     const std::shared_ptr<CommandPoolVK>& pool,
     std::shared_ptr<FenceWaiterVK> fence_waiter)
@@ -124,13 +125,23 @@ bool CommandEncoderVK::IsValid() const {
   return is_valid_;
 }
 
-bool CommandEncoderVK::Submit() {
+bool CommandEncoderVK::Submit(SubmitCallback callback) {
+  // Make sure to call callback with `false` if anything returns early.
+  bool fail_callback = !!callback;
   if (!IsValid()) {
+    if (fail_callback) {
+      callback(false);
+    }
     return false;
   }
 
   // Success or failure, you only get to submit once.
-  fml::ScopedCleanupClosure reset([&]() { Reset(); });
+  fml::ScopedCleanupClosure reset([&]() {
+    if (fail_callback) {
+      callback(false);
+    }
+    Reset();
+  });
 
   InsertDebugMarker("QueueSubmit");
 
@@ -155,10 +166,16 @@ bool CommandEncoderVK::Submit() {
     return false;
   }
 
+  // Submit will proceed, call callback with true when it is done and do not
+  // call when `reset` is collected.
+  fail_callback = false;
+
   return fence_waiter_->AddFence(
-      std::move(fence), [tracked_objects = std::move(tracked_objects_)] {
-        // Nothing to do, we just drop the tracked
-        // objects on the floor.
+      std::move(fence),
+      [callback, tracked_objects = std::move(tracked_objects_)] {
+        if (callback) {
+          callback(true);
+        }
       });
 }
 
