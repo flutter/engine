@@ -30,55 +30,9 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
   void SimulateVSync() override;
 
  private:
-  class OffScreenContext {
-   public:
-    OffScreenContext(fml::RefPtr<vulkan::VulkanProcTable> vk);
-
-    ~OffScreenContext();
-
-    sk_sp<GrDirectContext> GetContext() { return context_; }
-
-   private:
-    fml::RefPtr<vulkan::VulkanProcTable> vk_;
-    std::unique_ptr<vulkan::VulkanApplication> application_;
-    std::unique_ptr<vulkan::VulkanDevice> logical_device_;
-    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
-    sk_sp<GrDirectContext> context_;
-
-    bool CreateSkiaGrContext();
-    bool CreateSkiaBackendContext(GrVkBackendContext* context);
-
-    FML_DISALLOW_COPY_AND_ASSIGN(OffScreenContext);
-  };
-
-  class OffScreenStudio : public flutter::Studio {
-   public:
-    //------------------------------------------------------------------------------
-    /// @brief      Create a GPUStudioVulkan while letting it reuse an existing
-    ///             GrDirectContext.
-    ///
-    OffScreenStudio(const std::shared_ptr<OffScreenContext>& offscreen_context)
-        : offscreen_context_(offscreen_context) {}
-
-    ~OffScreenStudio() override = default;
-
-    // |Studio|
-    bool IsValid() override { return GetContext(); }
-
-    // |Studio|
-    GrDirectContext* GetContext() override {
-      return offscreen_context_->GetContext().get();
-    }
-
-   private:
-    std::shared_ptr<OffScreenContext> offscreen_context_;
-
-    FML_DISALLOW_COPY_AND_ASSIGN(OffScreenStudio);
-  };
-
   class OffScreenSurface : public flutter::Surface {
    public:
-    OffScreenSurface(const std::shared_ptr<OffScreenContext>& offscreen_context,
+    OffScreenSurface(fml::RefPtr<vulkan::VulkanProcTable> vk,
                      std::shared_ptr<ShellTestExternalViewEmbedder>
                          shell_test_external_view_embedder);
 
@@ -93,12 +47,21 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     // |Surface|
     SkMatrix GetRootTransformation() const override;
 
-   private:
-    GrDirectContext* GetContext();
+    // |Surface|
+    GrDirectContext* GetContext() override;
 
+   private:
+    bool valid_;
+    fml::RefPtr<vulkan::VulkanProcTable> vk_;
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder_;
-    std::shared_ptr<OffScreenContext> offscreen_context_;
+    std::unique_ptr<vulkan::VulkanApplication> application_;
+    std::unique_ptr<vulkan::VulkanDevice> logical_device_;
+    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
+    sk_sp<GrDirectContext> context_;
+
+    bool CreateSkiaGrContext();
+    bool CreateSkiaBackendContext(GrVkBackendContext* context);
 
     FML_DISALLOW_COPY_AND_ASSIGN(OffScreenSurface);
   };
@@ -111,8 +74,6 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
   std::shared_ptr<ShellTestExternalViewEmbedder>
       shell_test_external_view_embedder_;
-
-  std::shared_ptr<OffScreenContext> offscreen_context_;
 
   bool support_thread_merging_;
 

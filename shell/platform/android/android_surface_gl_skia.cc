@@ -9,8 +9,6 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/shell/gpu/gpu_studio_gl_skia.h"
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
@@ -49,36 +47,20 @@ bool AndroidSurfaceGLSkia::IsValid() const {
   return offscreen_surface_ && android_context_->IsValid();
 }
 
-sk_sp<GrDirectContext> AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
+std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
     GrDirectContext* gr_context) {
   if (gr_context) {
-    return sk_ref_sp(gr_context);
+    return std::make_unique<GPUSurfaceGLSkia>(sk_ref_sp(gr_context), this,
+                                              true);
   } else {
     sk_sp<GrDirectContext> main_skia_context =
         android_context_->GetMainSkiaContext();
     if (!main_skia_context) {
-      main_skia_context = GPUStudioGLSkia::MakeGLContext(this);
+      main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
       android_context_->SetMainSkiaContext(main_skia_context);
     }
-    FML_DCHECK(android_context_->GetMainSkiaContext() == main_skia_context);
-    return main_skia_context;
+    return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
   }
-}
-
-std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateGPUStudio(
-    GrDirectContext* gr_context) {
-  auto studio = std::make_unique<GPUStudioGLSkia>(
-      UseExistingMainContextOrCreate(gr_context), this);
-  if (!studio->IsValid()) {
-    return nullptr;
-  }
-  return studio;
-}
-
-std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
-    GrDirectContext* gr_context) {
-  return std::make_unique<GPUSurfaceGLSkia>(
-      UseExistingMainContextOrCreate(gr_context), this, true);
 }
 
 bool AndroidSurfaceGLSkia::OnScreenSurfaceResize(const SkISize& size) {
@@ -222,18 +204,18 @@ sk_sp<const GrGLInterface> AndroidSurfaceGLSkia::GetGLInterface() const {
   return GPUSurfaceGLDelegate::GetGLInterface();
 }
 
-std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateSnapshotStudio() {
+std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
   if (!onscreen_surface_ || !onscreen_surface_->IsValid()) {
     onscreen_surface_ = android_context_->CreatePbufferSurface();
   }
   sk_sp<GrDirectContext> main_skia_context =
       android_context_->GetMainSkiaContext();
   if (!main_skia_context) {
-    main_skia_context = GPUStudioGLSkia::MakeGLContext(this);
+    main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
     android_context_->SetMainSkiaContext(main_skia_context);
   }
 
-  return std::make_unique<GPUStudioGLSkia>(main_skia_context, this);
+  return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
 }
 
 }  // namespace flutter

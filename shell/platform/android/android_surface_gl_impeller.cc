@@ -6,7 +6,6 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
-#include "flutter/shell/gpu/gpu_studio_gl_impeller.h"
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 namespace flutter {
@@ -31,19 +30,6 @@ AndroidSurfaceGLImpeller::~AndroidSurfaceGLImpeller() = default;
 // |AndroidSurface|
 bool AndroidSurfaceGLImpeller::IsValid() const {
   return is_valid_;
-}
-
-// |AndroidSurface|
-std::unique_ptr<Studio> AndroidSurfaceGLImpeller::CreateGPUStudio(
-    GrDirectContext* gr_context) {
-  auto studio = std::make_unique<GPUStudioGLImpeller>(
-      this,                                   // delegate
-      android_context_->GetImpellerContext()  // context
-  );
-  if (!studio->IsValid()) {
-    return nullptr;
-  }
-  return studio;
 }
 
 // |AndroidSurface|
@@ -93,7 +79,7 @@ bool AndroidSurfaceGLImpeller::SetNativeWindow(
 }
 
 // |AndroidSurface|
-std::unique_ptr<Studio> AndroidSurfaceGLImpeller::CreateSnapshotStudio() {
+std::unique_ptr<Surface> AndroidSurfaceGLImpeller::CreateSnapshotSurface() {
   FML_UNREACHABLE();
 }
 

@@ -30,9 +30,6 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   bool IsValid() const override;
 
   // |AndroidSurface|
-  std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context) override;
-
-  // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface(
       GrDirectContext* gr_context) override;
 
@@ -52,7 +49,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
 
   // |AndroidSurface|
-  virtual std::unique_ptr<Studio> CreateSnapshotStudio() override;
+  virtual std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
   // |GPUSurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
@@ -88,9 +85,6 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   fml::RefPtr<AndroidNativeWindow> native_window_;
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
-
-  sk_sp<GrDirectContext> UseExistingMainContextOrCreate(
-      GrDirectContext* gr_context);
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGLSkia);
 };
