@@ -102,10 +102,10 @@ public class FlutterActivityTest {
 
     verify(activity, times(0)).registerOnBackInvokedCallback();
 
-    activity.setFrameworkHandlesBacks(false);
+    activity.setFrameworkHandlesBack(false);
     verify(activity, times(0)).registerOnBackInvokedCallback();
 
-    activity.setFrameworkHandlesBacks(true);
+    activity.setFrameworkHandlesBack(true);
     verify(activity, times(1)).registerOnBackInvokedCallback();
   }
 

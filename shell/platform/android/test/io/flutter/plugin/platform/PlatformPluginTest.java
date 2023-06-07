@@ -470,16 +470,16 @@ public class PlatformPluginTest {
   }
 
   @Test
-  public void setFrameworkHandlesBacksFlutterActivity() {
+  public void setFrameworkHandlesBackFlutterActivity() {
     Activity mockActivity = mock(Activity.class);
     PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
     PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
     PlatformPlugin platformPlugin =
         new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
 
-    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBacks(true);
+    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
 
-    verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBacks(true);
+    verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBack(true);
   }
 
   @Test

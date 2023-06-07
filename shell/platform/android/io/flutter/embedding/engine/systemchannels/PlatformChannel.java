@@ -136,10 +136,10 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
-              case "SystemNavigator.setFrameworkHandlesBacks":
+              case "SystemNavigator.setFrameworkHandlesBack":
                 {
                   boolean frameworkHandlesBacks = (boolean) arguments;
-                  platformMessageHandler.setFrameworkHandlesBacks(frameworkHandlesBacks);
+                  platformMessageHandler.setFrameworkHandlesBack(frameworkHandlesBacks);
                   result.success(null);
                   break;
                 }
@@ -517,7 +517,7 @@ public class PlatformChannel {
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
 
     /** The Flutter application would or would not like to handle navigation pop events itself. */
-    void setFrameworkHandlesBacks(boolean frameworkHandlesPop);
+    void setFrameworkHandlesBack(boolean frameworkHandlesBack);
 
     /**
      * The Flutter application would like to pop the top item off of the Android app's navigation

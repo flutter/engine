@@ -1690,7 +1690,7 @@ public class FlutterFragment extends Fragment
   }
 
   @Override
-  public void setFrameworkHandlesBacks(boolean frameworkHandlesBacks) {
+  public void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
     // Irrelevant to FlutterFragment.
   }
 
