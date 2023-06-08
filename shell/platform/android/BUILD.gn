@@ -6,9 +6,11 @@ import("//build/config/android/config.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/version/version.gni")
+import("//flutter/vulkan/config.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
   enable_software = true
@@ -479,6 +481,7 @@ action("android_jar") {
   ]
 
   if (enable_vulkan_validation_layers) {
+    assert(impeller_enable_vulkan)
     deps += [ "//third_party/vulkan_validation_layers" ]
     args += [
       "--native_lib",
