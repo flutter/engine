@@ -976,7 +976,7 @@ TEST(FlTextInputPluginTest, ComposingDelta) {
                   .old_text = "",
                   .delta_text = "Flutter ",
                   .delta_start = 0,
-                  .delta_end = 8,
+                  .delta_end = 0,
                   .selection_base = 8,
                   .selection_extent = 8,
                   .composing_base = 0,
@@ -1033,6 +1033,7 @@ TEST(FlTextInputPluginTest, ComposingDelta) {
           "deltas",
           build_list({
               build_editing_delta({
+                  .old_text = "Flutter engine",
                   .delta_text = "Flutter engine",
                   .selection_base = 14,
                   .selection_extent = 14,
