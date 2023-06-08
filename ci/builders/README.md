@@ -150,7 +150,8 @@ configuration.
   "type": "gcs",
   "include_paths": [
      "out/host_debug/zip_archives/linux-x64/artifacts.zip"
-  ]
+  ],
+  "realm": "production"
 }
 ```
 
@@ -176,6 +177,10 @@ cleanups. Gcs is expected for any artifacts being consumed by the flutter tool.
 given destination.
 * **cas_archive** - a boolean value indicating whether the build output will
 be archived to CAS or not. The default value is true.
+* **realm** - has a string value of either `production` or `experimental`
+where production means the artifact will be uploaded to the location expected
+by the flutter tool and experimental will uploaded the artifact to a location
+different than the production one(production path with an additional experimental prefix).
 
 #### Drone\_dimensions
 
@@ -508,19 +513,27 @@ new artifacts combining outputs of multiple sub-builds.
 ### Global Archives
 
 The archives component provides instructions to upload the artifacts generated
-by the global generators. Is a list of dictionaries with two keys: `source` and
-`destination`. `source` is a path relative to the checkout repository and
-`destination` is a relative path to &lt;bucket>/flutter/&lt;commit>.
+by the global generators. Is a list of dictionaries with three keys: `source` and
+`destination`, and `realm`. `source` is a path relative to the checkout repository,
+`destination` is a relative path to &lt;bucket>/flutter/&lt;commit>, and `realm` is
+a string with either `production` or `experimental` value.
+
+The realm value is used to build the path where the artifacts will be uploaded to.
+E.g. artifacts uploaded with the experimental realm will not impact the flutter tool
+even though they are uploaded to the same location as the production ones and it is
+useful to validate new artifacts before they are ready for production usage.
 
 ```json
 "archives": [
     {
         "source": "out/debug/artifacts.zip",
-        "destination": "ios/artifacts.zip"
+        "destination": "ios/artifacts.zip",
+        "realm": "production"
     },
     {
         "source": "out/debug/ios-objcdoc.zip",
-        "destination": "ios-objcdoc.zip"
+        "destination": "ios-objcdoc.zip",
+        "realm": "experimental"
     }
 ]
 ```
