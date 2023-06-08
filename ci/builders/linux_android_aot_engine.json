@@ -235,6 +235,18 @@
                 ],
                 "script": "flutter/testing/symbols/verify_exported.dart",
                 "language": "dart"
+            },
+            {
+                "name": "Generate treemap for android_release_arm64",
+                "language": "python3",
+                "script": "third_party/dart/runtime/third_party/binary_size/src/run_binary_size_analysis.py",
+                "parameters": [
+                    "--library", "src/out/android_release_arm64/libflutter.so",
+                    "--destdir",
+                    "android-arm64-release",
+                    "--addr2line-binary",
+                    "src/third_party/android_tools/ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-addr2line"
+                ]
             }
         ]
     }
