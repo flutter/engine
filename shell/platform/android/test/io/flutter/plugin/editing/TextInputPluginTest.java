@@ -2185,8 +2185,7 @@ public class TextInputPluginTest {
   @Config(sdk = 30)
   public void lastWindowInsets_updatedOnSecondOnProgressCall() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
-    when(testView.getWindowSystemUiVisibility())
-        .thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
