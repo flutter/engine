@@ -27,7 +27,7 @@ class SurfaceVertices implements ui.Vertices {
     List<ui.Color>? colors,
     List<int>? indices,
   })  : assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.'),
-        assert(indices==null || indices.every((int i) => i >= 0 && i < positions.length),'"indices" values must be valid indices in the positions list.'),
+        assert(indices == null || indices.every((int i) => i >= 0 && i < positions.length),'"indices" values must be valid indices in the positions list.'),
         colors = colors != null ? _int32ListFromColors(colors) : null,
         indices = indices != null ? Uint16List.fromList(indices) : null,
         positions = offsetListToFloat32List(positions) {
@@ -41,7 +41,7 @@ class SurfaceVertices implements ui.Vertices {
     this.indices,
   }) :  assert(positions.length.isEven,'"positions" must have an even number of entries (each coordinate is an x,y pair).'),
         assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".'),
-        assert(indices==null || indices.every((int i) => i >= 0 && i*2 < positions.length),'"indices" values must be valid indices in the positions list.') {
+        assert(indices == null || indices.every((int i) => i >= 0 && i*2 < positions.length),'"indices" values must be valid indices in the positions list.') {
     initWebGl();
   }
 

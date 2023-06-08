@@ -4746,7 +4746,7 @@ base class Vertices extends NativeFieldWrapperClass1 {
     List<int>? indices,
   }) : assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
     assert(colors == null || colors.length == positions.length,'"positions" and "colors" lengths must match.'),
-    assert(indices==null || indices.every((int i) => i >= 0 && i < positions.length),'"indices" values must be valid indices in the positions list.') {
+    assert(indices == null || indices.every((int i) => i >= 0 && i < positions.length),'"indices" values must be valid indices in the positions list.') {
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
@@ -4816,7 +4816,7 @@ base class Vertices extends NativeFieldWrapperClass1 {
   }) : assert(positions.length.isEven,'"positions" must have an even number of entries (each coordinate is an x,y pair).'),
     assert(textureCoordinates == null || textureCoordinates.length == positions.length,'"positions" and "textureCoordinates" lengths must match.'),
     assert(colors == null || colors.length * 2 == positions.length,'"colors" length must be half the length of "positions".'),
-    assert(indices==null || indices.every((int i) => i >= 0 && i*2 < positions.length),'"indices" values must be valid indices in the positions list.') {
+    assert(indices == null || indices.every((int i) => i >= 0 && i*2 < positions.length),'"indices" values must be valid indices in the positions list.') {
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
