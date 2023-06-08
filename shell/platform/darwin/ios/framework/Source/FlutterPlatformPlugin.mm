@@ -30,10 +30,6 @@ const char* const kOverlayStyleUpdateNotificationName =
     "io.flutter.plugin.platform.SystemChromeOverlayNotificationName";
 const char* const kOverlayStyleUpdateNotificationKey =
     "io.flutter.plugin.platform.SystemChromeOverlayNotificationKey";
-const char* const kStatusBarHiddenUpdateNotificationName =
-    "io.flutter.plugin.platform.StatusBarHiddenNotificationName";
-const char* const kStatusBarHiddenUpdateNotificationKey =
-    "io.flutter.plugin.platform.StatusBarHiddenNotificationKey";
 
 }  // namespace flutter
 
@@ -41,6 +37,13 @@ using namespace flutter;
 
 @interface FlutterPlatformPlugin ()
 
+/**
+ * @brief Whether the status bar appearance is based on the style preferred for this ViewController.
+ *
+ *        The default value is true.
+ *        Explicitly add `UIViewControllerBasedStatusBarAppearance` as `false` in
+ *        info.plist makes this value to be false.
+ */
 @property(nonatomic, assign) BOOL enableViewControllerBasedStatusBarAppearance;
 
 @end
@@ -182,20 +185,14 @@ using namespace flutter;
                       object:nil];
   }
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    // This notification is respected by the iOS embedder
-    [[NSNotificationCenter defaultCenter]
-        postNotificationName:@(kStatusBarHiddenUpdateNotificationName)
-                      object:nil
-                    userInfo:@{
-                      @(kStatusBarHiddenUpdateNotificationKey) : @(statusBarShouldBeHidden)
-                    }];
+    [_engine.get() viewController].flutterPrefersStatusBarHidden = statusBarShouldBeHidden;
   } else {
     // Checks if the top status bar should be visible. This platform ignores all
     // other overlays
 
     // We opt out of view controller based status bar visibility since we want
     // to be able to modify this on the fly. The key used is
-    // UIViewControllerBasedStatusBarAppearance
+    // UIViewControllerBasedStatusBarAppearance.
     [UIApplication sharedApplication].statusBarHidden = statusBarShouldBeHidden;
   }
 }
@@ -203,18 +200,14 @@ using namespace flutter;
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
   BOOL edgeToEdge = [mode isEqualToString:@"SystemUiMode.edgeToEdge"];
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    // This notification is respected by the iOS embedder
-    [[NSNotificationCenter defaultCenter]
-        postNotificationName:@(kStatusBarHiddenUpdateNotificationName)
-                      object:nil
-                    userInfo:@{@(kStatusBarHiddenUpdateNotificationKey) : @(!edgeToEdge)}];
+    [_engine.get() viewController].flutterPrefersStatusBarHidden = !edgeToEdge;
   } else {
     // Checks if the top status bar should be visible, reflected by edge to edge setting. This
     // platform ignores all other system ui modes.
 
     // We opt out of view controller based status bar visibility since we want
     // to be able to modify this on the fly. The key used is
-    // UIViewControllerBasedStatusBarAppearance
+    // UIViewControllerBasedStatusBarAppearance.
     [UIApplication sharedApplication].statusBarHidden = !edgeToEdge;
   }
   [[NSNotificationCenter defaultCenter]
@@ -247,14 +240,14 @@ using namespace flutter;
   }
 
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    // This notification is respected by the iOS embedder
+    // This notification is respected by the iOS embedder.
     [[NSNotificationCenter defaultCenter]
         postNotificationName:@(kOverlayStyleUpdateNotificationName)
                       object:nil
                     userInfo:@{@(kOverlayStyleUpdateNotificationKey) : @(statusBarStyle)}];
   } else {
     // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
-    // in favor of delegating to the view controller
+    // in favor of delegating to the view controller.
     [[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
   }
 }

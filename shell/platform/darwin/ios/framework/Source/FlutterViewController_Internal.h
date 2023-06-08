@@ -39,6 +39,16 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 @property(nonatomic, readonly) BOOL isVoiceOverRunning;
 @property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
+
+/**
+ * @brief Whether the status bar is preferred hidden.
+ *
+ *        The |UIViewController:prefersStatusBarHidden| of this ViewController is overriden and
+ * returns `flutterPrefersStatusBarHidden`. This is ignored when
+ * `UIViewControllerBasedStatusBarAppearance` in info.plist of the app project is `false`.
+ */
+@property(nonatomic, assign) BOOL flutterPrefersStatusBarHidden;
+
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
@@ -53,6 +63,7 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 - (int32_t)accessibilityFlags;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
