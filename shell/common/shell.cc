@@ -143,7 +143,7 @@ std::unique_ptr<Shell> Shell::Create(
 // FIXME: This is probably the wrong place to hook into.  Currently we only
 // link the shorebird updater on Android, so if we don't guard this other
 // non-android targets (e.g. flutter_tester) will fail to link.
-#if FML_OS_ANDROID
+#if FML_OS_ANDROID || FML_OS_IOS
   if (!vm) {
     shorebird_report_launch_failure();
   }

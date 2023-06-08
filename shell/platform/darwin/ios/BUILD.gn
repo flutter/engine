@@ -200,11 +200,12 @@ source_set("flutter_framework_source") {
   ]
 
   if (target_cpu == "arm64") {
-    libs =
-        [ "//third_party/updater/target/aarch64-apple-ios/debug/libupdater.a" ]
+    libs = [
+      "//third_party/updater/target/aarch64-apple-ios/release/libupdater.a",
+    ]
   } else if (target_cpu == "x64") {
     libs =
-        [ "//third_party/updater/target/x86_64-apple-ios/debug/libupdater.a" ]
+        [ "//third_party/updater/target/x86_64-apple-ios/release/libupdater.a" ]
   } else {
     assert(false, "Unsupported target_cpu")
   }
