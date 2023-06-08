@@ -47,7 +47,7 @@ static NSString* const kEnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
 static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
-static FlutterCompositor createFlutterCompositorFor(flutter::FlutterCompositor* macOSCompositor) {
+static FlutterCompositor CreateFlutterCompositorFor(flutter::FlutterCompositor* macOSCompositor) {
   FlutterCompositor compositor;
   compositor = {};
   compositor.struct_size = sizeof(FlutterCompositor);
@@ -516,7 +516,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _implicitMacOSCompositor = std::make_shared<flutter::FlutterCompositor>(
       [[FlutterViewEngineProvider alloc] initWithEngine:self], kFlutterDefaultViewId,
       _platformViewController);
-  _implicitCompositor = createFlutterCompositorFor(_implicitMacOSCompositor.get());
+  _implicitCompositor = CreateFlutterCompositorFor(_implicitMacOSCompositor.get());
 
   return self;
 }
@@ -688,7 +688,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                    [[FlutterViewEngineProvider alloc] initWithEngine:self], viewId,
                                    _platformViewController);
   FlutterCompositor compositor =
-      isImplicitView ? _implicitCompositor : createFlutterCompositorFor(macOSCompositor.get());
+      isImplicitView ? _implicitCompositor : CreateFlutterCompositorFor(macOSCompositor.get());
   NSAssert(macOSCompositor, @"No macOSCompositor");
   NSAssert(compositor.create_backing_store_callback, @"Invalid compositor");
   _viewRecords[@(viewId)] = [[FlutterEngineViewRecord alloc] initWithViewController:controller

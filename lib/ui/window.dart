@@ -332,7 +332,7 @@ class FlutterView {
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
   void render(Scene scene) {
-    _render(viewId as int, scene as _NativeScene);
+    _render(viewId, scene as _NativeScene);
   }
 
   @Native<Void Function(Int64, Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
