@@ -255,7 +255,6 @@ static void perform_action(FlTextInputPlugin* self) {
 static void im_preedit_start_cb(FlTextInputPlugin* self) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
-  g_warning("preedit started");
   priv->text_model->BeginComposing();
 }
 
@@ -277,7 +276,6 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   }
   priv->text_model->UpdateComposingText(buf);
   priv->text_model->SetSelection(flutter::TextRange(cursor_offset));
-  g_warning("preedit changed");
   if (priv->enable_delta_model) {
     std::string text(buf);
     flutter::TextEditingDelta delta = flutter::TextEditingDelta(
@@ -303,7 +301,6 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
     priv->text_model->CommitComposing();
   }
 
-  g_warning("im commit");
   if (priv->enable_delta_model) {
     flutter::TextEditingDelta* delta;
     if (wasComposing) {
@@ -313,8 +310,6 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
       delta = new flutter::TextEditingDelta(text_before_change,
                                             selection_before_change, text);
     }
-    // flutter::TextEditingDelta delta = flutter::TextEditingDelta(
-    //     text_before_change, selection_before_change, text);
     update_editing_state_with_delta(self, delta);
     delete delta;
   } else {
@@ -328,7 +323,6 @@ static void im_preedit_end_cb(FlTextInputPlugin* self) {
       fl_text_input_plugin_get_instance_private(self));
   std::string text_before_change = priv->text_model->GetText();
   priv->text_model->EndComposing();
-  g_warning("preedit end");
   if (priv->enable_delta_model) {
     flutter::TextEditingDelta delta = flutter::TextEditingDelta(
         text_before_change, flutter::TextRange(-1, -1),
