@@ -14,8 +14,6 @@ import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'render_canvas_factory.dart';
-import 'renderer.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
@@ -83,17 +81,6 @@ class Surface {
   int? _glContext;
   int? _skiaCacheBytes;
 
-  /// The root HTML element for this surface.
-  ///
-  /// This element contains the canvas used to draw the UI. Unlike the canvas,
-  /// this element is permanent. It is never replaced or deleted, until this
-  /// surface is disposed of via [dispose].
-  ///
-  /// Conversely, the canvas that lives inside this element can be swapped, for
-  /// example, when the screen size changes, or when the WebGL context is lost
-  /// due to the browser tab becoming dormant.
-  final DomElement htmlElement = createDomElement('flt-canvas-container');
-
   /// The underlying `<canvas>` element used for this surface.
   DomOffscreenCanvas? offscreenCanvas;
   int _pixelWidth = -1;
@@ -113,8 +100,6 @@ class Surface {
     }
   }
 
-  bool _addedToScene = false;
-
   /// Acquire a frame of the given [size] containing a drawable canvas.
   ///
   /// The given [size] is in physical pixels.
@@ -128,13 +113,6 @@ class Surface {
     };
 
     return SurfaceFrame(surface, submitCallback);
-  }
-
-  void addToScene() {
-    if (!_addedToScene) {
-      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
-    }
-    _addedToScene = true;
   }
 
   ui.Size? _currentCanvasPhysicalSize;
@@ -201,7 +179,6 @@ class Surface {
     if (_forceNewContext || _currentCanvasPhysicalSize == null) {
       _surface?.dispose();
       _surface = null;
-      _addedToScene = false;
       _grContext?.releaseResourcesAndAbandonContext();
       _grContext?.delete();
       _grContext = null;
@@ -381,7 +358,6 @@ class Surface {
         'webglcontextrestored', _cachedContextRestoredListener, false);
     _cachedContextLostListener = null;
     _cachedContextRestoredListener = null;
-    htmlElement.remove();
     _surface?.dispose();
   }
 }

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -293,7 +292,6 @@ void testMain() {
 
     test('renders overlays on top of platform views', () async {
       expect(RenderCanvasFactory.instance.debugCacheSize, 0);
-      expect(configuration.canvasKitMaximumSurfaces, 8);
       final CkPicture testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
@@ -341,6 +339,7 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // Frame 2:
@@ -393,14 +392,23 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // Frame 5:
@@ -494,8 +502,11 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // Frame 2:
@@ -520,8 +531,11 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // Frame 3:
@@ -546,8 +560,11 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // Frame 4:
@@ -572,8 +589,11 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
         _platformView,
+        _overlay,
       ]);
 
       // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
@@ -778,56 +798,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
       ]);
-    });
-
-    test('works correctly with max overlays == 2', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      final FlutterConfiguration config = FlutterConfiguration()
-        ..setUserConfiguration(
-          js_util.jsify(<String, Object?>{
-            'canvasKitMaximumSurfaces': 2,
-          }) as JsFlutterConfiguration);
-      debugSetConfiguration(config);
-
-      RenderCanvasFactory.instance.debugClear();
-
-      ui_web.platformViewRegistry.registerViewFactory(
-        'test-platform-view',
-        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
-      );
-      await createPlatformView(0, 'test-platform-view');
-      await createPlatformView(1, 'test-platform-view');
-
-      LayerSceneBuilder sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(0, width: 10, height: 10);
-      sb.pop();
-      // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-        _overlay,
-      ]);
-
-      sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(1, width: 10, height: 10);
-      sb.addPlatformView(0, width: 10, height: 10);
-      sb.pop();
-      // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-        _overlay,
-        _platformView,
-      ]);
-
-      // Reset configuration
-      debugSetConfiguration(FlutterConfiguration());
     });
 
     test('does not create overlays for invisible platform views', () async {
