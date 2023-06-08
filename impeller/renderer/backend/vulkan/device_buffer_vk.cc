@@ -46,6 +46,7 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   if (source) {
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
+  ::vmaFlushAllocation(allocator_, allocation_, offset, source_range.length);
 
   return true;
 }
