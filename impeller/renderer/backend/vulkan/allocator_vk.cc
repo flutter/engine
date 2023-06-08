@@ -153,12 +153,10 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     }
   }
 
-  if (!(vk_usage & vk::ImageUsageFlagBits::eTransientAttachment)) {
-    // TODO (https://github.com/flutter/flutter/issues/121634):
-    // Add transfer usage flags to support blit passes
-    vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
-                vk::ImageUsageFlagBits::eTransferDst;
-  }
+  // TODO (https://github.com/flutter/flutter/issues/121634):
+  // Add transfer usage flags to support blit passes
+  vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
+              vk::ImageUsageFlagBits::eTransferDst;
 
   return vk_usage;
 }
