@@ -33,7 +33,7 @@
         },
         {
             "contexts": [
-                "metric_center_token"
+                "android_virtual_device"
             ],
             "language": "bash",
             "name": "Scenario App Integration Tests",
