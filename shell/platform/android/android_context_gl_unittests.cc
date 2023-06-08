@@ -88,7 +88,7 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNotNull) {
   android_surface->SetNativeWindow(window);
   auto onscreen_surface = android_surface->GetOnscreenSurface();
   EXPECT_NE(onscreen_surface, nullptr);
-  android_surface->CreateSnapshotStudio();
+  android_surface->CreateSnapshotSurface();
   EXPECT_EQ(onscreen_surface, android_surface->GetOnscreenSurface());
 }
 
@@ -111,7 +111,7 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNull) {
   auto android_surface =
       std::make_unique<AndroidSurfaceGLSkia>(android_context);
   EXPECT_EQ(android_surface->GetOnscreenSurface(), nullptr);
-  android_surface->CreateSnapshotStudio();
+  android_surface->CreateSnapshotSurface();
   EXPECT_NE(android_surface->GetOnscreenSurface(), nullptr);
 }
 

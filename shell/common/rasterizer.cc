@@ -293,7 +293,10 @@ RasterStatus Rasterizer::Draw(
 
   // EndFrame should perform cleanups for the external_view_embedder.
   auto surface_record = surfaces_.find(draw_result.view_id);
-  FML_DCHECK(surface_record != surfaces_.end());
+  // The view that has just been drawn onto should always exist, except in the
+  // case that the rasterizer has been torn down (Teardown()) in between, at
+  // which point `surface_` must have been reset.
+  FML_DCHECK(surface_ == nullptr || surface_record != surfaces_.end());
   auto view_embedder = surface_record->second.view_embedder;
   if (view_embedder && view_embedder->GetUsedThisFrame()) {
     view_embedder->SetUsedThisFrame(false);
