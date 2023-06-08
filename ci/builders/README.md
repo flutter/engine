@@ -179,7 +179,7 @@ given destination.
 be archived to CAS or not. The default value is true.
 * **realm** - a string value of either `production` or `experimental`
 where production means the artifact will be uploaded to the location expected
-by the flutter tool and experimental will add a experimental prefix to the
+by the flutter tool and experimental will add an `experimental` prefix to the
 path to avoid interfering with production artifacts.
 
 #### Drone\_dimensions
