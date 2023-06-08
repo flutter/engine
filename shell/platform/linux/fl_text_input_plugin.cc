@@ -308,7 +308,7 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
     std::unique_ptr<flutter::TextEditingDelta> delta =
         std::make_unique<flutter::TextEditingDelta>(text_before_change,
                                                     replace_range, text);
-    update_editing_state_with_delta(self, delta);
+    update_editing_state_with_delta(self, delta.get());
   } else {
     update_editing_state(self);
   }
