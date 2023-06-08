@@ -21,7 +21,7 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         textureCoordinates: const <Offset>[Offset.zero],
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -33,7 +33,7 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         colors: const <Color>[Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -45,7 +45,7 @@ void main() {
         const <Offset>[Offset.zero, Offset.zero, Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -68,7 +68,7 @@ void main() {
         VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices.raw did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -80,7 +80,7 @@ void main() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices.raw did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {

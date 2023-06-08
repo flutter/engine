@@ -68,14 +68,14 @@ void testMain() {
 
   test('Vertices assert checks', () {
     // We don't test textureCoordinate assert checks on html render because HTML renderer's SurfaceVertices() does not support textureCoordinates
-    if(renderer.rendererTag != 'html') {
+    if (renderer.rendererTag != 'html') {
       try {
         ui.Vertices(
           ui.VertexMode.triangles,
           const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
           textureCoordinates: const <ui.Offset>[ui.Offset.zero],
         );
-        if(assertsEnabled) {
+        if (assertsEnabled) {
           throw AssertionError('Vertices did not throw the expected assert error.');
         }
       } on AssertionError catch (e) {
@@ -88,7 +88,7 @@ void testMain() {
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         colors: const <ui.Color>[ui.Color.fromRGBO(255, 0, 0, 1.0)],
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -100,7 +100,7 @@ void testMain() {
         const <ui.Offset>[ui.Offset.zero, ui.Offset.zero, ui.Offset.zero],
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -123,21 +123,21 @@ void testMain() {
         ui.VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices.raw did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
       expect('$e', contains(r'\"positions\" must have an even number of entries (each coordinate is an x,y pair).'));
     }
     // We don't test textureCoordinate assert checks on html render because HTML renderer's SurfaceVertices() does not support textureCoordinates
-    if(renderer.rendererTag != 'html') {
+    if (renderer.rendererTag != 'html') {
       try {
         ui.Vertices.raw(
           ui.VertexMode.triangles,
           Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
           textureCoordinates: Float32List.fromList(const <double>[0.0, 0.0]),
         );
-        if(assertsEnabled) {
+        if (assertsEnabled) {
           throw AssertionError('Vertices did not throw the expected assert error.');
         }
       } on AssertionError catch (e) {
@@ -150,7 +150,7 @@ void testMain() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         colors: Int32List.fromList(const <int>[0xffff0000]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
@@ -162,7 +162,7 @@ void testMain() {
         Float32List.fromList(const <double>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
         indices: Uint16List.fromList(const <int>[0, 2, 5]),
       );
-      if(assertsEnabled) {
+      if (assertsEnabled) {
         throw AssertionError('Vertices.raw did not throw the expected assert error.');
       }
     } on AssertionError catch (e) {
