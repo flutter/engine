@@ -173,7 +173,7 @@ std::list<SkRect> DlRTree::searchAndConsolidateRects(const SkRect& query,
     bounds(index).roundOut(&current_record_rect);
     rects.push_back(current_record_rect);
   }
-  DlRegion region(std::move(rects));
+  DlRegion region(rects);
 
   auto non_overlapping_rects = region.getRects(deband);
   std::list<SkRect> final_results;

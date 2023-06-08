@@ -12,35 +12,20 @@
 
 namespace flutter {
 
-typedef std::uint32_t SpanChunkHandle;
-class SpanBuffer;
-
 /// Represents a region as a collection of non-overlapping rectangles.
 /// Implements a subset of SkRegion functionality optimized for quickly
 /// converting set of overlapping rectangles to non-overlapping rectangles.
 class DlRegion {
  public:
-  /// Creates empty region.
-  DlRegion();
-
   /// Creates region by bulk adding the rectangles.
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
   explicit DlRegion(const std::vector<SkIRect>& rects);
 
-  /// Creates copy of the region.
-  DlRegion(const DlRegion& r) : flutter::DlRegion(r, false) {}
+  DlRegion(DlRegion&&) = default;
 
-  /// Creates copy of the region.
-  /// If |share_buffer| is true, the new region will share the same internal
-  /// span buffer as the original region. This means that both region must
-  /// be used on the same thread.
-  DlRegion(const DlRegion&, bool share_buffer);
-
-  ~DlRegion();
-
-  /// Adds another region to this region.
-  /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
-  void addRegion(const DlRegion& region);
+  /// Creates union region of region a and be.
+  /// Matches SkRegion a; a.op(b, SkRegion::kUnion_Op) behavior.
+  static DlRegion MakeUnion(const DlRegion& a, const DlRegion& b);
 
   /// Returns list of non-overlapping rectangles that cover current region.
   /// If |deband| is false, each span line will result in separate rectangles,
@@ -49,72 +34,93 @@ class DlRegion {
   /// merged into single rectange.
   std::vector<SkIRect> getRects(bool deband = true) const;
 
+  /// Returns maximum and minimum axis values of rectangles in this region.
+  /// If region is empty returns SKIRect::MakeEmpty().
+  const SkIRect& bounds() const { return bounds_; }
+
   /// Returns whether this region intersects with a rectangle.
   bool intersects(const SkIRect& rect) const;
 
   /// Returns whether this region intersects with another region.
   bool intersects(const DlRegion& region) const;
 
-  /// Returns maximum and minimum axis values of rectangles in this region.
-  /// If region is empty returns SKIRect::MakeEmpty().
-  const SkIRect& bounds() const { return bounds_; }
+  ~DlRegion();
 
  private:
-  void addRects(const std::vector<SkIRect>& rects);
+  typedef std::uint32_t SpanChunkHandle;
 
-  friend class SpanBuffer;
   struct Span {
     int32_t left;
     int32_t right;
-  };
-  typedef std::vector<Span> SpanVec;
-  struct SpanLine {
-    int32_t top;
-    int32_t bottom;
-    SpanChunkHandle chunk_handle;
 
-    void insertSpan(SpanBuffer& span_buffer, int32_t left, int32_t right);
-    void insertSpans(SpanBuffer& span_buffer,
-                     const Span* begin,
-                     const Span* end);
-    bool spansEqual(SpanBuffer& span_buffer, const SpanLine& l2) const;
-    bool spansEqual(SpanBuffer& span_buffer, const SpanVec& vec) const;
+    Span() = default;
+    Span(int32_t left, int32_t right) : left(left), right(right) {}
   };
 
-  typedef std::vector<SpanLine> LineVec;
+  /// Holds spands for the region. Having custom allocated memory that doesn't
+  /// do zero initialization every time the buffer gets resized improves
+  /// performance measurably.
+  class SpanBuffer {
+   public:
+    SpanBuffer() = default;
+    SpanBuffer(const SpanBuffer&) = delete;
+    SpanBuffer(SpanBuffer&& m);
+
+    void reserve(size_t capacity);
+    size_t capacity() const { return capacity_; }
+
+    SpanChunkHandle storeChunk(const Span* begin, const Span* end);
+    size_t getChunkSize(SpanChunkHandle handle) const;
+    void getSpans(SpanChunkHandle handle,
+                  const DlRegion::Span*& begin,
+                  const DlRegion::Span*& end) const;
+
+    ~SpanBuffer();
+
+   private:
+    size_t capacity_ = 0;
+    size_t size_ = 0;
+
+    // Spans for the region chunks. First span in each chunk contains the
+    // chunk size.
+    Span* spans_ = nullptr;
+  };
+
+  DlRegion();
 
   bool isEmpty() const { return lines_.empty(); }
   bool isComplex() const;
 
-  std::vector<SpanLine> lines_;
+  struct SpanLine {
+    int32_t top;
+    int32_t bottom;
+    SpanChunkHandle chunk_handle;
+  };
 
-  SkIRect bounds_ = SkIRect::MakeEmpty();
+  void addRects(const std::vector<SkIRect>& rects);
 
-  void insertLine(size_t position, SpanLine line);
-  LineVec::iterator removeLine(LineVec::iterator position);
-
+  typedef std::vector<Span> SpanVec;
+  SpanLine makeLine(int32_t top, int32_t bottom, const SpanVec&);
   SpanLine makeLine(int32_t top,
                     int32_t bottom,
-                    int32_t spanLeft,
-                    int32_t spanRight);
-  SpanLine makeLine(int32_t top, int32_t bottom, const SpanVec&);
-  SpanLine duplicateLine(int32_t top, int32_t bottom, SpanChunkHandle handle);
-  SpanLine duplicateLine(int32_t top,
-                         int32_t bottom,
-                         SpanBuffer* span_buffer,
-                         SpanChunkHandle handle);
-  SpanLine mergeLines(int32_t top,
-                      int32_t bottom,
-                      SpanChunkHandle our_handle,
-                      SpanBuffer* their_span_buffer,
-                      SpanChunkHandle their_handle);
+                    const Span* begin,
+                    const Span* end);
+  static size_t mergeLines(std::vector<Span>& res,
+                           const SpanBuffer& a_buffer,
+                           SpanChunkHandle a_handle,
+                           const SpanBuffer& b_buffer,
+                           SpanChunkHandle b_handle);
 
-  bool spansIntersect(const Span* begin1,
-                      const Span* end1,
-                      const Span* begin2,
-                      const Span* end2) const;
+  bool spansEqual(SpanLine& line, const Span* begin, const Span* end) const;
 
-  std::shared_ptr<SpanBuffer> span_buffer_;
+  static bool spansIntersect(const Span* begin1,
+                             const Span* end1,
+                             const Span* begin2,
+                             const Span* end2);
+
+  std::vector<SpanLine> lines_;
+  SkIRect bounds_ = SkIRect::MakeEmpty();
+  SpanBuffer span_buffer_;
 };
 
 }  // namespace flutter

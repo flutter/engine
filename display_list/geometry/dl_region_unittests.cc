@@ -13,7 +13,7 @@ namespace flutter {
 namespace testing {
 
 TEST(DisplayListRegion, EmptyRegion) {
-  DlRegion region;
+  DlRegion region(std::vector<SkIRect>{});
   EXPECT_TRUE(region.getRects().empty());
 }
 
@@ -30,7 +30,7 @@ TEST(DisplayListRegion, NonOverlappingRectangles1) {
     SkIRect rect = SkIRect::MakeXYWH(50 * i, 50 * i, 50, 50);
     rects_in.push_back(rect);
   }
-  DlRegion region(std::move(rects_in));
+  DlRegion region(rects_in);
   auto rects = region.getRects();
   std::vector<SkIRect> expected{
       {0, 0, 50, 50},       {50, 50, 100, 100},   {100, 100, 150, 150},
@@ -111,7 +111,7 @@ TEST(DisplayListRegion, OverlappingRectangles) {
     SkIRect rect = SkIRect::MakeXYWH(10 * i, 10 * i, 50, 50);
     rects_in.push_back(rect);
   }
-  DlRegion region(std::move(rects_in));
+  DlRegion region(rects_in);
   auto rects = region.getRects();
   std::vector<SkIRect> expected{
       {0, 0, 50, 10},      {0, 10, 60, 20},     {0, 20, 70, 30},
@@ -164,19 +164,6 @@ void CheckEquality(const DlRegion& dl_region, const SkRegion& sk_region) {
     iterator.next();
   }
 
-  if (rects != skia_rects) {
-    fprintf(stderr, "----- %zu %zu\n", rects.size(), skia_rects.size());
-    for (size_t i = 0; i < std::min(rects.size(), skia_rects.size()); ++i) {
-      if (rects[i] != skia_rects[i]) {
-        fprintf(stderr, "A %d %d %d %d\n", rects[i].fLeft, rects[i].fTop,
-                rects[i].fRight, rects[i].fBottom);
-        fprintf(stderr, "B %d %d %d %d\n", skia_rects[i].fLeft,
-                skia_rects[i].fTop, skia_rects[i].fRight,
-                skia_rects[i].fBottom);
-      }
-    }
-  }
-
   EXPECT_EQ(rects, skia_rects);
 }
 
@@ -201,7 +188,6 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
   for (const auto& settings : all_settings) {
     std::random_device d;
     std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
-    // std::seed_seq seed{133};
     std::mt19937 rng(seed);
 
     SkRegion sk_region1;
@@ -224,10 +210,10 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
       sk_region2.op(rect, SkRegion::kUnion_Op);
     }
 
-    DlRegion region1(std::move(rects_in1));
+    DlRegion region1(rects_in1);
     CheckEquality(region1, sk_region1);
 
-    DlRegion region2(std::move(rects_in2));
+    DlRegion region2(rects_in2);
     CheckEquality(region2, sk_region2);
 
     auto intersects_1 = region1.intersects(region2);
@@ -243,10 +229,11 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
       }
     }
 
-    region1.addRegion(region2);
-    sk_region1.op(sk_region2, SkRegion::kUnion_Op);
+    DlRegion dl_union = DlRegion::MakeUnion(region1, region2);
+    SkRegion sk_union(sk_region1);
+    sk_union.op(sk_region2, SkRegion::kUnion_Op);
 
-    CheckEquality(region1, sk_region1);
+    CheckEquality(dl_union, sk_union);
   }
 }
 
