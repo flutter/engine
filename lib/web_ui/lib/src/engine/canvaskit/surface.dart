@@ -177,11 +177,6 @@ class Surface {
       if (previousSurfaceSize != null &&
           size.width == previousSurfaceSize.width &&
           size.height == previousSurfaceSize.height) {
-        // The existing surface is still reusable.
-        if (window.devicePixelRatio != _currentDevicePixelRatio) {
-          _updateLogicalHtmlCanvasSize();
-          _translateCanvas();
-        }
         return _surface!;
       }
 
@@ -199,7 +194,6 @@ class Surface {
         _currentCanvasPhysicalSize = newSize;
         _pixelWidth = newSize.width.ceil();
         _pixelHeight = newSize.height.ceil();
-        _updateLogicalHtmlCanvasSize();
       }
     }
 
@@ -215,47 +209,13 @@ class Surface {
       _createNewCanvas(size);
       _currentCanvasPhysicalSize = size;
     } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
-      _updateLogicalHtmlCanvasSize();
     }
 
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
-    _translateCanvas();
     _surface?.dispose();
     _surface = _createNewSurface(size);
     return _surface!;
-  }
-
-  /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
-  /// pixels.
-  ///
-  /// The logical size of the canvas is not based on the size of the window
-  /// but on the size of the canvas, which, due to `ceil()` above, may not be
-  /// the same as the window. We do not round/floor/ceil the logical size as
-  /// CSS pixels can contain more than one physical pixel and therefore to
-  /// match the size of the window precisely we use the most precise floating
-  /// point value we can get.
-  void _updateLogicalHtmlCanvasSize() {
-    final double logicalWidth = _pixelWidth / window.devicePixelRatio;
-    final double logicalHeight = _pixelHeight / window.devicePixelRatio;
-    final DomCSSStyleDeclaration style = offscreenCanvas!.style;
-    style.width = '${logicalWidth}px';
-    style.height = '${logicalHeight}px';
-  }
-
-  /// Translate the canvas so the surface covers the visible portion of the
-  /// screen.
-  ///
-  /// The <canvas> may be larger than the visible screen, but the SkSurface is
-  /// exactly the size of the visible screen. Unfortunately, the SkSurface is
-  /// drawn in the lower left corner of the <canvas>, and without translation,
-  /// only the top left of the <canvas> is visible. So we shift the canvas up so
-  /// the bottom left corner is visible.
-  void _translateCanvas() {
-    final int surfaceHeight = _currentSurfaceSize!.height.ceil();
-    final double offset =
-        (_pixelHeight - surfaceHeight) / window.devicePixelRatio;
-    offscreenCanvas!.style.transform = 'translate(0, -${offset}px)';
   }
 
   JSVoid _contextRestoredListener(DomEvent event) {
@@ -273,14 +233,9 @@ class Surface {
   JSVoid _contextLostListener(DomEvent event) {
     assert(event.target == offscreenCanvas,
         'Received a context lost event for a disposed canvas');
-    final RenderCanvasFactory factory = RenderCanvasFactory.instance;
     _contextLost = true;
-    if (factory.isLive(this)) {
-      _forceNewContext = true;
-      event.preventDefault();
-    } else {
-      dispose();
-    }
+    _forceNewContext = true;
+    event.preventDefault();
   }
 
   /// This function is expensive.
@@ -288,18 +243,18 @@ class Surface {
   /// It's better to reuse canvas if possible.
   void _createNewCanvas(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    if (this.offscreenCanvas != null) {
-      this.offscreenCanvas!.removeEventListener(
+    if (offscreenCanvas != null) {
+      offscreenCanvas!.removeEventListener(
             'webglcontextrestored',
             _cachedContextRestoredListener,
             false,
           );
-      this.offscreenCanvas!.removeEventListener(
+      offscreenCanvas!.removeEventListener(
             'webglcontextlost',
             _cachedContextLostListener,
             false,
           );
-      this.offscreenCanvas!.remove();
+      offscreenCanvas = null;
       _cachedContextRestoredListener = null;
       _cachedContextLostListener = null;
     }
@@ -308,25 +263,11 @@ class Surface {
     // we ensure that the rendred picture covers the entire browser window.
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
-    final DomCanvasElement htmlCanvas = createDomCanvasElement(
-      width: _pixelWidth,
-      height: _pixelHeight,
+    final DomOffscreenCanvas htmlCanvas = createDomOffscreenCanvas(
+      _pixelWidth,
+      _pixelHeight,
     );
-    this.offscreenCanvas = htmlCanvas;
-
-    // The DOM elements used to render pictures are used purely to put pixels on
-    // the screen. They have no semantic information. If an assistive technology
-    // attempts to scan picture content it will look like garbage and confuse
-    // users. UI semantics are exported as a separate DOM tree rendered parallel
-    // to pictures.
-    //
-    // Why are layer and scene elements not hidden from ARIA? Because those
-    // elements may contain platform views, and platform views must be
-    // accessible.
-    htmlCanvas.setAttribute('aria-hidden', 'true');
-
-    htmlCanvas.style.position = 'absolute';
-    _updateLogicalHtmlCanvasSize();
+    offscreenCanvas = htmlCanvas;
 
     // When the browser tab using WebGL goes dormant the browser and/or OS may
     // decide to clear GPU resources to let other tabs/programs use the GPU.
@@ -350,7 +291,7 @@ class Surface {
     _contextLost = false;
 
     if (webGLVersion != -1 && !configuration.canvasKitForceCpuOnly) {
-      final int glContext = canvasKit.GetWebGLContext(
+      final int glContext = canvasKit.GetOffscreenWebGLContext(
         htmlCanvas,
         SkWebGLContextOptions(
           // Default to no anti-aliasing. Paint commands can be explicitly
@@ -376,8 +317,6 @@ class Surface {
         _syncCacheBytes();
       }
     }
-
-    htmlElement.append(htmlCanvas);
   }
 
   void _initWebglParams() {
@@ -419,13 +358,13 @@ class Surface {
   static bool _didWarnAboutWebGlInitializationFailure = false;
 
   CkSurface _makeSoftwareCanvasSurface(
-      DomCanvasElement htmlCanvas, String reason) {
+      DomOffscreenCanvas htmlCanvas, String reason) {
     if (!_didWarnAboutWebGlInitializationFailure) {
       printWarning('WARNING: Falling back to CPU-only rendering. $reason.');
       _didWarnAboutWebGlInitializationFailure = true;
     }
     return CkSurface(
-      canvasKit.MakeSWCanvasSurface(htmlCanvas),
+      canvasKit.MakeOffscreenSWCanvasSurface(htmlCanvas),
       null,
     );
   }

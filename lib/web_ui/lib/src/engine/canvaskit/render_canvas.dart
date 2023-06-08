@@ -2,20 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_interop';
-
 import 'package:ui/ui.dart' as ui;
 
-import '../browser_detection.dart';
-import '../configuration.dart';
 import '../dom.dart';
-import '../platform_dispatcher.dart';
-import '../util.dart';
 import '../window.dart';
-import 'canvas.dart';
-import 'canvaskit_api.dart';
 import 'renderer.dart';
-import 'surface_factory.dart';
 import 'util.dart';
 
 /// A visible (on-screen) canvas that can display bitmaps produced by CanvasKit
@@ -54,8 +45,10 @@ class RenderCanvas {
   int _pixelWidth = -1;
   int _pixelHeight = -1;
 
+  DomCanvasBitmapRendererContext? renderContext;
+
   ui.Size? _currentCanvasPhysicalSize;
-  ui.Size? _currentSurfaceSize;
+  ui.Size? _currentRenderSize;
   double _currentDevicePixelRatio = -1;
 
   bool _addedToScene = false;
@@ -83,51 +76,79 @@ class RenderCanvas {
     style.height = '${logicalHeight}px';
   }
 
-  /// Creates a <canvas> and SkSurface for the given [size].
-  CkSurface createOrUpdateSurface(ui.Size size) {
-    if (size.isEmpty) {
-      throw CanvasKitError('Cannot create surfaces of empty size.');
+  /// This function is expensive.
+  ///
+  /// It's better to reuse canvas if possible.
+  void _createNewCanvas(ui.Size physicalSize) {
+    // Clear the container, if it's not empty. We're going to create a new <canvas>.
+    if (canvasElement != null) {
+      canvasElement!.remove();
     }
 
-      // Check if the window is the same size as before, and if so, don't allocate
-      // a new canvas as the previous canvas is big enough to fit everything.
-      final ui.Size? previousSurfaceSize = _currentSurfaceSize;
-      if (previousSurfaceSize != null &&
-          size.width == previousSurfaceSize.width &&
-          size.height == previousSurfaceSize.height) {
-        // The existing surface is still reusable.
-        if (window.devicePixelRatio != _currentDevicePixelRatio) {
-          _updateLogicalHtmlCanvasSize();
-          _translateCanvas();
-        }
-        return _surface!;
-      }
+    // If `physicalSize` is not precise, use a slightly bigger canvas. This way
+    // we ensure that the rendred picture covers the entire browser window.
+    _pixelWidth = physicalSize.width.ceil();
+    _pixelHeight = physicalSize.height.ceil();
+    final DomCanvasElement htmlCanvas = createDomCanvasElement(
+      width: _pixelWidth,
+      height: _pixelHeight,
+    );
+    canvasElement = htmlCanvas;
+    renderContext = htmlCanvas.bitmapRendererContext;
 
-      final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
-      // Initialize a new, larger, canvas. If the size is growing, then make the
-      // new canvas larger than required to avoid many canvas creations.
-      if (previousCanvasSize != null &&
-          (size.width > previousCanvasSize.width ||
-              size.height > previousCanvasSize.height)) {
-        final ui.Size newSize = size * 1.4;
-        _surface?.dispose();
-        _surface = null;
-        offscreenCanvas!.width = newSize.width;
-        offscreenCanvas!.height = newSize.height;
-        _currentCanvasPhysicalSize = newSize;
-        _pixelWidth = newSize.width.ceil();
-        _pixelHeight = newSize.height.ceil();
+    // The DOM elements used to render pictures are used purely to put pixels on
+    // the screen. They have no semantic information. If an assistive technology
+    // attempts to scan picture content it will look like garbage and confuse
+    // users. UI semantics are exported as a separate DOM tree rendered parallel
+    // to pictures.
+    //
+    // Why are layer and scene elements not hidden from ARIA? Because those
+    // elements may contain platform views, and platform views must be
+    // accessible.
+    htmlCanvas.setAttribute('aria-hidden', 'true');
+
+    htmlCanvas.style.position = 'absolute';
+    _updateLogicalHtmlCanvasSize();
+    htmlElement.append(htmlCanvas);
+  }
+
+  /// Ensures that this canvas can draw a frame of the given [size].
+  void ensureSize(ui.Size size) {
+    if (size.isEmpty) {
+      throw CanvasKitError('Cannot create canvases of empty size.');
+    }
+
+    // Check if the window is the same size as before, and if so, don't allocate
+    // a new canvas as the previous canvas is big enough to fit everything.
+    final ui.Size? previousRenderSize = _currentRenderSize;
+    if (previousRenderSize != null &&
+        size.width == previousRenderSize.width &&
+        size.height == previousRenderSize.height) {
+      // The existing surface is still reusable.
+      if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
       }
+      return;
+    }
+
+    final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
+    // Initialize a new, larger, canvas. If the size is growing, then make the
+    // new canvas larger than required to avoid many canvas creations.
+    if (previousCanvasSize != null &&
+        (size.width > previousCanvasSize.width ||
+            size.height > previousCanvasSize.height)) {
+      final ui.Size newSize = size * 1.4;
+      canvasElement!.width = newSize.width;
+      canvasElement!.height = newSize.height;
+      _currentCanvasPhysicalSize = newSize;
+      _pixelWidth = newSize.width.ceil();
+      _pixelHeight = newSize.height.ceil();
+      _updateLogicalHtmlCanvasSize();
+    }
 
     // This is the first frame we have rendered with this canvas.
     if (_currentCanvasPhysicalSize == null) {
-      _surface?.dispose();
-      _surface = null;
       _addedToScene = false;
-      _grContext?.releaseResourcesAndAbandonContext();
-      _grContext?.delete();
-      _grContext = null;
 
       _createNewCanvas(size);
       _currentCanvasPhysicalSize = size;
@@ -136,11 +157,7 @@ class RenderCanvas {
     }
 
     _currentDevicePixelRatio = window.devicePixelRatio;
-    _currentSurfaceSize = size;
-    _translateCanvas();
-    _surface?.dispose();
-    _surface = _createNewSurface(size);
-    return _surface!;
+    _currentRenderSize = size;
   }
 
   void dispose() {

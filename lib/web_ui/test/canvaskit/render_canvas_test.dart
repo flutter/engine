@@ -22,11 +22,10 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1.0);
     });
 
-    test('Surface allocates canvases efficiently', () {
-      final Surface? surface = Surface();
-      final CkSurface originalSurface =
-          surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final DomCanvasElement original = surface.offscreenCanvas!;
+    test('RenderCanvas allocates canvases efficiently', () {
+      final RenderCanvas canvas = RenderCanvasFactory.instance.getCanvas();
+      canvas.ensureSize(const ui.Size(9, 19));
+      final DomCanvasElement original = canvas.canvasElement!;
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
@@ -34,8 +33,6 @@ void testMain() {
       expect(original.style.width, '9px');
       expect(original.style.height, '19px');
       expect(original.style.transform, _isTranslate('0', '0'));
-      expect(originalSurface.width(), 9);
-      expect(originalSurface.height(), 19);
 
       // Shrinking reuses the existing canvas but translates it so
       // Skia renders into the visible area.

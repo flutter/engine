@@ -10,8 +10,8 @@ import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
 import 'native_memory.dart';
+import 'render_canvas_factory.dart';
 import 'surface.dart';
-import 'surface_factory.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
 class CkPicture implements ui.Picture {

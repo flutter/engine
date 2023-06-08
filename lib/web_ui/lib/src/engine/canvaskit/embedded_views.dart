@@ -5,7 +5,6 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show platformViewManager;
-import '../configuration.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
@@ -370,16 +369,25 @@ class HtmlViewEmbedder {
     );
     int pictureRecorderIndex = 0;
 
+    // Prime the SkSurface for rendering.
+    final SurfaceFrame frame = CanvasKitRenderer
+        .instance.rasterizer.offscreenSurface
+        .acquireFrame(_frameSize);
+
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
       if (_overlays[viewId] != null) {
-        final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
+        // Render the picture to the canvas
+        _overlays[viewId]!.ensureSize(_frameSize);
         final CkCanvas canvas = frame.skiaCanvas;
+        canvas.clear(const ui.Color(0x00000000));
         canvas.drawPicture(
           _context.pictureRecorders[pictureRecorderIndex].endRecording(),
         );
-        pictureRecorderIndex++;
         frame.submit();
+        final DomImageBitmap bitmap = CanvasKitRenderer.instance.rasterizer.offscreenSurface.offscreenCanvas!.transferToImageBitmap();
+        _overlays[viewId]!.renderContext!.transferFromImageBitmap(bitmap);
+        pictureRecorderIndex++;
       }
     }
     for (final CkPictureRecorder recorder
@@ -433,7 +441,7 @@ class HtmlViewEmbedder {
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
-          final Surface? overlay = _overlays[viewId];
+          final RenderCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
             skiaSceneHost.insertBefore(
                 overlay.htmlElement, elementToInsertBefore);
@@ -441,7 +449,7 @@ class HtmlViewEmbedder {
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost.append(platformViewRoot);
-          final Surface? overlay = _overlays[viewId];
+          final RenderCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
             skiaSceneHost.append(overlay.htmlElement);
           }
@@ -484,7 +492,7 @@ class HtmlViewEmbedder {
         }
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-        final Surface? overlay = _overlays[viewId];
+        final RenderCanvas? overlay = _overlays[viewId];
         skiaSceneHost.append(platformViewRoot);
         if (overlay != null) {
           skiaSceneHost.append(overlay.htmlElement);
@@ -558,13 +566,6 @@ class HtmlViewEmbedder {
         getOverlayGroups(_compositionOrder);
     final List<int> viewsNeedingOverlays =
         overlayGroups.map((OverlayGroup group) => group.last).toList();
-    // If there were more visible views than overlays, then the last group
-    // doesn't have an overlay.
-    if (viewsNeedingOverlays.length > RenderCanvasFactory.instance.maximumOverlays) {
-      assert(viewsNeedingOverlays.length ==
-          RenderCanvasFactory.instance.maximumOverlays + 1);
-      viewsNeedingOverlays.removeLast();
-    }
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to all the surfaces needing one.
@@ -598,10 +599,6 @@ class HtmlViewEmbedder {
   // be assigned an overlay are grouped together and will be rendered on top of
   // the rest of the scene.
   List<OverlayGroup> getOverlayGroups(List<int> views) {
-    final int maxOverlays = RenderCanvasFactory.instance.maximumOverlays;
-    if (maxOverlays == 0) {
-      return const <OverlayGroup>[];
-    }
     final List<OverlayGroup> result = <OverlayGroup>[];
     OverlayGroup currentGroup = OverlayGroup(<int>[]);
 
@@ -623,17 +620,7 @@ class HtmlViewEmbedder {
             // We only care about groups that have one visible view.
             result.add(currentGroup);
           }
-          // If there are overlays still available.
-          if (result.length < maxOverlays) {
-            // Create a new group, starting with `view`.
-            currentGroup = OverlayGroup(<int>[view], visible: true);
-          } else {
-            // Add the rest of the views to a final group that will be rendered
-            // on top of the scene.
-            currentGroup = OverlayGroup(views.sublist(i), visible: true);
-            // And break out of the loop!
-            break;
-          }
+          currentGroup = OverlayGroup(<int>[view], visible: true);
         }
       }
     }
@@ -648,8 +635,8 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final Surface overlay = RenderCanvasFactory.instance.getCanvas()!;
-    overlay.createOrUpdateSurface(_frameSize);
+    final RenderCanvas overlay = RenderCanvasFactory.instance.getCanvas();
+    overlay.ensureSize(_frameSize);
     _overlays[viewId] = overlay;
   }
 

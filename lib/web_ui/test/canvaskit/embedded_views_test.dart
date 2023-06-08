@@ -477,7 +477,6 @@ void testMain() {
       //   Render: Views 1-10
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-      expect(RenderCanvasFactory.instance.numAvailableOverlays, 0);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -504,7 +503,6 @@ void testMain() {
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-      expect(RenderCanvasFactory.instance.numAvailableOverlays, 0);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -782,28 +780,6 @@ void testMain() {
       ]);
     });
 
-    test('does not crash when overlays are disabled', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      HtmlViewEmbedder.debugDisableOverlays = true;
-      ui_web.platformViewRegistry.registerViewFactory(
-        'test-platform-view',
-        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
-      );
-      await createPlatformView(0, 'test-platform-view');
-
-      final LayerSceneBuilder sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(0, width: 10, height: 10);
-      sb.pop();
-      // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-      ]);
-      HtmlViewEmbedder.debugDisableOverlays = false;
-    });
-
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       final FlutterConfiguration config = FlutterConfiguration()
@@ -814,9 +790,6 @@ void testMain() {
       debugSetConfiguration(config);
 
       RenderCanvasFactory.instance.debugClear();
-
-      expect(RenderCanvasFactory.instance.maximumSurfaces, 2);
-      expect(RenderCanvasFactory.instance.maximumOverlays, 1);
 
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
@@ -855,45 +828,6 @@ void testMain() {
 
       // Reset configuration
       debugSetConfiguration(FlutterConfiguration());
-    });
-
-    test(
-        'correctly renders when overlays are disabled and a subset '
-        'of views is used', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      HtmlViewEmbedder.debugDisableOverlays = true;
-      ui_web.platformViewRegistry.registerViewFactory(
-        'test-platform-view',
-        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
-      );
-      await createPlatformView(0, 'test-platform-view');
-      await createPlatformView(1, 'test-platform-view');
-
-      LayerSceneBuilder sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(0, width: 10, height: 10);
-      sb.addPlatformView(1, width: 10, height: 10);
-      sb.pop();
-      // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-        _platformView,
-      ]);
-
-      sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(1, width: 10, height: 10);
-      sb.pop();
-      // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-      ]);
-
-      HtmlViewEmbedder.debugDisableOverlays = false;
     });
 
     test('does not create overlays for invisible platform views', () async {

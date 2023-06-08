@@ -1073,6 +1073,23 @@ extension DomCanvasElementExtension on DomCanvasElement {
     }
     return getContext('webgl2')! as WebGLContext;
   }
+
+  DomCanvasBitmapRendererContext get bitmapRendererContext =>
+      getContext('bitmaprenderer')! as DomCanvasBitmapRendererContext;
+}
+
+@JS()
+@staticInterop
+class DomImageBitmap {}
+
+@JS()
+@staticInterop
+class DomCanvasBitmapRendererContext {}
+
+extension DomCanvasBitmapRendererContextExtension on DomCanvasBitmapRendererContext {
+  @JS('transferFromImageBitmap')
+  external void _transferFromImageBitmap(JSAny? bitmap);
+  void transferFromImageBitmap(DomImageBitmap bitmap) => _transferFromImageBitmap(bitmap.toJSAnyShallow);
 }
 
 @JS()
@@ -2722,6 +2739,13 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
   }
 
+  WebGLContext getGlContext(int majorVersion) {
+    if (majorVersion == 1) {
+      return getContext('webgl')! as WebGLContext;
+    }
+    return getContext('webgl2')! as WebGLContext;
+  }
+
   @JS('convertToBlob')
   external JSPromise _convertToBlob1();
   @JS('convertToBlob')
@@ -2735,6 +2759,10 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
     return js_util.promiseToFuture(blob);
   }
+
+  @JS('transferToImageBitmap')
+  external JSAny? _transferToImageBitmap();
+  DomImageBitmap transferToImageBitmap() => _transferToImageBitmap()! as DomImageBitmap;
 }
 
 DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
