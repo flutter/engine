@@ -177,10 +177,10 @@ cleanups. Gcs is expected for any artifacts being consumed by the flutter tool.
 given destination.
 * **cas_archive** - a boolean value indicating whether the build output will
 be archived to CAS or not. The default value is true.
-* **realm** - has a string value of either `production` or `experimental`
+* **realm** - a string value of either `production` or `experimental`
 where production means the artifact will be uploaded to the location expected
-by the flutter tool and experimental will uploaded the artifact to a location
-different than the production one(production path with an additional experimental prefix).
+by the flutter tool and experimental will add a experimental prefix to the
+path to avoid interfering with production artifacts.
 
 #### Drone\_dimensions
 
@@ -518,10 +518,10 @@ by the global generators. Is a list of dictionaries with three keys: `source` an
 `destination` is a relative path to &lt;bucket>/flutter/&lt;commit>, and `realm` is
 a string with either `production` or `experimental` value.
 
-The realm value is used to build the path where the artifacts will be uploaded to.
-E.g. artifacts uploaded with the experimental realm will not impact the flutter tool
-even though they are uploaded to the same location as the production ones and it is
-useful to validate new artifacts before they are ready for production usage.
+The realm value is used to build the destination path of the artifacts.
+`production` will upload the artifacts to the location expected by the flutter
+tool and `experimental` will add experimental as a prefix to the path to avoid
+interfering with the production artifacts.
 
 ```json
 "archives": [
