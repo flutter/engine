@@ -276,6 +276,7 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   }
   priv->text_model->UpdateComposingText(buf);
   priv->text_model->SetSelection(flutter::TextRange(cursor_offset));
+
   if (priv->enable_delta_model) {
     std::string text(buf);
     flutter::TextEditingDelta delta = flutter::TextEditingDelta(
