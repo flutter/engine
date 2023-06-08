@@ -153,7 +153,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     }
   }
 
-  if (mode != StorageMode::kDeviceTransient) {
+  if (!(vk_usage & vk::ImageUsageFlagBits::eTransientAttachment)) {
     // TODO (https://github.com/flutter/flutter/issues/121634):
     // Add transfer usage flags to support blit passes
     vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
