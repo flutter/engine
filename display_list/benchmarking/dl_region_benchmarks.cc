@@ -13,7 +13,9 @@ namespace {
 
 class SkRegionAdapter {
  public:
-  void addRects(std::vector<SkIRect>&& rects) {
+  SkRegionAdapter() {}
+
+  explicit SkRegionAdapter(const std::vector<SkIRect>& rects) {
     for (const auto& rect : rects) {
       region_.op(rect, SkRegion::kUnion_Op);
     }
@@ -47,9 +49,10 @@ class SkRegionAdapter {
 
 class DlRegionAdapter {
  public:
-  void addRects(std::vector<SkIRect>&& rects) {
-    region_.addRects(std::move(rects));
-  }
+  DlRegionAdapter() {}
+
+  explicit DlRegionAdapter(const std::vector<SkIRect>& rects)
+      : region_(rects) {}
 
   void addRegion(const DlRegionAdapter& region) {
     region_.addRegion(region.region_);
@@ -64,8 +67,6 @@ class DlRegionAdapter {
   bool intersects(const SkIRect& rect) { return region_.intersects(rect); }
 
   std::vector<SkIRect> getRects() { return region_.getRects(false); }
-
-  DlRegionAdapter() {}
 
   DlRegionAdapter(const DlRegionAdapter& copy) : region_(copy.region_, true) {}
 
@@ -89,8 +90,7 @@ void RunAddRectsBenchmark(benchmark::State& state, int maxSize) {
   }
 
   while (state.KeepRunning()) {
-    Region region;
-    region.addRects(std::move(rects));
+    Region region(std::move(rects));
     auto vec2 = region.getRects();
   }
 }
@@ -110,18 +110,14 @@ void RunAddRegionBenchmark(benchmark::State& state, int maxSize) {
     rects.push_back(rect);
   }
 
-  Region base;
-
-  Region region1(base);
-  region1.addRects(std::move(rects));
+  Region region1(rects);
 
   rects.clear();
   for (int i = 0; i < 500; ++i) {
     SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
-  Region region2(base);
-  region2.addRects(std::move(rects));
+  Region region2(rects);
 
   while (state.KeepRunning()) {
     Region copy_of_region1(region1);
@@ -146,18 +142,14 @@ void RunIntersectsRegionBenchmark(benchmark::State& state, int maxSize) {
     rects.push_back(rect);
   }
 
-  Region base;
-
-  Region region1(base);
-  region1.addRects(std::move(rects));
+  Region region1(rects);
 
   rects.clear();
   for (int i = 0; i < 500; ++i) {
     SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
-  Region region2(base);
-  region2.addRects(std::move(rects));
+  Region region2(rects);
 
   while (state.KeepRunning()) {
     region1.intersects(region2);
@@ -179,10 +171,7 @@ void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
     rects.push_back(rect);
   }
 
-  Region base;
-
-  Region region1(base);
-  region1.addRects(std::move(rects));
+  Region region1(rects);
 
   rects.clear();
   for (int i = 0; i < 100; ++i) {

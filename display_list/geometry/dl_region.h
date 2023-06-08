@@ -25,7 +25,7 @@ class DlRegion {
 
   /// Creates region by bulk adding the rectangles.
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
-  explicit DlRegion(std::vector<SkIRect>&& rects);
+  explicit DlRegion(const std::vector<SkIRect>& rects);
 
   /// Creates copy of the region.
   DlRegion(const DlRegion& r) : flutter::DlRegion(r, false) {}
@@ -37,10 +37,6 @@ class DlRegion {
   DlRegion(const DlRegion&, bool share_buffer);
 
   ~DlRegion();
-
-  /// Adds group of rectangles to the region.
-  /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
-  void addRects(std::vector<SkIRect>&& rects);
 
   /// Adds another region to this region.
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
@@ -64,6 +60,8 @@ class DlRegion {
   const SkIRect& bounds() const { return bounds_; }
 
  private:
+  void addRects(const std::vector<SkIRect>& rects);
+
   friend class SpanBuffer;
   struct Span {
     int32_t left;
@@ -80,6 +78,7 @@ class DlRegion {
                      const Span* begin,
                      const Span* end);
     bool spansEqual(SpanBuffer& span_buffer, const SpanLine& l2) const;
+    bool spansEqual(SpanBuffer& span_buffer, const SpanVec& vec) const;
   };
 
   typedef std::vector<SpanLine> LineVec;
@@ -98,6 +97,7 @@ class DlRegion {
                     int32_t bottom,
                     int32_t spanLeft,
                     int32_t spanRight);
+  SpanLine makeLine(int32_t top, int32_t bottom, const SpanVec&);
   SpanLine duplicateLine(int32_t top, int32_t bottom, SpanChunkHandle handle);
   SpanLine duplicateLine(int32_t top,
                          int32_t bottom,

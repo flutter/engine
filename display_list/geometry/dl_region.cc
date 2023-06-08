@@ -188,13 +188,13 @@ const uint32_t SpanBuffer::kDefaultCapacity = 16;
 
 DlRegion::DlRegion() : span_buffer_(std::make_shared<SpanBuffer>()) {}
 
-DlRegion::DlRegion(std::vector<SkIRect>&& rects)
+DlRegion::DlRegion(const std::vector<SkIRect>& rects)
     : span_buffer_(std::make_shared<SpanBuffer>()) {
   // If SpanLines can not be memmoved `addRect` would be significantly slower
   // due to cost of inserting and removing elements from the `lines_` vector.
   static_assert(std::is_trivially_constructible<SpanLine>::value,
                 "SpanLine must be trivially constructible.");
-  addRects(std::move(rects));
+  addRects(rects);
 }
 
 DlRegion::~DlRegion() {
@@ -399,6 +399,17 @@ void DlRegion::SpanLine::insertSpans(SpanBuffer& buffer,
 }
 
 bool DlRegion::SpanLine::spansEqual(SpanBuffer& buffer,
+                                    const DlRegion::SpanVec& vec) const {
+  Span *our_begin, *our_end;
+  buffer.getSpans(chunk_handle, our_begin, our_end);
+  size_t our_size = our_end - our_begin;
+  if (our_size != vec.size()) {
+    return false;
+  }
+  return memcmp(our_begin, vec.data(), our_size * sizeof(Span)) == 0;
+}
+
+bool DlRegion::SpanLine::spansEqual(SpanBuffer& buffer,
                                     const SpanLine& l2) const {
   FML_DCHECK(this != &l2);
 
@@ -435,6 +446,17 @@ DlRegion::SpanLine DlRegion::makeLine(int32_t top,
                                       int32_t spanRight) {
   auto handle = span_buffer_->allocateChunk();
   span_buffer_->appendSpan(handle, {spanLeft, spanRight});
+  return {top, bottom, handle};
+}
+
+DlRegion::SpanLine DlRegion::makeLine(int32_t top,
+                                      int32_t bottom,
+                                      const DlRegion::SpanVec& v) {
+  auto handle = span_buffer_->allocateChunk(v.capacity());
+  Span *begin, *end;
+  span_buffer_->getSpans(handle, begin, end);
+  memcpy(begin, v.data(), v.size() * sizeof(Span));
+  span_buffer_->updateChunkSize(handle, v.size());
   return {top, bottom, handle};
 }
 
@@ -566,112 +588,140 @@ DlRegion::SpanLine DlRegion::duplicateLine(int32_t top,
   return {top, bottom, span_buffer_->duplicateChunk(handle)};
 }
 
-void DlRegion::addRects(std::vector<SkIRect>&& rects) {
-  std::sort(rects.begin(), rects.end(), [](const SkIRect& a, const SkIRect& b) {
-    // Sort the rectangles by Y axis. Because the rectangles have varying
-    // height, they are added to span lines in non-deterministic order and thus
-    // it makes no difference if they are also sorted by the X axis.
-    return a.top() < b.top();
+void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {
+  size_t count = unsorted_rects.size();
+  std::vector<const SkIRect*> rects(count);
+  for (size_t i = 0; i < count; i++) {
+    rects[i] = &unsorted_rects[i];
+    bounds_.join(unsorted_rects[i]);
+  }
+  std::sort(rects.begin(), rects.end(), [](const SkIRect* a, const SkIRect* b) {
+    if (a->top() < b->top()) {
+      return true;
+    }
+    if (a->top() > b->top()) {
+      return false;
+    }
+    return a->left() < b->left();
   });
 
-  size_t start_index = 0;
+  size_t active_end = 0;
+  size_t next_rect = 0;
+  int32_t cur_y = std::numeric_limits<int32_t>::min();
+  SpanVec working_spans;
 
-  size_t dirty_start = std::numeric_limits<size_t>::max();
-  size_t dirty_end = 0;
+#ifdef DLREGION2_DO_STATS
+  size_t active_rect_count = 0;
+  size_t span_count = 0;
+  int pass_count = 0;
+  int line_count = 0;
+#endif
 
-  // Marks line as dirty. Dirty lines will be checked for equality
-  // later and merged as needed.
-  auto mark_dirty = [&](size_t line) {
-    dirty_start = std::min(dirty_start, line);
-    dirty_end = std::max(dirty_end, line);
-  };
-
-  for (const SkIRect& rect : rects) {
-    if (rect.isEmpty()) {
-      continue;
-    }
-
-    bounds_.join(rect);
-
-    int32_t y1 = rect.fTop;
-    int32_t y2 = rect.fBottom;
-
-    for (size_t i = start_index; i < lines_.size() && y1 < y2; ++i) {
-      SpanLine& line = lines_[i];
-
-      if (rect.fTop >= line.bottom) {
-        start_index = i;
-        continue;
+  while (next_rect < count || active_end > 0) {
+    // First prune passed rects out of the active list
+    size_t preserve_end = 0;
+    for (size_t i = 0; i < active_end; i++) {
+      const SkIRect* r = rects[i];
+      if (r->bottom() > cur_y) {
+        rects[preserve_end++] = r;
       }
+    }
+    active_end = preserve_end;
 
-      if (y2 <= line.top) {
-        insertLine(i, makeLine(y1, y2, rect.fLeft, rect.fRight));
-        mark_dirty(i);
-        y1 = y2;
+    // If we have no active rects any more, jump to the top of the
+    // next available input rect.
+    if (active_end == 0) {
+      if (next_rect >= count) {
+        // No active rects and no more rects to bring in. We are done.
         break;
       }
-      if (y1 < line.top) {
-        auto prevLineStart = line.top;
-        insertLine(i, makeLine(y1, prevLineStart, rect.fLeft, rect.fRight));
-        mark_dirty(i);
-        y1 = prevLineStart;
+      cur_y = rects[next_rect]->top();
+    }
+
+    // Next, insert any new rects we've reached into the active list
+    while (next_rect < count) {
+      const SkIRect* r = rects[next_rect];
+      if (r->isEmpty()) {
         continue;
       }
-      if (y1 > line.top) {
-        // duplicate line
-        auto prevLineEnd = line.bottom;
-        line.bottom = y1;
-        mark_dirty(i);
-        insertLine(i + 1, duplicateLine(y1, prevLineEnd, line.chunk_handle));
-        continue;
-      }
-      FML_DCHECK(y1 == line.top);
-      if (y2 < line.bottom) {
-        // duplicate line
-        auto new_line = duplicateLine(y2, line.bottom, line.chunk_handle);
-        line.bottom = y2;
-        line.insertSpan(*span_buffer_, rect.fLeft, rect.fRight);
-        insertLine(i + 1, new_line);
-        y1 = y2;
-        mark_dirty(i);
+      if (r->top() > cur_y) {
         break;
       }
-      FML_DCHECK(y2 >= line.bottom);
-      line.insertSpan(*span_buffer_, rect.fLeft, rect.fRight);
-      mark_dirty(i);
-      y1 = line.bottom;
-    }
-
-    if (y1 < y2) {
-      lines_.push_back(makeLine(y1, y2, rect.fLeft, rect.fRight));
-      mark_dirty(lines_.size() - 1);
-    }
-
-    // Check for duplicate lines and merge them.
-    if (dirty_start <= dirty_end) {
-      // Expand the region by one if possible.
-      if (dirty_start > 0) {
-        --dirty_start;
-      }
-      if (dirty_end + 1 < lines_.size()) {
-        ++dirty_end;
-      }
-      for (auto i = lines_.begin() + dirty_start;
-           i < lines_.begin() + dirty_end;) {
-        auto& line = *i;
-        auto& next = *(i + 1);
-        if (line.bottom == next.top && line.spansEqual(*span_buffer_, next)) {
-          --dirty_end;
-          next.top = line.top;
-          i = removeLine(i);
-        } else {
-          ++i;
+      // We now know that we will be inserting this rect into active list
+      next_rect++;
+      size_t insert_at = active_end++;
+      while (insert_at > 0) {
+        const SkIRect* ir = rects[insert_at - 1];
+        if (ir->left() <= r->left()) {
+          break;
         }
+        rects[insert_at--] = ir;
+      }
+      rects[insert_at] = r;
+    }
+
+    // We either preserved some rects in the active list or added more from
+    // the remaining input rects, or we would have exited the loop above.
+    FML_DCHECK(active_end != 0);
+    working_spans.clear();
+    FML_DCHECK(working_spans.empty());
+
+#ifdef DLREGION2_DO_STATS
+    active_rect_count += active_end;
+    pass_count++;
+#endif
+
+    // [start_x, end_x) always represents a valid span to be inserted
+    // [cur_y, end_y) is the intersecting range over which all spans are valid
+    int32_t start_x = rects[0]->left();
+    int32_t end_x = rects[0]->right();
+    int32_t end_y = rects[0]->bottom();
+    for (size_t i = 1; i < active_end; i++) {
+      const SkIRect* r = rects[i];
+      if (r->left() > end_x) {
+        working_spans.push_back({start_x, end_x});
+        start_x = r->left();
+        end_x = r->right();
+      } else if (end_x < r->right()) {
+        end_x = r->right();
+      }
+      if (end_y > r->bottom()) {
+        end_y = r->bottom();
       }
     }
-    dirty_start = std::numeric_limits<size_t>::max();
-    dirty_end = 0;
+    working_spans.push_back({start_x, end_x});
+
+    // end_y must not pass by the top of the next input rect
+    if (next_rect < count && end_y > rects[next_rect]->top()) {
+      end_y = rects[next_rect]->top();
+    }
+
+    // If all of the rules above work out, we should never collapse the
+    // current range of Y coordinates to empty
+    FML_DCHECK(end_y > cur_y);
+
+    if (!lines_.empty() && lines_.back().bottom == cur_y &&
+        lines_.back().spansEqual(*span_buffer_, working_spans)) {
+      lines_.back().bottom = end_y;
+    } else {
+#ifdef DLREGION2_DO_STATS
+      span_count += working_spans.size();
+      line_count++;
+#endif
+      // lines_.emplace_back(cur_y, end_y, working_spans);
+      lines_.push_back(makeLine(cur_y, end_y, working_spans));
+    }
+    cur_y = end_y;
   }
+
+#ifdef DLREGION2_DO_STATS
+  double span_avg = ((double)span_count) / line_count;
+  double active_avg = ((double)active_rect_count) / pass_count;
+  FML_LOG(ERROR) << lines_.size() << " lines for " << count
+                 << " input rects, avg " << span_avg
+                 << " spans per line and avg " << active_avg
+                 << " active rects per loop";
+#endif
 }
 
 bool DlRegion::isComplex() const {
