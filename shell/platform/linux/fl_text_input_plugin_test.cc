@@ -1036,7 +1036,6 @@ TEST(FlTextInputPluginTest, ComposingDelta) {
           build_list({
               build_editing_delta({
                   .old_text = "Flutter engine",
-                  .delta_text = "Flutter engine",
                   .selection_base = 14,
                   .selection_extent = 14,
               }),

@@ -318,12 +318,10 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
 static void im_preedit_end_cb(FlTextInputPlugin* self) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
-  std::string text_before_change = priv->text_model->GetText();
   priv->text_model->EndComposing();
   if (priv->enable_delta_model) {
     flutter::TextEditingDelta delta =
-        flutter::TextEditingDelta(text_before_change, flutter::TextRange(-1,-1),
-                                  priv->text_model->GetText());
+        flutter::TextEditingDelta(priv->text_model->GetText());
     update_editing_state_with_delta(self, &delta);
   } else {
     update_editing_state(self);
