@@ -348,7 +348,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
   };
 
   Shell::CreateCallback<PlatformView> platform_view_create_callback =
-      std::move(config.platform_view_create_callback);
+      config.platform_view_create_callback;
   if (!platform_view_create_callback) {
     platform_view_create_callback =
         [vsync_clock,           //

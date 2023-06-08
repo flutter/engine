@@ -293,14 +293,17 @@ RasterStatus Rasterizer::Draw(
 
   // EndFrame should perform cleanups for the external_view_embedder.
   auto surface_record = surfaces_.find(draw_result.view_id);
-  // The view that has just been drawn onto should always exist, except in the
-  // case that the rasterizer has been torn down (Teardown()) in between, at
-  // which point `surface_` must have been reset.
-  FML_DCHECK(surface_ == nullptr || surface_record != surfaces_.end());
-  auto view_embedder = surface_record->second.view_embedder;
-  if (view_embedder && view_embedder->GetUsedThisFrame()) {
-    view_embedder->SetUsedThisFrame(false);
-    view_embedder->EndFrame(should_resubmit_frame, raster_thread_merger_);
+  if (surface_record != surfaces_.end()) {
+    auto view_embedder = surface_record->second.view_embedder;
+    if (view_embedder && view_embedder->GetUsedThisFrame()) {
+      view_embedder->SetUsedThisFrame(false);
+      view_embedder->EndFrame(should_resubmit_frame, raster_thread_merger_);
+    }
+  } else {
+    // The view that has just been drawn onto should always exist, except in the
+    // case that the rasterizer has been torn down (Teardown()) in between, at
+    // which point `surface_` must have been reset.
+    FML_DCHECK(surface_ == nullptr);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
