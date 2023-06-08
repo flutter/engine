@@ -304,7 +304,7 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
 
   if (priv->enable_delta_model) {
     flutter::TextRange replace_range =
-        was_composing ? composing_before_change : selection_before_range;
+        was_composing ? composing_before_change : selection_before_change;
     std::unique_ptr<flutter::TextEditingDelta> delta =
         std::make_unique<flutter::TextEditingDelta>(text_before_change,
                                                     replace_range, text);
