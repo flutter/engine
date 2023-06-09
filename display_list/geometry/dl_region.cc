@@ -161,6 +161,8 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
     }
   }
 
+  FML_DCHECK(begin1 == end1 || begin2 == end2);
+
   if (current_span.left != current_span.right) {
     while (begin1 != end1 && current_span.right >= begin1->left) {
       current_span.right = std::max(current_span.right, begin1->right);
@@ -174,8 +176,6 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
     *new_span = current_span;
     ++new_span;
   }
-
-  FML_DCHECK(begin1 == end1 || begin2 == end2);
 
   // At most one of these loops will execute
   while (begin1 != end1) {
