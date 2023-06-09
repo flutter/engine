@@ -55,27 +55,22 @@ class TestFileFixture {
         final io.File hFile = io.File('${repoDir.path}/format_test.h');
         hFile.writeAsStringSync(hContentPair.original);
         files.add(hFile);
-        break;
       case target.FormatCheck.gn:
         final io.File gnFile = io.File('${repoDir.path}/format_test.gn');
         gnFile.writeAsStringSync(gnContentPair.original);
         files.add(gnFile);
-        break;
       case target.FormatCheck.java:
         final io.File javaFile = io.File('${repoDir.path}/format_test.java');
         javaFile.writeAsStringSync(javaContentPair.original);
         files.add(javaFile);
-        break;
       case target.FormatCheck.python:
         final io.File pyFile = io.File('${repoDir.path}/format_test.py');
         pyFile.writeAsStringSync(pythonContentPair.original);
         files.add(pyFile);
-        break;
       case target.FormatCheck.whitespace:
         final io.File whitespaceFile = io.File('${repoDir.path}/format_test.c');
         whitespaceFile.writeAsStringSync(whitespaceContentPair.original);
         files.add(whitespaceFile);
-        break;
     }
   }
 
