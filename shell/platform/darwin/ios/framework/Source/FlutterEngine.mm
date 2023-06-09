@@ -673,7 +673,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         // TODO(gaaclarke): Find way to eliminate this data copy.
         NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
                                       length:screenshot.data->size()];
-        NSString* format = [NSString stringWithCString:screenshot.format.c_str() encoding:NSUTF8StringEncoding];
+        NSString* format = [NSString stringWithCString:screenshot.format.c_str()
+                                              encoding:NSUTF8StringEncoding];
         NSNumber* width = @(screenshot.frame_size.fWidth);
         NSNumber* height = @(screenshot.frame_size.fHeight);
         return result(@[ width, height, format, data ]);
