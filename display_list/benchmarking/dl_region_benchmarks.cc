@@ -93,6 +93,27 @@ void RunAddRectsBenchmark(benchmark::State& state, int maxSize) {
 
   while (state.KeepRunning()) {
     Region region(rects);
+  }
+}
+
+template <typename Region>
+void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
+  std::random_device d;
+  std::seed_seq seed{2, 1, 3};
+  std::mt19937 rng(seed);
+
+  std::uniform_int_distribution pos(0, 4000);
+  std::uniform_int_distribution size(1, maxSize);
+
+  std::vector<SkIRect> rects;
+  for (int i = 0; i < 2000; ++i) {
+    SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+    rects.push_back(rect);
+  }
+
+  Region region(rects);
+
+  while (state.KeepRunning()) {
     auto vec2 = region.getRects();
   }
 }
@@ -195,6 +216,14 @@ static void BM_SkRegion_AddRects(benchmark::State& state, int maxSize) {
   RunAddRectsBenchmark<SkRegionAdapter>(state, maxSize);
 }
 
+static void BM_DlRegion_GetRects(benchmark::State& state, int maxSize) {
+  RunGetRectsBenchmark<DlRegionAdapter>(state, maxSize);
+}
+
+static void BM_SkRegion_GetRects(benchmark::State& state, int maxSize) {
+  RunGetRectsBenchmark<SkRegionAdapter>(state, maxSize);
+}
+
 static void BM_DlRegion_MakeUnion(benchmark::State& state, int maxSize) {
   RunUnionRegionBenchmark<DlRegionAdapter>(state, maxSize);
 }
@@ -287,6 +316,23 @@ BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Medium, 400)
 BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Large, 1500)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Large, 1500)
+    ->Unit(benchmark::kMicrosecond);
+
+BENCHMARK_CAPTURE(BM_DlRegion_GetRects, Tiny, 30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_GetRects, Tiny, 30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_GetRects, Small, 100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_GetRects, Small, 100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_GetRects, Medium, 400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_GetRects, Medium, 400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_GetRects, Large, 1500)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_GetRects, Large, 1500)
     ->Unit(benchmark::kMicrosecond);
 
 }  // namespace flutter
