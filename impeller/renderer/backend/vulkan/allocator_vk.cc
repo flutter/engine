@@ -175,8 +175,7 @@ static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
       if (is_texture) {
         return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
       } else {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
       }
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
