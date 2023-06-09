@@ -811,7 +811,9 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
       end_frame_callback, PostPrerollResult::kResubmitFrame, false);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -870,7 +872,9 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
       end_frame_callback, PostPrerollResult::kResubmitFrame, false);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -941,7 +945,9 @@ TEST_F(ShellTest,
       end_frame_callback, PostPrerollResult::kResubmitFrame, true);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -984,7 +990,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1048,7 +1056,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
       PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1114,7 +1124,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1179,7 +1191,9 @@ TEST_F(ShellTest,
       end_frame_callback, PostPrerollResult::kSuccess, true);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1281,7 +1295,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   auto shell = CreateShell({
       .settings = settings,
       .task_runners = task_runners,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1324,7 +1340,9 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
       end_frame_callback, PostPrerollResult::kSuccess, true);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1377,7 +1395,9 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   PlatformViewNotifyCreated(shell.get());
@@ -2651,7 +2671,9 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       std::move(end_frame_callback), PostPrerollResult::kSuccess, false);
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -2726,7 +2748,9 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
 
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -3582,7 +3606,9 @@ TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3602,7 +3628,10 @@ TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kVulkanBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kVulkanBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3622,7 +3651,10 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kMetalBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kMetalBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3919,7 +3951,9 @@ TEST_F(ShellTest, PictureToImageSync) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
 
   AddNativeCallback("NativeOnBeforeToImageSync",
@@ -3958,7 +3992,10 @@ TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
   settings.enable_impeller = true;
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kMetalBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kMetalBackend,
+      }),
   });
 
   AddNativeCallback("NativeOnBeforeToImageSync",
@@ -4007,7 +4044,9 @@ TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
       .task_runners = task_runners,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
 
   AddNativeCallback(

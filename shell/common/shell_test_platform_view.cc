@@ -14,6 +14,8 @@
 #include "flutter/shell/common/shell_test_platform_view_metal.h"
 #endif  // SHELL_ENABLE_METAL
 
+#include "flutter/shell/common/vsync_waiter_fallback.h"
+
 namespace flutter {
 namespace testing {
 
@@ -55,6 +57,34 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
       FML_LOG(FATAL) << "No backends supported for ShellTestPlatformView";
       return nullptr;
   }
+}
+
+ShellTestPlatformViewBuilder::ShellTestPlatformViewBuilder(Config config)
+    : config_(config) {}
+
+std::unique_ptr<PlatformView> ShellTestPlatformViewBuilder::operator()(
+    Shell& shell) {
+  const TaskRunners& task_runners = shell.GetTaskRunners();
+  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+  CreateVsyncWaiter create_vsync_waiter = [&]() {
+    if (config_.simulate_vsync) {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
+    } else {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<VsyncWaiterFallback>(task_runners, true));
+    }
+  };
+  return ShellTestPlatformView::Create(
+      shell,                                      //
+      task_runners,                               //
+      vsync_clock,                                //
+      create_vsync_waiter,                        //
+      config_.rendering_backend,                  //
+      config_.shell_test_external_view_embedder,  //
+      shell.GetConcurrentWorkerTaskRunner(),      //
+      shell.GetIsGpuDisabledSyncSwitch()          //
+  );
 }
 
 }  // namespace testing

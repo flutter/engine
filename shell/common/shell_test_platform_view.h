@@ -43,6 +43,24 @@ class ShellTestPlatformView : public PlatformView {
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 
+class ShellTestPlatformViewBuilder {
+ public:
+  struct Config {
+    bool simulate_vsync = false;
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder = nullptr;
+    ShellTestPlatformView::BackendType rendering_backend =
+        ShellTestPlatformView::BackendType::kDefaultBackend;
+  };
+
+  ShellTestPlatformViewBuilder(Config config);
+  ~ShellTestPlatformViewBuilder() = default;
+  std::unique_ptr<PlatformView> operator()(Shell& shell);
+
+ private:
+  Config config_;
+};
+
 }  // namespace testing
 }  // namespace flutter
 

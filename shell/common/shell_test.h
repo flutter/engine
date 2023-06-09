@@ -36,12 +36,7 @@ class ShellTest : public FixtureTest {
     const Settings& settings;
     // Defaults to GetTaskRunnersForFixture().
     std::optional<TaskRunners> task_runners = {};
-    bool simulate_vsync = false;
-    std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder = nullptr;
     bool is_gpu_disabled = false;
-    ShellTestPlatformView::BackendType rendering_backend =
-        ShellTestPlatformView::BackendType::kDefaultBackend;
     // Defaults to calling ShellTestPlatformView::Create with the provided
     // arguments.
     Shell::CreateCallback<PlatformView> platform_view_create_callback;
