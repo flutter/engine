@@ -1608,9 +1608,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
           return;
         }
 
+        // If the view controller's view is not loaded, bail out.
+        if (flutterViewController.get().viewIfLoaded == nil) {
+          return;
+        }
+        // If the view for tracking keyboard animation is nil, means it is not
+        // created, bail out.
+        if ([flutterViewController keyboardAnimationView] == nil) {
+          return;
+        }
+
         if ([flutterViewController keyboardAnimationView].superview == nil) {
           // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-          [flutterViewController.get().view
+          [flutterViewController.get().viewIfLoaded
               addSubview:[flutterViewController keyboardAnimationView]];
         }
 
@@ -1682,9 +1692,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
 
-  // Need to call the updateViewportMetrics signal after flutter UI thread's process callback,
-  // so here need to wait vsync on UI thread instead of posting the signal
-  // on platform thread directly.
+  // Make sure the new viewport metrics get sent after the begin frame event has processed.
   auto uiCallback = [keyboardAnimationCallback,
                      &shell](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
