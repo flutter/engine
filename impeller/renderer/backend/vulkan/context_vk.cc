@@ -192,8 +192,8 @@ void ContextVK::Setup(Settings settings) {
     ss << "]";
     FML_DLOG(ERROR) << ss.str();
 #if !IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS && FML_OS_ANDROID
-    VALIDATION_LOG << "Attempting to use validation layers without "
-                      "--enable-vulkan-validation-layers";
+    VALIDATION_LOG << "Vulkan validation layers found but the gn argument "
+                      "`--enable-vulkan-validation-layers` is missing.";
 #endif
     instance_info.pNext = &validation;
   }
