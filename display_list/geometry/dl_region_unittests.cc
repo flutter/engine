@@ -150,6 +150,147 @@ TEST(DisplayListRegion, Deband) {
   EXPECT_EQ(rects_without_deband, expected_without_deband);
 }
 
+TEST(DisplayListRegion, Intersects1) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(20, 0, 20, 20),
+      SkIRect::MakeXYWH(0, 20, 20, 20),
+  });
+  EXPECT_FALSE(region1.intersects(region2));
+  EXPECT_FALSE(region2.intersects(region1));
+
+  EXPECT_TRUE(region1.intersects(region2.bounds()));
+  EXPECT_TRUE(region2.intersects(region1.bounds()));
+
+  EXPECT_TRUE(region1.intersects(SkIRect::MakeXYWH(0, 0, 20, 20)));
+  EXPECT_FALSE(region1.intersects(SkIRect::MakeXYWH(20, 0, 20, 20)));
+
+  EXPECT_TRUE(region1.intersects(
+      DlRegion(std::vector<SkIRect>{SkIRect::MakeXYWH(0, 0, 20, 20)})));
+  EXPECT_FALSE(region1.intersects(
+      DlRegion(std::vector<SkIRect>{SkIRect::MakeXYWH(20, 0, 20, 20)})));
+
+  EXPECT_FALSE(region1.intersects(SkIRect::MakeXYWH(-1, -1, 1, 1)));
+  EXPECT_TRUE(region1.intersects(SkIRect::MakeXYWH(0, 0, 1, 1)));
+
+  EXPECT_FALSE(region1.intersects(SkIRect::MakeXYWH(40, 40, 1, 1)));
+  EXPECT_TRUE(region1.intersects(SkIRect::MakeXYWH(39, 39, 1, 1)));
+}
+
+TEST(DisplayListRegion, Intersects2) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(-10, -10, 20, 20),
+      SkIRect::MakeXYWH(-30, -30, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(20, 20, 5, 5),
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+  });
+  EXPECT_TRUE(region1.intersects(region2));
+  EXPECT_TRUE(region2.intersects(region1));
+}
+
+TEST(DisplayListRegion, Union1) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(20, 0, 20, 20),
+      SkIRect::MakeXYWH(0, 20, 20, 20),
+  });
+  DlRegion u = DlRegion::MakeUnion(region1, region2);
+  EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(0, 0, 40, 40));
+  auto rects = u.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(0, 0, 40, 40),  //
+  };
+  EXPECT_EQ(rects, expected);
+}
+
+TEST(DisplayListRegion, Union2) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(21, 21, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(21, 0, 20, 20),
+      SkIRect::MakeXYWH(0, 21, 20, 20),
+  });
+  DlRegion u = DlRegion::MakeUnion(region1, region2);
+  EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(0, 0, 41, 41));
+  auto rects = u.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(21, 0, 20, 20),
+      SkIRect::MakeXYWH(0, 21, 20, 20),
+      SkIRect::MakeXYWH(21, 21, 20, 20),
+  };
+  EXPECT_EQ(rects, expected);
+}
+
+TEST(DisplayListRegion, Union3) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(-10, -10, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+  });
+  DlRegion u = DlRegion::MakeUnion(region1, region2);
+  EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(-10, -10, 30, 30));
+  auto rects = u.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(-10, -10, 20, 10),
+      SkIRect::MakeXYWH(-10, 0, 30, 10),
+      SkIRect::MakeXYWH(0, 10, 20, 10),
+  };
+  EXPECT_EQ(rects, expected);
+  // for (auto& rect : rects) {
+  //   printf("SkIRect::MakeXYWH(%d, %d, %d, %d,),\n", rect.fLeft, rect.fTop,
+  //   rect.width(),
+  //          rect.height());
+  // }
+}
+
+TEST(DisplayListRegion, UnionEmpty) {
+  {
+    DlRegion region1(std::vector<SkIRect>{});
+    DlRegion region2(std::vector<SkIRect>{});
+    DlRegion u = DlRegion::MakeUnion(region1, region2);
+    EXPECT_EQ(u.bounds(), SkIRect::MakeEmpty());
+    auto rects = u.getRects();
+    std::vector<SkIRect> expected{};
+    EXPECT_EQ(rects, expected);
+  }
+  {
+    DlRegion region1(std::vector<SkIRect>{});
+    DlRegion region2({
+        SkIRect::MakeXYWH(0, 0, 20, 20),
+    });
+    DlRegion u = DlRegion::MakeUnion(region1, region2);
+    EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(0, 0, 20, 20));
+    auto rects = u.getRects();
+    std::vector<SkIRect> expected{
+        SkIRect::MakeXYWH(0, 0, 20, 20),
+    };
+  }
+  {
+    DlRegion region1({
+        SkIRect::MakeXYWH(0, 0, 20, 20),
+    });
+    DlRegion region2(std::vector<SkIRect>{});
+    DlRegion u = DlRegion::MakeUnion(region1, region2);
+    EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(0, 0, 20, 20));
+    auto rects = u.getRects();
+    std::vector<SkIRect> expected{
+        SkIRect::MakeXYWH(0, 0, 20, 20),
+    };
+  }
+}
+
 void CheckEquality(const DlRegion& dl_region, const SkRegion& sk_region) {
   EXPECT_EQ(dl_region.bounds(), sk_region.getBounds());
 
