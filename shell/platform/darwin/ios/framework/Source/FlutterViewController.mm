@@ -1617,6 +1617,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         if ([flutterViewController keyboardAnimationView] == nil) {
           return;
         }
+        // If keyboardAnimationVSyncClient is nil, means the animation ends.
+        // And should bail out.
+        if (flutterViewController.get().keyboardAnimationVSyncClient == nil) {
+          return;
+        }
 
         if ([flutterViewController keyboardAnimationView].superview == nil) {
           // Ensure the keyboardAnimationView is in view hierarchy when animation running.
