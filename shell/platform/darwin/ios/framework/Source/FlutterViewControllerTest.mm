@@ -26,7 +26,7 @@ FLUTTER_ASSERT_ARC
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
-- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner;            
+- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner;
 @end
 
 /// Sometimes we have to use a custom mock to avoid retain cycles in OCMock.
