@@ -140,7 +140,6 @@ void RunIntersectsRegionBenchmark(benchmark::State& state, int maxSize) {
     SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
-
   Region region1(rects);
 
   rects.clear();
@@ -169,7 +168,6 @@ void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
     SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
-
   Region region1(rects);
 
   rects.clear();

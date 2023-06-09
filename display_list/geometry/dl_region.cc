@@ -108,20 +108,18 @@ size_t DlRegion::mergeLines(std::vector<Span>& res,
   if (res.size() < min_size) {
     res.resize(min_size);
   }
-  Span* end = res.data();
+
+  // Pointer to the next span to be written.
+  Span* new_span = res.data();
 
   while (true) {
-    if (begin1->right < begin2->left - 1) {
-      *end = *begin1;
-      ++begin1;
-      ++end;
+    if (begin1->right < begin2->left) {
+      *new_span++ = *begin1++;
       if (begin1 == end1) {
         break;
       }
     } else if (begin2->right < begin1->left) {
-      *end = *begin2;
-      ++begin2;
-      ++end;
+      *new_span++ = *begin2++;
       if (begin2 == end2) {
         break;
       }
@@ -130,73 +128,66 @@ size_t DlRegion::mergeLines(std::vector<Span>& res,
     }
   }
 
-  Span currentSpan{0, 0};
+  Span current_span{0, 0};
   while (begin1 != end1 && begin2 != end2) {
-    if (currentSpan.left == currentSpan.right) {
-      if (begin1->right < begin2->left - 1) {
-        *end = *begin1;
-        ++begin1;
-        ++end;
+    if (current_span.left == current_span.right) {
+      if (begin1->right < begin2->left) {
+        *new_span++ = *begin1++;
       } else if (begin2->right < begin1->left) {
-        *end = *begin2;
-        ++begin2;
-        ++end;
-      } else if (begin1->left == begin2->left) {
-        currentSpan.left = begin1->left;
-        currentSpan.right = std::max(begin1->right, begin2->right);
-        ++begin1;
-        ++begin2;
+        *new_span++ = *begin2++;
       } else if (begin1->left < begin2->left) {
-        currentSpan.left = begin1->left;
-        currentSpan.right = begin1->right;
+        current_span = *begin1;
         ++begin1;
+      } else if (begin2->left < begin1->left) {
+        current_span = *begin2;
+        ++begin2;
       } else {
-        currentSpan.left = begin2->left;
-        currentSpan.right = begin2->right;
+        FML_DCHECK(begin1->left == begin2->left);
+        current_span.left = begin1->left;
+        current_span.right = std::max(begin1->right, begin2->right);
+        ++begin1;
         ++begin2;
       }
-    } else if (currentSpan.right >= begin1->left) {
-      currentSpan.right = std::max(currentSpan.right, begin1->right);
+    } else if (current_span.right >= begin1->left) {
+      current_span.right = std::max(current_span.right, begin1->right);
       ++begin1;
-    } else if (currentSpan.right >= begin2->left) {
-      currentSpan.right = std::max(currentSpan.right, begin2->right);
+    } else if (current_span.right >= begin2->left) {
+      current_span.right = std::max(current_span.right, begin2->right);
       ++begin2;
     } else {
-      *end = currentSpan;
-      ++end;
-      currentSpan.left = currentSpan.right = 0;
+      *new_span = current_span;
+      ++new_span;
+      current_span.left = current_span.right = 0;
     }
   }
 
-  if (currentSpan.left != currentSpan.right) {
-    while (begin1 != end1 && currentSpan.right >= begin1->left) {
-      currentSpan.right = std::max(currentSpan.right, begin1->right);
+  if (current_span.left != current_span.right) {
+    while (begin1 != end1 && current_span.right >= begin1->left) {
+      current_span.right = std::max(current_span.right, begin1->right);
       ++begin1;
     }
-    while (begin2 != end2 && currentSpan.right >= begin2->left) {
-      currentSpan.right = std::max(currentSpan.right, begin2->right);
+    while (begin2 != end2 && current_span.right >= begin2->left) {
+      current_span.right = std::max(current_span.right, begin2->right);
       ++begin2;
     }
 
-    *end = currentSpan;
-    ++end;
+    *new_span = current_span;
+    ++new_span;
   }
 
   FML_DCHECK(begin1 == end1 || begin2 == end2);
 
+  // At most one of these loops will execute
   while (begin1 != end1) {
-    *end = *begin1;
-    ++begin1;
-    ++end;
+    *new_span++ = *begin1++;
   }
-
   while (begin2 != end2) {
-    *end = *begin2;
-    ++begin2;
-    ++end;
+    *new_span++ = *begin2++;
   }
 
-  return end - res.data();
+  FML_DCHECK(begin1 == end1 && begin2 == end2);
+
+  return new_span - res.data();
 }
 
 void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {

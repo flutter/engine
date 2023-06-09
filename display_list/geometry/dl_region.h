@@ -57,7 +57,7 @@ class DlRegion {
     Span(int32_t left, int32_t right) : left(left), right(right) {}
   };
 
-  /// Holds spands for the region. Having custom allocated memory that doesn't
+  /// Holds spans for the region. Having custom allocated memory that doesn't
   /// do zero initialization every time the buffer gets resized improves
   /// performance measurably.
   class SpanBuffer {
