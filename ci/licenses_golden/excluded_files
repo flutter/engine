@@ -1657,6 +1657,7 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
+../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc
@@ -2027,6 +2028,7 @@
 ../../../third_party/harfbuzz/README.mingw.md
 ../../../third_party/harfbuzz/README.python.md
 ../../../third_party/harfbuzz/RELEASING.md
+../../../third_party/harfbuzz/SECURITY.md
 ../../../third_party/harfbuzz/TESTING.md
 ../../../third_party/harfbuzz/THANKS
 ../../../third_party/harfbuzz/docs

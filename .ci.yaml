@@ -106,7 +106,6 @@ targets:
     recipe: engine/scenarios
     enabled_branches:
       - main
-      - master
     properties:
       dependencies: >-
         [
@@ -184,14 +183,23 @@ targets:
     timeout: 60
 
   - name: Linux Benchmarks
+    bringup: true
     enabled_branches:
       - main
-      - master
     recipe: engine/engine_metrics
     presubmit: false
     properties:
       build_host: "true"
-      upload_metrics: "true"
+      upload_metrics: "false"
+    timeout: 60
+
+  - name: Linux linux_benchmarks
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_benchmarks
     timeout: 60
 
   - name: Linux Benchmarks (no-upload)
@@ -240,7 +248,6 @@ targets:
     recipe: engine/framework_smoke
     enabled_branches:
       - main
-      - master
     timeout: 60
 
   - name: Linux Host Engine
@@ -410,7 +417,6 @@ targets:
     recipe: engine/web_engine_framework
     enabled_branches:
       - main
-      - master
     properties:
       add_recipes_cq: "true"
       cores: "32"
@@ -418,7 +424,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:111.0a"},
+          {"dependency": "chrome_and_driver", "version": "version:114.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
