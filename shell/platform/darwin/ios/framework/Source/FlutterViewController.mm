@@ -1693,13 +1693,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
   auto uiCallback = [keyboardAnimationCallback,
-                     platformTaskRunner = [_engine.get() platformTaskRunner]](
-                        std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+                     engine = _engine](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
-    platformTaskRunner->PostTask([keyboardAnimationCallback, keyboardAnimationTargetTime] {
-      keyboardAnimationCallback(keyboardAnimationTargetTime);
-    });
+    [engine.get() platformTaskRunner]->PostTask(
+        [keyboardAnimationCallback, keyboardAnimationTargetTime] {
+          keyboardAnimationCallback(keyboardAnimationTargetTime);
+        });
   };
   _keyboardAnimationVSyncClient =
       [[VSyncClient alloc] initWithTaskRunner:[_engine.get() uiTaskRunner] callback:uiCallback];
