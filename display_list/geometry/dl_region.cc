@@ -93,11 +93,11 @@ DlRegion::SpanLine DlRegion::makeLine(int32_t top,
   return {top, bottom, handle};
 }
 
-size_t DlRegion::mergeLines(std::vector<Span>& res,
-                            const SpanBuffer& a_buffer,
-                            SpanChunkHandle a_handle,
-                            const SpanBuffer& b_buffer,
-                            SpanChunkHandle b_handle) {
+size_t DlRegion::unionLineSpans(std::vector<Span>& res,
+                                const SpanBuffer& a_buffer,
+                                SpanChunkHandle a_handle,
+                                const SpanBuffer& b_buffer,
+                                SpanChunkHandle b_handle) {
   const Span *begin1, *end1;
   a_buffer.getSpans(a_handle, begin1, end1);
 
@@ -394,8 +394,8 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
         FML_DCHECK(a_it->top == b_it->top);
         FML_DCHECK(new_bottom > a_it->top);
         FML_DCHECK(new_bottom > b_it->top);
-        auto size = mergeLines(tmp, a_buffer, a_it->chunk_handle, b_buffer,
-                               b_it->chunk_handle);
+        auto size = unionLineSpans(tmp, a_buffer, a_it->chunk_handle, b_buffer,
+                                   b_it->chunk_handle);
         append_spans(a_it->top, new_bottom, tmp.data(), tmp.data() + size);
         a_it->top = b_it->top = new_bottom;
         if (a_it->top == a_it->bottom) {

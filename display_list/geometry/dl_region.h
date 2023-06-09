@@ -105,11 +105,11 @@ class DlRegion {
                     int32_t bottom,
                     const Span* begin,
                     const Span* end);
-  static size_t mergeLines(std::vector<Span>& res,
-                           const SpanBuffer& a_buffer,
-                           SpanChunkHandle a_handle,
-                           const SpanBuffer& b_buffer,
-                           SpanChunkHandle b_handle);
+  static size_t unionLineSpans(std::vector<Span>& res,
+                               const SpanBuffer& a_buffer,
+                               SpanChunkHandle a_handle,
+                               const SpanBuffer& b_buffer,
+                               SpanChunkHandle b_handle);
 
   bool spansEqual(SpanLine& line, const Span* begin, const Span* end) const;
 
