@@ -443,6 +443,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testKeyboardAnimationWillWaitUIThreadVsync {
+  // We need to make sure the new viewport metrics get sent after the
+  // begin frame event has processed. And this test is to expect that the callback
+  // will sync with UI thread. So just simulate a lot of works on UI thread and
+  // test the keyboard animation callback will execute until UI task completed.
+  // Related issue: https://github.com/flutter/flutter/issues/120555.
+
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
@@ -453,13 +459,13 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   const int delayTime = 1;
   shell.GetTaskRunners().GetUITaskRunner()->PostTask([] { sleep(delayTime); });
   XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
-  CFTimeInterval startTime = CACurrentMediaTime();
   CFTimeInterval fulfillTime;
   FlutterKeyboardAnimationCallback callback = [&expectation,
                                                &fulfillTime](fml::TimePoint targetTime) {
     fulfillTime = CACurrentMediaTime();
     [expectation fulfill];
   };
+  CFTimeInterval startTime = CACurrentMediaTime();
   [viewController setupKeyboardAnimationVsyncClient:callback];
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
   XCTAssertTrue(fulfillTime - startTime > delayTime);
