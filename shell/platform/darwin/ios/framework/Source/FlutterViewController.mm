@@ -342,11 +342,6 @@ typedef struct MouseState {
 
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
-                 name:UIAccessibilityVoiceOverStatusChanged
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilitySwitchControlStatusDidChangeNotification
                object:nil];
 
