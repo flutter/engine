@@ -574,8 +574,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Start on the platform thread.
   weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
                                           platformTaskRunner = [_engine.get() platformTaskRunner],
-                                          RasterTaskRunner = [_engine.get() RasterTaskRunner]]() {
-    FML_DCHECK(RasterTaskRunner->RunsTasksOnCurrentThread());
+                                          rasterTaskRunner = [_engine.get() rasterTaskRunner]]() {
+    FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
       if (weakSelf) {
@@ -1688,23 +1688,21 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (!keyboardAnimationCallback) {
     return;
   }
-  flutter::Shell& shell = [_engine.get() shell];
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
   auto uiCallback = [keyboardAnimationCallback,
-                     &shell](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+                     platformTaskRunner = [_engine.get() platformTaskRunner]](
+                        std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
-    shell.GetTaskRunners().GetPlatformTaskRunner()->PostTask(
-        [keyboardAnimationCallback, keyboardAnimationTargetTime] {
-          keyboardAnimationCallback(keyboardAnimationTargetTime);
-        });
+    platformTaskRunner->PostTask([keyboardAnimationCallback, keyboardAnimationTargetTime] {
+      keyboardAnimationCallback(keyboardAnimationTargetTime);
+    });
   };
   _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetUITaskRunner()
-                                     callback:uiCallback];
+      [[VSyncClient alloc] initWithTaskRunner:[_engine.get() uiTaskRunner] callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
 }
