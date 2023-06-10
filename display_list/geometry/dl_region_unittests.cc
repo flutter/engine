@@ -193,6 +193,58 @@ TEST(DisplayListRegion, Intersects2) {
   EXPECT_TRUE(region2.intersects(region1));
 }
 
+TEST(DisplayListRegion, Intersection1) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(20, 0, 20, 20),
+      SkIRect::MakeXYWH(0, 20, 20, 20),
+  });
+  DlRegion i = DlRegion::MakeIntersection(region1, region2);
+  EXPECT_EQ(i.bounds(), SkIRect::MakeEmpty());
+  auto rects = i.getRects();
+  EXPECT_TRUE(rects.empty());
+}
+
+TEST(DisplayListRegion, Intersection2) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  });
+  DlRegion i = DlRegion::MakeIntersection(region1, region2);
+  EXPECT_EQ(i.bounds(), SkIRect::MakeXYWH(0, 0, 40, 40));
+  auto rects = i.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+      SkIRect::MakeXYWH(20, 20, 20, 20),
+  };
+  EXPECT_EQ(rects, expected);
+}
+
+TEST(DisplayListRegion, Intersection3) {
+  DlRegion region1({
+      SkIRect::MakeXYWH(0, 0, 20, 20),
+  });
+  DlRegion region2({
+      SkIRect::MakeXYWH(-10, -10, 20, 20),
+      SkIRect::MakeXYWH(10, 10, 20, 20),
+  });
+  DlRegion i = DlRegion::MakeIntersection(region1, region2);
+  EXPECT_EQ(i.bounds(), SkIRect::MakeXYWH(0, 0, 20, 20));
+  auto rects = i.getRects();
+  std::vector<SkIRect> expected{
+      SkIRect::MakeXYWH(0, 0, 10, 10),
+      SkIRect::MakeXYWH(10, 10, 10, 10),
+  };
+  EXPECT_EQ(rects, expected);
+}
+
 TEST(DisplayListRegion, Union1) {
   DlRegion region1({
       SkIRect::MakeXYWH(0, 0, 20, 20),
@@ -248,11 +300,6 @@ TEST(DisplayListRegion, Union3) {
       SkIRect::MakeXYWH(0, 10, 20, 10),
   };
   EXPECT_EQ(rects, expected);
-  // for (auto& rect : rects) {
-  //   printf("SkIRect::MakeXYWH(%d, %d, %d, %d,),\n", rect.fLeft, rect.fTop,
-  //   rect.width(),
-  //          rect.height());
-  // }
 }
 
 TEST(DisplayListRegion, UnionEmpty) {
