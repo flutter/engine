@@ -1597,54 +1597,54 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
 
-  FlutterKeyboardAnimationCallback keyboardAnimationCallback =
-      [weakSelf = [self getWeakPtr]](fml::TimePoint keyboardAnimationTargetTime) {
-        if (!weakSelf) {
-          return;
-        }
-        fml::scoped_nsobject<FlutterViewController> flutterViewController(
-            [(FlutterViewController*)weakSelf.get() retain]);
-        if (!flutterViewController) {
-          return;
-        }
+  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  FlutterKeyboardAnimationCallback keyboardAnimationCallback = ^(
+      fml::TimePoint keyboardAnimationTargetTime) {
+    if (!weakSelf) {
+      return;
+    }
+    fml::scoped_nsobject<FlutterViewController> flutterViewController(
+        [(FlutterViewController*)weakSelf.get() retain]);
+    if (!flutterViewController) {
+      return;
+    }
 
-        // If the view controller's view is not loaded, bail out.
-        if (flutterViewController.get().viewIfLoaded == nil) {
-          return;
-        }
-        // If the view for tracking keyboard animation is nil, means it is not
-        // created, bail out.
-        if ([flutterViewController keyboardAnimationView] == nil) {
-          return;
-        }
-        // If keyboardAnimationVSyncClient is nil, means the animation ends.
-        // And should bail out.
-        if (flutterViewController.get().keyboardAnimationVSyncClient == nil) {
-          return;
-        }
+    // If the view controller's view is not loaded, bail out.
+    if (flutterViewController.get().viewIfLoaded == nil) {
+      return;
+    }
+    // If the view for tracking keyboard animation is nil, means it is not
+    // created, bail out.
+    if ([flutterViewController keyboardAnimationView] == nil) {
+      return;
+    }
+    // If keyboardAnimationVSyncClient is nil, means the animation ends.
+    // And should bail out.
+    if (flutterViewController.get().keyboardAnimationVSyncClient == nil) {
+      return;
+    }
 
-        if ([flutterViewController keyboardAnimationView].superview == nil) {
-          // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-          [flutterViewController.get().viewIfLoaded
-              addSubview:[flutterViewController keyboardAnimationView]];
-        }
+    if ([flutterViewController keyboardAnimationView].superview == nil) {
+      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+      [flutterViewController.get().viewIfLoaded
+          addSubview:[flutterViewController keyboardAnimationView]];
+    }
 
-        if ([flutterViewController keyboardSpringAnimation] == nil) {
-          if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
-            flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-                flutterViewController.get()
-                    .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-            [flutterViewController updateViewportMetricsIfNeeded];
-          }
-        } else {
-          fml::TimeDelta timeElapsed =
-              keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
-          flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-              [[flutterViewController keyboardSpringAnimation]
-                  curveFunction:timeElapsed.ToSecondsF()];
-          [flutterViewController updateViewportMetricsIfNeeded];
-        }
-      };
+    if ([flutterViewController keyboardSpringAnimation] == nil) {
+      if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
+        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+            flutterViewController.get()
+                .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+        [flutterViewController updateViewportMetricsIfNeeded];
+      }
+    } else {
+      fml::TimeDelta timeElapsed =
+          keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
+      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+          [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
+      [flutterViewController updateViewportMetricsIfNeeded];
+    }
+  };
   [self setupKeyboardAnimationVsyncClient:keyboardAnimationCallback];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
@@ -1697,15 +1697,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            @"_keyboardAnimationVSyncClient must be nil when setup");
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
-  auto uiCallback = [keyboardAnimationCallback,
+  auto uiCallback = [keyboardAnimationCallback =
+                         (FlutterKeyboardAnimationCallback)[keyboardAnimationCallback copy],
                      engine = _engine](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
     [engine.get() platformTaskRunner]->PostTask(
-        [keyboardAnimationCallback, keyboardAnimationTargetTime] {
-          keyboardAnimationCallback(keyboardAnimationTargetTime);
-        });
+        [keyboardAnimationCallback =
+             (FlutterKeyboardAnimationCallback)[keyboardAnimationCallback copy],
+         keyboardAnimationTargetTime] { keyboardAnimationCallback(keyboardAnimationTargetTime); });
+    [keyboardAnimationCallback release];
   };
+  [keyboardAnimationCallback release];
   _keyboardAnimationVSyncClient =
       [[VSyncClient alloc] initWithTaskRunner:[_engine.get() uiTaskRunner] callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;

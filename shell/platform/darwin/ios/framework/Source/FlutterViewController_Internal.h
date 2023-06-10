@@ -33,7 +33,7 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
   FlutterKeyboardModeFloating = 2,
 };
 
-typedef std::function<void(fml::TimePoint)> FlutterKeyboardAnimationCallback;
+typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
 
 @interface FlutterViewController () <FlutterViewResponder>
 
