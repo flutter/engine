@@ -7,7 +7,6 @@
 // Run with --help for usage.
 
 import 'dart:io';
-import 'dart:math';
 
 import 'package:args/args.dart';
 import 'package:meta/meta.dart';
@@ -207,13 +206,7 @@ abstract class FormatChecker {
   @protected
   Stream<List<int>> codeUnitsAsStream(List<int>? input) async* {
     if (input != null) {
-      int pos = 0;
-      while (input.length > pos) {
-        // On Windows large pages seem to be truncated
-        final int len = min(input.length - pos, 512);
-        yield input.getRange(pos, pos + len).toList(growable: false);
-        pos += len;
-      }
+      yield input;
     }
   }
 
