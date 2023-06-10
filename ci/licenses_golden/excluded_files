@@ -39,6 +39,7 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
+../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_paint_dispatcher_unittests.cc
@@ -498,6 +499,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.data/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.developer.tiles/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
@@ -628,6 +630,7 @@
 ../../../fuchsia/sdk/linux/pkg/async/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json
@@ -1654,6 +1657,7 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
+../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc
@@ -2024,6 +2028,7 @@
 ../../../third_party/harfbuzz/README.mingw.md
 ../../../third_party/harfbuzz/README.python.md
 ../../../third_party/harfbuzz/RELEASING.md
+../../../third_party/harfbuzz/SECURITY.md
 ../../../third_party/harfbuzz/TESTING.md
 ../../../third_party/harfbuzz/THANKS
 ../../../third_party/harfbuzz/docs
