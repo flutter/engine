@@ -236,6 +236,9 @@ size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
 }
 
 void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {
+  // addRects can only be called on empty regions.
+  FML_DCHECK(lines_.empty());
+
   size_t count = unsorted_rects.size();
   std::vector<const SkIRect*> rects(count);
   for (size_t i = 0; i < count; i++) {

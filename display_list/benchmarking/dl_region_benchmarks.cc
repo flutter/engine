@@ -90,7 +90,7 @@ class DlRegionAdapter {
 };
 
 template <typename Region>
-void RunAddRectsBenchmark(benchmark::State& state, int maxSize) {
+void RunFromRectsBenchmark(benchmark::State& state, int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
   std::mt19937 rng(seed);
@@ -232,12 +232,12 @@ void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
 
 namespace flutter {
 
-static void BM_DlRegion_AddRects(benchmark::State& state, int maxSize) {
-  RunAddRectsBenchmark<DlRegionAdapter>(state, maxSize);
+static void BM_DlRegion_FromRects(benchmark::State& state, int maxSize) {
+  RunFromRectsBenchmark<DlRegionAdapter>(state, maxSize);
 }
 
-static void BM_SkRegion_AddRects(benchmark::State& state, int maxSize) {
-  RunAddRectsBenchmark<SkRegionAdapter>(state, maxSize);
+static void BM_SkRegion_FromRects(benchmark::State& state, int maxSize) {
+  RunFromRectsBenchmark<SkRegionAdapter>(state, maxSize);
 }
 
 static void BM_DlRegion_GetRects(benchmark::State& state, int maxSize) {
@@ -370,21 +370,21 @@ BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   1500)
     ->Unit(benchmark::kMicrosecond);
 
-BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Tiny, 30)
+BENCHMARK_CAPTURE(BM_DlRegion_FromRects, Tiny, 30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Tiny, 30)
+BENCHMARK_CAPTURE(BM_SkRegion_FromRects, Tiny, 30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Small, 100)
+BENCHMARK_CAPTURE(BM_DlRegion_FromRects, Small, 100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Small, 100)
+BENCHMARK_CAPTURE(BM_SkRegion_FromRects, Small, 100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Medium, 400)
+BENCHMARK_CAPTURE(BM_DlRegion_FromRects, Medium, 400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Medium, 400)
+BENCHMARK_CAPTURE(BM_SkRegion_FromRects, Medium, 400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Large, 1500)
+BENCHMARK_CAPTURE(BM_DlRegion_FromRects, Large, 1500)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_AddRects, Large, 1500)
+BENCHMARK_CAPTURE(BM_SkRegion_FromRects, Large, 1500)
     ->Unit(benchmark::kMicrosecond);
 
 BENCHMARK_CAPTURE(BM_DlRegion_GetRects, Tiny, 30)
