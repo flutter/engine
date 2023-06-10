@@ -28,6 +28,13 @@ class SkRegionAdapter {
     return result;
   }
 
+  static SkRegionAdapter intersectRegions(const SkRegionAdapter& a1,
+                                          const SkRegionAdapter& a2) {
+    SkRegionAdapter result(a1);
+    result.region_.op(a2.region_, SkRegion::kIntersect_Op);
+    return result;
+  }
+
   bool intersects(const SkRegionAdapter& region) {
     return region_.intersects(region.region_);
   }
@@ -57,6 +64,12 @@ class DlRegionAdapter {
                                       const DlRegionAdapter& a2) {
     return DlRegionAdapter(
         flutter::DlRegion::MakeUnion(a1.region_, a2.region_));
+  }
+
+  static DlRegionAdapter intersectRegions(const DlRegionAdapter& a1,
+                                          const DlRegionAdapter& a2) {
+    return DlRegionAdapter(
+        flutter::DlRegion::MakeIntersection(a1.region_, a2.region_));
   }
 
   SkIRect getBounds() { return region_.bounds(); }
@@ -118,8 +131,10 @@ void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
   }
 }
 
+enum RegionOp { kUnion, kIntersection };
+
 template <typename Region>
-void RunUnionRegionBenchmark(benchmark::State& state, int maxSize) {
+void RunRegionOpBenchmark(benchmark::State& state, RegionOp op, int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
   std::mt19937 rng(seed);
@@ -142,8 +157,17 @@ void RunUnionRegionBenchmark(benchmark::State& state, int maxSize) {
   }
   Region region2(rects);
 
-  while (state.KeepRunning()) {
-    Region::unionRegions(region1, region2);
+  switch (op) {
+    case kUnion:
+      while (state.KeepRunning()) {
+        Region::unionRegions(region1, region2);
+      }
+      break;
+    case kIntersection:
+      while (state.KeepRunning()) {
+        Region::intersectRegions(region1, region2);
+      }
+      break;
   }
 }
 
@@ -224,12 +248,16 @@ static void BM_SkRegion_GetRects(benchmark::State& state, int maxSize) {
   RunGetRectsBenchmark<SkRegionAdapter>(state, maxSize);
 }
 
-static void BM_DlRegion_MakeUnion(benchmark::State& state, int maxSize) {
-  RunUnionRegionBenchmark<DlRegionAdapter>(state, maxSize);
+static void BM_DlRegion_Operation(benchmark::State& state,
+                                  RegionOp op,
+                                  int maxSize) {
+  RunRegionOpBenchmark<DlRegionAdapter>(state, op, maxSize);
 }
 
-static void BM_SkRegion_MakeUnion(benchmark::State& state, int maxSize) {
-  RunUnionRegionBenchmark<SkRegionAdapter>(state, maxSize);
+static void BM_SkRegion_Operation(benchmark::State& state,
+                                  RegionOp op,
+                                  int maxSize) {
+  RunRegionOpBenchmark<SkRegionAdapter>(state, op, maxSize);
 }
 
 static void BM_DlRegion_IntersectsRegion(benchmark::State& state, int maxSize) {
@@ -284,21 +312,62 @@ BENCHMARK_CAPTURE(BM_DlRegion_IntersectsRegion, Large, 1500)
 BENCHMARK_CAPTURE(BM_SkRegion_IntersectsRegion, Large, 1500)
     ->Unit(benchmark::kNanosecond);
 
-BENCHMARK_CAPTURE(BM_DlRegion_MakeUnion, Tiny, 30)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Tiny, RegionOp::kUnion, 30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_MakeUnion, Tiny, 30)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Tiny, RegionOp::kUnion, 30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_MakeUnion, Small, 100)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Small, RegionOp::kUnion, 100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_MakeUnion, Small, 100)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Small, RegionOp::kUnion, 100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_MakeUnion, Medium, 400)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Medium, RegionOp::kUnion, 400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_MakeUnion, Medium, 400)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Medium, RegionOp::kUnion, 400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_MakeUnion, Large, 1500)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Large, RegionOp::kUnion, 1500)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_MakeUnion, Large, 1500)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Large, RegionOp::kUnion, 1500)
+    ->Unit(benchmark::kMicrosecond);
+
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_Tiny,
+                  RegionOp::kIntersection,
+                  30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_Tiny,
+                  RegionOp::kIntersection,
+                  30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_Small,
+                  RegionOp::kIntersection,
+                  100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_Small,
+                  RegionOp::kIntersection,
+                  100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_Medium,
+                  RegionOp::kIntersection,
+                  400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_Medium,
+                  RegionOp::kIntersection,
+                  400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_Large,
+                  RegionOp::kIntersection,
+                  1500)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_Large,
+                  RegionOp::kIntersection,
+                  1500)
     ->Unit(benchmark::kMicrosecond);
 
 BENCHMARK_CAPTURE(BM_DlRegion_AddRects, Tiny, 30)

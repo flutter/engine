@@ -27,6 +27,10 @@ class DlRegion {
   /// Matches SkRegion a; a.op(b, SkRegion::kUnion_Op) behavior.
   static DlRegion MakeUnion(const DlRegion& a, const DlRegion& b);
 
+  /// Creates intersection region of region a and be.
+  /// Matches SkRegion a; a.op(b, SkRegion::kIntersect_Op) behavior.
+  static DlRegion MakeIntersection(const DlRegion& a, const DlRegion& b);
+
   /// Returns list of non-overlapping rectangles that cover current region.
   /// If |deband| is false, each span line will result in separate rectangles,
   /// closely matching SkRegion::Iterator behavior.
@@ -99,6 +103,19 @@ class DlRegion {
 
   void addRects(const std::vector<SkIRect>& rects);
 
+  void appendLine(int32_t top,
+                  int32_t bottom,
+                  const Span* begin,
+                  const Span* end);
+  void appendLine(int32_t top,
+                  int32_t bottom,
+                  const SpanBuffer& buffer,
+                  SpanChunkHandle handle) {
+    const Span *begin, *end;
+    buffer.getSpans(handle, begin, end);
+    appendLine(top, bottom, begin, end);
+  }
+
   typedef std::vector<Span> SpanVec;
   SpanLine makeLine(int32_t top, int32_t bottom, const SpanVec&);
   SpanLine makeLine(int32_t top,
@@ -110,6 +127,11 @@ class DlRegion {
                                SpanChunkHandle a_handle,
                                const SpanBuffer& b_buffer,
                                SpanChunkHandle b_handle);
+  static size_t intersectLineSpans(std::vector<Span>& res,
+                                   const SpanBuffer& a_buffer,
+                                   SpanChunkHandle a_handle,
+                                   const SpanBuffer& b_buffer,
+                                   SpanChunkHandle b_handle);
 
   bool spansEqual(SpanLine& line, const Span* begin, const Span* end) const;
 

@@ -373,8 +373,12 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
     DlRegion dl_union = DlRegion::MakeUnion(region1, region2);
     SkRegion sk_union(sk_region1);
     sk_union.op(sk_region2, SkRegion::kUnion_Op);
-
     CheckEquality(dl_union, sk_union);
+
+    DlRegion dl_intersection = DlRegion::MakeIntersection(region1, region2);
+    SkRegion sk_intersection(sk_region1);
+    sk_intersection.op(sk_region2, SkRegion::kIntersect_Op);
+    CheckEquality(dl_intersection, sk_intersection);
   }
 }
 

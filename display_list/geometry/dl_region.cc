@@ -190,6 +190,51 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
   return new_span - res.data();
 }
 
+size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
+                                    const SpanBuffer& a_buffer,
+                                    SpanChunkHandle a_handle,
+                                    const SpanBuffer& b_buffer,
+                                    SpanChunkHandle b_handle) {
+  const Span *begin1, *end1;
+  a_buffer.getSpans(a_handle, begin1, end1);
+
+  const Span *begin2, *end2;
+  b_buffer.getSpans(b_handle, begin2, end2);
+
+  // Worst case scenario, interleaved overlapping spans
+  //   AAAA  BBBB  CCCC
+  // XXX  YYYY  XXXX
+  size_t min_size = (end1 - begin1) + (end2 - begin2) - 1;
+  if (res.size() < min_size) {
+    res.resize(min_size);
+  }
+
+  // Pointer to the next span to be written.
+  Span* new_span = res.data();
+
+  while (begin1 != end1 && begin2 != end2) {
+    if (begin1->right <= begin2->left) {
+      ++begin1;
+    } else if (begin2->right <= begin1->left) {
+      ++begin2;
+    } else {
+      int32_t left = std::max(begin1->left, begin2->left);
+      int32_t right = std::min(begin1->right, begin2->right);
+      FML_DCHECK(left < right);
+      FML_DCHECK(new_span < res.data() + res.size());
+      *new_span++ = {left, right};
+      if (begin1->right == right) {
+        ++begin1;
+      }
+      if (begin2->right == right) {
+        ++begin2;
+      }
+    }
+  }
+
+  return new_span - res.data();
+}
+
 void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {
   size_t count = unsorted_rects.size();
   std::vector<const SkIRect*> rects(count);
@@ -326,41 +371,35 @@ void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {
 #endif
 }
 
+void DlRegion::appendLine(int32_t top,
+                          int32_t bottom,
+                          const Span* begin,
+                          const Span* end) {
+  if (lines_.empty()) {
+    lines_.push_back(makeLine(top, bottom, begin, end));
+  } else {
+    if (lines_.back().bottom == top && spansEqual(lines_.back(), begin, end)) {
+      lines_.back().bottom = bottom;
+    } else {
+      lines_.push_back(makeLine(top, bottom, begin, end));
+    }
+  }
+}
+
 DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
   DlRegion res;
 
-  res.span_buffer_.reserve(a.span_buffer_.capacity() +
-                           b.span_buffer_.capacity());
   res.bounds_ = a.bounds_;
   res.bounds_.join(b.bounds_);
+
+  res.span_buffer_.reserve(a.span_buffer_.capacity() +
+                           b.span_buffer_.capacity());
 
   auto& lines = res.lines_;
   lines.reserve(a.lines_.size() + b.lines_.size());
 
-  auto append_spans = [&](int32_t top, int32_t bottom, const Span* begin,
-                          const Span* end) {
-    if (lines.empty()) {
-      lines.push_back(res.makeLine(top, bottom, begin, end));
-    } else {
-      if (lines.back().bottom == top &&
-          res.spansEqual(lines.back(), begin, end)) {
-        lines.back().bottom = bottom;
-      } else {
-        lines.push_back(res.makeLine(top, bottom, begin, end));
-      }
-    }
-  };
-
-  auto append_line = [&](int32_t top, int32_t bottom, const SpanBuffer& buffer,
-                         SpanChunkHandle chunk_handle) {
-    const Span *begin, *end;
-    buffer.getSpans(chunk_handle, begin, end);
-    append_spans(top, bottom, begin, end);
-  };
-
   auto a_lines = a.lines_;
   auto b_lines = b.lines_;
-
   auto a_it = a_lines.begin();
   auto b_it = b_lines.begin();
 
@@ -371,20 +410,20 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
 
   while (a_it != a_lines.end() && b_it != b_lines.end()) {
     if (a_it->bottom <= b_it->top) {
-      append_line(a_it->top, a_it->bottom, a_buffer, a_it->chunk_handle);
+      res.appendLine(a_it->top, a_it->bottom, a_buffer, a_it->chunk_handle);
       ++a_it;
     } else if (b_it->bottom <= a_it->top) {
-      append_line(b_it->top, b_it->bottom, b_buffer, b_it->chunk_handle);
+      res.appendLine(b_it->top, b_it->bottom, b_buffer, b_it->chunk_handle);
       ++b_it;
     } else {
       if (a_it->top < b_it->top) {
-        append_line(a_it->top, b_it->top, a_buffer, a_it->chunk_handle);
+        res.appendLine(a_it->top, b_it->top, a_buffer, a_it->chunk_handle);
         a_it->top = b_it->top;
         if (a_it->top == b_it->bottom) {
           ++a_it;
         }
       } else if (b_it->top < a_it->top) {
-        append_line(b_it->top, a_it->top, b_buffer, b_it->chunk_handle);
+        res.appendLine(b_it->top, a_it->top, b_buffer, b_it->chunk_handle);
         b_it->top = a_it->top;
         if (b_it->top == a_it->bottom) {
           ++b_it;
@@ -396,7 +435,7 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
         FML_DCHECK(new_bottom > b_it->top);
         auto size = unionLineSpans(tmp, a_buffer, a_it->chunk_handle, b_buffer,
                                    b_it->chunk_handle);
-        append_spans(a_it->top, new_bottom, tmp.data(), tmp.data() + size);
+        res.appendLine(a_it->top, new_bottom, tmp.data(), tmp.data() + size);
         a_it->top = b_it->top = new_bottom;
         if (a_it->top == a_it->bottom) {
           ++a_it;
@@ -411,15 +450,65 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
   FML_DCHECK(a_it == a_lines.end() || b_it == b_lines.end());
 
   while (a_it != a_lines.end()) {
-    append_line(a_it->top, a_it->bottom, a_buffer, a_it->chunk_handle);
+    res.appendLine(a_it->top, a_it->bottom, a_buffer, a_it->chunk_handle);
     ++a_it;
   }
 
   while (b_it != b_lines.end()) {
-    append_line(b_it->top, b_it->bottom, b_buffer, b_it->chunk_handle);
+    res.appendLine(b_it->top, b_it->bottom, b_buffer, b_it->chunk_handle);
     ++b_it;
   }
 
+  return res;
+}
+
+DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
+  DlRegion res;
+  if (!SkIRect::Intersects(a.bounds_, b.bounds_)) {
+    return res;
+  }
+
+  res.span_buffer_.reserve(
+      std::max(a.span_buffer_.capacity(), b.span_buffer_.capacity()));
+
+  auto& lines = res.lines_;
+  lines.reserve(std::min(a.lines_.size(), b.lines_.size()));
+
+  auto a_lines = a.lines_;
+  auto b_lines = b.lines_;
+  auto a_it = a_lines.begin();
+  auto b_it = b_lines.begin();
+
+  auto& a_buffer = a.span_buffer_;
+  auto& b_buffer = b.span_buffer_;
+
+  std::vector<Span> tmp;
+
+  while (a_it != a_lines.end() && b_it != b_lines.end()) {
+    if (a_it->bottom <= b_it->top) {
+      ++a_it;
+    } else if (b_it->bottom <= a_it->top) {
+      ++b_it;
+    } else {
+      auto top = std::max(a_it->top, b_it->top);
+      auto bottom = std::min(a_it->bottom, b_it->bottom);
+      auto size = intersectLineSpans(tmp, a_buffer, a_it->chunk_handle,
+                                     b_buffer, b_it->chunk_handle);
+      if (size > 0) {
+        res.appendLine(top, bottom, tmp.data(), tmp.data() + size);
+        res.bounds_.join(SkIRect::MakeLTRB(
+            tmp.data()->left, top, (tmp.data() + size - 1)->right, bottom));
+      }
+      a_it->top = b_it->top = bottom;
+      if (a_it->top == a_it->bottom) {
+        ++a_it;
+      }
+      if (b_it->top == b_it->bottom) {
+        ++b_it;
+      }
+    }
+  }
+  FML_DCHECK(a_it == a_lines.end() || b_it == b_lines.end());
   return res;
 }
 
