@@ -12,8 +12,8 @@
 @interface FlutterView () <FlutterSurfaceManagerDelegate> {
   int64_t _viewId;
   __weak id<FlutterViewReshapeListener> _reshapeListener;
-  FlutterSurfaceManager* _surfaceManager;
   FlutterThreadSynchronizer* _threadSynchronizer;
+  FlutterSurfaceManager* _surfaceManager;
 }
 
 @end

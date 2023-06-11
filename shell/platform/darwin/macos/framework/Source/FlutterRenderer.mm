@@ -36,8 +36,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 @implementation FlutterRenderer {
   FlutterDarwinContextMetalSkia* _darwinMetalContext;
-
-  NSMutableDictionary<NSNumber*, NSNumber*>* _texture_to_view;
 }
 
 - (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {
@@ -57,7 +55,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
     _darwinMetalContext = [[FlutterDarwinContextMetalSkia alloc] initWithMTLDevice:_device
                                                                       commandQueue:_commandQueue];
-    _texture_to_view = [NSMutableDictionary dictionary];
   }
   return self;
 }

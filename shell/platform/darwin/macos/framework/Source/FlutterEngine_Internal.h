@@ -109,8 +109,6 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  */
 @property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
 
-@property(nonatomic, readonly) FlutterThreadSynchronizer* synchronizer;
-
 /**
  * Attach a view controller to the engine as its default controller.
  *
