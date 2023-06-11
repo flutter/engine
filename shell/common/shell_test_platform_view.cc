@@ -66,8 +66,10 @@ std::unique_ptr<PlatformView> ShellTestPlatformViewBuilder::operator()(
     Shell& shell) {
   const TaskRunners& task_runners = shell.GetTaskRunners();
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
-  CreateVsyncWaiter create_vsync_waiter = [&]() {
-    if (config_.simulate_vsync) {
+  CreateVsyncWaiter create_vsync_waiter = [&task_runners, vsync_clock,
+                                           simulate_vsync =
+                                               config_.simulate_vsync]() {
+    if (simulate_vsync) {
       return static_cast<std::unique_ptr<VsyncWaiter>>(
           std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
     } else {
