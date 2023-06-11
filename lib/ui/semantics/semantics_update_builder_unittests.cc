@@ -74,7 +74,7 @@ TEST_F(SemanticsUpdateBuilderTest, CanHandleAttributedStrings) {
   AddNativeCallback("SemanticsUpdate",
                     CREATE_NATIVE_ENTRY(nativeSemanticsUpdate));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);

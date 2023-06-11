@@ -323,52 +323,23 @@ fml::TimePoint ShellTest::GetLatestFrameTargetTime(Shell* shell) const {
   return shell->GetLatestFrameTargetTime();
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(const Settings& settings,
-                                              const TaskRunners* task_runners) {
+std::unique_ptr<Shell> ShellTest::CreateShell(
+    const Settings& settings,
+    std::optional<TaskRunners> task_runners) {
   return CreateShell({
       .settings = settings,
-      .task_runners = task_runners,
+      .task_runners = std::move(task_runners),
   });
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
-  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
-
-  TaskRunners task_runners = config.task_runners != nullptr
-                                 ? *config.task_runners
+  TaskRunners task_runners = config.task_runners.has_value()
+                                 ? config.task_runners.value()
                                  : GetTaskRunnersForFixture();
-  CreateVsyncWaiter create_vsync_waiter = [&]() {
-    if (config.simulate_vsync) {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
-    } else {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<VsyncWaiterFallback>(task_runners, true));
-    }
-  };
-
   Shell::CreateCallback<PlatformView> platform_view_create_callback =
-      config.platform_view_create_callback;
+      std::move(config.platform_view_create_callback);
   if (!platform_view_create_callback) {
-    platform_view_create_callback =
-        [vsync_clock,           //
-         &create_vsync_waiter,  //
-         shell_test_external_view_embedder =
-             config.shell_test_external_view_embedder,  //
-         rendering_backend = config.rendering_backend,  //
-         support_thread_merging = config.support_thread_merging](Shell& shell) {
-          return ShellTestPlatformView::Create(
-              shell,                                  //
-              shell.GetTaskRunners(),                 //
-              vsync_clock,                            //
-              create_vsync_waiter,                    //
-              rendering_backend,                      //
-              shell_test_external_view_embedder,      //
-              shell.GetConcurrentWorkerTaskRunner(),  //
-              shell.GetIsGpuDisabledSyncSwitch(),     //
-              support_thread_merging                  //
-          );
-        };
+    platform_view_create_callback = ShellTestPlatformViewBuilder({});
   }
 
   Shell::CreateCallback<Rasterizer> rasterizer_create_callback =

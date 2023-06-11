@@ -15,7 +15,7 @@ namespace testing {
 class ShellTestPlatformView : public PlatformView {
  public:
   enum class BackendType {
-    kDefaultBackend = 0,  // Default value
+    kDefaultBackend = 0,
     kGLBackend,
     kVulkanBackend,
     kMetalBackend,
@@ -41,6 +41,30 @@ class ShellTestPlatformView : public PlatformView {
       : PlatformView(delegate, task_runners) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
+};
+
+// Create a ShellTestPlatformView from configuration struct.
+class ShellTestPlatformViewBuilder {
+ public:
+  struct Config {
+    bool simulate_vsync = false;
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder = nullptr;
+    ShellTestPlatformView::BackendType rendering_backend =
+        ShellTestPlatformView::BackendType::kDefaultBackend;
+    // Whether the platform supports dynamic thread merging.
+    // See PlatformView::SupportsDynamicThreadMerging
+    bool support_thread_merging = false;
+  };
+
+  ShellTestPlatformViewBuilder(Config config);
+  ~ShellTestPlatformViewBuilder() = default;
+
+  // Override operator () to make this class assignable to std::function.
+  std::unique_ptr<PlatformView> operator()(Shell& shell);
+
+ private:
+  Config config_;
 };
 
 }  // namespace testing

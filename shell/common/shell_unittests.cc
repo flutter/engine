@@ -5,9 +5,11 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
+#include <chrono>
 #include <ctime>
 #include <future>
 #include <memory>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -332,7 +334,7 @@ TEST_F(ShellTest, InitializeWithInvalidThreads) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   TaskRunners task_runners("test", nullptr, nullptr, nullptr, nullptr);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_FALSE(shell);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
@@ -350,7 +352,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   DestroyShell(std::move(shell), task_runners);
@@ -365,7 +367,7 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
   DestroyShell(std::move(shell), task_runners);
@@ -379,7 +381,7 @@ TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   DestroyShell(std::move(shell), task_runners);
@@ -434,7 +436,7 @@ TEST_F(ShellTest, InitializeWithDisabledGpu) {
                            task_runner);
   auto shell = CreateShell({
       .settings = settings,
-      .task_runners = &task_runners,
+      .task_runners = task_runners,
       .is_gpu_disabled = true,
   });
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -462,7 +464,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
   DestroyShell(std::move(shell), task_runners);
@@ -682,9 +684,13 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 }
 
 TEST_F(ShellTest, ReportTimingsIsCalled) {
-  fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // We MUST put |start| after |CreateShell| because the clock source will be
+  // reset through |TimePoint::SetClockSource()| in
+  // |DartVMInitializer::Initialize()| within |CreateShell()|.
+  fml::TimePoint start = fml::TimePoint::Now();
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -732,19 +738,10 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
 }
 
 TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
-  fml::TimePoint start = fml::TimePoint::Now();
-
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent timingLatch;
+
   FrameTiming timing;
-
-  for (auto phase : FrameTiming::kPhases) {
-    timing.Set(phase, fml::TimePoint());
-    // Check that the time points are initially smaller than start, so
-    // CheckFrameTimings will fail if they're not properly set later.
-    ASSERT_TRUE(timing.Get(phase) < start);
-  }
-
+  fml::AutoResetWaitableEvent timingLatch;
   settings.frame_rasterized_callback = [&timing,
                                         &timingLatch](const FrameTiming& t) {
     timing = t;
@@ -752,6 +749,22 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   };
 
   std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Wait to make |start| bigger than zero
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(1ms);
+
+  // We MUST put |start| after |CreateShell()| because the clock source will be
+  // reset through |TimePoint::SetClockSource()| in
+  // |DartVMInitializer::Initialize()| within |CreateShell()|.
+  fml::TimePoint start = fml::TimePoint::Now();
+
+  for (auto phase : FrameTiming::kPhases) {
+    timing.Set(phase, fml::TimePoint());
+    // Check that the time points are initially smaller than start, so
+    // CheckFrameTimings will fail if they're not properly set later.
+    ASSERT_TRUE(timing.Get(phase) < start);
+  }
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -802,7 +815,9 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
       end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -861,7 +876,9 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
       end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -932,8 +949,10 @@ TEST_F(ShellTest,
       end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -976,8 +995,10 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1041,8 +1062,10 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
       PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1108,8 +1131,10 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1174,8 +1199,10 @@ TEST_F(ShellTest,
       end_frame_callback, PostPrerollResult::kSuccess);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1276,9 +1303,11 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   );
   auto shell = CreateShell({
       .settings = settings,
-      .task_runners = &task_runners,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .task_runners = task_runners,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1321,8 +1350,10 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
       end_frame_callback, PostPrerollResult::kSuccess);
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -1375,8 +1406,10 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
-      .support_thread_merging = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+          .support_thread_merging = true,
+      }),
   });
 
   PlatformViewNotifyCreated(shell.get());
@@ -1541,7 +1574,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -1604,7 +1637,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
 
   auto shell = CreateShell({
       .settings = settings,
-      .task_runners = &task_runners,
+      .task_runners = task_runners,
       .platform_view_create_callback = platform_view_create_callback,
   });
 
@@ -1703,7 +1736,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -1767,7 +1800,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
@@ -1795,7 +1828,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
@@ -1835,7 +1868,7 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -1904,7 +1937,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(ValidateShell(shell.get()));
   PlatformViewNotifyCreated(shell.get());
@@ -1958,7 +1991,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
                       message_latch.Signal();
                     }));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -1985,7 +2018,7 @@ TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
                     CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
                       check_latch.Signal();
                     }));
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(shell->IsSetup());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2019,7 +2052,7 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
                       is_on_begin_frame_called = true;
                       count_down_latch.CountDown();
                     }));
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(shell->IsSetup());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2369,7 +2402,7 @@ TEST_F(ShellTest, RasterizerScreenshot) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(ValidateShell(shell.get()));
   PlatformViewNotifyCreated(shell.get());
@@ -2399,7 +2432,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(ValidateShell(shell.get()));
   PlatformViewNotifyCreated(shell.get());
@@ -2655,7 +2688,9 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       std::move(end_frame_callback), PostPrerollResult::kSuccess);
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -2731,7 +2766,9 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
 
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .shell_test_external_view_embedder = external_view_embedder,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .shell_test_external_view_embedder = external_view_embedder,
+      }),
   });
 
   // Create the surface needed by rasterizer
@@ -2816,7 +2853,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   AddNativeCallback("ReportMetrics",
                     CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("reportMetrics");
@@ -3421,7 +3458,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -3466,7 +3503,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -3507,7 +3544,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -3544,7 +3581,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -3591,7 +3628,9 @@ TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3611,7 +3650,10 @@ TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kVulkanBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kVulkanBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3631,7 +3673,10 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kMetalBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kMetalBackend,
+      }),
   });
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
@@ -3798,7 +3843,7 @@ TEST_F(ShellTest, UsesPlatformMessageHandler) {
       };
   auto shell = CreateShell({
       .settings = settings,
-      .task_runners = &task_runners,
+      .task_runners = task_runners,
       .platform_view_create_callback = platform_view_create_callback,
   });
 
@@ -3892,7 +3937,7 @@ TEST_F(ShellTest, ImmutableBufferLoadsAssetOnBackgroundThread) {
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   fml::CountDownLatch latch(1);
   AddNativeCallback("NotifyNative",
@@ -3928,7 +3973,9 @@ TEST_F(ShellTest, PictureToImageSync) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
 
   AddNativeCallback("NativeOnBeforeToImageSync",
@@ -3967,7 +4014,10 @@ TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
   settings.enable_impeller = true;
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .rendering_backend = ShellTestPlatformView::BackendType::kMetalBackend,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kMetalBackend,
+      }),
   });
 
   AddNativeCallback("NativeOnBeforeToImageSync",
@@ -4015,8 +4065,10 @@ TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .task_runners = &task_runners,
-      .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      .task_runners = task_runners,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend = ShellTestPlatformView::BackendType::kGLBackend,
+      }),
   });
 
   AddNativeCallback(
@@ -4090,7 +4142,7 @@ TEST_F(ShellTest, NotifyIdleRejectsPastAndNearFuture) {
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -4135,7 +4187,7 @@ TEST_F(ShellTest, NotifyIdleNotCalledInLatencyMode) {
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 
@@ -4178,7 +4230,7 @@ TEST_F(ShellTest, NotifyDestroyed) {
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
-  auto shell = CreateShell(settings, &task_runners);
+  auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
 

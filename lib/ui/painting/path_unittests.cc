@@ -50,7 +50,7 @@ TEST_F(ShellTest, PathVolatilityOldPathsBecomeNonVolatile) {
 
   AddNativeCallback("ValidatePath", CREATE_NATIVE_ENTRY(native_validate_path));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -108,7 +108,7 @@ TEST_F(ShellTest, PathVolatilityGCRemovesPathFromTracker) {
 
   AddNativeCallback("ValidatePath", CREATE_NATIVE_ENTRY(native_validate_path));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -164,7 +164,7 @@ TEST_F(ShellTest, DeterministicRenderingDisablesPathVolatility) {
 
   AddNativeCallback("ValidatePath", CREATE_NATIVE_ENTRY(native_validate_path));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);

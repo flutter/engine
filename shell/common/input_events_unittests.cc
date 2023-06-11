@@ -56,7 +56,9 @@ static void TestSimulatedInputEvents(
   auto settings = fixture->CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = fixture->CreateShell({
       .settings = settings,
-      .simulate_vsync = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
   });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -305,7 +307,9 @@ TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .simulate_vsync = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
   });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -369,7 +373,9 @@ TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .simulate_vsync = true,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
   });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);

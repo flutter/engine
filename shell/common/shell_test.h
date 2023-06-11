@@ -34,28 +34,20 @@ class ShellTest : public FixtureTest {
   struct Config {
     // Required.
     const Settings& settings;
-    // Defaults to &GetTaskRunnersForFixture().
-    const TaskRunners* task_runners;
-    // Defaults to false.
-    bool simulate_vsync;
-    // Defaults to nullptr.
-    std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder;
-    // Defaults to false.
-    bool is_gpu_disabled;
-    // Defaults to kDefaultBackend.
-    ShellTestPlatformView::BackendType rendering_backend;
+    // Defaults to GetTaskRunnersForFixture().
+    std::optional<TaskRunners> task_runners = {};
+    bool is_gpu_disabled = false;
     // Defaults to calling ShellTestPlatformView::Create with the provided
     // arguments.
     Shell::CreateCallback<PlatformView> platform_view_create_callback;
-    bool support_thread_merging;
   };
 
   ShellTest();
 
   Settings CreateSettingsForFixture() override;
-  std::unique_ptr<Shell> CreateShell(const Settings& settings,
-                                     const TaskRunners* task_runners = nullptr);
+  std::unique_ptr<Shell> CreateShell(
+      const Settings& settings,
+      std::optional<TaskRunners> task_runners = {});
   std::unique_ptr<Shell> CreateShell(const Config& config);
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell,

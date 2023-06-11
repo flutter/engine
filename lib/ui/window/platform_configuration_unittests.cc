@@ -49,7 +49,7 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -99,7 +99,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -137,7 +137,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorHandlesError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -187,7 +187,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -238,7 +238,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -286,7 +286,7 @@ TEST_F(ShellTest, PlatformConfigurationSetDartPerformanceMode) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, &task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
