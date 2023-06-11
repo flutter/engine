@@ -43,6 +43,7 @@ class ShellTestPlatformView : public PlatformView {
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 
+// Create a ShellTestPlatformView from configuration struct.
 class ShellTestPlatformViewBuilder {
  public:
   struct Config {
@@ -55,6 +56,8 @@ class ShellTestPlatformViewBuilder {
 
   ShellTestPlatformViewBuilder(Config config);
   ~ShellTestPlatformViewBuilder() = default;
+
+  // Override operator () to make this class assignable to std::function.
   std::unique_ptr<PlatformView> operator()(Shell& shell);
 
  private:

@@ -325,7 +325,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     std::optional<TaskRunners> task_runners) {
   return CreateShell({
       .settings = settings,
-      .task_runners = task_runners,
+      .task_runners = std::move(task_runners),
   });
 }
 

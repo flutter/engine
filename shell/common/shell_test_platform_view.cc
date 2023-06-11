@@ -60,7 +60,7 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
 }
 
 ShellTestPlatformViewBuilder::ShellTestPlatformViewBuilder(Config config)
-    : config_(config) {}
+    : config_(std::move(config)) {}
 
 std::unique_ptr<PlatformView> ShellTestPlatformViewBuilder::operator()(
     Shell& shell) {
