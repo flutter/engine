@@ -337,7 +337,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
                                  ? config.task_runners.value()
                                  : GetTaskRunnersForFixture();
   Shell::CreateCallback<PlatformView> platform_view_create_callback =
-      std::move(config.platform_view_create_callback);
+      config.platform_view_create_callback;
   if (!platform_view_create_callback) {
     platform_view_create_callback = ShellTestPlatformViewBuilder({});
   }
