@@ -56,7 +56,8 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  FlutterKeyboardAnimationCallback callback = [](fml::TimePoint targetTime) {};
+  FlutterKeyboardAnimationCallback callback = ^(fml::TimePoint targetTime) {
+  };
   [viewController setupKeyboardAnimationVsyncClient:callback];
   XCTAssertNotNil(viewController.keyboardAnimationVSyncClient);
   CADisplayLink* link = [viewController.keyboardAnimationVSyncClient getDisplayLink];

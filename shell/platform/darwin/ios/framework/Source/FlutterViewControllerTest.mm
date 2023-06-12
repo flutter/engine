@@ -457,9 +457,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   const int delayTime = 1;
   [engine uiTaskRunner]->PostTask([] { sleep(delayTime); });
   XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
-  CFTimeInterval fulfillTime;
-  FlutterKeyboardAnimationCallback callback = [&expectation,
-                                               &fulfillTime](fml::TimePoint targetTime) {
+
+  __block CFTimeInterval fulfillTime;
+  FlutterKeyboardAnimationCallback callback = ^(fml::TimePoint targetTime) {
     fulfillTime = CACurrentMediaTime();
     [expectation fulfill];
   };
