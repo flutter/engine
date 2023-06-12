@@ -1600,22 +1600,65 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
-  // TODO(cbracken) Implement.
+  NSInteger index = ((FlutterTextPosition*)position).index;
+  UITextStorageDirection affinity = ((FlutterTextPosition*)position).affinity;
+  // Get the selectionRect of the characters before and after the requested caret position.
+  NSArray<UITextSelectionRect*>* rects = [self
+      selectionRectsForRange:[FlutterTextRange
+                                 rangeWithNSRange:fml::RangeForCharactersInRange(
+                                                      self.text,
+                                                      NSMakeRange(
+                                                          MAX(0, index - 1),
+                                                          (index >= (NSInteger)self.text.length)
+                                                              ? 1
+                                                              : 2))]];
+  if (rects.count == 0) {
+    return CGRectZero;
+  }
+  if (index == 0) {
+    // There is no character before the caret, so this will be the bounds of the character after the
+    // caret position.
+    CGRect characterAfterCaret = rects[0].rect;
+    // Return a zero-width rectangle along the upstream edge of the character after the caret
+    // position.
+    if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[0]).isRTL) {
+      return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
+                        characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
+    } else {
+      return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
+                        characterAfterCaret.size.height);
+    }
+  } else if (rects.count == 2 && affinity == UITextStorageDirectionForward) {
+    // There are characters before and after the caret, with forward direction affinity.
+    // It's better to use the character after the caret.
+    CGRect characterAfterCaret = rects[1].rect;
+    // Return a zero-width rectangle along the upstream edge of the character after the caret
+    // position.
+    if ([rects[1] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[1]).isRTL) {
+      return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
+                        characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
+    } else {
+      return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
+                        characterAfterCaret.size.height);
+    }
+  }
 
-  // As of iOS 14.4, this call is used by iOS's
-  // _UIKeyboardTextSelectionController to determine the position
-  // of the floating cursor when the user force touches the space
-  // bar to initiate floating cursor.
-  //
-  // It is recommended to return a value that's roughly the
-  // center of kSpacePanBounds to make sure the floating cursor
-  // has ample space in all directions and does not hit kSpacePanBounds.
-  // See the comments in beginFloatingCursorAtPoint.
-  return CGRectZero;
-}
-
-- (CGRect)bounds {
-  return _isFloatingCursorActive ? kSpacePanBounds : super.bounds;
+  // Covers 2 remaining cases:
+  // 1. there are characters before and after the caret, with backward direction affinity.
+  // 2. there is only 1 character before the caret (caret is at the end of text).
+  // For both cases, return a zero-width rectangle along the downstream edge of the character
+  // before the caret position.
+  CGRect characterBeforeCaret = rects[0].rect;
+  if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+      ((FlutterTextSelectionRect*)rects[0]).isRTL) {
+    return CGRectMake(characterBeforeCaret.origin.x, characterBeforeCaret.origin.y, 0,
+                      characterBeforeCaret.size.height);
+  } else {
+    return CGRectMake(characterBeforeCaret.origin.x + characterBeforeCaret.size.width,
+                      characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
+  }
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
