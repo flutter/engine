@@ -58,7 +58,8 @@ static vk::AttachmentDescription CreateAttachmentDescription(
                                   desc.sample_count,  //
                                   load_action,        //
                                   store_action,       //
-                                  current_layout      //
+                                  current_layout,     //
+                                  resolve_texture     //
       );
 
   // Instead of transitioning layouts manually using barriers, we are going to
