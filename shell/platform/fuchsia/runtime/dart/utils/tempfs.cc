@@ -23,7 +23,6 @@
 namespace {
 
 constexpr char kTmpPath[] = "/tmp";
-[[maybe_unused]] constexpr size_t kMaxTmpPages = 1024;
 
 }  // namespace
 
@@ -41,15 +40,8 @@ RunnerTemp::~RunnerTemp() = default;
 void RunnerTemp::Start() {
   std::promise<void> finished;
   async::PostTask(loop_->dispatcher(), [this, &finished]() {
-#if defined(DART_PRODUCT)
-    zx_status_t status = memfs_install_at_with_page_limit(
-        loop_->dispatcher(), kMaxTmpPages, kTmpPath);
-#else
     memfs_filesystem_t* fs;
-    // Hot reload uses /tmp to hold the updated dills and assets so do not
-    // impose any size limitation in non product runners.
     zx_status_t status = memfs_install_at(loop_->dispatcher(), kTmpPath, &fs);
-#endif
     finished.set_value();
     if (status != ZX_OK) {
       FX_LOGF(ERROR, LOG_TAG, "Failed to install a /tmp memfs: %s",
