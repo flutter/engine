@@ -57,6 +57,12 @@ public class PlatformPlugin {
      */
     boolean popSystemNavigator();
 
+    /**
+     * The Flutter application would or would not like to handle navigation pop events itself.
+     *
+     * <p> Relevant for registering and unregistering the app's OnBackInvokedCallback for the
+     * Predictive Back feature.
+     */
     default void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
     }
   }
