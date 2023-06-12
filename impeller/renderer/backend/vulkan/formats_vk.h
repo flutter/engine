@@ -468,7 +468,7 @@ constexpr vk::AttachmentDescription CreateAttachmentDescription(
     case AttachmentKind::kColor:
       vk_attachment.initialLayout = current_layout;
       vk_attachment.finalLayout =
-          resolve_texture ? vk::ImageLayout::ePresentSrcKHR
+          resolve_texture ? vk::ImageLayout::eGeneral
                           : vk::ImageLayout::eColorAttachmentOptimal;
       break;
     case AttachmentKind::kDepth:

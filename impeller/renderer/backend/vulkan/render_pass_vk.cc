@@ -96,9 +96,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                                 vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(color));
     if (color.resolve_texture) {
-      resolve_refs[bind_point] =
-          vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
-                                  vk::ImageLayout::ePresentSrcKHR};
+      resolve_refs[bind_point] = vk::AttachmentReference{
+          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(CreateAttachmentDescription(color, true));
     }
   }
