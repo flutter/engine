@@ -415,9 +415,11 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
   return true;
 }
 
-static void SetViewportAndScissor(const Command& command,
-                                  const vk::CommandBuffer& cmd_buffer,
-                                  const ISize& target_size) {
+static void SetViewportAndScissor(
+    const Command& command,
+    const vk::CommandBuffer& cmd_buffer,
+    CommandBufferCache<vk::CommandBuffer>& cmd_buffer_cache,
+    const ISize& target_size) {
   // Set the viewport.
   const auto& vp = command.viewport.value_or<Viewport>(
       {.rect = Rect::MakeSize(target_size)});
@@ -427,7 +429,7 @@ static void SetViewportAndScissor(const Command& command,
                               .setY(vp.rect.size.height)
                               .setMinDepth(0.0f)
                               .setMaxDepth(1.0f);
-  cmd_buffer.setViewport(0, 1, &viewport);
+  cmd_buffer_cache.setViewport(cmd_buffer, 0, 1, &viewport);
 
   // Set the scissor rect.
   const auto& sc = command.scissor.value_or(IRect::MakeSize(target_size));
@@ -435,13 +437,15 @@ static void SetViewportAndScissor(const Command& command,
       vk::Rect2D()
           .setOffset(vk::Offset2D(sc.origin.x, sc.origin.y))
           .setExtent(vk::Extent2D(sc.size.width, sc.size.height));
-  cmd_buffer.setScissor(0, 1, &scissor);
+  cmd_buffer_cache.setScissor(cmd_buffer, 0, 1, &scissor);
 }
 
-static bool EncodeCommand(const Context& context,
-                          const Command& command,
-                          CommandEncoderVK& encoder,
-                          const ISize& target_size) {
+static bool EncodeCommand(
+    const Context& context,
+    const Command& command,
+    CommandEncoderVK& encoder,
+    CommandBufferCache<vk::CommandBuffer>& command_buffer_cache,
+    const ISize& target_size) {
   if (command.vertex_count == 0u || command.instance_count == 0u) {
     return true;
   }
@@ -466,15 +470,15 @@ static bool EncodeCommand(const Context& context,
     return false;
   }
 
-  cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                          pipeline_vk.GetPipeline());
+  command_buffer_cache.bindPipeline(
+      cmd_buffer, vk::PipelineBindPoint::eGraphics, pipeline_vk.GetPipeline());
 
   // Set the viewport and scissors.
-  SetViewportAndScissor(command, cmd_buffer, target_size);
+  SetViewportAndScissor(command, cmd_buffer, command_buffer_cache, target_size);
 
   // Set the stencil reference.
-  cmd_buffer.setStencilReference(
-      vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
+  command_buffer_cache.setStencilReference(
+      cmd_buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
       command.stencil_reference);
 
   // Configure vertex and index and buffers for binding.
@@ -619,7 +623,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         continue;
       }
 
-      if (!EncodeCommand(context, command, *encoder, target_size)) {
+      if (!EncodeCommand(context, command, *encoder, command_buffer_cache_,
+                         target_size)) {
         return false;
       }
     }

@@ -9,6 +9,7 @@ impeller_component("vulkan_unittests") {
   testonly = true
   sources = [
     "blit_command_vk_unittests.cc",
+    "command_buffer_cache_unittests.cc",
     "context_vk_unittests.cc",
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
@@ -29,6 +30,7 @@ impeller_component("vulkan") {
     "blit_pass_vk.h",
     "capabilities_vk.cc",
     "capabilities_vk.h",
+    "command_buffer_cache.h",
     "command_buffer_vk.cc",
     "command_buffer_vk.h",
     "command_encoder_vk.cc",
