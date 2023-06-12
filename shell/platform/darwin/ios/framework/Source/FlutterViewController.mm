@@ -75,6 +75,7 @@ typedef struct MouseState {
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) CGFloat originalViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
+@property(nonatomic, copy) FlutterKeyboardAnimationCallback keyboardAnimationCallback;
 
 /// VSyncClient for touch events delivery frame rate correction.
 ///
@@ -1695,20 +1696,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
+  NSAssert(_keyboardAnimationCallback == nil, @"_keyboardAnimationCallback must be nil when setup");
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
-  auto uiCallback = [keyboardAnimationCallback =
-                         (FlutterKeyboardAnimationCallback)[keyboardAnimationCallback copy],
+  self.keyboardAnimationCallback = keyboardAnimationCallback;
+  auto uiCallback = [keyboardAnimationCallback = self.keyboardAnimationCallback,
                      engine = _engine](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
     [engine.get() platformTaskRunner]->PostTask(
         [keyboardAnimationCallback =
              (FlutterKeyboardAnimationCallback)[keyboardAnimationCallback copy],
-         keyboardAnimationTargetTime] { keyboardAnimationCallback(keyboardAnimationTargetTime); });
-    [keyboardAnimationCallback release];
+         keyboardAnimationTargetTime] {
+          keyboardAnimationCallback(keyboardAnimationTargetTime);
+          [keyboardAnimationCallback release];
+        });
   };
-  [keyboardAnimationCallback release];
   _keyboardAnimationVSyncClient =
       [[VSyncClient alloc] initWithTaskRunner:[_engine.get() uiTaskRunner] callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
@@ -1719,6 +1722,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_keyboardAnimationVSyncClient invalidate];
   [_keyboardAnimationVSyncClient release];
   _keyboardAnimationVSyncClient = nil;
+  [_keyboardAnimationCallback release];
+  _keyboardAnimationCallback = nil;
 }
 
 - (void)removeKeyboardAnimationView {
