@@ -1611,7 +1611,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     // If the view controller's view is not loaded, bail out.
-    if (flutterViewController.get().viewIfLoaded == nil) {
+    if (!flutterViewController.get().isViewLoaded) {
       return;
     }
     // If the view for tracking keyboard animation is nil, means it is not
@@ -1627,8 +1627,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     if ([flutterViewController keyboardAnimationView].superview == nil) {
       // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-      [flutterViewController.get().viewIfLoaded
-          addSubview:[flutterViewController keyboardAnimationView]];
+      [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
     if ([flutterViewController keyboardSpringAnimation] == nil) {
