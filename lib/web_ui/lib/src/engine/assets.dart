@@ -88,6 +88,8 @@ class AssetManager {
     final String url = getAssetUrl(asset);
     final HttpFetchResponse response = await httpFetch(url);
 
+    // TODO(andrewkolos): 'AssetManifest.json' is outdated.
+    // See https://github.com/flutter/flutter/issues/128619.
     if (response.status == 404 && asset == 'AssetManifest.json') {
       printWarning('Asset manifest does not exist at `$url` - ignoring.');
       return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
