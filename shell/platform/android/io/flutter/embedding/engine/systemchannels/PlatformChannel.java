@@ -138,8 +138,8 @@ public class PlatformChannel {
                 break;
               case "SystemNavigator.setFrameworkHandlesBack":
                 {
-                  boolean frameworkHandlesBacks = (boolean) arguments;
-                  platformMessageHandler.setFrameworkHandlesBack(frameworkHandlesBacks);
+                  boolean frameworkHandlesBack = (boolean) arguments;
+                  platformMessageHandler.setFrameworkHandlesBack(frameworkHandlesBack);
                   result.success(null);
                   break;
                 }

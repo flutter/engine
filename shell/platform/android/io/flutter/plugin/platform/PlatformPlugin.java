@@ -63,7 +63,7 @@ public class PlatformPlugin {
      * <p>Relevant for registering and unregistering the app's OnBackInvokedCallback for the
      * Predictive Back feature.
      */
-    default void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {}
+    default void setFrameworkHandlesBack(boolean frameworkHandlesBack) {}
   }
 
   @VisibleForTesting
@@ -118,8 +118,8 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
-          PlatformPlugin.this.setFrameworkHandlesBack(frameworkHandlesBacks);
+        public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+          PlatformPlugin.this.setFrameworkHandlesBack(frameworkHandlesBack);
         }
 
         @Override
@@ -488,8 +488,8 @@ public class PlatformPlugin {
     currentTheme = systemChromeStyle;
   }
 
-  private void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
-    platformPluginDelegate.setFrameworkHandlesBack(frameworkHandlesBacks);
+  private void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+    platformPluginDelegate.setFrameworkHandlesBack(frameworkHandlesBack);
   }
 
   private void popSystemNavigator() {
