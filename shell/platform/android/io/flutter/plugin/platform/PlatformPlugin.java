@@ -57,7 +57,8 @@ public class PlatformPlugin {
      */
     boolean popSystemNavigator();
 
-    void setFrameworkHandlesBack(boolean frameworkHandlesBacks);
+    default void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
+    }
   }
 
   @VisibleForTesting
