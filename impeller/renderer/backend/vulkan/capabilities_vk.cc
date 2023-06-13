@@ -193,7 +193,7 @@ CapabilitiesVK::GetRequiredDeviceExtensions(
   required.push_back("VK_KHR_storage_buffer_storage_class");
   if (exts.find("VK_KHR_16bit_storage") == exts.end()) {
     VALIDATION_LOG << "Device does not support the "
-                      "VK_KHR_storage_buffer_storage_class extension.";
+                      "VK_KHR_16bit_storage extension.";
     return std::nullopt;
   }
   required.push_back(
