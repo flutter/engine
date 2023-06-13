@@ -1609,6 +1609,92 @@ class PlatformViewScrollingUnderWidget extends Scenario
   }
 }
 
+/// Builds a scenario where many platform views with clips scrolling.
+class PlatformViewsWithClipsScrolling extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  PlatformViewsWithClipsScrolling(
+    super.view, {
+    required int firstPlatformViewId,
+    required int lastPlatformViewId,
+  }) :  _firstPlatformViewId = firstPlatformViewId,
+       _lastPlatformViewId = lastPlatformViewId;
+
+  final int _firstPlatformViewId;
+
+  final int _lastPlatformViewId;
+
+  double _offset = 0;
+
+  bool _movingUp = true;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    _buildOneFrame(_offset);
+  }
+
+  @override
+  void onDrawFrame() {
+    // Scroll up until -1000, then scroll down until -1.
+    if (_offset < -500) {
+      _movingUp = false;
+    } else if (_offset > -1) {
+      _movingUp = true;
+    }
+
+    if (_movingUp) {
+      _offset -= 100;
+    } else {
+      _offset += 100;
+    }
+    view.platformDispatcher.scheduleFrame();
+    super.onDrawFrame();
+  }
+
+  Future<void> _buildOneFrame(double offset) async {
+    const double cellWidth = 1000;
+    double localOffset = offset;
+    final SceneBuilder builder = SceneBuilder();
+    const double cellHeight = 300;
+    for (int i = _firstPlatformViewId; i <= _lastPlatformViewId; i++) {
+      // Build a list view with platform views.
+      builder.pushOffset(0, localOffset);
+      bool addedClipRRect = false;
+      if (localOffset > -1) {
+        addedClipRRect = true;
+        builder.pushClipRRect(
+          RRect.fromLTRBAndCorners(
+            100,
+            100,
+            400,
+            400,
+            topLeft: const Radius.circular(15),
+            topRight: const Radius.circular(50),
+            bottomLeft: const Radius.circular(50),
+          ),
+        );
+      }
+      addPlatformView(
+        i,
+        dispatcher: view.platformDispatcher,
+        sceneBuilder: builder,
+        text: 'platform view $i',
+        width: cellWidth,
+        height: cellHeight,
+      );
+      if (addedClipRRect) {
+        builder.pop();
+      }
+      builder.pop();
+      localOffset += cellHeight;
+    }
+
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
 final Map<String, int> _createdPlatformViews = <String, int> {};
 
 /// Adds the platform view to the scene.

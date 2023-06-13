@@ -53,6 +53,7 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'platform_view_gesture_reject_after_touches_ended': (FlutterView view) => PlatformViewForTouchIOSScenario(view, id: _viewId++, accept: false, rejectUntilTouchesEnded: true),
   'platform_view_gesture_accept_with_overlapping_platform_views': (FlutterView view) => PlatformViewForOverlappingPlatformViewsScenario(view, foregroundId: _viewId++, backgroundId: _viewId++),
   'platform_view_scrolling_under_widget':(FlutterView view) => PlatformViewScrollingUnderWidget(view, firstPlatformViewId: _viewId++, lastPlatformViewId: _viewId+=16),
+  'platform_views_with_clips_scrolling':(FlutterView view) => PlatformViewsWithClipsScrolling(view, firstPlatformViewId: _viewId++, lastPlatformViewId: _viewId+=16),
   'two_platform_view_clip_rect': (FlutterView view) => TwoPlatformViewClipRect(view, firstId: _viewId++, secondId: _viewId++),
   'two_platform_view_clip_rrect': (FlutterView view) => TwoPlatformViewClipRRect(view, firstId: _viewId++, secondId: _viewId++),
   'two_platform_view_clip_path': (FlutterView view) => TwoPlatformViewClipPath(view, firstId: _viewId++, secondId: _viewId++),

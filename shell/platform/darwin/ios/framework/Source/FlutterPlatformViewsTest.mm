@@ -2835,7 +2835,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];

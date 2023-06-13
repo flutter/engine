@@ -483,15 +483,13 @@ static BOOL _preparedOnce = NO;
 
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame {
   FML_DCHECK(self.pool.count <= self.capacity);
-  FlutterClippingMaskView* maskView;
   if (self.pool.count == 0) {
     // The pool is empty, alloc a new one.
-    maskView =
+    return
         [[[FlutterClippingMaskView alloc] initWithFrame:frame
                                             screenScale:[UIScreen mainScreen].scale] autorelease];
-    return maskView;
   }
-  maskView = [self.pool anyObject];
+  FlutterClippingMaskView* maskView = [[[self.pool anyObject] retain] autorelease];
   maskView.frame = frame;
   [maskView reset];
   [self.pool removeObject:maskView];
