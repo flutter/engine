@@ -131,6 +131,7 @@ class RasterCache {
 
   std::unique_ptr<RasterCacheResult> Rasterize(
       const RasterCache::Context& context,
+      sk_sp<const DlRTree> rtree,
       const std::function<void(DlCanvas*)>& draw_function,
       const std::function<void(DlCanvas*, const SkRect& rect)>&
           draw_checkerboard) const;
@@ -241,10 +242,10 @@ class RasterCache {
    */
   int GetAccessCount(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
 
-  bool UpdateCacheEntry(
-      const RasterCacheKeyID& id,
-      const Context& raster_cache_context,
-      const std::function<void(DlCanvas*)>& render_function) const;
+  bool UpdateCacheEntry(const RasterCacheKeyID& id,
+                        const Context& raster_cache_context,
+                        const std::function<void(DlCanvas*)>& render_function,
+                        sk_sp<const DlRTree> rtree = nullptr) const;
 
  private:
   struct Entry {

@@ -54,10 +54,18 @@ void RasterCacheResult::draw(DlCanvas& canvas,
     // platform views and hit testing. To preserve the RTree raster cache must
     // paint individual rects instead of the whole image.
     auto rects = rtree_->searchAndConsolidateRects(kGiantRect);
+
+    // Bounds of original display list.
+    SkRect rtree_bounds = SkRect::MakeEmpty();
     for (auto rect : rects) {
-      SkRect dst(rect);
+      rtree_bounds.join(rect);
+    }
+    for (auto rect : rects) {
+      SkRect src(rect);
+      src.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
+      SkRect dst(src);
       dst.offset(bounds.fLeft, bounds.fTop);
-      canvas.DrawImageRect(image_, rect, dst, DlImageSampling::kNearestNeighbor,
+      canvas.DrawImageRect(image_, src, dst, DlImageSampling::kNearestNeighbor,
                            paint);
     }
   }
@@ -72,6 +80,7 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
+    sk_sp<const DlRTree> rtree,
     const std::function<void(DlCanvas*)>& draw_function,
     const std::function<void(DlCanvas*, const SkRect& rect)>& draw_checkerboard)
     const {
@@ -93,12 +102,9 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     return nullptr;
   }
 
-  // Clear the surface canvas directly to avoid RTree storing a giant clear
-  // rect.
-  auto surfaceCanvas = surface->getCanvas();
-  surfaceCanvas->clear(SK_ColorTRANSPARENT);
+  DlSkCanvasAdapter canvas(surface->getCanvas());
+  canvas.Clear(DlColor::kTransparent());
 
-  DisplayListBuilder canvas(true);
   canvas.Translate(-dest_rect.left(), -dest_rect.top());
   canvas.Transform(matrix);
   draw_function(&canvas);
@@ -107,24 +113,22 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     draw_checkerboard(&canvas, context.logical_rect);
   }
 
-  auto display_list = canvas.Build();
-  DlSkCanvasDispatcher dispatcher(surfaceCanvas);
-  display_list->Dispatch(dispatcher);
-  auto rtree = display_list->rtree();
   auto image = DlImage::Make(surface->makeImageSnapshot());
-  return std::make_unique<RasterCacheResult>(image, context.logical_rect,
-                                             context.flow_type, rtree);
+  return std::make_unique<RasterCacheResult>(
+      image, context.logical_rect, context.flow_type, std::move(rtree));
 }
 
 bool RasterCache::UpdateCacheEntry(
     const RasterCacheKeyID& id,
     const Context& raster_cache_context,
-    const std::function<void(DlCanvas*)>& render_function) const {
+    const std::function<void(DlCanvas*)>& render_function,
+    sk_sp<const DlRTree> rtree) const {
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   if (!entry.image) {
     void (*func)(DlCanvas*, const SkRect& rect) = DrawCheckerboard;
-    entry.image = Rasterize(raster_cache_context, render_function, func);
+    entry.image = Rasterize(raster_cache_context, std::move(rtree),
+                            render_function, func);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {

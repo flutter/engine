@@ -167,8 +167,10 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       // clang-format on
   };
   return context.raster_cache->UpdateCacheEntry(
-      id.value(), r_context, [display_list = display_list_](DlCanvas* canvas) {
+      id.value(), r_context,
+      [display_list = display_list_](DlCanvas* canvas) {
         canvas->DrawDisplayList(display_list);
-      });
+      },
+      display_list_->rtree());
 }
 }  // namespace flutter
