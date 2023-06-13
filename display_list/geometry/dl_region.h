@@ -23,11 +23,11 @@ class DlRegion {
 
   DlRegion(DlRegion&&) = default;
 
-  /// Creates union region of region a and be.
+  /// Creates union region of region a and b.
   /// Matches SkRegion a; a.op(b, SkRegion::kUnion_Op) behavior.
   static DlRegion MakeUnion(const DlRegion& a, const DlRegion& b);
 
-  /// Creates intersection region of region a and be.
+  /// Creates intersection region of region a and b.
   /// Matches SkRegion a; a.op(b, SkRegion::kIntersect_Op) behavior.
   static DlRegion MakeIntersection(const DlRegion& a, const DlRegion& b);
 
