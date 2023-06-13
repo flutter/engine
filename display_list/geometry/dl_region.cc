@@ -509,6 +509,7 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
     } else {
       auto top = std::max(a_top, b_top);
       auto bottom = std::min(a_it->bottom, b_it->bottom);
+      FML_DCHECK(top < bottom);
       auto size = intersectLineSpans(tmp, a_buffer, a_it->chunk_handle,
                                      b_buffer, b_it->chunk_handle);
       if (size > 0) {
