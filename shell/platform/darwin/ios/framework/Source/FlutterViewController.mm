@@ -146,6 +146,7 @@ typedef struct MouseState {
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
+@synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -2081,7 +2082,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   });
 }
 
-- (void)setFlutterPrefersStatusBarHidden:(BOOL)hidden {
+- (void)setPrefersStatusBarHidden:(BOOL)hidden {
   if (hidden != _flutterPrefersStatusBarHidden) {
     _flutterPrefersStatusBarHidden = hidden;
     [self setNeedsStatusBarAppearanceUpdate];

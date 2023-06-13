@@ -63,13 +63,13 @@ using namespace flutter;
     NSObject* infoValue = [[NSBundle mainBundle]
         objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-    if (infoValue!= nil && ![infoValue isKindOfClass:[NSNumber class]]) {
-      FML_LOG(ERROR) << "The value of UIViewControllerBasedStatusBarAppearance in info.plist must be a Boolean type.";
+    if (infoValue != nil && ![infoValue isKindOfClass:[NSNumber class]]) {
+      FML_LOG(ERROR) << "The value of UIViewControllerBasedStatusBarAppearance in info.plist must "
+                        "be a Boolean type.";
     }
 #endif
-    NSNumber* infoValue = [[NSBundle mainBundle]
-        objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
-    _enableViewControllerBasedStatusBarAppearance = (infoValue == nil || [infoValue boolValue]);
+    _enableViewControllerBasedStatusBarAppearance =
+        (infoValue == nil || [(NSNumber*)infoValue boolValue]);
   }
 
   return self;
@@ -192,7 +192,7 @@ using namespace flutter;
                       object:nil];
   }
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    [_engine.get() viewController].flutterPrefersStatusBarHidden = statusBarShouldBeHidden;
+    [_engine.get() viewController].prefersStatusBarHidden = statusBarShouldBeHidden;
   } else {
     // Checks if the top status bar should be visible. This platform ignores all
     // other overlays
@@ -207,7 +207,7 @@ using namespace flutter;
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
   BOOL edgeToEdge = [mode isEqualToString:@"SystemUiMode.edgeToEdge"];
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    [_engine.get() viewController].flutterPrefersStatusBarHidden = !edgeToEdge;
+    [_engine.get() viewController].prefersStatusBarHidden = !edgeToEdge;
   } else {
     // Checks if the top status bar should be visible, reflected by edge to edge setting. This
     // platform ignores all other system ui modes.
