@@ -2187,9 +2187,9 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 }
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineAddRenderSurface(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    FlutterRenderSurfaceConfig* config) {
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         FlutterAddViewInfo* config) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
@@ -2201,7 +2201,7 @@ FlutterEngineResult FlutterEngineAddRenderSurface(
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
                               "Compositor arguments were invalid.");
   }
-  embedder_engine->GetShell().AddRenderSurface(
+  embedder_engine->GetShell().AddView(
       config->view_id, std::move(external_view_embedder_result.first));
 
   return kSuccess;
@@ -3244,7 +3244,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(Initialize, FlutterEngineInitialize);
   SET_PROC(Deinitialize, FlutterEngineDeinitialize);
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
-  SET_PROC(AddRenderSurface, FlutterEngineAddRenderSurface);
+  SET_PROC(AddView, FlutterEngineAddView);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
   SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);

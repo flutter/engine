@@ -98,9 +98,9 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface,
 }
 
 void Rasterizer::TeardownExternalViewEmbedder() {
-  for (auto& surface_record : surfaces_) {
-    surface_record.second.view_embedder->Teardown();
-    surface_record.second.view_embedder = nullptr;
+  for (auto& view_record : view_records) {
+    view_record.second.view_embedder->Teardown();
+    view_record.second.view_embedder = nullptr;
   }
 }
 
@@ -115,7 +115,7 @@ void Rasterizer::Teardown() {
     }
     surface_.reset();
   }
-  surfaces_.clear();
+  view_records.clear();
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
@@ -156,13 +156,12 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::AddSurface(
-    int64_t view_id,
-    std::shared_ptr<ExternalViewEmbedder> view_embedder) {
+void Rasterizer::AddView(int64_t view_id,
+                         std::shared_ptr<ExternalViewEmbedder> view_embedder) {
   // Only allows having no view embedders if there is one surface and there has
   // never been an view embedder.
   if (!requires_view_embedder_) {
-    if (view_embedder || !surfaces_.empty()) {
+    if (view_embedder || !view_records.empty()) {
       requires_view_embedder_ = true;
     }
   }
@@ -170,18 +169,18 @@ void Rasterizer::AddSurface(
     FML_DCHECK(view_embedder);
   }
   bool insertion_happened =
-      surfaces_
+      view_records
           .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id,
                        view_embedder)
           .second;
   if (!insertion_happened) {
-    FML_DLOG(INFO) << "Rasterizer::AddSurface called with an existing view ID "
+    FML_DLOG(INFO) << "Rasterizer::AddView called with an existing view ID "
                    << view_id << ".";
   }
 }
 
 void Rasterizer::RemoveSurface(int64_t view_id) {
-  surfaces_.erase(view_id);
+  view_records.erase(view_id);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
@@ -194,7 +193,7 @@ GrDirectContext* Rasterizer::GetGrContext() {
 
 bool Rasterizer::HasLastLayerTree() const {
   // TODO(dkwingsmt): This method is only available in unittests now
-  for (auto& record_pair : surfaces_) {
+  for (auto& record_pair : view_records) {
     auto& layer_tree = record_pair.second.last_tree;
     if (layer_tree) {
       return true;
@@ -211,19 +210,18 @@ int Rasterizer::DrawLastLayerTree(
   }
   int success_count = 0;
   bool should_resubmit_frame = false;
-  for (auto& [view_id, surface_record] : surfaces_) {
-    auto view_embedder = surface_record.view_embedder;
-    flutter::LayerTree* layer_tree = surface_record.last_tree.get();
-    float device_pixel_ratio = surface_record.last_pixel_ratio;
+  for (auto& [view_id, view_record] : view_records) {
+    auto view_embedder = view_record.view_embedder;
+    flutter::LayerTree* layer_tree = view_record.last_tree.get();
+    float device_pixel_ratio = view_record.last_pixel_ratio;
     if (!layer_tree) {
       continue;
     }
     if (enable_leaf_layer_tracing) {
       layer_tree->enable_leaf_layer_tracing(true);
     }
-    RasterStatus raster_status =
-        DrawToSurface(*frame_timings_recorder, layer_tree, device_pixel_ratio,
-                      &surface_record);
+    RasterStatus raster_status = DrawToSurface(
+        *frame_timings_recorder, layer_tree, device_pixel_ratio, &view_record);
     if (enable_leaf_layer_tracing) {
       layer_tree->enable_leaf_layer_tracing(false);
     }
@@ -292,9 +290,9 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  auto surface_record = surfaces_.find(draw_result.view_id);
-  if (surface_record != surfaces_.end()) {
-    auto view_embedder = surface_record->second.view_embedder;
+  auto view_record = view_records.find(draw_result.view_id);
+  if (view_record != view_records.end()) {
+    auto view_embedder = view_record->second.view_embedder;
     if (view_embedder && view_embedder->GetUsedThisFrame()) {
       view_embedder->SetUsedThisFrame(false);
       view_embedder->EndFrame(should_resubmit_frame, raster_thread_merger_);
@@ -455,9 +453,9 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
-  SurfaceRecord* surface_record = GetSurfaceRecord(view_id);
+  ViewRecord* view_record = GetViewRecord(view_id);
 
-  if (!layer_tree || !surface_record) {
+  if (!layer_tree || !view_record) {
     return DoDrawResult{
         .raster_status = RasterStatus::kFailed,
     };
@@ -468,10 +466,10 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   RasterStatus raster_status =
       DrawToSurface(*frame_timings_recorder, layer_tree.get(),
-                    device_pixel_ratio, surface_record);
+                    device_pixel_ratio, view_record);
   if (raster_status == RasterStatus::kSuccess) {
-    surface_record->last_tree = std::move(layer_tree);
-    surface_record->last_pixel_ratio = device_pixel_ratio;
+    view_record->last_tree = std::move(layer_tree);
+    view_record->last_pixel_ratio = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
     return DoDrawResult{
         .raster_status = raster_status,
@@ -489,8 +487,8 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
-    auto screenshot = ScreenshotLayerTree(ScreenshotType::SkiaPicture, false,
-                                          *surface_record);
+    auto screenshot =
+        ScreenshotLayerTree(ScreenshotType::SkiaPicture, false, *view_record);
     persistent_cache->DumpSkp(*screenshot.data);
   }
 
@@ -567,14 +565,14 @@ RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree* layer_tree,
     float device_pixel_ratio,
-    SurfaceRecord* surface_record) {
+    ViewRecord* view_record) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
-  FML_DCHECK(surface_record);
+  FML_DCHECK(view_record);
 
   RasterStatus raster_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
     raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree,
-                                        device_pixel_ratio, surface_record);
+                                        device_pixel_ratio, view_record);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
@@ -582,7 +580,7 @@ RasterStatus Rasterizer::DrawToSurface(
             .SetIfFalse([&] {
               raster_status =
                   DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree,
-                                      device_pixel_ratio, surface_record);
+                                      device_pixel_ratio, view_record);
             }));
   }
 
@@ -596,8 +594,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree* layer_tree,
     float device_pixel_ratio,
-    SurfaceRecord* surface_record) {
-  auto view_embedder = surface_record->view_embedder;
+    ViewRecord* view_record) {
+  auto view_embedder = view_record->view_embedder;
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
@@ -665,7 +663,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       damage = std::make_unique<FrameDamage>();
       auto existing_damage = frame->framebuffer_info().existing_damage;
       if (existing_damage.has_value() && !force_full_repaint) {
-        damage->SetPreviousLayerTree(surface_record->last_tree.get());
+        damage->SetPreviousLayerTree(view_record->last_tree.get());
         damage->AddAdditionalDamage(existing_damage.value());
         damage->SetClipAlignment(
             frame->framebuffer_info().horizontal_clip_alignment,
@@ -821,19 +819,19 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     bool base64_encode) {
   // TODO(dkwingsmt): Probably screenshot all layer trees and put them together
   // instead of just the first one.
-  SurfaceRecord* surface_record = GetFirstSurface();
-  if (surface_record == nullptr || surface_record->last_tree == nullptr) {
+  ViewRecord* view_record = GetFirstViewRecord();
+  if (view_record == nullptr || view_record->last_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
-  return ScreenshotLayerTree(type, base64_encode, *surface_record);
+  return ScreenshotLayerTree(type, base64_encode, *view_record);
 }
 
 Rasterizer::Screenshot Rasterizer::ScreenshotLayerTree(
     ScreenshotType type,
     bool base64_encode,
-    SurfaceRecord& surface_record) {
-  auto* layer_tree = surface_record.last_tree.get();
+    ViewRecord& view_record) {
+  auto* layer_tree = view_record.last_tree.get();
 
   sk_sp<SkData> data = nullptr;
   std::string format;

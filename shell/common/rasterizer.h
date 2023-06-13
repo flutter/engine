@@ -207,8 +207,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Add a surface, implicit or not.
-  void AddSurface(int64_t view_id,
-                  std::shared_ptr<ExternalViewEmbedder> view_embedder);
+  void AddView(int64_t view_id,
+               std::shared_ptr<ExternalViewEmbedder> view_embedder);
 
   void RemoveSurface(int64_t view_id);
 
@@ -508,9 +508,9 @@ class Rasterizer final : public SnapshotDelegate,
     std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
 
-  struct SurfaceRecord {
-    SurfaceRecord(int64_t view_id,
-                  std::shared_ptr<ExternalViewEmbedder> view_embedder)
+  struct ViewRecord {
+    ViewRecord(int64_t view_id,
+               std::shared_ptr<ExternalViewEmbedder> view_embedder)
         : view_id(view_id), view_embedder(std::move(view_embedder)) {}
 
     int64_t view_id;
@@ -528,17 +528,17 @@ class Rasterizer final : public SnapshotDelegate,
     float last_pixel_ratio;
   };
 
-  SurfaceRecord* GetSurfaceRecord(int64_t view_id) {
-    auto found_surface = surfaces_.find(view_id);
-    if (found_surface == surfaces_.end()) {
+  ViewRecord* GetViewRecord(int64_t view_id) {
+    auto found_surface = view_records.find(view_id);
+    if (found_surface == view_records.end()) {
       return nullptr;
     }
     return &found_surface->second;
   }
 
-  SurfaceRecord* GetFirstSurface() {
+  ViewRecord* GetFirstViewRecord() {
     // TODO(dkwingsmt)
-    return GetSurfaceRecord(0ll);
+    return GetViewRecord(0ll);
   }
 
   // |SnapshotDelegate|
@@ -604,16 +604,16 @@ class Rasterizer final : public SnapshotDelegate,
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree* layer_tree,
                              float device_pixel_ratio,
-                             SurfaceRecord* surface_record);
+                             ViewRecord* view_record);
 
   RasterStatus DrawToSurfaceUnsafe(FrameTimingsRecorder& frame_timings_recorder,
                                    flutter::LayerTree* layer_tree,
                                    float device_pixel_ratio,
-                                   SurfaceRecord* surface_record);
+                                   ViewRecord* view_record);
 
   Screenshot ScreenshotLayerTree(ScreenshotType type,
                                  bool base64_encode,
-                                 SurfaceRecord& surface_record);
+                                 ViewRecord& view_record);
 
   void FireNextFrameCallbackIfPresent();
 
@@ -626,7 +626,7 @@ class Rasterizer final : public SnapshotDelegate,
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
   std::unique_ptr<Surface> surface_;
-  std::unordered_map<int64_t, SurfaceRecord> surfaces_;
+  std::unordered_map<int64_t, ViewRecord> view_records;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   fml::closure next_frame_callback_;

@@ -821,7 +821,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(surface), supports_thread_merging);
-          rasterizer->AddSurface(kFlutterDefaultViewId, view_embedder);
+          rasterizer->AddView(kFlutterDefaultViewId, view_embedder);
         }
 
         waiting_for_first_frame.store(true);
@@ -2015,10 +2015,10 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddRenderSurface(
+void Shell::AddView(
     int64_t view_id,
     std::unique_ptr<ExternalViewEmbedder> external_view_embedder) {
-  TRACE_EVENT0("flutter", "Shell::AddRenderSurface");
+  TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   if (view_id == kFlutterDefaultViewId) {
@@ -2039,13 +2039,13 @@ void Shell::AddRenderSurface(
         if (rasterizer) {
           std::shared_ptr<ExternalViewEmbedder> view_embedder(
               view_embedder_ptr);
-          rasterizer->AddSurface(view_id, view_embedder);
+          rasterizer->AddView(view_id, view_embedder);
         }
       }));
 }
 
-void Shell::RemoveRenderSurface(int64_t view_id) {
-  TRACE_EVENT0("flutter", "Shell::RemoveRenderSurface");
+void Shell::RemoveView(int64_t view_id) {
+  TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 

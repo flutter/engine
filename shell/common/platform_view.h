@@ -686,7 +686,7 @@ class PlatformView {
 
   /// @brief Returns the external view embedder for the implicit view.
   ///        Those of non-implicit views should be set by
-  ///        Shell::AddRenderSurface.
+  ///        Shell::AddView.
   virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
 
   /// Whether the embedder should support dynamic thread merging.

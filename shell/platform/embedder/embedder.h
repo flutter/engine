@@ -1631,7 +1631,7 @@ typedef struct {
 typedef struct {
   int64_t view_id;
   FlutterCompositor* compositor;
-} FlutterRenderSurfaceConfig;
+} FlutterAddViewInfo;
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLocale).
@@ -2264,14 +2264,14 @@ FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineAddRenderSurface(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    FlutterRenderSurfaceConfig* config);
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         FlutterAddViewInfo* config);
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineRemoveRenderSurface(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    int64_t view_id);
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            int64_t view_id);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
@@ -2848,10 +2848,10 @@ typedef FlutterEngineResult (*FlutterEngineDeinitializeFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
-typedef FlutterEngineResult (*FlutterEngineAddRenderSurfaceFnPtr)(
+typedef FlutterEngineResult (*FlutterEngineAddViewFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    FlutterRenderSurfaceConfig* config);
-typedef FlutterEngineResult (*FlutterEngineRemoveRenderSurfaceFnPtr)(
+    FlutterAddViewInfo* config);
+typedef FlutterEngineResult (*FlutterEngineRemoveViewFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t view_id);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
@@ -2964,7 +2964,8 @@ typedef struct {
   FlutterEngineInitializeFnPtr Initialize;
   FlutterEngineDeinitializeFnPtr Deinitialize;
   FlutterEngineRunInitializedFnPtr RunInitialized;
-  FlutterEngineAddRenderSurfaceFnPtr AddRenderSurface;
+  FlutterEngineAddViewFnPtr AddView;
+  FlutterEngineRemoveViewFnPtr RemoveView;
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
   FlutterEngineSendKeyEventFnPtr SendKeyEvent;

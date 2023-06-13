@@ -302,10 +302,9 @@ class Shell final : public PlatformView::Delegate,
   ///         is created in OnPlatformViewCreated.
   /// @param view_id
   /// @param external_view_embedder Must not be null.
-  void AddRenderSurface(
-      int64_t view_id,
-      std::unique_ptr<ExternalViewEmbedder> external_view_embedder);
-  void RemoveRenderSurface(int64_t view_id);
+  void AddView(int64_t view_id,
+               std::unique_ptr<ExternalViewEmbedder> external_view_embedder);
+  void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data
