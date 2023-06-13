@@ -100,7 +100,7 @@ f16vec4 IPHalfSampleWithTileMode(f16sampler2D tex,
     return f16vec4(0.0hf);
   }
 
-  return texture(tex, coords, kDefaultMipBiasHalf);
+  return f16vec4(texture(tex, coords, kDefaultMipBiasHalf));
 }
 
 /// Sample a texture, emulating a specific tile mode.
@@ -139,7 +139,7 @@ f16vec4 IPHalfSampleDecal(f16sampler2D texture_sampler, vec2 coords) {
       any(greaterThanEqual(coords, vec2(1)))) {
     return f16vec4(0.0);
   }
-  return texture(texture_sampler, coords, kDefaultMipBiasHalf);
+  return f16vec4(texture(texture_sampler, coords, kDefaultMipBiasHalf));
 }
 
 /// Sample a texture, emulating a specific tile mode.
