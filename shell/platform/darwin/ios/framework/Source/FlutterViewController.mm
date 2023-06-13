@@ -1706,8 +1706,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       animationCallback.get()(keyboardAnimationTargetTime);
     });
   };
+
+  flutter::Shell& shell = [_engine shell];
   _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:[_engine.get() uiTaskRunner] callback:uiCallback];
+      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetUITaskRunner()
+                                     callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
 }
