@@ -82,6 +82,8 @@ class DlRegion {
     ~SpanBuffer();
 
    private:
+    void setChunkSize(SpanChunkHandle handle, size_t size);
+
     size_t capacity_ = 0;
     size_t size_ = 0;
 

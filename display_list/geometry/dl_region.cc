@@ -37,7 +37,7 @@ DlRegion::SpanChunkHandle DlRegion::SpanBuffer::storeChunk(const Span* begin,
   }
   SpanChunkHandle res = size_;
   size_ += chunk_size + 1;
-  spans_[res].left = chunk_size;
+  setChunkSize(res, chunk_size);
 
   auto* dst = spans_ + res + 1;
   memmove(dst, begin, chunk_size * sizeof(Span));
@@ -50,13 +50,17 @@ size_t DlRegion::SpanBuffer::getChunkSize(SpanChunkHandle handle) const {
   return spans_[handle].left;
 }
 
+void DlRegion::SpanBuffer::setChunkSize(SpanChunkHandle handle, size_t size) {
+  FML_DCHECK(handle < size_);
+  spans_[handle].left = size;
+}
+
 void DlRegion::SpanBuffer::getSpans(SpanChunkHandle handle,
                                     const DlRegion::Span*& begin,
                                     const DlRegion::Span*& end) const {
   FML_DCHECK(handle < size_);
-  auto& info = spans_[handle];
   begin = spans_ + handle + 1;
-  end = begin + info.left;
+  end = begin + getChunkSize(handle);
 }
 
 DlRegion::DlRegion(const std::vector<SkIRect>& rects) {
