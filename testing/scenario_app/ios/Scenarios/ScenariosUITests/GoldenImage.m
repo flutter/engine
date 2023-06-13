@@ -114,7 +114,7 @@ NS_INLINE NSString* _platformName() {
   char* answer = malloc(size);
   sysctlbyname("hw.model", answer, &size, NULL, 0);
 
-  NSString* results = [NSString stringWithUTF8String:answer encoding];
+  NSString* results = [NSString stringWithUTF8String:answer];
   free(answer);
   return results;
 }
