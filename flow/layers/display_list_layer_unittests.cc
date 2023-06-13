@@ -318,8 +318,8 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
                               &paint_context(), false);
 
   DisplayListBuilder expected_root_canvas(true);
-  context->raster_cache->Draw(display_list_layer->caching_key_id(),
-                              expected_root_canvas, nullptr, true);
+  ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
+                                          expected_root_canvas, nullptr, true));
   auto root_canvas_dl = expected_root_canvas.Build();
   const auto root_canvas_rects =
       root_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
@@ -329,8 +329,9 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
 
   DisplayListBuilder expected_overlay_canvas(true);
-  context->raster_cache->Draw(display_list_layer->caching_key_id(),
-                              expected_overlay_canvas, nullptr, false);
+  ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
+                                          expected_overlay_canvas, nullptr,
+                                          false));
   auto overlay_canvas_dl = expected_overlay_canvas.Build();
   const auto overlay_canvas_rects =
       overlay_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
