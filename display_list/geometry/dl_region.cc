@@ -603,7 +603,7 @@ bool DlRegion::intersects(const SkIRect& rect) const {
     const Span *begin, *end;
     span_buffer_.getSpans(it->chunk_handle, begin, end);
     while (begin != end && begin->left < rect.fRight) {
-      if (begin->right > rect.fLeft && begin->left < rect.fRight) {
+      if (begin->right > rect.fLeft) {
         return true;
       }
       ++begin;
