@@ -9,15 +9,20 @@
 #extension GL_AMD_gpu_shader_half_float_fetch : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
-// OpenGLES 2 targets GLSL ES 1.0, which doesn't support explicit arithmetic
-// types on individual declarations. So for GLES, we set the float types to
-// `mediump` by default and provide macros for 16 bit types to keep writing
-// cross API shaders easy.
-
 #ifdef IMPELLER_TARGET_OPENGLES
 
-precision mediump sampler2D;
-precision mediump float;
+// OpenGLES 2 targets GLSL ES 1.0, which doesn't support explicit arithmetic
+// types on individual declarations. So for GLES, we provide macros for 16 bit
+// types to keep writing cross API shaders easy.
+//
+// By default, OpenGLES sets the floating point precision to `highp` for vertex
+// shaders and `mediump` for fragment shaders. Fragment shader samplers are set
+// to `lowp` by default. Individual shaders may explicitly declare the
+// precision for all declarations in the shader.
+//
+// For example:
+//  precision mediump sampler2D;
+//  precision mediump float;
 
 #define float16_t float
 #define f16vec2 vec2
@@ -26,7 +31,13 @@ precision mediump float;
 #define f16mat4 mat4
 #define f16sampler2D sampler2D
 
-#endif  // IMPELLER_TARGET_METAL
+#elif IMPELLER_TARGET_VULKAN
+
+// Vulkan does not support 16 bit floating point samplers.
+// https://registry.khronos.org/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-StandaloneSpirv-OpTypeImage-04656
+#define f16sampler2D sampler2D
+
+#endif
 
 #define BoolF float
 #define BoolV2 vec2
