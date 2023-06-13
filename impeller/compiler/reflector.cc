@@ -413,6 +413,9 @@ std::vector<size_t> Reflector::ComputeOffsets(
     offsets[location] = (type.width * type.vecsize) / 8;
   }
   for (size_t i = 1; i < resources.size(); i++) {
+    offsets[i] += offsets[i - 1];
+  }
+  for (size_t i = resources.size() - 1; i > 0; i--) {
     offsets[i] = offsets[i - 1];
   }
   if (resources.size() > 0) {
