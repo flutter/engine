@@ -418,7 +418,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 static void SetViewportAndScissor(
     const Command& command,
     const vk::CommandBuffer& cmd_buffer,
-    CommandBufferCache<vk::CommandBuffer>& cmd_buffer_cache,
+    PassBindingsCache<vk::CommandBuffer>& cmd_buffer_cache,
     const ISize& target_size) {
   // Set the viewport.
   const auto& vp = command.viewport.value_or<Viewport>(
@@ -444,7 +444,7 @@ static bool EncodeCommand(
     const Context& context,
     const Command& command,
     CommandEncoderVK& encoder,
-    CommandBufferCache<vk::CommandBuffer>& command_buffer_cache,
+    PassBindingsCache<vk::CommandBuffer>& command_buffer_cache,
     const ISize& target_size) {
   if (command.vertex_count == 0u || command.instance_count == 0u) {
     return true;
@@ -623,7 +623,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         continue;
       }
 
-      if (!EncodeCommand(context, command, *encoder, command_buffer_cache_,
+      if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
                          target_size)) {
         return false;
       }

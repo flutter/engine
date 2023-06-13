@@ -5,8 +5,8 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/backend/vulkan/command_buffer_cache.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -27,7 +27,7 @@ class RenderPassVK final : public RenderPass {
   std::weak_ptr<CommandEncoderVK> encoder_;
   std::string debug_label_;
   bool is_valid_ = false;
-  mutable CommandBufferCache<vk::CommandBuffer> command_buffer_cache_;
+  mutable PassBindingsCache<vk::CommandBuffer> pass_bindings_cache_;
 
   RenderPassVK(const std::shared_ptr<const Context>& context,
                const RenderTarget& target,

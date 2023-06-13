@@ -11,7 +11,7 @@
 namespace impeller {
 
 template <typename CommandBuffer>
-class CommandBufferCache {
+class PassBindingsCache {
  public:
   void bindPipeline(CommandBuffer command_buffer,
                     vk::PipelineBindPoint pipeline_bind_point,

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
-#include "impeller/renderer/backend/vulkan/command_buffer_cache.h"
+#include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
 
 namespace impeller {
 namespace testing {
@@ -45,8 +45,8 @@ class MockCommandBuffer {
 };
 }  // namespace
 
-TEST(CommandBufferCacheTest, bindPipeline) {
-  CommandBufferCache<MockCommandBuffer> cache;
+TEST(PassBindingsCacheTest, bindPipeline) {
+  PassBindingsCache<MockCommandBuffer> cache;
   MockCommandBuffer buffer;
   VkPipeline vk_pipeline = reinterpret_cast<VkPipeline>(0xfeedface);
   vk::Pipeline pipeline(vk_pipeline);
@@ -57,8 +57,8 @@ TEST(CommandBufferCacheTest, bindPipeline) {
   ASSERT_EQ(buffer.tallies_->bindPipeline_count, 1);
 }
 
-TEST(CommandBufferCacheTest, setStencilReference) {
-  CommandBufferCache<MockCommandBuffer> cache;
+TEST(PassBindingsCacheTest, setStencilReference) {
+  PassBindingsCache<MockCommandBuffer> cache;
   MockCommandBuffer buffer;
   ASSERT_EQ(buffer.tallies_->setStencilReference_count, 0);
   cache.setStencilReference(
@@ -69,8 +69,8 @@ TEST(CommandBufferCacheTest, setStencilReference) {
   ASSERT_EQ(buffer.tallies_->setStencilReference_count, 1);
 }
 
-TEST(CommandBufferCacheTest, setScissor) {
-  CommandBufferCache<MockCommandBuffer> cache;
+TEST(PassBindingsCacheTest, setScissor) {
+  PassBindingsCache<MockCommandBuffer> cache;
   MockCommandBuffer buffer;
   vk::Rect2D scissors;
   ASSERT_EQ(buffer.tallies_->setScissor_count, 0);
@@ -80,8 +80,8 @@ TEST(CommandBufferCacheTest, setScissor) {
   ASSERT_EQ(buffer.tallies_->setScissor_count, 1);
 }
 
-TEST(CommandBufferCacheTest, setViewport) {
-  CommandBufferCache<MockCommandBuffer> cache;
+TEST(PassBindingsCacheTest, setViewport) {
+  PassBindingsCache<MockCommandBuffer> cache;
   MockCommandBuffer buffer;
   vk::Viewport viewports;
   ASSERT_EQ(buffer.tallies_->setViewport_count, 0);
