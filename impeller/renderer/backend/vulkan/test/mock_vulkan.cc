@@ -10,8 +10,9 @@ namespace testing {
 namespace {
 
 struct MockCommandBuffer {
-  MockCommandBuffer(std::shared_ptr<std::vector<std::string>> called_functions)
-      : called_functions_(called_functions) {}
+  explicit MockCommandBuffer(
+      std::shared_ptr<std::vector<std::string>> called_functions)
+      : called_functions_(std::move(called_functions)) {}
   std::shared_ptr<std::vector<std::string>> called_functions_;
 };
 
