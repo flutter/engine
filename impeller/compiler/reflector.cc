@@ -406,6 +406,9 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
 std::vector<size_t> Reflector::ComputeOffsets(
     const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const {
   std::vector<size_t> offsets(resources.size());
+  if (resources.size() == 0) {
+    return offsets;
+  }
   for (const auto& resource : resources) {
     const auto type = compiler_->get_type(resource.type_id);
     auto location = compiler_->get_decoration(
@@ -418,9 +421,7 @@ std::vector<size_t> Reflector::ComputeOffsets(
   for (size_t i = resources.size() - 1; i > 0; i--) {
     offsets[i] = offsets[i - 1];
   }
-  if (resources.size() > 0) {
-    offsets[0] = 0;
-  }
+  offsets[0] = 0;
 
   return offsets;
 }
