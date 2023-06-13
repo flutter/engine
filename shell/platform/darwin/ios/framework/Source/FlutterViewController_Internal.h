@@ -43,9 +43,10 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
 /**
  * @brief Whether the status bar is preferred hidden.
  *
- *        The |UIViewController:prefersStatusBarHidden| of this ViewController is overriden and
- * returns `flutterPrefersStatusBarHidden`. This is ignored when
- * `UIViewControllerBasedStatusBarAppearance` in info.plist of the app project is `false`.
+ *        This overrides the |UIViewController:prefersStatusBarHidden| of this
+ *        ViewController is overriden.
+ *        This is ignored when `UIViewControllerBasedStatusBarAppearance` in info.plist
+ *        of the app project is `false`.
  */
 @property(nonatomic, assign, readwrite) BOOL prefersStatusBarHidden;
 
