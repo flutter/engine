@@ -40,7 +40,7 @@ using namespace flutter;
 /**
  * @brief Whether the status bar appearance is based on the style preferred for this ViewController.
  *
- *        The default value is true.
+ *        The default value is YES.
  *        Explicitly add `UIViewControllerBasedStatusBarAppearance` as `false` in
  *        info.plist makes this value to be false.
  */
@@ -60,6 +60,13 @@ using namespace flutter;
 
   if (self) {
     _engine = engine;
+    NSObject* infoValue = [[NSBundle mainBundle]
+        objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+    if (infoValue!= nil && ![infoValue isKindOfClass:[NSNumber class]]) {
+      FML_LOG(ERROR) << "The value of UIViewControllerBasedStatusBarAppearance in info.plist must be a Boolean type.";
+    }
+#endif
     NSNumber* infoValue = [[NSBundle mainBundle]
         objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
     _enableViewControllerBasedStatusBarAppearance = (infoValue == nil || [infoValue boolValue]);
