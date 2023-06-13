@@ -72,9 +72,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   if (enable_impeller) {
-    // TODO(gaaclarke): We need to devise a more complete heuristic about what
-    //                  backend to use by default.
-    // Default value is Vulkan with gles fallback.
+    // Default value is Vulkan with GLES fallback.
     AndroidRenderingAPI backend = AndroidRenderingAPI::kAutoselect;
     if (impeller_backend.has_value()) {
       if (impeller_backend.value() == "opengles") {
