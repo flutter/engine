@@ -10,7 +10,6 @@
 #include <optional>
 #include <set>
 #include <sstream>
-#include <iostream>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
@@ -407,21 +406,18 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
 std::vector<size_t> Reflector::ComputeOffsets(
     const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const {
   std::vector<size_t> offsets(resources.size());
-
   for (const auto& resource : resources) {
     const auto type = compiler_->get_type(resource.type_id);
     auto location = compiler_->get_decoration(
         resource.id, spv::Decoration::DecorationLocation);
-    if (location < 0 || location >= resources.size()) {
-      std::cerr << "Bad size: " << location << std::endl;
-    } else {
-      offsets[location] = (type.width * type.vecsize) / 8;
-    }
+    offsets[location] = (type.width * type.vecsize) / 8;
   }
   for (size_t i = 1; i < resources.size(); i++) {
     offsets[i] = offsets[i - 1];
   }
-  offsets[0] = 0;
+  if (resources.size() > 0) {
+    offsets[0] = 0;
+  }
 
   return offsets;
 }
