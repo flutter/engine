@@ -3,92 +3,91 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
+#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
+#include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 
 namespace impeller {
 namespace testing {
 
 namespace {
-struct Tallies {
-  int32_t bindPipeline_count = 0;
-  int32_t setStencilReference_count = 0;
-  int32_t setScissor_count = 0;
-  int32_t setViewport_count = 0;
-};
-
-class MockCommandBuffer {
- public:
-  MockCommandBuffer() : tallies_(new Tallies()) {}
-
-  void bindPipeline(vk::PipelineBindPoint pipeline_bind_point,
-                    vk::Pipeline pipeline) {
-    tallies_->bindPipeline_count += 1;
+int32_t CountStringViewInstances(const std::vector<std::string>& strings,
+                                 std::string_view target) {
+  int32_t count = 0;
+  for (const std::string& str : strings) {
+    if (str == target) {
+      count++;
+    }
   }
-
-  void setStencilReference(vk::StencilFaceFlags face_mask, uint32_t reference) {
-    tallies_->setStencilReference_count += 1;
-  }
-
-  void setScissor(uint32_t first_scissor,
-                  uint32_t scissor_count,
-                  const vk::Rect2D* scissors) {
-    tallies_->setScissor_count += 1;
-  }
-
-  void setViewport(uint32_t first_viewport,
-                   uint32_t viewport_count,
-                   const vk::Viewport* viewports) {
-    tallies_->setViewport_count += 1;
-  }
-
-  std::shared_ptr<Tallies> tallies_;
-};
+  return count;
+}
 }  // namespace
 
 TEST(PassBindingsCacheTest, bindPipeline) {
-  PassBindingsCache<MockCommandBuffer> cache;
-  MockCommandBuffer buffer;
+  auto context = CreateMockVulkanContext();
+  PassBindingsCache cache;
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
+  auto buffer = encoder.GetCommandBuffer();
   VkPipeline vk_pipeline = reinterpret_cast<VkPipeline>(0xfeedface);
   vk::Pipeline pipeline(vk_pipeline);
-  ASSERT_EQ(buffer.tallies_->bindPipeline_count, 0);
   cache.bindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
-  ASSERT_EQ(buffer.tallies_->bindPipeline_count, 1);
   cache.bindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
-  ASSERT_EQ(buffer.tallies_->bindPipeline_count, 1);
+  std::shared_ptr<std::vector<std::string>> functions =
+      GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdBindPipeline"), 1);
 }
 
 TEST(PassBindingsCacheTest, setStencilReference) {
-  PassBindingsCache<MockCommandBuffer> cache;
-  MockCommandBuffer buffer;
-  ASSERT_EQ(buffer.tallies_->setStencilReference_count, 0);
+  auto context = CreateMockVulkanContext();
+  PassBindingsCache cache;
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
+  auto buffer = encoder.GetCommandBuffer();
   cache.setStencilReference(
       buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack, 123);
-  ASSERT_EQ(buffer.tallies_->setStencilReference_count, 1);
   cache.setStencilReference(
       buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack, 123);
-  ASSERT_EQ(buffer.tallies_->setStencilReference_count, 1);
+  std::shared_ptr<std::vector<std::string>> functions =
+      GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdSetStencilReference"),
+            1);
 }
 
 TEST(PassBindingsCacheTest, setScissor) {
-  PassBindingsCache<MockCommandBuffer> cache;
-  MockCommandBuffer buffer;
+  auto context = CreateMockVulkanContext();
+  PassBindingsCache cache;
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
+  auto buffer = encoder.GetCommandBuffer();
   vk::Rect2D scissors;
-  ASSERT_EQ(buffer.tallies_->setScissor_count, 0);
   cache.setScissor(buffer, 0, 1, &scissors);
-  ASSERT_EQ(buffer.tallies_->setScissor_count, 1);
   cache.setScissor(buffer, 0, 1, &scissors);
-  ASSERT_EQ(buffer.tallies_->setScissor_count, 1);
+  std::shared_ptr<std::vector<std::string>> functions =
+      GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdSetScissor"), 1);
 }
 
 TEST(PassBindingsCacheTest, setViewport) {
-  PassBindingsCache<MockCommandBuffer> cache;
-  MockCommandBuffer buffer;
+  auto context = CreateMockVulkanContext();
+  PassBindingsCache cache;
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
+  auto buffer = encoder.GetCommandBuffer();
   vk::Viewport viewports;
-  ASSERT_EQ(buffer.tallies_->setViewport_count, 0);
   cache.setViewport(buffer, 0, 1, &viewports);
-  ASSERT_EQ(buffer.tallies_->setViewport_count, 1);
   cache.setViewport(buffer, 0, 1, &viewports);
-  ASSERT_EQ(buffer.tallies_->setViewport_count, 1);
+  std::shared_ptr<std::vector<std::string>> functions =
+      GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdSetViewport"), 1);
 }
 
 }  // namespace testing

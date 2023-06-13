@@ -27,7 +27,7 @@ class RenderPassVK final : public RenderPass {
   std::weak_ptr<CommandEncoderVK> encoder_;
   std::string debug_label_;
   bool is_valid_ = false;
-  mutable PassBindingsCache<vk::CommandBuffer> pass_bindings_cache_;
+  mutable PassBindingsCache pass_bindings_cache_;
 
   RenderPassVK(const std::shared_ptr<const Context>& context,
                const RenderTarget& target,
