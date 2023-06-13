@@ -5,7 +5,7 @@
 #include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
 
 namespace impeller {
-void PassBindingsCache::bindPipeline(vk::CommandBuffer command_buffer,
+void PassBindingsCache::BindPipeline(vk::CommandBuffer command_buffer,
                                      vk::PipelineBindPoint pipeline_bind_point,
                                      vk::Pipeline pipeline) {
   switch (pipeline_bind_point) {
@@ -29,7 +29,7 @@ void PassBindingsCache::bindPipeline(vk::CommandBuffer command_buffer,
   command_buffer.bindPipeline(pipeline_bind_point, pipeline);
 }
 
-void PassBindingsCache::setStencilReference(vk::CommandBuffer command_buffer,
+void PassBindingsCache::SetStencilReference(vk::CommandBuffer command_buffer,
                                             vk::StencilFaceFlags face_mask,
                                             uint32_t reference) {
   if (stencil_face_flags_.has_value() &&
@@ -42,7 +42,7 @@ void PassBindingsCache::setStencilReference(vk::CommandBuffer command_buffer,
   command_buffer.setStencilReference(face_mask, reference);
 }
 
-void PassBindingsCache::setScissor(vk::CommandBuffer command_buffer,
+void PassBindingsCache::SetScissor(vk::CommandBuffer command_buffer,
                                    uint32_t first_scissor,
                                    uint32_t scissor_count,
                                    const vk::Rect2D* scissors) {
@@ -55,7 +55,7 @@ void PassBindingsCache::setScissor(vk::CommandBuffer command_buffer,
   command_buffer.setScissor(first_scissor, scissor_count, scissors);
 }
 
-void PassBindingsCache::setViewport(vk::CommandBuffer command_buffer,
+void PassBindingsCache::SetViewport(vk::CommandBuffer command_buffer,
                                     uint32_t first_viewport,
                                     uint32_t viewport_count,
                                     const vk::Viewport* viewports) {

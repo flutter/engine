@@ -428,7 +428,7 @@ static void SetViewportAndScissor(const Command& command,
                               .setY(vp.rect.size.height)
                               .setMinDepth(0.0f)
                               .setMaxDepth(1.0f);
-  cmd_buffer_cache.setViewport(cmd_buffer, 0, 1, &viewport);
+  cmd_buffer_cache.SetViewport(cmd_buffer, 0, 1, &viewport);
 
   // Set the scissor rect.
   const auto& sc = command.scissor.value_or(IRect::MakeSize(target_size));
@@ -436,7 +436,7 @@ static void SetViewportAndScissor(const Command& command,
       vk::Rect2D()
           .setOffset(vk::Offset2D(sc.origin.x, sc.origin.y))
           .setExtent(vk::Extent2D(sc.size.width, sc.size.height));
-  cmd_buffer_cache.setScissor(cmd_buffer, 0, 1, &scissor);
+  cmd_buffer_cache.SetScissor(cmd_buffer, 0, 1, &scissor);
 }
 
 static bool EncodeCommand(const Context& context,
@@ -468,14 +468,14 @@ static bool EncodeCommand(const Context& context,
     return false;
   }
 
-  command_buffer_cache.bindPipeline(
+  command_buffer_cache.BindPipeline(
       cmd_buffer, vk::PipelineBindPoint::eGraphics, pipeline_vk.GetPipeline());
 
   // Set the viewport and scissors.
   SetViewportAndScissor(command, cmd_buffer, command_buffer_cache, target_size);
 
   // Set the stencil reference.
-  command_buffer_cache.setStencilReference(
+  command_buffer_cache.SetStencilReference(
       cmd_buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
       command.stencil_reference);
 

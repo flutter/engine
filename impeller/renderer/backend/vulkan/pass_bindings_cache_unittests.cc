@@ -33,8 +33,8 @@ TEST(PassBindingsCacheTest, bindPipeline) {
   auto buffer = encoder.GetCommandBuffer();
   VkPipeline vk_pipeline = reinterpret_cast<VkPipeline>(0xfeedface);
   vk::Pipeline pipeline(vk_pipeline);
-  cache.bindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
-  cache.bindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
+  cache.BindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
+  cache.BindPipeline(buffer, vk::PipelineBindPoint::eGraphics, pipeline);
   std::shared_ptr<std::vector<std::string>> functions =
       GetMockVulkanFunctions(context->GetDevice());
   EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdBindPipeline"), 1);
@@ -48,9 +48,9 @@ TEST(PassBindingsCacheTest, setStencilReference) {
                            context->GetGraphicsQueue(), pool,
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
-  cache.setStencilReference(
+  cache.SetStencilReference(
       buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack, 123);
-  cache.setStencilReference(
+  cache.SetStencilReference(
       buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack, 123);
   std::shared_ptr<std::vector<std::string>> functions =
       GetMockVulkanFunctions(context->GetDevice());
@@ -67,8 +67,8 @@ TEST(PassBindingsCacheTest, setScissor) {
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   vk::Rect2D scissors;
-  cache.setScissor(buffer, 0, 1, &scissors);
-  cache.setScissor(buffer, 0, 1, &scissors);
+  cache.SetScissor(buffer, 0, 1, &scissors);
+  cache.SetScissor(buffer, 0, 1, &scissors);
   std::shared_ptr<std::vector<std::string>> functions =
       GetMockVulkanFunctions(context->GetDevice());
   EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdSetScissor"), 1);
@@ -83,8 +83,8 @@ TEST(PassBindingsCacheTest, setViewport) {
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   vk::Viewport viewports;
-  cache.setViewport(buffer, 0, 1, &viewports);
-  cache.setViewport(buffer, 0, 1, &viewports);
+  cache.SetViewport(buffer, 0, 1, &viewports);
+  cache.SetViewport(buffer, 0, 1, &viewports);
   std::shared_ptr<std::vector<std::string>> functions =
       GetMockVulkanFunctions(context->GetDevice());
   EXPECT_EQ(CountStringViewInstances(*functions, "vkCmdSetViewport"), 1);

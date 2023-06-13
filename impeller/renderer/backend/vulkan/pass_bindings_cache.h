@@ -12,20 +12,20 @@ namespace impeller {
 
 class PassBindingsCache {
  public:
-  void bindPipeline(vk::CommandBuffer command_buffer,
+  void BindPipeline(vk::CommandBuffer command_buffer,
                     vk::PipelineBindPoint pipeline_bind_point,
                     vk::Pipeline pipeline);
 
-  void setStencilReference(vk::CommandBuffer command_buffer,
+  void SetStencilReference(vk::CommandBuffer command_buffer,
                            vk::StencilFaceFlags face_mask,
                            uint32_t reference);
 
-  void setScissor(vk::CommandBuffer command_buffer,
+  void SetScissor(vk::CommandBuffer command_buffer,
                   uint32_t first_scissor,
                   uint32_t scissor_count,
                   const vk::Rect2D* scissors);
 
-  void setViewport(vk::CommandBuffer command_buffer,
+  void SetViewport(vk::CommandBuffer command_buffer,
                    uint32_t first_viewport,
                    uint32_t viewport_count,
                    const vk::Viewport* viewports);
