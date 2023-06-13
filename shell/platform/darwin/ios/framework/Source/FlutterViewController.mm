@@ -1695,24 +1695,20 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
 
-  flutter::Shell& shell = [_engine shell];
-
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
   fml::scoped_nsprotocol<FlutterKeyboardAnimationCallback> animationCallback(
       [keyboardAnimationCallback copy]);
   auto uiCallback = [animationCallback,
-                     &shell](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+                     engine = _engine](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
-    shell.GetTaskRunners().GetPlatformTaskRunner()->PostTask(
-        [animationCallback, keyboardAnimationTargetTime] {
-          animationCallback.get()(keyboardAnimationTargetTime);
-        });
+    [engine platformTaskRunner]->PostTask([animationCallback, keyboardAnimationTargetTime] {
+      animationCallback.get()(keyboardAnimationTargetTime);
+    });
   };
 
-  _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetUITaskRunner()
-                                     callback:uiCallback];
+  _keyboardAnimationVSyncClient = [[VSyncClient alloc] initWithTaskRunner:[_engine uiTaskRunner]
+                                                                 callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
 }

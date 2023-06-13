@@ -647,9 +647,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testHandleKeyboardNotification {
-  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
-  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
   // keyboard is empty
@@ -670,11 +670,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
   viewControllerMock.targetViewInsetBottom = 0;
   XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
-  OCMStub([mockEngine updateViewportMetrics:flutter::ViewportMetrics()])
-      .ignoringNonObjectArgs()
-      .andDo(^(NSInvocation* invocation) {
-        [expectation fulfill];
-      });
+  OCMStub([viewControllerMock updateViewportMetricsIfNeeded]).andDo(^(NSInvocation* invocation) {
+    [expectation fulfill];
+  });
 
   [viewControllerMock handleKeyboardNotification:notification];
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 320 * UIScreen.mainScreen.scale);
