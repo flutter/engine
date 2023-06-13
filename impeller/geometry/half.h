@@ -15,7 +15,7 @@
 
 #ifdef FML_OS_MACOSX
 using InternalHalf = _Float16;
-#elif
+#else
 using InternalHalf = uint16_t;
 #endif
 
