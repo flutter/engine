@@ -139,18 +139,11 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
         *new_span++ = *begin1++;
       } else if (begin2->right < begin1->left) {
         *new_span++ = *begin2++;
-      } else if (begin1->left < begin2->left) {
-        current_span = *begin1;
-        ++begin1;
-      } else if (begin2->left < begin1->left) {
-        current_span = *begin2;
-        ++begin2;
       } else {
-        FML_DCHECK(begin1->left == begin2->left);
-        current_span.left = begin1->left;
-        current_span.right = std::max(begin1->right, begin2->right);
-        ++begin1;
-        ++begin2;
+        current_span = {std::min(begin1->left, begin2->left),
+                        std::max(begin1->right, begin2->right)};
+        begin1++;
+        begin2++;
       }
     } else if (current_span.right >= begin1->left) {
       current_span.right = std::max(current_span.right, begin1->right);
@@ -159,8 +152,7 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
       current_span.right = std::max(current_span.right, begin2->right);
       ++begin2;
     } else {
-      *new_span = current_span;
-      ++new_span;
+      *new_span++ = current_span;
       current_span.left = current_span.right = 0;
     }
   }
