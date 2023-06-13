@@ -367,26 +367,14 @@ class HtmlViewEmbedder {
       'There should be the same number of picture recorders '
       '(${_context.pictureRecorders.length}) as overlays (${_overlays.length}).',
     );
+
     int pictureRecorderIndex = 0;
-
-    // Prime the SkSurface for rendering.
-    final SurfaceFrame frame = CanvasKitRenderer
-        .instance.rasterizer.offscreenSurface
-        .acquireFrame(_frameSize);
-
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
       if (_overlays[viewId] != null) {
-        // Render the picture to the canvas
-        _overlays[viewId]!.ensureSize(_frameSize);
-        final CkCanvas canvas = frame.skiaCanvas;
-        canvas.clear(const ui.Color(0x00000000));
-        canvas.drawPicture(
-          _context.pictureRecorders[pictureRecorderIndex].endRecording(),
-        );
-        frame.submit();
-        final DomImageBitmap bitmap = CanvasKitRenderer.instance.rasterizer.offscreenSurface.offscreenCanvas!.transferToImageBitmap();
-        _overlays[viewId]!.renderContext!.transferFromImageBitmap(bitmap);
+        CanvasKitRenderer.instance.rasterizer.rasterizeToCanvas(
+            _overlays[viewId]!,
+            _context.pictureRecorders[pictureRecorderIndex].endRecording());
         pictureRecorderIndex++;
       }
     }

@@ -4,7 +4,6 @@
 import 'package:meta/meta.dart';
 
 import '../../engine.dart';
-import 'render_canvas.dart';
 
 /// Caches canvases used to overlay platform views.
 class RenderCanvasFactory {

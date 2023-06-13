@@ -6,13 +6,6 @@ import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../frame_reference.dart';
-import 'canvas.dart';
-import 'embedded_views.dart';
-import 'layer_tree.dart';
-import 'render_canvas_factory.dart';
-import 'surface.dart';
-
 /// A class that can rasterize [LayerTree]s into a given [Surface].
 class Rasterizer {
   final CompositorContext context = CompositorContext();
@@ -20,10 +13,28 @@ class Rasterizer {
 
   /// This is an SkSurface backed by an OffScreenCanvas. This single Surface is
   /// used to render to many RenderCanvases to produce the rendered scene.
-  final Surface offscreenSurface = Surface();
+  final Surface _offscreenSurface = Surface();
+  ui.Size _currentFrameSize = ui.Size.zero;
+  late SurfaceFrame _currentFrame;
 
+  /// Render the given [picture] so it is displayed by the given [canvas].
+  void rasterizeToCanvas(RenderCanvas canvas, CkPicture picture) {
+    // Ensure the [canvas] is the correct size.
+    canvas.ensureSize(_currentFrameSize);
+
+    final CkCanvas skCanvas = _currentFrame.skiaCanvas;
+    skCanvas.clear(const ui.Color(0x00000000));
+    skCanvas.drawPicture(picture);
+    _currentFrame.submit();
+
+    final DomImageBitmap bitmap =
+        _offscreenSurface.offscreenCanvas!.transferToImageBitmap();
+    canvas.renderContext!.transferFromImageBitmap(bitmap);
+  }
+
+  /// Sets the maximum size of the Skia resource cache, in bytes.
   void setSkiaResourceCacheMaxBytes(int bytes) =>
-      offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
+      _offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
@@ -34,24 +45,22 @@ class Rasterizer {
         return;
       }
 
-      SurfaceFrame frame = offscreenSurface.acquireFrame(layerTree.frameSize);
-      RenderCanvasFactory.instance.baseCanvas.ensureSize(layerTree.frameSize);
-      HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
+      _currentFrameSize = layerTree.frameSize;
+      _currentFrame = _offscreenSurface.acquireFrame(_currentFrameSize);
+      RenderCanvasFactory.instance.baseCanvas.ensureSize(_currentFrameSize);
+      HtmlViewEmbedder.instance.frameSize = _currentFrameSize;
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-      pictureRecorder.beginRecording(ui.Offset.zero & layerTree.frameSize);
+      pictureRecorder.beginRecording(ui.Offset.zero & _currentFrameSize);
       pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-      final Frame compositorFrame =
-          context.acquireFrame(pictureRecorder.recordingCanvas!, HtmlViewEmbedder.instance);
+      final Frame compositorFrame = context.acquireFrame(
+          pictureRecorder.recordingCanvas!, HtmlViewEmbedder.instance);
 
       compositorFrame.raster(layerTree, ignoreRasterCache: true);
-      RenderCanvasFactory.instance.baseCanvas.addToScene();
 
-      final CkCanvas canvas = frame.skiaCanvas;
-      canvas.clear(const ui.Color(0x00000000));
-      canvas.drawPicture(pictureRecorder.endRecording());
-      frame.submit();
-      final DomImageBitmap bitmap = CanvasKitRenderer.instance.rasterizer.offscreenSurface.offscreenCanvas!.transferToImageBitmap();
-      RenderCanvasFactory.instance.baseCanvas.renderContext!.transferFromImageBitmap(bitmap);
+      RenderCanvasFactory.instance.baseCanvas.addToScene();
+      rasterizeToCanvas(RenderCanvasFactory.instance.baseCanvas,
+          pictureRecorder.endRecording());
+
       HtmlViewEmbedder.instance.submitFrame();
     } finally {
       _runPostFrameCallbacks();
