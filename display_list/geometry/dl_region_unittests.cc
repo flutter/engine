@@ -391,17 +391,16 @@ TEST(DisplayListRegion, TestAgainstSkRegion) {
       SkIRect rect =
           SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
       rects_in1.push_back(rect);
-      sk_region1.op(rect, SkRegion::kUnion_Op);
-
       rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
       rects_in2.push_back(rect);
-      sk_region2.op(rect, SkRegion::kUnion_Op);
     }
 
     DlRegion region1(rects_in1);
+    sk_region1.setRects(rects_in1.data(), rects_in1.size());
     CheckEquality(region1, sk_region1);
 
     DlRegion region2(rects_in2);
+    sk_region2.setRects(rects_in2.data(), rects_in2.size());
     CheckEquality(region2, sk_region2);
 
     auto intersects_1 = region1.intersects(region2);
