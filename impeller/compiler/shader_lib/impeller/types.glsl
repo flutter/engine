@@ -31,7 +31,7 @@
 #define f16mat4 mat4
 #define f16sampler2D sampler2D
 
-#elif IMPELLER_TARGET_VULKAN
+#elif defined(IMPELLER_TARGET_VULKAN)
 
 // Vulkan does not support 16 bit floating point samplers.
 // https://registry.khronos.org/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-StandaloneSpirv-OpTypeImage-04656
