@@ -55,18 +55,13 @@ void RasterCacheResult::draw(DlCanvas& canvas,
     // paint individual rects instead of the whole image.
     auto rects = rtree_->searchAndConsolidateRects(kGiantRect);
 
-    // Bounds of original display list.
-    SkRect rtree_bounds = SkRect::MakeEmpty();
+    canvas.Translate(bounds.fLeft, bounds.fTop);
+
+    SkRect rtree_bounds = rtree_->bounds();
     for (auto rect : rects) {
-      rtree_bounds.join(rect);
-    }
-    for (auto rect : rects) {
-      SkRect src(rect);
-      src.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
-      SkRect dst(src);
-      dst.offset(bounds.fLeft, bounds.fTop);
-      canvas.DrawImageRect(image_, src, dst, DlImageSampling::kNearestNeighbor,
-                           paint);
+      rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
+      canvas.DrawImageRect(image_, rect, rect,
+                           DlImageSampling::kNearestNeighbor, paint);
     }
   }
 }
