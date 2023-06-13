@@ -175,6 +175,28 @@ CapabilitiesVK::GetRequiredDeviceExtensions(
   if (exts.find("VK_KHR_portability_subset") != exts.end()) {
     required.push_back("VK_KHR_portability_subset");
   }
+
+  // Vulkan 1.1 core extensions for 16 bit buffer access.
+  if (exts.find("VK_KHR_get_physical_device_properties2") == exts.end()) {
+    VALIDATION_LOG << "Device does not support the "
+                      "VK_KHR_get_physical_device_properties2 extension.";
+    return std::nullopt;
+  }
+  required.push_back("VK_KHR_get_physical_device_properties2");
+  if (exts.find("VK_KHR_storage_buffer_storage_class") == exts.end()) {
+    VALIDATION_LOG << "Device does not support the "
+                      "VK_KHR_storage_buffer_storage_class extension.";
+    return std::nullopt;
+  }
+  required.push_back("VK_KHR_storage_buffer_storage_class");
+  if (exts.find("VK_KHR_16bit_storage") == exts.end()) {
+    VALIDATION_LOG << "Device does not support the "
+                      "VK_KHR_storage_buffer_storage_class extension.";
+    return std::nullopt;
+  }
+  required.push_back(
+      "VK_KHR_16bit_storage");  // Requires SPV_KHR_16bit_storage.
+
   return required;
 }
 
