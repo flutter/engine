@@ -19,7 +19,6 @@ import 'picture_recorder.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
 import 'renderer.dart';
-import 'surface.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
