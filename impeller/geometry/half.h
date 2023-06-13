@@ -13,10 +13,10 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
 
-#ifdef FML_OS_WIN
-using InternalHalf = uint16_t;
-#else
+#ifdef FML_OS_MACOSX
 using InternalHalf = _Float16;
+#elif
+using InternalHalf = uint16_t;
 #endif
 
 namespace impeller {
