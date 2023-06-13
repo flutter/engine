@@ -147,7 +147,9 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   return buffer->SubmitCommands();
 }
 
-void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
+void CanRenderTiledTexture(AiksTest* aiks_test,
+                           Entity::TileMode tile_mode,
+                           Matrix local_matrix = {}) {
   auto context = aiks_test->GetContext();
   ASSERT_TRUE(context);
   auto texture = aiks_test->CreateTextureForFixture("table_mountain_nx.png",
@@ -158,7 +160,7 @@ void CanRenderTiledTexture(AiksTest* aiks_test, Entity::TileMode tile_mode) {
   canvas.Translate({100.0f, 100.0f, 0});
   Paint paint;
   paint.color_source =
-      ColorSource::MakeImage(texture, tile_mode, tile_mode, {}, {});
+      ColorSource::MakeImage(texture, tile_mode, tile_mode, {}, local_matrix);
   paint.color = Color(1, 1, 1, 1);
   canvas.DrawRect({0, 0, 600, 600}, paint);
 
@@ -197,6 +199,11 @@ TEST_P(AiksTest, CanRenderTiledTextureMirror) {
 
 TEST_P(AiksTest, CanRenderTiledTextureDecal) {
   CanRenderTiledTexture(this, Entity::TileMode::kDecal);
+}
+
+TEST_P(AiksTest, CanRenderTiledTextureClampWithTranslate) {
+  CanRenderTiledTexture(this, Entity::TileMode::kClamp,
+                        Matrix::MakeTranslation({172.f, 172.f, 0.f}));
 }
 
 TEST_P(AiksTest, CanRenderImageRect) {
@@ -786,6 +793,37 @@ TEST_P(AiksTest, CanRenderConicalGradient) {
         std::get<2>(array[i]), std::get<3>(array[i]), Entity::TileMode::kClamp,
         {});
     canvas.DrawRect({0, 0, size, size}, paint);
+    canvas.Restore();
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderGradientDecalWithBackground) {
+  std::vector<Color> colors = {Color::MakeRGBA8(0xF4, 0x43, 0x36, 0xFF),
+                               Color::MakeRGBA8(0xFF, 0xEB, 0x3B, 0xFF),
+                               Color::MakeRGBA8(0x4c, 0xAF, 0x50, 0xFF),
+                               Color::MakeRGBA8(0x21, 0x96, 0xF3, 0xFF)};
+  std::vector<Scalar> stops = {0.0, 1.f / 3.f, 2.f / 3.f, 1.0};
+
+  std::array<ColorSource, 3> color_sources = {
+      ColorSource::MakeLinearGradient({0, 0}, {100, 100}, colors, stops,
+                                      Entity::TileMode::kDecal, {}),
+      ColorSource::MakeRadialGradient({100, 100}, 100, colors, stops,
+                                      Entity::TileMode::kDecal, {}),
+      ColorSource::MakeSweepGradient({100, 100}, Degrees(45), Degrees(135),
+                                     colors, stops, Entity::TileMode::kDecal,
+                                     {}),
+  };
+
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::White();
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 605, 205), paint);
+  for (int i = 0; i < 3; i++) {
+    canvas.Save();
+    canvas.Translate({i * 200.0f, 0, 0});
+    paint.color_source = color_sources[i];
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 200, 200), paint);
     canvas.Restore();
   }
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -2405,6 +2443,54 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
                     Entity::TileMode::kClamp, effect_transform);
               },
       });
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
+  // This case triggers the ForegroundPorterDuffBlend path. The color filter
+  // should apply to the color only, and respect the alpha mask.
+  Canvas canvas;
+  canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
+  canvas.DrawCircle({400, 400}, 200,
+                    {
+                        .color = Color::White(),
+                        .color_filter =
+                            [](const FilterInput::Ref& input) {
+                              return ColorFilterContents::MakeBlend(
+                                  BlendMode::kSource, {input}, Color::Green());
+                            },
+                        .mask_blur_descriptor =
+                            Paint::MaskBlurDescriptor{
+                                .style = FilterContents::BlurStyle::kNormal,
+                                .sigma = Radius(20),
+                            },
+                    });
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
+  // This case triggers the ForegroundAdvancedBlend path. The color filter
+  // should apply to the color only, and respect the alpha mask.
+  Canvas canvas;
+  canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
+  canvas.DrawCircle({400, 400}, 200,
+                    {
+                        .color = Color::White(),
+                        .color_filter =
+                            [](const FilterInput::Ref& input) {
+                              return ColorFilterContents::MakeBlend(
+                                  BlendMode::kColor, {input}, Color::Green());
+                            },
+                        .mask_blur_descriptor =
+                            Paint::MaskBlurDescriptor{
+                                .style = FilterContents::BlurStyle::kNormal,
+                                .sigma = Radius(20),
+                            },
+                    });
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
