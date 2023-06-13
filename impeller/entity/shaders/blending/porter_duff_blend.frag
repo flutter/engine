@@ -27,15 +27,15 @@ out f16vec4 frag_color;
 f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 // gles 2.0 is the only backend without native decal support.
 #ifdef IMPELLER_TARGET_OPENGLES
-  return IPSampleDecal(texture_sampler, texture_coords);
+  return IPHalfSampleDecal(texture_sampler, texture_coords);
 #else
-  return texture(texture_sampler, texture_coords);
+  return f16vec4(texture(texture_sampler, texture_coords));
 #endif
 }
 
 void main() {
-  f16vec4 dst =
-      texture(texture_sampler_dst, v_texture_coords) * frag_info.input_alpha;
+  f16vec4 dst = f16vec4(texture(texture_sampler_dst, v_texture_coords)) *
+                frag_info.input_alpha;
   f16vec4 src = frag_info.color;
   frag_color =
       src * (frag_info.src_coeff + dst.a * frag_info.src_coeff_dst_alpha) +

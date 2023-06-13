@@ -17,6 +17,6 @@ in vec2 v_texture_coords;
 out f16vec4 frag_color;
 
 void main() {
-  frag_color =
-      texture(texture_sampler_src, v_texture_coords) * frag_info.input_alpha;
+  frag_color = f16vec4(texture(texture_sampler_src, v_texture_coords)) *
+               frag_info.input_alpha;
 }

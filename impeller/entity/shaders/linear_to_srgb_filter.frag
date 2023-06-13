@@ -22,7 +22,7 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 input_color =
-      texture(input_texture, v_texture_coords) * frag_info.input_alpha;
+      f16vec4(texture(input_texture, v_texture_coords)) * frag_info.input_alpha;
 
   f16vec4 color = IPHalfUnpremultiply(input_color);
   for (int i = 0; i < 3; i++) {

@@ -31,7 +31,7 @@ void main() {
     yuv_offset.x = 16.0hf / 255.0hf;
   }
 
-  yuv.x = texture(y_texture, v_texture_coords).r;
-  yuv.yz = texture(uv_texture, v_texture_coords).rg;
+  yuv.x = float16_t(texture(y_texture, v_texture_coords).r);
+  yuv.yz = f16vec2(texture(uv_texture, v_texture_coords).rg);
   frag_color = f16mat4(frag_info.matrix) * f16vec4(yuv - yuv_offset, 1.0hf);
 }

@@ -16,6 +16,6 @@ in highp vec2 v_uv;
 out f16vec4 frag_color;
 
 void main() {
-  f16vec4 value = texture(glyph_atlas_sampler, v_uv);
+  f16vec4 value = f16vec4(texture(glyph_atlas_sampler, v_uv));
   frag_color = value * frag_info.text_color.aaaa;
 }

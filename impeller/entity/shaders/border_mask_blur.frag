@@ -40,7 +40,7 @@ float16_t BoxBlurMask(f16vec2 uv) {
 }
 
 void main() {
-  f16vec4 image_color = texture(texture_sampler, v_texture_coords);
+  f16vec4 image_color = f16vec4(texture(texture_sampler, v_texture_coords));
   float16_t blur_factor = BoxBlurMask(f16vec2(v_texture_coords));
 
   float16_t within_bounds =

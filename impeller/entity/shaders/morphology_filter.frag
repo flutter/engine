@@ -34,7 +34,7 @@ void main() {
 #ifdef IMPELLER_TARGET_OPENGLES
     f16vec4 color = IPHalfSampleDecal(texture_sampler, texture_coords);
 #else
-    f16vec4 color = texture(texture_sampler, texture_coords);
+    f16vec4 color = f16vec4(texture(texture_sampler, texture_coords));
 #endif
 
     if (frag_info.morph_type == kMorphTypeDilate) {
