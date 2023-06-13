@@ -36,7 +36,7 @@ RasterCacheResult::RasterCacheResult(sk_sp<DlImage> image,
 
 void RasterCacheResult::draw(DlCanvas& canvas,
                              const DlPaint* paint,
-                             bool is_root_canvas) const {
+                             bool preserve_rtree) const {
   DlAutoCanvasRestore auto_restore(&canvas, true);
 
   auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.GetTransform());
@@ -46,7 +46,7 @@ void RasterCacheResult::draw(DlCanvas& canvas,
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.TransformReset();
   flow_.Step();
-  if (is_root_canvas || !rtree_) {
+  if (!preserve_rtree || !rtree_) {
     canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
                      DlImageSampling::kNearestNeighbor, paint);
   } else {
@@ -174,7 +174,7 @@ bool RasterCache::HasEntry(const RasterCacheKeyID& id,
 bool RasterCache::Draw(const RasterCacheKeyID& id,
                        DlCanvas& canvas,
                        const DlPaint* paint,
-                       bool is_root_canvas) const {
+                       bool preserve_rtree) const {
   auto it = cache_.find(RasterCacheKey(id, canvas.GetTransform()));
   if (it == cache_.end()) {
     return false;
@@ -183,7 +183,7 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   Entry& entry = it->second;
 
   if (entry.image) {
-    entry.image->draw(canvas, paint, is_root_canvas);
+    entry.image->draw(canvas, paint, preserve_rtree);
     return true;
   }
 

@@ -37,7 +37,7 @@ class RasterCacheResult {
 
   virtual void draw(DlCanvas& canvas,
                     const DlPaint* paint,
-                    bool is_root_canvas) const;
+                    bool preserve_rtree) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
@@ -148,12 +148,15 @@ class RasterCache {
   // if the item was disabled due to conditions discovered during |Preroll|
   // or if the attempt to populate the entry failed due to bounds overflow
   // conditions.
-  // If |is_root_canvas| is false, the raster cache will preserve the original
-  // RTree of cached content.
+  // If |preserve_rtree| is true, the raster cache will preserve the original
+  // RTree of cached content by blitting individual rectangles from the cached
+  // image of the canvas according to the original layer R-Tree (if present).
+  // This is to ensure that the target surface R-Tree with be cloberred with
+  // one large blit as it can affect platform view overlays and hit testing.
   bool Draw(const RasterCacheKeyID& id,
             DlCanvas& canvas,
             const DlPaint* paint,
-            bool is_root_canvas = true) const;
+            bool preserve_rtree = false) const;
 
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 

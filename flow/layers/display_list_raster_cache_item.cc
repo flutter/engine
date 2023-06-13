@@ -134,7 +134,7 @@ bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
   }
   if (cache_state_ == CacheState::kCurrent) {
     return context.raster_cache->Draw(key_id_, *canvas, paint,
-                                      context.is_root_canvas);
+                                      context.rendering_above_platform_view);
   }
   return false;
 }
