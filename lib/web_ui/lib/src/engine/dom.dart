@@ -1086,10 +1086,12 @@ class DomImageBitmap {}
 @staticInterop
 class DomCanvasBitmapRendererContext {}
 
-extension DomCanvasBitmapRendererContextExtension on DomCanvasBitmapRendererContext {
+extension DomCanvasBitmapRendererContextExtension
+    on DomCanvasBitmapRendererContext {
   @JS('transferFromImageBitmap')
   external void _transferFromImageBitmap(JSAny? bitmap);
-  void transferFromImageBitmap(DomImageBitmap bitmap) => _transferFromImageBitmap(bitmap.toJSAnyShallow);
+  void transferFromImageBitmap(DomImageBitmap bitmap) =>
+      _transferFromImageBitmap(bitmap.toJSAnyShallow);
 }
 
 @JS()
@@ -1436,7 +1438,8 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response =
+        await mockHttpFetchResponseFactory!(url);
     if (response != null) {
       return response;
     }
@@ -1693,8 +1696,7 @@ class MockHttpFetchPayload implements HttpFetchPayload {
     while (currentIndex < totalLength) {
       final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
       final Uint8List chunk = Uint8List.sublistView(
-        _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize
-      );
+          _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize);
       callback(chunk.toJS as T);
       currentIndex += chunkSize;
     }
@@ -1704,10 +1706,12 @@ class MockHttpFetchPayload implements HttpFetchPayload {
   Future<ByteBuffer> asByteBuffer() async => _byteBuffer;
 
   @override
-  Future<dynamic> json() async => throw AssertionError('json not supported by mock');
+  Future<dynamic> json() async =>
+      throw AssertionError('json not supported by mock');
 
   @override
-  Future<String> text() async => throw AssertionError('text not supported by mock');
+  Future<String> text() async =>
+      throw AssertionError('text not supported by mock');
 }
 
 /// Indicates a missing HTTP payload when one was expected, such as when
@@ -2762,7 +2766,8 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
 
   @JS('transferToImageBitmap')
   external JSAny? _transferToImageBitmap();
-  DomImageBitmap transferToImageBitmap() => _transferToImageBitmap()! as DomImageBitmap;
+  DomImageBitmap transferToImageBitmap() =>
+      _transferToImageBitmap()! as DomImageBitmap;
 }
 
 DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
@@ -3331,8 +3336,8 @@ class DomSegments {}
 
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
-    final DomIterator segmentIterator =
-        js_util.callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
+    final DomIterator segmentIterator = js_util
+        .callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
 }
@@ -3469,10 +3474,8 @@ external JSAny? get _finalizationRegistryConstructor;
 // dart2js that causes a crash in the Google3 build if we do use a factory
 // constructor. See b/284478971
 DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
-  js_util.callConstructor(
-    _finalizationRegistryConstructor!.toObjectShallow,
-    <Object>[cleanup]
-  );
+    js_util.callConstructor(
+        _finalizationRegistryConstructor!.toObjectShallow, <Object>[cleanup]);
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
@@ -3481,11 +3484,12 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
   external JSVoid _register2(JSAny target, JSAny value, JSAny token);
   void register(Object target, Object value, [Object? token]) {
-      if (token != null) {
-        _register2(target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
-      } else {
-        _register1(target.toJSAnyShallow, value.toJSAnyShallow);
-      }
+    if (token != null) {
+      _register2(
+          target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
+    } else {
+      _register1(target.toJSAnyShallow, value.toJSAnyShallow);
+    }
   }
 
   @JS('unregister')
@@ -3496,3 +3500,8 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
+
+@JS('window.OffscreenCanvas')
+external JSAny? get _offscreenCanvasConstructor;
+
+bool browserSupportsOffscreenCanvas = _offscreenCanvasConstructor != null;

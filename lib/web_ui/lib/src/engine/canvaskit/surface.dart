@@ -24,8 +24,7 @@ typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
-  SurfaceFrame(this.skiaSurface, this.submitCallback)
-      : _submitted = false;
+  SurfaceFrame(this.skiaSurface, this.submitCallback) : _submitted = false;
 
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
@@ -33,7 +32,6 @@ class SurfaceFrame {
 
   /// Submit this frame to be drawn.
   bool submit() {
-
     if (_submitted) {
       return false;
     }
@@ -121,8 +119,11 @@ class Surface {
 
   /// This is only valid after the first frame or if [ensureSurface] has been
   /// called
-  bool get usingSoftwareBackend => _glContext == null ||
-      _grContext == null || webGLVersion == -1 || configuration.canvasKitForceCpuOnly;
+  bool get usingSoftwareBackend =>
+      _glContext == null ||
+      _grContext == null ||
+      webGLVersion == -1 ||
+      configuration.canvasKitForceCpuOnly;
 
   /// Ensure that the initial surface exists and has a size of at least [size].
   ///
@@ -185,8 +186,7 @@ class Surface {
 
       _createNewCanvas(size);
       _currentCanvasPhysicalSize = size;
-    } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
-    }
+    } else if (window.devicePixelRatio != _currentDevicePixelRatio) {}
 
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
@@ -222,15 +222,15 @@ class Surface {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
     if (offscreenCanvas != null) {
       offscreenCanvas!.removeEventListener(
-            'webglcontextrestored',
-            _cachedContextRestoredListener,
-            false,
-          );
+        'webglcontextrestored',
+        _cachedContextRestoredListener,
+        false,
+      );
       offscreenCanvas!.removeEventListener(
-            'webglcontextlost',
-            _cachedContextLostListener,
-            false,
-          );
+        'webglcontextlost',
+        _cachedContextLostListener,
+        false,
+      );
       offscreenCanvas = null;
       _cachedContextRestoredListener = null;
       _cachedContextLostListener = null;
@@ -240,6 +240,9 @@ class Surface {
     // we ensure that the rendred picture covers the entire browser window.
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
+    if (!browserSupportsOffscreenCanvas) {
+      throw Exception('OffscreenCanvas is not supported');
+    }
     final DomOffscreenCanvas htmlCanvas = createDomOffscreenCanvas(
       _pixelWidth,
       _pixelHeight,
@@ -252,7 +255,8 @@ class Surface {
     // notification. When we receive this notification we force a new context.
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
-    _cachedContextRestoredListener = createDomEventListener(_contextRestoredListener);
+    _cachedContextRestoredListener =
+        createDomEventListener(_contextRestoredListener);
     _cachedContextLostListener = createDomEventListener(_contextLostListener);
     htmlCanvas.addEventListener(
       'webglcontextlost',
@@ -315,13 +319,12 @@ class Surface {
           offscreenCanvas!, 'Failed to initialize WebGL context');
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
-        _grContext!,
-        size.width.roundToDouble(),
-        size.height.roundToDouble(),
-        SkColorSpaceSRGB,
-        _sampleCount,
-        _stencilBits
-      );
+          _grContext!,
+          size.width.roundToDouble(),
+          size.height.roundToDouble(),
+          SkColorSpaceSRGB,
+          _sampleCount,
+          _stencilBits);
 
       if (skSurface == null) {
         return _makeSoftwareCanvasSurface(
