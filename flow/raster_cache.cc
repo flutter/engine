@@ -57,8 +57,10 @@ void RasterCacheResult::draw(DlCanvas& canvas,
 
     canvas.Translate(bounds.fLeft, bounds.fTop);
 
-    SkRect rtree_bounds = rtree_->bounds();
+    SkRect rtree_bounds =
+        RasterCacheUtil::GetRoundedOutDeviceBounds(rtree_->bounds(), matrix);
     for (auto rect : rects) {
+      rect = RasterCacheUtil::GetRoundedOutDeviceBounds(rect, matrix);
       rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
       canvas.DrawImageRect(image_, rect, rect,
                            DlImageSampling::kNearestNeighbor, paint);

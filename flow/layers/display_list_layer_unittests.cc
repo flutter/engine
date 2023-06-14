@@ -307,17 +307,22 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   use_skia_raster_cache();
 
   auto context = preroll_context();
-  display_list_layer->Preroll(preroll_context());
-  EXPECT_EQ(context->renderable_state_flags, 0);
+  {
+    auto mutator = context->state_stack.save();
+    mutator.transform(SkMatrix::Scale(2.0, 2.0));
+    display_list_layer->Preroll(preroll_context());
+    EXPECT_EQ(context->renderable_state_flags, 0);
 
-  // Pump the DisplayListLayer until it is ready to cache its DL
-  display_list_layer->Preroll(preroll_context());
-  display_list_layer->Preroll(preroll_context());
-  display_list_layer->Preroll(preroll_context());
-  LayerTree::TryToRasterCache(*preroll_context()->raster_cached_entries,
-                              &paint_context(), false);
+    // Pump the DisplayListLayer until it is ready to cache its DL
+    display_list_layer->Preroll(preroll_context());
+    display_list_layer->Preroll(preroll_context());
+    display_list_layer->Preroll(preroll_context());
+    LayerTree::TryToRasterCache(*preroll_context()->raster_cached_entries,
+                                &paint_context(), false);
+  }
 
   DisplayListBuilder expected_root_canvas(true);
+  expected_root_canvas.Scale(2.0, 2.0);
   ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
                                           expected_root_canvas, nullptr,
                                           false));
@@ -325,11 +330,12 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   const auto root_canvas_rects =
       root_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
   std::list<SkRect> root_canvas_rects_expected = {
-      SkRect::MakeLTRB(13, 13, 28, 28),
+      SkRect::MakeLTRB(26, 26, 56, 56),
   };
   EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
 
   DisplayListBuilder expected_overlay_canvas(true);
+  expected_overlay_canvas.Scale(2.0, 2.0);
   ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
                                           expected_overlay_canvas, nullptr,
                                           true));
@@ -339,9 +345,9 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
 
   // Same bounds as root canvas, but preserves individual rects.
   std::list<SkRect> overlay_canvas_rects_expected = {
-      SkRect::MakeLTRB(13, 13, 23, 18),
-      SkRect::MakeLTRB(13, 18, 28, 23),
-      SkRect::MakeLTRB(18, 23, 28, 28),
+      SkRect::MakeLTRB(26, 26, 46, 36),
+      SkRect::MakeLTRB(26, 36, 56, 46),
+      SkRect::MakeLTRB(36, 46, 56, 56),
   };
   EXPECT_EQ(overlay_canvas_rects_expected, overlay_canvas_rects);
 };
