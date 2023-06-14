@@ -29,7 +29,7 @@
                 "--type",
                 "android",
                 "--adb-path",
-                "src/third_party/android_sdk/public/platform-tools/"
+                "src/third_party/android_sdk/public/platform-tools/adb"
 	    ],
             "script": "flutter/testing/run_tests.py"
         },
