@@ -57,7 +57,6 @@ class BufferBindingsGLES {
   };
   std::vector<VertexAttribPointer> vertex_attrib_arrays_;
   std::map<std::string, GLint> uniform_locations_;
-  bool interleaved_vertex_data_ = true;
 
   bool BindUniformBuffer(const ProcTableGLES& gl,
                          Allocator& transients_allocator,

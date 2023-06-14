@@ -131,10 +131,6 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
-  void SetInterleavedVertexData(bool value);
-
-  bool GetInterleavedVertexData() const;
-
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -143,7 +139,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   std::map<ShaderStage, std::shared_ptr<const ShaderFunction>> entrypoints_;
   std::map<size_t /* index */, ColorAttachmentDescriptor>
       color_attachment_descriptors_;
-  mutable std::shared_ptr<VertexDescriptor> vertex_descriptor_;
+  std::shared_ptr<VertexDescriptor> vertex_descriptor_;
   PixelFormat depth_pixel_format_ = PixelFormat::kUnknown;
   PixelFormat stencil_pixel_format_ = PixelFormat::kUnknown;
   std::optional<DepthAttachmentDescriptor> depth_attachment_descriptor_;
@@ -153,7 +149,6 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
-  bool interleaved_vertex_data_ = true;
 };
 
 }  // namespace impeller

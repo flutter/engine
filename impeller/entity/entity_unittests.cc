@@ -2456,7 +2456,6 @@ TEST_P(EntityTest, CanCustomizeVertexLayout) {
           cmd.label = "Per Vertex Colors";
           auto options = OptionsFromPass(pass);
           options.primitive_type = PrimitiveType::kTriangle;
-          options.interleaved_vertex_data = false;
 
           cmd.pipeline = renderer.GetGeometryColorPipeline(options);
           cmd.BindVertexBuffers<2>({

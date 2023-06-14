@@ -24,8 +24,6 @@ class VertexDescriptorMTL {
       const std::vector<ShaderStageIOSlot>& inputs,
       const std::vector<ShaderStageBufferLayout>& layouts);
 
-  void SetInterleavedVertexData(bool value);
-
   MTLVertexDescriptor* GetMTLVertexDescriptor() const;
 
  private:

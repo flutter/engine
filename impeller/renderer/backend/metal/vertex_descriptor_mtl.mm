@@ -203,10 +203,6 @@ bool VertexDescriptorMTL::SetStageInputsAndLayout(
   return true;
 }
 
-void VertexDescriptorMTL::SetInterleavedVertexData(bool value) {
-  interleaved_vertex_data_ = value;
-}
-
 MTLVertexDescriptor* VertexDescriptorMTL::GetMTLVertexDescriptor() const {
   return descriptor_;
 }

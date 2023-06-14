@@ -45,8 +45,6 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
     return false;
   }
   auto vtx_desc = std::make_unique<BufferBindingsGLES>();
-  vtx_desc->SetInterleavedVertexData(
-      GetDescriptor().GetVertexDescriptor()->GetInterleavedVertexData());
   if (!vtx_desc->RegisterVertexStageInput(
           gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs(),
           GetDescriptor().GetVertexDescriptor()->GetStageLayouts())) {

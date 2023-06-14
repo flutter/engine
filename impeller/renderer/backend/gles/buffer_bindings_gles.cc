@@ -50,10 +50,6 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
   return true;
 }
 
-void BufferBindingsGLES::SetInterleavedVertexData(bool value) {
-  interleaved_vertex_data_ = value;
-}
-
 static std::string NormalizeUniformKey(const std::string& key) {
   std::string result;
   result.reserve(key.length());
@@ -129,7 +125,7 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
                                               size_t vertex_index,
                                               size_t vertex_offset) const {
-  if (interleaved_vertex_data_) {
+  if (true) {
     for (const auto& array : vertex_attrib_arrays_) {
       gl.EnableVertexAttribArray(array.index);
       gl.VertexAttribPointer(
