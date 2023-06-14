@@ -14,7 +14,7 @@ FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
     : view_provider_(view_provider),
       platform_view_controller_(platform_view_controller),
       mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
-  FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
+  FML_CHECK(view_provider_ != nullptr) << "view provider cannot be nullptr";
 }
 
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,

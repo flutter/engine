@@ -15,6 +15,8 @@
 namespace flutter {
 
 namespace {
+static constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 // The maximum duration to block the platform thread for while waiting
 // for a window resize operation to complete.
 constexpr std::chrono::milliseconds kWindowResizeTimeout{100};
@@ -268,12 +270,14 @@ void FlutterWindowsView::OnResetImeComposing() {
 void FlutterWindowsView::SendWindowMetrics(size_t width,
                                            size_t height,
                                            double dpiScale) const {
+  // TODO(dkwingsmt)
+  int64_t view_id = kFlutterDefaultViewId;
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
-  engine_->SendWindowMetricsEvent(event);
+  engine_->SendWindowMetricsEvent(view_id, event);
 }
 
 void FlutterWindowsView::SendInitialBounds() {

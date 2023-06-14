@@ -22,7 +22,7 @@
 namespace flutter {
 namespace {
 
-constexpr int kImplicitViewId = 0;
+constexpr int64_t kFlutterDefaultViewId = 0ll;
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
   return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
@@ -34,7 +34,11 @@ PlatformConfigurationClient::~PlatformConfigurationClient() {}
 
 PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
-    : client_(client) {}
+    : client_(client) {
+  if (client_->ImplicitViewEnabled()) {
+    AddView(kFlutterDefaultViewId);
+  }
+}
 
 PlatformConfiguration::~PlatformConfiguration() {}
 
@@ -43,6 +47,10 @@ void PlatformConfiguration::DidCreateIsolate() {
 
   on_error_.Set(tonic::DartState::Current(),
                 Dart_GetField(library, tonic::ToDart("_onError")));
+  add_view_.Set(tonic::DartState::Current(),
+                Dart_GetField(library, tonic::ToDart("_addView")));
+  remove_view_.Set(tonic::DartState::Current(),
+                   Dart_GetField(library, tonic::ToDart("_removeView")));
   update_displays_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateDisplays")));
@@ -76,12 +84,56 @@ void PlatformConfiguration::DidCreateIsolate() {
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
 
-  // TODO(loicsharma): This should only be created if the embedder enables the
-  // implicit view.
-  // See: https://github.com/flutter/flutter/issues/120306
-  windows_.emplace(kImplicitViewId,
-                   std::make_unique<Window>(
-                       kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
+  library_.Set(tonic::DartState::Current(),
+               Dart_LookupLibrary(tonic::ToDart("dart:ui")));
+
+  SendViewConfigurations();
+}
+
+void PlatformConfiguration::SendViewConfigurations() {
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  FML_DCHECK(dart_state);
+  tonic::DartState::Scope scope(dart_state);
+
+  // TODO(dkwingsmt): send all of ViewportMetrics
+  std::vector<int64_t> view_ids;
+  for (const auto& [view_id, window] : windows_) {
+    view_ids.push_back(view_id);
+  }
+
+  tonic::CheckAndHandleError(tonic::DartInvokeField(
+      library_.value(), "_sendViewConfigurations", {tonic::ToDart(view_ids)}));
+}
+
+void PlatformConfiguration::AddView(int64_t view_id) {
+  // TODO(dkwingsmt): How do I access the current dart state after
+  // DidCreateIsolate?
+  windows_.emplace(
+      view_id, std::make_unique<Window>(library_, view_id,
+                                        ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
+  std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(
+      tonic::DartInvoke(add_view_.Get(), {
+                                             tonic::ToDart(view_id),
+                                         }));
+}
+
+void PlatformConfiguration::RemoveView(int64_t view_id) {
+  windows_.erase(view_id);
+  std::shared_ptr<tonic::DartState> dart_state =
+      remove_view_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(
+      tonic::DartInvoke(remove_view_.Get(), {
+                                                tonic::ToDart(view_id),
+                                            }));
 }
 
 void PlatformConfiguration::UpdateDisplays(
@@ -337,9 +389,10 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfigurationNativeApi::Render(Scene* scene) {
+void PlatformConfigurationNativeApi::Render(int64_t view_id, Scene* scene) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->platform_configuration()->client()->Render(scene);
+  UIDartState::Current()->platform_configuration()->client()->Render(view_id,
+                                                                     scene);
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {

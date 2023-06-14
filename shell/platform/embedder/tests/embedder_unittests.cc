@@ -52,6 +52,8 @@ static uint64_t NanosFromEpoch(int millis_from_now) {
 namespace flutter {
 namespace testing {
 
+static constexpr int64_t kDefaultViewId = 0ll;
+
 using EmbedderTest = testing::EmbedderTest;
 
 TEST(EmbedderTestNoFixture, MustNotRunWithInvalidArgs) {
@@ -805,8 +807,9 @@ TEST_F(EmbedderTest,
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
@@ -921,8 +924,9 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
@@ -1043,8 +1047,9 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
@@ -1114,8 +1119,9 @@ TEST_F(EmbedderTest, CanDeinitializeAnEngine) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kInvalidArguments);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kInvalidArguments);
   engine.reset();
 }
 
@@ -1319,8 +1325,9 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   // wait for scene to be rendered.
@@ -1811,8 +1818,9 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   event.physical_view_inset_left = 0.0;
 
   // Pixel ratio must be positive.
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kInvalidArguments);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kInvalidArguments);
 
   event.pixel_ratio = 1.0;
   event.physical_view_inset_top = -1.0;
@@ -1821,8 +1829,9 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   event.physical_view_inset_left = -1.0;
 
   // Physical view insets must be non-negative.
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kInvalidArguments);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kInvalidArguments);
 
   event.physical_view_inset_top = 700;
   event.physical_view_inset_right = 900;
@@ -1831,8 +1840,9 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
 
   // Top/bottom insets cannot be greater than height.
   // Left/right insets cannot be greater than width.
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kInvalidArguments);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kInvalidArguments);
 }
 
 static void expectSoftwareRenderingOutputMatches(
@@ -1876,8 +1886,9 @@ static void expectSoftwareRenderingOutputMatches(
   event.width = 1;
   event.height = 1;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
 
   latch.Wait();
   ASSERT_TRUE(matches);
@@ -2389,7 +2400,8 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
     event.height = 600;
     event.pixel_ratio = 1.0;
 
-    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId,
+                                                  &event),
               kSuccess);
   });
 
@@ -2464,8 +2476,9 @@ TEST_F(EmbedderTest, CanSetNextFrameCallback) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), kDefaultViewId, &event),
+      kSuccess);
 
   callback_latch.Wait();
 }

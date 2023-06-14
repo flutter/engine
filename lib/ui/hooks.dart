@@ -5,6 +5,20 @@
 part of dart.ui;
 
 @pragma('vm:entry-point')
+void _addView(
+  Object id,
+) {
+  PlatformDispatcher.instance._addView(id);
+}
+
+@pragma('vm:entry-point')
+void _removeView(
+  Object id,
+) {
+  PlatformDispatcher.instance._removeView(id);
+}
+
+@pragma('vm:entry-point')
 void _updateDisplays(
   List<int> ids,
   List<double> widths,
@@ -28,6 +42,11 @@ void _updateDisplays(
   }
 
   PlatformDispatcher.instance._updateDisplays(displays);
+}
+
+@pragma('vm:entry-point')
+void _sendViewConfigurations(List<int> viewIds) {
+  PlatformDispatcher.instance._onSentViewConfigurations(viewIds);
 }
 
 @pragma('vm:entry-point')

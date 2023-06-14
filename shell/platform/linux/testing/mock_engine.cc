@@ -221,6 +221,7 @@ FlutterEngineResult FlutterEngineDeinitialize(FLUTTER_API_SYMBOL(FlutterEngine)
 
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t view_id,
     const FlutterWindowMetricsEvent* event) {
   EXPECT_TRUE(engine->running);
   return kSuccess;

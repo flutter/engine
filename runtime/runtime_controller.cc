@@ -20,7 +20,7 @@
 
 namespace flutter {
 
-const uint64_t kFlutterDefaultViewId = 0llu;
+constexpr uint64_t kFlutterDefaultViewId = 0ll;
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
@@ -115,7 +115,10 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  return SetViewportMetrics(platform_data_.viewport_metrics) &&
+  // TODO(dkwingsmt): Needs a view ID here (or platform_data should probably
+  // have multiple view metrics).
+  return SetViewportMetrics(kFlutterDefaultViewId,
+                            platform_data_.viewport_metrics) &&
          SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -125,13 +128,35 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
+bool RuntimeController::AddView(int64_t view_id) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->AddView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::RemoveView(int64_t view_id) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::SetViewportMetrics(int64_t view_id,
+                                           const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "SetViewportMetrics");
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->get_window(0)->UpdateWindowMetrics(metrics);
-    return true;
+    Window* window = platform_configuration->get_window(view_id);
+    if (window) {
+      window->UpdateWindowMetrics(metrics);
+      return true;
+    }
   }
 
   return false;
@@ -318,16 +343,15 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(Scene* scene) {
-  // TODO(dkwingsmt): Currently only supports a single window.
-  int64_t view_id = kFlutterDefaultViewId;
+void RuntimeController::Render(int64_t view_id, Scene* scene) {
   auto window =
       UIDartState::Current()->platform_configuration()->get_window(view_id);
   if (window == nullptr) {
     return;
   }
   const auto& viewport_metrics = window->viewport_metrics();
-  client_.Render(scene->takeLayerTree(viewport_metrics.physical_width,
+  client_.Render(view_id,
+                 scene->takeLayerTree(viewport_metrics.physical_width,
                                       viewport_metrics.physical_height),
                  viewport_metrics.device_pixel_ratio);
 }

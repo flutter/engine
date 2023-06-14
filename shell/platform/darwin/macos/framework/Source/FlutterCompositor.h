@@ -27,8 +27,8 @@ class FlutterCompositor {
   // The view_provider is used to query FlutterViews from view IDs,
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
-  explicit FlutterCompositor(id<FlutterViewProvider> view_provider,
-                             FlutterPlatformViewController* platform_views_controller);
+  FlutterCompositor(id<FlutterViewProvider> view_provider,
+                    FlutterPlatformViewController* platform_views_controller);
 
   ~FlutterCompositor() = default;
 

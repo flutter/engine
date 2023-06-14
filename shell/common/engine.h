@@ -676,6 +676,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
+  void AddView(int64_t view_id);
+
+  void RemoveView(int64_t view_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for the currently running Flutter
   ///             application. The viewport metrics detail the size of the
@@ -686,7 +690,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  metrics  The metrics
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the display metrics for the currently running Flutter
@@ -906,7 +910,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|

@@ -79,7 +79,7 @@ class PlatformConfigurationClient {
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
-  virtual void Render(Scene* scene) = 0;
+  virtual void Render(int64_t view_id, Scene* scene) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Receives an updated semantics tree from the Framework.
@@ -268,6 +268,10 @@ class PlatformConfiguration final {
   ///
   void DidCreateIsolate();
 
+  void AddView(int64_t view_id);
+
+  void RemoveView(int64_t view_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Update the specified display data in the framework.
   ///
@@ -415,7 +419,14 @@ class PlatformConfiguration final {
   ///
   /// @return     a pointer to the Window.
   ///
-  Window* get_window(int window_id) { return windows_[window_id].get(); }
+  Window* get_window(int window_id) {
+    auto found = windows_.find(window_id);
+    if (found != windows_.end()) {
+      return found->second.get();
+    } else {
+      return nullptr;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -442,6 +453,8 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue add_view_;
+  tonic::DartPersistentValue remove_view_;
   tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
@@ -455,12 +468,20 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue draw_frame_;
   tonic::DartPersistentValue report_timings_;
 
+  tonic::DartPersistentValue library_;
+
+  // All *actual* views that the app has.
+  //
+  // This means that, if implicit view is enabled but the implicit view is
+  // currently closed, `windows_` will not have an entry for ID 0.
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
   // ID starts at 1 because an ID of 0 indicates that no response is expected.
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+
+  void SendViewConfigurations();
 };
 
 //----------------------------------------------------------------------------
@@ -495,7 +516,7 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static void Render(Scene* scene);
+  static void Render(int64_t view_id, Scene* scene);
 
   static void UpdateSemantics(SemanticsUpdate* update);
 

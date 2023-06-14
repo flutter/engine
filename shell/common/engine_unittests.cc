@@ -21,6 +21,8 @@
 namespace flutter {
 
 namespace {
+constexpr int64_t kDefaultViewId = 0ll;
+
 class MockDelegate : public Engine::Delegate {
  public:
   MOCK_METHOD2(OnEngineUpdateSemantics,
@@ -51,7 +53,8 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD0(ImplicitViewEnabled, bool());
   MOCK_METHOD0(DefaultRouteName, std::string());
   MOCK_METHOD1(ScheduleFrame, void(bool));
-  MOCK_METHOD2(Render, void(std::unique_ptr<flutter::LayerTree>, float));
+  MOCK_METHOD3(Render,
+               void(int64_t, std::unique_ptr<flutter::LayerTree>, float));
   MOCK_METHOD2(UpdateSemantics,
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
@@ -330,7 +333,8 @@ TEST_F(EngineTest, SpawnResetsViewportMetrics) {
     const double kViewHeight = 1024;
     old_viewport_metrics.physical_width = kViewWidth;
     old_viewport_metrics.physical_height = kViewHeight;
-    mock_runtime_controller->SetViewportMetrics(old_viewport_metrics);
+    mock_runtime_controller->SetViewportMetrics(kDefaultViewId,
+                                                old_viewport_metrics);
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,

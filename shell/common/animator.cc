@@ -128,7 +128,8 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+void Animator::Render(int64_t view_id,
+                      std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
   has_rendered_ = true;
   last_layer_tree_size_ = layer_tree->frame_size();
@@ -149,7 +150,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
       frame_timings_recorder_->GetVsyncTargetTime());
 
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), std::move(frame_timings_recorder_),
+      view_id, std::move(layer_tree), std::move(frame_timings_recorder_),
       device_pixel_ratio);
   // Commit the pending continuation.
   PipelineProduceResult result =

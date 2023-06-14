@@ -35,6 +35,7 @@
 #include "focus_delegate.h"
 #include "pointer_delegate.h"
 #include "pointer_injector_delegate.h"
+#include "surface.h"
 #include "text_delegate.h"
 
 namespace flutter_runner {
