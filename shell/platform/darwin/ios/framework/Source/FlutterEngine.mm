@@ -136,6 +136,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _lookupChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
@@ -500,6 +501,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterMethodChannel*)spellCheckChannel {
   return _spellCheckChannel.get();
 }
+- (FlutterMethodChannel*)lookUpChannel {
+  return _lookupChannel.get();
+}
 - (FlutterBasicMessageChannel*)lifecycleChannel {
   return _lifecycleChannel.get();
 }
@@ -535,6 +539,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _settingsChannel.reset();
   _keyEventChannel.reset();
   _spellCheckChannel.reset();
+  _lookupChannel.reset();
 }
 
 - (void)startProfiler {
@@ -610,6 +615,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _spellCheckChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/spellcheck"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
+  _lookupChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/lookup"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterStandardMethodCodec sharedInstance]]);
 
