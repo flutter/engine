@@ -1857,8 +1857,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self setNeedsUpdateOfSupportedInterfaceOrientations];
       }
     } else {
-      UIInterfaceOrientationMask currentInterfaceOrientation =
+      UIInterfaceOrientationMask currentInterfaceOrientation;
+      if (@available(iOS 13.0, *)) {
+        currentInterfaceOrientation = 1 << self.view.window.windowScene.interfaceOrientation;
+      } else {
+        currentInterfaceOrientation =
           1 << [[UIApplication sharedApplication] statusBarOrientation];
+      }
       if (!(_orientationPreferences & currentInterfaceOrientation)) {
         [UIViewController attemptRotationToDeviceOrientation];
         // Force orientation switch if the current orientation is not allowed
