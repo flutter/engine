@@ -1281,10 +1281,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { 
-              print('blurred');
-              activeDomElement.focus(); 
-              }));
+            (_) { activeDomElement.focus(); }));
 
     preventDefaultForMouseEvents();
   }
