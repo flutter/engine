@@ -3,26 +3,27 @@
 // found in the LICENSE file.
 
 #include <impeller/transform.glsl>
-#include <impeller/types.glsl>
+
+precision highp float;
 
 uniform FrameInfo {
-  mat4 mvp;
-  mat4 entity_transform;
-  vec2 atlas_size;
-  vec2 offset;
+  highp mat4 mvp;
+  highp mat4 entity_transform;
+  highp vec2 atlas_size;
+  highp vec2 offset;
   float is_translation_scale;
 }
 frame_info;
 
 // XYWH.
-in vec4 atlas_glyph_bounds;
+in highp vec4 atlas_glyph_bounds;
 // XYWH
-in vec4 glyph_bounds;
+in highp vec4 glyph_bounds;
 
-in vec2 unit_position;
-in vec2 glyph_position;
+in highp vec2 unit_position;
+in highp vec2 glyph_position;
 
-out vec2 v_uv;
+out highp vec2 v_uv;
 
 mat4 basis(mat4 m) {
   return mat4(m[0][0], m[0][1], m[0][2], 0.0,  //

@@ -243,59 +243,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Vertex Input Setup
   ///
-  auto interleaved = desc.GetVertexDescriptor()->GetInterleavedVertexData();
-  const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
-  std::vector<vk::VertexInputBindingDescription> binding_descs;
-  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  std::vector<vk::VertexInputBindingDescription> buffer_descs;
 
-  if (interleaved) {
-    uint32_t offset = 0;
-
-    for (const ShaderStageIOSlot& stage_in : stage_inputs) {
-      vk::VertexInputAttributeDescription attr_desc;
-      attr_desc.setBinding(stage_in.binding);
-      attr_desc.setLocation(stage_in.location);
-      attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
-      attr_desc.setOffset(offset);
-      attr_descs.push_back(attr_desc);
-      uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
-      offset += len;
-    }
-
-    vk::VertexInputBindingDescription binding_description;
-
-    binding_description.setBinding(0);
-    binding_description.setInputRate(vk::VertexInputRate::eVertex);
-    binding_description.setStride(offset);
-    binding_descs.push_back(binding_description);
-
-    vertex_input_state.setVertexAttributeDescriptions(attr_descs);
-    vertex_input_state.setVertexBindingDescriptions(binding_descs);
-
-  } else {
-    size_t offset = 0u;
-    for (const ShaderStageIOSlot& stage_in : stage_inputs) {
-      vk::VertexInputAttributeDescription attr_desc;
-      attr_desc.setBinding(stage_in.binding + offset);
-      attr_desc.setLocation(stage_in.location);
-      attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
-      attr_desc.setOffset(0);
-      attr_descs.push_back(attr_desc);
-      uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
-
-      vk::VertexInputBindingDescription binding_description;
-      binding_description.setBinding(stage_in.binding + offset);
-      binding_description.setInputRate(vk::VertexInputRate::eVertex);
-      binding_description.setStride(len);
-
-      binding_descs.push_back(binding_description);
-      offset++;
-    }
-
-    vertex_input_state.setVertexAttributeDescriptions(attr_descs);
-    vertex_input_state.setVertexBindingDescriptions(binding_descs);
+  const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  const auto& stage_buffer_layouts =
+      desc.GetVertexDescriptor()->GetStageLayouts();
+  for (const ShaderStageIOSlot& stage_in : stage_inputs) {
+    vk::VertexInputAttributeDescription attr_desc;
+    attr_desc.setBinding(stage_in.binding);
+    attr_desc.setLocation(stage_in.location);
+    attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
+    attr_desc.setOffset(stage_in.offset);
+    attr_descs.push_back(attr_desc);
   }
+  for (const ShaderStageBufferLayout& layout : stage_buffer_layouts) {
+    vk::VertexInputBindingDescription binding_description;
+    binding_description.setBinding(layout.binding);
+    binding_description.setInputRate(vk::VertexInputRate::eVertex);
+    binding_description.setStride(layout.stride);
+    buffer_descs.push_back(binding_description);
+  }
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  vertex_input_state.setVertexAttributeDescriptions(attr_descs);
+  vertex_input_state.setVertexBindingDescriptions(buffer_descs);
   pipeline_info.setPVertexInputState(&vertex_input_state);
 
   //----------------------------------------------------------------------------

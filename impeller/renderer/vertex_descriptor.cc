@@ -10,28 +10,28 @@ VertexDescriptor::VertexDescriptor() = default;
 
 VertexDescriptor::~VertexDescriptor() = default;
 
-bool VertexDescriptor::SetStageInputs(
+void VertexDescriptor::SetStageInputs(
     const ShaderStageIOSlot* const stage_inputs[],
-    size_t count) {
+    size_t count,
+    const ShaderStageBufferLayout* const stage_layout[],
+    size_t layout_count) {
   inputs_.reserve(inputs_.size() + count);
+  layouts_.reserve(layouts_.size() + layout_count);
   for (size_t i = 0; i < count; i++) {
     inputs_.emplace_back(*stage_inputs[i]);
   }
-  return true;
+  for (size_t i = 0; i < layout_count; i++) {
+    layouts_.emplace_back(*stage_layout[i]);
+  }
 }
 
-void VertexDescriptor::SetInterleavedVertexData(bool value) {
-  interleaved_vertex_data_ = value;
-}
-
-bool VertexDescriptor::RegisterDescriptorSetLayouts(
+void VertexDescriptor::RegisterDescriptorSetLayouts(
     const DescriptorSetLayout desc_set_layout[],
     size_t count) {
   desc_set_layouts_.reserve(desc_set_layouts_.size() + count);
   for (size_t i = 0; i < count; i++) {
     desc_set_layouts_.emplace_back(desc_set_layout[i]);
   }
-  return true;
 }
 
 // |Comparable<VertexDescriptor>|
@@ -40,22 +40,24 @@ size_t VertexDescriptor::GetHash() const {
   for (const auto& input : inputs_) {
     fml::HashCombineSeed(seed, input.GetHash());
   }
-  fml::HashCombineSeed(seed, interleaved_vertex_data_);
+  for (const auto& layout : layouts_) {
+    fml::HashCombineSeed(seed, layout.GetHash());
+  }
   return seed;
 }
 
 // |Comparable<VertexDescriptor>|
 bool VertexDescriptor::IsEqual(const VertexDescriptor& other) const {
-  return inputs_ == other.inputs_ &&
-         other.interleaved_vertex_data_ == interleaved_vertex_data_;
+  return inputs_ == other.inputs_ && layouts_ == other.layouts_;
 }
 
 const std::vector<ShaderStageIOSlot>& VertexDescriptor::GetStageInputs() const {
   return inputs_;
 }
 
-bool VertexDescriptor::GetInterleavedVertexData() const {
-  return interleaved_vertex_data_;
+const std::vector<ShaderStageBufferLayout>& VertexDescriptor::GetStageLayouts()
+    const {
+  return layouts_;
 }
 
 const std::vector<DescriptorSetLayout>&

@@ -48,7 +48,8 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
   vtx_desc->SetInterleavedVertexData(
       GetDescriptor().GetVertexDescriptor()->GetInterleavedVertexData());
   if (!vtx_desc->RegisterVertexStageInput(
-          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs())) {
+          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs(),
+          GetDescriptor().GetVertexDescriptor()->GetStageLayouts())) {
     return false;
   }
   if (!vtx_desc->ReadUniformsBindings(gl, program)) {

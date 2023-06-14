@@ -25,10 +25,10 @@ class BufferBindingsGLES {
 
   ~BufferBindingsGLES();
 
-  void SetInterleavedVertexData(bool value);
-
-  bool RegisterVertexStageInput(const ProcTableGLES& gl,
-                                const std::vector<ShaderStageIOSlot>& inputs);
+  bool RegisterVertexStageInput(
+      const ProcTableGLES& gl,
+      const std::vector<ShaderStageIOSlot>& inputs,
+      const std::vector<ShaderStageBufferLayout>& layouts);
 
   bool ReadUniformsBindings(const ProcTableGLES& gl, GLuint program);
 

@@ -20,30 +20,16 @@ class VertexDescriptorMTL {
 
   ~VertexDescriptorMTL();
 
-  bool SetStageInputs(const std::vector<ShaderStageIOSlot>& inputs);
+  bool SetStageInputsAndLayout(
+      const std::vector<ShaderStageIOSlot>& inputs,
+      const std::vector<ShaderStageBufferLayout>& layouts);
 
   void SetInterleavedVertexData(bool value);
 
   MTLVertexDescriptor* GetMTLVertexDescriptor() const;
 
  private:
-  struct StageInput {
-    size_t location;
-    MTLVertexFormat format;
-    size_t length;
-
-    StageInput(size_t p_location, MTLVertexFormat p_format, size_t p_length)
-        : location(p_location), format(p_format), length(p_length) {}
-
-    struct Compare {
-      constexpr bool operator()(const StageInput& lhs,
-                                const StageInput& rhs) const {
-        return lhs.location < rhs.location;
-      }
-    };
-  };
-  std::set<StageInput, StageInput::Compare> stage_inputs_;
-  bool interleaved_vertex_data_ = true;
+  MTLVertexDescriptor* descriptor_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptorMTL);
 };
