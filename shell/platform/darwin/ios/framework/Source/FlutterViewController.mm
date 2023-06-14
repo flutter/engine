@@ -1870,6 +1870,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       if (@available(iOS 13.0, *)) {
         UIWindowScene* windowScene = [self windowSceneIfViewLoaded];
         if (!windowScene) {
+          // When the view is not loaded, it does not make sense to access the interface
+          // orientation, bail.
           FML_LOG(WARNING) << "Trying to access the window scene before the view is loaded.";
           return;
         }
