@@ -27,7 +27,9 @@
                 "--android-variant",
                 "android_debug_x64",
                 "--type",
-                "android"
+                "android",
+                "--adb-path",
+                "src/third_party/android_sdk/public/platform-tools/"
 	    ],
             "script": "flutter/testing/run_tests.py"
         },
