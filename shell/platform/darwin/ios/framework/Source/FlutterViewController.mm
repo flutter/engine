@@ -624,8 +624,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIWindowScene*)windowSceneIfViewLoaded {
   if (self.viewIfLoaded == nil) {
-    return nil;
     FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
+    return nil;
   }
   return self.viewIfLoaded.window.windowScene;
 }
