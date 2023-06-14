@@ -617,9 +617,17 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     if (self.viewIfLoaded == nil) {
       FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
     }
-    return self.viewIfLoaded.window.windowScene.screen;
+    return [self windowSceneIfViewLoaded].screen;
   }
   return UIScreen.mainScreen;
+}
+
+- (UIWindowScene*)windowSceneIfViewLoaded API_AVAILABLE(ios(13.0)) {
+  if (self.viewIfLoaded == nil) {
+    return nil;
+    FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
+  }
+  return self.viewIfLoaded.window.windowScene;
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1859,7 +1867,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     } else {
       UIInterfaceOrientationMask currentInterfaceOrientation;
       if (@available(iOS 13.0, *)) {
-        currentInterfaceOrientation = 1 << self.view.window.windowScene.interfaceOrientation;
+        UIWindowScene* windowScene = [self windowSceneIfViewLoaded];
+        if (!windowScene) {
+          FML_LOG(WARNING) << "Trying to access the window scene before the view is loaded.";
+          return;
+        }
+        currentInterfaceOrientation = 1 << windowScene.interfaceOrientation;
       } else {
         currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
       }
