@@ -46,7 +46,8 @@ class SurfaceMTL final : public Surface {
   static std::unique_ptr<SurfaceMTL> MakeFromTexture(
       const std::shared_ptr<Context>& context,
       id<MTLTexture> texture,
-      std::optional<IRect> clip_rect);
+      std::optional<IRect> clip_rect,
+      id<CAMetalDrawable> drawable = nil);
 #pragma GCC diagnostic pop
 
   // |Surface|

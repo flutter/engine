@@ -102,11 +102,20 @@ targets:
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
     timeout: 60
 
+  - name: Linux linux_android_emulator_tests
+    bringup: true
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_android_emulator
+    timeout: 60
+
   - name: Linux Android Emulator Tests
     recipe: engine/scenarios
     enabled_branches:
       - main
-      - master
     properties:
       dependencies: >-
         [
@@ -184,14 +193,23 @@ targets:
     timeout: 60
 
   - name: Linux Benchmarks
+    bringup: true
     enabled_branches:
       - main
-      - master
     recipe: engine/engine_metrics
     presubmit: false
     properties:
       build_host: "true"
-      upload_metrics: "true"
+      upload_metrics: "false"
+    timeout: 60
+
+  - name: Linux linux_benchmarks
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_benchmarks
     timeout: 60
 
   - name: Linux Benchmarks (no-upload)
@@ -240,7 +258,6 @@ targets:
     recipe: engine/framework_smoke
     enabled_branches:
       - main
-      - master
     timeout: 60
 
   - name: Linux Host Engine
@@ -268,6 +285,7 @@ targets:
     timeout: 60
 
   - name: Linux Host clang-tidy
+    bringup: true
     recipe: engine/engine_lint
     properties:
       cores: "32"
@@ -288,6 +306,7 @@ targets:
       - "**.vert"
 
   - name: Linux Android clang-tidy
+    bringup: true
     recipe: engine/engine_lint
     properties:
       cores: "32"
@@ -326,7 +345,6 @@ targets:
       - os=Linux
 
   - name: Linux linux_clang_tidy
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
@@ -410,7 +428,6 @@ targets:
     recipe: engine/web_engine_framework
     enabled_branches:
       - main
-      - master
     properties:
       add_recipes_cq: "true"
       cores: "32"
@@ -418,7 +435,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:111.0a"},
+          {"dependency": "chrome_and_driver", "version": "version:114.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
@@ -467,11 +484,23 @@ targets:
       - os=Linux
 
   - name: Mac mac_clang_tidy
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       config_name: mac_clang_tidy
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
@@ -511,6 +540,7 @@ targets:
     timeout: 75
 
   - name: Mac Host clang-tidy
+    bringup: true
     recipe: engine/engine_lint
     properties:
       cpu: arm64
@@ -533,6 +563,7 @@ targets:
       - "**.mm"
 
   - name: Mac iOS clang-tidy
+    bringup: true
     recipe: engine/engine_lint
     properties:
       cpu: arm64
