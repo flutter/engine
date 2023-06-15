@@ -60,7 +60,8 @@ sk_sp<SkImage> EmbedderTestCompositor::GetLastComposition() {
   return last_composition_;
 }
 
-bool EmbedderTestCompositor::Present(const FlutterLayer** layers,
+bool EmbedderTestCompositor::Present(int64_t view_id,
+                                     const FlutterLayer** layers,
                                      size_t layers_count) {
   if (!UpdateOffscrenComposition(layers, layers_count)) {
     FML_LOG(ERROR)
