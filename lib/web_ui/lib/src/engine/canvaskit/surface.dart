@@ -118,7 +118,7 @@ class Surface {
     _surface!.flush();
 
     DomImageBitmap bitmap;
-    if (_offscreenCanvasSupported) {
+    if (Surface.offscreenCanvasSupported) {
       bitmap = _offscreenCanvas!.transferToImageBitmap();
     } else {
       bitmap = (await createImageBitmap(_canvasElement!))!;
@@ -196,7 +196,7 @@ class Surface {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        if (_offscreenCanvasSupported) {
+        if (Surface.offscreenCanvasSupported) {
           _offscreenCanvas!.width = newSize.width;
           _offscreenCanvas!.height = newSize.height;
         } else {
@@ -288,7 +288,7 @@ class Surface {
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
     DomEventTarget htmlCanvas;
-    if (_offscreenCanvasSupported) {
+    if (Surface.offscreenCanvasSupported) {
       final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
         _pixelWidth,
         _pixelHeight,
@@ -334,7 +334,7 @@ class Surface {
         antialias: _kUsingMSAA ? 1 : 0,
         majorVersion: webGLVersion.toDouble(),
       );
-      if (_offscreenCanvasSupported) {
+      if (Surface.offscreenCanvasSupported) {
         glContext = canvasKit.GetOffscreenWebGLContext(
           _offscreenCanvas!,
           options,
@@ -366,7 +366,7 @@ class Surface {
 
   void _initWebglParams() {
     WebGLContext gl;
-    if (_offscreenCanvasSupported) {
+    if (Surface.offscreenCanvasSupported) {
       gl = _offscreenCanvas!.getGlContext(webGLVersion);
     } else {
       gl = _canvasElement!.getGlContext(webGLVersion);
@@ -409,7 +409,7 @@ class Surface {
     }
 
     SkSurface surface;
-    if (_offscreenCanvasSupported) {
+    if (Surface.offscreenCanvasSupported) {
       surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
     } else {
       surface = canvasKit.MakeSWCanvasSurface(_canvasElement!);
@@ -437,7 +437,7 @@ class Surface {
 
   /// Safari 15 doesn't support OffscreenCanvas at all. Safari 16 supports
   /// OffscreenCanvas, but only with the context2d API, not WebGL.
-  bool get _offscreenCanvasSupported =>
+  static bool get offscreenCanvasSupported =>
       browserSupportsOffscreenCanvas && !isSafari;
 }
 

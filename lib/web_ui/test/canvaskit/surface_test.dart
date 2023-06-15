@@ -104,7 +104,7 @@ void testMain() {
       // which cannot be a different size from the canvas.
       // TODO(hterkelsen): See if we can give a custom size for software
       //     surfaces.
-    }, skip: isFirefox);
+    }, skip: isFirefox || !Surface.offscreenCanvasSupported);
 
     test(
       'Surface creates new context when WebGL context is restored',
@@ -152,7 +152,7 @@ void testMain() {
         expect(afterContextLost, isNot(same(before)));
       },
       // Firefox can't create a WebGL2 context in headless mode.
-      skip: isFirefox,
+      skip: isFirefox || !Surface.offscreenCanvasSupported,
     );
 
     // Regression test for https://github.com/flutter/flutter/issues/75286
@@ -194,6 +194,8 @@ void testMain() {
       expect(changeRatioAndSize.height(), 16);
       expect(surface.debugOffscreenCanvas!.width, 10);
       expect(surface.debugOffscreenCanvas!.height, 16);
-    });
+      },
+      skip: !Surface.offscreenCanvasSupported,
+    );
   });
 }
