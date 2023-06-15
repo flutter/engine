@@ -362,6 +362,7 @@ void EmbedderConfigBuilder::SetCompositor(bool avoid_backing_store_cache) {
       };
   compositor_.present_layers_callback = [](const FlutterLayer** layers,  //
                                            size_t layers_count,          //
+                                           int64_t view_id,              //
                                            void* user_data               //
                                         ) {
     return reinterpret_cast<EmbedderTestCompositor*>(user_data)->Present(

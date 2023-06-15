@@ -10,11 +10,20 @@
 namespace flutter {
 
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
-                                     FlutterPlatformViewController* platform_view_controller)
-    : view_provider_(view_provider),
-      platform_view_controller_(platform_view_controller),
-      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
+                                     const FlutterPlatformViewController* platform_view_controller)
+    : view_provider_(view_provider), platform_view_controller_(platform_view_controller) {
   FML_CHECK(view_provider_ != nullptr) << "view provider cannot be nullptr";
+}
+
+void FlutterCompositor::AddView(int64_t view_id) {
+  FML_CHECK(presenters_.find(view_id) == presenters_.end());
+  presenters_.emplace(std::piecewise_construct, std::forward_as_tuple(view_id),
+                      std::forward_as_tuple(view_provider_, platform_view_controller_));
+}
+
+void FlutterCompositor::RemoveView(int64_t view_id) {
+  FML_CHECK(presenters_.find(view_id) != presenters_.end());
+  presenters_.erase(view_id);
 }
 
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
@@ -22,7 +31,7 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
   // TODO(dkwingsmt): This class only supports single-view for now. As more
   // classes are gradually converted to multi-view, it should get the view ID
   // from somewhere.
-  FlutterView* view = [view_provider_ viewForId:kFlutterDefaultViewId];
+  FlutterView* view = [view_provider_ viewForId:config->view_id];
   if (!view) {
     return false;
   }
@@ -62,17 +71,30 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
     }
   }
 
-  [view.surfaceManager present:surfaces
-                        notify:^{
-                          PresentPlatformViews(view, layers, layers_count);
-                        }];
+  [view.surfaceManager
+      present:surfaces
+       notify:^{
+         auto found_presenter = presenters_.find(view_id);
+         if (found_presenter != presenters_.end()) {
+           found_presenter->second.PresentPlatformViews(view, layers, layers_count);
+         }
+       }];
 
   return true;
 }
 
-void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
-                                             const FlutterLayer** layers,
-                                             size_t layers_count) {
+FlutterCompositor::ViewPresenter::ViewPresenter(
+    id<FlutterViewProvider> view_provider,
+    const FlutterPlatformViewController* platform_view_controller)
+    : view_provider_(view_provider),
+      platform_view_controller_(platform_view_controller),
+      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
+  FML_CHECK(view_provider_ != nullptr);
+}
+
+void FlutterCompositor::ViewPresenter::PresentPlatformViews(FlutterView* default_base_view,
+                                                            const FlutterLayer** layers,
+                                                            size_t layers_count) {
   FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to present platform views";
 
@@ -98,9 +120,10 @@ void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
   [platform_view_controller_ disposePlatformViews];
 }
 
-FlutterMutatorView* FlutterCompositor::PresentPlatformView(FlutterView* default_base_view,
-                                                           const FlutterLayer* layer,
-                                                           size_t layer_position) {
+FlutterMutatorView* FlutterCompositor::ViewPresenter::PresentPlatformView(
+    FlutterView* default_base_view,
+    const FlutterLayer* layer,
+    size_t layer_position) {
   FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to present platform views";
 

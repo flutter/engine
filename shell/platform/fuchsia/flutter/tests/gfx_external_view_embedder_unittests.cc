@@ -54,6 +54,8 @@ using ::testing::VariantWith;
 namespace flutter_runner::testing {
 namespace {
 
+constexpr int64_t kDefaultViewId = 0;
+
 class FakeSurfaceProducerSurface : public SurfaceProducerSurface {
  public:
   explicit FakeSurfaceProducerSurface(scenic::Session* session,
@@ -458,7 +460,7 @@ void DrawSimpleFrame(GfxExternalViewEmbedder& external_view_embedder,
   external_view_embedder.EndFrame(false, nullptr);
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   external_view_embedder.SubmitFrame(
-      nullptr, nullptr,
+      nullptr, nullptr, kDefaultViewId,
       std::make_unique<flutter::SurfaceFrame>(
           nullptr, framebuffer_info,
           [](const flutter::SurfaceFrame& surface_frame,
@@ -488,7 +490,7 @@ void DrawFrameWithView(
   external_view_embedder.EndFrame(false, nullptr);
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   external_view_embedder.SubmitFrame(
-      nullptr, nullptr,
+      nullptr, nullptr, kDefaultViewId,
       std::make_unique<flutter::SurfaceFrame>(
           nullptr, framebuffer_info,
           [](const flutter::SurfaceFrame& surface_frame,
