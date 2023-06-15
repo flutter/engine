@@ -169,14 +169,10 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
   }
 }
 
-bool VertexDescriptorMTL::SetStageInputsAndLayout(
-    const std::vector<ShaderStageIOSlot>& inputs,
-    const std::vector<ShaderStageBufferLayout>& layouts) {
-  auto descriptor = descriptor_ = [MTLVertexDescriptor vertexDescriptor];
+bool VertexDescriptorMTL::SetStageInputs(
+    const std::vector<ShaderStageIOSlot>& inputs) {
+  stage_inputs_.clear();
 
-  // TODO: its odd that we offset buffers from the max index on metal
-  // but not on GLES or Vulkan. We should probably consistently start
-  // these at zero?
   for (size_t i = 0; i < inputs.size(); i++) {
     const auto& input = inputs[i];
     auto vertex_format = ReadStageInputFormat(input);
@@ -184,27 +180,38 @@ bool VertexDescriptorMTL::SetStageInputsAndLayout(
       VALIDATION_LOG << "Format for input " << input.name << " not supported.";
       return false;
     }
-    auto attrib = descriptor.attributes[input.location];
-    attrib.format = vertex_format;
-    attrib.offset = input.offset;
-    attrib.bufferIndex =
-        VertexDescriptor::kReservedVertexBufferIndex - input.binding;
+
+    stage_inputs_.insert(StageInput{input.location, vertex_format,
+                                    (input.bit_width * input.vec_size) / 8});
   }
 
-  for (size_t i = 0; i < layouts.size(); i++) {
-    const auto& layout = layouts[i];
-    auto vertex_layout =
-        descriptor.layouts[VertexDescriptor::kReservedVertexBufferIndex -
-                           layout.binding];
-    vertex_layout.stride = layout.stride;
-    vertex_layout.stepRate = 1u;
-    vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
-  }
   return true;
 }
 
 MTLVertexDescriptor* VertexDescriptorMTL::GetMTLVertexDescriptor() const {
-  return descriptor_;
+  auto descriptor = [MTLVertexDescriptor vertexDescriptor];
+
+  const size_t vertex_buffer_index =
+      VertexDescriptor::kReservedVertexBufferIndex;
+
+  size_t offset = 0u;
+  for (const auto& input : stage_inputs_) {
+    auto attrib = descriptor.attributes[input.location];
+    attrib.format = input.format;
+    attrib.offset = offset;
+    // All vertex inputs are interleaved and tightly packed in one buffer at a
+    // reserved index.
+    attrib.bufferIndex = vertex_buffer_index;
+    offset += input.length;
+  }
+
+  // Since it's all in one buffer, indicate its layout.
+  auto vertex_layout = descriptor.layouts[vertex_buffer_index];
+  vertex_layout.stride = offset;
+  vertex_layout.stepRate = 1u;
+  vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
+
+  return descriptor;
 }
 
 }  // namespace impeller

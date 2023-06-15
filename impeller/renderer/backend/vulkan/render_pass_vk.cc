@@ -49,8 +49,6 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 
   if (desc.storage_mode == StorageMode::kDeviceTransient) {
     store_action = StoreAction::kDontCare;
-  } else if (resolve_texture) {
-    store_action = StoreAction::kStore;
   }
 
   const auto attachment_desc =
@@ -95,8 +93,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                                 vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(color));
     if (color.resolve_texture) {
-      resolve_refs[bind_point] = vk::AttachmentReference{
-          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
+      resolve_refs[bind_point] =
+          vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
+                                  vk::ImageLayout::eColorAttachmentOptimal};
       attachments.emplace_back(CreateAttachmentDescription(color, true));
     }
   }
@@ -418,7 +417,6 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 
 static void SetViewportAndScissor(const Command& command,
                                   const vk::CommandBuffer& cmd_buffer,
-                                  PassBindingsCache& cmd_buffer_cache,
                                   const ISize& target_size) {
   // Set the viewport.
   const auto& vp = command.viewport.value_or<Viewport>(
@@ -429,7 +427,7 @@ static void SetViewportAndScissor(const Command& command,
                               .setY(vp.rect.size.height)
                               .setMinDepth(0.0f)
                               .setMaxDepth(1.0f);
-  cmd_buffer_cache.SetViewport(cmd_buffer, 0, 1, &viewport);
+  cmd_buffer.setViewport(0, 1, &viewport);
 
   // Set the scissor rect.
   const auto& sc = command.scissor.value_or(IRect::MakeSize(target_size));
@@ -437,13 +435,12 @@ static void SetViewportAndScissor(const Command& command,
       vk::Rect2D()
           .setOffset(vk::Offset2D(sc.origin.x, sc.origin.y))
           .setExtent(vk::Extent2D(sc.size.width, sc.size.height));
-  cmd_buffer_cache.SetScissor(cmd_buffer, 0, 1, &scissor);
+  cmd_buffer.setScissor(0, 1, &scissor);
 }
 
 static bool EncodeCommand(const Context& context,
                           const Command& command,
                           CommandEncoderVK& encoder,
-                          PassBindingsCache& command_buffer_cache,
                           const ISize& target_size) {
   if (command.vertex_count == 0u || command.instance_count == 0u) {
     return true;
@@ -469,15 +466,15 @@ static bool EncodeCommand(const Context& context,
     return false;
   }
 
-  command_buffer_cache.BindPipeline(
-      cmd_buffer, vk::PipelineBindPoint::eGraphics, pipeline_vk.GetPipeline());
+  cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                          pipeline_vk.GetPipeline());
 
   // Set the viewport and scissors.
-  SetViewportAndScissor(command, cmd_buffer, command_buffer_cache, target_size);
+  SetViewportAndScissor(command, cmd_buffer, target_size);
 
   // Set the stencil reference.
-  command_buffer_cache.SetStencilReference(
-      cmd_buffer, vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
+  cmd_buffer.setStencilReference(
+      vk::StencilFaceFlagBits::eVkStencilFrontAndBack,
       command.stencil_reference);
 
   // Configure vertex and index and buffers for binding.
@@ -622,8 +619,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         continue;
       }
 
-      if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
-                         target_size)) {
+      if (!EncodeCommand(context, command, *encoder, target_size)) {
         return false;
       }
     }

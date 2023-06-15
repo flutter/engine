@@ -49,7 +49,6 @@ EmbedderSurfaceMetalImpeller::EmbedderSurfaceMetalImpeller(
       std::make_shared<fml::SyncSwitch>(false),  // is_gpu_disabled_sync_switch
       "Impeller Library"                         // library_label
   );
-  FML_LOG(ERROR) << "Using the Impeller rendering backend (Metal).";
 
   valid_ = !!context_;
 }
@@ -74,10 +73,6 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface()
   }
 
   return surface;
-}
-
-std::shared_ptr<impeller::Context> EmbedderSurfaceMetalImpeller::CreateImpellerContext() const {
-  return context_;
 }
 
 GPUCAMetalLayerHandle EmbedderSurfaceMetalImpeller::GetCAMetalLayer(

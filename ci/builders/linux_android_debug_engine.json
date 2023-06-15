@@ -135,27 +135,6 @@
             }
         },
         {
-            "cas_archive": false,
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gn": [
-                "--android",
-                "--android-cpu=arm64",
-                "--no-lto",
-                "--enable-vulkan-validation-layers"
-            ],
-            "name": "android_debug_arm64_validation_layers",
-            "ninja": {
-                "config": "android_debug_arm64",
-                "targets": [
-                    "flutter",
-                    "flutter/shell/platform/android:abi_jars"
-                ]
-            }
-        },
-        {
             "archives": [
                 {
                     "name": "android_debug_x86",

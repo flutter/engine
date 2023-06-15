@@ -30,31 +30,25 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
   // |Comparable<PipelineVertexDescriptor>|
   virtual ~VertexDescriptor();
 
-  template <size_t Size, size_t LayoutSize>
-  void SetStageInputs(
-      const std::array<const ShaderStageIOSlot*, Size>& inputs,
-      const std::array<const ShaderStageBufferLayout*, LayoutSize>& layout) {
-    return SetStageInputs(inputs.data(), inputs.size(), layout.data(),
-                          layout.size());
+  template <size_t Size>
+  bool SetStageInputs(
+      const std::array<const ShaderStageIOSlot*, Size>& inputs) {
+    return SetStageInputs(inputs.data(), inputs.size());
   }
 
   template <size_t Size>
-  void RegisterDescriptorSetLayouts(
+  bool RegisterDescriptorSetLayouts(
       const std::array<DescriptorSetLayout, Size>& inputs) {
     return RegisterDescriptorSetLayouts(inputs.data(), inputs.size());
   }
 
-  void SetStageInputs(const ShaderStageIOSlot* const stage_inputs[],
-                      size_t count,
-                      const ShaderStageBufferLayout* const stage_layout[],
-                      size_t layout_count);
+  bool SetStageInputs(const ShaderStageIOSlot* const stage_inputs[],
+                      size_t count);
 
-  void RegisterDescriptorSetLayouts(const DescriptorSetLayout desc_set_layout[],
+  bool RegisterDescriptorSetLayouts(const DescriptorSetLayout desc_set_layout[],
                                     size_t count);
 
   const std::vector<ShaderStageIOSlot>& GetStageInputs() const;
-
-  const std::vector<ShaderStageBufferLayout>& GetStageLayouts() const;
 
   const std::vector<DescriptorSetLayout>& GetDescriptorSetLayouts() const;
 
@@ -66,7 +60,6 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
 
  private:
   std::vector<ShaderStageIOSlot> inputs_;
-  std::vector<ShaderStageBufferLayout> layouts_;
   std::vector<DescriptorSetLayout> desc_set_layouts_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptor);

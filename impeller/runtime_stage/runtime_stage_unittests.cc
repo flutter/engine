@@ -239,9 +239,7 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   desc.AddStageEntrypoint(
       library->GetFunction(stage->GetEntrypoint(), ShaderStage::kFragment));
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
-                                    VS::kInterleavedBufferLayout);
-
+  ASSERT_TRUE(vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs));
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;
   color0.format = GetContext()->GetCapabilities()->GetDefaultColorFormat();

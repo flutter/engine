@@ -138,13 +138,12 @@ CapabilitiesVK::GetRequiredInstanceExtensions() const {
     }
     required.push_back("VK_EXT_debug_utils");
 
-    if (HasExtension("VK_EXT_validation_features")) {
-      // It's valid to not have `VK_EXT_validation_features` available.  That's
-      // the case when using AGI as a frame debugger.
-      FML_DLOG(INFO) << "Requested validations but could not find the "
+    if (!HasExtension("VK_EXT_validation_features")) {
+      VALIDATION_LOG << "Requested validations but could not find the "
                         "VK_EXT_validation_features extension.";
-      required.push_back("VK_EXT_validation_features");
+      return std::nullopt;
     }
+    required.push_back("VK_EXT_validation_features");
   }
 
   return required;
@@ -278,11 +277,13 @@ bool CapabilitiesVK::HasExtension(const std::string& ext) const {
   return false;
 }
 
-void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
-  color_format_ = pixel_format;
-}
-
 bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
+  if (HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm)) {
+    color_format_ = PixelFormat::kB8G8R8A8UNormInt;
+  } else {
+    return false;
+  }
+
   if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
     depth_stencil_format_ = PixelFormat::kS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,

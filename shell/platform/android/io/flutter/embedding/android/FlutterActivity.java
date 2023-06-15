@@ -701,10 +701,10 @@ public class FlutterActivity extends Activity
           : null;
 
   @Override
-  public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
-    if (frameworkHandlesBack && !hasRegisteredBackCallback) {
+  public void setFrameworkHandlesBack(boolean frameworkHandlesBacks) {
+    if (frameworkHandlesBacks && !hasRegisteredBackCallback) {
       registerOnBackInvokedCallback();
-    } else if (!frameworkHandlesBack && hasRegisteredBackCallback) {
+    } else if (!frameworkHandlesBacks && hasRegisteredBackCallback) {
       unregisterOnBackInvokedCallback();
     }
   }

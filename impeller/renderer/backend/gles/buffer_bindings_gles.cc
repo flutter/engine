@@ -23,12 +23,17 @@ BufferBindingsGLES::~BufferBindingsGLES() = default;
 
 bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
-    const std::vector<ShaderStageIOSlot>& p_inputs,
-    const std::vector<ShaderStageBufferLayout>& layouts) {
+    const std::vector<ShaderStageIOSlot>& p_inputs) {
+  // Attrib locations have to be iterated over in order of location because we
+  // will be calculating offsets later.
+  auto inputs = p_inputs;
+  std::sort(inputs.begin(), inputs.end(), [](const auto& lhs, const auto& rhs) {
+    return lhs.location < rhs.location;
+  });
+
   std::vector<VertexAttribPointer> vertex_attrib_arrays;
-  for (auto i = 0u; i < p_inputs.size(); i++) {
-    const auto& input = p_inputs[i];
-    const auto& layout = layouts[input.binding];
+  size_t offset = 0u;
+  for (const auto& input : inputs) {
     VertexAttribPointer attrib;
     attrib.index = input.location;
     // Component counts must be 1, 2, 3 or 4. Do that validation now.
@@ -42,9 +47,12 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     }
     attrib.type = type.value();
     attrib.normalized = GL_FALSE;
-    attrib.offset = input.offset;
-    attrib.stride = layout.stride;
+    attrib.offset = offset;
+    offset += (input.bit_width * input.vec_size) / 8;
     vertex_attrib_arrays.emplace_back(attrib);
+  }
+  for (auto& array : vertex_attrib_arrays) {
+    array.stride = offset;
   }
   vertex_attrib_arrays_ = std::move(vertex_attrib_arrays);
   return true;

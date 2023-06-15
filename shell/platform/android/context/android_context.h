@@ -16,9 +16,6 @@ enum class AndroidRenderingAPI {
   kSoftware,
   kOpenGLES,
   kVulkan,
-  /// @brief Attempt to create a Vulkan surface, if that fails then fall back
-  /// to GLES.
-  kAutoselect,
 };
 
 //------------------------------------------------------------------------------

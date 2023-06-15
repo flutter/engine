@@ -41,9 +41,8 @@ static MTLRenderPipelineDescriptor* GetMTLRenderPipelineDescriptor(
 
   if (const auto& vertex_descriptor = desc.GetVertexDescriptor()) {
     VertexDescriptorMTL vertex_descriptor_mtl;
-    if (vertex_descriptor_mtl.SetStageInputsAndLayout(
-            vertex_descriptor->GetStageInputs(),
-            vertex_descriptor->GetStageLayouts())) {
+    if (vertex_descriptor_mtl.SetStageInputs(
+            vertex_descriptor->GetStageInputs())) {
       descriptor.vertexDescriptor =
           vertex_descriptor_mtl.GetMTLVertexDescriptor();
     }

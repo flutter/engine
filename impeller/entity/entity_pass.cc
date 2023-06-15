@@ -263,6 +263,7 @@ bool EntityPass::Render(ContentContext& renderer,
             ->GetCapabilities()
             ->SupportsTextureToTextureBlits()) {
       auto blit_pass = command_buffer->CreateBlitPass();
+
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());

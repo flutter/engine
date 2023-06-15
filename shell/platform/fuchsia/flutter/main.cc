@@ -40,7 +40,7 @@ int main(int argc, char const* argv[]) {
         &already_started);
   }
 
-  // Set up the process-wide /tmp virtual filesystem.
+  // Set up the process-wide /tmp memfs.
   dart_utils::RunnerTemp runner_temp;
 
   fml::MessageLoop& loop = fml::MessageLoop::GetCurrent();
