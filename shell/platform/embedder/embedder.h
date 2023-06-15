@@ -1560,6 +1560,7 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  int64_t view_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
@@ -1602,6 +1603,7 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
+                                             int64_t view_id,
                                              void* user_data);
 
 typedef struct {

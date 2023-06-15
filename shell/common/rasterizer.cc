@@ -114,7 +114,7 @@ void Rasterizer::Teardown() {
     }
     surface_.reset();
   }
-  view_records.clear();
+  view_records_.clear();
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
@@ -157,7 +157,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 
 void Rasterizer::AddView(int64_t view_id) {
   bool insertion_happened =
-      view_records
+      view_records_
           .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
           .second;
   if (!insertion_happened) {
@@ -167,7 +167,7 @@ void Rasterizer::AddView(int64_t view_id) {
 }
 
 void Rasterizer::RemoveSurface(int64_t view_id) {
-  view_records.erase(view_id);
+  view_records_.erase(view_id);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
@@ -180,7 +180,7 @@ GrDirectContext* Rasterizer::GetGrContext() {
 
 bool Rasterizer::HasLastLayerTree() const {
   // TODO(dkwingsmt): This method is only available in unittests now
-  for (auto& record_pair : view_records) {
+  for (auto& record_pair : view_records_) {
     auto& layer_tree = record_pair.second.last_tree;
     if (layer_tree) {
       return true;
@@ -196,7 +196,7 @@ int Rasterizer::DrawLastLayerTree(
     return 0;
   }
   int success_count = 0;
-  for (auto& [view_id, view_record] : view_records) {
+  for (auto& [view_id, view_record] : view_records_) {
     flutter::LayerTree* layer_tree = view_record.last_tree.get();
     float device_pixel_ratio = view_record.last_pixel_ratio;
     if (!layer_tree) {
@@ -608,6 +608,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     ViewRecord* view_record) {
   FML_DCHECK(surface_);
 
+  const int64_t view_id = view_record->view_id;
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
@@ -713,8 +714,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(
-          surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
+      external_view_embedder_->SubmitFrame(surface_->GetContext(),
+                                           surface_->GetAiksContext(), view_id,
+                                           std::move(frame));
     } else {
       frame->Submit();
     }

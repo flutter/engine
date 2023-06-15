@@ -535,8 +535,8 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   ViewRecord* GetViewRecord(int64_t view_id) {
-    auto found_surface = view_records.find(view_id);
-    if (found_surface == view_records.end()) {
+    auto found_surface = view_records_.find(view_id);
+    if (found_surface == view_records_.end()) {
       return nullptr;
     }
     return &found_surface->second;
@@ -631,7 +631,7 @@ class Rasterizer final : public SnapshotDelegate,
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
   std::unique_ptr<Surface> surface_;
-  std::unordered_map<int64_t, ViewRecord> view_records;
+  std::unordered_map<int64_t, ViewRecord> view_records_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   fml::closure next_frame_callback_;
