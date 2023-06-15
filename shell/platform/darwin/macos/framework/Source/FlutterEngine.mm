@@ -620,6 +620,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
+  _macOSCompositor->AddView(viewId);
 }
 
 - (void)deregisterViewControllerForId:(FlutterViewId)viewId {
@@ -628,6 +629,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     [oldController detachFromEngine];
     [_viewControllers removeObjectForKey:@(viewId)];
   }
+  _macOSCompositor->RemoveView(viewId);
 }
 
 - (void)shutDownIfNeeded {
