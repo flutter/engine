@@ -303,6 +303,7 @@ TEST(
 
   std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
+  rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
