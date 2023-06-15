@@ -220,6 +220,7 @@ gboolean fl_renderer_collect_backing_store(
  * @renderer: an #FlRenderer.
  * @layers: layers to be composited.
  * @layers_count: number of layers.
+ * @view_id: the target view to present on.
  *
  * Callback invoked by the engine to composite the contents of each layer
  * onto the screen.
@@ -228,7 +229,8 @@ gboolean fl_renderer_collect_backing_store(
  */
 gboolean fl_renderer_present_layers(FlRenderer* renderer,
                                     const FlutterLayer** layers,
-                                    size_t layers_count);
+                                    size_t layers_count,
+                                    int64_t view_id);
 
 /**
  * fl_renderer_wait_for_frame:

@@ -295,8 +295,9 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   } else {
     event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
+  event.view_id = view_id;
   FlutterEngineSendWindowMetricsEvent(controller->engine->flutter_engine,
-                                      view_id, &event);
+                                      &event);
 }
 
 // Populates |task_runner| with a description that uses |engine_state|'s event

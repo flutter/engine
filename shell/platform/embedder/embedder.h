@@ -837,6 +837,8 @@ typedef struct {
   double physical_view_inset_left;
   /// The identifier of the display the view is rendering on.
   FlutterEngineDisplayId display_id;
+  /// The view that this event is describing.
+  int64_t view_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -1603,9 +1605,18 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
-                                             int64_t view_id,
                                              void* user_data);
 
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterViewPresentInfo).
+  size_t struct_size;
+  const FlutterLayer** layers;
+  size_t layers_count;
+  int64_t view_id;
+  void* user_data;
+} FlutterViewPresentInfo;
+
+typedef bool (*FlutterViewPresentCallback)(FlutterViewPresentInfo* info);
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
   size_t struct_size;
@@ -1627,16 +1638,22 @@ typedef struct {
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
+  /// Not used if `present_view_callback` is present.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
+  FlutterViewPresentCallback present_view_callback;
 } FlutterCompositor;
 
 typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterAddViewInfo).
+  size_t struct_size;
   int64_t view_id;
 } FlutterAddViewInfo;
 
 typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterRemoveViewInfo).
+  size_t struct_size;
   int64_t view_id;
 } FlutterRemoveViewInfo;
 
@@ -2283,7 +2300,6 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    int64_t view_id,
     const FlutterWindowMetricsEvent* event);
 
 FLUTTER_EXPORT
@@ -2863,7 +2879,6 @@ typedef FlutterEngineResult (*FlutterEngineRemoveViewFnPtr)(
     FlutterRemoveViewInfo* config);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    int64_t view_id,
     const FlutterWindowMetricsEvent* event);
 typedef FlutterEngineResult (*FlutterEngineSendPointerEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,

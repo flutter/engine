@@ -662,6 +662,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (BOOL)addViewToEmbedderEngine:(FlutterViewId)viewId {
   FlutterAddViewInfo info{
+      .struct_size = sizeof(FlutterAddViewInfo),
       .view_id = viewId,
   };
   FlutterEngineResult result = _embedderAPI.AddView(_engine, &info);
@@ -670,6 +671,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (BOOL)removeViewFromEmbedderEngine:(FlutterViewId)viewId {
   FlutterRemoveViewInfo info{
+      .struct_size = sizeof(FlutterRemoveViewInfo),
       .view_id = viewId,
   };
   FlutterEngineResult result = _embedderAPI.RemoveView(_engine, &info);
@@ -746,13 +748,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                   void* user_data                            //
                                                ) { return true; };
 
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           int64_t view_id,              //
-                                           void* user_data               //
-                                        ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(view_id, layers,
-                                                                             layers_count);
+  _compositor.present_view_callback = [](FlutterViewPresentInfo* info) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)
+        ->Present(info->view_id,      //
+                  info->layers,       //
+                  info->layers_count  //
+        );
   };
 
   _compositor.avoid_backing_store_cache = true;
@@ -888,8 +889,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
       .display_id = static_cast<uint64_t>(displayId),
+      .view_id = viewController.viewId,
   };
-  _embedderAPI.SendWindowMetricsEvent(_engine, viewController.viewId, &windowMetricsEvent);
+  _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
