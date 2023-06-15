@@ -3264,6 +3264,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(Deinitialize, FlutterEngineDeinitialize);
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
   SET_PROC(AddView, FlutterEngineAddView);
+  SET_PROC(RemoveView, FlutterEngineRemoveView);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
   SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);

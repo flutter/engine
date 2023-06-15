@@ -74,6 +74,7 @@ TEST_F(EmbedderTest,
   builder.GetCompositor().create_backing_store_callback = nullptr;
   builder.GetCompositor().collect_backing_store_callback = nullptr;
   builder.GetCompositor().present_layers_callback = nullptr;
+  builder.GetCompositor().present_view_callback = nullptr;
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
 }

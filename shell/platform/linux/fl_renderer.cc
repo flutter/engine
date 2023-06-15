@@ -156,7 +156,8 @@ void fl_renderer_wait_for_frame(FlRenderer* self,
 
 gboolean fl_renderer_present_layers(FlRenderer* self,
                                     const FlutterLayer** layers,
-                                    size_t layers_count) {
+                                    size_t layers_count,
+                                    int64_t view_id) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 

@@ -201,12 +201,10 @@ static bool compositor_collect_backing_store_callback(
 }
 
 // Called when embedder should composite contents of each layer onto the screen.
-static bool compositor_present_layers_callback(const FlutterLayer** layers,
-                                               size_t layers_count,
-                                               void* user_data) {
+static bool compositor_present_view_callback(FlutterViewPresentInfo* info) {
   g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
-  return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
-                                    layers_count);
+  return fl_renderer_present_layers(FL_RENDERER(info->user_data), info->layers,
+                                    info->layers_count, info->view_id);
 }
 
 // Flutter engine rendering callbacks.
@@ -544,7 +542,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
       compositor_create_backing_store_callback;
   compositor.collect_backing_store_callback =
       compositor_collect_backing_store_callback;
-  compositor.present_layers_callback = compositor_present_layers_callback;
+  compositor.present_view_callback = compositor_present_view_callback;
   args.compositor = &compositor;
 
   if (self->embedder_api.RunsAOTCompiledDartCode()) {
