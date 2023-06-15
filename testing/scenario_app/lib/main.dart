@@ -22,7 +22,7 @@ void main() {
     ..onMetricsChanged = _onMetricsChanged
     ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
-  channelBuffers.setListener('drive', _handleDriverMessage);
+  channelBuffers.setListener('driver', _handleDriverMessage);
   channelBuffers.setListener('write_timeline', _handleWriteTimelineMessage);
 
   final FlutterView view = PlatformDispatcher.instance.implicitView!;
