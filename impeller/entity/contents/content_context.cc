@@ -9,6 +9,7 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -155,6 +156,24 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   return std::make_unique<PipelineT>(context, desc);
 }
 
+template <typename PipelineT, size_t IOCount, size_t LayoutCount>
+static std::unique_ptr<PipelineT> CreateCustomizedPipeline(
+    const Context& context,
+    std::array<const ShaderStageIOSlot*, IOCount> vertex_inputs,
+    std::array<const ShaderStageBufferLayout*, LayoutCount> vertex_layouts) {
+  auto desc = PipelineT::Builder::MakeCustomizedPipelineDescriptor(
+      context, vertex_inputs, vertex_layouts);
+  if (!desc.has_value()) {
+    return nullptr;
+  }
+  // Apply default ContentContextOptions to the descriptor.
+  const auto default_color_fmt =
+      context.GetCapabilities()->GetDefaultColorFormat();
+  ContentContextOptions{.color_attachment_pixel_format = default_color_fmt}
+      .ApplyToPipelineDescriptor(*desc);
+  return std::make_unique<PipelineT>(context, desc);
+}
+
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
@@ -285,6 +304,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GlyphAtlasColorPipeline>(*context_);
   geometry_color_pipelines_[{}] =
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
+  geometry_color_non_interleaved_pipelines_[{}] =
+      CreateCustomizedPipeline<GeometryColorPipeline>(
+          *context_, VerticesBindings::kAllShaderStageInputs,
+          VerticesBindings::kNonInterleavedBufferLayout);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
   porter_duff_blend_pipelines_[{}] =

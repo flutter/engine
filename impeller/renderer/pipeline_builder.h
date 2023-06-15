@@ -56,9 +56,33 @@ struct PipelineBuilder {
     return std::nullopt;
   }
 
+  template <size_t IOCount, size_t LayoutCount>
+  static std::optional<PipelineDescriptor> MakeCustomizedPipelineDescriptor(
+      const Context& context,
+      std::array<const ShaderStageIOSlot*, IOCount> vertex_inputs,
+      std::array<const ShaderStageBufferLayout*, LayoutCount> vertex_layouts) {
+    PipelineDescriptor desc;
+    if (InitializePipelineDescriptor(context, desc, vertex_inputs,
+                                     vertex_layouts)) {
+      return {std::move(desc)};
+    }
+    return std::nullopt;
+  }
+
   [[nodiscard]] static bool InitializePipelineDescriptorDefaults(
       const Context& context,
       PipelineDescriptor& desc) {
+    return InitializePipelineDescriptor(context, desc,
+                                        VertexShader::kAllShaderStageInputs,
+                                        VertexShader::kInterleavedBufferLayout);
+  }
+
+  template <size_t IOCount, size_t LayoutCount>
+  [[nodiscard]] static bool InitializePipelineDescriptor(
+      const Context& context,
+      PipelineDescriptor& desc,
+      std::array<const ShaderStageIOSlot*, IOCount> vertex_inputs,
+      std::array<const ShaderStageBufferLayout*, LayoutCount> vertex_layouts) {
     // Setup debug instrumentation.
     desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
 
@@ -85,8 +109,7 @@ struct PipelineBuilder {
     // Setup the vertex descriptor from reflected information.
     {
       auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-      vertex_descriptor->SetStageInputs(VertexShader::kAllShaderStageInputs,
-                                        VertexShader::kInterleavedBufferLayout);
+      vertex_descriptor->SetStageInputs(vertex_inputs, vertex_layouts);
       vertex_descriptor->RegisterDescriptorSetLayouts(
           VertexShader::kDescriptorSetLayouts);
       vertex_descriptor->RegisterDescriptorSetLayouts(

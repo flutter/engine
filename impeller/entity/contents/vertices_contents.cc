@@ -184,7 +184,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
       geometry->GetPositionColorBuffer(renderer, entity, pass);
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
+  cmd.pipeline = renderer.GetGeometryColorPipelineNonInterleaved(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
   cmd.BindVertexBuffers<2>(

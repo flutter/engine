@@ -20,6 +20,53 @@
 
 namespace impeller {
 
+namespace VerticesBindings {
+
+static constexpr auto kInputPosition = ShaderStageIOSlot{
+    // position
+    "position",          // name
+    0u,                  // attribute location
+    0u,                  // attribute set
+    0u,                  // attribute binding
+    ShaderType::kFloat,  // type
+    32u,                 // bit width of type
+    2u,                  // vec size
+    1u,                  // number of columns
+    0u,                  // offset for interleaved layout
+};
+
+static constexpr auto kInputColor = ShaderStageIOSlot{
+    // color
+    "color",             // name
+    1u,                  // attribute location
+    0u,                  // attribute set
+    1u,                  // attribute binding
+    ShaderType::kFloat,  // type
+    32u,                 // bit width of type
+    4u,                  // vec size
+    1u,                  // number of columns
+    0u,                  // offset for interleaved layout
+};
+
+static constexpr std::array<const ShaderStageIOSlot*, 2> kAllShaderStageInputs =
+    {
+        &kInputPosition,  // position
+        &kInputColor,     // color
+};
+
+static constexpr auto kInputBuffer = ShaderStageBufferLayout{
+    sizeof(Vector2),  // stride for interleaved layout
+    0u,               // attribute binding
+};
+static constexpr auto kColorBuffer = ShaderStageBufferLayout{
+    sizeof(Color),  // stride for interleaved layout
+    1u,             // attribute binding
+};
+static constexpr std::array<const ShaderStageBufferLayout*, 2>
+    kNonInterleavedBufferLayout = {&kInputBuffer, &kColorBuffer};
+
+}  // namespace VerticesBindings
+
 class VerticesContents final : public Contents {
  public:
   VerticesContents();

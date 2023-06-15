@@ -487,6 +487,11 @@ class ContentContext {
     return GetPipeline(geometry_color_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetGeometryColorPipelineNonInterleaved(ContentContextOptions opts) const {
+    return GetPipeline(geometry_color_non_interleaved_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
@@ -750,6 +755,8 @@ class ContentContext {
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
+  mutable Variants<GeometryColorPipeline>
+      geometry_color_non_interleaved_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
