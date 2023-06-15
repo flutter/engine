@@ -699,7 +699,7 @@ def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
   if adb_path is None:
     adb_path = 'adb'
   run_cmd([adb_path, 'devices', '-l'])
-  run_cmd([adb_path, 'reboot'])
+  run_cmd([adb_path, 'reconnect'])
   run_cmd([adb_path, 'devices', '-l'])
   run_cmd([adb_path, 'push', tests_path, remote_path], cwd=BUILDROOT_DIR)
   run_cmd([adb_path, 'shell', remote_tests_path])
