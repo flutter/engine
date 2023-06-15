@@ -93,13 +93,20 @@ using namespace flutter;
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
   } else if ([method isEqualToString:@"LookUp.initiate"]) {
-    NSLog(@"Hit Engine, thank jesus");
-    NSLog(@"%@", args);
     [self showLookUpView:args];
     result(nil);
   } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
     NSLog(@"Search web engine");
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString: @"https://example.com"] options:@{} completionHandler:nil];
+    NSString *googleURL = @"https://google.com/search?q=";
+    NSString *escapedText = [args stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+    NSString *searchURL = [NSString stringWithFormat:@"%@%@", googleURL, escapedText];
+
+    NSLog(@"%@", googleURL);
+    NSLog(@"%@", escapedText);
+    NSLog(@"%@", searchURL);
+
+
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
