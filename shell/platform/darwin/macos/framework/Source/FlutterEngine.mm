@@ -662,6 +662,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (BOOL)addViewToEmbedderEngine:(FlutterViewId)viewId {
   FlutterAddViewInfo info{
+      .struct_size = sizeof(FlutterAddViewInfo),
       .view_id = viewId,
   };
   FlutterEngineResult result = _embedderAPI.AddView(_engine, &info);
@@ -670,6 +671,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (BOOL)removeViewFromEmbedderEngine:(FlutterViewId)viewId {
   FlutterRemoveViewInfo info{
+      .struct_size = sizeof(FlutterRemoveViewInfo),
       .view_id = viewId,
   };
   FlutterEngineResult result = _embedderAPI.RemoveView(_engine, &info);
