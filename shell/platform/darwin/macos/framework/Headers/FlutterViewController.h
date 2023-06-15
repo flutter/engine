@@ -95,6 +95,16 @@ FLUTTER_DARWIN_EXPORT
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
 /**
+ * The identifier for this view controller.
+ *
+ * The ID is assigned by FlutterEngine when the view controller is attached.
+ *
+ * If the view controller is unattached (see FlutterViewController#attached),
+ * reading this property throws an assertion.
+ */
+@property(nonatomic, readonly) int64_t viewId;
+
+/**
  * Return YES if the view controller is attached to an engine.
  */
 - (BOOL)attached;

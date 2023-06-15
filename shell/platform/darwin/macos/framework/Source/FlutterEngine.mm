@@ -159,6 +159,13 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
+/**
+ * Generate a new unique view ID.
+ *
+ * IDs start from kFlutterDefaultViewId.
+ */
+- (FlutterViewId)generateViewId;
+
 @end
 
 #pragma mark -
@@ -393,7 +400,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterThreadSynchronizer* _threadSynchronizer;
 
   // The next available view ID.
-  int _nextViewId;
+  FlutterViewId _nextViewId;
 
   // Whether the application is currently the active application.
   BOOL _active;
@@ -724,15 +731,27 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 #pragma mark - Framework-internal methods
 
-- (void)addViewController:(FlutterViewController*)controller {
-  [self registerViewController:controller forId:kFlutterDefaultViewId];
+- (bool)addViewController:(FlutterViewController*)controller {
+  FlutterViewId viewId = [self generateViewId];
+  [self registerViewController:controller forId:viewId];
+  FlutterAddViewInfo info{
+      .view_id = viewId,
+  };
+  FlutterEngineResult result = _embedderAPI.AddView(_engine, &info);
+  return result == kSuccess;
 }
 
-- (void)removeViewController:(nonnull FlutterViewController*)viewController {
+- (bool)removeViewController:(nonnull FlutterViewController*)viewController {
   NSAssert([viewController attached] && viewController.engine == self,
            @"The given view controller is not associated with this engine.");
+  FlutterViewId viewId = viewController.viewId;
+  FlutterRemoveViewInfo info{
+      .view_id = viewId,
+  };
+  FlutterEngineResult result = _embedderAPI.RemoveView(_engine, &info);
   [self deregisterViewControllerForId:viewController.viewId];
   [self shutDownIfNeeded];
+  return result == kSuccess;
 }
 
 - (BOOL)running {
@@ -871,6 +890,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 #pragma mark - Private methods
+
+- (FlutterViewId)generateViewId {
+  FlutterViewId result = _nextViewId;
+  _nextViewId += 1;
+  return result;
+}
 
 - (void)sendUserLocales {
   if (!self.running) {
