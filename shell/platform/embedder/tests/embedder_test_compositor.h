@@ -36,7 +36,9 @@ class EmbedderTestCompositor {
 
   bool CollectBackingStore(const FlutterBackingStore* backing_store);
 
-  bool Present(const FlutterLayer** layers, size_t layers_count);
+  bool Present(int64_t view_id,
+               const FlutterLayer** layers,
+               size_t layers_count);
 
   void SetPlatformViewRendererCallback(
       const PlatformViewRendererCallback& callback);

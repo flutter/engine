@@ -360,16 +360,12 @@ void EmbedderConfigBuilder::SetCompositor(bool avoid_backing_store_cache) {
         return reinterpret_cast<EmbedderTestCompositor*>(user_data)
             ->CollectBackingStore(backing_store);
       };
-  compositor_.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           int64_t view_id,              //
-                                           void* user_data               //
-                                        ) {
-    return reinterpret_cast<EmbedderTestCompositor*>(user_data)->Present(
-        layers,       //
-        layers_count  //
-
-    );
+  compositor_.present_view_callback = [](FlutterViewPresentInfo* info) {
+    return reinterpret_cast<EmbedderTestCompositor*>(info->user_data)
+        ->Present(info->view_id,      //
+                  info->layers,       //
+                  info->layers_count  //
+        );
   };
   compositor_.avoid_backing_store_cache = avoid_backing_store_cache;
   project_args_.compositor = &compositor_;

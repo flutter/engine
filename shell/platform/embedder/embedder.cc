@@ -1176,13 +1176,16 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
       SAFE_ACCESS(compositor, create_backing_store_callback, nullptr);
   auto c_collect_callback =
       SAFE_ACCESS(compositor, collect_backing_store_callback, nullptr);
-  auto c_present_callback =
+  auto c_legacy_present_callback =
       SAFE_ACCESS(compositor, present_layers_callback, nullptr);
+  auto c_present_callback =
+      SAFE_ACCESS(compositor, present_view_callback, nullptr);
   bool avoid_backing_store_cache =
       SAFE_ACCESS(compositor, avoid_backing_store_cache, false);
 
   // Make sure the required callbacks are present
-  if (!c_create_callback || !c_collect_callback || !c_present_callback) {
+  if (!c_create_callback || !c_collect_callback ||
+      (!c_present_callback && !c_legacy_present_callback)) {
     FML_LOG(ERROR) << "Required compositor callbacks absent.";
     return {nullptr, true};
   }
@@ -1200,14 +1203,29 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
                                               enable_impeller);
           };
 
-  flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback, user_data = compositor->user_data](
-          const auto& layers, int64_t view_id) {
-        TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
-        return c_present_callback(
-            const_cast<const FlutterLayer**>(layers.data()), layers.size(),
-            view_id, user_data);
-      };
+  flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback;
+  if (c_present_callback) {
+    present_callback = [c_present_callback, user_data = compositor->user_data](
+                           const auto& layers, int64_t view_id) {
+      TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
+      FlutterViewPresentInfo info;
+      info.struct_size = sizeof(FlutterViewPresentInfo);
+      info.layers = const_cast<const FlutterLayer**>(layers.data());
+      info.layers_count = layers.size();
+      info.view_id = view_id;
+      info.user_data = user_data;
+      return c_present_callback(&info);
+    };
+  } else {
+    present_callback = [c_legacy_present_callback,
+                        user_data = compositor->user_data](const auto& layers,
+                                                           int64_t view_id) {
+      TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
+      return c_legacy_present_callback(
+          const_cast<const FlutterLayer**>(layers.data()), layers.size(),
+          user_data);
+    };
+  }
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(
               avoid_backing_store_cache, create_render_target_callback,
@@ -2210,11 +2228,11 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
 
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    int64_t view_id,
     const FlutterWindowMetricsEvent* flutter_metrics) {
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
+  int64_t view_id = SAFE_ACCESS(flutter_metrics, view_id, 0);
 
   flutter::ViewportMetrics metrics;
 
