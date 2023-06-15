@@ -241,6 +241,7 @@ class Surface {
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
     if (!browserSupportsOffscreenCanvas) {
+      print(domWindow.navigator.userAgent);
       throw Exception('OffscreenCanvas is not supported');
     }
     final DomOffscreenCanvas htmlCanvas = createDomOffscreenCanvas(
