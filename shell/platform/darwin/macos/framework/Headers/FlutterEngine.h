@@ -116,9 +116,9 @@ FLUTTER_DARWIN_EXPORT
 - (bool)removeViewController:(nonnull FlutterViewController*)viewController;
 
 /**
- * The `FlutterViewController` associated with the given view ID, if any.
+ * The |FlutterViewController| associated with the given view ID, if any.
  */
-- (nullable FlutterViewController*)viewControllerForId:(int64_t)viewId;
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
 /**
  * Shuts the Flutter engine if it is running. The FlutterEngine instance must always be shutdown

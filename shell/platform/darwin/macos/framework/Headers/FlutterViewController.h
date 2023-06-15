@@ -102,7 +102,7 @@ FLUTTER_DARWIN_EXPORT
  * If the view controller is unattached (see FlutterViewController#attached),
  * reading this property throws an assertion.
  */
-@property(nonatomic, readonly) int64_t viewId;
+@property(nonatomic, readonly) FlutterViewId viewId;
 
 /**
  * Return YES if the view controller is attached to an engine.

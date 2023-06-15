@@ -14,6 +14,8 @@
 // TODO: Merge this file and FlutterPluginMacOS.h with the iOS FlutterPlugin.h, sharing all but
 // the platform-specific methods.
 
+typedef int64_t FlutterViewId;
+
 /**
  * The protocol for an object managing registration for a plugin. It provides access to application
  * context, as allowing registering for callbacks for handling various conditions.
