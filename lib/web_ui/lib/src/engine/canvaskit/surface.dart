@@ -14,6 +14,8 @@ import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
+import 'picture.dart';
+import 'render_canvas.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
@@ -79,8 +81,16 @@ class Surface {
   int? _glContext;
   int? _skiaCacheBytes;
 
-  /// The underlying `<canvas>` element used for this surface.
-  DomOffscreenCanvas? offscreenCanvas;
+  /// The underlying OffscreenCanvas element used for this surface.
+  DomOffscreenCanvas? _offscreenCanvas;
+
+  /// Returns the underlying OffscreenCanvas. Should only be used in tests.
+  DomOffscreenCanvas? get debugOffscreenCanvas => _offscreenCanvas;
+
+  /// The <canvas> backing this Surface in the case that OffscreenCanvas isn't
+  /// supported.
+  DomCanvasElement? _canvasElement;
+
   int _pixelWidth = -1;
   int _pixelHeight = -1;
   int _sampleCount = -1;
@@ -96,6 +106,24 @@ class Surface {
     if (_skiaCacheBytes != null) {
       _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!.toDouble());
     }
+  }
+
+  Future<void> rasterizeToCanvas(
+      ui.Size frameSize, RenderCanvas canvas, CkPicture picture) async {
+    canvas.ensureSize(frameSize);
+
+    final CkCanvas skCanvas = _surface!.getCanvas();
+    skCanvas.clear(const ui.Color(0x00000000));
+    skCanvas.drawPicture(picture);
+    _surface!.flush();
+
+    DomImageBitmap bitmap;
+    if (_offscreenCanvasSupported) {
+      bitmap = _offscreenCanvas!.transferToImageBitmap();
+    } else {
+      bitmap = (await createImageBitmap(_canvasElement!))!;
+    }
+    canvas.renderContext!.transferFromImageBitmap(bitmap);
   }
 
   /// Acquire a frame of the given [size] containing a drawable canvas.
@@ -168,8 +196,13 @@ class Surface {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        offscreenCanvas!.width = newSize.width;
-        offscreenCanvas!.height = newSize.height;
+        if (_offscreenCanvasSupported) {
+          _offscreenCanvas!.width = newSize.width;
+          _offscreenCanvas!.height = newSize.height;
+        } else {
+          _canvasElement!.width = newSize.width;
+          _canvasElement!.height = newSize.height;
+        }
         _currentCanvasPhysicalSize = newSize;
         _pixelWidth = newSize.width.ceil();
         _pixelHeight = newSize.height.ceil();
@@ -208,7 +241,7 @@ class Surface {
   }
 
   JSVoid _contextLostListener(DomEvent event) {
-    assert(event.target == offscreenCanvas,
+    assert(event.target == _offscreenCanvas || event.target == _canvasElement,
         'Received a context lost event for a disposed canvas');
     _contextLost = true;
     _forceNewContext = true;
@@ -220,18 +253,32 @@ class Surface {
   /// It's better to reuse canvas if possible.
   void _createNewCanvas(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    if (offscreenCanvas != null) {
-      offscreenCanvas!.removeEventListener(
+    if (_offscreenCanvas != null) {
+      _offscreenCanvas!.removeEventListener(
         'webglcontextrestored',
         _cachedContextRestoredListener,
         false,
       );
-      offscreenCanvas!.removeEventListener(
+      _offscreenCanvas!.removeEventListener(
         'webglcontextlost',
         _cachedContextLostListener,
         false,
       );
-      offscreenCanvas = null;
+      _offscreenCanvas = null;
+      _cachedContextRestoredListener = null;
+      _cachedContextLostListener = null;
+    } else if (_canvasElement != null) {
+      _canvasElement!.removeEventListener(
+        'webglcontextrestored',
+        _cachedContextRestoredListener,
+        false,
+      );
+      _canvasElement!.removeEventListener(
+        'webglcontextlost',
+        _cachedContextLostListener,
+        false,
+      );
+      _canvasElement = null;
       _cachedContextRestoredListener = null;
       _cachedContextLostListener = null;
     }
@@ -240,15 +287,22 @@ class Surface {
     // we ensure that the rendred picture covers the entire browser window.
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
-    if (!browserSupportsOffscreenCanvas) {
-      print(domWindow.navigator.userAgent);
-      throw Exception('OffscreenCanvas is not supported');
+    DomEventTarget htmlCanvas;
+    if (_offscreenCanvasSupported) {
+      final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
+        _pixelWidth,
+        _pixelHeight,
+      );
+      htmlCanvas = offscreenCanvas;
+      _offscreenCanvas = offscreenCanvas;
+      _canvasElement = null;
+    } else {
+      final DomCanvasElement canvas =
+          createDomCanvasElement(width: _pixelWidth, height: _pixelHeight);
+      htmlCanvas = canvas;
+      _canvasElement = canvas;
+      _offscreenCanvas = null;
     }
-    final DomOffscreenCanvas htmlCanvas = createDomOffscreenCanvas(
-      _pixelWidth,
-      _pixelHeight,
-    );
-    offscreenCanvas = htmlCanvas;
 
     // When the browser tab using WebGL goes dormant the browser and/or OS may
     // decide to clear GPU resources to let other tabs/programs use the GPU.
@@ -273,15 +327,24 @@ class Surface {
     _contextLost = false;
 
     if (webGLVersion != -1 && !configuration.canvasKitForceCpuOnly) {
-      final int glContext = canvasKit.GetOffscreenWebGLContext(
-        htmlCanvas,
-        SkWebGLContextOptions(
-          // Default to no anti-aliasing. Paint commands can be explicitly
-          // anti-aliased by setting their `Paint` object's `antialias` property.
-          antialias: _kUsingMSAA ? 1 : 0,
-          majorVersion: webGLVersion.toDouble(),
-        ),
-      ).toInt();
+      int glContext = 0;
+      final SkWebGLContextOptions options = SkWebGLContextOptions(
+        // Default to no anti-aliasing. Paint commands can be explicitly
+        // anti-aliased by setting their `Paint` object's `antialias` property.
+        antialias: _kUsingMSAA ? 1 : 0,
+        majorVersion: webGLVersion.toDouble(),
+      );
+      if (_offscreenCanvasSupported) {
+        glContext = canvasKit.GetOffscreenWebGLContext(
+          _offscreenCanvas!,
+          options,
+        ).toInt();
+      } else {
+        glContext = canvasKit.GetWebGLContext(
+          _canvasElement!,
+          options,
+        ).toInt();
+      }
 
       _glContext = glContext;
 
@@ -302,22 +365,24 @@ class Surface {
   }
 
   void _initWebglParams() {
-    final WebGLContext gl = offscreenCanvas!.getGlContext(webGLVersion);
+    WebGLContext gl;
+    if (_offscreenCanvasSupported) {
+      gl = _offscreenCanvas!.getGlContext(webGLVersion);
+    } else {
+      gl = _canvasElement!.getGlContext(webGLVersion);
+    }
     _sampleCount = gl.getParameter(gl.samples);
     _stencilBits = gl.getParameter(gl.stencilBits);
   }
 
   CkSurface _createNewSurface(ui.Size size) {
-    assert(offscreenCanvas != null);
+    assert(_offscreenCanvas != null || _canvasElement != null);
     if (webGLVersion == -1) {
-      return _makeSoftwareCanvasSurface(
-          offscreenCanvas!, 'WebGL support not detected');
+      return _makeSoftwareCanvasSurface('WebGL support not detected');
     } else if (configuration.canvasKitForceCpuOnly) {
-      return _makeSoftwareCanvasSurface(
-          offscreenCanvas!, 'CPU rendering forced by application');
+      return _makeSoftwareCanvasSurface('CPU rendering forced by application');
     } else if (_glContext == 0) {
-      return _makeSoftwareCanvasSurface(
-          offscreenCanvas!, 'Failed to initialize WebGL context');
+      return _makeSoftwareCanvasSurface('Failed to initialize WebGL context');
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
           _grContext!,
@@ -328,8 +393,7 @@ class Surface {
           _stencilBits);
 
       if (skSurface == null) {
-        return _makeSoftwareCanvasSurface(
-            offscreenCanvas!, 'Failed to initialize WebGL surface');
+        return _makeSoftwareCanvasSurface('Failed to initialize WebGL surface');
       }
 
       return CkSurface(skSurface, _glContext);
@@ -338,14 +402,20 @@ class Surface {
 
   static bool _didWarnAboutWebGlInitializationFailure = false;
 
-  CkSurface _makeSoftwareCanvasSurface(
-      DomOffscreenCanvas htmlCanvas, String reason) {
+  CkSurface _makeSoftwareCanvasSurface(String reason) {
     if (!_didWarnAboutWebGlInitializationFailure) {
       printWarning('WARNING: Falling back to CPU-only rendering. $reason.');
       _didWarnAboutWebGlInitializationFailure = true;
     }
+
+    SkSurface surface;
+    if (_offscreenCanvasSupported) {
+      surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
+    } else {
+      surface = canvasKit.MakeSWCanvasSurface(_canvasElement!);
+    }
     return CkSurface(
-      canvasKit.MakeOffscreenSWCanvasSurface(htmlCanvas),
+      surface,
       null,
     );
   }
@@ -356,14 +426,19 @@ class Surface {
   }
 
   void dispose() {
-    offscreenCanvas?.removeEventListener(
+    _offscreenCanvas?.removeEventListener(
         'webglcontextlost', _cachedContextLostListener, false);
-    offscreenCanvas?.removeEventListener(
+    _offscreenCanvas?.removeEventListener(
         'webglcontextrestored', _cachedContextRestoredListener, false);
     _cachedContextLostListener = null;
     _cachedContextRestoredListener = null;
     _surface?.dispose();
   }
+
+  /// Safari 15 doesn't support OffscreenCanvas at all. Safari 16 supports
+  /// OffscreenCanvas, but only with the context2d API, not WebGL.
+  bool get _offscreenCanvasSupported =>
+      browserSupportsOffscreenCanvas && !isSafari;
 }
 
 /// A Dart wrapper around Skia's CkSurface.

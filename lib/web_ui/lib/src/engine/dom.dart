@@ -190,6 +190,11 @@ external DomIntl get domIntl;
 @JS('Symbol')
 external DomSymbol get domSymbol;
 
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap(DomCanvasElement canvas);
+Future<DomImageBitmap?> createImageBitmap(DomCanvasElement canvas) =>
+    js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(canvas));
+
 @JS()
 @staticInterop
 class DomNavigator {}
