@@ -23,12 +23,14 @@
             "contexts": [
                 "android_virtual_device"
             ],
-	    "parameters": [
+	        "parameters": [
                 "--android-variant",
                 "android_debug_x64",
                 "--type",
-                "android"
-	    ],
+                "android",
+                "--adb-path",
+                "/b/s/w/ir/cache/avd/src/third_party/android_sdk/public/platform-tools/adb"
+	        ],
             "script": "flutter/testing/run_tests.py"
         },
         {
@@ -37,9 +39,9 @@
             "contexts": [
                 "android_virtual_device"
             ],
-	    "parameters": [
-                "android_debug_x64"
-	    ],
+            "parameters": [
+                    "android_debug_x64"
+            ],
             "script": "flutter/testing/scenario_app/run_android_tests.sh"
         }
     ]
