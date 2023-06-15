@@ -6,7 +6,7 @@
 // KEEP THIS SYNCHRONIZED WITH ../web_ui/lib/channel_buffers.dart
 part of dart.ui;
 
-/// Deprecated. Migrate to [ChannelCallback] isntead.
+/// Deprecated. Migrate to [ChannelCallback] instead.
 ///
 /// Signature for [ChannelBuffers.drain]'s `callback` argument.
 ///
