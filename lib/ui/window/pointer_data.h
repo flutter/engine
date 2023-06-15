@@ -11,7 +11,7 @@ namespace flutter {
 
 // If this value changes, update the pointer data unpacking code in
 // platform_dispatcher.dart.
-static constexpr int kPointerDataFieldCount = 35;
+static constexpr int kPointerDataFieldCount = 36;
 static constexpr int kBytesPerField = sizeof(int64_t);
 // Must match the button constants in events.dart.
 enum PointerButtonMouse : int64_t {
@@ -32,7 +32,7 @@ enum PointerButtonStylus : int64_t {
   kPointerButtonStylusSecondary = 1 << 2,
 };
 
-// This structure is unpacked by hooks.dart.
+// This structure is unpacked by platform_dispatcher.dart.
 struct alignas(8) PointerData {
   // Must match the PointerChange enum in pointer.dart.
   enum class Change : int64_t {
@@ -100,6 +100,7 @@ struct alignas(8) PointerData {
   double pan_delta_y;
   double scale;
   double rotation;
+  int64_t view_id;
 
   void Clear();
 };

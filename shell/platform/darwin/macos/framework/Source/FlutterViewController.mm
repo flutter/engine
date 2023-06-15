@@ -781,6 +781,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
       .device_kind = deviceKind,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : _mouseState.buttons,
+      .view_id = static_cast<int64_t>(_viewId),
   };
 
   if (phase == kPanZoomUpdate) {
@@ -1070,6 +1071,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
           .device = kPointerPanZoomDeviceId,
           .signal_kind = kFlutterPointerSignalKindScrollInertiaCancel,
           .device_kind = kFlutterPointerDeviceKindTrackpad,
+          .view_id = static_cast<int64_t>(_viewId),
       };
 
       [_engine sendPointerEvent:flutterEvent];

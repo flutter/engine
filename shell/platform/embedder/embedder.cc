@@ -2426,6 +2426,9 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.pan_delta_y = 0.0;
     pointer_data.scale = SAFE_ACCESS(current, scale, 0.0);
     pointer_data.rotation = SAFE_ACCESS(current, rotation, 0.0);
+    // TODO(loicsharma): The pointer event *must* have a view ID
+    // if implicit mode is disabled.
+    pointer_data.view_id = SAFE_ACCESS(current, view_id, 0);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);

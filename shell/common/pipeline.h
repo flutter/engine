@@ -100,6 +100,11 @@ class Pipeline {
         continuation_ = nullptr;
         TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
         TRACE_FLOW_STEP("flutter", "PipelineItem", trace_id_);
+      } else {
+        // TODO: Remove this. This was added temporarily to catch if we
+        // complete the same continuation multiple itmes. This is a bug we
+        // should fix.
+        FML_LOG(ERROR) << "Continuation is null!";
       }
       return result;
     }
@@ -252,16 +257,14 @@ class Pipeline {
 };
 
 struct LayerTreeItem {
-  LayerTreeItem(int64_t view_id,
-                std::unique_ptr<LayerTree> layer_tree,
-                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-                float device_pixel_ratio)
-      : view_id(view_id),
-        layer_tree(std::move(layer_tree)),
+  LayerTreeItem(
+      std::unordered_map<int64_t, std::unique_ptr<LayerTree>> layer_trees,
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+      float device_pixel_ratio)
+      : layer_trees(std::move(layer_trees)),
         frame_timings_recorder(std::move(frame_timings_recorder)),
         device_pixel_ratio(device_pixel_ratio) {}
-  int64_t view_id;
-  std::unique_ptr<LayerTree> layer_tree;
+  std::unordered_map<int64_t, std::unique_ptr<LayerTree>> layer_trees;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
   float device_pixel_ratio;
 };

@@ -390,6 +390,9 @@ static void SendPointerEventWithData(GLFWwindow* window,
   event.y *= pixels_per_coordinate;
   event.scroll_delta_x *= pixels_per_coordinate;
   event.scroll_delta_y *= pixels_per_coordinate;
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
 
   FlutterEngineSendPointerEvent(controller->engine->flutter_engine, &event, 1);
 

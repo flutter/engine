@@ -836,6 +836,9 @@ void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
   fl_event.rotation = rotation;
   fl_event.device = kPointerPanZoomDeviceId;
   fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  fl_event.view_id = 0;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 

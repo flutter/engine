@@ -513,7 +513,7 @@ class Rasterizer final : public SnapshotDelegate,
   // front of the pipeline.
   struct DoDrawResult {
     RasterStatus raster_status = RasterStatus::kFailed;
-    int64_t view_id;
+    // int64_t view_id;
     std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
 
@@ -601,11 +601,10 @@ class Rasterizer final : public SnapshotDelegate,
       GrDirectContext* surface_context,
       bool compressed);
 
-  DoDrawResult DoDraw(
-      int64_t view_id,
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::unique_ptr<flutter::LayerTree> layer_tree,
-      float device_pixel_ratio);
+  DoDrawResult DoDraw(int64_t view_id,
+                      FrameTimingsRecorder& frame_timings_recorder,
+                      std::unique_ptr<flutter::LayerTree> layer_tree,
+                      float device_pixel_ratio);
 
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree* layer_tree,

@@ -411,6 +411,9 @@ void FlutterWindowsView::SendPointerPanZoomEnd(int32_t device_id) {
   event.x = state->pan_zoom_start_x;
   event.y = state->pan_zoom_start_y;
   event.phase = FlutterPointerPhase::kPanZoomEnd;
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
   SendPointerEventWithData(event, state);
 }
 
@@ -513,6 +516,9 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);

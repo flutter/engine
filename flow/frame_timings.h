@@ -16,7 +16,7 @@
 
 #define TRACE_EVENT_WITH_FRAME_NUMBER(recorder, category_group, name) \
   TRACE_EVENT1(category_group, name, "frame_number",                  \
-               recorder->GetFrameNumberTraceArg())
+               (recorder)->GetFrameNumberTraceArg())
 
 namespace flutter {
 

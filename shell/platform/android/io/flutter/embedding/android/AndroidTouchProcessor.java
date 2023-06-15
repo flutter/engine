@@ -76,8 +76,8 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 4;
   }
 
-  // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 35;
+  // Must match the unpacking code in platform_dispatcher.dart.
+  private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
@@ -354,6 +354,9 @@ public class AndroidTouchProcessor {
     packet.putDouble(0.0); // pan_delta_y
     packet.putDouble(1.0); // scale
     packet.putDouble(0.0); // rotation
+    // TODO(loicsharma): This assumes all pointer events are on the implicit
+    // view and should be updated to support multiple views.
+    packet.putLong(0); // view_id
 
     if (isTrackpadPan && getPointerChangeForPanZoom(pointerChange) == PointerChange.PAN_ZOOM_END) {
       ongoingPans.remove(event.getPointerId(pointerIndex));

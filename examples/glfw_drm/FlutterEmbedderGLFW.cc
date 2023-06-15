@@ -56,6 +56,9 @@ void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
   FlutterEngineSendPointerEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
       1);
