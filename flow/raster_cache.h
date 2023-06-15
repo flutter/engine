@@ -150,8 +150,8 @@ class RasterCache {
   // conditions.
   // If |preserve_rtree| is true, the raster cache will preserve the original
   // RTree of cached content by blitting individual rectangles from the cached
-  // image of the canvas according to the original layer R-Tree (if present).
-  // This is to ensure that the target surface R-Tree with be cloberred with
+  // image to the canvas according to the original layer R-Tree (if present).
+  // This is to ensure that the target surface R-Tree will not be clobbered with
   // one large blit as it can affect platform view overlays and hit testing.
   bool Draw(const RasterCacheKeyID& id,
             DlCanvas& canvas,
