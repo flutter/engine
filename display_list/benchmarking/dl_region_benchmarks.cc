@@ -134,7 +134,10 @@ void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
 enum RegionOp { kUnion, kIntersection };
 
 template <typename Region>
-void RunRegionOpBenchmark(benchmark::State& state, RegionOp op, int maxSize) {
+void RunRegionOpBenchmark(benchmark::State& state,
+                          RegionOp op,
+                          bool withSingleRect,
+                          int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
   std::mt19937 rng(seed);
@@ -151,7 +154,7 @@ void RunRegionOpBenchmark(benchmark::State& state, RegionOp op, int maxSize) {
   Region region1(rects);
 
   rects.clear();
-  for (int i = 0; i < 500; ++i) {
+  for (int i = 0; i < (withSingleRect ? 1 : 500); ++i) {
     SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
@@ -250,14 +253,16 @@ static void BM_SkRegion_GetRects(benchmark::State& state, int maxSize) {
 
 static void BM_DlRegion_Operation(benchmark::State& state,
                                   RegionOp op,
+                                  bool withSingleRect,
                                   int maxSize) {
-  RunRegionOpBenchmark<DlRegionAdapter>(state, op, maxSize);
+  RunRegionOpBenchmark<DlRegionAdapter>(state, op, withSingleRect, maxSize);
 }
 
 static void BM_SkRegion_Operation(benchmark::State& state,
                                   RegionOp op,
+                                  bool withSingleRect,
                                   int maxSize) {
-  RunRegionOpBenchmark<SkRegionAdapter>(state, op, maxSize);
+  RunRegionOpBenchmark<SkRegionAdapter>(state, op, withSingleRect, maxSize);
 }
 
 static void BM_DlRegion_IntersectsRegion(benchmark::State& state, int maxSize) {
@@ -312,61 +317,150 @@ BENCHMARK_CAPTURE(BM_DlRegion_IntersectsRegion, Large, 1500)
 BENCHMARK_CAPTURE(BM_SkRegion_IntersectsRegion, Large, 1500)
     ->Unit(benchmark::kNanosecond);
 
-BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Tiny, RegionOp::kUnion, 30)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Union_Tiny,
+                  RegionOp::kUnion,
+                  false,
+                  30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Tiny, RegionOp::kUnion, 30)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Union_Tiny,
+                  RegionOp::kUnion,
+                  false,
+                  30)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Small, RegionOp::kUnion, 100)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Union_Small,
+                  RegionOp::kUnion,
+                  false,
+                  100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Small, RegionOp::kUnion, 100)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Union_Small,
+                  RegionOp::kUnion,
+                  false,
+                  100)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Medium, RegionOp::kUnion, 400)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Union_Medium,
+                  RegionOp::kUnion,
+                  false,
+                  400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Medium, RegionOp::kUnion, 400)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Union_Medium,
+                  RegionOp::kUnion,
+                  false,
+                  400)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_DlRegion_Operation, Union_Large, RegionOp::kUnion, 1500)
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Union_Large,
+                  RegionOp::kUnion,
+                  false,
+                  1500)
     ->Unit(benchmark::kMicrosecond);
-BENCHMARK_CAPTURE(BM_SkRegion_Operation, Union_Large, RegionOp::kUnion, 1500)
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Union_Large,
+                  RegionOp::kUnion,
+                  false,
+                  1500)
     ->Unit(benchmark::kMicrosecond);
 
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_Tiny,
                   RegionOp::kIntersection,
+                  false,
                   30)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_Tiny,
                   RegionOp::kIntersection,
+                  false,
                   30)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_Small,
                   RegionOp::kIntersection,
+                  false,
                   100)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_Small,
                   RegionOp::kIntersection,
+                  false,
                   100)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_Medium,
                   RegionOp::kIntersection,
+                  false,
                   400)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_Medium,
                   RegionOp::kIntersection,
+                  false,
                   400)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_Large,
                   RegionOp::kIntersection,
+                  false,
                   1500)
     ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_Large,
                   RegionOp::kIntersection,
+                  false,
+                  1500)
+    ->Unit(benchmark::kMicrosecond);
+
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_SingleRect_Tiny,
+                  RegionOp::kIntersection,
+                  true,
+                  30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_SingleRect_Tiny,
+                  RegionOp::kIntersection,
+                  true,
+                  30)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_SingleRect_Small,
+                  RegionOp::kIntersection,
+                  true,
+                  100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_SingleRect_Small,
+                  RegionOp::kIntersection,
+                  true,
+                  100)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_SingleRect_Medium,
+                  RegionOp::kIntersection,
+                  true,
+                  400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_SingleRect_Medium,
+                  RegionOp::kIntersection,
+                  true,
+                  400)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DlRegion_Operation,
+                  Intersection_SingleRect_Large,
+                  RegionOp::kIntersection,
+                  true,
+                  1500)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SkRegion_Operation,
+                  Intersection_SingleRect_Large,
+                  RegionOp::kIntersection,
+                  true,
                   1500)
     ->Unit(benchmark::kMicrosecond);
 

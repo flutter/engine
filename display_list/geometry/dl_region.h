@@ -21,6 +21,10 @@ class DlRegion {
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
   explicit DlRegion(const std::vector<SkIRect>& rects);
 
+  /// Creates region covering area of a rectangle.
+  explicit DlRegion(const SkIRect& rect);
+
+  DlRegion(const DlRegion&) = default;
   DlRegion(DlRegion&&) = default;
 
   /// Creates union region of region a and b.
@@ -67,7 +71,7 @@ class DlRegion {
   class SpanBuffer {
    public:
     SpanBuffer() = default;
-    SpanBuffer(const SpanBuffer&) = delete;
+    SpanBuffer(const SpanBuffer&);
     SpanBuffer(SpanBuffer&& m);
 
     void reserve(size_t capacity);
@@ -96,6 +100,7 @@ class DlRegion {
 
   bool isEmpty() const { return lines_.empty(); }
   bool isComplex() const;
+  bool isSimple() const { return !isComplex(); }
 
   struct SpanLine {
     int32_t top;
@@ -103,7 +108,7 @@ class DlRegion {
     SpanChunkHandle chunk_handle;
   };
 
-  void addRects(const std::vector<SkIRect>& rects);
+  void setRects(const std::vector<SkIRect>& rects);
 
   void appendLine(int32_t top,
                   int32_t bottom,

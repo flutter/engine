@@ -15,6 +15,16 @@ DlRegion::SpanBuffer::SpanBuffer(DlRegion::SpanBuffer&& m)
   m.spans_ = nullptr;
 };
 
+DlRegion::SpanBuffer::SpanBuffer(const DlRegion::SpanBuffer& m)
+    : capacity_(m.capacity_), size_(m.size_) {
+  if (m.spans_ == nullptr) {
+    spans_ = nullptr;
+  } else {
+    spans_ = static_cast<Span*>(std::malloc(capacity_ * sizeof(Span)));
+    memcpy(spans_, m.spans_, size_ * sizeof(Span));
+  }
+};
+
 DlRegion::SpanBuffer::~SpanBuffer() {
   free(spans_);
 }
@@ -64,10 +74,15 @@ void DlRegion::SpanBuffer::getSpans(SpanChunkHandle handle,
 }
 
 DlRegion::DlRegion(const std::vector<SkIRect>& rects) {
-  addRects(rects);
+  setRects(rects);
 }
 
 DlRegion::DlRegion() {}
+
+DlRegion::DlRegion(const SkIRect& rect) : bounds_(rect) {
+  Span span{rect.left(), rect.right()};
+  lines_.push_back(makeLine(rect.top(), rect.bottom(), &span, &span + 1));
+}
 
 bool DlRegion::spansEqual(SpanLine& line,
                           const Span* begin,
@@ -231,8 +246,8 @@ size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
   return new_span - res.data();
 }
 
-void DlRegion::addRects(const std::vector<SkIRect>& unsorted_rects) {
-  // addRects can only be called on empty regions.
+void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
+  // setRects can only be called on empty regions.
   FML_DCHECK(lines_.empty());
 
   size_t count = unsorted_rects.size();
@@ -386,11 +401,15 @@ void DlRegion::appendLine(int32_t top,
 }
 
 DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
-  DlRegion res;
+  if (a.isSimple() && a.bounds_.contains(b.bounds_)) {
+    return a;
+  } else if (b.isSimple() && b.bounds_.contains(a.bounds_)) {
+    return b;
+  }
 
+  DlRegion res;
   res.bounds_ = a.bounds_;
   res.bounds_.join(b.bounds_);
-
   res.span_buffer_.reserve(a.span_buffer_.capacity() +
                            b.span_buffer_.capacity());
 
@@ -468,11 +487,20 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
 }
 
 DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
-  DlRegion res;
   if (!SkIRect::Intersects(a.bounds_, b.bounds_)) {
-    return res;
+    return DlRegion();
+  } else if (a.isSimple() && b.isSimple()) {
+    SkIRect r(a.bounds_);
+    auto res = r.intersect(b.bounds_);
+    FML_DCHECK(res);
+    return DlRegion(r);
+  } else if (a.isSimple() && a.bounds_.contains(b.bounds_)) {
+    return b;
+  } else if (b.isSimple() && b.bounds_.contains(a.bounds_)) {
+    return a;
   }
 
+  DlRegion res;
   res.span_buffer_.reserve(
       std::max(a.span_buffer_.capacity(), b.span_buffer_.capacity()));
 
@@ -483,6 +511,18 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
   auto a_end = a.lines_.end();
   auto b_it = b.lines_.begin();
   auto b_end = b.lines_.end();
+
+  // When intersecting single rectangle with a complex region use binary
+  // search to find the first line that intersects the rectangle.
+  if (b_it == b_end - 1) {
+    a_it = std::upper_bound(
+        a_it, a_end, b_it->top,
+        [](int32_t top, const SpanLine& line) { return top < line.bottom; });
+  } else if (a_it == a_end - 1) {
+    b_it = std::upper_bound(
+        b_it, b_end, a_it->top,
+        [](int32_t top, const SpanLine& line) { return top < line.bottom; });
+  }
 
   auto& a_buffer = a.span_buffer_;
   auto& b_buffer = b.span_buffer_;
@@ -524,6 +564,13 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
 
 std::vector<SkIRect> DlRegion::getRects(bool deband) const {
   std::vector<SkIRect> rects;
+  if (isEmpty()) {
+    return rects;
+  } else if (isSimple()) {
+    rects.push_back(bounds_);
+    return rects;
+  }
+
   size_t rect_count = 0;
   size_t previous_span_end = 0;
   for (const auto& line : lines_) {
@@ -578,7 +625,7 @@ bool DlRegion::intersects(const SkIRect& rect) const {
 
   auto bounds_intersect = SkIRect::Intersects(bounds_, rect);
 
-  if (!isComplex()) {
+  if (isSimple()) {
     return bounds_intersect;
   }
 
