@@ -73,12 +73,17 @@ LogMessage::LogMessage(LogSeverity severity,
 }
 
 // static
-std::shared_ptr<std::ostringstream> LogMessage::test_stream_ = nullptr;
+thread_local std::shared_ptr<std::ostringstream>
+    LogMessage::capture_next_log_stream_ = nullptr;
+
+void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream) {
+  LogMessage::CaptureNextLog(stream);
+}
 
 // static
 void LogMessage::CaptureNextLog(
     const std::shared_ptr<std::ostringstream>& stream) {
-  test_stream_ = stream;
+  LogMessage::capture_next_log_stream_ = stream;
 }
 
 LogMessage::~LogMessage() {
@@ -86,9 +91,9 @@ LogMessage::~LogMessage() {
   stream_ << std::endl;
 #endif
 
-  if (test_stream_) {
-    *test_stream_ << stream_.str();
-    test_stream_.reset();
+  if (capture_next_log_stream_) {
+    *capture_next_log_stream_ << stream_.str();
+    capture_next_log_stream_.reset();
   } else {
 #if defined(FML_OS_ANDROID)
     android_LogPriority priority =

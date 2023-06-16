@@ -6,6 +6,6 @@
 
 namespace fml {
 
-bool ThreadChecker::disable_next_ = false;
+thread_local bool ThreadChecker::disable_next_failure_ = false;
 
 }

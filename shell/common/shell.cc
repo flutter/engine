@@ -992,13 +992,13 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   }
 }
 
-std::set<std::string> Shell::misbehaving_message_channels_ = {};
-
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+    std::scoped_lock lock(misbehaving_message_channels_mutex_);
     auto inserted = misbehaving_message_channels_.insert(message->channel());
     if (inserted.second) {
       FML_LOG(ERROR)
@@ -1013,6 +1013,7 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
              "information.";
     }
   }
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)

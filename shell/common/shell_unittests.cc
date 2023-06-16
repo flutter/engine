@@ -4233,6 +4233,9 @@ TEST_F(ShellTest, NotifyDestroyed) {
 }
 
 TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG
+  GTEST_SKIP() << "Test is for debug mode only.";
+#endif
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
                          ThreadHost::Type::Platform);
@@ -4242,7 +4245,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   auto shell = CreateShell(settings, task_runners);
 
   auto stream = std::make_shared<std::ostringstream>();
-  fml::LogMessage::CaptureNextLog(stream);
+  fml::CaptureNextLog(stream);
 
   // The next call will result in a thread checker violation.
   fml::ThreadChecker::DisableNextThreadCheckFailure();
@@ -4259,6 +4262,16 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                   "https://docs.flutter.dev/platform-integration/"
                   "platform-channels#channels-and-platform-threading for more "
                   "information.\n"));
+
+  stream = std::make_shared<std::ostringstream>();
+  fml::CaptureNextLog(stream);
+
+  // The next call will result in a thread checker violation.
+  fml::ThreadChecker::DisableNextThreadCheckFailure();
+  SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
+                                       "com.test.plugin", nullptr));
+
+  EXPECT_EQ(stream->str(), "");
 }
 
 }  // namespace testing

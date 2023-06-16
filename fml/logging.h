@@ -12,6 +12,8 @@
 
 namespace fml {
 
+void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream);
+
 class LogMessageVoidify {
  public:
   void operator&(std::ostream&) {}
@@ -30,7 +32,8 @@ class LogMessage {
   static void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream);
 
  private:
-  static std::shared_ptr<std::ostringstream> test_stream_;
+  static thread_local std::shared_ptr<std::ostringstream>
+      capture_next_log_stream_;
   std::ostringstream stream_;
   const LogSeverity severity_;
   const char* file_;
