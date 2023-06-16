@@ -532,11 +532,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       checkInputEditingState(textEditing!.strategy.domElement, '', 0, 0);
 
@@ -589,11 +585,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -629,9 +621,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      await Future<void>.delayed(Duration.zero);
+      await waitForDesktopSafariFocus();
 
       const MethodCall setEditingState =
         MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -716,11 +706,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -818,11 +804,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -880,11 +862,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
@@ -940,11 +918,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
@@ -999,11 +973,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
@@ -1066,9 +1036,7 @@ Future<void> testMain() async {
       expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
       expect(domDocument.activeElement, domDocument.body);
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      await Future<void>.delayed(Duration.zero);
+      await waitForDesktopSafariFocus();
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
@@ -1106,11 +1074,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1162,11 +1126,7 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState2));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'xyz', 0, 2);
@@ -1208,11 +1168,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1283,11 +1239,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(updateSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
       // Check the element still has focus. User can keep editing.
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           textEditing!.strategy.domElement);
@@ -1343,11 +1295,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
@@ -1659,11 +1607,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       // Check if the selection range is correct.
       checkInputEditingState(
@@ -1849,11 +1793,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1921,11 +1861,7 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      // This timer exists because Desktop Safari element is focused after
-      // zero-duration timer to prevent autofill dialog
-      if(isSafari){
-        await Future<void>.delayed(Duration.zero);
-      }
+      await waitForDesktopSafariFocus();
 
       final DomHTMLTextAreaElement textarea = textEditing!.strategy.domElement!
           as DomHTMLTextAreaElement;
@@ -3004,4 +2940,13 @@ void clearForms() {
     defaultTextEditingRoot.querySelectorAll('form').last.remove();
   }
   formsOnTheDom.clear();
+}
+
+/// On Desktop Safari, the editing element is focused after a zero-duration timer
+/// to prevent autofill popup flickering. We must wait a tick for this placement
+/// before referencing these elements.
+Future<void> waitForDesktopSafariFocus() async {
+  if (textEditing.strategy is SafariDesktopTextEditingStrategy) {
+    await Future<void>.delayed(Duration.zero);
+  }
 }
