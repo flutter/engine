@@ -35,7 +35,7 @@ class DlRegion {
   /// If |deband| is false, each span line will result in separate rectangles,
   /// closely matching SkRegion::Iterator behavior.
   /// If |deband| is true, matching rectangles from adjacent span lines will be
-  /// merged into single rectange.
+  /// merged into single rectangle.
   std::vector<SkIRect> getRects(bool deband = true) const;
 
   /// Returns maximum and minimum axis values of rectangles in this region.
