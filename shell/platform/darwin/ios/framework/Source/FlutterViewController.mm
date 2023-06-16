@@ -146,6 +146,7 @@ typedef struct MouseState {
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
+@synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -617,9 +618,17 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     if (self.viewIfLoaded == nil) {
       FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
     }
-    return self.viewIfLoaded.window.windowScene.screen;
+    return [self windowSceneIfViewLoaded].screen;
   }
   return UIScreen.mainScreen;
+}
+
+- (UIWindowScene*)windowSceneIfViewLoaded {
+  if (self.viewIfLoaded == nil) {
+    FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
+    return nil;
+  }
+  return self.viewIfLoaded.window.windowScene;
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1857,8 +1866,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self setNeedsUpdateOfSupportedInterfaceOrientations];
       }
     } else {
-      UIInterfaceOrientationMask currentInterfaceOrientation =
-          1 << [[UIApplication sharedApplication] statusBarOrientation];
+      UIInterfaceOrientationMask currentInterfaceOrientation;
+      if (@available(iOS 13.0, *)) {
+        UIWindowScene* windowScene = [self windowSceneIfViewLoaded];
+        if (!windowScene) {
+          // When the view is not loaded, it does not make sense to access the interface
+          // orientation, bail.
+          FML_LOG(WARNING) << "Trying to access the window scene before the view is loaded.";
+          return;
+        }
+        currentInterfaceOrientation = 1 << windowScene.interfaceOrientation;
+      } else {
+        currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
+      }
       if (!(_orientationPreferences & currentInterfaceOrientation)) {
         [UIViewController attemptRotationToDeviceOrientation];
         // Force orientation switch if the current orientation is not allowed
@@ -2110,6 +2130,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [self setNeedsStatusBarAppearanceUpdate];
     }
   });
+}
+
+- (void)setPrefersStatusBarHidden:(BOOL)hidden {
+  if (hidden != _flutterPrefersStatusBarHidden) {
+    _flutterPrefersStatusBarHidden = hidden;
+    [self setNeedsStatusBarAppearanceUpdate];
+  }
+}
+
+- (BOOL)prefersStatusBarHidden {
+  return _flutterPrefersStatusBarHidden;
 }
 
 #pragma mark - Platform views
