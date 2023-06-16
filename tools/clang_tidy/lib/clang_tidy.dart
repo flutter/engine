@@ -192,7 +192,7 @@ class ClangTidy {
   /// Returns f(n) = value(n * [shardCount] + [id]).
   Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync* {
     int count = 0;
-    for (final T val in values) {
+    for (T val in values) {
       if (count % shardCount == id) {
         yield val;
       }
