@@ -1031,6 +1031,53 @@ Future<void> testMain() async {
       expect(formsOnTheDom, hasLength(0));
     });
 
+    test('form is not placed and input is not focused until after tick on Desktop Safari', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: <String>[
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // Prior to tick, form should not exist and no elements should be focused.
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
+      expect(domDocument.activeElement, domDocument.body);
+
+      // This timer exists because Desktop Safari element is focused after
+      // zero-duration timer to prevent autofill dialog
+      await Future<void>.delayed(Duration.zero);
+
+      // Form is added to DOM.
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
+
+      final DomHTMLInputElement inputElement =
+          textEditing!.strategy.domElement! as DomHTMLInputElement;
+      expect(domDocument.activeElement, inputElement);
+    }, skip: !isSafari);
+
     test('setClient, setEditingState, show, setClient', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
