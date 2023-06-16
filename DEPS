@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '2d531d020c260d1761179b7145e4a9fd64db3219',
+  'skia_revision': '9ab04a53b7be7aac0c1eb8fc19d306f02a2f5aa5',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:7f374b6902fad9caed41284a57d573abe9ada9d1',
+  'clang_version': 'git_revision:6d667d4b261e81f325756fdfd5bb43b3b3d2451d',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
@@ -889,7 +889,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'P7QA6bfO_Ij5dre7BjchMdl7JhkRp3rus6-mD4Tya9wC'
+        'version': 'fXVcR5tdj5wSd_OUzJ4cyGDnCRdGd74H704TqeCx-2oC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -899,7 +899,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '53EjCyuRu91oFTBf2vhNaLJYi8xisr1qLStJlCIeuSgC'
+        'version': 'E5G7PwYbRA-u-ZJ9FM3iag1y1c2jDWNm9OQzgYXugOQC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
