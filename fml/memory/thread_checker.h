@@ -34,7 +34,14 @@ class ThreadChecker final {
   ThreadChecker() : self_(GetCurrentThreadId()) {}
   ~ThreadChecker() {}
 
-  bool IsCreationThreadCurrent() const { return GetCurrentThreadId() == self_; }
+  bool IsCreationThreadCurrent() const {
+    bool result = GetCurrentThreadId() == self_;
+    if (!result && disable_next_) {
+      disable_next_ = false;
+      return true;
+    }
+    return result;
+  }
 
  private:
   DWORD self_;
@@ -48,6 +55,10 @@ class ThreadChecker final {
   bool IsCreationThreadCurrent() const {
     pthread_t current_thread = pthread_self();
     bool is_creation_thread_current = !!pthread_equal(current_thread, self_);
+    if (disable_next_ && !is_creation_thread_current) {
+      disable_next_ = false;
+      return true;
+    }
 #ifdef __APPLE__
     // TODO(https://github.com/flutter/flutter/issues/45272): Implement for
     // other platforms.
@@ -67,7 +78,10 @@ class ThreadChecker final {
     return is_creation_thread_current;
   }
 
+  static void DisableNextThreadCheckFailure() { disable_next_ = true; }
+
  private:
+  static bool disable_next_;
   pthread_t self_;
 #endif
 };

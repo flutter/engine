@@ -27,7 +27,10 @@ class LogMessage {
 
   std::ostream& stream() { return stream_; }
 
+  static void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream);
+
  private:
+  static std::shared_ptr<std::ostringstream> test_stream_;
   std::ostringstream stream_;
   const LogSeverity severity_;
   const char* file_;
