@@ -97,7 +97,7 @@ def run_cmd(
     print_divider('!')
 
     print(
-        f'Failed Command:\n\n{command_string}\n\nExit Code: {process.returncode}\n'
+          f'Failed Command:\n\n{command_string}\n\nExit Code: {process.returncode}\n\nOutput:{output}\n'
     )
 
     print_divider('!')
