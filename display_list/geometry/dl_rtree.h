@@ -6,8 +6,10 @@
 #define FLUTTER_DISPLAY_LIST_GEOMETRY_DL_RTREE_H_
 
 #include <list>
+#include <optional>
 #include <vector>
 
+#include "flutter/display_list/geometry/dl_region.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -123,6 +125,16 @@ class DlRTree : public SkRefCnt {
   std::list<SkRect> searchAndConsolidateRects(const SkRect& query,
                                               bool deband = true) const;
 
+  /// Returns DlRegion that represents the union of all rectangles in the
+  /// R-Tree.
+  const DlRegion& region() const;
+
+  /// Returns DlRegion that represents the union of all rectangles in the
+  /// R-Tree intersected with the query rect.
+  DlRegion region(const SkRect& query) const {
+    return DlRegion::MakeIntersection(region(), DlRegion(query.roundOut()));
+  }
+
  private:
   static constexpr SkRect empty_ = SkRect::MakeEmpty();
 
@@ -133,6 +145,7 @@ class DlRTree : public SkRefCnt {
   std::vector<Node> nodes_;
   int leaf_count_;
   int invalid_id_;
+  mutable std::optional<DlRegion> region_;
 };
 
 }  // namespace flutter
