@@ -297,7 +297,8 @@ std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
 }
 
 // |Context|
-std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
+std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer(
+    CommandBufferType type) const {
   return CreateCommandBufferInQueue(command_queue_);
 }
 

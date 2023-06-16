@@ -57,7 +57,9 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
     return false;
   }
 
-  auto cmd_buffer = context->CreateCommandBuffer();
+  FML_LOG(ERROR) << "Creating Command Buffer: "
+                 << static_cast<int>(buffer_type_);
+  auto cmd_buffer = context->CreateCommandBuffer(buffer_type_);
 
   if (!cmd_buffer) {
     return false;

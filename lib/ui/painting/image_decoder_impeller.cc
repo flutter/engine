@@ -402,7 +402,8 @@ ImageDecoderImpeller::UploadTextureToShared(
     // This is only really needed for iOS.
     gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
         [context, &texture, &decode_error] {
-          auto command_buffer = context->CreateCommandBuffer();
+          auto command_buffer = context->CreateCommandBuffer(
+              impeller::CommandBufferType::kTransfer);
           if (!command_buffer) {
             decode_error =
                 "Could not create command buffer for mipmap generation.";

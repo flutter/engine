@@ -51,22 +51,14 @@ static std::optional<vk::PhysicalDevice> PickPhysicalDevice(
 
 static std::vector<vk::DeviceQueueCreateInfo> GetQueueCreateInfos(
     std::initializer_list<QueueIndexVK> queues) {
-  std::map<size_t /* family */, size_t /* index */> family_index_map;
-  for (const auto& queue : queues) {
-    family_index_map[queue.family] = 0;
-  }
-  for (const auto& queue : queues) {
-    auto value = family_index_map[queue.family];
-    family_index_map[queue.family] = std::max(value, queue.index);
-  }
-
   static float kQueuePriority = 1.0f;
   std::vector<vk::DeviceQueueCreateInfo> infos;
-  for (const auto& item : family_index_map) {
+  for (const auto& queue : queues) {
     vk::DeviceQueueCreateInfo info;
-    info.setQueueFamilyIndex(item.first);
-    info.setQueueCount(item.second + 1);
-    info.setQueuePriorities(kQueuePriority);
+    info.setQueueFamilyIndex(queue.family);
+    info.setQueueCount(1);
+    auto priority = queue.index == 0 ? 1.0f : 0.25f;
+    info.setQueuePriorities(priority);
     infos.push_back(info);
   }
   return infos;
@@ -256,8 +248,10 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
   if (!transfer_queue.has_value()) {
-    FML_LOG(INFO) << "Dedicated transfer queue not avialable.";
     transfer_queue = graphics_queue.value();
+  } else if (transfer_queue.value() == graphics_queue.value()) {
+    transfer_queue = QueueIndexVK{.family = graphics_queue.value().family,
+                                  .index = graphics_queue.value().index + 1};
   }
   if (!compute_queue.has_value()) {
     VALIDATION_LOG << "Could not pick compute queue.";
@@ -437,8 +431,11 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  auto encoder = CreateGraphicsCommandEncoder();
+std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer(
+    CommandBufferType type) const {
+  auto encoder = type == CommandBufferType::kGraphics
+                     ? CreateGraphicsCommandEncoder()
+                     : CreateTransferCommandEncoder();
   if (!encoder) {
     return nullptr;
   }
@@ -526,10 +523,30 @@ std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     return nullptr;
   }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      device_holder_,          //
-      queues_.graphics_queue,  //
-      tls_pool,                //
-      fence_waiter_            //
+      device_holder_,               //
+      queues_.graphics_queue,       //
+      tls_pool,                     //
+      fence_waiter_,                //
+      CommandBufferType::kGraphics  //
+      ));
+  if (!encoder->IsValid()) {
+    return nullptr;
+  }
+  return encoder;
+}
+
+std::unique_ptr<CommandEncoderVK> ContextVK::CreateTransferCommandEncoder()
+    const {
+  auto tls_pool = CommandPoolVK::GetThreadLocal(this);
+  if (!tls_pool) {
+    return nullptr;
+  }
+  auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
+      device_holder_,               //
+      queues_.transfer_queue,       //
+      tls_pool,                     //
+      fence_waiter_,                //
+      CommandBufferType::kTransfer  //
       ));
   if (!encoder->IsValid()) {
     return nullptr;

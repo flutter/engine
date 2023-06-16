@@ -34,7 +34,8 @@ class CommandEncoderVK {
   CommandEncoderVK(const std::weak_ptr<const DeviceHolder>& device_holder,
                    const std::shared_ptr<QueueVK>& queue,
                    const std::shared_ptr<CommandPoolVK>& pool,
-                   std::shared_ptr<FenceWaiterVK> fence_waiter);
+                   std::shared_ptr<FenceWaiterVK> fence_waiter,
+                   CommandBufferType buffer_type);
 
   ~CommandEncoderVK();
 

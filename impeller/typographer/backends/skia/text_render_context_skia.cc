@@ -277,6 +277,7 @@ static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
 
   FML_DCHECK(bitmap != nullptr);
   auto texture_descriptor = texture->GetTextureDescriptor();
+  texture->SetCommandBufferType(CommandBufferType::kGraphics);
 
   auto mapping = std::make_shared<fml::NonOwnedMapping>(
       reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data

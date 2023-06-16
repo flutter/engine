@@ -259,6 +259,11 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   return false;
 }
 
+enum class CommandBufferType {
+  kGraphics = 0,
+  kTransfer = 1,
+};
+
 enum class SampleCount {
   kCount1 = 1,
   kCount4 = 4,

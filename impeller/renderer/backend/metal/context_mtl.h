@@ -76,7 +76,8 @@ class ContextMTL final : public Context,
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer(
+      CommandBufferType type = CommandBufferType::kGraphics) const override;
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;

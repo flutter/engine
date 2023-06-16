@@ -16,17 +16,19 @@ class TrackedObjectsVK {
  public:
   explicit TrackedObjectsVK(
       const std::weak_ptr<const DeviceHolder>& device_holder,
-      const std::shared_ptr<CommandPoolVK>& pool)
+      const std::shared_ptr<CommandPoolVK>& pool,
+      CommandBufferType buffer_type)
       : desc_pool_(device_holder) {
     if (!pool) {
       return;
     }
-    auto buffer = pool->CreateGraphicsCommandBuffer();
+    auto buffer = pool->CreateCommandBuffer(buffer_type);
     if (!buffer) {
       return;
     }
     pool_ = pool;
     buffer_ = std::move(buffer);
+    buffer_type_ = buffer_type;
     is_valid_ = true;
   }
 
@@ -40,7 +42,7 @@ class TrackedObjectsVK {
       buffer_.release();
       return;
     }
-    pool->CollectGraphicsCommandBuffer(std::move(buffer_));
+    pool->CollectCommandBuffer(std::move(buffer_), buffer_type_);
   }
 
   bool IsValid() const { return is_valid_; }
@@ -92,6 +94,7 @@ class TrackedObjectsVK {
   std::set<std::shared_ptr<const Buffer>> tracked_buffers_;
   std::set<std::shared_ptr<const TextureSourceVK>> tracked_textures_;
   bool is_valid_ = false;
+  CommandBufferType buffer_type_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TrackedObjectsVK);
 };
@@ -100,10 +103,12 @@ CommandEncoderVK::CommandEncoderVK(
     const std::weak_ptr<const DeviceHolder>& device_holder,
     const std::shared_ptr<QueueVK>& queue,
     const std::shared_ptr<CommandPoolVK>& pool,
-    std::shared_ptr<FenceWaiterVK> fence_waiter)
+    std::shared_ptr<FenceWaiterVK> fence_waiter,
+    CommandBufferType buffer_type)
     : fence_waiter_(std::move(fence_waiter)),
-      tracked_objects_(
-          std::make_shared<TrackedObjectsVK>(device_holder, pool)) {
+      tracked_objects_(std::make_shared<TrackedObjectsVK>(device_holder,
+                                                          pool,
+                                                          buffer_type)) {
   if (!fence_waiter_ || !tracked_objects_->IsValid() || !queue) {
     return;
   }

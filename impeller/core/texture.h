@@ -45,6 +45,10 @@ class Texture {
 
   virtual Scalar GetYCoordScale() const;
 
+  void SetCommandBufferType(CommandBufferType buffer_type) {
+    buffer_type_ = buffer_type;
+  }
+
   bool NeedsMipmapGeneration() const;
 
  protected:
@@ -59,6 +63,7 @@ class Texture {
       size_t slice) = 0;
 
   bool mipmap_generated_ = false;
+  CommandBufferType buffer_type_ = CommandBufferType::kTransfer;
 
  private:
   TextureIntent intent_ = TextureIntent::kRenderToTexture;
