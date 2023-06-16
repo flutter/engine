@@ -50,7 +50,7 @@ class DlRTree : public SkRefCnt {
   /// If an array of IDs is not specified then all leaf nodes will be
   /// represented by the |invalid_id| (which defaults to -1).
   ///
-  /// Invallid rects that are empty or contain a NaN value will not be
+  /// Invalid rects that are empty or contain a NaN value will not be
   /// stored in the R-Tree. And, if a |predicate| function is provided,
   /// that function will be called to query if the rectangle associated
   /// with the ID should be included.
@@ -73,8 +73,8 @@ class DlRTree : public SkRefCnt {
   /// The returned indices may not themselves be in numerical order,
   /// but they will represent the rectangles and IDs in the order in
   /// which they were passed into the constructor. The actual rectangle
-  /// and ID associated with each index can be retreived using the
-  /// |DlRTree::id| and |DlRTree::bouds| methods.
+  /// and ID associated with each index can be retrieved using the
+  /// |DlRTree::id| and |DlRTree::bounds| methods.
   void search(const SkRect& query, std::vector<int>* results) const;
 
   /// Return the ID for the indicated result of a query or
