@@ -1,4 +1,4 @@
-Signature: 471fe578b288caff4974e1aca344a942
+Signature: 11f19eeedf2b341622a2f7b3a7f5579d
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8918,6 +8918,7 @@ ORIGIN: ../../../third_party/skia/include/core/SkColorTable.h + ../../../third_p
 ORIGIN: ../../../third_party/skia/include/core/SkEncodedImageFormat.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkICC.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkTextureCompressionType.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/core/SkTiledImageUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/SkImageGanesh.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h + ../../../third_party/skia/LICENSE
@@ -9049,6 +9050,7 @@ ORIGIN: ../../../third_party/skia/src/image/SkImage_RasterFactories.cpp + ../../
 ORIGIN: ../../../third_party/skia/src/image/SkPictureImageGenerator.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/image/SkSurface_Base.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/image/SkSurface_Null.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/image/SkTiledImageUtils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/fontations/src/ffi.rs + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.h + ../../../third_party/skia/LICENSE
@@ -9072,6 +9074,10 @@ ORIGIN: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.cpp + ../../../
 ORIGIN: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/transform/SkSLHoistSwitchVarDeclarationsAtTopLevel.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/transform/SkSLRewriteIndexedSwizzle.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/text/gpu/SlugImpl.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/text/gpu/SlugImpl.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/text/gpu/VertexFiller.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/text/gpu/VertexFiller.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp
@@ -9099,6 +9105,7 @@ FILE: ../../../third_party/skia/include/core/SkColorTable.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
 FILE: ../../../third_party/skia/include/core/SkICC.h
 FILE: ../../../third_party/skia/include/core/SkTextureCompressionType.h
+FILE: ../../../third_party/skia/include/core/SkTiledImageUtils.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/SkImageGanesh.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h
@@ -9230,6 +9237,7 @@ FILE: ../../../third_party/skia/src/image/SkImage_RasterFactories.cpp
 FILE: ../../../third_party/skia/src/image/SkPictureImageGenerator.h
 FILE: ../../../third_party/skia/src/image/SkSurface_Base.cpp
 FILE: ../../../third_party/skia/src/image/SkSurface_Null.cpp
+FILE: ../../../third_party/skia/src/image/SkTiledImageUtils.cpp
 FILE: ../../../third_party/skia/src/ports/fontations/src/ffi.rs
 FILE: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.cpp
 FILE: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.h
@@ -9253,6 +9261,10 @@ FILE: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.cpp
 FILE: ../../../third_party/skia/src/sksl/tracing/SkSLTraceHook.h
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLHoistSwitchVarDeclarationsAtTopLevel.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLRewriteIndexedSwizzle.cpp
+FILE: ../../../third_party/skia/src/text/gpu/SlugImpl.cpp
+FILE: ../../../third_party/skia/src/text/gpu/SlugImpl.h
+FILE: ../../../third_party/skia/src/text/gpu/VertexFiller.cpp
+FILE: ../../../third_party/skia/src/text/gpu/VertexFiller.h
 FILE: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 Google LLC
