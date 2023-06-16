@@ -1600,24 +1600,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
-<<<<<<< HEAD
-  // TODO(cbracken) Implement.
-
-  // As of iOS 14.4, this call is used by iOS's
-  // _UIKeyboardTextSelectionController to determine the position
-  // of the floating cursor when the user force touches the space
-  // bar to initiate floating cursor.
-  //
-  // It is recommended to return a value that's roughly the
-  // center of kSpacePanBounds to make sure the floating cursor
-  // has ample space in all directions and does not hit kSpacePanBounds.
-  // See the comments in beginFloatingCursorAtPoint.
-  return CGRectZero;
-}
-
-- (CGRect)bounds {
-  return _isFloatingCursorActive ? kSpacePanBounds : super.bounds;
-=======
   NSInteger index = ((FlutterTextPosition*)position).index;
   UITextStorageDirection affinity = ((FlutterTextPosition*)position).affinity;
   // Get the selectionRect of the characters before and after the requested caret position.
@@ -1677,7 +1659,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     return CGRectMake(characterBeforeCaret.origin.x + characterBeforeCaret.size.width,
                       characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
   }
->>>>>>> de68fba093 (Fix crash with CJK keyboard with emoji at end of text field (#42540))
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
