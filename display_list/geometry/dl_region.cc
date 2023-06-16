@@ -62,6 +62,8 @@ size_t DlRegion::SpanBuffer::getChunkSize(SpanChunkHandle handle) const {
 
 void DlRegion::SpanBuffer::setChunkSize(SpanChunkHandle handle, size_t size) {
   FML_DCHECK(handle < size_);
+  FML_DCHECK(spans_ != nullptr);
+  // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
   spans_[handle].left = size;
 }
 
