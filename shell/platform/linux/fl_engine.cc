@@ -202,7 +202,7 @@ static bool compositor_collect_backing_store_callback(
 
 // Called when embedder should composite contents of each layer onto the screen.
 static bool compositor_present_view_callback(FlutterViewPresentInfo* info) {
-  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  g_return_val_if_fail(FL_IS_RENDERER(info->user_data), false);
   return fl_renderer_present_layers(FL_RENDERER(info->user_data), info->layers,
                                     info->layers_count, info->view_id);
 }
@@ -773,7 +773,8 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
-  self->embedder_api.SendWindowMetricsEvent(self->engine, view_id, &event);
+  event.view_id = view_id;
+  self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,

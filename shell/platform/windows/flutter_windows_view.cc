@@ -277,7 +277,8 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
-  engine_->SendWindowMetricsEvent(view_id, event);
+  event.view_id = view_id;
+  engine_->SendWindowMetricsEvent(event);
 }
 
 void FlutterWindowsView::SendInitialBounds() {
