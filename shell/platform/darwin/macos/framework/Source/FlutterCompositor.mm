@@ -57,6 +57,12 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
         info.surface = surface;
         info.offset = CGPointMake(layer->offset.x, layer->offset.y);
         info.zIndex = i;
+        FlutterBackingStorePresentInfo* present_info = layer->backing_store_present_info;
+        if (present_info != nullptr && present_info->paint_region != nullptr) {
+          auto paint_region = present_info->paint_region;
+          info.paintRegion = std::vector<FlutterRect>(
+              paint_region->rects, paint_region->rects + paint_region->rects_count);
+        }
         [surfaces addObject:info];
       }
     }
