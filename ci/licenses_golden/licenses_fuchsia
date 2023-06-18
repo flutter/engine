@@ -1,4 +1,4 @@
-Signature: c1c573d904603c14a54ca1f53972e369
+Signature: 748b14f4f7c6e2e7cba98d2adc50a0b3
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -905,7 +905,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/limits.h + ../../..
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/namespace.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/unsafe.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_base/decoding_and_validating.cc + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_base/encoding.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_base/formatting.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/coding.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/internal.h + ../../../fuchsia/sdk/linux/LICENSE
@@ -1023,7 +1022,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/limits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/namespace.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/unsafe.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/decoding_and_validating.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/encoding.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/formatting.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/coding.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/internal.h
@@ -2342,8 +2340,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/include/lib/inspect/s
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/reader.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/service.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/magma_client/include/lib/magma/magma_sysmem.h + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/pkg/modular_cpp/agent.cc + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/pkg/modular_cpp/include/lib/modular/cpp/agent.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_ref_pair.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_token_pair.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_ref_pair.cc + ../../../fuchsia/sdk/linux/LICENSE
@@ -2662,8 +2658,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/include/lib/inspect/ser
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/reader.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/service.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/magma_client/include/lib/magma/magma_sysmem.h
-FILE: ../../../fuchsia/sdk/linux/pkg/modular_cpp/agent.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/modular_cpp/include/lib/modular/cpp/agent.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_ref_pair.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_token_pair.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_ref_pair.cc
@@ -3957,6 +3951,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl + ../../../fuchs
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/feature.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv4.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv6.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/lifecycle.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/restarter.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing/tracing.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -3970,6 +3965,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc + ../.
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/include/lib/driver/devfs/cpp/connector.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/media_session.dart
@@ -3988,6 +3984,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/feature.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv4.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv6.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/lifecycle.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/restarter.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing/tracing.fidl
@@ -4001,6 +3998,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/include/lib/driver/devfs/cpp/connector.h
+FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 The Fuchsia Authors. All rights reserved.
 
