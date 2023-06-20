@@ -12,12 +12,9 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
-<<<<<<< HEAD
-
-=======
 #include "impeller/typographer/rectangle_packer.h"
+
 #include "third_party/skia/include/core/SkBitmap.h"
->>>>>>> 7d4abb81ccd1deff7dfe817ce2b0eeacf6110d18
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
@@ -153,22 +150,18 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     GlyphAtlas::Type type,
     std::optional<uint16_t> minimum_alignment) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+
   // This size needs to be above the minimum required aligment for linear
   // textures. This is 256 for older intel macs and decreases on iOS devices.
   static constexpr auto kMinAtlasSize = 256u;
   static constexpr auto kMinAlphaBitmapSize = 1024u;
   static constexpr auto kMaxAtlasSize = 4096u;
-  // In case a device happens to have a larger minimum alignment, verify that
-  // 256 is sufficient here.
-  uint16_t minimum_size = minimum_alignment.value_or(0) > kMinAtlasSize
-                              ? minimum_alignment.value()
-                              : kMinAtlasSize;
-
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  uint16_t minimum_size = minimum_alignment.value_or(kMinAtlasSize);
 
   ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
                            ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
-                           : ISize(kMinAtlasSize, kMinAtlasSize);
+                           : ISize(minimum_size, minimum_size);
   size_t total_pairs = pairs.size() + 1;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
@@ -429,7 +422,6 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // A new glyph atlas must be created.
   PixelFormat format;
   switch (type) {
-    case GlyphAtlas::Type::kSignedDistanceField:
     case GlyphAtlas::Type::kAlphaBitmap:
       format = PixelFormat::kA8UNormInt;
       break;
@@ -485,15 +477,6 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 8: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
-  PixelFormat format;
-  switch (type) {
-    case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
-      break;
-    case GlyphAtlas::Type::kColorBitmap:
-      format = PixelFormat::kR8G8B8A8UNormInt;
-      break;
-  }
   auto texture =
       UploadGlyphTextureAtlas(*GetContext()->GetResourceAllocator().get(),
                               device_buffer, bitmap, atlas_size, format);
