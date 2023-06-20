@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/impeller/golden_tests/metal_screenshoter.h"
+#include "flutter/impeller/golden_tests/metal_screenshotter.h"
 
 #include <CoreImage/CoreImage.h>
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #define GLFW_INCLUDE_NONE
@@ -13,17 +15,45 @@
 namespace impeller {
 namespace testing {
 
-MetalScreenshoter::MetalScreenshoter() {
+MetalScreenshotter::MetalScreenshotter() {
   FML_CHECK(::glfwInit() == GLFW_TRUE);
   playground_ =
       PlaygroundImpl::Create(PlaygroundBackend::kMetal, PlaygroundSwitches{});
   aiks_context_.reset(new AiksContext(playground_->GetContext()));
 }
 
-std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
-    const Picture& picture,
+sk_sp<flutter::DlImage> MetalScreenshotter::MakeImage(
+    const sk_sp<flutter::DisplayList>& list,
     const ISize& size) {
-  Vector2 content_scale = playground_->GetContentScale();
+  DlDispatcher dispatcher;
+  dispatcher.drawColor(flutter::DlColor::kTransparent(),
+                       flutter::DlBlendMode::kSrc);
+  list->Dispatch(dispatcher);
+  auto picture = dispatcher.EndRecordingAsPicture();
+  std::shared_ptr<Image> image = picture.ToImage(*aiks_context_, size);
+  std::shared_ptr<Texture> texture = image->GetTexture();
+  return DlImageImpeller::Make(texture);
+}
+
+std::unique_ptr<MetalScreenshot> MetalScreenshotter::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list,
+    const ISize& size,
+    bool scale_content) {
+  DlDispatcher dispatcher;
+  dispatcher.drawColor(flutter::DlColor::kTransparent(),
+                       flutter::DlBlendMode::kSrc);
+  list->Dispatch(dispatcher);
+  auto picture = dispatcher.EndRecordingAsPicture();
+
+  return MakeScreenshot(picture, size, scale_content);
+}
+
+std::unique_ptr<MetalScreenshot> MetalScreenshotter::MakeScreenshot(
+    const Picture& picture,
+    const ISize& size,
+    bool scale_content) {
+  Vector2 content_scale =
+      scale_content ? playground_->GetContentScale() : Vector2{1, 1};
   std::shared_ptr<Image> image = picture.ToImage(
       *aiks_context_,
       ISize(size.width * content_scale.x, size.height * content_scale.y));

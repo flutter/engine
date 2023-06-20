@@ -5,13 +5,18 @@
 #ifndef FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_SURFACE_PROVIDER_H_
 #define FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_SURFACE_PROVIDER_H_
 
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/impeller/golden_tests/metal_screenshot.h"
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {
+
+using MetalScreenshot = impeller::testing::MetalScreenshot;
 
 class DlSurfaceInstance {
  public:
@@ -60,6 +65,7 @@ class DlSurfaceProvider {
   virtual const std::string backend_name() const = 0;
   virtual BackendType backend_type() const = 0;
   virtual bool supports(PixelFormat format) const = 0;
+  virtual bool supports_impeller() const { return false; }
   virtual bool InitializeSurface(
       size_t width,
       size_t height,
@@ -71,6 +77,17 @@ class DlSurfaceProvider {
       PixelFormat format = kN32Premul_PixelFormat) const = 0;
 
   virtual bool Snapshot(std::string& filename) const;
+  virtual std::unique_ptr<MetalScreenshot> ImpellerSnapshot(
+      const sk_sp<DisplayList>& list,
+      int width,
+      int height) const {
+    return nullptr;
+  }
+  virtual sk_sp<DlImage> MakeImpellerImage(const sk_sp<DisplayList>& list,
+                                           int width,
+                                           int height) const {
+    return nullptr;
+  }
 
  protected:
   DlSurfaceProvider() = default;

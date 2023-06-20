@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/metal_screenshot.h"
@@ -12,14 +14,24 @@
 namespace impeller {
 namespace testing {
 
-/// Converts `Picture`'s to `MetalScreenshot`'s with the playground backend.
-class MetalScreenshoter {
+/// Converts `Picture`'s and `DisplayList`'s to `MetalScreenshot`'s with the
+/// playground backend.
+class MetalScreenshotter {
  public:
-  MetalScreenshoter();
+  MetalScreenshotter();
+
+  sk_sp<flutter::DlImage> MakeImage(const sk_sp<flutter::DisplayList>& list,
+                                    const ISize& size);
+
+  std::unique_ptr<MetalScreenshot> MakeScreenshot(
+      const sk_sp<flutter::DisplayList>& list,
+      const ISize& size,
+      bool scale_content = true);
 
   std::unique_ptr<MetalScreenshot> MakeScreenshot(const Picture& picture,
                                                   const ISize& size = {300,
-                                                                       300});
+                                                                       300},
+                                                  bool scale_content = true);
 
   AiksContext& GetContext() { return *aiks_context_; }
 

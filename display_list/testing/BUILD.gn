@@ -66,6 +66,7 @@ source_set("display_list_surface_provider") {
 
   deps = [
     "//flutter/common/graphics",
+    "//flutter/impeller/golden_tests:metal_screenshot",
     "//flutter/testing:testing_lib",
   ]
 

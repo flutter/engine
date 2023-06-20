@@ -54,5 +54,25 @@ std::shared_ptr<DlSurfaceInstance> DlMetalSurfaceProvider::MakeOffscreenSurface(
   return std::make_shared<DlMetalSurfaceInstance>(std::move(surface));
 }
 
+std::unique_ptr<MetalScreenshot> DlMetalSurfaceProvider::ImpellerSnapshot(
+    const sk_sp<DisplayList>& list,
+    int width,
+    int height) const {
+  if (!snapshotter_) {
+    snapshotter_.reset(new MetalScreenshotter());
+  }
+  return snapshotter_->MakeScreenshot(list, {width, height}, false);
+}
+
+sk_sp<DlImage> DlMetalSurfaceProvider::MakeImpellerImage(
+    const sk_sp<DisplayList>& list,
+    int width,
+    int height) const {
+  if (!snapshotter_) {
+    snapshotter_.reset(new MetalScreenshotter());
+  }
+  return snapshotter_->MakeImage(list, {width, height});
+}
+
 }  // namespace testing
 }  // namespace flutter
