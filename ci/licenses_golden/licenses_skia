@@ -1,4 +1,4 @@
-Signature: a83d107d81257aea149a8e0108454b62
+Signature: 3c8ddfa27c3c54c252dc45af0b3f982f
 
 ====================================================================================================
 LIBRARY: etc1
@@ -1404,6 +1404,7 @@ ORIGIN: ../../../third_party/skia/gm/points.cpp + ../../../third_party/skia/LICE
 ORIGIN: ../../../third_party/skia/gm/poly2poly.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/quadpaths.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/rasterhandleallocator.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/gm/shaderpath.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/shadertext3.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/strokefill.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/strokerects.cpp + ../../../third_party/skia/LICENSE
@@ -1586,6 +1587,7 @@ FILE: ../../../third_party/skia/gm/points.cpp
 FILE: ../../../third_party/skia/gm/poly2poly.cpp
 FILE: ../../../third_party/skia/gm/quadpaths.cpp
 FILE: ../../../third_party/skia/gm/rasterhandleallocator.cpp
+FILE: ../../../third_party/skia/gm/shaderpath.cpp
 FILE: ../../../third_party/skia/gm/shadertext3.cpp
 FILE: ../../../third_party/skia/gm/strokefill.cpp
 FILE: ../../../third_party/skia/gm/strokerects.cpp
