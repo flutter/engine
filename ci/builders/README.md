@@ -300,7 +300,7 @@ permissions to run in the target platform.
 * **parameters** - flags or parameters passed to the script.
 * **Script** - the path to the script to execute relative to the checkout
 directory.
-* **contexts** - a list of available contexts to add the text execution step.
+* **contexts** - a list of available contexts to add to the text execution step.
 The list of supported contexts can be found [here](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#687). As of 06/20/23 two contexts are supported:
 "android_virtual_device" and "metric_center_token".
 
