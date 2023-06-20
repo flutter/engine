@@ -4,13 +4,11 @@
 
 #pragma once
 
-#include <functional>
-#include <memory>
-#include <vector>
-
 #include "flutter/fml/macros.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
+#include "impeller/renderer/pipeline_descriptor.h"
+#include "impeller/renderer/context.h"
 
 namespace impeller {
 
@@ -25,7 +23,7 @@ namespace impeller {
 /// Flutter application may easily require building hundreds of PSOs in total,
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
-  SampleCount sample_count = SampleCount::kCount1;
+  SampleCount sample_count = SampleCount::kCount4;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
@@ -60,7 +58,6 @@ struct ContentContextOptions {
 
   void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
-
 
 constexpr std::array<BlendMode, 14> kColorSourceBlends = {
     BlendMode::kClear,
@@ -119,17 +116,21 @@ template <typename PipelineT>
 void InitializeColorSource(Variants<PipelineT>& storage,
                            ContentContextOptions& default_opts,
                            const Context& context) {
-  for (const auto& blend : kColorSourceBlends) {
-    for (const auto& stencil_config : kColorSourceStencilParams) {
-      for (const auto& primitive_type : kColorSourcePrimitiveTypes) {
-        ContentContextOptions options = default_opts;
-        options.blend_mode = blend;
-        options.stencil_compare = stencil_config.stencil_compare;
-        options.stencil_operation = stencil_config.stencil_operation;
-        options.primitive_type = primitive_type;
-        storage[options] = CreatePipeline<PipelineT>(context, options);
+  if (context.GetCapabilities()->HasSlowPSOConstruction()) {
+    for (const auto& blend : kColorSourceBlends) {
+      for (const auto& stencil_config : kColorSourceStencilParams) {
+        for (const auto& primitive_type : kColorSourcePrimitiveTypes) {
+          ContentContextOptions options = default_opts;
+          options.blend_mode = blend;
+          options.stencil_compare = stencil_config.stencil_compare;
+          options.stencil_operation = stencil_config.stencil_operation;
+          options.primitive_type = primitive_type;
+          storage[options] = CreatePipeline<PipelineT>(context, options);
+        }
       }
     }
+  } else {
+    storage[default_opts] = CreatePipeline<PipelineT>(context, default_opts);
   }
 }
 

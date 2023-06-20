@@ -216,6 +216,9 @@ RenderTarget RenderTarget::CreateOffscreen(
   if (size.IsEmpty()) {
     return {};
   }
+  // Dont force additional PSO variants on Vulkan.
+  FML_DCHECK(stencil_attachment_config.has_value() ||
+             !context.GetCapabilities()->HasSlowPSOConstruction());
 
   RenderTarget target;
   PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
@@ -257,6 +260,9 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   if (size.IsEmpty()) {
     return {};
   }
+  // Dont force additional PSO variants on Vulkan.
+  FML_DCHECK(stencil_attachment_config.has_value() ||
+             !context.GetCapabilities()->HasSlowPSOConstruction());
 
   RenderTarget target;
   PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();

@@ -76,6 +76,10 @@ class StandardCapabilities final : public Capabilities {
     return default_stencil_format_;
   }
 
+  bool HasSlowPSOConstruction() const override {
+    return false;
+  }
+
  private:
   StandardCapabilities(bool has_threading_restrictions,
                        bool supports_offscreen_msaa,

@@ -37,6 +37,8 @@ class Capabilities {
 
   virtual bool SupportsDecalTileMode() const = 0;
 
+  virtual bool HasSlowPSOConstruction() const = 0;
+
   virtual PixelFormat GetDefaultColorFormat() const = 0;
 
   virtual PixelFormat GetDefaultStencilFormat() const = 0;

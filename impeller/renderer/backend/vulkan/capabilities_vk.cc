@@ -347,6 +347,11 @@ bool CapabilitiesVK::SupportsCompute() const {
 }
 
 // |Capabilities|
+bool CapabilitiesVK::HasSlowPSOConstruction() const {
+  return true;
+}
+
+// |Capabilities|
 bool CapabilitiesVK::SupportsComputeSubgroups() const {
   // Set by |SetDevice|.
   return supports_compute_subgroups_;
