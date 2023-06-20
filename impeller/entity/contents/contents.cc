@@ -68,8 +68,10 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     return std::nullopt;
   }
 
-  if (GetCoverageHint().has_value()) {
-    coverage = coverage->Intersection(*GetCoverageHint());
+  auto coverage_hint = GetCoverageHint();
+  if (coverage_hint.has_value()) {
+    coverage = coverage->Intersection(coverage_hint.value())
+                   .value_or(coverage.value());
   }
 
   // Pad Contents snapshots with 1 pixel borders to ensure correct sampling
