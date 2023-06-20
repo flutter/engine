@@ -92,9 +92,9 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
         Entity sub_entity;
         auto color_size = contents.GetColorSourceSize();
         if (color_size.has_value()) {
-          auto sx = coverage->size.width / color_size->width;
-          auto sy = coverage->size.height / color_size->height;
-          sub_entity.SetTransformation(Matrix::MakeScale(Vector2{sx, sy}));
+          auto scale_size = coverage->size / color_size.value();
+          sub_entity.SetTransformation(
+              Matrix::MakeScale(Vector2{scale_size.width, scale_size.height}));
         } else {
           sub_entity.SetTransformation(
               Matrix::MakeTranslation(Vector3(-coverage->origin)) *
