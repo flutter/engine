@@ -43,9 +43,9 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
   default_options_ = ContentContextOptions{
+      .sample_count = SampleCount::kCount4,  // Default to MSAA
       .color_attachment_pixel_format =
           context_->GetCapabilities()->GetDefaultColorFormat(),
-      .sample_count = SampleCount::kCount4,  // Default to MSAA
   };
 
 #ifdef IMPELLER_DEBUG
