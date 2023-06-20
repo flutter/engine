@@ -1,4 +1,4 @@
-Signature: 11f19eeedf2b341622a2f7b3a7f5579d
+Signature: 783892464687754b7c30e25bad9f3ecb
 
 ====================================================================================================
 LIBRARY: etc1
@@ -393,6 +393,7 @@ FILE: ../../../third_party/skia/relnotes/skif_runtimeshader_sampleradius.md
 FILE: ../../../third_party/skia/relnotes/skimagefilters_alphathreshold_remove.md
 FILE: ../../../third_party/skia/relnotes/skimagefilters_image_remove.md
 FILE: ../../../third_party/skia/relnotes/skimagegenerator_grexternaltexturegenerator.md
+FILE: ../../../third_party/skia/relnotes/skpoint_float.md
 FILE: ../../../third_party/skia/relnotes/sksamplingoptions_implicit.md
 FILE: ../../../third_party/skia/relnotes/skshaders_namespace.md
 FILE: ../../../third_party/skia/relnotes/sksurface_methods.md
@@ -628,7 +629,6 @@ ORIGIN: ../../../third_party/skia/include/core/SkPaint.h + ../../../third_party/
 ORIGIN: ../../../third_party/skia/include/core/SkPath.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkPathEffect.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkPathMeasure.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/core/SkPoint.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkRect.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkRefCnt.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkScalar.h + ../../../third_party/skia/LICENSE
@@ -652,6 +652,7 @@ ORIGIN: ../../../third_party/skia/include/private/base/SkFixed.h + ../../../thir
 ORIGIN: ../../../third_party/skia/include/private/base/SkFloatingPoint.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkMath.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkNoncopyable.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/private/base/SkPoint_impl.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkTDArray.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkTemplates.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/utils/SkBase64.h + ../../../third_party/skia/LICENSE
@@ -775,7 +776,6 @@ FILE: ../../../third_party/skia/include/core/SkPaint.h
 FILE: ../../../third_party/skia/include/core/SkPath.h
 FILE: ../../../third_party/skia/include/core/SkPathEffect.h
 FILE: ../../../third_party/skia/include/core/SkPathMeasure.h
-FILE: ../../../third_party/skia/include/core/SkPoint.h
 FILE: ../../../third_party/skia/include/core/SkRect.h
 FILE: ../../../third_party/skia/include/core/SkRefCnt.h
 FILE: ../../../third_party/skia/include/core/SkScalar.h
@@ -799,6 +799,7 @@ FILE: ../../../third_party/skia/include/private/base/SkFixed.h
 FILE: ../../../third_party/skia/include/private/base/SkFloatingPoint.h
 FILE: ../../../third_party/skia/include/private/base/SkMath.h
 FILE: ../../../third_party/skia/include/private/base/SkNoncopyable.h
+FILE: ../../../third_party/skia/include/private/base/SkPoint_impl.h
 FILE: ../../../third_party/skia/include/private/base/SkTDArray.h
 FILE: ../../../third_party/skia/include/private/base/SkTemplates.h
 FILE: ../../../third_party/skia/include/utils/SkBase64.h
@@ -1403,6 +1404,7 @@ ORIGIN: ../../../third_party/skia/gm/points.cpp + ../../../third_party/skia/LICE
 ORIGIN: ../../../third_party/skia/gm/poly2poly.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/quadpaths.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/rasterhandleallocator.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/gm/shaderpath.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/shadertext3.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/strokefill.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/strokerects.cpp + ../../../third_party/skia/LICENSE
@@ -1585,6 +1587,7 @@ FILE: ../../../third_party/skia/gm/points.cpp
 FILE: ../../../third_party/skia/gm/poly2poly.cpp
 FILE: ../../../third_party/skia/gm/quadpaths.cpp
 FILE: ../../../third_party/skia/gm/rasterhandleallocator.cpp
+FILE: ../../../third_party/skia/gm/shaderpath.cpp
 FILE: ../../../third_party/skia/gm/shadertext3.cpp
 FILE: ../../../third_party/skia/gm/strokefill.cpp
 FILE: ../../../third_party/skia/gm/strokerects.cpp
@@ -8917,6 +8920,7 @@ ORIGIN: ../../../third_party/skia/include/codec/SkWebpDecoder.h + ../../../third
 ORIGIN: ../../../third_party/skia/include/core/SkColorTable.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkEncodedImageFormat.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkICC.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/core/SkPoint.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkTextureCompressionType.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkTiledImageUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h + ../../../third_party/skia/LICENSE
@@ -9104,6 +9108,7 @@ FILE: ../../../third_party/skia/include/codec/SkWebpDecoder.h
 FILE: ../../../third_party/skia/include/core/SkColorTable.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
 FILE: ../../../third_party/skia/include/core/SkICC.h
+FILE: ../../../third_party/skia/include/core/SkPoint.h
 FILE: ../../../third_party/skia/include/core/SkTextureCompressionType.h
 FILE: ../../../third_party/skia/include/core/SkTiledImageUtils.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h

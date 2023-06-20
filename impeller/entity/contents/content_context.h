@@ -803,6 +803,12 @@ class ContentContext {
       point_field_compute_pipelines_;
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       uv_compute_pipelines_;
+  // The values for the default context options must be cached on
+  // initial creation. In the presence of wide gamut and platform views,
+  // it is possible that secondary surfaces will have a different default
+  // pixel format, which would cause the prototype check in GetPipeline
+  // below to fail.
+  ContentContextOptions default_options_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -820,9 +826,7 @@ class ContentContext {
       return found->second->WaitAndGet();
     }
 
-    auto prototype = container.find(
-        {.color_attachment_pixel_format =
-             context_->GetCapabilities()->GetDefaultColorFormat()});
+    auto prototype = container.find(default_options_);
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());
