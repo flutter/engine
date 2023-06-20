@@ -59,21 +59,12 @@ struct ContentContextOptions {
   void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
 
-constexpr std::array<BlendMode, 14> kColorSourceBlends = {
-    BlendMode::kClear,
+// To be exhaustive this should include all pipeline blends, but src and srcOver
+// are the most common due to defaults and src coercision for hidden surface
+// removal.
+constexpr std::array<BlendMode, 2> kColorSourceBlends = {
     BlendMode::kSource,
-    BlendMode::kDestination,
     BlendMode::kSourceOver,
-    BlendMode::kDestinationOver,
-    BlendMode::kSourceIn,
-    BlendMode::kDestinationIn,
-    BlendMode::kSourceOut,
-    BlendMode::kDestinationOut,
-    BlendMode::kSourceATop,
-    BlendMode::kDestinationATop,
-    BlendMode::kXor,
-    BlendMode::kPlus,
-    BlendMode::kModulate,
 };
 
 struct StencilParameters {
