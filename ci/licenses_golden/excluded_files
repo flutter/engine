@@ -451,8 +451,6 @@
 ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/testing
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
