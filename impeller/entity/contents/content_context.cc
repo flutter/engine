@@ -231,7 +231,8 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA  //
 #ifndef FML_OS_ANDROID
-        ,std::nullopt  // stencil_attachment_config
+        ,
+        std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
     );
   } else {
@@ -239,7 +240,8 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig  //
 #ifndef FML_OS_ANDROID
-        ,std::nullopt  // stencil_attachment_config
+        ,
+        std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
     );
   }
