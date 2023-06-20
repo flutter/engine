@@ -28,7 +28,9 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   // Apply default ContentContextOptions to the descriptor.
   const auto default_color_fmt =
       context.GetCapabilities()->GetDefaultColorFormat();
-  ContentContextOptions{.color_attachment_pixel_format = default_color_fmt}
+  ContentContextOptions{
+      .sample_count = SampleCount::kCount4,  // Default to MSAA
+      .color_attachment_pixel_format = default_color_fmt}
       .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
