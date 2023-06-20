@@ -44,6 +44,7 @@ class ThreadChecker final {
   }
 
  private:
+  static thread_local bool disable_next_failure_;
   DWORD self_;
 
 #else
