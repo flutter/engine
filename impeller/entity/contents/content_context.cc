@@ -44,7 +44,9 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   }
   default_options_ = ContentContextOptions{
       .color_attachment_pixel_format =
-          context_->GetCapabilities()->GetDefaultColorFormat()};
+          context_->GetCapabilities()->GetDefaultColorFormat(),
+      .sample_count = SampleCount::kCount4,  // Default to MSAA
+  };
 
 #ifdef IMPELLER_DEBUG
   checkerboard_pipelines_[default_options_] =
