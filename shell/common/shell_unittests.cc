@@ -4261,7 +4261,11 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                   "plugin or application code creating that channel.\nSee "
                   "https://docs.flutter.dev/platform-integration/"
                   "platform-channels#channels-and-platform-threading for more "
+#if !OS_FUCHSIA
                   "information.\n"));
+#else
+                  "information."));
+#endif  // !OS_FUCHSIA
 
   stream = std::make_shared<std::ostringstream>();
   fml::CaptureNextLog(stream.get());
