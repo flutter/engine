@@ -30,6 +30,12 @@ namespace fml {
 // there's a small space cost to having even an empty class. )
 class ThreadChecker final {
  public:
+  static void DisableNextThreadCheckFailure() { disable_next_failure_ = true; }
+
+ private:
+  static thread_local bool disable_next_failure_;
+
+ public:
 #if defined(FML_OS_WIN)
   ThreadChecker() : self_(GetCurrentThreadId()) {}
   ~ThreadChecker() {}
@@ -44,7 +50,6 @@ class ThreadChecker final {
   }
 
  private:
-  static thread_local bool disable_next_failure_;
   DWORD self_;
 
 #else
@@ -79,10 +84,7 @@ class ThreadChecker final {
     return is_creation_thread_current;
   }
 
-  static void DisableNextThreadCheckFailure() { disable_next_failure_ = true; }
-
  private:
-  static thread_local bool disable_next_failure_;
   pthread_t self_;
 #endif
 };
