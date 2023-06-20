@@ -29,7 +29,7 @@
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -42,6 +42,10 @@ namespace impeller {
   FML_DLOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
 
 DlDispatcher::DlDispatcher() = default;
+
+DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
+
+DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
 
 DlDispatcher::~DlDispatcher() = default;
 
@@ -197,7 +201,7 @@ static Paint::Style ToStyle(flutter::DlDrawStyle style) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStyle(flutter::DlDrawStyle style) {
+void DlDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
   paint_.style = ToStyle(style);
 }
 
@@ -487,7 +491,7 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
     }
     case flutter::DlColorFilterType::kMatrix: {
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
-      impeller::FilterContents::ColorMatrix color_matrix;
+      impeller::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
       return [color_matrix](FilterInput::Ref input) {
         return ColorFilterContents::MakeColorMatrix({std::move(input)},
@@ -841,6 +845,7 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
+          .SetConvexity(Convexity::kConvex)
           .TakePath();
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
@@ -858,8 +863,10 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
     canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
                        bounds.width() * 0.5, paint_);
   } else {
-    auto path =
-        PathBuilder{}.AddOval(skia_conversions::ToRect(bounds)).TakePath();
+    auto path = PathBuilder{}
+                    .AddOval(skia_conversions::ToRect(bounds))
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
     canvas_.DrawPath(path, paint_);
   }
 }
@@ -889,7 +896,20 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
-  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  SkRect rect;
+  SkRRect rrect;
+  SkRect oval;
+  if (path.isRect(&rect)) {
+    canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
+  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
+                      rrect.getSimpleRadii().fX, paint_);
+  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
+    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
+                       oval.width() * 0.5, paint_);
+  } else {
+    canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  }
 }
 
 // |flutter::DlOpReceiver|
@@ -910,16 +930,17 @@ void DlDispatcher::drawPoints(PointMode mode,
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
-    case flutter::DlCanvas::PointMode::kPoints:
-      if (paint.stroke_cap == Cap::kButt) {
-        paint.stroke_cap = Cap::kSquare;
+    case flutter::DlCanvas::PointMode::kPoints: {
+      // Cap::kButt is also treated as a square.
+      auto point_style = paint.stroke_cap == Cap::kRound ? PointStyle::kRound
+                                                         : PointStyle::kSquare;
+      auto radius = paint.stroke_width;
+      if (radius > 0) {
+        radius /= 2.0;
       }
-      for (uint32_t i = 0; i < count; i++) {
-        Point p0 = skia_conversions::ToPoint(points[i]);
-        auto path = PathBuilder{}.AddLine(p0, p0).TakePath();
-        canvas_.DrawPath(path, paint);
-      }
-      break;
+      canvas_.DrawPoints(skia_conversions::ToPoints(points, count), radius,
+                         paint, point_style);
+    } break;
     case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = skia_conversions::ToPoint(points[i - 1]);
@@ -1053,7 +1074,24 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  display_list->Dispatch(*this);
+  if (display_list->has_rtree()) {
+    // The canvas remembers the screen-space culling bounds clipped by
+    // the surface and the history of clip calls. DisplayList can cull
+    // the ops based on a rectangle expressed in its "destination bounds"
+    // so we need the canvas to transform those into the current local
+    // coordinate space into which the DisplayList will be rendered.
+    auto cull_bounds = canvas_.GetCurrentLocalCullingBounds();
+    if (cull_bounds.has_value()) {
+      Rect cull_rect = cull_bounds.value();
+      display_list->Dispatch(
+          *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
+                                  cull_rect.GetRight(), cull_rect.GetBottom()));
+    } else {
+      display_list->Dispatch(*this);
+    }
+  } else {
+    display_list->Dispatch(*this);
+  }
 
   // Restore all saved state back to what it was before we interpreted
   // the display_list
@@ -1066,7 +1104,7 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLength();
+  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
   canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
                         impeller::Point{x, y},               //
                         paint_                               //

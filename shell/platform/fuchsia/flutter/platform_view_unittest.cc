@@ -54,6 +54,7 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
 
   void SubmitFrame(GrDirectContext* context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
@@ -331,7 +332,8 @@ class PlatformViewBuilder {
         std::move(on_create_surface_callback_),
         std::move(on_semantics_node_update_callback_),
         std::move(on_request_announce_callback_),
-        std::move(on_shader_warmup_callback_), [](auto...) {}, [](auto...) {});
+        std::move(on_shader_warmup_callback_), [](auto...) {}, [](auto...) {},
+        nullptr);
   }
 
  private:
@@ -636,7 +638,7 @@ TEST_F(PlatformViewTests, SetViewportMetrics) {
       delegate.metrics(),
       flutter::ViewportMetrics(
           valid_pixel_ratio, std::round(valid_pixel_ratio * valid_max_bound),
-          std::round(valid_pixel_ratio * valid_max_bound), -1.0));
+          std::round(valid_pixel_ratio * valid_max_bound), -1.0, 0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics
@@ -1447,7 +1449,8 @@ TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
               })));
   session_listener->OnScenicEvent(std::move(scenic_events));
   RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics(2.f, 40.f, 40.f, -1));
+  EXPECT_EQ(delegate.metrics(),
+            flutter::ViewportMetrics(2.f, 40.f, 40.f, -1, 0));
 
   // Inject
   std::vector<fuchsia::ui::pointer::TouchEvent> events =

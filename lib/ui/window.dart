@@ -3,6 +3,40 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+/// A configurable display that a [FlutterView] renders on.
+///
+/// Use [FlutterView.display] to get the current display for that view.
+class Display {
+  const Display._({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+    required this.refreshRate,
+  });
+
+  /// A unique identifier for this display.
+  ///
+  /// This identifier is unique among a list of displays the Flutter framework
+  /// is aware of, and is not derived from any platform specific identifiers for
+  /// displays.
+  final int id;
+
+  /// The device pixel ratio of this display.
+  ///
+  /// This value is the same as the value of [FlutterView.devicePixelRatio] for
+  /// all view objects attached to this display.
+  final double devicePixelRatio;
+
+  /// The physical size of this display.
+  final Size size;
+
+  /// The refresh rate in FPS of this display.
+  final double refreshRate;
+
+  @override
+  String toString() => 'Display(id: $id, size: $size, devicePixelRatio: $devicePixelRatio, refreshRate: $refreshRate)';
+}
+
 /// A view into which a Flutter [Scene] is drawn.
 ///
 /// Each [FlutterView] has its own layer tree that is rendered
@@ -55,7 +89,7 @@ class FlutterView {
   FlutterView._(this.viewId, this.platformDispatcher);
 
   /// The opaque ID for this view.
-  final Object viewId;
+  final int viewId;
 
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
@@ -65,6 +99,12 @@ class FlutterView {
   _ViewConfiguration get _viewConfiguration {
     assert(platformDispatcher._viewConfigurations.containsKey(viewId));
     return platformDispatcher._viewConfigurations[viewId]!;
+  }
+
+  /// The [Display] this view is drawn in.
+  Display get display {
+    assert(platformDispatcher._displays.containsKey(_viewConfiguration.displayId));
+    return platformDispatcher._displays[_viewConfiguration.displayId]!;
   }
 
   /// The number of device pixels for each logical pixel for the screen this
@@ -92,6 +132,8 @@ class FlutterView {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
+  ///  * [Display.devicePixelRatio], which reports the DPR of the display.
+  ///    The value here is equal to the value exposed on [display].
   double get devicePixelRatio => _viewConfiguration.devicePixelRatio;
 
   /// The dimensions and location of the rectangle into which the scene rendered
@@ -289,10 +331,10 @@ class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene);
+  void render(Scene scene) => _render(scene as _NativeScene);
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
-  external static void _render(Scene scene);
+  external static void _render(_NativeScene scene);
 
   /// Change the retained semantics data about this [FlutterView].
   ///
@@ -302,10 +344,10 @@ class FlutterView {
   ///
   /// This function disposes the given update, which means the semantics update
   /// cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update as _NativeSemanticsUpdate);
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
-  external static void _updateSemantics(SemanticsUpdate update);
+  external static void _updateSemantics(_NativeSemanticsUpdate update);
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
@@ -714,21 +756,6 @@ class SingletonFlutterWindow extends FlutterView {
     platformDispatcher.onFrameDataChanged = callback;
   }
 
-  /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
-  ///
-  /// {@macro dart.ui.window.accessorForwardWarning}
-  ///
-  /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
-  }
-
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
@@ -760,6 +787,8 @@ class SingletonFlutterWindow extends FlutterView {
     platformDispatcher.sendPlatformMessage(name, data, callback);
   }
 
+  /// Deprecated. Migrate to [ChannelBuffers.setListener] instead.
+  ///
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
   ///
@@ -775,8 +804,15 @@ class SingletonFlutterWindow extends FlutterView {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  // TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   set onPlatformMessage(PlatformMessageCallback? callback) {
     platformDispatcher.onPlatformMessage = callback;
   }

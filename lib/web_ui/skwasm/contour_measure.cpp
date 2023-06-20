@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <emscripten.h>
 #include "export.h"
 #include "helpers.h"
 
@@ -22,6 +21,10 @@ SKWASM_EXPORT SkContourMeasure* contourMeasureIter_next(
     next->ref();
   }
   return next.get();
+}
+
+SKWASM_EXPORT void contourMeasureIter_dispose(SkContourMeasureIter* iter) {
+  delete iter;
 }
 
 SKWASM_EXPORT void contourMeasure_dispose(SkContourMeasure* measure) {

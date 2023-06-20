@@ -4,9 +4,16 @@
 
 part of ui;
 
+abstract class Display {
+  int get id;
+  double get devicePixelRatio;
+  Size get size;
+  double get refreshRate;
+}
+
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
-  Object get viewId;
+  int get viewId;
   double get devicePixelRatio;
   Rect get physicalGeometry;
   Size get physicalSize;
@@ -16,6 +23,7 @@ abstract class FlutterView {
   ViewPadding get padding;
   GestureSettings get gestureSettings;
   List<DisplayFeature> get displayFeatures;
+  Display get display;
   void render(Scene scene) => platformDispatcher.render(scene, this);
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
@@ -104,11 +112,6 @@ abstract class SingletonFlutterWindow extends FlutterView {
   VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback) {
     platformDispatcher.onSemanticsEnabledChanged = callback;
-  }
-
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
   }
 
   FrameData get frameData => const FrameData._();

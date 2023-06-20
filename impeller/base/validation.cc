@@ -39,14 +39,14 @@ std::ostream& ValidationLog::GetStream() {
 
 void ImpellerValidationBreak(const char* message) {
 // Nothing to do. Exists for the debugger.
-#ifdef IMPELLER_DEBUG
+#ifdef IMPELLER_ENABLE_VALIDATION
   std::stringstream stream;
   stream << "Break on '" << __FUNCTION__
          << "' to inspect point of failure: " << message;
   if (sValidationLogsAreFatal) {
     FML_LOG(FATAL) << stream.str();
   } else {
-    FML_LOG(INFO) << stream.str();
+    FML_LOG(ERROR) << stream.str();
   }
 #endif  // IMPELLER_DEBUG
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import '../embedder.dart' show flutterViewEmbedder;
 import 'accessibility.dart';
 import 'semantics.dart';
 
@@ -25,14 +26,10 @@ class LiveRegion extends RoleManager {
     if (_lastAnnouncement != semanticsObject.label) {
       _lastAnnouncement = semanticsObject.label;
       if (semanticsObject.hasLabel) {
-        accessibilityAnnouncements.announce(
+        flutterViewEmbedder.accessibilityAnnouncements.announce(
           _lastAnnouncement! , Assertiveness.polite
         );
       }
     }
-  }
-
-  @override
-  void dispose() {
   }
 }

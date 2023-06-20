@@ -27,7 +27,7 @@ GlyphAtlasContext::GetBitmap() const {
   return std::make_pair(bitmap_, device_buffer_);
 }
 
-std::shared_ptr<skgpu::Rectanizer> GlyphAtlasContext::GetRectPacker() const {
+std::shared_ptr<RectanglePacker> GlyphAtlasContext::GetRectPacker() const {
   return rect_packer_;
 }
 
@@ -45,7 +45,7 @@ void GlyphAtlasContext::UpdateBitmap(
 }
 
 void GlyphAtlasContext::UpdateRectPacker(
-    std::shared_ptr<skgpu::Rectanizer> rect_packer) {
+    std::shared_ptr<RectanglePacker> rect_packer) {
   rect_packer_ = std::move(rect_packer);
 }
 

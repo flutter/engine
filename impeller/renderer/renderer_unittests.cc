@@ -39,6 +39,9 @@
 #include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 namespace testing {
 
@@ -163,7 +166,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     vertex_buffer.index_buffer = {
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
-    vertex_buffer.index_count = 36;
+    vertex_buffer.vertex_count = 36;
     vertex_buffer.index_type = IndexType::k16bit;
   }
 
@@ -285,6 +288,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   using BoxPipelineBuilder = PipelineBuilder<VS, FS>;
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  pipeline_desc->SetSampleCount(SampleCount::kCount1);
+
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
@@ -1007,7 +1012,16 @@ TEST_P(RendererTest, DefaultIndexSize) {
   // Default to 16bit index buffer size, as this is a reasonable default and
   // supported on all backends without extensions.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.AppendIndex(0u);
   ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, DefaultIndexBehavior) {
+  using VS = BoxFadeVertexShader;
+
+  // Do not create any index buffer if no indices were provided.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::kNone);
 }
 
 TEST_P(RendererTest, VertexBufferBuilder) {
@@ -1034,3 +1048,5 @@ TEST_P(RendererTest, VertexBufferBuilder) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

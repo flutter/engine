@@ -63,7 +63,6 @@ struct PrerollContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
   // presence of a platform view during Preroll.
@@ -107,6 +106,11 @@ struct PaintContext {
   LayerStateStack& state_stack;
   DlCanvas* canvas;
 
+  // Whether current canvas is an overlay canvas. Used to determine if the
+  // raster cache is painting to a surface that will be displayed above a
+  // platform view, in which case it will attempt to preserve the R-Tree.
+  bool rendering_above_platform_view = false;
+
   GrDirectContext* gr_context;
   SkColorSpace* dst_color_space;
   ExternalViewEmbedder* view_embedder;
@@ -114,7 +118,6 @@ struct PaintContext {
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
   const RasterCache* raster_cache;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
   // only when leaf layer tracing is enabled.

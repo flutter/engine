@@ -129,7 +129,8 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
       22,                     // physical touch slop
       std::vector<double>(),  // display features bounds
       std::vector<int>(),     // display features type
-      std::vector<int>()      // display features state
+      std::vector<int>(),     // display features state
+      0                       // Display ID
   };
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
@@ -168,7 +169,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder));
+  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
@@ -197,18 +198,19 @@ void ShellTest::PumpOneFrame(Shell* shell,
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        auto layer_tree = std::make_shared<LayerTree>(
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
-        layer_tree->set_root_layer(root_layer);
+        auto layer_tree = std::make_unique<LayerTree>(
+            LayerTree::Config{.root_layer = root_layer},
+            SkISize::Make(viewport_metrics.physical_width,
+                          viewport_metrics.physical_height));
+        float device_pixel_ratio =
+            static_cast<float>(viewport_metrics.device_pixel_ratio);
         if (builder) {
           builder(root_layer);
         }
-        runtime_delegate->Render(std::move(layer_tree));
+        runtime_delegate->Render(std::move(layer_tree), device_pixel_ratio);
         latch.Signal();
       });
   latch.Wait();
@@ -318,46 +320,23 @@ fml::TimePoint ShellTest::GetLatestFrameTargetTime(Shell* shell) const {
   return shell->GetLatestFrameTargetTime();
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(const Settings& settings,
-                                              bool simulate_vsync) {
-  return CreateShell(settings, GetTaskRunnersForFixture(), simulate_vsync);
-}
-
 std::unique_ptr<Shell> ShellTest::CreateShell(
     const Settings& settings,
-    TaskRunners task_runners,
-    bool simulate_vsync,
-    const std::shared_ptr<ShellTestExternalViewEmbedder>&
-        shell_test_external_view_embedder,
-    bool is_gpu_disabled,
-    ShellTestPlatformView::BackendType rendering_backend,
-    Shell::CreateCallback<PlatformView> platform_view_create_callback) {
-  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+    std::optional<TaskRunners> task_runners) {
+  return CreateShell({
+      .settings = settings,
+      .task_runners = std::move(task_runners),
+  });
+}
 
-  CreateVsyncWaiter create_vsync_waiter = [&]() {
-    if (simulate_vsync) {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
-    } else {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<VsyncWaiterFallback>(task_runners, true));
-    }
-  };
-
+std::unique_ptr<Shell> ShellTest::CreateShell(const Config& config) {
+  TaskRunners task_runners = config.task_runners.has_value()
+                                 ? config.task_runners.value()
+                                 : GetTaskRunnersForFixture();
+  Shell::CreateCallback<PlatformView> platform_view_create_callback =
+      config.platform_view_create_callback;
   if (!platform_view_create_callback) {
-    platform_view_create_callback = [vsync_clock,                        //
-                                     &create_vsync_waiter,               //
-                                     shell_test_external_view_embedder,  //
-                                     rendering_backend                   //
-    ](Shell& shell) {
-      return ShellTestPlatformView::Create(shell,                             //
-                                           shell.GetTaskRunners(),            //
-                                           vsync_clock,                       //
-                                           create_vsync_waiter,               //
-                                           rendering_backend,                 //
-                                           shell_test_external_view_embedder  //
-      );
-    };
+    platform_view_create_callback = ShellTestPlatformViewBuilder({});
   }
 
   Shell::CreateCallback<Rasterizer> rasterizer_create_callback =
@@ -365,10 +344,10 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
 
   return Shell::Create(flutter::PlatformData(),        //
                        task_runners,                   //
-                       settings,                       //
+                       config.settings,                //
                        platform_view_create_callback,  //
                        rasterizer_create_callback,     //
-                       is_gpu_disabled                 //
+                       config.is_gpu_disabled          //
   );
 }
 

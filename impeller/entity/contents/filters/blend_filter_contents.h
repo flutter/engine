@@ -16,6 +16,7 @@ class BlendFilterContents : public ColorFilterContents {
                                           const ContentContext& renderer,
                                           const Entity& entity,
                                           const Rect& coverage,
+                                          BlendMode blend_mode,
                                           std::optional<Color> foreground_color,
                                           bool absorb_opacity,
                                           std::optional<Scalar> alpha)>;
@@ -32,11 +33,13 @@ class BlendFilterContents : public ColorFilterContents {
 
  private:
   // |FilterContents|
-  std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     const Matrix& effect_transform,
-                                     const Rect& coverage) const override;
+  std::optional<Entity> RenderFilter(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Matrix& effect_transform,
+      const Rect& coverage,
+      const std::optional<Rect>& coverage_hint) const override;
 
   /// @brief Optimized advanced blend that avoids a second subpass when there is
   ///        only a single input and a foreground color.

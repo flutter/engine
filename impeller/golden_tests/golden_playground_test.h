@@ -12,6 +12,10 @@
 #include "flutter/impeller/renderer/render_target.h"
 #include "flutter/testing/testing.h"
 
+#if FML_OS_MACOSX
+#include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
+#endif
+
 namespace impeller {
 
 class GoldenPlaygroundTest
@@ -24,6 +28,8 @@ class GoldenPlaygroundTest
 
   void SetUp();
 
+  void TearDown();
+
   PlaygroundBackend GetBackend() const;
 
   bool OpenPlaygroundHere(const Picture& picture);
@@ -33,6 +39,9 @@ class GoldenPlaygroundTest
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
       bool enable_mipmapping = false) const;
+
+  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
+      const char* asset_name) const;
 
   std::shared_ptr<Context> GetContext() const;
 
@@ -46,6 +55,11 @@ class GoldenPlaygroundTest
   struct GoldenPlaygroundTestImpl;
   // This is only a shared_ptr so it can work with a forward declared type.
   std::shared_ptr<GoldenPlaygroundTestImpl> pimpl_;
+
+#if FML_OS_MACOSX
+  fml::ScopedNSAutoreleasePool autorelease_pool_;
+#endif
+
   FML_DISALLOW_COPY_AND_ASSIGN(GoldenPlaygroundTest);
 };
 

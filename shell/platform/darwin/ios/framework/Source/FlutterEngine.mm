@@ -333,7 +333,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
-- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
+- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner {
+  FML_DCHECK(_shell);
+  return _shell->GetTaskRunners().GetUITaskRunner();
+}
+
+- (fml::RefPtr<fml::TaskRunner>)rasterTaskRunner {
   FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
@@ -395,6 +400,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  [self updateDisplays];
   _textInputPlugin.get().viewController = viewController;
   _undoManagerPlugin.get().viewController = viewController;
 
@@ -672,7 +678,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         // TODO(gaaclarke): Find way to eliminate this data copy.
         NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
                                       length:screenshot.data->size()];
-        NSString* format = [NSString stringWithCString:screenshot.format.c_str()];
+        NSString* format = [NSString stringWithUTF8String:screenshot.format.c_str()];
         NSNumber* width = @(screenshot.frame_size.fWidth);
         NSNumber* height = @(screenshot.frame_size.fHeight);
         return result(@[ width, height, format, data ]);
@@ -732,7 +738,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _shell = std::move(shell);
   [self setupChannels];
   [self onLocaleUpdated:nil];
-  [self initializeDisplays];
+  [self updateDisplays];
   _publisher.reset([[FlutterDartVMServicePublisher alloc]
       initWithEnableVMServicePublication:doesVMServicePublication]);
   [self maybeSetupPlatformViewChannels];
@@ -815,8 +821,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
-    self.initialRoute = [NSString stringWithCString:settings.route.c_str()
-                                           encoding:NSUTF8StringEncoding];
+    self.initialRoute = [NSString stringWithUTF8String:settings.route.c_str()];
   }
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
@@ -835,7 +840,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       [self](flutter::Shell& shell) {
         [self recreatePlatformViewController];
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners());
+            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners(),
+            shell.GetConcurrentWorkerTaskRunner(), shell.GetIsGpuDisabledSyncSwitch());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -873,12 +879,19 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _shell != nullptr;
 }
 
-- (void)initializeDisplays {
-  auto vsync_waiter = std::shared_ptr<flutter::VsyncWaiter>(_shell->GetVsyncWaiter().lock());
+- (void)updateDisplays {
+  if (!_shell) {
+    // Tests may do this.
+    return;
+  }
+  auto vsync_waiter = _shell->GetVsyncWaiter().lock();
   auto vsync_waiter_ios = std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
   std::vector<std::unique_ptr<flutter::Display>> displays;
-  displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(vsync_waiter_ios));
-  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
+  auto screen_size = UIScreen.mainScreen.nativeBounds.size;
+  auto scale = UIScreen.mainScreen.scale;
+  displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(
+      0, vsync_waiter_ios, screen_size.width, screen_size.height, scale));
+  _shell->OnDisplayUpdates(std::move(displays));
 }
 
 - (BOOL)run {
@@ -1000,7 +1013,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       actionString = @"TextInputAction.next";
       break;
     case FlutterTextInputActionContinue:
-      actionString = @"TextInputAction.continue";
+      actionString = @"TextInputAction.continueAction";
       break;
     case FlutterTextInputActionJoin:
       actionString = @"TextInputAction.join";

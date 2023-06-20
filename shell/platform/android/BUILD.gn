@@ -6,9 +6,11 @@ import("//build/config/android/config.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/version/version.gni")
+import("//flutter/vulkan/config.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
   enable_software = true
@@ -39,9 +41,10 @@ executable("flutter_shell_native_unittests") {
   visibility = [ "*" ]
   testonly = true
   sources = [
+    "android_context_gl_impeller_unittests.cc",
     "android_context_gl_unittests.cc",
+    "android_context_vulkan_impeller_unittests.cc",
     "android_shell_holder_unittests.cc",
-    "android_surface_gl_impeller_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
   ]
@@ -72,6 +75,8 @@ source_set("flutter_shell_native_src") {
     "android_context_gl_impeller.h",
     "android_context_gl_skia.cc",
     "android_context_gl_skia.h",
+    "android_context_vulkan_impeller.cc",
+    "android_context_vulkan_impeller.h",
     "android_display.cc",
     "android_display.h",
     "android_egl_surface.cc",
@@ -474,6 +479,26 @@ action("android_jar") {
     ":pom_embedding",
     ":pom_libflutter",
   ]
+
+  if (enable_vulkan_validation_layers) {
+    assert(impeller_enable_vulkan)
+    deps += [ "//third_party/vulkan_validation_layers" ]
+    args += [
+      "--native_lib",
+      rebase_path("libVkLayer_khronos_validation.so",
+                  root_build_dir,
+                  root_build_dir),
+    ]
+    if (current_cpu == "arm64") {
+      args += [
+        "--native_lib",
+        rebase_path("$android_libcpp_root/libs/arm64-v8a/libc++_shared.so",
+                    root_build_dir),
+      ]
+    } else {
+      assert(false, "Validation layers not supported for arch.")
+    }
+  }
 
   if (flutter_runtime_mode == "profile") {
     deps += [ "//flutter/shell/vmservice:vmservice_snapshot" ]

@@ -231,8 +231,8 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       supports_read_from_resolve_,                                        //
       supports_decal_tile_mode_,                                          //
       supports_shared_device_buffer_texture_memory_,                      //
-      *default_color_format_,                                             //
-      *default_stencil_format_                                            //
+      default_color_format_.value_or(PixelFormat::kUnknown),              //
+      default_stencil_format_.value_or(PixelFormat::kUnknown)             //
       ));
 }
 

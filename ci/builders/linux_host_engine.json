@@ -76,7 +76,8 @@
                         "out/host_debug/zip_archives/linux-x64/font-subset.zip",
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip"
-                    ]
+                    ],
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
@@ -176,7 +177,8 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/host_release/zip_archives/flutter_patched_sdk_product.zip"
-                    ]
+                    ],
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
@@ -222,8 +224,33 @@
                         "--engine-capture-core-dump"
                     ],
                     "script": "flutter/testing/run_tests.py"
+                },
+                {
+                    "language": "bash",
+                    "name": "Generate metrics test",
+                    "script": "flutter/testing/benchmark/generate_metrics.sh"
+                },
+                {
+                    "language": "bash",
+                    "name": "Upload metrics dry-run",
+		    "parameters": [
+                        "--no-upload"
+                    ],
+                    "script": "flutter/testing/benchmark/upload_metrics.sh"
                 }
             ]
         }
-    ]
+    ],
+    "generators": {
+        "tasks": [
+            {
+                "name": "Verify-export-symbols-release-binaries",
+                "parameters": [
+                    "src/out"
+                ],
+                "script": "flutter/testing/symbols/verify_exported.dart",
+                "language": "dart"
+            }
+        ]
+    }
 }

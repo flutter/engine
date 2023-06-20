@@ -10,6 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/test_initialization.dart';
 import 'utils.dart';
 
 void main() {
@@ -17,7 +18,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   group('${ui.SceneBuilder}', () {
     const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
@@ -33,7 +37,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_centered_circle.png', region: region);
     });
 
@@ -45,7 +48,7 @@ Future<void> testMain() async {
       // matrix for the device pixel ratio, so just push the identity matrix.
       sceneBuilder.pushTransform(transform.toFloat64());
       transform.translate(150, 150);
-      transform.rotate(Vector3(0, 0, 1), math.pi / 3);
+      transform.rotate(kUnitZ, math.pi / 3);
       sceneBuilder.pushTransform(transform.toFloat64());
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
         canvas.drawRRect(
@@ -58,7 +61,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_rotated_rounded_square.png', region: region);
     });
 
@@ -74,7 +76,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_circle_clip_rect.png', region: region);
     });
 
@@ -93,7 +94,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_circle_clip_rrect.png', region: region);
     });
 
@@ -110,7 +110,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_rectangle_clip_circular_path.png', region: region);
     });
 
@@ -139,7 +138,6 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_opacity_circles_on_square.png', region: region);
     });
 
@@ -180,9 +178,81 @@ Future<void> testMain() async {
       }));
 
       await renderer.renderScene(sceneBuilder.build());
-      await awaitNextFrame();
       await matchGoldenFile('scene_builder_shader_mask.png', region: region);
     }, skip: isFirefox && isHtml); // https://github.com/flutter/flutter/issues/86623
+
+    test('backdrop filter layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        // Create a red and blue checkerboard pattern
+        final ui.Paint redPaint = ui.Paint()..color = const ui.Color(0xFFFF0000);
+        final ui.Paint bluePaint = ui.Paint()..color = const ui.Color(0xFF0000FF);
+        for (double y = 0; y < 300; y += 10) {
+          for (double x = 0; x < 300; x += 10) {
+            final ui.Paint paint = ((x + y) % 20 == 0) ? redPaint : bluePaint;
+            canvas.drawRect(ui.Rect.fromLTWH(x, y, 10, 10), paint);
+          }
+        }
+      }));
+
+      sceneBuilder.pushBackdropFilter(ui.ImageFilter.blur(
+        sigmaX: 3.0,
+        sigmaY: 3.0,
+      ));
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(
+          const ui.Offset(150, 150),
+          50,
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+
+      await renderer.renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_backdrop_filter.png', region: region);
+    });
+
+    test('image filter layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      sceneBuilder.pushImageFilter(ui.ImageFilter.blur(
+        sigmaX: 5.0,
+        sigmaY: 5.0,
+      ));
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(
+          const ui.Offset(150, 150),
+          50,
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+
+      await renderer.renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_image_filter.png', region: region);
+    });
+
+    test('color filter layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      const ui.ColorFilter sepia = ui.ColorFilter.matrix(<double>[
+        0.393, 0.769, 0.189, 0, 0,
+        0.349, 0.686, 0.168, 0, 0,
+        0.272, 0.534, 0.131, 0, 0,
+        0,     0,     0,     1, 0,
+      ]);
+      sceneBuilder.pushColorFilter(sepia);
+
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(
+          const ui.Offset(150, 150),
+          50,
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+
+      await renderer.renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_color_filter.png', region: region);
+    });
   });
 }
 
