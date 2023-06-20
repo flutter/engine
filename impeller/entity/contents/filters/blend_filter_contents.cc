@@ -169,9 +169,11 @@ static std::optional<Entity> AdvancedBlend(
   };
 
   auto subpass_size = ISize(coverage.size);
-  auto coverage_hint = entity.GetContents()->GetCoverageHint();
-  if (coverage_hint.has_value()) {
-    subpass_size = subpass_size.Min(ISize(coverage_hint->size));
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+    if (coverage_hint.has_value()) {
+      subpass_size = subpass_size.Min(ISize(coverage_hint->size));
+    }
   }
   auto out_texture =
       renderer.MakeSubpass("Advanced Blend Filter", subpass_size, callback);
@@ -594,9 +596,11 @@ static std::optional<Entity> PipelineBlend(
   };
 
   auto subpass_size = ISize(coverage.size);
-  auto coverage_hint = entity.GetContents()->GetCoverageHint();
-  if (coverage_hint.has_value()) {
-    subpass_size = subpass_size.Min(ISize(coverage_hint->size));
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+    if (coverage_hint.has_value()) {
+      subpass_size = subpass_size.Min(ISize(coverage_hint->size));
+    }
   }
   auto out_texture =
       renderer.MakeSubpass("Pipeline Blend Filter", subpass_size, callback);
