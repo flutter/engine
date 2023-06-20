@@ -153,6 +153,7 @@ impeller_component("entity") {
     "contents/conical_gradient_contents.h",
     "contents/content_context.cc",
     "contents/content_context.h",
+    "contents/pipeline_macros.h",
     "contents/contents.cc",
     "contents/contents.h",
     "contents/filters/blend_filter_contents.cc",

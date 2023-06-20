@@ -17,6 +17,7 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
+#include "impeller/entity/contents/pipeline_macros.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
@@ -279,53 +280,6 @@ using FramebufferBlendSoftLightPipeline =
 /// Geometry Pipelines
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
-
-/// Pipeline state configuration.
-///
-/// Each unique combination of these options requires a different pipeline state
-/// object to be built. This struct is used as a key for the per-pipeline
-/// variant cache.
-///
-/// When adding fields to this key, reliant features should take care to limit
-/// the combinatorical explosion of variations. A sufficiently complicated
-/// Flutter application may easily require building hundreds of PSOs in total,
-/// but they shouldn't require e.g. 10s of thousands.
-struct ContentContextOptions {
-  SampleCount sample_count = SampleCount::kCount1;
-  BlendMode blend_mode = BlendMode::kSourceOver;
-  CompareFunction stencil_compare = CompareFunction::kEqual;
-  StencilOperation stencil_operation = StencilOperation::kKeep;
-  PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  std::optional<PixelFormat> color_attachment_pixel_format;
-  bool has_stencil_attachment = true;
-  bool wireframe = false;
-
-  struct Hash {
-    constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
-                              o.stencil_operation, o.primitive_type,
-                              o.color_attachment_pixel_format,
-                              o.has_stencil_attachment, o.wireframe);
-    }
-  };
-
-  struct Equal {
-    constexpr bool operator()(const ContentContextOptions& lhs,
-                              const ContentContextOptions& rhs) const {
-      return lhs.sample_count == rhs.sample_count &&
-             lhs.blend_mode == rhs.blend_mode &&
-             lhs.stencil_compare == rhs.stencil_compare &&
-             lhs.stencil_operation == rhs.stencil_operation &&
-             lhs.primitive_type == rhs.primitive_type &&
-             lhs.color_attachment_pixel_format ==
-                 rhs.color_attachment_pixel_format &&
-             lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
-             lhs.wireframe == rhs.wireframe;
-    }
-  };
-
-  void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
-};
 
 class Tessellator;
 
