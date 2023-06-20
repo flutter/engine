@@ -13,11 +13,11 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/pipeline_macros.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
-#include "impeller/entity/contents/pipeline_macros.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
