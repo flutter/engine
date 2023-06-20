@@ -229,17 +229,17 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfigMSAA,  //
+        RenderTarget::kDefaultColorAttachmentConfigMSAA  //
 #ifndef FML_OS_ANDROID
-        std::nullopt  // stencil_attachment_config
+        ,std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfig,  //
+        RenderTarget::kDefaultColorAttachmentConfig  //
 #ifndef FML_OS_ANDROID
-        std::nullopt  // stencil_attachment_config
+        ,std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
     );
   }
