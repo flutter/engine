@@ -12,7 +12,7 @@
 
 namespace fml {
 
-void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream);
+void CaptureNextLog(std::ostringstream* stream);
 
 class LogMessageVoidify {
  public:
@@ -29,11 +29,12 @@ class LogMessage {
 
   std::ostream& stream() { return stream_; }
 
-  static void CaptureNextLog(const std::shared_ptr<std::ostringstream>& stream);
+  static void CaptureNextLog(std::ostringstream* stream);
 
  private:
-  static thread_local std::shared_ptr<std::ostringstream>
-      capture_next_log_stream_;
+  // This is a raw pointer so that we avoid having a non-trivially-destructible
+  // static. It is only ever for use in unit tests.
+  static thread_local std::ostringstream* capture_next_log_stream_;
   std::ostringstream stream_;
   const LogSeverity severity_;
   const char* file_;

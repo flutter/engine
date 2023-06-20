@@ -4245,7 +4245,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   auto shell = CreateShell(settings, task_runners);
 
   auto stream = std::make_shared<std::ostringstream>();
-  fml::CaptureNextLog(stream);
+  fml::CaptureNextLog(stream.get());
 
   // The next call will result in a thread checker violation.
   fml::ThreadChecker::DisableNextThreadCheckFailure();
@@ -4264,7 +4264,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                   "information.\n"));
 
   stream = std::make_shared<std::ostringstream>();
-  fml::CaptureNextLog(stream);
+  fml::CaptureNextLog(stream.get());
 
   // The next call will result in a thread checker violation.
   fml::ThreadChecker::DisableNextThreadCheckFailure();
