@@ -661,17 +661,20 @@ class GnFormatChecker extends FormatChecker {
     ];
     final List<WorkerJob> jobs = <WorkerJob>[];
     for (final String file in filesToCheck) {
-      if (!fixing) {
+      if (fixing) {
+        jobs.add(WorkerJob(
+          <String>[...cmd, file],
+          name: <String>[...cmd, file].join(' '),
+        ));
+      } else {
         final WorkerJob job = WorkerJob(
           cmd,
           stdinRaw: codeUnitsAsStream(
-              File(path.join(repoDir.absolute.path, file)).readAsBytesSync()),
+            File(path.join(repoDir.absolute.path, file)).readAsBytesSync(),
+          ),
           name: <String>[...cmd, file].join(' '),
         );
         jobs.add(job);
-      } else {
-        jobs.add(WorkerJob(<String>[...cmd, file],
-            name: <String>[...cmd, file].join(' ')));
       }
     }
     final ProcessPool gnPool = ProcessPool(
