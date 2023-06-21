@@ -34,10 +34,9 @@ class DlMetalSurfaceProvider : public DlSurfaceProvider {
     return format == kN32Premul_PixelFormat;
   }
   bool supports_impeller() const override { return true; }
-  std::unique_ptr<MetalScreenshot> ImpellerSnapshot(
-      const sk_sp<DisplayList>& list,
-      int width,
-      int height) const override;
+  sk_sp<DlPixelData> ImpellerSnapshot(const sk_sp<DisplayList>& list,
+                                      int width,
+                                      int height) const override;
   virtual sk_sp<DlImage> MakeImpellerImage(const sk_sp<DisplayList>& list,
                                            int width,
                                            int height) const override;

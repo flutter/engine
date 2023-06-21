@@ -8,7 +8,6 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/mapping.h"
-#include "flutter/impeller/golden_tests/metal_screenshot.h"
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
@@ -16,7 +15,15 @@
 namespace flutter {
 namespace testing {
 
-using MetalScreenshot = impeller::testing::MetalScreenshot;
+class DlPixelData : public SkRefCnt {
+ public:
+  virtual ~DlPixelData() = default;
+
+  virtual const uint32_t* addr32(int x, int y) const = 0;
+  virtual size_t width() const = 0;
+  virtual size_t height() const = 0;
+  virtual void write(const std::string& path) const = 0;
+};
 
 class DlSurfaceInstance {
  public:
@@ -77,10 +84,9 @@ class DlSurfaceProvider {
       PixelFormat format = kN32Premul_PixelFormat) const = 0;
 
   virtual bool Snapshot(std::string& filename) const;
-  virtual std::unique_ptr<MetalScreenshot> ImpellerSnapshot(
-      const sk_sp<DisplayList>& list,
-      int width,
-      int height) const {
+  virtual sk_sp<DlPixelData> ImpellerSnapshot(const sk_sp<DisplayList>& list,
+                                              int width,
+                                              int height) const {
     return nullptr;
   }
   virtual sk_sp<DlImage> MakeImpellerImage(const sk_sp<DisplayList>& list,

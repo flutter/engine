@@ -392,32 +392,25 @@ class SkRenderResult final : public RenderResult {
 
 class ImpellerRenderResult final : public RenderResult {
  public:
-  explicit ImpellerRenderResult(std::unique_ptr<MetalScreenshot> screenshot,
+  explicit ImpellerRenderResult(sk_sp<DlPixelData> screenshot,
                                 SkRect render_bounds)
-      : screenshot_(std::move(screenshot)),
-        render_bounds_(render_bounds),
-        addr_(reinterpret_cast<const uint32_t*>(screenshot_->GetBytes())),
-        ints_per_row_(screenshot_->GetBytesPerRow() / 4) {
-    FML_DCHECK(screenshot_->GetBytesPerRow() == ints_per_row_ * 4);
-  }
+      : screenshot_(std::move(screenshot)), render_bounds_(render_bounds) {}
   ~ImpellerRenderResult() override = default;
 
   sk_sp<SkImage> image() const override { return nullptr; };
-  int width() const override { return screenshot_->GetWidth(); };
-  int height() const override { return screenshot_->GetHeight(); }
+  int width() const override { return screenshot_->width(); };
+  int height() const override { return screenshot_->height(); }
   const uint32_t* addr32(int x, int y) const override {
-    return addr_ + (y * ints_per_row_) + x;
+    return screenshot_->addr32(x, y);
   }
   void write(const std::string& path) const override {
-    screenshot_->WriteToPNG(path);
+    screenshot_->write(path);
   }
   const SkRect& render_bounds() const { return render_bounds_; }
 
  private:
-  const std::unique_ptr<MetalScreenshot> screenshot_;
+  const sk_sp<DlPixelData> screenshot_;
   SkRect render_bounds_;
-  const uint32_t* addr_;
-  const uint32_t ints_per_row_;
 };
 
 struct RenderJobInfo {
@@ -1073,7 +1066,7 @@ class CanvasCompareTester {
       if (env.supports_impeller()) {
         auto impeller_result = env.ref_impeller_result();
         if (!checkPixels(impeller_result, impeller_result->render_bounds(),
-                         "Impeller")) {
+                         "Impeller reference")) {
           std::string test_name =
               ::testing::UnitTest::GetInstance()->current_test_info()->name();
           impeller_result->write(to_png_filename(test_name + " Impeller"));
@@ -2254,7 +2247,7 @@ class CanvasCompareTester {
                             caseP.dl_restore(),   //
                             env.impeller_image());
       auto imp_result = env.getImpellerResult(base_info, imp_job);
-      std::string imp_info = info + " (Impeller reference)";
+      std::string imp_info = info + " (Impeller)";
       if (!checkPixels(imp_result.get(), imp_result->render_bounds(), imp_info,
                        bg)) {
         FML_LOG(ERROR) << "Skia bounds: "           //
