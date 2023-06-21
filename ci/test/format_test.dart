@@ -187,7 +187,7 @@ void main() {
     } finally {
       fixture.gitRemove();
     }
-    // TODO: Fails if Java dependency is unavailable.
+    // TODO(mtolmacs): Fails if Java dependency is unavailable,
     // https://github.com/flutter/flutter/issues/129221
   }, skip: true);
 
