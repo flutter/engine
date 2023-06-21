@@ -120,7 +120,7 @@
                         "--library",
                         "../../src/out/android_release_arm64/libflutter.so",
                         "--destdir",
-                        "${FLUTTER_LOGS_DIRECTORY}",
+                        "${FLUTTER_LOGS_DIR}",
                         "--addr2line-binary",
                         "../../src/third_party/android_tools/ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-addr2line"
                     ]
