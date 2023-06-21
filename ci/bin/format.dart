@@ -465,25 +465,6 @@ class JavaFormatChecker extends FormatChecker {
   }) : super(
           srcDir: srcDir,
         ) {
-    javaBin = File(
-      path.absolute(
-        path.joinAll(<String>[
-          srcDir.absolute.path,
-          'third_party',
-          'java',
-          'open_jdk',
-          if (Platform.isMacOS) ...<String>[
-            'Contents',
-            'Home',
-          ],
-          'bin',
-          if (Platform.isWindows)
-            'java.exe'
-          else
-            'java',
-        ]),
-      ),
-    );
     googleJavaFormatJar = File(
       path.absolute(
         path.join(
@@ -497,12 +478,11 @@ class JavaFormatChecker extends FormatChecker {
     );
   }
 
-  late final File javaBin;
   late final File googleJavaFormatJar;
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
-        .runProcess(<String>[javaBin.path, '-jar', googleJavaFormatJar.path, '--version']);
+        .runProcess(<String>['java', '-jar', googleJavaFormatJar.path, '--version']);
     return result.stderr.trim();
   }
 
@@ -525,7 +505,7 @@ class JavaFormatChecker extends FormatChecker {
 
   Future<String> _getJavaVersion() async {
     final ProcessRunnerResult result =
-        await _processRunner.runProcess(<String>[javaBin.path, '-version']);
+        await _processRunner.runProcess(<String>['java', '-version']);
     return result.stderr.trim().split('\n')[0];
   }
 
@@ -560,7 +540,7 @@ class JavaFormatChecker extends FormatChecker {
       }
       formatJobs.add(
         WorkerJob(
-          <String>[javaBin.path, '-jar', googleJavaFormatJar.path, file.trim()],
+          <String>['java', '-jar', googleJavaFormatJar.path, file.trim()],
         ),
       );
     }
