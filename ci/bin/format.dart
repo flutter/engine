@@ -562,7 +562,7 @@ class JavaFormatChecker extends FormatChecker {
               '--ignore-cr-at-eol',
               '--',
               completedJob.command.last,
-              '-'
+              '-',
             ],
             stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
           ),
