@@ -268,7 +268,7 @@ bool EntityPass::Render(ContentContext& renderer,
           root_render_target.GetRenderTargetTexture());
 
       if (!command_buffer->SubmitCommandsAsync(std::move(blit_pass))) {
-          VALIDATION_LOG << "Failed to encode root pass blit command.";
+        VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
     } else {
