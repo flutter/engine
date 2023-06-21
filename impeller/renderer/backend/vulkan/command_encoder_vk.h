@@ -40,6 +40,8 @@ class CommandEncoderVK {
 
   bool IsValid() const;
 
+  bool Finish();
+
   bool Submit(SubmitCallback callback = {});
 
   bool Track(std::shared_ptr<SharedObjectVK> object);

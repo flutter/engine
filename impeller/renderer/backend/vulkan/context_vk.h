@@ -31,6 +31,20 @@ class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
 
+class CommandBufferQueue {
+ public:
+  void Enqueue(std::shared_ptr<CommandEncoderVK> encoder) {
+    pending_encoders_.push_back(encoder);
+  }
+
+  std::vector<std::shared_ptr<CommandEncoderVK>> Take() {
+    return std::move(pending_encoders_);
+  }
+
+ private:
+  std::vector<std::shared_ptr<CommandEncoderVK>> pending_encoders_;
+};
+
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
@@ -120,6 +134,9 @@ class ContextVK final : public Context,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  const std::shared_ptr<fml::ConcurrentTaskRunner> GetSubmissionTaskRunner()
+      const;
+
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 
   std::unique_ptr<Surface> AcquireNextSurface();
@@ -133,6 +150,8 @@ class ContextVK final : public Context,
   vk::PhysicalDevice GetPhysicalDevice() const;
 
   std::shared_ptr<FenceWaiterVK> GetFenceWaiter() const;
+
+  std::shared_ptr<CommandBufferQueue> GetCommandBufferQueue() const;
 
  private:
   struct DeviceHolderImpl : public DeviceHolder {
@@ -160,6 +179,8 @@ class ContextVK final : public Context,
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> submission_task_runner_;
+  std::shared_ptr<CommandBufferQueue> command_buffer_queue_;
   const uint64_t hash_;
 
   bool is_valid_ = false;

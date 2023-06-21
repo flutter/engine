@@ -267,9 +267,8 @@ bool EntityPass::Render(ContentContext& renderer,
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
 
-      if (!blit_pass->EncodeCommands(
-              renderer.GetContext()->GetResourceAllocator())) {
-        VALIDATION_LOG << "Failed to encode root pass blit command.";
+      if (!command_buffer->SubmitCommandsAsync(std::move(blit_pass))) {
+          VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
     } else {
@@ -291,16 +290,11 @@ bool EntityPass::Render(ContentContext& renderer,
         entity.Render(renderer, *render_pass);
       }
 
-      if (!render_pass->EncodeCommands()) {
-        VALIDATION_LOG << "Failed to encode root pass command buffer.";
+      if (!command_buffer->SubmitCommandsAsync(std::move(render_pass))) {
+        VALIDATION_LOG << "Failed to submit root pass command buffer.";
         return false;
       }
     }
-    if (!command_buffer->SubmitCommands()) {
-      VALIDATION_LOG << "Failed to submit root pass command buffer.";
-      return false;
-    }
-
     return true;
   }
 

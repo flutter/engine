@@ -17,6 +17,7 @@ class ComputePass;
 class Context;
 class RenderPass;
 class RenderTarget;
+class BlitPass;
 
 //------------------------------------------------------------------------------
 /// @brief      A collection of encoded commands to be submitted to the GPU for
@@ -76,6 +77,9 @@ class CommandBuffer {
   ///
   [[nodiscard]] virtual bool SubmitCommandsAsync(
       std::shared_ptr<RenderPass> render_pass);
+
+  [[nodiscard]] virtual bool SubmitCommandsAsync(
+      std::shared_ptr<BlitPass> blit_pass);
 
   //----------------------------------------------------------------------------
   /// @brief      Force execution of pending GPU commands.

@@ -7,6 +7,7 @@
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
@@ -377,8 +378,33 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
+  auto current_frame = current_frame_;
+  const auto& sync = synchronizers_[current_frame];
 
-  const auto& sync = synchronizers_[current_frame_];
+  // Submit all command buffers.
+  {
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      return false;
+    }
+
+    const auto& encoders = context.GetCommandBufferQueue()->Take();
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers;
+    for (const auto& encoder : encoders) {
+      buffers.push_back(encoder->GetCommandBuffer());
+    }
+    submit_info.setCommandBuffers(buffers);
+    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+        vk::Result::eSuccess) {
+      return false;
+    }
+
+    if (!context.GetFenceWaiter()->AddFence(
+            std::move(fence), [encoders = std::move(encoders)] {})) {
+      return false;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
@@ -429,32 +455,36 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  //----------------------------------------------------------------------------
-  /// Present the image.
-  ///
-  uint32_t indices[] = {static_cast<uint32_t>(index)};
+  context.GetSubmissionTaskRunner()->PostTask([&, current_frame, index]() {
+    const auto& sync = synchronizers_[current_frame];
+    //----------------------------------------------------------------------------
+    /// Present the image.
+    ///
+    uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-  vk::PresentInfoKHR present_info;
-  present_info.setSwapchains(*swapchain_);
-  present_info.setImageIndices(indices);
-  present_info.setWaitSemaphores(*sync->present_ready);
+    vk::PresentInfoKHR present_info;
+    present_info.setSwapchains(*swapchain_);
+    present_info.setImageIndices(indices);
+    present_info.setWaitSemaphores(*sync->present_ready);
 
-  switch (auto result = present_queue_.presentKHR(present_info)) {
-    case vk::Result::eErrorOutOfDateKHR:
-      // Caller will recreate the impl on acquisition, not submission.
-      [[fallthrough]];
-    case vk::Result::eErrorSurfaceLostKHR:
-      // Vulkan guarantees that the set of queue operations will still complete
-      // successfully.
-      [[fallthrough]];
-    case vk::Result::eSuccess:
-      return true;
-    default:
-      VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-      return false;
-  }
-  FML_UNREACHABLE();
-  return false;
+    switch (auto result = present_queue_.presentKHR(present_info)) {
+      case vk::Result::eErrorOutOfDateKHR:
+        // Caller will recreate the impl on acquisition, not submission.
+        [[fallthrough]];
+      case vk::Result::eErrorSurfaceLostKHR:
+        // Vulkan guarantees that the set of queue operations will still
+        // complete successfully.
+        [[fallthrough]];
+      case vk::Result::eSuccess:
+        return true;
+      default:
+        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
+        return false;
+    }
+    FML_UNREACHABLE();
+    return false;
+  });
+  return true;
 }
 
 }  // namespace impeller
