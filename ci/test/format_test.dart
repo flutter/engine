@@ -187,7 +187,9 @@ void main() {
     } finally {
       fixture.gitRemove();
     }
-  }, skip: io.Platform.isWindows); // Android dependencies aren't downloaded on Windows.
+    // TODO: Fails if Java dependency is unavailable.
+    // https://github.com/flutter/flutter/issues/129221
+  }, skip: true);
 
   test('Can fix Python formatting errors', () {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.python);
