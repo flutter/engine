@@ -214,7 +214,7 @@ class EngineAutofillForm {
 
     // We need to explicitly disable pointer events on the form in Safari Desktop,
     // so that we don't have pointer event collisions if users hover over or click
-    // into the invisible autofill elements within the form. 
+    // into the invisible autofill elements within the form.
     _hideAutofillElements(formElement, shouldDisablePointerEvents: isSafariDesktopStrategy);
 
     // We keep the ids in a list then sort them later, in case the text fields'
@@ -248,9 +248,9 @@ class EngineAutofillForm {
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
 
-          // Safari Desktop does not respect elements that are invisible (or 
+          // Safari Desktop does not respect elements that are invisible (or
           // have no size) and that leads to issues with autofill only partially
-          // working (ref: https://github.com/flutter/flutter/issues/71275). 
+          // working (ref: https://github.com/flutter/flutter/issues/71275).
           // Thus, we have to make sure that the elements remain invisible to users,
           // but not to Safari for autofill to work. Since these elements are
           // sized and placed on the DOM, we also have to disable pointer events.
