@@ -26,7 +26,7 @@ TextureContents::~TextureContents() = default;
 
 std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   auto contents = std::make_shared<TextureContents>();
-  contents->rect_ = destination;
+  contents->destination_rect_ = destination;
   return contents;
 }
 
@@ -34,8 +34,8 @@ void TextureContents::SetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-void TextureContents::SetRect(Rect rect) {
-  rect_ = rect;
+void TextureContents::SetDestinationRect(Rect rect) {
+  destination_rect_ = rect;
 }
 
 void TextureContents::SetTexture(std::shared_ptr<Texture> texture) {
@@ -70,7 +70,7 @@ std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
   if (GetOpacity() == 0) {
     return std::nullopt;
   }
-  return rect_.TransformBounds(entity.GetTransformation());
+  return destination_rect_.TransformBounds(entity.GetTransformation());
 };
 
 std::optional<Snapshot> TextureContents::RenderToSnapshot(
@@ -82,7 +82,7 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
     const std::string& label) const {
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
-  auto bounds = rect_;
+  auto bounds = destination_rect_;
   auto opacity = GetOpacity();
   if (source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
       (opacity >= 1 - kEhCloseEnough || defer_applying_opacity_)) {
@@ -104,37 +104,37 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
       label);                                            // label
 }
 
-static TextureFillVertexShader::PerVertexData ComputeVertexData(
-    const Point& position,
-    const Rect& coverage_rect,
-    const ISize& texture_size,
-    const Rect& source_rect) {
-  TextureFillVertexShader::PerVertexData data;
-  data.position = position;
-  auto coverage_coords = (position - coverage_rect.origin) / coverage_rect.size;
-  data.texture_coords =
-      (source_rect.origin + source_rect.size * coverage_coords) / texture_size;
-  return data;
-}
-
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
 
-  const auto coverage_rect = rect_;
-
-  if (coverage_rect.size.IsEmpty() || source_rect_.IsEmpty() ||
+  if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
     return true;
   }
 
+  // Expand the destination rect by one pixel towards the bottom right. Map the
+  // texture coordinates such that texels are evenly spaced across the pixel
+  // grid.
+  auto destination_rect = destination_rect_.Expand(0, 0, 1, 1);
+  auto half_texel_size =
+      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
+  auto texture_coords =
+      destination_rect_.Project(source_rect_.Shift(destination_rect_.origin));
+  texture_coords =
+      texture_coords.Expand(-half_texel_size.width, -half_texel_size.height,
+                            half_texel_size.width, half_texel_size.height);
+
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  for (const auto position : rect_.GetPoints()) {
-    vertex_builder.AppendVertex(ComputeVertexData(
-        position, coverage_rect, texture_->GetSize(), source_rect_));
-  }
+
+  vertex_builder.AddVertices({
+      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
+  });
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
