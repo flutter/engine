@@ -1,4 +1,4 @@
-Signature: 88911f05d2320cc5f60dd8b31074c0cd
+Signature: 012b166f3d41819b7fbc3a9594ae4631
 
 ====================================================================================================
 LIBRARY: etc1
@@ -384,21 +384,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
-FILE: ../../../third_party/skia/relnotes/SkPromiseImageTexture.md
-FILE: ../../../third_party/skia/relnotes/ddl_private.md
-FILE: ../../../third_party/skia/relnotes/skblenders_arithmetic_saturate.md
-FILE: ../../../third_party/skia/relnotes/skcolortable.md
-FILE: ../../../third_party/skia/relnotes/skif_legacy_magnifier.md
-FILE: ../../../third_party/skia/relnotes/skif_runtimeshader_sampleradius.md
-FILE: ../../../third_party/skia/relnotes/skimagefilters_alphathreshold_remove.md
-FILE: ../../../third_party/skia/relnotes/skimagefilters_image_remove.md
-FILE: ../../../third_party/skia/relnotes/skimagegenerator_grexternaltexturegenerator.md
-FILE: ../../../third_party/skia/relnotes/skpoint_float.md
-FILE: ../../../third_party/skia/relnotes/sksamplingoptions_implicit.md
-FILE: ../../../third_party/skia/relnotes/skshaders_namespace.md
-FILE: ../../../third_party/skia/relnotes/sksurface_methods.md
-FILE: ../../../third_party/skia/relnotes/sktablecolorfilter.md
-FILE: ../../../third_party/skia/relnotes/yuv-supported-formats.md
+FILE: ../../../third_party/skia/relnotes/canvas_flush.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
