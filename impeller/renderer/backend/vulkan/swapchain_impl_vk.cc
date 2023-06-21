@@ -400,8 +400,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
       return false;
     }
 
-    if (!context.GetFenceWaiter()->AddFence(
-            std::move(fence), [encoders = std::move(encoders)] {})) {
+    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
       return false;
     }
   }
