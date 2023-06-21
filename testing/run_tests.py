@@ -982,6 +982,15 @@ def gather_api_consistency_tests(build_dir):
 def gather_ci_tests(build_dir):
   test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'ci')
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+
+  run_engine_executable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=['pub', 'get', '--offline'],
+      cwd=test_dir,
+  )
+
   for dart_test_file in dart_tests:
     opts = [
         '--disable-dart-dev', dart_test_file,
