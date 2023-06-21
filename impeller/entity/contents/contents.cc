@@ -68,12 +68,6 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     return std::nullopt;
   }
 
-  auto coverage_hint = GetCoverageHint();
-  if (coverage_hint.has_value()) {
-    coverage = coverage->Intersection(coverage_hint.value())
-                   .value_or(coverage.value());
-  }
-
   // Pad Contents snapshots with 1 pixel borders to ensure correct sampling
   // behavior. Not doing so results in a coverage leak for filters that support
   // customizing the input sampling mode. Snapshots of contents should be
@@ -92,17 +86,10 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
-        auto color_size = contents.GetColorSourceSize();
-        if (color_size.has_value()) {
-          auto scale_size = coverage->size / color_size.value();
-          sub_entity.SetTransformation(
-              Matrix::MakeScale(Vector2{scale_size.width, scale_size.height}));
-        } else {
-          sub_entity.SetTransformation(
-              Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-              entity.GetTransformation());
-        }
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
+        sub_entity.SetTransformation(
+            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
+            entity.GetTransformation());
         return contents.Render(renderer, sub_entity, pass);
       },
       msaa_enabled);
