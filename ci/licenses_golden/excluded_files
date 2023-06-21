@@ -147,6 +147,7 @@
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/capabilities_unittests.cc
 ../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
@@ -450,14 +451,9 @@
 ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/testing
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_view/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
 ../../../fuchsia/sdk/linux/dart/zircon/meta.json
 ../../../fuchsia/sdk/linux/data/config/symbol-index/meta.json
@@ -651,8 +647,6 @@
 ../../../fuchsia/sdk/linux/pkg/magma_client/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp_no_converters/meta.json
-../../../fuchsia/sdk/linux/pkg/memfs/meta.json
-../../../fuchsia/sdk/linux/pkg/modular_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/include/lib/ui/scenic/cpp/testing
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/meta.json
@@ -988,6 +982,7 @@
 ../../../third_party/angle/include/GLX/.clang-format
 ../../../third_party/angle/include/KHR/.clang-format
 ../../../third_party/angle/include/WGL/.clang-format
+../../../third_party/angle/include/platform/autogen/.clang-format
 ../../../third_party/angle/include/platform/gen_features.py
 ../../../third_party/angle/infra
 ../../../third_party/angle/samples
@@ -2712,6 +2707,7 @@
 ../../../third_party/skia/modules/jetski/BUILD.bazel
 ../../../third_party/skia/modules/jetski/README
 ../../../third_party/skia/modules/pathkit/.gitignore
+../../../third_party/skia/modules/pathkit/BUILD.bazel
 ../../../third_party/skia/modules/pathkit/CHANGELOG.md
 ../../../third_party/skia/modules/pathkit/Makefile
 ../../../third_party/skia/modules/pathkit/README.md

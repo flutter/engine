@@ -1520,6 +1520,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc + ../../../flutter/LICENSE
@@ -1891,7 +1893,6 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/semantics.dart + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/app_bootstrap.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/assets.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/browser_detection.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvas_pool.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvas.dart + ../../../flutter/LICENSE
@@ -2107,6 +2108,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/text.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/tile_mode.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/platform_view_registry.dart + ../../../flutter/LICENSE
@@ -2382,6 +2384,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/rend
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyboardChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java + ../../../flutter/LICENSE
@@ -4195,6 +4198,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc
@@ -4568,7 +4573,6 @@ FILE: ../../../flutter/lib/web_ui/lib/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/app_bootstrap.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/assets.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_detection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvas_pool.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvas.dart
@@ -4784,6 +4788,7 @@ FILE: ../../../flutter/lib/web_ui/lib/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/platform_view_registry.dart
@@ -5063,6 +5068,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/render
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyboardChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java
