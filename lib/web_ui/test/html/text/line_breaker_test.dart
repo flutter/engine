@@ -449,7 +449,7 @@ void testMain() {
         Line('', endOfText),
       ]);
     });
-  });
+  }, skip: domIntl.v8BreakIterator == null);
 }
 
 typedef CreateLineBreakFragmenter = LineBreakFragmenter Function(String text);
