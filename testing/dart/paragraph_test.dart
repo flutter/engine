@@ -27,8 +27,7 @@ void main() {
       expect(paragraph.minIntrinsicWidth, closeTo(fontSize * 4.0, 0.001));
       expect(paragraph.maxIntrinsicWidth, closeTo(fontSize * 4.0, 0.001));
       expect(paragraph.alphabeticBaseline, closeTo(fontSize * .8, 0.001));
-      expect(
-        paragraph.ideographicBaseline,
+      expect(paragraph.ideographicBaseline,
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 0.001),
       );
     }
@@ -233,4 +232,35 @@ void main() {
       expect(callback, throwsStateError);
     }
   });
+
+    test('applyRoundingHack defaults to true', () {
+      const double fontSize = 1.25;
+      const String text = '12345';
+      assert((fontSize * text.length).truncate() != fontSize * text.length);
+      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+      builder.addText('test');
+      final Paragraph paragraph = builder.build()
+        ..layout(const ParagraphConstraints(width: text.length * fontSize));
+
+      expect(paragraph.maxIntrinsicWidth, greaterThan(text.length * fontSize));
+      expect(paragraph.computeLineMetrics(), hasLength(2));
+    });
+
+    test('applyRoundingHack works', () {
+      const double fontSize = 1.25;
+      const String text = '12345';
+      assert((fontSize * text.length).truncate() != fontSize * text.length);
+      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
+      builder.addText('test');
+      final Paragraph paragraph = builder.build()
+        ..layout(const ParagraphConstraints(width: text.length * fontSize));
+
+      expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
+      switch (paragraph.computeLineMetrics()) {
+        case [LineMetrics(width: final double width)]:
+          expect(width, text.length * fontSize);
+        case final List<LineMetrics> metrics:
+          expect(metrics, hasLength(1));
+      }
+    });
 }

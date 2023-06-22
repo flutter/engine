@@ -314,7 +314,8 @@ class CanvasKitRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale
+    ui.Locale? locale,
+    bool applyRoundingHack = true,
   }) => CkParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,

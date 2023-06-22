@@ -380,6 +380,7 @@ abstract class ParagraphStyle {
     StrutStyle? strutStyle,
     String? ellipsis,
     Locale? locale,
+    bool applyRoundingHack = true,
   }) => engine.renderer.createParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,
@@ -393,6 +394,7 @@ abstract class ParagraphStyle {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
+    applyRoundingHack: applyRoundingHack,
   );
 }
 

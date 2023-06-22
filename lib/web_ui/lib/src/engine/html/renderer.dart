@@ -283,7 +283,9 @@ class HtmlRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale
+    ui.Locale? locale,
+    // Not used: the HTML renderer does not use SkParagraph.
+    bool applyRoundingHack = true,
   }) => EngineParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,

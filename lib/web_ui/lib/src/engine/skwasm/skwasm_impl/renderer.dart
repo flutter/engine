@@ -154,7 +154,8 @@ class SkwasmRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale
+    ui.Locale? locale,
+    bool applyRoundingHack = true,
   }) => SkwasmParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,
@@ -168,6 +169,7 @@ class SkwasmRenderer implements Renderer {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
+    applyRoundingHack: applyRoundingHack,
   );
 
   @override

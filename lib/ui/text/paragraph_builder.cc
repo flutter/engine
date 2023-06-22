@@ -230,7 +230,8 @@ ParagraphBuilder::ParagraphBuilder(
     double fontSize,
     double height,
     const std::u16string& ellipsis,
-    const std::string& locale) {
+    const std::string& locale,
+    bool applyRoundingHack) {
   int32_t mask = 0;
   txt::ParagraphStyle style;
   {
@@ -291,6 +292,7 @@ ParagraphBuilder::ParagraphBuilder(
   if (mask & kPSLocaleMask) {
     style.locale = locale;
   }
+  style.apply_rounding_hack = applyRoundingHack;
 
   FontCollection& font_collection = UIDartState::Current()
                                         ->platform_configuration()

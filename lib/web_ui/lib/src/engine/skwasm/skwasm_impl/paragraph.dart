@@ -475,6 +475,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
+    bool applyRoundingHack = true,
   }) {
     final ParagraphStyleHandle handle = paragraphStyleCreate();
     if (textAlign != null) {
@@ -535,6 +536,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       skStringFree(localeHandle);
     }
     paragraphStyleSetTextStyle(handle, textStyleHandle);
+    paragraphStyleSetApplyRoundingHack(handle, applyRoundingHack);
     return SkwasmParagraphStyle._(handle, textStyle, fontFamily);
   }
 

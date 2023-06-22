@@ -77,7 +77,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.ParagraphStyle createParagraphStyle({ui.TextAlign? textAlign, ui.TextDirection? textDirection, int? maxLines, String? fontFamily, double? fontSize, double? height, ui.TextHeightBehavior? textHeightBehavior, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.StrutStyle? strutStyle, String? ellipsis, ui.Locale? locale}) {
+  ui.ParagraphStyle createParagraphStyle({ui.TextAlign? textAlign, ui.TextDirection? textDirection, int? maxLines, String? fontFamily, double? fontSize, double? height, ui.TextHeightBehavior? textHeightBehavior, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.StrutStyle? strutStyle, String? ellipsis, ui.Locale? locale, bool applyRoundingHack = true}) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
 
