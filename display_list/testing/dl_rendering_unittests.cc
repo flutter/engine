@@ -423,6 +423,7 @@ struct RenderJobInfo {
 
 struct JobRenderer {
   virtual void Render(SkCanvas* canvas, const RenderJobInfo& info) = 0;
+  virtual bool targets_impeller() const { return false; }
 };
 
 struct MatrixClipJobRenderer : public JobRenderer {
@@ -522,6 +523,10 @@ struct DlJobRenderer : public MatrixClipJobRenderer {
   const DlPaint& setup_paint() const {
     FML_CHECK(is_setup_);
     return setup_paint_;
+  }
+
+  bool targets_impeller() const override {
+    return dl_image_->impeller_texture() != nullptr;
   }
 
  private:
@@ -828,7 +833,12 @@ class TestParameters {
     const DlPaint& ref_attr = env.ref_dl_paint();
     if (flags_.applies_anti_alias() &&  //
         ref_attr.isAntiAlias() != attr.isAntiAlias()) {
-      return false;
+      if (renderer.targets_impeller()) {
+        // Impeller only does MSAA, ignoring the AA attribute
+        // https://github.com/flutter/flutter/issues/104721
+      } else {
+        return false;
+      }
     }
     if (flags_.applies_dither() &&  //
         ref_attr.isDither() != attr.isDither()) {
@@ -868,10 +878,16 @@ class TestParameters {
         flags_.WithPathEffect(attr.getPathEffect().get(), is_stroked);
     if (flags_.applies_path_effect() &&  //
         ref_attr.getPathEffect() != attr.getPathEffect()) {
-      switch (attr.getPathEffect()->type()) {
-        case DlPathEffectType::kDash: {
-          if (is_stroked && !ignores_dashes()) {
-            return false;
+      if (renderer.targets_impeller()) {
+        // Impeller ignores DlPathEffect objects:
+        // https://github.com/flutter/flutter/issues/109736
+      } else {
+        switch (attr.getPathEffect()->type()) {
+          case DlPathEffectType::kDash: {
+            if (is_stroked && !ignores_dashes()) {
+              return false;
+            }
+            break;
           }
         }
       }
@@ -1069,7 +1085,8 @@ class CanvasCompareTester {
                          "Impeller reference")) {
           std::string test_name =
               ::testing::UnitTest::GetInstance()->current_test_info()->name();
-          impeller_result->write(to_png_filename(test_name + " Impeller"));
+          impeller_result->write(
+              to_png_filename(test_name + " (Impeller reference)"));
         }
       } else {
         static OncePerBackendWarning warnings("No Impeller output tests");
@@ -1213,10 +1230,14 @@ class CanvasCompareTester {
       RenderEnvironment backdrop_env =
           RenderEnvironment::MakeN32(env.provider());
       SkSetup sk_backdrop_setup = [=](const SkSetupContext& ctx) {
-        DrawCheckerboard(ctx.canvas);
+        SkPaint setup_p;
+        setup_p.setShader(MakeColorSource(ctx.image));
+        ctx.canvas->drawPaint(setup_p);
       };
       DlSetup dl_backdrop_setup = [=](const DlSetupContext& ctx) {
-        DrawCheckerboard(ctx.canvas);
+        DlPaint setup_p;
+        setup_p.setColorSource(MakeColorSource(ctx.image));
+        ctx.canvas->DrawPaint(setup_p);
       };
       SkSetup sk_content_setup = [=](const SkSetupContext& ctx) {
         ctx.paint.setAlpha(ctx.paint.getAlpha() / 2);
@@ -2203,7 +2224,6 @@ class CanvasCompareTester {
 
     // sk_result is a direct rendering via SkCanvas to SkSurface
     // DisplayList mechanisms are not involved in this operation
-    // SkPaint sk_paint;
     SkJobRenderer sk_job(caseP.sk_setup(),     //
                          testP.sk_renderer(),  //
                          caseP.sk_restore(),   //
@@ -2231,14 +2251,12 @@ class CanvasCompareTester {
     SkRect sk_bounds = sk_picture->cullRect();
     checkPixels(sk_result.get(), sk_bounds, info + " (Skia reference)", bg);
 
-    bool should_match =
-        testP.should_match(env, caseP, dl_job.setup_paint(), dl_job);
-    if (should_match) {
+    if (testP.should_match(env, caseP, dl_job.setup_paint(), dl_job)) {
       quickCompareToReference(env.ref_sk_result(), sk_result.get(), true,
-                              info + " (attribute has no effect)");
+                              info + " (attribute should not have effect)");
     } else {
       quickCompareToReference(env.ref_sk_result(), sk_result.get(), false,
-                              info + " (attribute affects rendering)");
+                              info + " (attribute should affect rendering)");
     }
 
     if (env.supports_impeller()) {
@@ -2248,27 +2266,24 @@ class CanvasCompareTester {
                             env.impeller_image());
       auto imp_result = env.getImpellerResult(base_info, imp_job);
       std::string imp_info = info + " (Impeller)";
-      if (!checkPixels(imp_result.get(), imp_result->render_bounds(), imp_info,
-                       bg)) {
-        FML_LOG(ERROR) << "Skia bounds: "           //
-                       << sk_bounds.fLeft << ", "   //
-                       << sk_bounds.fTop << " => "  //
-                       << sk_bounds.fRight << ", "  //
-                       << sk_bounds.fBottom;
-        FML_LOG(ERROR) << "impeller dl bounds: "                      //
-                       << imp_result->render_bounds().fLeft << ", "   //
-                       << imp_result->render_bounds().fTop << " => "  //
-                       << imp_result->render_bounds().fRight << ", "  //
-                       << imp_result->render_bounds().fBottom;
-        imp_result->write(to_png_filename(imp_info));
-      }
-      if (should_match) {
-        quickCompareToReference(env.ref_impeller_result(), imp_result.get(),
-                                true, imp_info + " (attribute has no effect)");
+      bool success = checkPixels(imp_result.get(), imp_result->render_bounds(),
+                                 imp_info, bg);
+      if (testP.should_match(env, caseP, imp_job.setup_paint(), imp_job)) {
+        success = success &&                //
+                  quickCompareToReference(  //
+                      env.ref_impeller_result(), imp_result.get(), true,
+                      imp_info + " (attribute should not have effect)");
       } else {
-        quickCompareToReference(env.ref_impeller_result(), imp_result.get(),
-                                false,
-                                imp_info + " (attribute affects rendering)");
+        success = success &&                //
+                  quickCompareToReference(  //
+                      env.ref_impeller_result(), imp_result.get(), false,
+                      imp_info + " (attribute should affect rendering)");
+      }
+      if (!success) {
+        FML_LOG(ERROR) << "Impeller issue encountered for: " << *display_list;
+        std::string filename = to_png_filename(imp_info);
+        imp_result->write(filename);
+        FML_LOG(ERROR) << "output saved in: " << filename;
       }
     }
 
@@ -2502,14 +2517,14 @@ class CanvasCompareTester {
                             info + " reference rendering");
   }
 
-  static void quickCompareToReference(const RenderResult* ref_result,
+  static bool quickCompareToReference(const RenderResult* ref_result,
                                       const RenderResult* test_result,
                                       bool should_match,
                                       const std::string& info) {
     int w = test_result->width();
     int h = test_result->height();
-    ASSERT_EQ(w, ref_result->width()) << info;
-    ASSERT_EQ(h, ref_result->height()) << info;
+    EXPECT_EQ(w, ref_result->width()) << info;
+    EXPECT_EQ(h, ref_result->height()) << info;
     int pixels_different = 0;
     for (int y = 0; y < h; y++) {
       const uint32_t* ref_row = ref_result->addr32(0, y);
@@ -2524,9 +2539,11 @@ class CanvasCompareTester {
       }
     }
     if (should_match) {
-      ASSERT_EQ(pixels_different, 0) << info;
+      EXPECT_EQ(pixels_different, 0) << info;
+      return pixels_different == 0;
     } else {
-      ASSERT_NE(pixels_different, 0) << info;
+      EXPECT_NE(pixels_different, 0) << info;
+      return pixels_different != 0;
     }
   }
 
