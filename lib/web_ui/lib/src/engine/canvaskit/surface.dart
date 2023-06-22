@@ -119,9 +119,21 @@ class Surface {
 
     DomImageBitmap bitmap;
     if (Surface.offscreenCanvasSupported) {
-      bitmap = _offscreenCanvas!.transferToImageBitmap();
+      bitmap = (await createSizedOffscreenImageBitmap(
+        _offscreenCanvas!,
+        0,
+        _pixelHeight - frameSize.height.toInt(),
+        frameSize.width.toInt(),
+        frameSize.height.toInt(),
+      ))!;
     } else {
-      bitmap = (await createImageBitmap(_canvasElement!))!;
+      bitmap = (await createSizedImageBitmap(
+        _canvasElement!,
+        0,
+        _pixelHeight - frameSize.height.toInt(),
+        frameSize.width.toInt(),
+        frameSize.height.toInt(),
+      ))!;
     }
     canvas.renderContext!.transferFromImageBitmap(bitmap);
   }

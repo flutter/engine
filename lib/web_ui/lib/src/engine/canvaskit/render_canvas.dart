@@ -118,13 +118,13 @@ class RenderCanvas {
       throw CanvasKitError('Cannot create canvases of empty size.');
     }
 
-    // Check if the window is the same size as before, and if so, don't allocate
+    // Check if the frame is the same size as before, and if so, don't allocate
     // a new canvas as the previous canvas is big enough to fit everything.
     final ui.Size? previousRenderSize = _currentRenderSize;
     if (previousRenderSize != null &&
         size.width == previousRenderSize.width &&
         size.height == previousRenderSize.height) {
-      // The existing surface is still reusable.
+      // The existing canvas doesn't need to be resized.
       if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
       }
@@ -132,17 +132,16 @@ class RenderCanvas {
     }
 
     final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
-    // Initialize a new, larger, canvas. If the size is growing, then make the
-    // new canvas larger than required to avoid many canvas creations.
-    if (previousCanvasSize != null &&
-        (size.width > previousCanvasSize.width ||
-            size.height > previousCanvasSize.height)) {
-      final ui.Size newSize = size * 1.4;
-      canvasElement!.width = newSize.width;
-      canvasElement!.height = newSize.height;
-      _currentCanvasPhysicalSize = newSize;
-      _pixelWidth = newSize.width.ceil();
-      _pixelHeight = newSize.height.ceil();
+    // If the canvas is too large or too small, resize it to the exact size of
+    // the frame. We cannot allow the canvas to be larger than the screen
+    // because then when we call `transferFromImageBitmap()` the bitmap will
+    // be scaled to cover the entire canvas.
+    if (previousCanvasSize != null) {
+      canvasElement!.width = size.width;
+      canvasElement!.height = size.height;
+      _currentCanvasPhysicalSize = size;
+      _pixelWidth = size.width.ceil();
+      _pixelHeight = size.height.ceil();
       _updateLogicalHtmlCanvasSize();
     }
 

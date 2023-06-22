@@ -195,6 +195,22 @@ external JSPromise _createImageBitmap(DomCanvasElement canvas);
 Future<DomImageBitmap?> createImageBitmap(DomCanvasElement canvas) =>
     js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(canvas));
 
+@JS('createImageBitmap')
+external JSPromise _createSizedImageBitmap(DomCanvasElement canvas, JSNumber sx,
+    JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedImageBitmap(
+        DomCanvasElement canvas, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(
+        _createSizedImageBitmap(canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
+@JS('createImageBitmap')
+external JSPromise _createSizedOffscreenImageBitmap(DomOffscreenCanvas canvas,
+    JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedOffscreenImageBitmap(
+        DomOffscreenCanvas canvas, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(_createSizedOffscreenImageBitmap(
+        canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
 @JS()
 @staticInterop
 class DomNavigator {}
