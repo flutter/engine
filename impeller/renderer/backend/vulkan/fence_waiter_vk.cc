@@ -7,7 +7,6 @@
 #include <chrono>
 
 #include "flutter/fml/thread.h"
-#include "flutter/fml/trace_event.h"
 
 namespace impeller {
 
@@ -30,7 +29,6 @@ bool FenceWaiterVK::IsValid() const {
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
-  TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!IsValid() || !fence || !callback) {
     return false;
   }
