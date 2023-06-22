@@ -4233,8 +4233,8 @@ TEST_F(ShellTest, NotifyDestroyed) {
 }
 
 TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG
-  GTEST_SKIP() << "Test is for debug mode only.";
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG || OS_FUCHSIA
+  GTEST_SKIP() << "Test is for debug mode only on non-fuchsia targets.";
 #endif
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
@@ -4261,11 +4261,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                   "plugin or application code creating that channel.\nSee "
                   "https://docs.flutter.dev/platform-integration/"
                   "platform-channels#channels-and-platform-threading for more "
-#if !OS_FUCHSIA
                   "information.\n"));
-#else
-                  "information."));
-#endif  // !OS_FUCHSIA
 
   stream = std::make_shared<std::ostringstream>();
   fml::CaptureNextLog(stream.get());
