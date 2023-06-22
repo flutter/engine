@@ -8,7 +8,6 @@
 #include <memory>
 #include <optional>
 #include <thread>
-#include <unordered_map>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
@@ -38,16 +37,15 @@ class FenceWaiterVK {
   std::unique_ptr<std::thread> waiter_thread_;
   std::mutex wait_set_mutex_;
   std::condition_variable wait_set_cv_;
-  std::unordered_map<SharedHandleVK<vk::Fence>, fml::closure> wait_set_;
+
+  std::vector<vk::UniqueFence> wait_set_;
+  std::vector<fml::closure> wait_set_callbacks_;
   bool terminate_ = false;
   bool is_valid_ = false;
 
   explicit FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder);
 
   void Main();
-
-  std::optional<std::vector<vk::Fence>> TrimAndCreateWaitSetLocked(
-      const std::shared_ptr<DeviceHolder>& device_holder);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FenceWaiterVK);
 };

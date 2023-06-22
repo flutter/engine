@@ -36,7 +36,8 @@ bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
   }
   {
     std::scoped_lock lock(wait_set_mutex_);
-    wait_set_[MakeSharedVK(std::move(fence))] = callback;
+    wait_set_.push_back(std::move(fence));
+    wait_set_callbacks_.push_back(callback);
   }
   wait_set_cv_.notify_one();
   return true;
@@ -54,56 +55,36 @@ void FenceWaiterVK::Main() {
     wait_set_cv_.wait(lock, [&]() { return !wait_set_.empty() || terminate_; });
 
     auto device_holder = device_holder_.lock();
-    if (!device_holder) {
+    if (!device_holder || terminate_) {
       break;
     }
 
-    auto wait_set = TrimAndCreateWaitSetLocked(device_holder);
-
+    std::vector<vk::UniqueFence> temp_wait_set = std::move(wait_set_);
+    std::vector<fml::closure> callbacks = std::move(wait_set_callbacks_);
     lock.unlock();
 
-    if (!wait_set.has_value()) {
-      break;
+    std::vector<vk::Fence> fences(temp_wait_set.size());
+    for (auto i = 0u; i < temp_wait_set.size(); i++) {
+      fences[i] = temp_wait_set[i].get();
     }
-    if (wait_set->empty()) {
+
+    if (fences.empty()) {
       continue;
     }
 
     auto result = device_holder->GetDevice().waitForFences(
-        wait_set->size(),                        // fences count
-        wait_set->data(),                        // fences
-        false,                                   // wait for all
+        fences.size(),                           // fences count
+        fences.data(),                           // fences
+        true,                                    // wait for all
         std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
     );
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       break;
     }
-  }
-}
-
-std::optional<std::vector<vk::Fence>> FenceWaiterVK::TrimAndCreateWaitSetLocked(
-    const std::shared_ptr<DeviceHolder>& device_holder) {
-  if (terminate_) {
-    return std::nullopt;
-  }
-  TRACE_EVENT0("impeller", "TrimFences");
-  std::vector<vk::Fence> fences;
-  fences.reserve(wait_set_.size());
-  for (auto it = wait_set_.begin(); it != wait_set_.end();) {
-    switch (device_holder->GetDevice().getFenceStatus(it->first->Get())) {
-      case vk::Result::eSuccess:  // Signalled.
-        it->second();
-        it = wait_set_.erase(it);
-        break;
-      case vk::Result::eNotReady:  // Un-signalled.
-        fences.push_back(it->first->Get());
-        it++;
-        break;
-      default:
-        return std::nullopt;
+    for (auto cb : callbacks) {
+      cb();
     }
   }
-  return fences;
 }
 
 void FenceWaiterVK::Terminate() {
