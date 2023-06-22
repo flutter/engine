@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "flutter/fml/thread.h"
+#include "flutter/fml/trace_event.h"
 
 namespace impeller {
 
@@ -71,29 +72,54 @@ void FenceWaiterVK::Main() {
     }
 
     auto result = device_holder->GetDevice().waitForFences(
-        fences.size(),                            // fences count
-        fences.data(),                            // fences
-        true,                                     // wait for all
-        std::chrono::nanoseconds{1000ms}.count()  // timeout (ns)
+        fences.size(),                           // fences count
+        fences.data(),                           // fences
+        false,                                   // wait for all
+        std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
     );
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       break;
     }
-    // If there was a timeout, then we can't be sure about the status of any of
-    // the fences without a query. This has been observed to take tens of
-    // milliseconds on Qualcomm soc so instead we add them back to the set of
-    // fences to work with.
-    if (result == vk::Result::eTimeout) {
-      std::unique_lock lock(wait_set_mutex_);
-      a.insert(wait_set_.end(), temp_wait_set.begin(), temp_wait_set.end());
-      a.insert(wait_set_callbacks_.end(), callbacks.begin(), callbacks.end());
-      lock.unlock();
-    } else {
-      for (auto cb : callbacks) {
-        cb();
-      }
+
+    if (!TrimAndCreateWaitSetLocked(device_holder, std::move(temp_wait_set), std::move(callbacks))) {
+      break;
     }
   }
+}
+
+bool FenceWaiterVK::TrimAndCreateWaitSetLocked(
+    const std::shared_ptr<DeviceHolder>& device_holder,
+    std::vector<vk::UniqueFence> fences,
+    std::vector<fml::closure> closures) {
+  TRACE_EVENT0("impeller", "TrimFences");
+
+  std::vector<vk::UniqueFence> remaining_fences;
+  std::vector<fml::closure> remaining_closures;
+
+  for (auto i = 0u; i < fences.size(); i++) {
+    switch (device_holder->GetDevice().getFenceStatus(fences[i].get())) {
+      case vk::Result::eSuccess:  // Signalled.
+        closures[i]();
+        break;
+      case vk::Result::eNotReady:  // Un-signalled.
+        remaining_fences.push_back(std::move(fences[i]));
+        remaining_closures.push_back(std::move(closures[i]));
+        break;
+      default:
+        return false;
+    }
+  }
+
+  // Add Un-signalled fences back into the queue.
+  if (!remaining_fences.empty()) {
+    std::unique_lock lock(wait_set_mutex_);
+    for (auto i = 0u; i < remaining_fences.size(); i++) {
+      wait_set_.push_back(std::move(remaining_fences[i]));
+      wait_set_callbacks_.push_back(std::move(remaining_closures[i]));
+    }
+    lock.unlock();
+  }
+  return true;
 }
 
 void FenceWaiterVK::Terminate() {

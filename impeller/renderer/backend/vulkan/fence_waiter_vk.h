@@ -33,6 +33,11 @@ class FenceWaiterVK {
  private:
   friend class ContextVK;
 
+  bool TrimAndCreateWaitSetLocked(
+      const std::shared_ptr<DeviceHolder>& device_holder,
+      std::vector<vk::UniqueFence> fences,
+      std::vector<fml::closure> closures);
+
   std::weak_ptr<DeviceHolder> device_holder_;
   std::unique_ptr<std::thread> waiter_thread_;
   std::mutex wait_set_mutex_;
