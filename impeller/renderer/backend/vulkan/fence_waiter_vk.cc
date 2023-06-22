@@ -71,16 +71,27 @@ void FenceWaiterVK::Main() {
     }
 
     auto result = device_holder->GetDevice().waitForFences(
-        fences.size(),                           // fences count
-        fences.data(),                           // fences
-        true,                                    // wait for all
-        std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
+        fences.size(),                            // fences count
+        fences.data(),                            // fences
+        true,                                     // wait for all
+        std::chrono::nanoseconds{1000ms}.count()  // timeout (ns)
     );
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       break;
     }
-    for (auto cb : callbacks) {
-      cb();
+    // If there was a timeout, then we can't be sure about the status of any of
+    // the fences without a query. This has been observed to take tens of
+    // milliseconds on Qualcomm soc so instead we add them back to the set of
+    // fences to work with.
+    if (result == vk::Result::eTimeout) {
+      std::unique_lock lock(wait_set_mutex_);
+      a.insert(wait_set_.end(), temp_wait_set.begin(), temp_wait_set.end());
+      a.insert(wait_set_callbacks_.end(), callbacks.begin(), callbacks.end());
+      lock.unlock();
+    } else {
+      for (auto cb : callbacks) {
+        cb();
+      }
     }
   }
 }
