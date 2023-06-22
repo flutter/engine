@@ -46,6 +46,8 @@ class CapabilitiesVK final : public Capabilities,
 
   const vk::PhysicalDeviceProperties& GetPhysicalDeviceProperties() const;
 
+  void SetOffscreenFormat(PixelFormat pixel_format) const;
+
   // |Capabilities|
   bool HasThreadingRestrictions() const override;
 
@@ -88,9 +90,10 @@ class CapabilitiesVK final : public Capabilities,
  private:
   const bool enable_validations_;
   std::map<std::string, std::set<std::string>> exts_;
-  PixelFormat color_format_ = PixelFormat::kUnknown;
+  mutable PixelFormat color_format_ = PixelFormat::kUnknown;
   PixelFormat depth_stencil_format_ = PixelFormat::kUnknown;
   vk::PhysicalDeviceProperties device_properties_;
+  bool supports_compute_subgroups_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;

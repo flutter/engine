@@ -11,7 +11,6 @@ A top level harness to run all unit-tests in a specific engine build.
 from pathlib import Path
 
 import argparse
-import csv
 import errno
 import glob
 import multiprocessing
@@ -510,19 +509,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     )
 
 
-def parse_impeller_vulkan_filter():
-  test_status_path = os.path.join(SCRIPT_DIR, 'impeller_vulkan_test_status.csv')
-  gtest_filter = '--gtest_filter="'
-  with open(test_status_path, 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
-    next(csvreader)  # Skip header.
-    for row in csvreader:
-      if row[1] == 'pass':
-        gtest_filter += '*%s:' % row[0]
-  gtest_filter += '"'
-  return gtest_filter
-
-
 def run_engine_benchmarks(build_dir, executable_filter):
   print('Running Engine Benchmarks.')
 
@@ -993,6 +979,32 @@ def gather_api_consistency_tests(build_dir):
     )
 
 
+def gather_ci_tests(build_dir):
+  test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'ci')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+
+  run_engine_executable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=['pub', 'get', '--offline'],
+      cwd=test_dir,
+  )
+
+  for dart_test_file in dart_tests:
+    opts = [
+        '--disable-dart-dev', dart_test_file,
+        os.path.join(BUILDROOT_DIR, 'flutter')
+    ]
+    yield EngineExecutableTask(
+        build_dir,
+        os.path.join('dart-sdk', 'bin', 'dart'),
+        None,
+        flags=opts,
+        cwd=test_dir
+    )
+
+
 def run_engine_tasks_in_parallel(tasks):
   # Work around a bug in Python.
   #
@@ -1206,20 +1218,16 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     )
 
   # Use this type to exclusively run impeller vulkan tests.
-  # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
-  # impeller vulkan tests are stable.
   if 'impeller-vulkan' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
-      vulkan_gtest_filter = parse_impeller_vulkan_filter()
-      gtest_flags = shuffle_flags
-      gtest_flags.append(vulkan_gtest_filter)
       run_engine_executable(
           build_dir,
           'impeller_unittests',
           engine_filter,
-          gtest_flags,
+          shuffle_flags + ['--gtest_filter=-'
+                           '*/OpenGLES:'],
           coverage=args.coverage
       )
     finally:
@@ -1235,6 +1243,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     tasks += list(gather_path_ops_tests(build_dir))
     tasks += list(gather_const_finder_tests(build_dir))
     tasks += list(gather_front_end_server_tests(build_dir))
+    tasks += list(gather_ci_tests(build_dir))
     tasks += list(gather_dart_tests(build_dir, dart_filter))
     run_engine_tasks_in_parallel(tasks)
 

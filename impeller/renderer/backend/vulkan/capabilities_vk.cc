@@ -138,12 +138,13 @@ CapabilitiesVK::GetRequiredInstanceExtensions() const {
     }
     required.push_back("VK_EXT_debug_utils");
 
-    if (!HasExtension("VK_EXT_validation_features")) {
-      VALIDATION_LOG << "Requested validations but could not find the "
+    if (HasExtension("VK_EXT_validation_features")) {
+      // It's valid to not have `VK_EXT_validation_features` available.  That's
+      // the case when using AGI as a frame debugger.
+      FML_DLOG(INFO) << "Requested validations but could not find the "
                         "VK_EXT_validation_features extension.";
-      return std::nullopt;
+      required.push_back("VK_EXT_validation_features");
     }
-    required.push_back("VK_EXT_validation_features");
   }
 
   return required;
@@ -277,13 +278,11 @@ bool CapabilitiesVK::HasExtension(const std::string& ext) const {
   return false;
 }
 
-bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
-  if (HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm)) {
-    color_format_ = PixelFormat::kB8G8R8A8UNormInt;
-  } else {
-    return false;
-  }
+void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
+  color_format_ = pixel_format;
+}
 
+bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
   if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
     depth_stencil_format_ = PixelFormat::kS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
@@ -294,6 +293,19 @@ bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
   }
 
   device_properties_ = device.getProperties();
+
+  auto physical_properties_2 =
+      device.getProperties2<vk::PhysicalDeviceProperties2,
+                            vk::PhysicalDeviceSubgroupProperties>();
+
+  // Currently shaders only want access to arithmetic subgroup features.
+  // If that changes this needs to get updated, and so does Metal (which right
+  // now assumes it from compile time flags based on the MSL target version).
+
+  supports_compute_subgroups_ =
+      !!(physical_properties_2.get<vk::PhysicalDeviceSubgroupProperties>()
+             .supportedOperations &
+         vk::SubgroupFeatureFlagBits::eArithmetic);
 
   return true;
 }
@@ -330,12 +342,14 @@ bool CapabilitiesVK::SupportsFramebufferFetch() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsCompute() const {
-  return false;
+  // Vulkan 1.1 requires support for compute.
+  return true;
 }
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsComputeSubgroups() const {
-  return false;
+  // Set by |SetDevice|.
+  return supports_compute_subgroups_;
 }
 
 // |Capabilities|

@@ -243,31 +243,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Vertex Input Setup
   ///
-  vk::VertexInputBindingDescription binding_description;
-  // Only 1 stream of data is supported for now.
-  binding_description.setBinding(0);
-  binding_description.setInputRate(vk::VertexInputRate::eVertex);
-
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
-  uint32_t offset = 0;
+  std::vector<vk::VertexInputBindingDescription> buffer_descs;
+
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  const auto& stage_buffer_layouts =
+      desc.GetVertexDescriptor()->GetStageLayouts();
   for (const ShaderStageIOSlot& stage_in : stage_inputs) {
     vk::VertexInputAttributeDescription attr_desc;
     attr_desc.setBinding(stage_in.binding);
     attr_desc.setLocation(stage_in.location);
     attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
-    attr_desc.setOffset(offset);
+    attr_desc.setOffset(stage_in.offset);
     attr_descs.push_back(attr_desc);
-    uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
-    offset += len;
   }
-
-  binding_description.setStride(offset);
+  for (const ShaderStageBufferLayout& layout : stage_buffer_layouts) {
+    vk::VertexInputBindingDescription binding_description;
+    binding_description.setBinding(layout.binding);
+    binding_description.setInputRate(vk::VertexInputRate::eVertex);
+    binding_description.setStride(layout.stride);
+    buffer_descs.push_back(binding_description);
+  }
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
   vertex_input_state.setVertexAttributeDescriptions(attr_descs);
-  vertex_input_state.setVertexBindingDescriptionCount(1);
-  vertex_input_state.setPVertexBindingDescriptions(&binding_description);
+  vertex_input_state.setVertexBindingDescriptions(buffer_descs);
 
   pipeline_info.setPVertexInputState(&vertex_input_state);
 
@@ -343,6 +343,112 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   );
 }
 
+std::unique_ptr<ComputePipelineVK> PipelineLibraryVK::CreateComputePipeline(
+    const ComputePipelineDescriptor& desc) {
+  TRACE_EVENT0("flutter", __FUNCTION__);
+  vk::ComputePipelineCreateInfo pipeline_info;
+
+  //----------------------------------------------------------------------------
+  /// Shader Stage
+  ///
+  const auto entrypoint = desc.GetStageEntrypoint();
+  if (!entrypoint) {
+    VALIDATION_LOG << "Compute shader is missing an entrypoint.";
+    return nullptr;
+  }
+
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return nullptr;
+  }
+  auto device_properties = strong_device->GetPhysicalDevice().getProperties();
+  auto max_wg_size = device_properties.limits.maxComputeWorkGroupSize;
+
+  // Give all compute shaders a specialization constant entry for the
+  // workgroup/threadgroup size.
+  vk::SpecializationMapEntry specialization_map_entry[1];
+
+  uint32_t workgroup_size_x = max_wg_size[0];
+  specialization_map_entry[0].constantID = 0;
+  specialization_map_entry[0].offset = 0;
+  specialization_map_entry[0].size = sizeof(uint32_t);
+
+  vk::SpecializationInfo specialization_info;
+  specialization_info.mapEntryCount = 1;
+  specialization_info.pMapEntries = &specialization_map_entry[0];
+  specialization_info.dataSize = sizeof(uint32_t);
+  specialization_info.pData = &workgroup_size_x;
+
+  vk::PipelineShaderStageCreateInfo info;
+  info.setStage(vk::ShaderStageFlagBits::eCompute);
+  info.setPName("main");
+  info.setModule(ShaderFunctionVK::Cast(entrypoint.get())->GetModule());
+  info.setPSpecializationInfo(&specialization_info);
+  pipeline_info.setStage(info);
+
+  //----------------------------------------------------------------------------
+  /// Pipeline Layout a.k.a the descriptor sets and uniforms.
+  ///
+  std::vector<vk::DescriptorSetLayoutBinding> desc_bindings;
+
+  for (auto layout : desc.GetDescriptorSetLayouts()) {
+    auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
+    desc_bindings.push_back(vk_desc_layout);
+  }
+
+  vk::DescriptorSetLayoutCreateInfo descs_layout_info;
+  descs_layout_info.setBindings(desc_bindings);
+
+  auto [descs_result, descs_layout] =
+      strong_device->GetDevice().createDescriptorSetLayoutUnique(
+          descs_layout_info);
+  if (descs_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "unable to create uniform descriptors";
+    return nullptr;
+  }
+
+  ContextVK::SetDebugName(strong_device->GetDevice(), descs_layout.get(),
+                          "Descriptor Set Layout " + desc.GetLabel());
+
+  //----------------------------------------------------------------------------
+  /// Create the pipeline layout.
+  ///
+  vk::PipelineLayoutCreateInfo pipeline_layout_info;
+  pipeline_layout_info.setSetLayouts(descs_layout.get());
+  auto pipeline_layout = strong_device->GetDevice().createPipelineLayoutUnique(
+      pipeline_layout_info);
+  if (pipeline_layout.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create pipeline layout for pipeline "
+                   << desc.GetLabel() << ": "
+                   << vk::to_string(pipeline_layout.result);
+    return nullptr;
+  }
+  pipeline_info.setLayout(pipeline_layout.value.get());
+
+  //----------------------------------------------------------------------------
+  /// Finally, all done with the setup info. Create the pipeline itself.
+  ///
+  auto pipeline = pso_cache_->CreatePipeline(pipeline_info);
+  if (!pipeline) {
+    VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
+    return nullptr;
+  }
+
+  ContextVK::SetDebugName(strong_device->GetDevice(), *pipeline_layout.value,
+                          "Pipeline Layout " + desc.GetLabel());
+  ContextVK::SetDebugName(strong_device->GetDevice(), *pipeline,
+                          "Pipeline " + desc.GetLabel());
+
+  return std::make_unique<ComputePipelineVK>(
+      device_holder_,
+      weak_from_this(),                  //
+      desc,                              //
+      std::move(pipeline),               //
+      std::move(pipeline_layout.value),  //
+      std::move(descs_layout)            //
+  );
+}
+
 // |PipelineLibrary|
 PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {
@@ -390,10 +496,48 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
 // |PipelineLibrary|
 PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
     ComputePipelineDescriptor descriptor) {
+  Lock lock(compute_pipelines_mutex_);
+  if (auto found = compute_pipelines_.find(descriptor);
+      found != compute_pipelines_.end()) {
+    return found->second;
+  }
+
+  if (!IsValid()) {
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>(
+            nullptr)};
+  }
+
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
-  promise->set_value(nullptr);
-  return {descriptor, promise->get_future()};
+  auto pipeline_future = PipelineFuture<ComputePipelineDescriptor>{
+      descriptor, promise->get_future()};
+  compute_pipelines_[descriptor] = pipeline_future;
+
+  auto weak_this = weak_from_this();
+
+  worker_task_runner_->PostTask([descriptor, weak_this, promise]() {
+    auto self = weak_this.lock();
+    if (!self) {
+      promise->set_value(nullptr);
+      VALIDATION_LOG << "Pipeline library was collected before the pipeline "
+                        "could be created.";
+      return;
+    }
+
+    auto pipeline =
+        PipelineLibraryVK::Cast(*self).CreateComputePipeline(descriptor);
+    if (!pipeline) {
+      promise->set_value(nullptr);
+      VALIDATION_LOG << "Could not create pipeline: " << descriptor.GetLabel();
+      return;
+    }
+
+    promise->set_value(std::move(pipeline));
+  });
+
+  return pipeline_future;
 }
 
 // |PipelineLibrary|

@@ -57,7 +57,7 @@ void debugEmulateHotRestart() {
 
 /// Fully initializes the engine, including services and UI.
 Future<void> initializeEngine({
-  AssetManager? assetManager,
+  ui_web.AssetManager? assetManager,
 }) async {
   await initializeEngineServices(assetManager: assetManager);
   await initializeEngineUi();
@@ -115,7 +115,7 @@ void debugResetEngineInitializationState() {
 ///  * [initializeEngineUi], which is typically called after this function, and
 ///    puts UI elements on the page.
 Future<void> initializeEngineServices({
-  AssetManager? assetManager,
+  ui_web.AssetManager? assetManager,
   JsFlutterConfiguration? jsConfiguration
 }) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
@@ -132,10 +132,6 @@ Future<void> initializeEngineServices({
 
   // Store `jsConfiguration` so user settings are available to the engine.
   configuration.setUserConfiguration(jsConfiguration);
-
-  // Setup the hook that allows users to customize URL strategy before running
-  // the app.
-  _addUrlStrategyListener();
 
   // Called by the Web runtime just before hot restarting the app.
   //
@@ -198,7 +194,7 @@ Future<void> initializeEngineServices({
     }
   };
 
-  assetManager ??= AssetManager(assetBase: configuration.assetBase);
+  assetManager ??= ui_web.AssetManager(assetBase: configuration.assetBase);
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback () async => renderer.initialize();
@@ -228,17 +224,16 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
-  initializeAccessibilityAnnouncements();
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
   _initializationState = DebugEngineInitializationState.initialized;
 }
 
-AssetManager get assetManager => _assetManager!;
-AssetManager? _assetManager;
+ui_web.AssetManager get engineAssetManager => _assetManager!;
+ui_web.AssetManager? _assetManager;
 
-void _setAssetManager(AssetManager assetManager) {
+void _setAssetManager(ui_web.AssetManager assetManager) {
   if (assetManager == _assetManager) {
     return;
   }
@@ -259,28 +254,8 @@ Future<void> _downloadAssetFonts() async {
   }
 
   if (_assetManager != null) {
-    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(assetManager));
+    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
   }
-}
-
-void _addUrlStrategyListener() {
-  jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
-    if (jsStrategy == null) {
-      ui_web.urlStrategy = null;
-    } else {
-      // Because `JSStrategy` could be anything, we check for the
-      // `addPopStateListener` property and throw if it is missing.
-      if (!hasJsProperty(jsStrategy, 'addPopStateListener')) {
-        throw StateError(
-            'Unexpected JsUrlStrategy: $jsStrategy is missing '
-            '`addPopStateListener` property');
-      }
-      ui_web.urlStrategy = CustomUrlStrategy.fromJs(jsStrategy);
-    }
-  });
-  registerHotRestartListener(() {
-    jsSetUrlStrategy = null;
-  });
 }
 
 /// Whether to disable the font fallback system.

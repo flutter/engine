@@ -5,6 +5,8 @@
 #include "surface.h"
 #include <algorithm>
 
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+
 using namespace Skwasm;
 
 Surface::Surface() {

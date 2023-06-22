@@ -54,7 +54,6 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 14e222b
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e222b"
@@ -103,15 +102,24 @@ targets:
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
     timeout: 60
 
+  - name: Linux linux_android_emulator_tests
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_android_emulator
+    timeout: 60
+
   - name: Linux Android Emulator Tests
+    bringup: true
     recipe: engine/scenarios
     enabled_branches:
       - main
-      - master
     properties:
       dependencies: >-
         [
-          {"dependency": "android_virtual_device", "version": "31"},
+          {"dependency": "android_virtual_device", "version": "33"},
           {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
         ]
       upload_packages: "true"
@@ -185,18 +193,28 @@ targets:
     timeout: 60
 
   - name: Linux Benchmarks
+    bringup: true
     enabled_branches:
       - main
-      - master
     recipe: engine/engine_metrics
     presubmit: false
     properties:
       build_host: "true"
-      upload_metrics: "true"
+      upload_metrics: "false"
+    timeout: 60
+
+  - name: Linux linux_benchmarks
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    presubmit: false
+    properties:
+      config_name: linux_benchmarks
     timeout: 60
 
   - name: Linux Benchmarks (no-upload)
     recipe: engine/engine_metrics
+    bringup: true
     properties:
       build_host: "true"
       upload_metrics: "false"
@@ -240,7 +258,6 @@ targets:
     recipe: engine/framework_smoke
     enabled_branches:
       - main
-      - master
     timeout: 60
 
   - name: Linux Host Engine
@@ -331,7 +348,6 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
-      release_build: "true"
       config_name: linux_clang_tidy
 
   - name: Linux linux_arm_host_engine
@@ -411,7 +427,6 @@ targets:
     recipe: engine/web_engine_framework
     enabled_branches:
       - main
-      - master
     properties:
       add_recipes_cq: "true"
       cores: "32"
@@ -419,7 +434,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:111.0a"},
+          {"dependency": "chrome_and_driver", "version": "version:114.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
@@ -516,11 +531,6 @@ targets:
     bringup: true
     recipe: engine/engine_unopt
     properties:
-      runtime_versions: >-
-        [
-          "ios-16-4_14e222b",
-          "ios-16-2_14c18"
-        ]
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e222b",
@@ -593,16 +603,17 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      $flutter/osx_sdk : >-
-        {
-          "sdk_version": "14e222b"
-        }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
+      $flutter/osx_sdk : >-
+        {
+          "sdk_version": "14e222b"
+        }
     drone_dimensions:
       - os=Mac-12
+      - cpu=x86
 
   - name: Mac impeller-cmake-example
     bringup: true

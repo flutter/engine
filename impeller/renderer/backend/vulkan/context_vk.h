@@ -78,6 +78,8 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  void SetOffscreenFormat(PixelFormat pixel_format);
+
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
     return SetDebugName(GetDevice(), handle, label);
@@ -136,6 +138,11 @@ class ContextVK final : public Context,
   struct DeviceHolderImpl : public DeviceHolder {
     // |DeviceHolder|
     const vk::Device& GetDevice() const override { return device.get(); }
+    // |DeviceHolder|
+    const vk::PhysicalDevice& GetPhysicalDevice() const override {
+      return physical_device;
+    }
+
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;
     vk::UniqueDevice device;
