@@ -112,20 +112,21 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
-    return true;
+    return true;  // Nothing to render.
   }
+
+  auto half_texel_size =
+      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
+  auto texture_coords =
+      Rect::MakeSize(texture_->GetSize()).Project(source_rect_);
+  texture_coords =
+      texture_coords.Expand(-half_texel_size.width, -half_texel_size.height,
+                            half_texel_size.width, half_texel_size.height);
 
   // Expand the destination rect by one pixel towards the bottom right. Map the
   // texture coordinates such that texels are evenly spaced across the pixel
   // grid.
   auto destination_rect = destination_rect_.Expand(0, 0, 1, 1);
-  auto half_texel_size =
-      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
-  auto texture_coords =
-      destination_rect_.Project(source_rect_.Shift(destination_rect_.origin));
-  texture_coords =
-      texture_coords.Expand(-half_texel_size.width, -half_texel_size.height,
-                            half_texel_size.width, half_texel_size.height);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
 
