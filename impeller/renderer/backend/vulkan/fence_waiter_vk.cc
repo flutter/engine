@@ -81,7 +81,8 @@ void FenceWaiterVK::Main() {
       break;
     }
 
-    if (!TrimAndCreateWaitSetLocked(device_holder, std::move(temp_wait_set), std::move(callbacks))) {
+    if (!TrimAndCreateWaitSetLocked(device_holder, std::move(temp_wait_set),
+                                    std::move(callbacks))) {
       break;
     }
   }
