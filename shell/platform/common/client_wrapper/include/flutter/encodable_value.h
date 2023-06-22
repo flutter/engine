@@ -217,7 +217,8 @@ class EncodableValue : public internal::EncodableValueVariant {
   }
 
   // Explicitly provide operator<, delegating to std::variant's operator<.
-  // This avoids operator<=> problems with std::variant in C++20 mode.
+  // There are issues with with the way the standard library-provided
+  // < and <=> comparisons interact with classes derived from variant.
   friend bool operator<(const EncodableValue& lhs, const EncodableValue& rhs) {
     return static_cast<const super&>(lhs) < static_cast<const super&>(rhs);
   }
