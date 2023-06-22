@@ -115,28 +115,18 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;  // Nothing to render.
   }
 
+  // Expand the source rect by half a texel, which aligns sampled texels to the
+  // pixel grid if the source rect is the same size as the destination rect.
   auto texture_coords =
-      Rect::MakeSize(texture_->GetSize()).Project(source_rect_);
-
-  // Expand the texture coordinates
-  auto half_texel_size =
-      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
-  texture_coords =
-      texture_coords.Expand(half_texel_size.width, half_texel_size.height,
-                            half_texel_size.width, half_texel_size.height);
-
-  // Expand the destination rect by one pixel towards the bottom right. Map the
-  // texture coordinates such that texels are evenly spaced across the pixel
-  // grid.
-  auto destination_rect = destination_rect_.Expand(0, 0, 1, 1);
+      Rect::MakeSize(texture_->GetSize()).Project(source_rect_.Expand(0.5));
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
 
   vertex_builder.AddVertices({
-      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
-      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
-      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
-      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
+      {destination_rect_.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect_.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect_.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect_.GetRightBottom(), texture_coords.GetRightBottom()},
   });
 
   auto& host_buffer = pass.GetTransientsBuffer();
