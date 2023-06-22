@@ -66,7 +66,7 @@
                 {
                     "language": "dart",
                     "name": "test: Lint android host",
-                    "script": "flutter/tools/android_lint/bin/main.dartt"
+                    "script": "flutter/tools/android_lint/bin/main.dart"
                 }
             ]
         },
