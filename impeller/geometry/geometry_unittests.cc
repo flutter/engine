@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "gtest/gtest.h"
 #include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
@@ -2111,6 +2112,62 @@ TEST(GeometryTest, RectGetPositive) {
     Rect r{100, 200, -100, -100};
     auto actual = r.GetPositive();
     Rect expected(0, 100, 100, 100);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectScale) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(0);
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(-2);
+    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Point{0, 0});
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Size{-1, -2});
+    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectDirections) {
+  auto r = Rect::MakeLTRB(1, 2, 3, 4);
+
+  ASSERT_EQ(r.GetLeft(), 1);
+  ASSERT_EQ(r.GetTop(), 2);
+  ASSERT_EQ(r.GetRight(), 3);
+  ASSERT_EQ(r.GetBottom(), 4);
+
+  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
+  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
+  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
+  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
+}
+
+TEST(GeometryTest, RectProject) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(r);
+    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
+    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
     ASSERT_RECT_NEAR(expected, actual);
   }
 }
