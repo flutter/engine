@@ -62,7 +62,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
         "Picture Snapshot MSAA",  // label
         RenderTarget::
             kDefaultColorAttachmentConfigMSAA  // color_attachment_config
-#ifndef FML_OS_ANDROID
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
@@ -73,7 +73,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
         size,                                        // size
         "Picture Snapshot",                          // label
         RenderTarget::kDefaultColorAttachmentConfig  // color_attachment_config
-#ifndef FML_OS_ANDROID
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID

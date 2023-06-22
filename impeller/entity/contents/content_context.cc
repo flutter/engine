@@ -355,7 +355,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     subpass_target = RenderTarget::CreateOffscreenMSAA(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA  //
-#ifndef FML_OS_ANDROID
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
@@ -364,7 +364,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     subpass_target = RenderTarget::CreateOffscreen(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig  //
-#ifndef FML_OS_ANDROID
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config
 #endif                // FML_OS_ANDROID
