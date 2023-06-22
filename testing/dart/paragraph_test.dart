@@ -27,7 +27,8 @@ void main() {
       expect(paragraph.minIntrinsicWidth, closeTo(fontSize * 4.0, 0.001));
       expect(paragraph.maxIntrinsicWidth, closeTo(fontSize * 4.0, 0.001));
       expect(paragraph.alphabeticBaseline, closeTo(fontSize * .8, 0.001));
-      expect(paragraph.ideographicBaseline,
+      expect(
+        paragraph.ideographicBaseline,
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 0.001),
       );
     }
