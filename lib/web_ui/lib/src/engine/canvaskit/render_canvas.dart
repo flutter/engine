@@ -118,8 +118,8 @@ class RenderCanvas {
       throw CanvasKitError('Cannot create canvases of empty size.');
     }
 
-    // Check if the frame is the same size as before, and if so, don't allocate
-    // a new canvas as the previous canvas is big enough to fit everything.
+    // Check if the frame is the same size as before, and if so, we don't need
+    // to resize the canvas.
     final ui.Size? previousRenderSize = _currentRenderSize;
     if (previousRenderSize != null &&
         size.width == previousRenderSize.width &&
