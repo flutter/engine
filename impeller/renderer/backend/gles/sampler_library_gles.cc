@@ -19,6 +19,9 @@ SamplerLibraryGLES::~SamplerLibraryGLES() = default;
 // |SamplerLibrary|
 std::shared_ptr<const Sampler> SamplerLibraryGLES::GetSampler(
     SamplerDescriptor descriptor) {
+  // TODO(bdero): Change this validation once optional support for kDecal is
+  //              added to the OpenGLES backend:
+  //              https://github.com/flutter/flutter/issues/129358
   if (descriptor.width_address_mode == SamplerAddressMode::kDecal ||
       descriptor.height_address_mode == SamplerAddressMode::kDecal ||
       descriptor.depth_address_mode == SamplerAddressMode::kDecal) {
