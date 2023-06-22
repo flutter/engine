@@ -115,12 +115,14 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;  // Nothing to render.
   }
 
-  auto half_texel_size =
-      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
   auto texture_coords =
       Rect::MakeSize(texture_->GetSize()).Project(source_rect_);
+
+  // Expand the texture coordinates
+  auto half_texel_size =
+      Size(0.5 / texture_->GetSize().width, 0.5 / texture_->GetSize().height);
   texture_coords =
-      texture_coords.Expand(-half_texel_size.width, -half_texel_size.height,
+      texture_coords.Expand(half_texel_size.width, half_texel_size.height,
                             half_texel_size.width, half_texel_size.height);
 
   // Expand the destination rect by one pixel towards the bottom right. Map the
