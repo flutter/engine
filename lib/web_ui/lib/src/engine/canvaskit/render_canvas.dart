@@ -137,8 +137,8 @@ class RenderCanvas {
     // because then when we call `transferFromImageBitmap()` the bitmap will
     // be scaled to cover the entire canvas.
     if (previousCanvasSize != null) {
-      canvasElement!.width = size.width;
-      canvasElement!.height = size.height;
+      canvasElement!.width = size.width.ceilToDouble();
+      canvasElement!.height = size.height.ceilToDouble();
       _currentCanvasPhysicalSize = size;
       _pixelWidth = size.width.ceil();
       _pixelHeight = size.height.ceil();
