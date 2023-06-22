@@ -1828,8 +1828,8 @@ class ParagraphStyle {
                                           TextHeightBehavior._fromEncoded(_encoded[6], _leadingDistribution).toString() : "unspecified"}, '
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
-             'strutStyle: ${    _encoded[0] & 0x200 == 0x200 ? _strutStyle                       : "unspecified"}, ',
-             'height: ${        _encoded[0] & 0x400 == 0x400 ? "${_height}x"                     : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
+             'strutStyle: ${    _encoded[0] & 0x400 == 0x400 ? _strutStyle                       : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x800 == 0x800 ? '"$_ellipsis"'                    : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x1000 == 0x1000 ? _locale                         : "unspecified"}'
            ')';
