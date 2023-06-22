@@ -49,12 +49,6 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
   contents->SetOpacity(paint_.color.alpha);
   contents->SetDeferApplyingOpacity(true);
 
-  SamplerDescriptor sampler_desc;
-  sampler_desc.label = "Subpass";
-  sampler_desc.width_address_mode = SamplerAddressMode::kDecal;
-  sampler_desc.height_address_mode = SamplerAddressMode::kDecal;
-  contents->SetSamplerDescriptor(sampler_desc);
-
   return paint_.WithFiltersForSubpassTarget(std::move(contents),
                                             effect_transform);
 }
@@ -149,12 +143,6 @@ OpacityPeepholePassDelegate::CreateContentsForSubpassTarget(
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
   contents->SetDeferApplyingOpacity(true);
-
-  SamplerDescriptor sampler_desc;
-  sampler_desc.label = "Subpass";
-  sampler_desc.width_address_mode = SamplerAddressMode::kDecal;
-  sampler_desc.height_address_mode = SamplerAddressMode::kDecal;
-  contents->SetSamplerDescriptor(sampler_desc);
 
   return paint_.WithFiltersForSubpassTarget(std::move(contents),
                                             effect_transform);
