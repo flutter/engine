@@ -2290,6 +2290,63 @@ Future<void> testMain() async {
       expect(formChildNodes[3].type, 'submit');
     });
 
+    test(
+        'hidden autofill elements should have a width and height of 0 on non-Safari browsers',
+        () {
+      final List<dynamic> fields = createFieldValues(<String>[
+        'email',
+        'username',
+        'password',
+      ], <String>[
+        'field1',
+        'field2',
+        'field3'
+      ]);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('email', 'field1'), fields)!;
+      final List<DomHTMLInputElement> formChildNodes =
+          autofillForm.formElement.childNodes.toList()
+              as List<DomHTMLInputElement>;
+      final DomHTMLInputElement username = formChildNodes[0];
+      final DomHTMLInputElement password = formChildNodes[1];
+
+      expect(username.name, 'username');
+      expect(password.name, 'current-password');
+      expect(username.style.width, '0px');
+      expect(username.style.height, '0px');
+      expect(password.style.width, '0px');
+      expect(password.style.height, '0px');
+    }, skip: isSafari);
+
+    test(
+        'hidden autofill elements should not have a width and height of 0 on Safari',
+        () {
+      final List<dynamic> fields = createFieldValues(<String>[
+        'email',
+        'username',
+        'password',
+      ], <String>[
+        'field1',
+        'field2',
+        'field3'
+      ]);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('email', 'field1'), fields)!;
+      final List<DomHTMLInputElement> formChildNodes =
+          autofillForm.formElement.childNodes.toList()
+              as List<DomHTMLInputElement>;
+      final DomHTMLInputElement username = formChildNodes[0];
+      final DomHTMLInputElement password = formChildNodes[1];
+      expect(username.name, 'username');
+      expect(password.name, 'current-password');
+      expect(username.style.width, isNot(equals('0px')));
+      expect(username.style.height, isNot(equals('0px')));
+      expect(password.style.width, isNot(equals('0px')));
+      expect(password.style.height, isNot(equals('0px')));
+    }, skip: !isSafari);
+
     tearDown(() {
       clearForms();
     });
