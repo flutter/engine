@@ -537,3 +537,30 @@ TEST(FlutterMutatorViewTest, PathClipViewsAreAddedAndRemoved) {
   EXPECT_TRUE(CGRectEqualToRect(mutatorView.frame, CGRectMake(100, 50, 30, 20)));
   EXPECT_EQ(mutatorView.pathClipViews.count, 0ull);
 }
+
+TEST(FlutterMutatorViewTest, HitTestIgnoreRegion) {
+  NSView* platformView = [[NSView alloc] init];
+  FlutterMutatorView* mutatorView = [[FlutterMutatorView alloc] initWithPlatformView:platformView];
+  ApplyFlutterLayer(mutatorView, FlutterSize{100, 100}, {});
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 10)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(50, 10)], platformView);
+
+  [mutatorView resetHitTestRegion];
+  [mutatorView addHitTestIgnoreRegion:CGRectMake(0, 0, 50, 50)];
+  [mutatorView addHitTestIgnoreRegion:CGRectMake(50, 50, 50, 50)];
+
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 10)], nil);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(49, 10)], nil);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 49)], nil);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(50, 50)], nil);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(50, 10)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 50)], platformView);
+
+  [mutatorView resetHitTestRegion];
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 10)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(49, 10)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 49)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(50, 50)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(50, 10)], platformView);
+  EXPECT_EQ([mutatorView hitTest:NSMakePoint(10, 50)], platformView);
+}

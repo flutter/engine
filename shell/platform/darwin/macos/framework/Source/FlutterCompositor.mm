@@ -13,7 +13,8 @@ FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
                                      FlutterPlatformViewController* platform_view_controller)
     : view_provider_(view_provider),
       platform_view_controller_(platform_view_controller),
-      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
+      mutator_views_([NSMapTable strongToStrongObjectsMapTable]),
+      cursor_coordinators_([NSMapTable weakToStrongObjectsMapTable]) {
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
@@ -89,7 +90,32 @@ void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
   for (size_t i = 0; i < layers_count; i++) {
     FlutterLayer* layer = (FlutterLayer*)layers[i];
     if (layer->type == kFlutterLayerContentTypePlatformView) {
-      [present_mutators addObject:PresentPlatformView(default_base_view, layer, i)];
+      FlutterMutatorView* mutator_view = PresentPlatformView(default_base_view, layer, i);
+      [present_mutators addObject:mutator_view];
+
+      // Gather all overlay regions above this mutator view.
+      [mutator_view resetHitTestRegion];
+      for (size_t j = i + 1; j < layers_count; j++) {
+        FlutterLayer* overlayLayer = (FlutterLayer*)layers[j];
+        if (overlayLayer->type == kFlutterLayerContentTypeBackingStore) {
+          auto present_info = overlayLayer->backing_store->present_info;
+          if (present_info != nullptr && present_info->paint_region != nullptr) {
+            for (size_t k = 0; k < present_info->paint_region->rects_count; k++) {
+              FlutterRect flutter_rect = present_info->paint_region->rects[k];
+              double scale = default_base_view.layer.contentsScale;
+              CGRect rect = CGRectMake(flutter_rect.left / scale, flutter_rect.top / scale,
+                                       (flutter_rect.right - flutter_rect.left) / scale,
+                                       (flutter_rect.bottom - flutter_rect.top) / scale);
+              CGRect intersection = CGRectIntersection(rect, mutator_view.frame);
+              if (!CGRectIsNull(intersection)) {
+                intersection.origin.x -= mutator_view.frame.origin.x;
+                intersection.origin.y -= mutator_view.frame.origin.y;
+                [mutator_view addHitTestIgnoreRegion:intersection];
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -116,10 +142,17 @@ FlutterMutatorView* FlutterCompositor::PresentPlatformView(FlutterView* default_
 
   FML_DCHECK(platform_view) << "Platform view not found for id: " << platform_view_id;
 
+  FlutterCursorCoordinator* coordinator = [cursor_coordinators_ objectForKey:default_base_view];
+  if (!coordinator) {
+    coordinator = [[FlutterCursorCoordinator alloc] initWithFlutterView:default_base_view];
+    [cursor_coordinators_ setObject:coordinator forKey:default_base_view];
+  }
+
   FlutterMutatorView* container = [mutator_views_ objectForKey:platform_view];
 
   if (!container) {
-    container = [[FlutterMutatorView alloc] initWithPlatformView:platform_view];
+    container = [[FlutterMutatorView alloc] initWithPlatformView:platform_view
+                                                cursorCoordiator:coordinator];
     [mutator_views_ setObject:container forKey:platform_view];
     [default_base_view addSubview:container];
   }
