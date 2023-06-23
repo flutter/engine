@@ -229,6 +229,10 @@ enum Clip {
 
 abstract class Paint {
   factory Paint() => engine.renderer.createPaint();
+
+  Paint.deserialize(ByteData data, List<Object?>? objects) => throw UnimplementedError();
+  (ByteData, List<Object?>?) serialize();
+
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);

@@ -50,6 +50,8 @@ abstract class Path {
   Path transform(Float64List matrix4);
   // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds();
+  Uint8List serialize();
+  void deserialize(Uint8List bytes);
   static Path combine(PathOperation operation, Path path1, Path path2) =>
     engine.renderer.combinePaths(operation, path1, path2);
 
