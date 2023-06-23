@@ -1091,6 +1091,21 @@ class Paint {
     }
   }
 
+  /// Constructs a [Paint] from data serialized from [serialize].
+  ///
+  /// The format is not guaranteed to be stable, and should only be used in
+  /// pair with [deserialize].
+  Paint.deserialize(ByteData data, List<Object?>? objects) {
+    _data.buffer.asUint8List().setRange(0, _kDataByteCount, data.buffer.asUint8List());
+    _objects = objects;
+  }
+
+  /// Serialize data of the current [Paint].
+  ///
+  /// The format is not guaranteed to be stable, and should only be used in
+  /// pair with `serialize`.
+  (ByteData, List<Object?>?) serialize() => (_data, _objects);
+
   // Paint objects are encoded in two buffers:
   //
   // * _data is binary data in four-byte fields, each of which is either a
