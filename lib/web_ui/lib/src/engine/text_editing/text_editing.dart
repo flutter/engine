@@ -101,10 +101,12 @@ void _setStaticStyleAttributes(DomHTMLElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillElements(DomHTMLElement domElement,
-    {bool isOffScreen = false,
-    bool shouldHideElement = true,
-    bool shouldDisablePointerEvents = false}) {
+void _styleAutofillElements(
+  DomHTMLElement domElement, {
+  bool isOffScreen = false,
+  bool shouldHideElement = true,
+  bool shouldDisablePointerEvents = false,
+}) {
   final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -215,7 +217,7 @@ class EngineAutofillForm {
     // We need to explicitly disable pointer events on the form in Safari Desktop,
     // so that we don't have pointer event collisions if users hover over or click
     // into the invisible autofill elements within the form.
-    _hideAutofillElements(formElement, shouldDisablePointerEvents: isSafariDesktopStrategy);
+    _styleAutofillElements(formElement, shouldDisablePointerEvents: isSafariDesktopStrategy);
 
     // We keep the ids in a list then sort them later, in case the text fields'
     // locations are re-ordered on the framework side.
@@ -254,7 +256,7 @@ class EngineAutofillForm {
           // Thus, we have to make sure that the elements remain invisible to users,
           // but not to Safari for autofill to work. Since these elements are
           // sized and placed on the DOM, we also have to disable pointer events.
-          _hideAutofillElements(htmlElement,
+          _styleAutofillElements(htmlElement,
               shouldHideElement: !isSafariDesktopStrategy,
               shouldDisablePointerEvents: isSafariDesktopStrategy);
 
@@ -300,7 +302,7 @@ class EngineAutofillForm {
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
     final DomHTMLInputElement submitButton = createDomHTMLInputElement();
-    _hideAutofillElements(submitButton, isOffScreen: true);
+    _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
 
@@ -326,7 +328,7 @@ class EngineAutofillForm {
 
   void storeForm() {
     formsOnTheDom[formIdentifier] = formElement;
-    _hideAutofillElements(formElement, isOffScreen: true);
+    _styleAutofillElements(formElement, isOffScreen: true);
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -1348,7 +1350,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
       activeDomElement.blur();
-      _hideAutofillElements(activeDomElement, isOffScreen: true);
+      _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
       activeDomElement.remove();

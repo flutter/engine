@@ -2315,8 +2315,11 @@ Future<void> testMain() async {
       expect(password.name, 'current-password');
       expect(username.style.width, '0px');
       expect(username.style.height, '0px');
+      expect(username.style.pointerEvents, isNot('none'));
       expect(password.style.width, '0px');
       expect(password.style.height, '0px');
+      expect(password.style.pointerEvents, isNot('none'));
+      expect(autofillForm.formElement.style.pointerEvents, isNot('none'));
     }, skip: isSafari);
 
     test(
@@ -2341,10 +2344,13 @@ Future<void> testMain() async {
       final DomHTMLInputElement password = formChildNodes[1];
       expect(username.name, 'username');
       expect(password.name, 'current-password');
-      expect(username.style.width, isNot(equals('0px')));
-      expect(username.style.height, isNot(equals('0px')));
-      expect(password.style.width, isNot(equals('0px')));
-      expect(password.style.height, isNot(equals('0px')));
+      expect(username.style.width, isNot('0px'));
+      expect(username.style.height, isNot('0px'));
+      expect(username.style.pointerEvents, 'none');
+      expect(password.style.width, isNot('0px'));
+      expect(password.style.height, isNot('0px'));
+      expect(password.style.pointerEvents, 'none');
+      expect(autofillForm.formElement.style.pointerEvents, 'none');
     }, skip: !isSafari);
 
     tearDown(() {
