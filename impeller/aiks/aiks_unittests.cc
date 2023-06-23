@@ -16,6 +16,7 @@
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/aiks/testing/context_spy.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/scene_contents.h"
@@ -2002,6 +2003,44 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
 
   ASSERT_EQ(picture.pass->GetElementCount(), 0u);
   ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
+}
+
+TEST_P(AiksTest, DrawRectAbsorbsClears) {
+  Canvas canvas;
+  canvas.DrawRect({0, 0, 300, 300},
+                  {.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawRect({0, 0, 300, 300}, {.color = Color::CornflowerBlue(),
+                                     .blend_mode = BlendMode::kSource});
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
+TEST_P(AiksTest, DrawRectDoesNotAbsorbClears) {
+  Canvas canvas;
+  canvas.DrawRect({0, 0, 300, 300},
+                  {.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawRect({0, 0, 300, 300}, {.color = Color::CornflowerBlue(),
+                                     .blend_mode = BlendMode::kSource});
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {301, 301});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
 }
 
 TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
