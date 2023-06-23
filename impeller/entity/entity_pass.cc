@@ -283,6 +283,7 @@ bool EntityPass::Render(ContentContext& renderer,
         contents->SetTexture(
             offscreen_target.GetRenderTarget().GetRenderTargetTexture());
         contents->SetSourceRect(size_rect);
+        contents->SetLabel("Root pass blit");
 
         Entity entity;
         entity.SetContents(contents);
@@ -477,7 +478,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         renderer,                                  // renderer
         subpass_size,                              // size
         subpass->GetTotalPassReads(renderer) > 0,  // readable
-        clear_color_.Premultiply());               // clear_color
+        Color::BlackTransparent());                // clear_color
 
     if (!subpass_target.IsValid()) {
       VALIDATION_LOG << "Subpass render target is invalid.";
