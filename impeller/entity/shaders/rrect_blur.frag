@@ -2,26 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/gaussian.glsl>
-#include <impeller/types.glsl>
+precision highp float;
+
+#include <impeller/gaussian_highp.glsl>
 
 uniform FragInfo {
-  f16vec4 color;
+  vec4 color;
   vec2 rect_size;
   float blur_sigma;
   float corner_radius;
 }
 frag_info;
 
-in vec2 v_position;
+in highp vec2 v_position;
 
-out f16vec4 frag_color;
+out vec4 frag_color;
 
 const int kSampleCount = 4;
 
-float16_t RRectDistance(vec2 sample_position, vec2 half_size) {
+float RRectDistance(vec2 sample_position, vec2 half_size) {
   vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
-  return float16_t(length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
+  return float(length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
                    frag_info.corner_radius);
 }
 
@@ -72,8 +73,8 @@ void main() {
   vec2 sample_position = v_position - half_size;
 
   if (frag_info.blur_sigma > 0.0) {
-    frag_color *= float16_t(RRectBlur(sample_position, half_size));
+    frag_color *= float(RRectBlur(sample_position, half_size));
   } else {
-    frag_color *= float16_t(-RRectDistance(sample_position, half_size));
+    frag_color *= float(-RRectDistance(sample_position, half_size));
   }
 }

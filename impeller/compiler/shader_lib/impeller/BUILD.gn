@@ -10,6 +10,7 @@ copy("impeller") {
     "constants.glsl",
     "conversions.glsl",
     "gaussian.glsl",
+    "gaussian_highp.glsl",
     "gradient.glsl",
     "path.glsl",
     "texture.glsl",
