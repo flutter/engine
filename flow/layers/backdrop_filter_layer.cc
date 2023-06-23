@@ -42,12 +42,10 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void BackdropFilterLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
-  // if (filter_ && context->view_embedder != nullptr) {
-  if (context->view_embedder != nullptr) {
+  if (filter_ && context->view_embedder != nullptr) {
     context->view_embedder->PushFilterToVisitedPlatformViews(
         filter_, context->state_stack.device_cull_rect());
   }
-  // }
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_paint_bounds);
   child_paint_bounds.join(context->state_stack.local_cull_rect());

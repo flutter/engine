@@ -1443,8 +1443,6 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
 /// A simple platform view for testing backDropFilter with a platform view in the scene.
 ///
 /// The stack would look like: picture 1 -> pv1 -> picture 2 -> filter -> pv2 - > picture 3.
-/// Because backdrop filter on platform views has not been implemented(see: https://github.com/flutter/flutter/issues/43902),
-/// the result will not including a filtered pv1.
 class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Constructs the scenario.
@@ -1535,13 +1533,12 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
 
 /// A simple platform view for testing backDropFilter with a platform view in the scene.
 ///
-/// The stack would look like: picture 1 -> pv1 -> picture 2 -> filter -> pv2 - > picture 3.
-/// Because backdrop filter on platform views has not been implemented(see: https://github.com/flutter/flutter/issues/43902),
-/// the result will not including a filtered pv1.
-class PlatformViewsWithNegativeBackDropFilter extends Scenario
+/// The backdrop filter sigma value is negative, which tries to reproduce a crash, see:
+/// https://github.com/flutter/flutter/issues/127095
+class PlatformViewWithNegativeBackDropFilter extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Constructs the scenario.
-  PlatformViewsWithNegativeBackDropFilter(
+  PlatformViewWithNegativeBackDropFilter(
     super.view, {
     required int id,
   }) : _id = id;
@@ -1559,7 +1556,6 @@ class PlatformViewsWithNegativeBackDropFilter extends Scenario
       const Rect.fromLTRB(0, 0, 600, 1000),
       Paint()..color = const Color(0xFFFF0000),
     );
-    // This rect should look blur due to the backdrop filter.
     canvas.drawRect(
       const Rect.fromLTRB(0, 0, 300, 300),
       Paint()..color = const Color(0xFF00FF00),
@@ -1580,7 +1576,6 @@ class PlatformViewsWithNegativeBackDropFilter extends Scenario
 
     final PictureRecorder recorder2 = PictureRecorder();
     final Canvas canvas2 = Canvas(recorder2);
-    // This circle should look blur due to the backdrop filter.
     canvas2.drawCircle(
       const Offset(200, 100),
       50,
@@ -1589,7 +1584,7 @@ class PlatformViewsWithNegativeBackDropFilter extends Scenario
     final Picture picture2 = recorder2.endRecording();
     builder.addPicture(const Offset(100, 100), picture2);
 
-    final ImageFilter filter = ImageFilter.blur(sigmaX: 8, sigmaY: 8);
+    final ImageFilter filter = ImageFilter.blur(sigmaX: -8, sigmaY: 8);
     builder.pushBackdropFilter(filter);
 
     final Scene scene = builder.build();
