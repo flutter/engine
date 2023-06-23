@@ -3135,11 +3135,12 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._fontSize ?? 0,
         style._height ?? 0,
         style._ellipsis ?? '',
-        _encodeLocale(style._locale)
+        _encodeLocale(style._locale),
+        style._applyRoundingHack,
       );
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>(symbol: 'ParagraphBuilder::Create')
+  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle, Bool)>(symbol: 'ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3148,7 +3149,8 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       double fontSize,
       double height,
       String ellipsis,
-      String locale);
+      String locale,
+      bool applyRoundingHack);
 
   @override
   int get placeholderCount => _placeholderCount;
