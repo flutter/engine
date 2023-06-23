@@ -58,8 +58,15 @@ void FenceWaiterVK::Main() {
       break;
     }
 
-    std::vector<vk::UniqueFence> temp_wait_set = std::move(wait_set_);
-    std::vector<fml::closure> callbacks = std::move(wait_set_callbacks_);
+    std::vector<vk::UniqueFence> temp_wait_set(wait_set_.size());
+    std::vector<fml::closure> temp_callbacks(wait_set_callbacks_.size());
+    for (auto i = 0u; i < wait_set_.size(); i++) {
+      temp_wait_set[i] = std::move(wait_set_[i]);
+      temp_callbacks[i] = std::move(wait_set_callbacks_[i]);
+    }
+    wait_set_.clear();
+    wait_set_callbacks_.clear();
+
     lock.unlock();
 
     std::vector<vk::Fence> fences(temp_wait_set.size());
@@ -82,7 +89,7 @@ void FenceWaiterVK::Main() {
     }
 
     if (!TrimAndCreateWaitSetLocked(device_holder, std::move(temp_wait_set),
-                                    std::move(callbacks))) {
+                                    std::move(temp_callbacks))) {
       break;
     }
   }
@@ -91,20 +98,20 @@ void FenceWaiterVK::Main() {
 bool FenceWaiterVK::TrimAndCreateWaitSetLocked(
     const std::shared_ptr<DeviceHolder>& device_holder,
     std::vector<vk::UniqueFence> fences,
-    std::vector<fml::closure> closures) {
+    std::vector<fml::closure> callback) {
   TRACE_EVENT0("impeller", "TrimFences");
 
   std::vector<vk::UniqueFence> remaining_fences;
-  std::vector<fml::closure> remaining_closures;
+  std::vector<fml::closure> remaining_callback;
 
   for (auto i = 0u; i < fences.size(); i++) {
     switch (device_holder->GetDevice().getFenceStatus(fences[i].get())) {
       case vk::Result::eSuccess:  // Signalled.
-        closures[i]();
+        callback[i]();
         break;
       case vk::Result::eNotReady:  // Un-signalled.
         remaining_fences.push_back(std::move(fences[i]));
-        remaining_closures.push_back(std::move(closures[i]));
+        remaining_callback.push_back(std::move(callback[i]));
         break;
       default:
         return false;
@@ -116,7 +123,7 @@ bool FenceWaiterVK::TrimAndCreateWaitSetLocked(
     std::unique_lock lock(wait_set_mutex_);
     for (auto i = 0u; i < remaining_fences.size(); i++) {
       wait_set_.push_back(std::move(remaining_fences[i]));
-      wait_set_callbacks_.push_back(std::move(remaining_closures[i]));
+      wait_set_callbacks_.push_back(std::move(remaining_callback[i]));
     }
     lock.unlock();
   }
