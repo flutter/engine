@@ -1605,8 +1605,8 @@ class TextStyle {
              'fontFamily: ${fontFamily ?? "unspecified"}, '
              'fontFamilyFallback: ${fontFamilyFallback ?? "unspecified"}, '
              'fontSize: ${fontSize ?? "unspecified"}, '
-             'letterSpacing: ${letterSpacing ?? "unspecified"}, '
-             'wordSpacing: ${wordSpacing ?? "unspecified"}, '
+             'letterSpacing: ${letterSpacing != null ? '${letterSpacing}x' ? "unspecified"}, '
+             'wordSpacing: ${wordSpacing != null ? '${wordSpacing}x' ? "unspecified"}, '
              'height: ${height ?? "unspecified"}, '
              'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
              'locale: ${locale ?? "unspecified"}, '
@@ -1858,8 +1858,8 @@ class ParagraphStyle {
              'textHeightBehavior: ${textHeightBehavior ?? "unspecified"}, '
              'fontFamily: ${fontFamily ?? "unspecified"}, '
              'fontSize: ${fontSize ?? "unspecified"}, '
-             'height: ${height ?? "unspecified"}, '
-             'ellipsis: ${ellipsis ?? "unspecified"}, '
+             'height: ${height != null ? '${height}x' : "unspecified"}, '
+             'ellipsis: ${ellipsis != null ? '"$ellipsis"' : "unspecified"}, '
              'locale: ${locale ?? "unspecified"}'
            ')';
   }
