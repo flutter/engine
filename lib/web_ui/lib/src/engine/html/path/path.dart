@@ -1507,6 +1507,12 @@ class SurfacePath implements ui.Path {
     return newBounds;
   }
 
+  @override
+  Uint8List serialize() => throw UnimplementedError();
+
+  @override
+  void deserialize(Uint8List bytes) => throw UnimplementedError();
+
   /// Creates a [PathMetrics] object for this path.
   ///
   /// If `forceClosed` is set to true, the contours of the path will be measured

@@ -35,6 +35,9 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   );
 
   @override
+  (ByteData, List<Object?>?) serialize() => throw UnimplementedError();
+
+  @override
   ui.BlendMode get blendMode {
     return _cachedBlendMode;
   }

@@ -241,6 +241,12 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
     });
   }
 
+  @override
+  Uint8List serialize() => throw UnimplementedError();
+
+  @override
+  void deserialize(Uint8List bytes) => throw UnimplementedError();
+
   static SkwasmPath combine(
     ui.PathOperation operation,
     SkwasmPath path1,

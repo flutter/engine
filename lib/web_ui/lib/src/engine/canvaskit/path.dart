@@ -203,6 +203,12 @@ class CkPath implements ui.Path {
   ui.Rect getBounds() => fromSkRect(skiaObject.getBounds());
 
   @override
+  Uint8List serialize() => throw UnimplementedError();
+
+  @override
+  void deserialize(Uint8List bytes) => throw UnimplementedError();
+
+  @override
   void lineTo(double x, double y) {
     skiaObject.lineTo(x, y);
   }

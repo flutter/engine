@@ -41,6 +41,9 @@ class CkPaint implements ui.Paint {
   UniqueRef<SkPaint> get debugRef => _ref;
 
   @override
+  (ByteData, List<Object?>?) serialize() => throw UnimplementedError();
+
+  @override
   ui.BlendMode get blendMode => _blendMode;
   @override
   set blendMode(ui.BlendMode value) {

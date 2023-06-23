@@ -15,6 +15,9 @@ class SurfacePaint implements ui.Paint {
   ui.BlendMode get blendMode => _paintData.blendMode ?? ui.BlendMode.srcOver;
 
   @override
+  (ByteData, List<Object?>?) serialize() => throw UnimplementedError();
+
+  @override
   set blendMode(ui.BlendMode value) {
     if (_frozen) {
       _paintData = _paintData.clone();
