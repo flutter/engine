@@ -234,22 +234,12 @@ void main() {
     }
   });
 
-  test('applyRoundingHack defaults to true', () {
+  test('disableRoundingHack works', () {
     const double fontSize = 1.25;
     const String text = '12345';
     assert((fontSize * text.length).truncate() != fontSize * text.length);
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
-    builder.addText(text);
-    final Paragraph paragraph = builder.build()
-      ..layout(const ParagraphConstraints(width: text.length * fontSize));
-
-    expect(paragraph.computeLineMetrics(), hasLength(2));
-  });
-
-  test('applyRoundingHack works', () {
-    const double fontSize = 1.25;
-    const String text = '12345';
-    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    final bool roundingHackWasDisabled = ParagraphBuilder.shouldDisableRoundingHack;
+    ParagraphBuilder.setDisableRoundingHack(true);
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
@@ -262,5 +252,6 @@ void main() {
       case final List<LineMetrics> metrics:
         expect(metrics, hasLength(1));
     }
+    ParagraphBuilder.setDisableRoundingHack(roundingHackWasDisabled);
   });
 }

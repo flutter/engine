@@ -2801,7 +2801,7 @@ abstract class Paragraph {
   /// This only returns a valid value if asserts are enabled, and must not be
   /// used otherwise.
   bool get debugDisposed;
- }
+}
 
 @pragma('vm:entry-point')
 base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragraph {
@@ -3017,6 +3017,28 @@ abstract class ParagraphBuilder {
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   factory ParagraphBuilder(ParagraphStyle style) = _NativeParagraphBuilder;
+
+  /// Whether the rounding hack enabled by default in SkParagraph and TextPainter
+  /// is disabled.
+  ///
+  /// Do not rely on this getter as it exists for migration purposes only and
+  /// will soon be removed.
+  static bool get shouldDisableRoundingHack {
+    return const bool.hasEnvironment('SKPARAGRAPH_REMOVE_ROUNDING_HACK')
+        || _roundingHackDisabledInDebugMode;
+  }
+  static bool _roundingHackDisabledInDebugMode = true;
+
+  /// Only works in debug mode. Do not call this method as it is for migration
+  /// purposes only and will soon be removed.
+  static void setDisableRoundingHack(bool disableRoundingHack) {
+    // bool.hasEnvironment does not work in internal tests so an additional flag
+    // is needed for tests.
+    assert(() {
+      _roundingHackDisabledInDebugMode = disableRoundingHack;
+      return true;
+    }());
+  }
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount;

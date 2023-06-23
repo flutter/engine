@@ -315,7 +315,6 @@ class CanvasKitRenderer implements Renderer {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
-    bool applyRoundingHack = true,
   }) => CkParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,
@@ -329,7 +328,7 @@ class CanvasKitRenderer implements Renderer {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
-    applyRoundingHack: applyRoundingHack,
+    applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
   );
 
   @override

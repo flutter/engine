@@ -210,7 +210,6 @@ abstract class Renderer {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
-    bool applyRoundingHack = true,
   });
 
   ui.StrutStyle createStrutStyle({
