@@ -4,6 +4,9 @@
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
+#include <pthread.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -120,12 +123,14 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
-  if (!settings.worker_task_runner) {
-    VALIDATION_LOG
-        << "Cannot set up a Vulkan context without a worker task runner.";
-    return;
-  }
-  worker_task_runner_ = settings.worker_task_runner;
+  raster_message_loop_ = fml::ConcurrentMessageLoop::Create(4u);
+#ifdef FML_OS_ANDROID
+  raster_message_loop_->PostTaskToAllWorkers([]() {
+    if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
+      FML_LOG(ERROR) << "Failed to set Workers task runner priority";
+    }
+  });
+#endif  // FML_OS_ANDROID
 
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
@@ -335,10 +340,10 @@ void ContextVK::Setup(Settings settings) {
   /// Setup the pipeline library.
   ///
   auto pipeline_library = std::shared_ptr<PipelineLibraryVK>(
-      new PipelineLibraryVK(device_holder,                        //
-                            caps,                                 //
-                            std::move(settings.cache_directory),  //
-                            worker_task_runner_                   //
+      new PipelineLibraryVK(device_holder,                         //
+                            caps,                                  //
+                            std::move(settings.cache_directory),   //
+                            raster_message_loop_->GetTaskRunner()  //
                             ));
 
   if (!pipeline_library->IsValid()) {
@@ -458,7 +463,7 @@ const vk::Device& ContextVK::GetDevice() const {
 
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
-  return worker_task_runner_;
+  return raster_message_loop_->GetTaskRunner();
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {

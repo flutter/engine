@@ -35,11 +35,9 @@ class DarwinContextMetal {
                               std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
                               std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
-        impeller_context_(
-            impeller ? [[FlutterDarwinContextMetalImpeller alloc]
-                                    initWithTaskRunner:std::move(worker_task_runner)
-                           is_gpu_disabled_sync_switch:std::move(is_gpu_disabled_sync_switch)]
-                     : nil),
+        impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc]
+                                         init:std::move(is_gpu_disabled_sync_switch)]
+                                   : nil),
         offscreen_texture_(CreateOffscreenTexture(
             impeller ? [impeller_context_ context]->GetMTLDevice() : [context_ device])) {}
 
