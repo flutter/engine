@@ -239,7 +239,7 @@ void main() {
       const String text = '12345';
       assert((fontSize * text.length).truncate() != fontSize * text.length);
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
-      builder.addText('test');
+      builder.addText(text);
       final Paragraph paragraph = builder.build()
         ..layout(const ParagraphConstraints(width: text.length * fontSize));
 
@@ -252,7 +252,7 @@ void main() {
       const String text = '12345';
       assert((fontSize * text.length).truncate() != fontSize * text.length);
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
-      builder.addText('test');
+      builder.addText(text);
       final Paragraph paragraph = builder.build()
         ..layout(const ParagraphConstraints(width: text.length * fontSize));
 
