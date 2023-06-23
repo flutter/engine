@@ -1568,34 +1568,53 @@ class TextStyle {
     _fontVariations == null ? null : Object.hashAll(_fontVariations!),
   );
 
+  Color? get color => _encoded[0] & 0x00002 == 0x00002 ? Color(_encoded[1]) : null;
+  TextDecoration? get decoration => _encoded[0] & 0x00004 == 0x00004 ? TextDecoration._(_encoded[2]) : null;
+  Color? get decorationColor => _encoded[0] & 0x00008 == 0x00008 ? Color(_encoded[3]) : null;
+  TextDecorationStyle? get decorationStyle => _encoded[0] & 0x00010 == 0x00010 ? TextDecorationStyle.values[_encoded[4]] : null;
+  double? get decorationThickness => _encoded[0] & 0x00100 == 0x00100 ? _decorationThickness : null;
+  FontWeight? get fontWeight => _encoded[0] & 0x00020 == 0x00020 ? FontWeight.values[_encoded[5]] : null;
+  FontStyle? get fontStyle => _encoded[0] & 0x00040 == 0x00040 ? FontStyle.values[_encoded[6]] : null;
+  TextBaseline? get textBaseline => _encoded[0] & 0x00080 == 0x00080 ? TextBaseline.values[_encoded[7]] : null;
+  String? get fontFamily => _encoded[0] & 0x00200 == 0x00200 ? _fontFamily : null;
+  List<String>? get fontFamilyFallback => _encoded[0] & 0x00200 == 0x00200 ? _fontFamilyFallback : null;
+  double? get fontSize => _encoded[0] & 0x00400 == 0x00400 ? _fontSize : null;
+  double? get letterSpacing => _encoded[0] & 0x00800 == 0x00800 ? _letterSpacing : null;
+  double? get wordSpacing => _encoded[0] & 0x01000 == 0x01000 ? _wordSpacing : null;
+  double? get height => _encoded[0] & 0x02000 == 0x02000 ? _height : null;
+  TextLeadingDistribution? get leadingDistribution => _leadingDistribution;
+  Locale? get locale => _encoded[0] & 0x04000 == 0x04000 ? _locale : null;
+  Paint? get background => _encoded[0] & 0x08000 == 0x08000 ? _background : null;
+  Paint? get foreground => _encoded[0] & 0x10000 == 0x10000 ? _foreground : null;
+  List<Shadow>? get shadows => _encoded[0] & 0x20000 == 0x20000 ? _shadows : null;
+  List<FontFeature>? get fontFeatures => _encoded[0] & 0x40000 == 0x40000 ? _fontFeatures : null;
+  List<FontVariation>? get fontVariations => _encoded[0] & 0x80000 == 0x80000 ? _fontVariations : null;
+
   @override
   String toString() {
     return 'TextStyle('
-             'color: ${              _encoded[0] & 0x00002 == 0x00002  ? Color(_encoded[1])                           : "unspecified"}, '
-             'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? TextDecoration._(_encoded[2])                : "unspecified"}, '
-             'decorationColor: ${    _encoded[0] & 0x00008 == 0x00008  ? Color(_encoded[3])                           : "unspecified"}, '
-             'decorationStyle: ${    _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]]      : "unspecified"}, '
+             'color: ${color ?? "unspecified"}, '
+             'decoration: ${decoration ?? "unspecified"}, '
+             'decorationColor: ${decorationColor ?? "unspecified"}, '
+             'decorationStyle: ${decorationStyle ?? "unspecified"}, '
              // The decorationThickness is not in encoded order in order to keep it near the other decoration properties.
-             'decorationThickness: ${_encoded[0] & 0x00100 == 0x00100  ? _decorationThickness                         : "unspecified"}, '
-             'fontWeight: ${         _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]               : "unspecified"}, '
-             'fontStyle: ${          _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]                : "unspecified"}, '
-             'textBaseline: ${       _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]             : "unspecified"}, '
-             'fontFamily: ${         _encoded[0] & 0x00200 == 0x00200
-                                     && _fontFamily != ''              ? _fontFamily                                  : "unspecified"}, '
-             'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
-                                     && _fontFamilyFallback != null
-                                     && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                         : "unspecified"}, '
-             'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                                    : "unspecified"}, '
-             'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                         : "unspecified"}, '
-             'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                           : "unspecified"}, '
-             'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                                : "unspecified"}, '
-             'leadingDistribution: ${_leadingDistribution ?? "unspecified"}, '
-             'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                      : "unspecified"}, '
-             'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                                  : "unspecified"}, '
-             'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                                  : "unspecified"}, '
-             'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                     : "unspecified"}, '
-             'fontFeatures: ${       _encoded[0] & 0x40000 == 0x40000  ? _fontFeatures                                : "unspecified"}, '
-             'fontVariations: ${     _encoded[0] & 0x80000 == 0x80000  ? _fontVariations                              : "unspecified"}'
+             'decorationThickness: ${decorationThickness ?? "unspecified"}, '
+             'fontWeight: ${fontWeight ?? "unspecified"}, '
+             'fontStyle: ${fontStyle ?? "unspecified"}, '
+             'textBaseline: ${textBaseline ?? "unspecified"}, '
+             'fontFamily: ${fontFamily ?? "unspecified"}, '
+             'fontFamilyFallback: ${fontFamilyFallback ?? "unspecified"}, '
+             'fontSize: ${fontSize ?? "unspecified"}, '
+             'letterSpacing: ${letterSpacing ?? "unspecified"}, '
+             'wordSpacing: ${wordSpacing ?? "unspecified"}, '
+             'height: ${height ?? "unspecified"}, '
+             'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
+             'locale: ${locale ?? "unspecified"}, '
+             'background: ${background ?? "unspecified"}, '
+             'foreground: ${foreground ?? "unspecified"}, '
+             'shadows: ${shadows ?? "unspecified"}, '
+             'fontFeatures: ${fontFeatures ?? "unspecified"}, '
+             'fontVariations: ${fontVariations ?? "unspecified"}'
            ')';
   }
 }
@@ -1815,22 +1834,33 @@ class ParagraphStyle {
   @override
   int get hashCode => Object.hash(Object.hashAll(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution);
 
+  TextAlign? get textAlign => _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]] : null;
+  TextDirection? get textDirection => _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : null;
+  int? get maxLines => _encoded[0] & 0x020 == 0x020 ? _encoded[5] : null;
+  String? get fontFamily => _encoded[0] & 0x080 == 0x080 ? _fontFamily : null;
+  double? get fontSize => _encoded[0] & 0x100 == 0x100 ? _fontSize : null;
+  double? get height => _encoded[0] & 0x200 == 0x200 ? _height : null;
+  TextHeightBehavior? get textHeightBehavior => _encoded[0] & 0x040 == 0x040 ? TextHeightBehavior._fromEncoded(_encoded[6], _leadingDistribution) : null;
+  FontWeight? get fontWeight => _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]] : null;
+  FontStyle? get fontStyle => _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]] : null;
+  StrutStyle? get strutStyle => _encoded[0] & 0x400 == 0x400 ? _strutStyle : null;
+  String? get ellipsis => _encoded[0] & 0x800 == 0x800 ? _ellipsis : null;
+  Locale? get locale => _encoded[0] & 0x1000 == 0x1000 ? _locale : null;
+
   @override
   String toString() {
     return 'ParagraphStyle('
-             'textAlign: ${     _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]]     : "unspecified"}, '
-             'textDirection: ${ _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : "unspecified"}, '
-             'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
-             'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
-             'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-             'textHeightBehavior: ${
-                                _encoded[0] & 0x040 == 0x040 ?
-                                          TextHeightBehavior._fromEncoded(_encoded[6], _leadingDistribution).toString() : "unspecified"}, '
-             'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
-             'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
-             'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? '"$_ellipsis"'                    : "unspecified"}, '
-             'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
+             'textAlign: ${textAlign ?? "unspecified"}, '
+             'textDirection: ${textDirection ?? "unspecified"}, '
+             'fontWeight: ${fontWeight ?? "unspecified"}, '
+             'fontStyle: ${fontStyle ?? "unspecified"}, '
+             'maxLines: ${maxLines ?? "unspecified"}, '
+             'textHeightBehavior: ${textHeightBehavior ?? "unspecified"}, '
+             'fontFamily: ${fontFamily ?? "unspecified"}, '
+             'fontSize: ${fontSize ?? "unspecified"}, '
+             'height: ${height ?? "unspecified"}, '
+             'ellipsis: ${ellipsis ?? "unspecified"}, '
+             'locale: ${locale ?? "unspecified"}'
            ')';
   }
 }
@@ -1986,10 +2016,25 @@ class StrutStyle {
        _fontFamily = fontFamily,
        _fontFamilyFallback = fontFamilyFallback;
 
+  StrutStyle.raw({
+    required ByteData encoded,
+    TextLeadingDistribution? leadingDistribution,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+  }) : _encoded = encoded,
+        _leadingDistribution = leadingDistribution,
+        _fontFamily = fontFamily,
+        _fontFamilyFallback = fontFamilyFallback;
+
   final ByteData _encoded; // Most of the data for strut is encoded.
   final String? _fontFamily;
   final List<String>? _fontFamilyFallback;
   final TextLeadingDistribution? _leadingDistribution;
+
+  ByteData get encoded => _encoded;
+  String? get fontFamily => _fontFamily;
+  List<String>? get fontFamilyFallback => _fontFamilyFallback;
+  TextLeadingDistribution? get leadingDistribution => _leadingDistribution;
 
   bool get _enabled => _encoded.lengthInBytes > 0;
 
