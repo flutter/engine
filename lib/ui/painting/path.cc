@@ -315,6 +315,17 @@ tonic::Float32List CanvasPath::getBounds() {
   return rect;
 }
 
+tonic::Uint8List CanvasPath::serialize() {
+  size_t size = path().writeToMemory(nullptr);
+  tonic::Uint8List data(Dart_NewTypedData(Dart_TypedData_kUint8, size));
+  path().writeToMemory((void*)data.data());
+  return data;
+}
+
+void CanvasPath::deserialize(tonic::Uint8List bytes) {
+  mutable_path().readFromMemory(bytes.data(), bytes.num_elements());
+}
+
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), static_cast<SkPathOp>(operation),
             &tracked_path_->path);
