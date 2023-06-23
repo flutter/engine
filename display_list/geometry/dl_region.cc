@@ -25,6 +25,21 @@ DlRegion::SpanBuffer::SpanBuffer(const DlRegion::SpanBuffer& m)
   }
 };
 
+DlRegion::SpanBuffer& DlRegion::SpanBuffer::operator=(
+    const DlRegion::SpanBuffer& buffer) {
+  SpanBuffer copy(buffer);
+  std::swap(*this, copy);
+  return *this;
+}
+
+DlRegion::SpanBuffer& DlRegion::SpanBuffer::operator=(
+    DlRegion::SpanBuffer&& buffer) {
+  std::swap(capacity_, buffer.capacity_);
+  std::swap(size_, buffer.size_);
+  std::swap(spans_, buffer.spans_);
+  return *this;
+}
+
 DlRegion::SpanBuffer::~SpanBuffer() {
   free(spans_);
 }
@@ -78,8 +93,6 @@ void DlRegion::SpanBuffer::getSpans(SpanChunkHandle handle,
 DlRegion::DlRegion(const std::vector<SkIRect>& rects) {
   setRects(rects);
 }
-
-DlRegion::DlRegion() {}
 
 DlRegion::DlRegion(const SkIRect& rect) : bounds_(rect) {
   Span span{rect.left(), rect.right()};

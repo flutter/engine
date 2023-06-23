@@ -17,6 +17,9 @@ namespace flutter {
 /// converting set of overlapping rectangles to non-overlapping rectangles.
 class DlRegion {
  public:
+  /// Creates an empty region.
+  DlRegion() = default;
+
   /// Creates region by bulk adding the rectangles.
   /// Matches SkRegion::op(rect, SkRegion::kUnion_Op) behavior.
   explicit DlRegion(const std::vector<SkIRect>& rects);
@@ -26,6 +29,9 @@ class DlRegion {
 
   DlRegion(const DlRegion&) = default;
   DlRegion(DlRegion&&) = default;
+
+  DlRegion& operator=(const DlRegion&) = default;
+  DlRegion& operator=(DlRegion&&) = default;
 
   /// Creates union region of region a and b.
   /// Matches SkRegion a; a.op(b, SkRegion::kUnion_Op) behavior.
@@ -73,6 +79,8 @@ class DlRegion {
     SpanBuffer() = default;
     SpanBuffer(const SpanBuffer&);
     SpanBuffer(SpanBuffer&& m);
+    SpanBuffer& operator=(const SpanBuffer&);
+    SpanBuffer& operator=(SpanBuffer&& m);
 
     void reserve(size_t capacity);
     size_t capacity() const { return capacity_; }
@@ -95,8 +103,6 @@ class DlRegion {
     // chunk size.
     Span* spans_ = nullptr;
   };
-
-  DlRegion();
 
   bool isEmpty() const { return lines_.empty(); }
   bool isComplex() const;
