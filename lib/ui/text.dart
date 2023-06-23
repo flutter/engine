@@ -1762,7 +1762,6 @@ class ParagraphStyle {
     StrutStyle? strutStyle,
     String? ellipsis,
     Locale? locale,
-    bool applyRoundingHack = true,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
@@ -1783,7 +1782,6 @@ class ParagraphStyle {
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
        _locale = locale,
-       _applyRoundingHack = applyRoundingHack,
        _leadingDistribution = textHeightBehavior?.leadingDistribution ?? TextLeadingDistribution.proportional;
 
   final Int32List _encoded;
@@ -1794,7 +1792,6 @@ class ParagraphStyle {
   final String? _ellipsis;
   final Locale? _locale;
   final TextLeadingDistribution _leadingDistribution;
-  final bool _applyRoundingHack;
 
   @override
   bool operator ==(Object other) {
@@ -1812,12 +1809,11 @@ class ParagraphStyle {
         && other._ellipsis == _ellipsis
         && other._locale == _locale
         && other._leadingDistribution == _leadingDistribution
-        && other._applyRoundingHack == _applyRoundingHack
         && _listEquals<int>(other._encoded, _encoded);
   }
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution, _applyRoundingHack);
+  int get hashCode => Object.hash(Object.hashAll(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution);
 
   @override
   String toString() {
@@ -3158,7 +3154,7 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._height ?? 0,
         style._ellipsis ?? '',
         _encodeLocale(style._locale),
-        style._applyRoundingHack,
+        !ParagraphBuilder.shouldDisableRoundingHack,
       );
   }
 

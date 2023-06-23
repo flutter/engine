@@ -154,7 +154,7 @@ class SkwasmRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale,
+    ui.Locale? locale
   }) => SkwasmParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,

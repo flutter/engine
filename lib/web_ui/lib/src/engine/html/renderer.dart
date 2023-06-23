@@ -283,7 +283,7 @@ class HtmlRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale,
+    ui.Locale? locale
   }) => EngineParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,
