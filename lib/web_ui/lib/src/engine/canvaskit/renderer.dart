@@ -329,6 +329,7 @@ class CanvasKitRenderer implements Renderer {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
+    applyRoundingHack: applyRoundingHack,
   );
 
   @override

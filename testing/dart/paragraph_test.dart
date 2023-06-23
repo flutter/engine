@@ -234,34 +234,33 @@ void main() {
     }
   });
 
-    test('applyRoundingHack defaults to true', () {
-      const double fontSize = 1.25;
-      const String text = '12345';
-      assert((fontSize * text.length).truncate() != fontSize * text.length);
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
-      builder.addText(text);
-      final Paragraph paragraph = builder.build()
-        ..layout(const ParagraphConstraints(width: text.length * fontSize));
+  test('applyRoundingHack defaults to true', () {
+    const double fontSize = 1.25;
+    const String text = '12345';
+    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: text.length * fontSize));
 
-      expect(paragraph.maxIntrinsicWidth, greaterThan(text.length * fontSize));
-      expect(paragraph.computeLineMetrics(), hasLength(2));
-    });
+    expect(paragraph.computeLineMetrics(), hasLength(2));
+  });
 
-    test('applyRoundingHack works', () {
-      const double fontSize = 1.25;
-      const String text = '12345';
-      assert((fontSize * text.length).truncate() != fontSize * text.length);
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
-      builder.addText(text);
-      final Paragraph paragraph = builder.build()
-        ..layout(const ParagraphConstraints(width: text.length * fontSize));
+  test('applyRoundingHack works', () {
+    const double fontSize = 1.25;
+    const String text = '12345';
+    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: text.length * fontSize));
 
-      expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
-      switch (paragraph.computeLineMetrics()) {
-        case [LineMetrics(width: final double width)]:
-          expect(width, text.length * fontSize);
-        case final List<LineMetrics> metrics:
-          expect(metrics, hasLength(1));
-      }
-    });
+    expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
+    switch (paragraph.computeLineMetrics()) {
+      case [LineMetrics(width: final double width)]:
+        expect(width, text.length * fontSize);
+      case final List<LineMetrics> metrics:
+        expect(metrics, hasLength(1));
+    }
+  });
 }

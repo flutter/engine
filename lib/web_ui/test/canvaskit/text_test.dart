@@ -122,7 +122,40 @@ void testMain() {
         }
       });
     });
+
+    test('applyRoundingHack defaults to true', () {
+      const double fontSize = 1.25;
+      const String text = '12345';
+      assert((fontSize * text.length).truncate() != fontSize * text.length);
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'),
+      );
+      builder.addText(text);
+      final ui.Paragraph paragraph = builder.build()
+        ..layout(const ui.ParagraphConstraints(width: text.length * fontSize));
+
+      expect(paragraph.computeLineMetrics(), hasLength(2));
+    });
+
+    test('applyRoundingHack works', () {
+      const double fontSize = 1.25;
+      const String text = '12345';
+      assert((fontSize * text.length).truncate() != fontSize * text.length);
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest', applyRoundingHack: false),
+      );
+      builder.addText(text);
+      final ui.Paragraph paragraph = builder.build()
+        ..layout(const ui.ParagraphConstraints(width: text.length * fontSize));
+
+      expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
+      switch (paragraph.computeLineMetrics()) {
+        case [ui.LineMetrics(width: final double width)]:
+          expect(width, text.length * fontSize);
+        case final List<ui.LineMetrics> metrics:
+          expect(metrics, hasLength(1));
+      }
+    });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);
-
 }
