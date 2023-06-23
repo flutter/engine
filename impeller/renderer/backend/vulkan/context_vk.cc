@@ -4,9 +4,12 @@
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
+#ifdef FML_OS_ANDROID
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#endif  // FML_OS_ANDROID
+
 #include <map>
 #include <memory>
 #include <optional>
