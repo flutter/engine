@@ -23,7 +23,7 @@ const int kSampleCount = 4;
 float RRectDistance(vec2 sample_position, vec2 half_size) {
   vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
   return float(length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
-                   frag_info.corner_radius);
+               frag_info.corner_radius);
 }
 
 /// Closed form unidirectional rounded rect blur mask solution using the

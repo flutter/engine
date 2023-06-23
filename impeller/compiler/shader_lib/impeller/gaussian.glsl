@@ -6,8 +6,8 @@
 #define GAUSSIAN_GLSL_
 
 #include <impeller/constants.glsl>
-#include <impeller/types.glsl>
 #include <impeller/gaussian_highp.glsl>
+#include <impeller/types.glsl>
 
 /// Gaussian distribution function.
 float16_t IPHalfGaussian(float16_t x, float16_t sigma) {
