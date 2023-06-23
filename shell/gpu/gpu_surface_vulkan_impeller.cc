@@ -73,7 +73,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         }
 
         impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
+        display_list->Dispatch(
+            impeller_dispatcher,
+            surface->GetTargetRenderPassDescriptor().GetRenderTargetSize());
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
