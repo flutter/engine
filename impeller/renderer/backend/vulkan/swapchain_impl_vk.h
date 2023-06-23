@@ -70,7 +70,7 @@ class SwapchainImplVK final
                   vk::UniqueSurfaceKHR surface,
                   vk::SwapchainKHR old_swapchain);
 
-  bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
+  bool Present(std::shared_ptr<SwapchainImageVK> image, uint32_t index);
 
   void WaitIdle() const;
 

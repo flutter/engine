@@ -370,7 +370,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
+bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
                               uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
@@ -379,110 +379,117 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   auto current_frame = current_frame_;
-  const auto& sync = synchronizers_[current_frame];
+  const auto encoders = context.GetCommandBufferQueue()->Take();
 
-  // Submit all command buffers.
-  {
-    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
-    if (fence_result != vk::Result::eSuccess) {
-      return false;
-    }
+  ContextVK::Cast(*context_strong)
+      .GetConcurrentWorkerTaskRunner()
+      ->PostTask([&, current_frame, index, encoders, image]() {
+        const auto& sync = synchronizers_[current_frame];
 
-    const auto& encoders = context.GetCommandBufferQueue()->Take();
-    vk::SubmitInfo submit_info;
-    std::vector<vk::CommandBuffer> buffers;
-    for (const auto& encoder : encoders) {
-      buffers.push_back(encoder->GetCommandBuffer());
-    }
-    submit_info.setCommandBuffers(buffers);
-    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
-        vk::Result::eSuccess) {
-      return false;
-    }
+        // Submit all command buffers.
+        {
+          auto [fence_result, fence] =
+              context.GetDevice().createFenceUnique({});
+          if (fence_result != vk::Result::eSuccess) {
+            return false;
+          };
+          vk::SubmitInfo submit_info;
+          std::vector<vk::CommandBuffer> buffers;
+          for (const auto& encoder : encoders) {
+            buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+          }
+          submit_info.setCommandBuffers(buffers);
+          if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+              vk::Result::eSuccess) {
+            return false;
+          }
 
-    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
-      return false;
-    }
-  }
+          if (!context.GetFenceWaiter()->AddFence(std::move(fence),
+                                                  [encoders] {})) {
+            return false;
+          }
+        }
 
-  //----------------------------------------------------------------------------
-  /// Transition the image to color-attachment-optimal.
-  ///
-  sync->final_cmd_buffer = context.CreateCommandBuffer();
-  if (!sync->final_cmd_buffer) {
-    return false;
-  }
+        //----------------------------------------------------------------------------
+        /// Transition the image to color-attachment-optimal.
+        ///
+        sync->final_cmd_buffer = context.CreateCommandBuffer();
+        if (!sync->final_cmd_buffer) {
+          return false;
+        }
 
-  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                                 .GetEncoder()
-                                 ->GetCommandBuffer();
-  {
-    LayoutTransition transition;
-    transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
-    transition.cmd_buffer = vk_final_cmd_buffer;
-    transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-    transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    transition.dst_access = {};
-    transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+        auto vk_final_cmd_buffer =
+            CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                .GetEncoder()
+                ->GetCommandBuffer();
+        {
+          LayoutTransition transition;
+          transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
+          transition.cmd_buffer = vk_final_cmd_buffer;
+          transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+          transition.src_stage =
+              vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          transition.dst_access = {};
+          transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
 
-    if (!image->SetLayout(transition)) {
-      return false;
-    }
+          if (!image->SetLayout(transition)) {
+            return false;
+          }
 
-    if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
-      return false;
-    }
-  }
+          if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+            return false;
+          }
+        }
 
-  //----------------------------------------------------------------------------
-  /// Signal that the presentation semaphore is ready.
-  ///
-  {
-    vk::SubmitInfo submit_info;
-    vk::PipelineStageFlags wait_stage =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    submit_info.setWaitDstStageMask(wait_stage);
-    submit_info.setWaitSemaphores(*sync->render_ready);
-    submit_info.setSignalSemaphores(*sync->present_ready);
-    submit_info.setCommandBuffers(vk_final_cmd_buffer);
-    auto result =
-        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not wait on render semaphore: "
-                     << vk::to_string(result);
-      return false;
-    }
-  }
+        //----------------------------------------------------------------------------
+        /// Signal that the presentation semaphore is ready.
+        ///
+        {
+          vk::SubmitInfo submit_info;
+          vk::PipelineStageFlags wait_stage =
+              vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          submit_info.setWaitDstStageMask(wait_stage);
+          submit_info.setWaitSemaphores(*sync->render_ready);
+          submit_info.setSignalSemaphores(*sync->present_ready);
+          submit_info.setCommandBuffers(vk_final_cmd_buffer);
+          auto result =
+              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+          if (result != vk::Result::eSuccess) {
+            VALIDATION_LOG << "Could not wait on render semaphore: "
+                           << vk::to_string(result);
+            return false;
+          }
+        }
 
-  context.GetSubmissionTaskRunner()->PostTask([&, current_frame, index]() {
-    const auto& sync = synchronizers_[current_frame];
-    //----------------------------------------------------------------------------
-    /// Present the image.
-    ///
-    uint32_t indices[] = {static_cast<uint32_t>(index)};
+        //----------------------------------------------------------------------------
+        /// Present the image.
+        ///
+        uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-    vk::PresentInfoKHR present_info;
-    present_info.setSwapchains(*swapchain_);
-    present_info.setImageIndices(indices);
-    present_info.setWaitSemaphores(*sync->present_ready);
+        vk::PresentInfoKHR present_info;
+        present_info.setSwapchains(*swapchain_);
+        present_info.setImageIndices(indices);
+        present_info.setWaitSemaphores(*sync->present_ready);
 
-    switch (auto result = present_queue_.presentKHR(present_info)) {
-      case vk::Result::eErrorOutOfDateKHR:
-        // Caller will recreate the impl on acquisition, not submission.
-        [[fallthrough]];
-      case vk::Result::eErrorSurfaceLostKHR:
-        // Vulkan guarantees that the set of queue operations will still
-        // complete successfully.
-        [[fallthrough]];
-      case vk::Result::eSuccess:
-        return true;
-      default:
-        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
+        switch (auto result = present_queue_.presentKHR(present_info)) {
+          case vk::Result::eErrorOutOfDateKHR:
+            // Caller will recreate the impl on acquisition, not
+            // submission.
+            [[fallthrough]];
+          case vk::Result::eErrorSurfaceLostKHR:
+            // Vulkan guarantees that the set of queue operations will
+            // still complete successfully.
+            [[fallthrough]];
+          case vk::Result::eSuccess:
+            return true;
+          default:
+            VALIDATION_LOG << "Could not present queue: "
+                           << vk::to_string(result);
+            return false;
+        }
+        FML_UNREACHABLE();
         return false;
-    }
-    FML_UNREACHABLE();
-    return false;
-  });
+      });
   return true;
 }
 

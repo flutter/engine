@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/blit_pass_vk.h"
@@ -57,15 +58,22 @@ bool CommandBufferVK::SubmitCommandsAsync(std::shared_ptr<BlitPass> blit_pass) {
   if (!context) {
     return false;
   }
-  if (!blit_pass->EncodeCommands(context->GetResourceAllocator())) {
-    return false;
-  }
 
   const auto& context_vk = ContextVK::Cast(*context);
-  if (!encoder_->Finish()) {
-    return false;
-  }
-  context_vk.GetCommandBufferQueue()->Enqueue(std::move(encoder_));
+  auto pending = std::make_shared<EnqueuedCommandBuffer>();
+  context_vk.GetCommandBufferQueue()->Enqueue(pending);
+  auto encoder = std::move(encoder_);
+  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+      [pending, encoder, blit_pass, weak_context = context_]() {
+        auto context = weak_context.lock();
+        if (!context ||
+            !blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+            !encoder->Finish()) {
+          VALIDATION_LOG << "Failed to encode render pass.";
+        }
+        pending->SetEncoder(std::move(encoder));
+      });
+
   return true;
 }
 
@@ -79,14 +87,18 @@ bool CommandBufferVK::SubmitCommandsAsync(
   if (!context) {
     return false;
   }
-  if (!render_pass->EncodeCommands()) {
-    return false;
-  }
   const auto& context_vk = ContextVK::Cast(*context);
-  if (!encoder_->Finish()) {
-    return false;
-  }
-  context_vk.GetCommandBufferQueue()->Enqueue(std::move(encoder_));
+  auto pending = std::make_shared<EnqueuedCommandBuffer>();
+  context_vk.GetCommandBufferQueue()->Enqueue(pending);
+  auto encoder = std::move(encoder_);
+  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+      [pending, encoder, render_pass, weak_context = context_]() {
+        auto context = weak_context.lock();
+        if (!context || !render_pass->EncodeCommands() || !encoder->Finish()) {
+          VALIDATION_LOG << "Failed to encode render pass.";
+        }
+        pending->SetEncoder(std::move(encoder));
+      });
   return true;
 }
 

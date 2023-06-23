@@ -72,8 +72,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
           return false;
         }
 
+        auto cull_rect =
+            surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
+        SkIRect sk_cull_rect =
+            SkIRect::MakeWH(cull_rect.width, cull_rect.height);
         impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
+        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(

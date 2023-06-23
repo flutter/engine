@@ -9,6 +9,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
@@ -31,18 +32,40 @@ class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
 
-class CommandBufferQueue {
+class EnqueuedCommandBuffer {
  public:
-  void Enqueue(std::shared_ptr<CommandEncoderVK> encoder) {
-    pending_encoders_.push_back(encoder);
+  explicit EnqueuedCommandBuffer()
+      : latch_(std::make_shared<fml::CountDownLatch>(1u)) {}
+
+  ~EnqueuedCommandBuffer() = default;
+
+  std::shared_ptr<CommandEncoderVK>& WaitAndGet() {
+    latch_->Wait();
+    return encoder_;
   }
 
-  std::vector<std::shared_ptr<CommandEncoderVK>> Take() {
-    return std::move(pending_encoders_);
+  void SetEncoder(std::shared_ptr<CommandEncoderVK> encoder) {
+    encoder_ = std::move(encoder);
+    latch_->CountDown();
   }
 
  private:
-  std::vector<std::shared_ptr<CommandEncoderVK>> pending_encoders_;
+  std::shared_ptr<CommandEncoderVK> encoder_;
+  std::shared_ptr<fml::CountDownLatch> latch_;
+};
+
+class CommandBufferQueue {
+ public:
+  void Enqueue(std::shared_ptr<EnqueuedCommandBuffer> buffer) {
+    pending_.push_back(buffer);
+  }
+
+  std::vector<std::shared_ptr<EnqueuedCommandBuffer>> Take() {
+    return std::move(pending_);
+  }
+
+ private:
+  std::vector<std::shared_ptr<EnqueuedCommandBuffer>> pending_;
 };
 
 class ContextVK final : public Context,
