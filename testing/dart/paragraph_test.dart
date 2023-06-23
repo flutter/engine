@@ -240,7 +240,7 @@ void main() {
     assert((fontSize * text.length).truncate() != fontSize * text.length);
     final bool roundingHackWasDisabled = ParagraphBuilder.shouldDisableRoundingHack;
     ParagraphBuilder.setDisableRoundingHack(true);
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, applyRoundingHack: false));
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: text.length * fontSize));
