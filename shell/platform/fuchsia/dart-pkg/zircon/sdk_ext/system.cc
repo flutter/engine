@@ -8,6 +8,7 @@
 
 #include <fcntl.h>
 #include <lib/fdio/directory.h>
+#include <lib/fdio/fd.h>
 #include <lib/fdio/io.h>
 #include <lib/fdio/limits.h>
 #include <lib/fdio/namespace.h>
@@ -207,36 +208,30 @@ zx_status_t System::ConnectToService(std::string path,
                                  channel->ReleaseHandle());
 }
 
-zx::channel System::CloneChannelFromFileDescriptor(int fd) {
-  zx::handle handle;
-  zx_status_t status = fdio_fd_clone(fd, handle.reset_and_get_address());
-  if (status != ZX_OK)
-    return zx::channel();
-
-  zx_info_handle_basic_t info = {};
-  status =
-      handle.get_info(ZX_INFO_HANDLE_BASIC, &info, sizeof(info), NULL, NULL);
-
-  if (status != ZX_OK || info.type != ZX_OBJ_TYPE_CHANNEL)
-    return zx::channel();
-
-  return zx::channel(handle.release());
-}
-
 Dart_Handle System::ChannelFromFile(std::string path) {
   fml::UniqueFD fd = FdFromPath(path);
   if (!fd.is_valid()) {
     return ConstructDartObject(kHandleResult, ToDart(ZX_ERR_IO));
   }
 
-  // Get channel from fd.
-  zx::channel channel = CloneChannelFromFileDescriptor(fd.get());
-  if (!channel) {
-    return ConstructDartObject(kHandleResult, ToDart(ZX_ERR_IO));
+  zx::handle handle;
+  if (zx_status_t status =
+          fdio_fd_transfer(fd.release(), handle.reset_and_get_address());
+      status != ZX_OK) {
+    return ConstructDartObject(kHandleResult, ToDart(status));
+  }
+  zx_info_handle_basic_t info;
+  if (zx_status_t status = handle.get_info(ZX_INFO_HANDLE_BASIC, &info,
+                                           sizeof(info), nullptr, nullptr);
+      status != ZX_OK) {
+    return ConstructDartObject(kHandleResult, ToDart(status));
+  }
+  if (info.type != ZX_OBJ_TYPE_CHANNEL) {
+    return ConstructDartObject(kHandleResult, ToDart(ZX_ERR_WRONG_TYPE));
   }
 
   return ConstructDartObject(kHandleResult, ToDart(ZX_OK),
-                             ToDart(Handle::Create(channel.release())));
+                             ToDart(Handle::Create(handle.release())));
 }
 
 zx_status_t System::ChannelWrite(fml::RefPtr<Handle> channel,
