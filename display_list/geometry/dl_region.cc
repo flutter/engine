@@ -127,6 +127,8 @@ DlRegion::SpanLine DlRegion::makeLine(int32_t top,
   return {top, bottom, handle};
 }
 
+// Returns number of valid spans in res. For performance reasons res is never
+// downsized.
 size_t DlRegion::unionLineSpans(std::vector<Span>& res,
                                 const SpanBuffer& a_buffer,
                                 SpanChunkHandle a_handle,
@@ -626,8 +628,6 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
   return rects;
 }
 
-DlRegion::~DlRegion() {}
-
 bool DlRegion::isComplex() const {
   return lines_.size() > 1 ||
          (lines_.size() == 1 &&
@@ -654,7 +654,7 @@ bool DlRegion::intersects(const SkIRect& rect) const {
       [](int32_t i, const SpanLine& line) { return i < line.bottom; });
 
   while (it != lines_.end() && it->top < rect.fBottom) {
-    FML_DCHECK(rect.fTop < it->bottom || it->top < rect.fBottom);
+    FML_DCHECK(rect.fTop < it->bottom && it->top < rect.fBottom);
     const Span *begin, *end;
     span_buffer_.getSpans(it->chunk_handle, begin, end);
     while (begin != end && begin->left < rect.fRight) {
@@ -711,15 +711,17 @@ bool DlRegion::intersects(const DlRegion& region) const {
   }
 
   auto ours = lines_.begin();
+  auto ours_end = lines_.end();
   auto theirs = region.lines_.begin();
+  auto theirs_end = region.lines_.end();
 
-  while (ours != lines_.end() && theirs != region.lines_.end()) {
+  while (ours != ours_end && theirs != theirs_end) {
     if (ours->bottom <= theirs->top) {
       ++ours;
     } else if (theirs->bottom <= ours->top) {
       ++theirs;
     } else {
-      FML_DCHECK(ours->top < theirs->bottom || theirs->top < ours->bottom);
+      FML_DCHECK(ours->top < theirs->bottom && theirs->top < ours->bottom);
       const Span *ours_begin, *ours_end;
       span_buffer_.getSpans(ours->chunk_handle, ours_begin, ours_end);
       const Span *theirs_begin, *theirs_end;

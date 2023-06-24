@@ -13,7 +13,7 @@ namespace flutter {
 namespace testing {
 
 TEST(DisplayListRegion, EmptyRegion) {
-  DlRegion region(std::vector<SkIRect>{});
+  DlRegion region;
   EXPECT_TRUE(region.getRects().empty());
 }
 
@@ -256,6 +256,7 @@ TEST(DisplayListRegion, Union1) {
   });
   DlRegion u = DlRegion::MakeUnion(region1, region2);
   EXPECT_EQ(u.bounds(), SkIRect::MakeXYWH(0, 0, 40, 40));
+  EXPECT_TRUE(u.isSimple());
   auto rects = u.getRects();
   std::vector<SkIRect> expected{
       SkIRect::MakeXYWH(0, 0, 40, 40),  //
@@ -309,8 +310,7 @@ TEST(DisplayListRegion, UnionEmpty) {
     DlRegion u = DlRegion::MakeUnion(region1, region2);
     EXPECT_EQ(u.bounds(), SkIRect::MakeEmpty());
     auto rects = u.getRects();
-    std::vector<SkIRect> expected{};
-    EXPECT_EQ(rects, expected);
+    EXPECT_TRUE(rects.empty());
   }
   {
     DlRegion region1(std::vector<SkIRect>{});

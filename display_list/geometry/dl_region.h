@@ -58,7 +58,15 @@ class DlRegion {
   /// Returns whether this region intersects with another region.
   bool intersects(const DlRegion& region) const;
 
-  ~DlRegion();
+  /// Returns true if region is empty (contains no rectangles).
+  bool isEmpty() const { return lines_.empty(); }
+
+  /// Returns true if region is not empty and contains more than one rectangle.
+  bool isComplex() const;
+
+  /// Returns true if region can be represented by single rectangle (or is
+  /// empty).
+  bool isSimple() const { return !isComplex(); }
 
  private:
   typedef std::uint32_t SpanChunkHandle;
@@ -103,10 +111,6 @@ class DlRegion {
     // chunk size.
     Span* spans_ = nullptr;
   };
-
-  bool isEmpty() const { return lines_.empty(); }
-  bool isComplex() const;
-  bool isSimple() const { return !isComplex(); }
 
   struct SpanLine {
     int32_t top;
