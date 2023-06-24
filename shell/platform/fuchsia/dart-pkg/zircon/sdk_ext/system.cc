@@ -6,7 +6,7 @@
 
 #include <array>
 
-#include <fcntl.h>
+#include <fuchsia/io/cpp/fidl.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/fd.h>
 #include <lib/fdio/io.h>
@@ -173,17 +173,25 @@ fdio_ns_t* GetNamespace() {
   return reinterpret_cast<fdio_ns_t*>(fdio_ns_ptr);
 }
 
-fml::UniqueFD FdFromPath(std::string path) {
-  // Get a VMO for the file.
-  fdio_ns_t* ns = reinterpret_cast<fdio_ns_t*>(GetNamespace());
-  fml::UniqueFD dirfd(fdio_ns_opendir(ns));
-  if (!dirfd.is_valid())
-    return fml::UniqueFD();
-
-  const char* c_path = path.c_str();
-  if (path.length() > 0 && c_path[0] == '/')
-    c_path = &c_path[1];
-  return fml::UniqueFD(openat(dirfd.get(), c_path, O_RDONLY));
+zx_status_t FdFromPath(const char* path, fml::UniqueFD& fd) {
+  fml::UniqueFD dir_fd(fdio_ns_opendir(GetNamespace()));
+  if (!dir_fd.is_valid()) {
+    // TODO: can we return errno?
+    return ZX_ERR_IO;
+  }
+  if (path != nullptr && *path == '/') {
+    path++;
+  }
+  int raw_fd;
+  if (zx_status_t status = fdio_open_fd_at(
+          dir_fd.get(), path,
+          static_cast<uint32_t>(fuchsia::io::OpenFlags::RIGHT_READABLE),
+          &raw_fd);
+      status != ZX_OK) {
+    return status;
+  }
+  fd.reset(raw_fd);
+  return ZX_OK;
 }
 
 }  // namespace
@@ -209,9 +217,9 @@ zx_status_t System::ConnectToService(std::string path,
 }
 
 Dart_Handle System::ChannelFromFile(std::string path) {
-  fml::UniqueFD fd = FdFromPath(path);
-  if (!fd.is_valid()) {
-    return ConstructDartObject(kHandleResult, ToDart(ZX_ERR_IO));
+  fml::UniqueFD fd;
+  if (zx_status_t status = FdFromPath(path.c_str(), fd); status != ZX_OK) {
+    return ConstructDartObject(kHandleResult, ToDart(status));
   }
 
   zx::handle handle;
@@ -446,20 +454,25 @@ Dart_Handle System::VmoCreate(uint64_t size, uint32_t options) {
 }
 
 Dart_Handle System::VmoFromFile(std::string path) {
-  fml::UniqueFD fd = FdFromPath(path);
-  if (!fd.is_valid())
-    return ConstructDartObject(kFromFileResult, ToDart(ZX_ERR_IO));
+  fml::UniqueFD fd;
+  if (zx_status_t status = FdFromPath(path.c_str(), fd); status != ZX_OK) {
+    return ConstructDartObject(kHandleResult, ToDart(status));
+  }
 
   struct stat stat_struct;
-  if (fstat(fd.get(), &stat_struct) == -1)
+  if (fstat(fd.get(), &stat_struct) != 0) {
+    // TODO: can we return errno?
     return ConstructDartObject(kFromFileResult, ToDart(ZX_ERR_IO));
-  zx_handle_t vmo = ZX_HANDLE_INVALID;
-  zx_status_t status = fdio_get_vmo_clone(fd.get(), &vmo);
-  if (status != ZX_OK)
+  }
+  zx::vmo vmo;
+  if (zx_status_t status =
+          fdio_get_vmo_clone(fd.get(), vmo.reset_and_get_address());
+      status != ZX_OK) {
     return ConstructDartObject(kFromFileResult, ToDart(status));
+  }
 
-  return ConstructDartObject(kFromFileResult, ToDart(status),
-                             ToDart(Handle::Create(vmo)),
+  return ConstructDartObject(kFromFileResult, ToDart(ZX_OK),
+                             ToDart(Handle::Create(vmo.release())),
                              ToDart(stat_struct.st_size));
 }
 
