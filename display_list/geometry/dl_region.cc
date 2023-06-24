@@ -134,6 +134,28 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
                                 SpanChunkHandle a_handle,
                                 const SpanBuffer& b_buffer,
                                 SpanChunkHandle b_handle) {
+  class OrderedSpanAccumulator {
+   public:
+    explicit OrderedSpanAccumulator(std::vector<Span>& res) : res(res) {}
+
+    void accumulate(const Span& span) {
+      if (span.left > last_ || len == 0) {
+        res[len++] = span;
+        last_ = span.right;
+      } else if (span.right > last_) {
+        FML_DCHECK(len > 0);
+        res[len - 1].right = span.right;
+        last_ = span.right;
+      }
+    }
+
+    size_t len = 0;
+    std::vector<Span>& res;
+
+   private:
+    int32_t last_ = std::numeric_limits<int32_t>::min();
+  };
+
   const Span *begin1, *end1;
   a_buffer.getSpans(a_handle, begin1, end1);
 
@@ -145,77 +167,36 @@ size_t DlRegion::unionLineSpans(std::vector<Span>& res,
     res.resize(min_size);
   }
 
-  // Pointer to the next span to be written.
-  Span* new_span = res.data();
+  OrderedSpanAccumulator accumulator(res);
 
   while (true) {
-    if (begin1->right < begin2->left) {
-      *new_span++ = *begin1++;
+    if (begin1->left < begin2->left) {
+      accumulator.accumulate(*begin1++);
       if (begin1 == end1) {
         break;
       }
-    } else if (begin2->right < begin1->left) {
-      *new_span++ = *begin2++;
+    } else {
+      // Either 2 is first, or they are equal, in which case add 2 now
+      // and we might combine 1 with it next time around
+      accumulator.accumulate(*begin2++);
       if (begin2 == end2) {
         break;
       }
-    } else {
-      break;
-    }
-  }
-
-  Span current_span{0, 0};
-  while (begin1 != end1 && begin2 != end2) {
-    if (current_span.left == current_span.right) {
-      if (begin1->right < begin2->left) {
-        *new_span++ = *begin1++;
-      } else if (begin2->right < begin1->left) {
-        *new_span++ = *begin2++;
-      } else {
-        current_span = {std::min(begin1->left, begin2->left),
-                        std::max(begin1->right, begin2->right)};
-        begin1++;
-        begin2++;
-      }
-    } else if (current_span.right >= begin1->left) {
-      current_span.right = std::max(current_span.right, begin1->right);
-      ++begin1;
-    } else if (current_span.right >= begin2->left) {
-      current_span.right = std::max(current_span.right, begin2->right);
-      ++begin2;
-    } else {
-      *new_span++ = current_span;
-      current_span.left = current_span.right = 0;
     }
   }
 
   FML_DCHECK(begin1 == end1 || begin2 == end2);
 
-  if (current_span.left != current_span.right) {
-    while (begin1 != end1 && current_span.right >= begin1->left) {
-      current_span.right = std::max(current_span.right, begin1->right);
-      ++begin1;
-    }
-    while (begin2 != end2 && current_span.right >= begin2->left) {
-      current_span.right = std::max(current_span.right, begin2->right);
-      ++begin2;
-    }
-
-    *new_span = current_span;
-    ++new_span;
+  while (begin1 < end1) {
+    accumulator.accumulate(*begin1++);
   }
-
-  // At most one of these loops will execute
-  while (begin1 != end1) {
-    *new_span++ = *begin1++;
-  }
-  while (begin2 != end2) {
-    *new_span++ = *begin2++;
+  while (begin2 < end2) {
+    accumulator.accumulate(*begin2++);
   }
 
   FML_DCHECK(begin1 == end1 && begin2 == end2);
 
-  return new_span - res.data();
+  return accumulator.len;
 }
 
 size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
