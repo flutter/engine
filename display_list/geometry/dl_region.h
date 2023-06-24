@@ -64,8 +64,8 @@ class DlRegion {
   /// Returns true if region is not empty and contains more than one rectangle.
   bool isComplex() const;
 
-  /// Returns true if region can be represented by single rectangle (or is
-  /// empty).
+  /// Returns true if region can be represented by single rectangle or is
+  /// empty.
   bool isSimple() const { return !isComplex(); }
 
  private:
