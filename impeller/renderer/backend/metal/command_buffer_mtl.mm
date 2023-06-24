@@ -206,6 +206,7 @@ bool CommandBufferMTL::SubmitCommandsAsync(
       [render_pass, buffer, render_command_encoder, weak_context = context_]() {
         auto context = weak_context.lock();
         if (!context) {
+          [render_command_encoder endEncoding];
           return;
         }
         auto is_gpu_disabled_sync_switch =
