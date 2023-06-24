@@ -14,9 +14,7 @@ namespace {
 class SkRegionAdapter {
  public:
   explicit SkRegionAdapter(const std::vector<SkIRect>& rects) {
-    for (const auto& rect : rects) {
-      region_.op(rect, SkRegion::kUnion_Op);
-    }
+    region_.setRects(rects.data(), rects.size());
   }
 
   SkIRect getBounds() { return region_.getBounds(); }
