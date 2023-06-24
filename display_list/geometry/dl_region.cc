@@ -632,7 +632,7 @@ bool DlRegion::intersects(const SkIRect& rect) const {
 
   auto it = std::lower_bound(
       lines_.begin(), lines_.end(), rect.fTop,
-      [](const SpanLine& line, int32_t i) { return line.bottom <= i; });
+      [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
 
   while (it != lines_.end() && it->top < rect.fBottom) {
     FML_DCHECK(rect.fTop < it->bottom && it->top < rect.fBottom);
