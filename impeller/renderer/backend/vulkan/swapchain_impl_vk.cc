@@ -340,7 +340,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   );
 
   if (acq_result == vk::Result::eSuboptimalKHR ||
-      acq_result == vk::Result::eErrorOutOfDateKHR) {
+      acq_result == vk::Result::eErrorOutOfDateKHR ||
+      acq_result == vk::Result::eTimeout) {
     return AcquireResult{true /* out of date */};
   }
 

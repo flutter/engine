@@ -408,7 +408,6 @@ void ContextVK::Setup(Settings settings) {
   fence_waiter_ = std::move(fence_waiter);
   device_name_ = std::string(physical_device_properties.deviceName);
   command_buffer_queue_ = std::make_shared<CommandBufferQueue>();
-  submission_task_runner_ = fml::ConcurrentMessageLoop::Create(1u);
   is_valid_ = true;
 
   //----------------------------------------------------------------------------

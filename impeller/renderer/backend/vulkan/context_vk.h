@@ -198,6 +198,7 @@ class ContextVK final : public Context,
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  std::shared_ptr<CommandBufferQueue> command_buffer_queue_;
   const uint64_t hash_;
 
   bool is_valid_ = false;
