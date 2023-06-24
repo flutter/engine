@@ -24,7 +24,6 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
       CreateVsyncWaiter create_vsync_waiter,
       std::shared_ptr<ShellTestExternalViewEmbedder>
           shell_test_external_view_embedder,
-      const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
       const std::shared_ptr<const fml::SyncSwitch>&
           is_gpu_disabled_sync_switch);
 
