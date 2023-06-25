@@ -358,73 +358,71 @@ void CheckEquality(const DlRegion& dl_region, const SkRegion& sk_region) {
 TEST(DisplayListRegion, TestAgainstSkRegion) {
   struct Settings {
     int max_size;
-    size_t iteration_count;
   };
-  std::vector<Settings> all_settings{
-      {100, 1},     //
-      {100, 10},    //
-      {100, 100},   //
-      {100, 1000},  //
-      {400, 10},    //
-      {400, 100},   //
-      {400, 1000},  //
-      {800, 10},    //
-      {800, 100},   //
-      {800, 1000},
-  };
+  std::vector<Settings> all_settings{{100}, {400}, {800}};
+
+  std::vector<size_t> iterations{1, 10, 100, 1000};
 
   for (const auto& settings : all_settings) {
-    std::random_device d;
-    std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
-    std::mt19937 rng(seed);
+    for (const auto iterations_1 : iterations) {
+      for (const auto iterations_2 : iterations) {
+        std::random_device d;
+        std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
+        std::mt19937 rng(seed);
 
-    SkRegion sk_region1;
-    SkRegion sk_region2;
+        SkRegion sk_region1;
+        SkRegion sk_region2;
 
-    std::uniform_int_distribution pos(0, 4000);
-    std::uniform_int_distribution size(1, settings.max_size);
+        std::uniform_int_distribution pos(0, 4000);
+        std::uniform_int_distribution size(1, settings.max_size);
 
-    std::vector<SkIRect> rects_in1;
-    std::vector<SkIRect> rects_in2;
+        std::vector<SkIRect> rects_in1;
+        std::vector<SkIRect> rects_in2;
 
-    for (size_t i = 0; i < settings.iteration_count; ++i) {
-      SkIRect rect =
-          SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
-      rects_in1.push_back(rect);
-      rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
-      rects_in2.push_back(rect);
-    }
+        for (size_t i = 0; i < iterations_1; ++i) {
+          SkIRect rect =
+              SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+          rects_in1.push_back(rect);
+        }
 
-    DlRegion region1(rects_in1);
-    sk_region1.setRects(rects_in1.data(), rects_in1.size());
-    CheckEquality(region1, sk_region1);
+        for (size_t i = 0; i < iterations_2; ++i) {
+          SkIRect rect =
+              SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+          rects_in2.push_back(rect);
+        }
 
-    DlRegion region2(rects_in2);
-    sk_region2.setRects(rects_in2.data(), rects_in2.size());
-    CheckEquality(region2, sk_region2);
+        DlRegion region1(rects_in1);
+        sk_region1.setRects(rects_in1.data(), rects_in1.size());
+        CheckEquality(region1, sk_region1);
 
-    auto intersects_1 = region1.intersects(region2);
-    auto intersects_2 = region2.intersects(region1);
-    auto sk_intesects = sk_region1.intersects(sk_region2);
-    EXPECT_EQ(intersects_1, intersects_2);
-    EXPECT_EQ(intersects_1, sk_intesects);
+        DlRegion region2(rects_in2);
+        sk_region2.setRects(rects_in2.data(), rects_in2.size());
+        CheckEquality(region2, sk_region2);
 
-    {
-      auto rects = region2.getRects(true);
-      for (const auto& r : rects) {
-        EXPECT_EQ(region1.intersects(r), sk_region1.intersects(r));
+        auto intersects_1 = region1.intersects(region2);
+        auto intersects_2 = region2.intersects(region1);
+        auto sk_intesects = sk_region1.intersects(sk_region2);
+        EXPECT_EQ(intersects_1, intersects_2);
+        EXPECT_EQ(intersects_1, sk_intesects);
+
+        {
+          auto rects = region2.getRects(true);
+          for (const auto& r : rects) {
+            EXPECT_EQ(region1.intersects(r), sk_region1.intersects(r));
+          }
+        }
+
+        DlRegion dl_union = DlRegion::MakeUnion(region1, region2);
+        SkRegion sk_union(sk_region1);
+        sk_union.op(sk_region2, SkRegion::kUnion_Op);
+        CheckEquality(dl_union, sk_union);
+
+        DlRegion dl_intersection = DlRegion::MakeIntersection(region1, region2);
+        SkRegion sk_intersection(sk_region1);
+        sk_intersection.op(sk_region2, SkRegion::kIntersect_Op);
+        CheckEquality(dl_intersection, sk_intersection);
       }
     }
-
-    DlRegion dl_union = DlRegion::MakeUnion(region1, region2);
-    SkRegion sk_union(sk_region1);
-    sk_union.op(sk_region2, SkRegion::kUnion_Op);
-    CheckEquality(dl_union, sk_union);
-
-    DlRegion dl_intersection = DlRegion::MakeIntersection(region1, region2);
-    SkRegion sk_intersection(sk_region1);
-    sk_intersection.op(sk_region2, SkRegion::kIntersect_Op);
-    CheckEquality(dl_intersection, sk_intersection);
   }
 }
 
