@@ -81,6 +81,9 @@ class ContextMTL final : public Context,
   // |Context|
   bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
 
+  // |Context|
+  void Shutdown() override;
+
   id<MTLCommandBuffer> CreateMTLCommandBuffer() const;
 
   const std::shared_ptr<fml::ConcurrentTaskRunner> GetWorkerTaskRunner() const;

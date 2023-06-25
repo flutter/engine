@@ -470,6 +470,10 @@ ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
 }
 
+void ContextVK::Shutdown() {
+  raster_message_loop_->Terminate();
+}
+
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;

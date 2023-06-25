@@ -314,6 +314,11 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
 }
 
+// |Context|
+void ContextMTL::Shutdown() {
+  raster_message_loop_.reset();
+}
+
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextMTL::GetWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
