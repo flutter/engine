@@ -8,6 +8,10 @@
 
 namespace flutter {
 
+// Threshold for switching from linear search through span lines to binary
+// search.
+const int kBinarySearchThreshold = 10;
+
 DlRegion::SpanBuffer::SpanBuffer(DlRegion::SpanBuffer&& m)
     : capacity_(m.capacity_), size_(m.size_), spans_(m.spans_) {
   m.size_ = 0;
@@ -625,11 +629,20 @@ bool DlRegion::intersects(const SkIRect& rect) const {
     return false;
   }
 
-  auto it = std::lower_bound(
-      lines_.begin(), lines_.end(), rect.fTop,
-      [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
-
-  while (it != lines_.end() && it->top < rect.fBottom) {
+  auto it = lines_.begin();
+  auto end = lines_.end();
+  if (lines_.size() > kBinarySearchThreshold &&
+      it[kBinarySearchThreshold].bottom <= rect.fTop) {
+    it = std::lower_bound(
+        lines_.begin() + kBinarySearchThreshold + 1, lines_.end(), rect.fTop,
+        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
+  } else {
+    while (it != end && it->bottom <= rect.fTop) {
+      ++it;
+      continue;
+    }
+  }
+  while (it != end && it->top < rect.fBottom) {
     FML_DCHECK(rect.fTop < it->bottom && it->top < rect.fBottom);
     const Span *begin, *end;
     span_buffer_.getSpans(it->chunk_handle, begin, end);
@@ -675,8 +688,6 @@ void DlRegion::getIntersectionIterators(
 
   auto a_len = a_end - a_it;
   auto b_len = b_end - b_it;
-
-  const int kBinarySearchThreshold = 10;
 
   if (a_len > kBinarySearchThreshold &&
       a_it[kBinarySearchThreshold].bottom <= b_it->top) {
