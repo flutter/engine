@@ -28,8 +28,17 @@ ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
 
 ConcurrentMessageLoop::~ConcurrentMessageLoop() {
   Terminate();
-  for (auto& worker : workers_) {
-    worker.join();
+  for (auto i = 0u; i < workers_.size(); i++) {
+    auto& worker = workers_[i];
+    auto thread_id = worker_thread_ids_[i];
+    if (std::this_thread::get_id() != thread_id) {
+      FML_DCHECK(worker.joinable());
+      worker.join();
+    } else {
+      // The concurrent message loop is being deleted from a worker
+      // thread. detach this thread to avoid creating a deadlock.
+      worker.detach();
+    }
   }
 }
 
