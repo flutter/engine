@@ -13,6 +13,8 @@
 //     reduced in the first pass by sampling the source textures with a mip
 //     level of log2(min_radius).
 
+precision mediump float;
+
 #include <impeller/constants.glsl>
 #include <impeller/gaussian.glsl>
 #include <impeller/texture.glsl>
