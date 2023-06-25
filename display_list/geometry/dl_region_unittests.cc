@@ -14,6 +14,7 @@ namespace testing {
 
 TEST(DisplayListRegion, EmptyRegion) {
   DlRegion region;
+  EXPECT_TRUE(region.isEmpty());
   EXPECT_TRUE(region.getRects().empty());
 }
 
@@ -204,6 +205,7 @@ TEST(DisplayListRegion, Intersection1) {
   });
   DlRegion i = DlRegion::MakeIntersection(region1, region2);
   EXPECT_EQ(i.bounds(), SkIRect::MakeEmpty());
+  EXPECT_TRUE(i.isEmpty());
   auto rects = i.getRects();
   EXPECT_TRUE(rects.empty());
 }
@@ -309,6 +311,7 @@ TEST(DisplayListRegion, UnionEmpty) {
     DlRegion region2(std::vector<SkIRect>{});
     DlRegion u = DlRegion::MakeUnion(region1, region2);
     EXPECT_EQ(u.bounds(), SkIRect::MakeEmpty());
+    EXPECT_TRUE(u.isEmpty());
     auto rects = u.getRects();
     EXPECT_TRUE(rects.empty());
   }
