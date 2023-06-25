@@ -567,56 +567,56 @@ BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   false,
                   30,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_TinyAssymetric,
                   RegionOp::kIntersection,
                   false,
                   30,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_SmallAssymetric,
                   RegionOp::kIntersection,
                   false,
                   100,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_SmallAssymetric,
                   RegionOp::kIntersection,
                   false,
                   100,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_MediumAssymetric,
                   RegionOp::kIntersection,
                   false,
                   400,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_MediumAssymetric,
                   RegionOp::kIntersection,
                   false,
                   400,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_LargeAssymetric,
                   RegionOp::kIntersection,
                   false,
                   1500,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SkRegion_Operation,
                   Intersection_LargeAssymetric,
                   RegionOp::kIntersection,
                   false,
                   1500,
                   kSizeFactorSmall)
-    ->Unit(benchmark::kNanosecond);
+    ->Unit(benchmark::kMicrosecond);
 
 BENCHMARK_CAPTURE(BM_DlRegion_Operation,
                   Intersection_SingleRect_Tiny,
