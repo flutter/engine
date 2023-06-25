@@ -8,10 +8,6 @@
 
 namespace flutter {
 
-// Threshold for switching from linear search through span lines to binary
-// search.
-const int kBinarySearchThreshold = 10;
-
 DlRegion::SpanBuffer::SpanBuffer(DlRegion::SpanBuffer&& m)
     : capacity_(m.capacity_), size_(m.size_), spans_(m.spans_) {
   m.size_ = 0;
@@ -516,29 +512,11 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
   auto& lines = res.lines_;
   lines.reserve(std::min(a.lines_.size(), b.lines_.size()));
 
-  auto a_it = a.lines_.begin();
+  std::vector<SpanLine>::const_iterator a_it, b_it;
+  getIntersectionIterators(a.lines_, b.lines_, a_it, b_it);
+
   auto a_end = a.lines_.end();
-  auto b_it = b.lines_.begin();
   auto b_end = b.lines_.end();
-
-  FML_DCHECK(a_it != a_end && b_it != b_end);
-
-  auto a_len = a_end - a_it;
-  auto b_len = b_end - b_it;
-
-  if (a_len > kBinarySearchThreshold &&
-      a_it[kBinarySearchThreshold].bottom <= b_it->top) {
-    a_it = std::lower_bound(
-        a.lines_.begin() + kBinarySearchThreshold + 1, a.lines_.end(),
-        b_it->top,
-        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
-  } else if (b_len > kBinarySearchThreshold &&
-             b_it[kBinarySearchThreshold].bottom <= a_it->top) {
-    b_it = std::lower_bound(
-        b.lines_.begin() + kBinarySearchThreshold + 1, b.lines_.end(),
-        a_it->top,
-        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
-  }
 
   auto& a_buffer = a.span_buffer_;
   auto& b_buffer = b.span_buffer_;
@@ -683,6 +661,36 @@ bool DlRegion::spansIntersect(const Span* begin1,
   return false;
 }
 
+void DlRegion::getIntersectionIterators(
+    const std::vector<SpanLine>& a_lines,
+    const std::vector<SpanLine>& b_lines,
+    std::vector<SpanLine>::const_iterator& a_it,
+    std::vector<SpanLine>::const_iterator& b_it) {
+  a_it = a_lines.begin();
+  auto a_end = a_lines.end();
+  b_it = b_lines.begin();
+  auto b_end = b_lines.end();
+
+  FML_DCHECK(a_it != a_end && b_it != b_end);
+
+  auto a_len = a_end - a_it;
+  auto b_len = b_end - b_it;
+
+  const int kBinarySearchThreshold = 10;
+
+  if (a_len > kBinarySearchThreshold &&
+      a_it[kBinarySearchThreshold].bottom <= b_it->top) {
+    a_it = std::lower_bound(
+        a_lines.begin() + kBinarySearchThreshold + 1, a_lines.end(), b_it->top,
+        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
+  } else if (b_len > kBinarySearchThreshold &&
+             b_it[kBinarySearchThreshold].bottom <= a_it->top) {
+    b_it = std::lower_bound(
+        b_lines.begin() + kBinarySearchThreshold + 1, b_lines.end(), a_it->top,
+        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
+  }
+}
+
 bool DlRegion::intersects(const DlRegion& region) const {
   if (isEmpty() || region.isEmpty()) {
     return false;
@@ -708,28 +716,10 @@ bool DlRegion::intersects(const DlRegion& region) const {
     return intersects(region.bounds_);
   }
 
-  auto ours = lines_.begin();
+  std::vector<SpanLine>::const_iterator ours, theirs;
+  getIntersectionIterators(lines_, region.lines_, ours, theirs);
   auto ours_end = lines_.end();
-  auto theirs = region.lines_.begin();
   auto theirs_end = region.lines_.end();
-
-  FML_DCHECK(ours != ours_end && theirs != theirs_end);
-
-  auto ours_len = ours_end - ours;
-  auto their_len = theirs_end - theirs;
-
-  if (ours_len > kBinarySearchThreshold &&
-      ours[kBinarySearchThreshold].bottom <= theirs->top) {
-    ours = std::lower_bound(
-        lines_.begin() + kBinarySearchThreshold + 1, lines_.end(), theirs->top,
-        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
-  } else if (their_len > kBinarySearchThreshold &&
-             theirs[kBinarySearchThreshold].bottom <= ours->top) {
-    theirs = std::lower_bound(
-        region.lines_.begin() + kBinarySearchThreshold + 1, region.lines_.end(),
-        ours->top,
-        [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
-  }
 
   while (ours != ours_end && theirs != theirs_end) {
     if (ours->bottom <= theirs->top) {

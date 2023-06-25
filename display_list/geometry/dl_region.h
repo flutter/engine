@@ -157,6 +157,12 @@ class DlRegion {
                              const Span* begin2,
                              const Span* end2);
 
+  static void getIntersectionIterators(
+      const std::vector<SpanLine>& a_lines,
+      const std::vector<SpanLine>& b_lines,
+      std::vector<SpanLine>::const_iterator& a_it,
+      std::vector<SpanLine>::const_iterator& b_it);
+
   std::vector<SpanLine> lines_;
   SkIRect bounds_ = SkIRect::MakeEmpty();
   SpanBuffer span_buffer_;
