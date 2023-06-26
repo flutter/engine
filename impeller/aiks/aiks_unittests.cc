@@ -2024,7 +2024,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
-TEST_P(AiksTest, DrawRectDoesNotAbsorbClears) {
+TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
                   {.color = Color::Red(), .blend_mode = BlendMode::kSource});

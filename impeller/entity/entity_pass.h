@@ -46,6 +46,11 @@ class EntityPass {
     size_t stencil_depth;
   };
 
+  struct ConditionalClear {
+    Color color;
+    Entity entity;
+  };
+
   using StencilCoverageStack = std::vector<StencilCoverageLayer>;
 
   EntityPass();
@@ -100,6 +105,10 @@ class EntityPass {
 
   std::optional<Rect> GetElementsCoverage(
       std::optional<Rect> coverage_limit) const;
+
+  void AddConditionalClear(const ConditionalClear& conditional_clear) {
+    conditional_clears_.push_back(conditional_clear);
+  }
 
  private:
   struct EntityResult {
@@ -204,6 +213,7 @@ class EntityPass {
   /// The list of renderable items in the scene. Each of these items is
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
+  std::vector<ConditionalClear> conditional_clears_;
 
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
