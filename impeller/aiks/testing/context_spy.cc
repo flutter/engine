@@ -12,7 +12,7 @@ std::shared_ptr<ContextSpy> ContextSpy::Make() {
 }
 
 std::shared_ptr<ContextMock> ContextSpy::MakeContext(
-    std::shared_ptr<Context> real_context) {
+    const std::shared_ptr<Context>& real_context) {
   std::shared_ptr<ContextMock> mock_context =
       std::make_shared<::testing::NiceMock<ContextMock>>();
   std::shared_ptr<ContextSpy> shared_this = shared_from_this();
@@ -64,14 +64,14 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
             });
 
         ON_CALL(*spy, SubmitCommandsAsync)
-            .WillByDefault(
-                [real_buffer](std::shared_ptr<RenderPass> render_pass) {
-                  return real_buffer->SubmitCommandsAsync(render_pass);
-                });
+            .WillByDefault([real_buffer](
+                               std::shared_ptr<RenderPass> render_pass) {
+              return real_buffer->SubmitCommandsAsync(std::move(render_pass));
+            });
 
         ON_CALL(*spy, OnCreateRenderPass)
             .WillByDefault(
-                [real_buffer, shared_this](RenderTarget render_target) {
+                [real_buffer, shared_this](const RenderTarget& render_target) {
                   std::shared_ptr<RenderPass> result =
                       CommandBufferMock::ForwardOnCreateRenderPass(
                           real_buffer.get(), render_target);
@@ -87,7 +87,7 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
             .WillByDefault(
                 [real_buffer](CommandBuffer::CompletionCallback callback) {
                   return CommandBufferMock::ForwardOnSubmitCommands(
-                      real_buffer.get(), callback);
+                      real_buffer.get(), std::move(callback));
                 });
 
         ON_CALL(*spy, OnWaitUntilScheduled).WillByDefault([real_buffer]() {

@@ -17,7 +17,7 @@ class ContextSpy : public std::enable_shared_from_this<ContextSpy> {
   static std::shared_ptr<ContextSpy> Make();
 
   std::shared_ptr<ContextMock> MakeContext(
-      std::shared_ptr<Context> real_context);
+      const std::shared_ptr<Context>& real_context);
 
   std::vector<std::shared_ptr<RenderPass>> render_passes_;
 
