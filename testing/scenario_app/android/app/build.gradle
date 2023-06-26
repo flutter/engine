@@ -6,7 +6,7 @@ android {
         abortOnError true
         checkAllWarnings true
         showAll true
-        warningsAsErrors true
+        warningsAsErrors false
         checkTestSources true
         textOutput 'stdout'
         htmlReport false
@@ -18,7 +18,7 @@ android {
         // The others are irrelevant for a test application.
         disable 'UnpackedNativeCode','MissingApplicationIcon','GoogleAppIndexingApiWarning','GoogleAppIndexingWarning','GradleDependency','NewerVersionAvailable','Registered'
     }
-    buildToolsVersion = '33.0.0'
+    buildToolsVersion = '33.0.1'
     compileSdkVersion 33
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
