@@ -178,8 +178,7 @@ void Canvas::DrawPaint(const Paint& paint) {
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
 
-  if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
-      GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
+  if (GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
       (paint.blend_mode == BlendMode::kSourceOver ||
        paint.blend_mode == BlendMode::kSource) &&
       paint.color.alpha >= 1.0f) {
