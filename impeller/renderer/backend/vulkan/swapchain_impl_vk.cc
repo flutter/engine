@@ -346,8 +346,12 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr                                // fence
   );
 
-  if (acq_result == vk::Result::eSuboptimalKHR ||
-      acq_result == vk::Result::eErrorOutOfDateKHR) {
+  if (acq_result == vk::Result::eSuboptimalKHR) {
+    is_rotated_ = true;
+    return AcquireResult{true /* out of date */};
+  }
+
+  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
     return AcquireResult{true /* out of date */};
   }
 
