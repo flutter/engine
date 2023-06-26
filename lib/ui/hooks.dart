@@ -6,14 +6,14 @@ part of dart.ui;
 
 @pragma('vm:entry-point')
 void _addView(
-  Object id,
+  int id,
 ) {
   PlatformDispatcher.instance._addView(id);
 }
 
 @pragma('vm:entry-point')
 void _removeView(
-  Object id,
+  int id,
 ) {
   PlatformDispatcher.instance._removeView(id);
 }

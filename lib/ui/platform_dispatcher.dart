@@ -262,22 +262,22 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
-  FlutterView _createView(Object id) {
+  FlutterView _createView(int id) {
     if (id == _kImplicitViewId) {
       assert(_implicitViewEnabled());
       return implicitView!;
     }
-    return FlutterView._(id as int, this);
+    return FlutterView._(id, this);
   }
 
-  void _addView(Object id) {
-    assert(!_views.containsKey(id));
-    _views[id as int] = _createView(id);
+  void _addView(int id) {
+    assert(!_views.containsKey(id), 'View ID $id already exists.');
+    _views[id] = _createView(id);
     _viewConfigurations[id] = const _ViewConfiguration();
   }
 
-  void _removeView(Object id) {
-    assert(!_views.containsKey(id));
+  void _removeView(int id) {
+    assert(_views.containsKey(id), 'View ID $id does not exist.');
     // TODO(dkwingsmt): Reset _implicitView?
     _views.remove(id);
     _viewConfigurations.remove(id);
