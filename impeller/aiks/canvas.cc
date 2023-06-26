@@ -246,8 +246,7 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
   entity.SetContents(paint.WithFilters(
       paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
 
-  if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
-      GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
+  if (GetCurrentPass().GetElementCount() == 0 &&
       (paint.blend_mode == BlendMode::kSourceOver ||
        paint.blend_mode == BlendMode::kSource) &&
       paint.color.alpha >= 1.0f) {
