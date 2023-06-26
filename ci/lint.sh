@@ -53,7 +53,6 @@ cd "$SCRIPT_DIR"
 "$DART" \
   --disable-dart-dev \
   "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
-  --verbose \
   --src-dir="$SRC_DIR" \
   $fix_flag \
   "$@" && true # errors ignored
