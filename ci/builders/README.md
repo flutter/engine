@@ -283,7 +283,8 @@ configuration.
            "impeller-vulkan",
            "--engine-capture-core-dump"
        ],
-       "script": "flutter/testing/run_tests.py"
+       "script": "flutter/testing/run_tests.py",
+       "contexts": ["android_virtual_device"]
    }
 ]
 ```
@@ -296,9 +297,17 @@ default is empty which means no interpreter will be used to run the script
 and it is assumed the script is already an executable with the right
 permissions to run in the target platform.
 * **name** - the name of the step running the script.
-* **parameters** - flags or parameters passed to the script.
+* **parameters** - flags or parameters passed to the script. Parameters
+accept magic environment variables(placeholders replaced before executing
+the test). Magic environment variables have the following limitations:
+only `${FLUTTER_LOGS_DIR}` is currently supported and it needs to be used
+alone within the parameter string(e.g. `["${FLUTTER_LOGS_DIR}"]` is OK
+but `["path=${FLUTTER_LOGS_DIR}"]` is not).
 * **Script** - the path to the script to execute relative to the checkout
 directory.
+* **contexts** - a list of available contexts to add to the text execution step.
+The list of supported contexts can be found [here](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#687). As of 06/20/23 two contexts are supported:
+"android_virtual_device" and "metric_center_token".
 
 The test scripts will run in a deferred context (failing the step only after
 logs have been uploaded). Tester and builder recipes provide an environment
@@ -306,6 +315,10 @@ variable called FLUTTER\_LOGS\_DIR pointing a temporary directory where the
 test runner can place any logs|artifacts needed to debug issues. At the end
 of the test execution the content of FLUTTER\_LOGS\_DIR will be uploaded to
 Google Cloud Storage before signaling the pass | fail test state.
+
+Contexts are free form python contexts that communicate with the test script
+through environment variables. E.g. metric_center_token saves an access token
+to an [environment variable "token_path"](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/token_util/api.py#14) for the test to access it.
 
 Note that to keep the recipes generic they don’t know anything about what
 the test script is doing and it is the responsibility of the test script to
