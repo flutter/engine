@@ -28,7 +28,7 @@ void main() {
 }
 
 void testMain() {
-  test('warmupEngine calls _flutter.loader.didCreateEngineInitializer callback', () async {
+  test('bootstrapEngine calls _flutter.loader.didCreateEngineInitializer callback', () async {
     Object? engineInitializer;
 
     void didCreateEngineInitializerMock(Object? obj) {
@@ -41,7 +41,7 @@ void testMain() {
     // Reset the engine
     engine.debugResetEngineInitializationState();
 
-    await ui_web.warmupEngine(
+    await ui_web.bootstrapEngine(
       registerPlugins: () {},
       runApp: () {},
     );
@@ -52,7 +52,7 @@ void testMain() {
     expect(js_util.hasProperty(engineInitializer!, 'autoStart'), isTrue, reason: 'Missing FlutterEngineInitializer method: autoStart.');
   });
 
-  test('warmupEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist', () async {
+  test('bootstrapEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist', () async {
     loader = null;
 
     bool pluginsRegistered = false;
@@ -67,7 +67,7 @@ void testMain() {
     // Reset the engine
     engine.debugResetEngineInitializationState();
 
-    await ui_web.warmupEngine(
+    await ui_web.bootstrapEngine(
       registerPlugins: registerPluginsMock,
       runApp: runAppMock,
     );

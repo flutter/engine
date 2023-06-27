@@ -39,17 +39,17 @@ Future<void> webOnlyInitializePlatform() {
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395
 Future<void> webOnlyWarmupEngine({
-  Function? registerPlugins,
-  Function? runApp,
+  VoidCallback? registerPlugins,
+  VoidCallback? runApp,
 }) {
   assert(() {
     engine.printWarning(
       'The webOnlyWarmupEngine API is deprecated and will be removed in a '
-      'future release. Please use `warmupEngine` from `dart:ui_web` instead.',
+      'future release. Please use `bootstrapEngine` from `dart:ui_web` instead.',
     );
     return true;
   }());
-  return ui_web.warmupEngine(
+  return ui_web.bootstrapEngine(
     registerPlugins: registerPlugins,
     runApp: runApp,
   );

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 /// Performs a full initialization of the web environment that supports the
 /// Flutter framework.
@@ -12,31 +13,29 @@ Future<void> initializePlatform() async {
   await initializeEngine();
 }
 
-/// Initializes essential bits of the engine before it fully initializes.
+/// Bootstraps the Flutter Web engine and app.
 ///
-/// When [FlutterLoaderExtension.didCreateEngineInitializer] is set, it delegates
-/// engine initialization and app startup to the programmer. Else, it immediately
-/// triggers the full engine + app bootstrap.
+/// If the app uses plugins, then the [registerPlugins] callback can be provided
+/// to register those plugins. This is done typically by calling
+/// `registerPlugins` from the auto-generated `web_plugin_registrant.dart` file.
 ///
-/// This method is called by the flutter_tools package, from the entrypoint that
-/// it generates around the main method provided by the programmer. See:
+/// The [runApp] callback is invoked to run the app after the engine is fully
+/// initialized.
+///
+/// For more information, see what the `flutter_tools` doesin the entrypoint
+/// that it generates around the app's main method:
+///
 /// * https://github.com/flutter/flutter/blob/95be76ab7e3dca2def54454313e97f94f4ac4582/packages/flutter_tools/lib/src/web/file_generators/main_dart.dart#L14-L43
 ///
-/// This function first calls [initializeEngineServices] so the engine can
-/// prepare its non-UI services. It then creates a JsObject that is passed to
-/// the [FlutterLoaderExtension.didCreateEngineInitializer] JS callback, to
-/// delegate bootstrapping the app to the programmer.
+/// By default, engine initialization and app startup occur immediately and back
+/// to back. They can be programmatically controlled by setting
+/// `FlutterLoader.didCreateEngineInitializer`. For more information, see how
+/// `flutter.js` does it:
 ///
-/// If said callback is not defined, this assumes that the Flutter Web app is
-/// initializing "automatically", as was normal before this feature was
-/// introduced. This will immediately run the `initializeEngine` and `runApp`
-/// methods (via [AppBootstrap.autoStart]).
-///
-/// This method should NOT trigger the download of any additional resources
-/// (except when the app is in "autoStart" mode).
-Future<void> warmupEngine({
-  Function? registerPlugins,
-  Function? runApp,
+/// * https://github.com/flutter/flutter/blob/95be76ab7e3dca2def54454313e97f94f4ac4582/packages/flutter_tools/lib/src/web/file_generators/js/flutter.js
+Future<void> bootstrapEngine({
+  ui.VoidCallback? registerPlugins,
+  ui.VoidCallback? runApp,
 }) async {
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final AppBootstrap bootstrap = AppBootstrap(
