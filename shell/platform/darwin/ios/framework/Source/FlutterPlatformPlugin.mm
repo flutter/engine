@@ -95,26 +95,10 @@ using namespace flutter;
   } else if ([method isEqualToString:@"LookUp.initiate"]) {
     [self showLookUpView:args];
     result(nil);
-  } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
-    NSLog(@"Search web engine");
-    // x-web-search://?[query]
-    //https://google.com/search?q=
-    NSString *googleURL = @"x-web-search://?";
-    NSString *escapedText = [args stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
-    NSString *searchURL = [NSString stringWithFormat:@"%@%@", googleURL, escapedText];
-
-
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
-
-    NSLog(@"%@", searchURL);
-    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
-
-
-
 
 - (void)playSystemSound:(NSString*)soundType {
   if ([soundType isEqualToString:@"SystemSoundType.click"]) {
@@ -305,18 +289,10 @@ using namespace flutter;
 }
 
 -(void)showLookUpView:(NSString*)term {
-//  UIReferenceLibraryViewController *controller = [[UIReferenceLibraryViewController alloc] initWithTerm:term]
-
-//  if ([UIReferenceLibraryViewController dictionaryHasDefinitionForTerm:term]) {
     UIViewController* engineViewController = [_engine.get() viewController];
-//    if ([UIReferenceLibraryViewController dictionaryHasDefinitionForTerm:term]) {
     UIReferenceLibraryViewController *refVC =
             [[UIReferenceLibraryViewController alloc] initWithTerm:term];
-  NSLog(@"Before Presenting %@", term);
-
-  [engineViewController presentViewController:refVC animated:YES completion:^{
-    NSLog(@"Is Presenting %d", [engineViewController.presentedViewController isKindOfClass:[UIReferenceLibraryViewController class]]);
-  }];
+  [engineViewController presentViewController:refVC animated:YES completion:nil];
 }
 
 - (UITextField*)textField {
