@@ -803,6 +803,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _markedRect = kInvalidFirstRect;
     _cachedFirstRect = kInvalidFirstRect;
     _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+    _pendingDeltas = [[NSMutableArray alloc] init];
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
@@ -1965,13 +1966,26 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     @"composingExtent" : @(composingExtent),
   };
 
-  NSDictionary* deltas = @{
-    @"deltas" : @[ deltaToFramework ],
-  };
+  [_pendingDeltas addObject:deltaToFramework];
 
-  [self.textInputDelegate flutterTextInputView:self
-                           updateEditingClient:_textInputClient
-                                     withDelta:deltas];
+  if (_pendingDeltas.count == 1) {
+    CFStringRef runLoopMode = self.customRunLoopMode != nil
+                                  ? (__bridge CFStringRef)self.customRunLoopMode
+                                  : kCFRunLoopCommonModes;
+
+    CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
+      if (_pendingDeltas.count > 0) {
+        NSDictionary* deltas = @{
+          @"deltas" : _pendingDeltas,
+        };
+
+        [self.textInputDelegate flutterTextInputView:self
+                                 updateEditingClient:_textInputClient
+                                           withDelta:deltas];
+        [_pendingDeltas removeAllObjects];
+      }
+    });
+  }
 }
 
 - (BOOL)hasText {
