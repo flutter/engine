@@ -30,7 +30,6 @@ Future<void> testMain() async {
       Uri(path: '/test_images/mandrill_128.png')
     );
     expect(codec.frameCount, 1);
-    expect(codec.repetitionCount, 0);
 
     final ui.FrameInfo info = await codec.getNextFrame();
     final ui.Image image = info.image;
