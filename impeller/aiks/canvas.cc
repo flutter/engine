@@ -178,18 +178,7 @@ void Canvas::DrawPaint(const Paint& paint) {
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
 
-  if (GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
-      (paint.blend_mode == BlendMode::kSourceOver ||
-       paint.blend_mode == BlendMode::kSource) &&
-      paint.color.alpha >= 1.0f) {
-    // Then we can absorb this drawPaint as the clear color of the pass.
-    GetCurrentPass().AddConditionalClear((EntityPass::ConditionalClear){
-        .color = paint.color,
-        .entity = entity,
-    });
-  } else {
-    GetCurrentPass().AddEntity(entity);
-  }
+  GetCurrentPass().AddEntity(entity);
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
@@ -245,15 +234,7 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
   entity.SetContents(paint.WithFilters(
       paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
 
-  if (GetCurrentPass().GetElementCount() == 0 &&
-      (paint.blend_mode == BlendMode::kSourceOver ||
-       paint.blend_mode == BlendMode::kSource) &&
-      paint.color.alpha >= 1.0f) {
-    GetCurrentPass().AddConditionalClear(
-        (EntityPass::ConditionalClear){.color = paint.color, .entity = entity});
-  } else {
-    GetCurrentPass().AddEntity(entity);
-  }
+  GetCurrentPass().AddEntity(entity);
 }
 
 void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {

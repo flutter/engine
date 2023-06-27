@@ -36,6 +36,20 @@
 
 namespace impeller {
 
+namespace {
+std::optional<Color> AsBackgroundColor(const EntityPass::Element& element,
+                                       ISize target_size) {
+  if (const Entity* entity = std::get_if<Entity>(&element)) {
+    std::optional<Color> entity_color =
+        entity->GetContents()->AsBackgroundColor(*entity, target_size);
+    if (entity_color.has_value()) {
+      return entity_color.value();
+    }
+  }
+  return {};
+}
+}  // namespace
+
 EntityPass::EntityPass() = default;
 
 EntityPass::~EntityPass() = default;
@@ -212,31 +226,6 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
                    advanced_blend_reads_from_pass_texture_;
 }
 
-namespace {
-///\returns The calculated clear color and also all of the entities that can't
-///         be considered clear calls and must be drawn.
-std::tuple<Color, std::vector<Entity>> MaterializeClearColor(
-    const Color& clear_color,
-    const std::vector<EntityPass::ConditionalClear>& conditional_clears,
-    const ISize& render_size) {
-  Color result = clear_color;
-  std::vector<Entity> entities;
-  Rect render_target_rect =
-      Rect(0.0, 0.0, render_size.width, render_size.height);
-  for (const EntityPass::ConditionalClear& clear : conditional_clears) {
-    std::optional<Rect> coverage = clear.entity.GetCoverage();
-    bool should_collapse =
-        coverage.has_value() && coverage.value().Contains(render_target_rect);
-    if (should_collapse) {
-      result = clear.color;
-    } else {
-      entities.push_back(clear.entity);
-    }
-  }
-  return {result, entities};
-}
-}  // namespace
-
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
   auto root_render_target = render_target;
@@ -260,9 +249,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
-    auto offscreen_target =
-        CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
-                           true, clear_color_.Premultiply());
+    auto offscreen_target = CreateRenderTarget(
+        renderer, root_render_target.GetRenderTargetSize(), true,
+        GetClearColor(render_target.GetRenderTargetSize()).Premultiply());
 
     if (!OnRender(renderer,  // renderer
                   offscreen_target.GetRenderTarget()
@@ -367,10 +356,8 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   // Set up the clear color of the root pass.
-  color0.clear_color = std::get<Color>(MaterializeClearColor(
-                                           clear_color_, conditional_clears_,
-                                           render_target.GetRenderTargetSize()))
-                           .Premultiply();
+  color0.clear_color =
+      GetClearColor(render_target.GetRenderTargetSize()).Premultiply();
   root_render_target.SetColorAttachment(color0, 0);
 
   EntityPassTarget pass_target(
@@ -587,9 +574,7 @@ bool EntityPass::OnRender(
     return false;
   }
 
-  if (!(std::get<Color>(MaterializeClearColor(clear_color_, conditional_clears_,
-                                              root_pass_size)) ==
-        Color::BlackTransparent())) {
+  if (!(GetClearColor(root_pass_size) == Color::BlackTransparent())) {
     // Force the pass context to create at least one new pass if the clear color
     // is present. The `EndPass` first ensures that the clear color will get
     // applied even if this EntityPass is getting collapsed into the parent
@@ -734,19 +719,19 @@ bool EntityPass::OnRender(
     render_element(backdrop_entity);
   }
 
-  std::vector<Entity> non_clear_entities = std::get<std::vector<Entity>>(
-      MaterializeClearColor(clear_color_, conditional_clears_, root_pass_size));
-  std::vector<Element> non_clear_elements;
-  for (const Entity& entity : non_clear_entities) {
-    non_clear_elements.emplace_back(Element(entity));
-  }
-  std::vector<std::reference_wrapper<const Element>> all_elements;
-  all_elements.reserve(non_clear_elements.size() + elements_.size());
-  all_elements.insert(all_elements.end(), non_clear_elements.begin(),
-                      non_clear_elements.end());
-  all_elements.insert(all_elements.end(), elements_.begin(), elements_.end());
+  bool is_collapsing_clear_colors = true;
+  for (const auto& element : elements_) {
+    // Skip elements that are incorporated into the clear color.
+    if (is_collapsing_clear_colors) {
+      std::optional<Color> entity_color =
+          AsBackgroundColor(element, root_pass_size);
+      if (entity_color.has_value()) {
+        continue;
+      } else {
+        is_collapsing_clear_colors = false;
+      }
+    }
 
-  for (const Element& element : all_elements) {
     EntityResult result =
         GetEntityForElement(element,                 // element
                             renderer,                // renderer
@@ -938,9 +923,17 @@ void EntityPass::SetClearColor(Color clear_color) {
   clear_color_ = clear_color;
 }
 
-Color EntityPass::GetClearColor() const {
-  return std::get<Color>(MaterializeClearColor(
-      clear_color_, conditional_clears_, ISize::Infinite()));
+Color EntityPass::GetClearColor(ISize target_size) const {
+  Color result = clear_color_;
+  for (const Element& element : elements_) {
+    std::optional<Color> entity_color = AsBackgroundColor(element, target_size);
+    if (entity_color.has_value()) {
+      result = entity_color.value();
+    } else {
+      break;
+    }
+  }
+  return result;
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {

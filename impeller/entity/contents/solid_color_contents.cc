@@ -101,4 +101,17 @@ std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
   return contents;
 }
 
+std::optional<Color> SolidColorContents::AsBackgroundColor(
+    const Entity& entity,
+    ISize target_size) const {
+  std::optional<Rect> coverage = GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return {};
+  }
+
+  Rect target_rect = Rect::MakeSize(target_size);
+  return coverage.value().Contains(target_rect) ? GetColor()
+                                                : std::optional<Color>();
+}
+
 }  // namespace impeller

@@ -2000,9 +2000,17 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
       {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
 
   Picture picture = canvas.EndRecordingAsPicture();
-
-  ASSERT_EQ(picture.pass->GetElementCount(), 0u);
   ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClears) {
