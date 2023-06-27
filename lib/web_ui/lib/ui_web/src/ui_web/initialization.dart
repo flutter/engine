@@ -5,14 +5,6 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-/// Performs a full initialization of the web environment that supports the
-/// Flutter framework.
-///
-/// Unlike [warmupEngine], this method initializes UI and non-UI services.
-Future<void> initializePlatform() async {
-  await initializeEngine();
-}
-
 /// Bootstraps the Flutter Web engine and app.
 ///
 /// If the app uses plugins, then the [registerPlugins] callback can be provided

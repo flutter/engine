@@ -6,7 +6,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -15,7 +14,7 @@ void main() {
 void testMain() {
   group('Surface', () {
     setUpAll(() async {
-      await ui_web.initializePlatform();
+      await webOnlyInitializePlatform();
     });
 
     setUp(() {

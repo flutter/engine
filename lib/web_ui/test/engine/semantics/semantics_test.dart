@@ -29,7 +29,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui_web.initializePlatform();
+  await ui.webOnlyInitializePlatform();
   runSemanticsTests();
 }
 
