@@ -830,14 +830,14 @@ FLUTTER_ASSERT_ARC
 
   OCMVerify([engine
       flutterTextInputView:inputView
-      updateEditingClient:0
-                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
+       updateEditingClient:0
+                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                               isEqualToString:@"-"]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
-                }]]);
+                 }]]);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
