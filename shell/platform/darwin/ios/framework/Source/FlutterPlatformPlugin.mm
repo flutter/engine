@@ -97,34 +97,23 @@ using namespace flutter;
     result(nil);
   } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
     NSLog(@"Search web engine");
-    NSString *googleURL = @"https://google.com/search?q=";
+    // x-web-search://?[query]
+    //https://google.com/search?q=
+    NSString *googleURL = @"x-web-search://?";
     NSString *escapedText = [args stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
     NSString *searchURL = [NSString stringWithFormat:@"%@%@", googleURL, escapedText];
 
-    NSLog(@"%@", googleURL);
-    NSLog(@"%@", escapedText);
-    NSLog(@"%@", searchURL);
-
 
     [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
+
+    NSLog(@"%@", searchURL);
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
--(void)showLookUpView:(NSString*)term {
-//  UIReferenceLibraryViewController *controller = [[UIReferenceLibraryViewController alloc] initWithTerm:term]
 
-//  if ([UIReferenceLibraryViewController dictionaryHasDefinitionForTerm:term]) {
-    UIViewController* engineViewController = [_engine.get() viewController];
-    NSLog(@"Term: %@, has definition", term);
-    UIReferenceLibraryViewController *refVC =
-            [[UIReferenceLibraryViewController alloc] initWithTerm:term];
-    [engineViewController presentViewController:refVC animated:YES completion:nil];
-//  }
-
-}
 
 
 - (void)playSystemSound:(NSString*)soundType {
@@ -313,6 +302,21 @@ using namespace flutter;
 
 - (BOOL)isLiveTextInputAvailable {
   return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+}
+
+-(void)showLookUpView:(NSString*)term {
+//  UIReferenceLibraryViewController *controller = [[UIReferenceLibraryViewController alloc] initWithTerm:term]
+
+//  if ([UIReferenceLibraryViewController dictionaryHasDefinitionForTerm:term]) {
+    UIViewController* engineViewController = [_engine.get() viewController];
+//    if ([UIReferenceLibraryViewController dictionaryHasDefinitionForTerm:term]) {
+    UIReferenceLibraryViewController *refVC =
+            [[UIReferenceLibraryViewController alloc] initWithTerm:term];
+  NSLog(@"Before Presenting %@", term);
+
+  [engineViewController presentViewController:refVC animated:YES completion:^{
+    NSLog(@"Is Presenting %d", [engineViewController.presentedViewController isKindOfClass:[UIReferenceLibraryViewController class]]);
+  }];
 }
 
 - (UITextField*)textField {

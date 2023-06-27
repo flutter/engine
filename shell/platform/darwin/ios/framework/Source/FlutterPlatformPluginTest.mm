@@ -16,9 +16,30 @@
 
 @interface FlutterPlatformPlugin ()
 - (BOOL)isLiveTextInputAvailable;
+- (void)showLookUpView:(NSString*)term;
 @end
 
 @implementation FlutterPlatformPluginTest
+
+- (void)testLookUpCallInitiated {
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  XCTestExpectation* invokeExpectation =
+      [self expectationWithDescription:@"isLookUpInvoked"];
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"LookUp.initiate"
+                                        arguments:@"Test"];
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockPlugin showLookUpView:@"Test"]);
+    [invokeExpectation fulfill];
+  };
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+}
 
 - (void)testClipboardHasCorrectStrings {
   [UIPasteboard generalPasteboard].string = nil;
