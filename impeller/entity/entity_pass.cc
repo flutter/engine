@@ -42,9 +42,7 @@ std::optional<Color> AsBackgroundColor(const EntityPass::Element& element,
   if (const Entity* entity = std::get_if<Entity>(&element)) {
     std::optional<Color> entity_color =
         entity->GetContents()->AsBackgroundColor(*entity, target_size);
-    if (entity_color.has_value() &&
-        (entity->GetBlendMode() == BlendMode::kSource ||
-         entity->GetBlendMode() == BlendMode::kSourceOut)) {
+    if (entity_color.has_value()) {
       return entity_color.value();
     }
   }
