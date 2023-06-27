@@ -288,10 +288,10 @@ using namespace flutter;
   return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
 }
 
--(void)showLookUpView:(NSString*)term {
-    UIViewController* engineViewController = [_engine.get() viewController];
-    UIReferenceLibraryViewController *refVC =
-            [[UIReferenceLibraryViewController alloc] initWithTerm:term];
+- (void)showLookUpView:(NSString*)term {
+  UIViewController* engineViewController = [_engine.get() viewController];
+  UIReferenceLibraryViewController* refVC =
+      [[UIReferenceLibraryViewController alloc] initWithTerm:term];
   [engineViewController presentViewController:refVC animated:YES completion:nil];
 }
 
