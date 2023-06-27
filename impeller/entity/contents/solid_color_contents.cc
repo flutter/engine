@@ -104,6 +104,10 @@ std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
 std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
+  if (GetColor().IsTransparent()) {
+    return {};
+  }
+
   std::optional<Rect> coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return {};
