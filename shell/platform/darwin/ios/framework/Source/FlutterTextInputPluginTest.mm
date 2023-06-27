@@ -805,6 +805,41 @@ FLUTTER_ASSERT_ARC
                  }]]);
 }
 
+- (void)testTextEditingDeltasAreBatchedAndForwardedToFramework {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  inputView.enableDeltaModel = YES;
+  // Can't run CFRunLoop in default mode because it causes crashes from scheduled
+  // sources from other tests.
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
+  // Ensure both deltas are grouped in one platform channel call.
+  [inputView insertText:@"-"];
+  [inputView deleteBackward];
+  [inputView insertText:@"—"];
+
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+
+  OCMVerify([engine
+      flutterTextInputView:inputView
+      updateEditingClient:0
+                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                              isEqualToString:@"-"]) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                }]]);
+}
+
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
