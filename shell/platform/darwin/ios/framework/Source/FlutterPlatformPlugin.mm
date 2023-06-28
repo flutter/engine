@@ -124,11 +124,15 @@ using namespace flutter;
 }
 
 - (void)handleSearchWebWithSelection:(NSString*)selection {
-  NSString *searchURLPrefix = @"x-web-search://?";
-  NSString *escapedText = [selection stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
-  NSString *searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
+  NSString* searchURLPrefix = @"x-web-search://?";
+  NSString* escapedText = [selection
+      stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
+                                                             URLHostAllowedCharacterSet]];
+  NSString* searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
 
-  [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
+  [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
+                                     options:@{}
+                           completionHandler:nil];
 }
 
 - (void)playSystemSound:(NSString*)soundType {

@@ -25,14 +25,12 @@
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
-  XCTestExpectation* invokeExpectation =
-      [self expectationWithDescription:@"isSearchWebInitiated"];
+  XCTestExpectation* invokeExpectation = [self expectationWithDescription:@"isSearchWebInitiated"];
   FlutterPlatformPlugin* plugin =
       [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.initiate"
-                                        arguments:@"Test"];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.initiate"
+                                                                    arguments:@"Test"];
   FlutterResult result = ^(id result) {
     OCMVerify([mockPlugin handleSearchWebWithSelection:@"Test"]);
     [invokeExpectation fulfill];
