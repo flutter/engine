@@ -68,13 +68,6 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
       OpenCacheFile(cache_directory_, kPipelineCacheFileName, vk_caps);
 
   vk::PipelineCacheCreateInfo cache_info;
-
-  // TODO(csg): VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT is behind
-  // an extension. Check it and set it. If not, the implementation is doing
-  // unnecessary synchronization.
-  // cache_info.flags =
-  // vk::PipelineCacheCreateFlagBits::eExternallySynchronized;
-
   if (existing_cache_data) {
     cache_info.initialDataSize = existing_cache_data->GetSize();
     cache_info.pInitialData = existing_cache_data->GetMapping();
@@ -126,11 +119,26 @@ vk::UniquePipeline PipelineCacheVK::CreatePipeline(
     return {};
   }
 
-  Lock lock(cache_mutex_);
   auto [result, pipeline] =
       strong_device->GetDevice().createGraphicsPipelineUnique(*cache_, info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create graphics pipeline: "
+                   << vk::to_string(result);
+  }
+  return std::move(pipeline);
+}
+
+vk::UniquePipeline PipelineCacheVK::CreatePipeline(
+    const vk::ComputePipelineCreateInfo& info) {
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return {};
+  }
+
+  auto [result, pipeline] =
+      strong_device->GetDevice().createComputePipelineUnique(*cache_, info);
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create compute pipeline: "
                    << vk::to_string(result);
   }
   return std::move(pipeline);
@@ -145,7 +153,6 @@ std::shared_ptr<fml::Mapping> PipelineCacheVK::CopyPipelineCacheData() const {
   if (!IsValid()) {
     return nullptr;
   }
-  Lock lock(cache_mutex_);
   auto [result, data] =
       strong_device->GetDevice().getPipelineCacheData(*cache_);
   if (result != vk::Result::eSuccess) {
@@ -177,6 +184,10 @@ void PipelineCacheVK::PersistCacheToDisk() const {
     VALIDATION_LOG << "Could not persist pipeline cache to disk.";
     return;
   }
+}
+
+const CapabilitiesVK* PipelineCacheVK::GetCapabilities() const {
+  return CapabilitiesVK::Cast(caps_.get());
 }
 
 }  // namespace impeller

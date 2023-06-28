@@ -39,6 +39,9 @@
 #include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 namespace testing {
 
@@ -285,6 +288,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   using BoxPipelineBuilder = PipelineBuilder<VS, FS>;
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  pipeline_desc->SetSampleCount(SampleCount::kCount1);
+
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
@@ -1043,3 +1048,5 @@ TEST_P(RendererTest, VertexBufferBuilder) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

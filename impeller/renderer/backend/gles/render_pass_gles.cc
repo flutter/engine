@@ -38,27 +38,27 @@ void RenderPassGLES::OnSetLabel(std::string label) {
 
 void ConfigureBlending(const ProcTableGLES& gl,
                        const ColorAttachmentDescriptor* color) {
-  if (!color->blending_enabled) {
+  if (color->blending_enabled) {
+    gl.Enable(GL_BLEND);
+    gl.BlendFuncSeparate(
+        ToBlendFactor(color->src_color_blend_factor),  // src color
+        ToBlendFactor(color->dst_color_blend_factor),  // dst color
+        ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
+        ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
+    );
+    gl.BlendEquationSeparate(
+        ToBlendOperation(color->color_blend_op),  // mode color
+        ToBlendOperation(color->alpha_blend_op)   // mode alpha
+    );
+  } else {
     gl.Disable(GL_BLEND);
-    return;
   }
 
-  gl.Enable(GL_BLEND);
-  gl.BlendFuncSeparate(
-      ToBlendFactor(color->src_color_blend_factor),  // src color
-      ToBlendFactor(color->dst_color_blend_factor),  // dst color
-      ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
-      ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
-  );
-  gl.BlendEquationSeparate(
-      ToBlendOperation(color->color_blend_op),  // mode color
-      ToBlendOperation(color->alpha_blend_op)   // mode alpha
-  );
   {
     const auto is_set = [](std::underlying_type_t<ColorWriteMask> mask,
                            ColorWriteMask check) -> GLboolean {
       using RawType = decltype(mask);
-      return (static_cast<RawType>(mask) & static_cast<RawType>(mask))
+      return (static_cast<RawType>(mask) & static_cast<RawType>(check))
                  ? GL_TRUE
                  : GL_FALSE;
     };
@@ -100,7 +100,7 @@ void ConfigureStencil(const ProcTableGLES& gl,
   gl.Enable(GL_STENCIL_TEST);
   const auto& front = pipeline.GetFrontStencilAttachmentDescriptor();
   const auto& back = pipeline.GetBackStencilAttachmentDescriptor();
-  if (front == back) {
+  if (front.has_value() && front == back) {
     ConfigureStencil(GL_FRONT_AND_BACK, gl, *front, stencil_reference);
   } else if (front.has_value()) {
     ConfigureStencil(GL_FRONT, gl, *front, stencil_reference);
@@ -142,7 +142,7 @@ struct RenderPassData {
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
     return true;

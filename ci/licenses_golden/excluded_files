@@ -39,6 +39,7 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
+../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_paint_dispatcher_unittests.cc
@@ -146,6 +147,7 @@
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/capabilities_unittests.cc
 ../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
@@ -228,7 +230,6 @@
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
-../../../flutter/shell/platform/android/android_context_vulkan_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_shell_holder_unittests.cc
 ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
@@ -449,17 +450,12 @@
 ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/testing
-../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_view/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
 ../../../fuchsia/sdk/linux/dart/zircon/meta.json
-../../../fuchsia/sdk/linux/data/config/symbol-index/meta.json
+../../../fuchsia/sdk/linux/data/config/symbol_index/meta.json
 ../../../fuchsia/sdk/linux/docs
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.gesture/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/meta.json
@@ -498,6 +494,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.data/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.developer.tiles/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
@@ -614,6 +611,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.product.deprecatedclient/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.product.deprecatedconfiguration/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.softmac/meta.json
 ../../../fuchsia/sdk/linux/fidl/zx/meta.json
 ../../../fuchsia/sdk/linux/meta
 ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
@@ -627,6 +625,7 @@
 ../../../fuchsia/sdk/linux/pkg/async/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json
@@ -647,8 +646,6 @@
 ../../../fuchsia/sdk/linux/pkg/magma_client/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp_no_converters/meta.json
-../../../fuchsia/sdk/linux/pkg/memfs/meta.json
-../../../fuchsia/sdk/linux/pkg/modular_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/include/lib/ui/scenic/cpp/testing
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/meta.json
@@ -984,6 +981,7 @@
 ../../../third_party/angle/include/GLX/.clang-format
 ../../../third_party/angle/include/KHR/.clang-format
 ../../../third_party/angle/include/WGL/.clang-format
+../../../third_party/angle/include/platform/autogen/.clang-format
 ../../../third_party/angle/include/platform/gen_features.py
 ../../../third_party/angle/infra
 ../../../third_party/angle/samples
@@ -992,6 +990,7 @@
 ../../../third_party/angle/src/common/BinaryStream_unittest.cpp
 ../../../third_party/angle/src/common/CircularBuffer_unittest.cpp
 ../../../third_party/angle/src/common/FastVector_unittest.cpp
+../../../third_party/angle/src/common/FixedQueue_unittest.cpp
 ../../../third_party/angle/src/common/FixedVector_unittest.cpp
 ../../../third_party/angle/src/common/Float16ToFloat32.py
 ../../../third_party/angle/src/common/Optional_unittest.cpp
@@ -1026,9 +1025,11 @@
 ../../../third_party/angle/src/feature_support_util/feature_support_util_unittest.cpp
 ../../../third_party/angle/src/gpu_info_util/SystemInfo_unittest.cpp
 ../../../third_party/angle/src/image_util/AstcDecompressor_unittest.cpp
+../../../third_party/angle/src/libANGLE/BlendStateExt_unittest.cpp
 ../../../third_party/angle/src/libANGLE/BlobCache_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Config_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Fence_unittest.cpp
+../../../third_party/angle/src/libANGLE/GlobalMutex_unittest.cpp
 ../../../third_party/angle/src/libANGLE/HandleAllocator_unittest.cpp
 ../../../third_party/angle/src/libANGLE/ImageIndexIterator_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Image_unittest.cpp
@@ -1039,9 +1040,9 @@
 ../../../third_party/angle/src/libANGLE/SizedMRUCache_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Surface_unittest.cpp
 ../../../third_party/angle/src/libANGLE/TransformFeedback_unittest.cpp
+../../../third_party/angle/src/libANGLE/UnlockedTailCall_unittest.cpp
 ../../../third_party/angle/src/libANGLE/VaryingPacking_unittest.cpp
 ../../../third_party/angle/src/libANGLE/VertexArray_unittest.cpp
-../../../third_party/angle/src/libANGLE/angletypes_unittest.cpp
 ../../../third_party/angle/src/libANGLE/capture/OWNERS
 ../../../third_party/angle/src/libANGLE/gen_copy_conversion_table.py
 ../../../third_party/angle/src/libANGLE/gen_extensions.py
@@ -1067,7 +1068,6 @@
 ../../../third_party/angle/src/libANGLE/renderer/gl/generate_gl_dispatch_table.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/doc
 ../../../third_party/angle/src/libANGLE/renderer/metal/gen_mtl_format_table.py
-../../../third_party/angle/src/libANGLE/renderer/metal/shaders/create_mtl_internal_shaders.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py
 ../../../third_party/angle/src/libANGLE/renderer/serial_utils_unittest.cpp
 ../../../third_party/angle/src/libANGLE/renderer/vulkan/OWNERS
@@ -1587,6 +1587,7 @@
 ../../../third_party/dart/runtime/tools/wiki/build/cpp_indexer.py
 ../../../third_party/dart/runtime/tools/wiki/build/xrefs.py
 ../../../third_party/dart/runtime/vm/allocation_test.cc
+../../../third_party/dart/runtime/vm/ama_test.cc
 ../../../third_party/dart/runtime/vm/assert_test.cc
 ../../../third_party/dart/runtime/vm/atomic_test.cc
 ../../../third_party/dart/runtime/vm/base64_test.cc
@@ -1650,6 +1651,7 @@
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.cc
 ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 ../../../third_party/dart/runtime/vm/exceptions_test.cc
+../../../third_party/dart/runtime/vm/ffi_callback_metadata_test.cc
 ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 ../../../third_party/dart/runtime/vm/flags_test.cc
 ../../../third_party/dart/runtime/vm/growable_array_test.cc
@@ -2020,6 +2022,7 @@
 ../../../third_party/harfbuzz/README.mingw.md
 ../../../third_party/harfbuzz/README.python.md
 ../../../third_party/harfbuzz/RELEASING.md
+../../../third_party/harfbuzz/SECURITY.md
 ../../../third_party/harfbuzz/TESTING.md
 ../../../third_party/harfbuzz/THANKS
 ../../../third_party/harfbuzz/docs
@@ -2703,6 +2706,7 @@
 ../../../third_party/skia/modules/jetski/BUILD.bazel
 ../../../third_party/skia/modules/jetski/README
 ../../../third_party/skia/modules/pathkit/.gitignore
+../../../third_party/skia/modules/pathkit/BUILD.bazel
 ../../../third_party/skia/modules/pathkit/CHANGELOG.md
 ../../../third_party/skia/modules/pathkit/Makefile
 ../../../third_party/skia/modules/pathkit/README.md
@@ -2778,6 +2782,7 @@
 ../../../third_party/skia/src/codec/BUILD.bazel
 ../../../third_party/skia/src/core/BUILD.bazel
 ../../../third_party/skia/src/effects/BUILD.bazel
+../../../third_party/skia/src/effects/colorfilters/BUILD.bazel
 ../../../third_party/skia/src/effects/imagefilters/BUILD.bazel
 ../../../third_party/skia/src/encode/BUILD.bazel
 ../../../third_party/skia/src/fonts/BUILD.bazel
@@ -2808,7 +2813,6 @@
 ../../../third_party/skia/src/gpu/ganesh/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/text/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel
-../../../third_party/skia/src/gpu/gl/BUILD.bazel
 ../../../third_party/skia/src/gpu/mtl/BUILD.bazel
 ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/vk/BUILD.bazel

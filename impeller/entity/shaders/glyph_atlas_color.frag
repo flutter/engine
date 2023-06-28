@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 #include <impeller/types.glsl>
 
 uniform f16sampler2D glyph_atlas_sampler;
@@ -11,7 +13,7 @@ uniform FragInfo {
 }
 frag_info;
 
-in vec2 v_uv;
+in highp vec2 v_uv;
 
 out f16vec4 frag_color;
 

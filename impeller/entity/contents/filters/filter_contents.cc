@@ -177,8 +177,9 @@ bool FilterContents::Render(const ContentContext& renderer,
 std::optional<Rect> FilterContents::GetLocalCoverage(
     const Entity& local_entity) const {
   auto coverage = GetFilterCoverage(inputs_, local_entity, effect_transform_);
-  if (GetCoverageHint().has_value() && coverage.has_value()) {
-    coverage = coverage->Intersection(*GetCoverageHint());
+  auto coverage_hint = GetCoverageHint();
+  if (coverage_hint.has_value() && coverage.has_value()) {
+    coverage = coverage->Intersection(coverage_hint.value());
   }
 
   return coverage;

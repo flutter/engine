@@ -23,9 +23,9 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -53,6 +53,9 @@
 #include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 namespace testing {
@@ -1066,7 +1069,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetRect(input_rect);
+      texture->SetDestinationRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1189,7 +1192,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetRect(input_rect);
+    texture->SetDestinationRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -1365,8 +1368,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
-  // Draws the image as four squares stiched together. Because blend modes
-  // aren't implented this ends up as four solid color blocks.
+  // Draws the image as four squares stiched together.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
   auto size = atlas->GetSize();
   // Divide image into four quadrants.
@@ -1712,7 +1714,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
-    auto contents = std::make_unique<RRectShadowContents>();
+    auto contents = std::make_unique<SolidRRectBlurContents>();
     contents->SetRRect(rect, corner_radius);
     contents->SetColor(color);
     contents->SetSigma(Radius(blur_radius));
@@ -1746,7 +1748,7 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   fill->SetColor(Color::Coral());
 
   // Set the color matrix filter.
-  FilterContents::ColorMatrix matrix = {
+  ColorMatrix matrix = {
       1, 1, 1, 1, 1,  //
       1, 1, 1, 1, 1,  //
       1, 1, 1, 1, 1,  //
@@ -1773,7 +1775,7 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     // UI state.
-    static FilterContents::ColorMatrix color_matrix = {
+    static ColorMatrix color_matrix = {
         1, 0, 0, 0, 0,  //
         0, 3, 0, 0, 0,  //
         0, 0, 1, 0, 0,  //
@@ -1927,238 +1929,6 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(EntityTest, TTTBlendColor) {
-  {
-    Color src = {1, 0, 0, 0.5};
-    Color dst = {1, 0, 1, 1};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 0, 0, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(1, 0, 0, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0, 0, 0.5));
-  }
-
-  {
-    Color src = {1, 1, 0, 1};
-    Color dst = {1, 0, 1, 1};
-
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor), Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 1, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0, 0, 1));
-  }
-
-  {
-    Color src = {1, 1, 0, 0.2};
-    Color dst = {1, 1, 1, 0.5};
-
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 1, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 1, 1, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.8, 1.8, 0.8, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1.5, 1.5, 1, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.2, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.8, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.7, 0.7, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(1, 1, 1, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 1, 0, 0.1));
-  }
-
-  {
-    Color src = {1, 0.5, 0, 0.2};
-    Color dst = {1, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 0.5, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.8, 1.3, 0.4, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1.5, 1.25, 0.5, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.7, 0.45, 0.1, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(1, 1, 0.5, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0, 0.2};
-    Color dst = {0, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.5, 1.3, 0.4, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.25, 1.25, 0.5, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.25, 0.45, 0.1, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.5, 1, 0.5, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0.2, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.66, 1.3, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.45, 1.25, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.04, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.16, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.29, 0.45, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.7, 1, 0.7, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0.1, 0.5, 0.1, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 0.2, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0.2, 0.2, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.66, 0.66, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.45, 0.45, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.04, 0.04, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.16, 0.16, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.29, 0.29, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.7, 0.7, 0.7, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0.1, 0.1, 0.1, 0.1));
-  }
 }
 
 TEST_P(EntityTest, AtlasContentsSubAtlas) {
@@ -2543,7 +2313,7 @@ TEST_P(EntityTest, SolidColorContentsIsOpaque) {
 TEST_P(EntityTest, ConicalGradientContentsIsOpaque) {
   ConicalGradientContents contents;
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_TRUE(contents.IsOpaque());
+  ASSERT_FALSE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
 }
@@ -2554,6 +2324,9 @@ TEST_P(EntityTest, LinearGradientContentsIsOpaque) {
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
+  ASSERT_FALSE(contents.IsOpaque());
 }
 
 TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
@@ -2562,6 +2335,9 @@ TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
+  ASSERT_FALSE(contents.IsOpaque());
 }
 
 TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
@@ -2569,6 +2345,9 @@ TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
   contents.SetColors({Color::CornflowerBlue()});
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
   ASSERT_FALSE(contents.IsOpaque());
 }
 
@@ -2636,5 +2415,27 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
 }
 
+TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto src_contents = std::make_shared<SolidColorContents>();
+  src_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-300, -500, 30000, 50000)));
+  src_contents->SetColor(Color::Red());
+
+  auto dst_contents = std::make_shared<SolidColorContents>();
+  dst_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(300, 500, 20000, 30000)));
+  dst_contents->SetColor(Color::Blue());
+
+  auto contents = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
+                               FilterInput::Make(src_contents, false)});
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -11,7 +11,9 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
-#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 namespace testing {
@@ -27,7 +29,9 @@ class MockRasterCacheResult : public RasterCacheResult {
  public:
   explicit MockRasterCacheResult(SkRect device_rect);
 
-  void draw(DlCanvas& canvas, const DlPaint* paint = nullptr) const override{};
+  void draw(DlCanvas& canvas,
+            const DlPaint* paint = nullptr,
+            bool preserve_rtree = false) const override{};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();

@@ -23,6 +23,7 @@ if (impeller_enable_compute) {
       "stroke.comp",
       "path_polyline.comp",
       "prefix_sum_test.comp",
+      "threadgroup_sizing_test.comp",
     ]
   }
 
@@ -160,6 +161,6 @@ impeller_component("renderer_dart_unittests") {
     "../playground:playground_test",
     "//flutter/runtime:runtime",
     "//flutter/testing:fixture_test",
-    "//flutter/testing:testing_lib",
+    "//flutter/testing:testing",
   ]
 }

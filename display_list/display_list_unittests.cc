@@ -21,13 +21,19 @@
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 
+#include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
 DlOpReceiver& DisplayListBuilderTestingAccessor(DisplayListBuilder& builder) {
   return builder.asReceiver();
+}
+
+DlPaint DisplayListBuilderTestingAttributes(DisplayListBuilder& builder) {
+  return builder.CurrentAttributes();
 }
 
 namespace testing {
@@ -87,10 +93,137 @@ class DisplayListTestBase : public BaseT {
     return dl;
   }
 
+  static void check_defaults(
+      DisplayListBuilder& builder,
+      const SkRect& cull_rect = DisplayListBuilder::kMaxCullRect) {
+    DlPaint builder_paint = DisplayListBuilderTestingAttributes(builder);
+    DlPaint defaults;
+
+    EXPECT_EQ(builder_paint.isAntiAlias(), defaults.isAntiAlias());
+    EXPECT_EQ(builder_paint.isDither(), defaults.isDither());
+    EXPECT_EQ(builder_paint.isInvertColors(), defaults.isInvertColors());
+    EXPECT_EQ(builder_paint.getColor(), defaults.getColor());
+    EXPECT_EQ(builder_paint.getBlendMode(), defaults.getBlendMode());
+    EXPECT_EQ(builder_paint.getDrawStyle(), defaults.getDrawStyle());
+    EXPECT_EQ(builder_paint.getStrokeWidth(), defaults.getStrokeWidth());
+    EXPECT_EQ(builder_paint.getStrokeMiter(), defaults.getStrokeMiter());
+    EXPECT_EQ(builder_paint.getStrokeCap(), defaults.getStrokeCap());
+    EXPECT_EQ(builder_paint.getStrokeJoin(), defaults.getStrokeJoin());
+    EXPECT_EQ(builder_paint.getColorSource(), defaults.getColorSource());
+    EXPECT_EQ(builder_paint.getColorFilter(), defaults.getColorFilter());
+    EXPECT_EQ(builder_paint.getImageFilter(), defaults.getImageFilter());
+    EXPECT_EQ(builder_paint.getMaskFilter(), defaults.getMaskFilter());
+    EXPECT_EQ(builder_paint.getPathEffect(), defaults.getPathEffect());
+    EXPECT_EQ(builder_paint, defaults);
+    EXPECT_TRUE(builder_paint.isDefault());
+
+    EXPECT_EQ(builder.GetTransform(), SkMatrix());
+    EXPECT_EQ(builder.GetTransformFullPerspective(), SkM44());
+
+    EXPECT_EQ(builder.GetLocalClipBounds(), cull_rect);
+    EXPECT_EQ(builder.GetDestinationClipBounds(), cull_rect);
+
+    EXPECT_EQ(builder.GetSaveCount(), 1);
+  }
+
+  typedef const std::function<void(DlCanvas&)> DlSetup;
+  typedef const std::function<void(DlCanvas&, DlPaint&, SkRect& rect)>
+      DlRenderer;
+
+  static void verify_inverted_bounds(DlSetup& setup,
+                                     DlRenderer& renderer,
+                                     DlPaint paint,
+                                     SkRect render_rect,
+                                     SkRect expected_bounds,
+                                     const std::string& desc) {
+    DisplayListBuilder builder;
+    setup(builder);
+    renderer(builder, paint, render_rect);
+    auto dl = builder.Build();
+    EXPECT_EQ(dl->op_count(), 1u) << desc;
+    EXPECT_EQ(dl->bounds(), expected_bounds) << desc;
+  }
+
+  static void check_inverted_bounds(DlRenderer& renderer,
+                                    const std::string& desc) {
+    SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f);
+    SkRect invertedLR = SkRect::MakeLTRB(rect.fRight, rect.fTop,  //
+                                         rect.fLeft, rect.fBottom);
+    SkRect invertedTB = SkRect::MakeLTRB(rect.fLeft, rect.fBottom,  //
+                                         rect.fRight, rect.fTop);
+    SkRect invertedLTRB = SkRect::MakeLTRB(rect.fRight, rect.fBottom,  //
+                                           rect.fLeft, rect.fTop);
+    auto empty_setup = [](DlCanvas&) {};
+
+    ASSERT_TRUE(rect.fLeft < rect.fRight);
+    ASSERT_TRUE(rect.fTop < rect.fBottom);
+    ASSERT_FALSE(rect.isEmpty());
+    ASSERT_TRUE(invertedLR.fLeft > invertedLR.fRight);
+    ASSERT_TRUE(invertedLR.isEmpty());
+    ASSERT_TRUE(invertedTB.fTop > invertedTB.fBottom);
+    ASSERT_TRUE(invertedTB.isEmpty());
+    ASSERT_TRUE(invertedLTRB.fLeft > invertedLTRB.fRight);
+    ASSERT_TRUE(invertedLTRB.fTop > invertedLTRB.fBottom);
+    ASSERT_TRUE(invertedLTRB.isEmpty());
+
+    DlPaint ref_paint = DlPaint();
+    SkRect ref_bounds = rect;
+    verify_inverted_bounds(empty_setup, renderer, ref_paint, invertedLR,
+                           ref_bounds, desc + " LR swapped");
+    verify_inverted_bounds(empty_setup, renderer, ref_paint, invertedTB,
+                           ref_bounds, desc + " TB swapped");
+    verify_inverted_bounds(empty_setup, renderer, ref_paint, invertedLTRB,
+                           ref_bounds, desc + " LR&TB swapped");
+
+    // Round joins are used because miter joins greatly pad the bounds,
+    // but only on paths. So we use round joins for consistency there.
+    // We aren't fully testing all stroke-related bounds computations here,
+    // those are more fully tested in the render tests. We are simply
+    // checking that they are applied to the ordered bounds.
+    DlPaint stroke_paint = DlPaint()                                 //
+                               .setDrawStyle(DlDrawStyle::kStroke)   //
+                               .setStrokeJoin(DlStrokeJoin::kRound)  //
+                               .setStrokeWidth(2.0f);
+    SkRect stroke_bounds = rect.makeOutset(1.0f, 1.0f);
+    verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedLR,
+                           stroke_bounds, desc + " LR swapped, sw 2");
+    verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedTB,
+                           stroke_bounds, desc + " TB swapped, sw 2");
+    verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedLTRB,
+                           stroke_bounds, desc + " LR&TB swapped, sw 2");
+
+    DlBlurMaskFilter mask_filter(DlBlurStyle::kNormal, 2.0f);
+    DlPaint maskblur_paint = DlPaint()  //
+                                 .setMaskFilter(&mask_filter);
+    SkRect maskblur_bounds = rect.makeOutset(6.0f, 6.0f);
+    verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedLR,
+                           maskblur_bounds, desc + " LR swapped, mask 2");
+    verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedTB,
+                           maskblur_bounds, desc + " TB swapped, mask 2");
+    verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedLTRB,
+                           maskblur_bounds, desc + " LR&TB swapped, mask 2");
+
+    DlErodeImageFilter erode_filter(2.0f, 2.0f);
+    DlPaint erode_paint = DlPaint()  //
+                              .setImageFilter(&erode_filter);
+    SkRect erode_bounds = rect.makeInset(2.0f, 2.0f);
+    verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedLR,
+                           erode_bounds, desc + " LR swapped, erode 2");
+    verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedTB,
+                           erode_bounds, desc + " TB swapped, erode 2");
+    verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedLTRB,
+                           erode_bounds, desc + " LR&TB swapped, erode 2");
+  }
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(DisplayListTestBase);
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
+
+TEST_F(DisplayListTest, Defaults) {
+  DisplayListBuilder builder;
+  check_defaults(builder);
+}
 
 TEST_F(DisplayListTest, EmptyBuild) {
   DisplayListBuilder builder;
@@ -115,6 +248,199 @@ TEST_F(DisplayListTest, BuilderCanBeReused) {
   builder.DrawRect(kTestBounds, DlPaint());
   auto dl2 = builder.Build();
   ASSERT_TRUE(dl->Equals(dl2));
+}
+
+TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Save();
+  builder.Translate(10.0f, 10.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Scale(10.0f, 10.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Skew(0.1f, 0.1f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Rotate(45.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform(SkMatrix::Scale(10.0f, 10.0f));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform2DAffine(1.0f, 0.0f, 12.0f,  //
+                            0.0f, 1.0f, 35.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.Transform(SkM44(SkMatrix::Scale(10.0f, 10.0f)));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.TransformFullPerspective(1.0f, 0.0f, 0.0f, 12.0f,  //
+                                   0.0f, 1.0f, 0.0f, 35.0f,  //
+                                   0.0f, 0.0f, 1.0f, 5.0f,   //
+                                   0.0f, 0.0f, 0.0f, 1.0f);
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresTransform) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Translate(10.0f, 10.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Scale(10.0f, 10.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Skew(0.1f, 0.1f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Rotate(45.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform(SkMatrix::Scale(10.0f, 10.0f));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform2DAffine(1.0f, 0.0f, 12.0f,  //
+                            0.0f, 1.0f, 35.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.Transform(SkM44(SkMatrix::Scale(10.0f, 10.0f)));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.TransformFullPerspective(1.0f, 0.0f, 0.0f, 12.0f,  //
+                                   0.0f, 1.0f, 0.0f, 35.0f,  //
+                                   0.0f, 0.0f, 1.0f, 5.0f,   //
+                                   0.0f, 0.0f, 0.0f, 1.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, SaveRestoreRestoresClip) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.Save();
+  builder.ClipRect({0.0f, 0.0f, 10.0f, 10.0f});
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.ClipRRect(SkRRect::MakeRectXY({0.0f, 0.0f, 5.0f, 5.0f}, 2.0f, 2.0f));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+
+  builder.Save();
+  builder.ClipPath(SkPath().addOval({0.0f, 0.0f, 10.0f, 10.0f}));
+  builder.Restore();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresClip) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+
+  builder.ClipRect({0.0f, 0.0f, 10.0f, 10.0f});
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.ClipRRect(SkRRect::MakeRectXY({0.0f, 0.0f, 5.0f, 5.0f}, 2.0f, 2.0f));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  builder.ClipPath(SkPath().addOval({0.0f, 0.0f, 10.0f, 10.0f}));
+  builder.Build();
+  check_defaults(builder, cull_rect);
+}
+
+TEST_F(DisplayListTest, BuildRestoresAttributes) {
+  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DisplayListBuilder builder(cull_rect);
+  DlOpReceiver& receiver = ToReceiver(builder);
+
+  receiver.setAntiAlias(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setDither(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setInvertColors(true);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColor(DlColor::kRed());
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setBlendMode(DlBlendMode::kColorBurn);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setDrawStyle(DlDrawStyle::kStrokeAndFill);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeWidth(300.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeMiter(300.0f);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeCap(DlStrokeCap::kRound);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setStrokeJoin(DlStrokeJoin::kRound);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColorSource(&kTestSource1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setImageFilter(&kTestBlurImageFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setMaskFilter(&kTestMaskFilter1);
+  builder.Build();
+  check_defaults(builder, cull_rect);
+
+  receiver.setPathEffect(kTestPathEffect1.get());
+  builder.Build();
+  check_defaults(builder, cull_rect);
 }
 
 TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
@@ -2637,6 +2963,218 @@ TEST_F(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
   auto display_list = builder.Build();
 
   ASSERT_FALSE(display_list->can_apply_group_opacity());
+}
+
+TEST_F(DisplayListTest, DrawUnorderedRect) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    canvas.DrawRect(rect, paint);
+  };
+  check_inverted_bounds(renderer, "DrawRect");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedRoundRect) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    canvas.DrawRRect(SkRRect::MakeRectXY(rect, 2.0f, 2.0f), paint);
+  };
+  check_inverted_bounds(renderer, "DrawRoundRect");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedOval) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    canvas.DrawOval(rect, paint);
+  };
+  check_inverted_bounds(renderer, "DrawOval");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedRectangularPath) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    canvas.DrawPath(SkPath().addRect(rect), paint);
+  };
+  check_inverted_bounds(renderer, "DrawRectangularPath");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedOvalPath) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    canvas.DrawPath(SkPath().addOval(rect), paint);
+  };
+  check_inverted_bounds(renderer, "DrawOvalPath");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedRoundRectPathCW) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    SkPath path = SkPath()  //
+                      .addRoundRect(rect, 2.0f, 2.0f, SkPathDirection::kCW);
+    canvas.DrawPath(path, paint);
+  };
+  check_inverted_bounds(renderer, "DrawRoundRectPath Clockwise");
+}
+
+TEST_F(DisplayListTest, DrawUnorderedRoundRectPathCCW) {
+  auto renderer = [](DlCanvas& canvas, DlPaint& paint, SkRect& rect) {
+    SkPath path = SkPath()  //
+                      .addRoundRect(rect, 2.0f, 2.0f, SkPathDirection::kCCW);
+    canvas.DrawPath(path, paint);
+  };
+  check_inverted_bounds(renderer, "DrawRoundRectPath Counter-Clockwise");
+}
+
+TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
+  auto run_tests = [](const std::string& name,
+                      void init(DisplayListBuilder & builder, DlPaint & paint),
+                      uint32_t expected_op_count = 0u) {
+    auto run_one_test =
+        [init](const std::string& name,
+               void build(DisplayListBuilder & builder, DlPaint & paint),
+               uint32_t expected_op_count = 0u) {
+          DisplayListBuilder builder;
+          DlPaint paint;
+          init(builder, paint);
+          build(builder, paint);
+          auto list = builder.Build();
+          if (list->op_count() != expected_op_count) {
+            FML_LOG(ERROR) << *list;
+          }
+          ASSERT_EQ(list->op_count(), expected_op_count) << name;
+          ASSERT_TRUE(list->bounds().isEmpty()) << name;
+        };
+    run_one_test(
+        name + " DrawColor",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawColor(paint.getColor(), paint.getBlendMode());
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawPaint",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawPaint(paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawRect",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawRect({10, 10, 20, 20}, paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " Other Draw Ops",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawLine({10, 10}, {20, 20}, paint);
+          builder.DrawOval({10, 10, 20, 20}, paint);
+          builder.DrawCircle({50, 50}, 20, paint);
+          builder.DrawRRect(SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5), paint);
+          builder.DrawDRRect(SkRRect::MakeRectXY({5, 5, 100, 100}, 5, 5),
+                             SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5),
+                             paint);
+          builder.DrawPath(kTestPath1, paint);
+          builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
+          SkPoint pts[] = {{10, 10}, {20, 20}};
+          builder.DrawPoints(PointMode::kLines, 2, pts, paint);
+          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
+                            &paint);
+          builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
+                                SkRect{10.0f, 10.0f, 25.0f, 25.0f},
+                                DlImageSampling::kLinear, &paint);
+          builder.DrawImageNine(TestImage1, {10, 10, 20, 20},
+                                {10, 10, 100, 100}, DlFilterMode::kLinear,
+                                &paint);
+          SkRSXform xforms[] = {{1, 0, 10, 10}, {0, 1, 10, 10}};
+          SkRect rects[] = {{10, 10, 20, 20}, {10, 20, 30, 20}};
+          builder.DrawAtlas(TestImage1, xforms, rects, nullptr, 2,
+                            DlBlendMode::kSrcOver, DlImageSampling::kLinear,
+                            nullptr, &paint);
+          builder.DrawTextBlob(TestBlob1, 10, 10, paint);
+
+          // Dst mode eliminates most rendering ops except for
+          // the following two, so we'll prune those manually...
+          if (paint.getBlendMode() != DlBlendMode::kDst) {
+            builder.DrawDisplayList(TestDisplayList1, paint.getOpacity());
+            builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
+          }
+        },
+        expected_op_count);
+    run_one_test(
+        name + " SaveLayer",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.SaveLayer(nullptr, &paint, nullptr);
+          builder.DrawRect({10, 10, 20, 20}, DlPaint());
+          builder.Restore();
+        },
+        expected_op_count);
+    run_one_test(
+        name + " inside Save",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.Save();
+          builder.DrawRect({10, 10, 20, 20}, paint);
+          builder.Restore();
+        },
+        expected_op_count);
+  };
+  run_tests("transparent color",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setColor(DlColor::kTransparent());
+            });
+  run_tests("0 alpha",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              paint.setColor(DlColor::kWhite());
+              paint.setAlpha(0);
+            });
+  run_tests("BlendMode::kDst",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setBlendMode(DlBlendMode::kDst);
+            });
+  run_tests("Empty rect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRect(SkRect::MakeEmpty(), ClipOp::kIntersect, false);
+            });
+  run_tests("Empty rrect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRRect(SkRRect::MakeEmpty(), ClipOp::kIntersect,
+                                false);
+            });
+  run_tests("Empty path clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipPath(SkPath(), ClipOp::kIntersect, false);
+            });
+  run_tests("Transparent SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("0 alpha SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              save_paint.setColor(DlColor::kWhite());
+              save_paint.setAlpha(0);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("Dst blended SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setBlendMode(DlBlendMode::kDst);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests(
+      "Nop inside SaveLayer",
+      [](DisplayListBuilder& builder, DlPaint& paint) {
+        builder.SaveLayer(nullptr, nullptr);
+        paint.setBlendMode(DlBlendMode::kDst);
+      },
+      2u);
+  run_tests("DrawImage inside Culled SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+              builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear);
+            });
 }
 
 }  // namespace testing

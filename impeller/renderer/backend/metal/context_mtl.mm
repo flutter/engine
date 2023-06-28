@@ -6,9 +6,11 @@
 
 #include <Foundation/Foundation.h>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
@@ -67,16 +69,34 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
 
 ContextMTL::ContextMTL(
     id<MTLDevice> device,
+    id<MTLCommandQueue> command_queue,
     NSArray<id<MTLLibrary>>* shader_libraries,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
     std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
     : device_(device),
-      worker_task_runner_(std::move(worker_task_runner)),
+      command_queue_(command_queue),
       is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)) {
   // Validate device.
   if (!device_) {
     VALIDATION_LOG << "Could not setup valid Metal device.";
     return;
+  }
+
+  // Worker task runner.
+  {
+    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
+        std::min(4u, std::thread::hardware_concurrency()));
+    raster_message_loop_->PostTaskToAllWorkers([]() {
+      // See https://github.com/flutter/flutter/issues/65752
+      // Intentionally opt out of QoS for raster task workloads.
+      [[NSThread currentThread] setThreadPriority:1.0];
+      sched_param param;
+      int policy;
+      pthread_t thread = pthread_self();
+      if (!pthread_getschedparam(thread, &policy, &param)) {
+        param.sched_priority = 50;
+        pthread_setschedparam(thread, policy, &param);
+      }
+    });
   }
 
   // Setup the shader library.
@@ -94,16 +114,6 @@ ContextMTL::ContextMTL(
       return;
     }
     shader_library_ = std::move(library);
-  }
-
-  // Setup command queue.
-  {
-    command_queue_ = device_.newCommandQueue;
-    if (!command_queue_) {
-      VALIDATION_LOG << "Could not setup the command queue.";
-      return;
-    }
-    command_queue_.label = @"Impeller Command Queue";
   }
 
   // Setup the pipeline library.
@@ -204,14 +214,28 @@ static id<MTLDevice> CreateMetalDevice() {
   return ::MTLCreateSystemDefaultDevice();
 }
 
+static id<MTLCommandQueue> CreateMetalCommandQueue(id<MTLDevice> device) {
+  auto command_queue = device.newCommandQueue;
+  if (!command_queue) {
+    VALIDATION_LOG << "Could not setup the command queue.";
+    return nullptr;
+  }
+  command_queue.label = @"Impeller Command Queue";
+  return command_queue;
+}
+
 std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::string>& shader_library_paths,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
     std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
   auto device = CreateMetalDevice();
+  auto command_queue = CreateMetalCommandQueue(device);
+  if (!command_queue) {
+    return nullptr;
+  }
   auto context = std::shared_ptr<ContextMTL>(new ContextMTL(
-      device, MTLShaderLibraryFromFilePaths(device, shader_library_paths),
-      std::move(worker_task_runner), std::move(is_gpu_disabled_sync_switch)));
+      device, command_queue,
+      MTLShaderLibraryFromFilePaths(device, shader_library_paths),
+      std::move(is_gpu_disabled_sync_switch)));
   if (!context->IsValid()) {
     FML_LOG(ERROR) << "Could not create Metal context.";
     return nullptr;
@@ -221,14 +245,36 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 
 std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
     std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
-    const std::string& label) {
+    const std::string& library_label) {
   auto device = CreateMetalDevice();
-  auto context = std::shared_ptr<ContextMTL>(new ContextMTL(
-      device,
-      MTLShaderLibraryFromFileData(device, shader_libraries_data, label),
-      worker_task_runner, std::move(is_gpu_disabled_sync_switch)));
+  auto command_queue = CreateMetalCommandQueue(device);
+  if (!command_queue) {
+    return nullptr;
+  }
+  auto context = std::shared_ptr<ContextMTL>(
+      new ContextMTL(device, command_queue,
+                     MTLShaderLibraryFromFileData(device, shader_libraries_data,
+                                                  library_label),
+                     std::move(is_gpu_disabled_sync_switch)));
+  if (!context->IsValid()) {
+    FML_LOG(ERROR) << "Could not create Metal context.";
+    return nullptr;
+  }
+  return context;
+}
+
+std::shared_ptr<ContextMTL> ContextMTL::Create(
+    id<MTLDevice> device,
+    id<MTLCommandQueue> command_queue,
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
+    const std::string& library_label) {
+  auto context = std::shared_ptr<ContextMTL>(
+      new ContextMTL(device, command_queue,
+                     MTLShaderLibraryFromFileData(device, shader_libraries_data,
+                                                  library_label),
+                     std::move(is_gpu_disabled_sync_switch)));
   if (!context->IsValid()) {
     FML_LOG(ERROR) << "Could not create Metal context.";
     return nullptr;
@@ -268,9 +314,14 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
 }
 
-const std::shared_ptr<fml::ConcurrentTaskRunner>&
+// |Context|
+void ContextMTL::Shutdown() {
+  raster_message_loop_.reset();
+}
+
+const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextMTL::GetWorkerTaskRunner() const {
-  return worker_task_runner_;
+  return raster_message_loop_->GetTaskRunner();
 }
 
 std::shared_ptr<const fml::SyncSwitch> ContextMTL::GetIsGpuDisabledSyncSwitch()
@@ -310,8 +361,13 @@ bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   return true;
 }
 
-id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
-  return [command_queue_ commandBuffer];
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
+    const std::string& label) const {
+  auto buffer = [command_queue_ commandBuffer];
+  if (!label.empty()) {
+    [buffer setLabel:@(label.data())];
+  }
+  return buffer;
 }
 
 }  // namespace impeller

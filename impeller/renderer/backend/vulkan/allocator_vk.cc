@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -168,16 +169,12 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
 }
 
 static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
-    StorageMode mode,
-    bool is_texture) {
+    StorageMode mode) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      if (is_texture) {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      } else {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-      }
+      // See https://github.com/flutter/flutter/issues/128556 . Some devices do
+      // not have support for coherent host memory so we don't request it here.
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
@@ -236,7 +233,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode, true);
+    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
     alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode, true);
 
     auto create_info_native =
@@ -331,6 +328,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateTexture");
   if (!IsValid()) {
     return nullptr;
   }
@@ -352,10 +350,12 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |
                       vk::BufferUsageFlagBits::eUniformBuffer |
+                      vk::BufferUsageFlagBits::eStorageBuffer |
                       vk::BufferUsageFlagBits::eTransferSrc |
                       vk::BufferUsageFlagBits::eTransferDst;
   buffer_info.size = desc.size;
@@ -365,8 +365,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags =
-      ToVKMemoryPropertyFlags(desc.storage_mode, false);
+  allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationCreateFlags(desc.storage_mode, false);
 
   VkBuffer buffer = {};
