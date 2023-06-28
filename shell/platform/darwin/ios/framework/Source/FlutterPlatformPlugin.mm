@@ -291,7 +291,7 @@ using namespace flutter;
 - (void)showLookUpView:(NSString*)term {
   UIViewController* engineViewController = [_engine.get() viewController];
   UIReferenceLibraryViewController* refVC =
-      [[UIReferenceLibraryViewController alloc] initWithTerm:term];
+      [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
   [engineViewController presentViewController:refVC animated:YES completion:nil];
 }
 
