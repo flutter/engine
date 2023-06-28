@@ -110,14 +110,10 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
     return {};
   }
 
-  std::optional<Rect> coverage = GetCoverage(entity);
-  if (!coverage.has_value()) {
-    return {};
-  }
-
   Rect target_rect = Rect::MakeSize(target_size);
-  return coverage.value().Contains(target_rect) ? GetColor()
-                                                : std::optional<Color>();
+  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+             ? GetColor()
+             : std::optional<Color>();
 }
 
 }  // namespace impeller

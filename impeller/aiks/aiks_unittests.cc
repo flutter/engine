@@ -2032,6 +2032,26 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
+TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
+  Canvas canvas;
+  canvas.DrawRRect({0, 0, 300, 300}, 5.0,
+                   {.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawRRect(
+      {0, 0, 300, 300}, 5.0,
+      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
+}
+
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
