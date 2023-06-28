@@ -104,9 +104,9 @@ std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
 std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
-  if (GetColor().IsTransparent() ||
-      !(entity.GetBlendMode() == BlendMode::kSource ||
-        entity.GetBlendMode() == BlendMode::kSourceOver)) {
+  if (!(GetColor().IsOpaque() &&
+        (entity.GetBlendMode() == BlendMode::kSource ||
+         entity.GetBlendMode() == BlendMode::kSourceOver))) {
     return {};
   }
 
