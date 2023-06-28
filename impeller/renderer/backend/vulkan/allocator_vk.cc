@@ -246,7 +246,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     alloc_nfo.usage = ToVMAMemoryUsage();
     alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
     alloc_nfo.flags = ToVmaAllocationCreateFlags(
-        desc.storage_mode, true, desc.GetByteSizeOfBaseMipLevel());
+        desc.storage_mode, /*is_texture=*/true, desc.GetByteSizeOfBaseMipLevel());
 
     auto create_info_native =
         static_cast<vk::ImageCreateInfo::NativeType>(image_info);
