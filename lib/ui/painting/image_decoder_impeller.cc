@@ -34,6 +34,7 @@ namespace flutter {
 
 namespace {
 
+#ifdef FML_OS_ANDROID
 class MallocDeviceBuffer : public impeller::DeviceBuffer {
  public:
   MallocDeviceBuffer(impeller::DeviceBufferDescriptor desc, uint8_t* data)
@@ -73,6 +74,7 @@ std::shared_ptr<MallocDeviceBuffer> CreateMallocDeviceBuffer(
   return std::make_shared<MallocDeviceBuffer>(
       desc, static_cast<uint8_t*>(malloc(desc.size)));
 }
+#endif  // FML_OS_ANDROID
 
 /**
  *  Loads the gamut as a set of three points (triangle).
