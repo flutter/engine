@@ -115,22 +115,20 @@ using namespace flutter;
     result([self clipboardHasStrings]);
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
-  }≈ else if ([method isEqualToString:@"SearchWeb.initiate"]) {
-        NSLog(@"Search web engine");
-        // x-web-search://?[query]
-        //https://google.com/search?q=
-        NSString *googleURL = @"x-web-search://?";
-        NSString *escapedText = [args stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
-        NSString *searchURL = [NSString stringWithFormat:@"%@%@", googleURL, escapedText];
-
-
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
-
-        NSLog(@"%@", searchURL);
-        result(nil);
+  } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
+    [self handleSearchWebWithSelection:args];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+- (void)handleSearchWebWithSelection:(NSString*)selection {
+  NSString *searchURLPrefix = @"x-web-search://?";
+  NSString *escapedText = [selection stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+  NSString *searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
+
+  [[UIApplication sharedApplication] openURL:[NSURL URLWithString: searchURL] options:@{} completionHandler:nil];
 }
 
 - (void)playSystemSound:(NSString*)soundType {
