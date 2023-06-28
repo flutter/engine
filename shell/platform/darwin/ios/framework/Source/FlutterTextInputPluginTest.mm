@@ -870,17 +870,17 @@ FLUTTER_ASSERT_ARC
                                  NSDictionary* secondDelta = deltas[1];
                                  NSDictionary* thirdDelta = deltas[2];
                                  return [firstDelta[@"oldText"] isEqualToString:@""]
-                                     && [firstDelta[@"deltaText"] isEqualToString:@"-"]
-                                     && [firstDelta[@"deltaStart"] intValue] == 0
-                                     && [firstDelta[@"deltaEnd"] intValue] == 0
-                                     && [secondDelta[@"oldText"] isEqualToString:@"-"]
-                                     && [secondDelta[@"deltaText"] isEqualToString:@""]
-                                     && [secondDelta[@"deltaStart"] intValue] == 0
-                                     && [secondDelta[@"deltaEnd"] intValue] == 1
-                                     && [thirdDelta[@"oldText"] isEqualToString:@""]
-                                     && [thirdDelta[@"deltaText"] isEqualToString:@"—"]
-                                     && [thirdDelta[@"deltaStart"] intValue] == 0
-                                     && [thirdDelta[@"deltaEnd"] intValue] == 0;
+                                        [firstDelta[@"deltaText"] isEqualToString:@"-"] &&
+                                        [firstDelta[@"deltaStart"] intValue] == 0 &&
+                                        [firstDelta[@"deltaEnd"] intValue] == 0 &&
+                                        [secondDelta[@"oldText"] isEqualToString:@"-"] &&
+                                        [secondDelta[@"deltaText"] isEqualToString:@""] &&
+                                        [secondDelta[@"deltaStart"] intValue] == 0 &&
+                                        [secondDelta[@"deltaEnd"] intValue] == 1 &&
+                                        [thirdDelta[@"oldText"] isEqualToString:@""] &&
+                                        [thirdDelta[@"deltaText"] isEqualToString:@"—"] &&
+                                        [thirdDelta[@"deltaStart"] intValue] == 0 &&
+                                        [thirdDelta[@"deltaEnd"] intValue] == 0;
                                }]]);
 
   // Simulate user input.
