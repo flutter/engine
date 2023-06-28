@@ -89,7 +89,7 @@ class FlutterView {
   FlutterView._(this.viewId, this.platformDispatcher);
 
   /// The opaque ID for this view.
-  final Object viewId;
+  final int viewId;
 
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
@@ -756,21 +756,6 @@ class SingletonFlutterWindow extends FlutterView {
     platformDispatcher.onFrameDataChanged = callback;
   }
 
-  /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
-  ///
-  /// {@macro dart.ui.window.accessorForwardWarning}
-  ///
-  /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
-  }
-
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
@@ -802,6 +787,8 @@ class SingletonFlutterWindow extends FlutterView {
     platformDispatcher.sendPlatformMessage(name, data, callback);
   }
 
+  /// Deprecated. Migrate to [ChannelBuffers.setListener] instead.
+  ///
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
   ///
@@ -817,8 +804,15 @@ class SingletonFlutterWindow extends FlutterView {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  // TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   set onPlatformMessage(PlatformMessageCallback? callback) {
     platformDispatcher.onPlatformMessage = callback;
   }

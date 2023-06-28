@@ -73,10 +73,9 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
   if (!window) {
     return;
   }
-  auto worker_task_runner = concurrent_loop_->GetTaskRunner();
-  auto context = ContextMTL::Create(
-      ShaderLibraryMappingsForPlayground(), worker_task_runner,
-      is_gpu_disabled_sync_switch_, "Playground Library");
+  auto context =
+      ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
+                         is_gpu_disabled_sync_switch_, "Playground Library");
   if (!context) {
     return;
   }
@@ -121,7 +120,7 @@ std::unique_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
 
   auto drawable =
       SurfaceMTL::GetMetalDrawableAndValidate(context, data_->metal_layer);
-  return SurfaceMTL::WrapCurrentMetalLayerDrawable(context, drawable);
+  return SurfaceMTL::MakeFromMetalLayerDrawable(context, drawable);
 }
 
 }  // namespace impeller

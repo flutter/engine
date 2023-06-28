@@ -486,8 +486,8 @@ void _testEngineSemanticsOwner() {
     );
 
     // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager = MockRoleManager(Role.labelAndValue, semanticsObject);
-    semanticsObject.debugRoleManagers[Role.labelAndValue] = mockRoleManager;
+    final MockRoleManager mockRoleManager = MockRoleManager(PrimaryRole.generic, semanticsObject);
+    semanticsObject.primaryRole = mockRoleManager;
 
     pumpSemantics(label: 'World');
 
@@ -508,8 +508,8 @@ typedef MockRoleManagerLogEntry = ({
   SemanticsUpdatePhase phase,
 });
 
-class MockRoleManager extends RoleManager {
-  MockRoleManager(super.role, super.semanticsObject);
+class MockRoleManager extends PrimaryRoleManager {
+  MockRoleManager(super.role, super.semanticsObject) : super.blank();
 
   final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
 
@@ -522,6 +522,7 @@ class MockRoleManager extends RoleManager {
 
   @override
   void update() {
+    super.update();
     _log('update');
   }
 }
@@ -1102,12 +1103,12 @@ void _testVerticalScrolling() {
     // fired.
     final Zone testZone = Zone.current;
 
-    ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData? args) {
-      idLogController.add(id);
-      actionLogController.add(action);
+    ui.PlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
+      idLogController.add(event.nodeId);
+      actionLogController.add(event.type);
       testZone.run(() {
-        expect(args, null);
+        expect(event.arguments, null);
       });
     };
     semantics()
@@ -1334,11 +1335,11 @@ void _testIncrementables() {
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.incrementable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
-      node.debugRoleManagerFor(Role.focusable),
-      isNull,
+      node.primaryRole!.debugSecondaryRoles,
+      isNot(contains(Role.focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1459,8 +1460,8 @@ void _testIncrementables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -1504,11 +1505,11 @@ void _testTextField() {
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.textField), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
       reason: 'Text fields use custom focus management',
-      node.debugRoleManagerFor(Role.focusable),
-      isNull,
+      node.primaryRole!.debugSecondaryRoles,
+      isNot(contains(Role.focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1561,6 +1562,7 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
+      label: 'test label',
       flags: 0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
@@ -1573,12 +1575,16 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem aria-label="test label" role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.checkable), isNotNull);
-    expect(node.debugRoleManagerFor(Role.focusable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.checkable);
+    expect(
+      reason: 'Checkables use generic secondary roles',
+      node.primaryRole!.debugSecondaryRoles,
+      containsAll(<Role>[Role.focusable, Role.tappable]),
+    );
 
     semantics().semanticsEnabled = false;
   });
@@ -1814,8 +1820,8 @@ void _testCheckables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -1859,8 +1865,11 @@ void _testTappable() {
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.tappable), isNotNull);
-    expect(node.debugRoleManagerFor(Role.focusable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.button);
+    expect(
+      node.primaryRole?.debugSecondaryRoles,
+      containsAll(<Role>[Role.focusable, Role.tappable]),
+    );
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
     semantics().semanticsEnabled = false;
@@ -1973,8 +1982,8 @@ void _testTappable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
@@ -2123,12 +2132,6 @@ class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
   }
 
   @override
-  void dispose() {
-    throw UnsupportedError(
-        'dispose is not supported in MockAccessibilityAnnouncements!');
-  }
-
-  @override
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
     throw UnsupportedError(
         'handleMessage is not supported in MockAccessibilityAnnouncements!');
@@ -2143,7 +2146,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2166,7 +2169,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2188,7 +2191,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2452,8 +2455,8 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -2497,8 +2500,8 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -2546,12 +2549,16 @@ void _testDialog() {
     pumpSemantics(label: 'Dialog label');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
     expect(
-      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
-      isA<RouteName>(),
+      semantics().debugSemanticsTree![2]!.primaryRole?.role,
+      PrimaryRole.generic,
+    );
+    expect(
+      semantics().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
+      contains(Role.routeName),
     );
 
     pumpSemantics(label: 'Updated dialog label');
@@ -2580,12 +2587,12 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.routeName),
-      isNull,
+      semantics().debugSemanticsTree![0]!.primaryRole?.secondaryRoleManagers,
+      isNot(contains(Role.routeName)),
     );
 
     semantics().semanticsEnabled = false;
@@ -2628,19 +2635,19 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isNull,
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.generic,
     );
     expect(
-      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
-      isA<RouteName>(),
+      semantics().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
+      contains(Role.routeName),
     );
 
     semantics().semanticsEnabled = false;
   });
 }
 
-typedef CapturedAction = (int nodeId, ui.SemanticsAction action, ByteData? args);
+typedef CapturedAction = (int nodeId, ui.SemanticsAction action, Object? args);
 
 void _testFocusable() {
   test('AccessibilityFocusManager can manage element focus', () async {
@@ -2662,8 +2669,8 @@ void _testFocusable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsAction = (int nodeId, ui.SemanticsAction action, ByteData? args) {
-      capturedActions.add((nodeId, action, args));
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
     };
     expect(capturedActions, isEmpty);
 
@@ -2732,7 +2739,14 @@ void _testFocusable() {
 
     final SemanticsObject node = semantics().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
-    expect(node.debugRoleManagerFor(Role.focusable), isA<Focusable>());
+    expect(
+      node.primaryRole?.role,
+      PrimaryRole.generic,
+    );
+    expect(
+      node.primaryRole?.debugSecondaryRoles,
+      contains(Role.focusable),
+    );
 
     final DomElement element = node.element;
     expect(domDocument.activeElement, isNot(element));

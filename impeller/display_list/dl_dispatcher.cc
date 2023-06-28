@@ -201,7 +201,7 @@ static Paint::Style ToStyle(flutter::DlDrawStyle style) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStyle(flutter::DlDrawStyle style) {
+void DlDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
   paint_.style = ToStyle(style);
 }
 
@@ -491,7 +491,7 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
     }
     case flutter::DlColorFilterType::kMatrix: {
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
-      impeller::FilterContents::ColorMatrix color_matrix;
+      impeller::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
       return [color_matrix](FilterInput::Ref input) {
         return ColorFilterContents::MakeColorMatrix({std::move(input)},

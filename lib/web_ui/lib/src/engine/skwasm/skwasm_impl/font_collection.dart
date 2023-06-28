@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 // This URL was found by using the Google Fonts Developer API to find the URL
 // for Roboto. The API warns that this URL is not stable. In order to update
@@ -19,19 +20,11 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
-class SkwasmTypeface {
-  SkwasmTypeface(SkDataHandle data) : handle = typefaceCreate(data);
+class SkwasmTypeface extends SkwasmObjectWrapper<RawTypeface> {
+  SkwasmTypeface(SkDataHandle data) : super(typefaceCreate(data), _registry);
 
-  bool _isDisposed = false;
-
-  void dispose() {
-    if (!_isDisposed) {
-      _isDisposed = true;
-      typefaceDispose(handle);
-    }
-  }
-
-  TypefaceHandle handle;
+  static final SkwasmFinalizationRegistry<RawTypeface> _registry =
+    SkwasmFinalizationRegistry<RawTypeface>(typefaceDispose);
 }
 
 class SkwasmFontCollection implements FlutterFontCollection {
@@ -39,8 +32,13 @@ class SkwasmFontCollection implements FlutterFontCollection {
     setDefaultFontFamilies(<String>['Roboto']);
   }
 
+  // Most of the time, when an object deals with native handles to skwasm objects,
+  // we register it with a finalization registry so that it can clean up the handle
+  // when the dart side of object gets GC'd. However, this object is basically a
+  // singleton (the renderer creates one and just hangs onto it forever) so it's
+  // not really worth it to do the finalization dance here.
   FontCollectionHandle handle = fontCollectionCreate();
-  TextStyleHandle defaultTextStyle = textStyleCreate();
+  SkwasmNativeTextStyle defaultTextStyle = SkwasmNativeTextStyle.defaultTextStyle();
   final Map<String, List<SkwasmTypeface>> registeredTypefaces = <String, List<SkwasmTypeface>>{};
 
   void setDefaultFontFamilies(List<String> families) => withStackScope((StackScope scope) {
@@ -49,8 +47,8 @@ class SkwasmFontCollection implements FlutterFontCollection {
     for (int i = 0; i < families.length; i++) {
       familyPointers[i] = skStringFromDartString(families[i]);
     }
-    textStyleClearFontFamilies(defaultTextStyle);
-    textStyleAddFontFamilies(defaultTextStyle, familyPointers, families.length);
+    textStyleClearFontFamilies(defaultTextStyle.handle);
+    textStyleAddFontFamilies(defaultTextStyle.handle, familyPointers, families.length);
     for (int i = 0; i < families.length; i++) {
       skStringFree(familyPointers[i]);
     }
@@ -102,12 +100,12 @@ class SkwasmFontCollection implements FlutterFontCollection {
   Future<FontLoadError?> _downloadFontAsset(FontAsset asset, String family) async {
     final HttpFetchResponse response;
     try {
-      response = await assetManager.loadAsset(asset.asset);
+      response = await ui_web.assetManager.loadAsset(asset.asset) as HttpFetchResponse;
     } catch (error) {
-      return FontDownloadError(assetManager.getAssetUrl(asset.asset), error);
+      return FontDownloadError(ui_web.assetManager.getAssetUrl(asset.asset), error);
     }
     if (!response.hasPayload) {
-      return FontNotFoundError(assetManager.getAssetUrl(asset.asset));
+      return FontNotFoundError(ui_web.assetManager.getAssetUrl(asset.asset));
     }
     int length = 0;
     final List<JSUint8Array> chunks = <JSUint8Array>[];
@@ -131,7 +129,7 @@ class SkwasmFontCollection implements FlutterFontCollection {
       skStringFree(familyNameHandle);
       return null;
     } else {
-      return FontInvalidDataError(assetManager.getAssetUrl(asset.asset));
+      return FontInvalidDataError(ui_web.assetManager.getAssetUrl(asset.asset));
     }
   }
 

@@ -54,7 +54,7 @@ bool CapabilitiesVK::AreValidationsEnabled() const {
   return enable_validations_;
 }
 
-std::optional<std::vector<std::string>> CapabilitiesVK::GetRequiredLayers()
+std::optional<std::vector<std::string>> CapabilitiesVK::GetEnabledLayers()
     const {
   std::vector<std::string> required;
 
@@ -71,7 +71,7 @@ std::optional<std::vector<std::string>> CapabilitiesVK::GetRequiredLayers()
 }
 
 std::optional<std::vector<std::string>>
-CapabilitiesVK::GetRequiredInstanceExtensions() const {
+CapabilitiesVK::GetEnabledInstanceExtensions() const {
   std::vector<std::string> required;
 
   if (!HasExtension("VK_KHR_surface")) {
@@ -138,20 +138,41 @@ CapabilitiesVK::GetRequiredInstanceExtensions() const {
     }
     required.push_back("VK_EXT_debug_utils");
 
-    if (!HasExtension("VK_EXT_validation_features")) {
-      VALIDATION_LOG << "Requested validations but could not find the "
+    if (HasExtension("VK_EXT_validation_features")) {
+      // It's valid to not have `VK_EXT_validation_features` available.  That's
+      // the case when using AGI as a frame debugger.
+      FML_DLOG(INFO) << "Requested validations but could not find the "
                         "VK_EXT_validation_features extension.";
-      return std::nullopt;
+      required.push_back("VK_EXT_validation_features");
     }
-    required.push_back("VK_EXT_validation_features");
   }
 
   return required;
 }
 
-std::optional<std::vector<std::string>>
-CapabilitiesVK::GetRequiredDeviceExtensions(
-    const vk::PhysicalDevice& physical_device) const {
+static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
+  switch (ext) {
+    case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
+      return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kLast:
+      return "Unknown";
+  }
+  return "Unknown";
+}
+
+static void IterateOptionalDeviceExtensions(
+    const std::function<void(OptionalDeviceExtensionVK)>& it) {
+  if (!it) {
+    return;
+  }
+  for (size_t i = 0;
+       i < static_cast<uint32_t>(OptionalDeviceExtensionVK::kLast); i++) {
+    it(static_cast<OptionalDeviceExtensionVK>(i));
+  }
+}
+
+static std::optional<std::set<std::string>> GetSupportedDeviceExtensions(
+    const vk::PhysicalDevice& physical_device) {
   auto device_extensions = physical_device.enumerateDeviceExtensionProperties();
   if (device_extensions.result != vk::Result::eSuccess) {
     return std::nullopt;
@@ -160,21 +181,42 @@ CapabilitiesVK::GetRequiredDeviceExtensions(
   std::set<std::string> exts;
   for (const auto& device_extension : device_extensions.value) {
     exts.insert(device_extension.extensionName);
+  };
+
+  return exts;
+}
+
+std::optional<std::vector<std::string>>
+CapabilitiesVK::GetEnabledDeviceExtensions(
+    const vk::PhysicalDevice& physical_device) const {
+  auto exts = GetSupportedDeviceExtensions(physical_device);
+
+  if (!exts.has_value()) {
+    return std::nullopt;
   }
 
-  std::vector<std::string> required;
+  std::vector<std::string> enabled;
 
-  if (exts.find("VK_KHR_swapchain") == exts.end()) {
+  if (exts->find("VK_KHR_swapchain") == exts->end()) {
     VALIDATION_LOG << "Device does not support the swapchain extension.";
     return std::nullopt;
   }
-  required.push_back("VK_KHR_swapchain");
+  enabled.push_back("VK_KHR_swapchain");
 
   // Required for non-conformant implementations like MoltenVK.
-  if (exts.find("VK_KHR_portability_subset") != exts.end()) {
-    required.push_back("VK_KHR_portability_subset");
+  if (exts->find("VK_KHR_portability_subset") != exts->end()) {
+    enabled.push_back("VK_KHR_portability_subset");
   }
-  return required;
+
+  // Enable all optional extensions if the device supports it.
+  IterateOptionalDeviceExtensions([&](auto ext) {
+    auto ext_name = GetDeviceExtensionName(ext);
+    if (exts->find(ext_name) != exts->end()) {
+      enabled.push_back(ext_name);
+    }
+  });
+
+  return enabled;
 }
 
 static bool HasSuitableColorFormat(const vk::PhysicalDevice& device,
@@ -226,7 +268,7 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& physical_device) {
 }
 
 std::optional<vk::PhysicalDeviceFeatures>
-CapabilitiesVK::GetRequiredDeviceFeatures(
+CapabilitiesVK::GetEnabledDeviceFeatures(
     const vk::PhysicalDevice& device) const {
   if (!PhysicalDeviceSupportsRequiredFormats(device)) {
     VALIDATION_LOG << "Device doesn't support the required formats.";
@@ -243,7 +285,7 @@ CapabilitiesVK::GetRequiredDeviceFeatures(
     return std::nullopt;
   }
 
-  if (!GetRequiredDeviceExtensions(device).has_value()) {
+  if (!GetEnabledDeviceExtensions(device).has_value()) {
     VALIDATION_LOG << "Device doesn't support the required queues.";
     return std::nullopt;
   }
@@ -277,13 +319,11 @@ bool CapabilitiesVK::HasExtension(const std::string& ext) const {
   return false;
 }
 
-bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
-  if (HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm)) {
-    color_format_ = PixelFormat::kB8G8R8A8UNormInt;
-  } else {
-    return false;
-  }
+void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
+  color_format_ = pixel_format;
+}
 
+bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
   if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
     depth_stencil_format_ = PixelFormat::kS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
@@ -294,6 +334,34 @@ bool CapabilitiesVK::SetDevice(const vk::PhysicalDevice& device) {
   }
 
   device_properties_ = device.getProperties();
+
+  auto physical_properties_2 =
+      device.getProperties2<vk::PhysicalDeviceProperties2,
+                            vk::PhysicalDeviceSubgroupProperties>();
+
+  // Currently shaders only want access to arithmetic subgroup features.
+  // If that changes this needs to get updated, and so does Metal (which right
+  // now assumes it from compile time flags based on the MSL target version).
+
+  supports_compute_subgroups_ =
+      !!(physical_properties_2.get<vk::PhysicalDeviceSubgroupProperties>()
+             .supportedOperations &
+         vk::SubgroupFeatureFlagBits::eArithmetic);
+
+  // Determine the optional device extensions this physical device supports.
+  {
+    optional_device_extensions_.clear();
+    auto exts = GetSupportedDeviceExtensions(device);
+    if (!exts.has_value()) {
+      return false;
+    }
+    IterateOptionalDeviceExtensions([&](auto ext) {
+      auto ext_name = GetDeviceExtensionName(ext);
+      if (exts->find(ext_name) != exts->end()) {
+        optional_device_extensions_.insert(ext);
+      }
+    });
+  }
 
   return true;
 }
@@ -315,7 +383,7 @@ bool CapabilitiesVK::SupportsSSBO() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
-  return false;
+  return true;
 }
 
 // |Capabilities|
@@ -330,12 +398,14 @@ bool CapabilitiesVK::SupportsFramebufferFetch() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsCompute() const {
-  return false;
+  // Vulkan 1.1 requires support for compute.
+  return true;
 }
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsComputeSubgroups() const {
-  return false;
+  // Set by |SetPhysicalDevice|.
+  return supports_compute_subgroups_;
 }
 
 // |Capabilities|
@@ -365,6 +435,12 @@ PixelFormat CapabilitiesVK::GetDefaultStencilFormat() const {
 const vk::PhysicalDeviceProperties&
 CapabilitiesVK::GetPhysicalDeviceProperties() const {
   return device_properties_;
+}
+
+bool CapabilitiesVK::HasOptionalDeviceExtension(
+    OptionalDeviceExtensionVK extension) const {
+  return optional_device_extensions_.find(extension) !=
+         optional_device_extensions_.end();
 }
 
 }  // namespace impeller

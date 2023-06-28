@@ -83,10 +83,6 @@ typedef PopStateListener = void Function(Object? state);
 /// By default, the [HashUrlStrategy] subclass is used if the app doesn't
 /// specify one.
 abstract class UrlStrategy {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const UrlStrategy();
-
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
   ui.VoidCallback addPopStateListener(PopStateListener fn);
@@ -139,7 +135,7 @@ abstract class UrlStrategy {
 /// // Somewhere before calling `runApp()` do:
 /// setUrlStrategy(const HashUrlStrategy());
 /// ```
-class HashUrlStrategy extends UrlStrategy {
+class HashUrlStrategy implements UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
@@ -151,10 +147,10 @@ class HashUrlStrategy extends UrlStrategy {
 
   @override
   ui.VoidCallback addPopStateListener(PopStateListener fn) {
-    final DomEventListener wrappedFn = createDomEventListener((DomEvent event) {
+    void wrappedFn(Object event) {
       // `fn` expects `event.state`, not a `DomEvent`.
       fn((event as DomPopStateEvent).state);
-    });
+    }
     _platformLocation.addPopStateListener(wrappedFn);
     return () => _platformLocation.removePopStateListener(wrappedFn);
   }
@@ -183,8 +179,17 @@ class HashUrlStrategy extends UrlStrategy {
     // if the empty URL is pushed it won't replace any existing fragment. So
     // when the hash path is empty, we still return the location's path and
     // query.
-    return '${_platformLocation.pathname}${_platformLocation.search}'
-        '${internalUrl.isEmpty ? '' : '#$internalUrl'}';
+    final String hash;
+    if (internalUrl.isEmpty || internalUrl == '/') {
+      // Let's not add the hash at all when the app is in the home page. That
+      // way, the URL of the home page is cleaner.
+      //
+      // See: https://github.com/flutter/flutter/issues/127608
+      hash = '';
+    } else {
+      hash = '#$internalUrl';
+    }
+    return '${_platformLocation.pathname}${_platformLocation.search}$hash';
   }
 
   @override
@@ -199,7 +204,7 @@ class HashUrlStrategy extends UrlStrategy {
 
   @override
   Future<void> go(int count) {
-    _platformLocation.go(count.toDouble());
+    _platformLocation.go(count);
     return _waitForPopState();
   }
 

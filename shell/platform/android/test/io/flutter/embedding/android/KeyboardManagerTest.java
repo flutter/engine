@@ -1567,20 +1567,20 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void getPressedState() {
+  public void getKeyboardState() {
     final KeyboardTester tester = new KeyboardTester();
 
     tester.respondToTextInputWith(true); // Suppress redispatching.
 
     // Initial pressed state is empty.
-    assertEquals(tester.keyboardManager.getPressedState(), Map.of());
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of());
 
     tester.keyboardManager.handleEvent(
         new FakeKeyEvent(ACTION_DOWN, SCAN_KEY_A, KEYCODE_A, 1, 'a', 0));
-    assertEquals(tester.keyboardManager.getPressedState(), Map.of(PHYSICAL_KEY_A, LOGICAL_KEY_A));
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of(PHYSICAL_KEY_A, LOGICAL_KEY_A));
 
     tester.keyboardManager.handleEvent(
         new FakeKeyEvent(ACTION_UP, SCAN_KEY_A, KEYCODE_A, 0, 'a', 0));
-    assertEquals(tester.keyboardManager.getPressedState(), Map.of());
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of());
   }
 }

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <type_traits>
 
 #include "impeller/base/strings.h"
 #include "impeller/geometry/constants.h"
@@ -36,6 +37,16 @@ static constexpr inline bool ValidateBlendModes() {
 }
 static_assert(ValidateBlendModes(),
               "IMPELLER_FOR_EACH_BLEND_MODE must match impeller::BlendMode.");
+
+#define _IMPELLER_BLEND_MODE_NAME_LIST(blend_mode) #blend_mode,
+
+static constexpr const char* kBlendModeNames[] = {
+    IMPELLER_FOR_EACH_BLEND_MODE(_IMPELLER_BLEND_MODE_NAME_LIST)};
+
+const char* BlendModeToString(BlendMode blend_mode) {
+  return kBlendModeNames[static_cast<std::underlying_type_t<BlendMode>>(
+      blend_mode)];
+}
 
 ColorHSB ColorHSB::FromRGB(Color rgb) {
   Scalar R = rgb.red;
@@ -112,18 +123,6 @@ Color ColorHSB::ToRGBA() const {
   return Color(0, 0, 0, alpha);
 }
 
-Color Color::operator+(const Color& c) const {
-  return Color(Vector4(*this) + Vector4(c));
-}
-
-Color Color::operator-(const Color& c) const {
-  return Color(Vector4(*this) - Vector4(c));
-}
-
-Color Color::operator*(Scalar value) const {
-  return Color(red * value, green * value, blue * value, alpha * value);
-}
-
 Color::Color(const ColorHSB& hsbColor) : Color(hsbColor.ToRGBA()) {}
 
 Color::Color(const Vector4& value)
@@ -188,9 +187,9 @@ static constexpr Color FromRGB(Vector3 color, Scalar alpha) {
   return {color.x, color.y, color.z, alpha};
 }
 
-Color Color::BlendColor(const Color& src,
-                        const Color& dst,
-                        BlendMode blend_mode) {
+Color Color::Blend(const Color& src, BlendMode blend_mode) const {
+  const Color& dst = *this;
+
   static auto apply_rgb_srcover_alpha = [&](auto f) -> Color {
     return Color(f(src.red, dst.red), f(src.green, dst.green),
                  f(src.blue, dst.blue),
@@ -207,47 +206,57 @@ Color Color::BlendColor(const Color& src,
       return dst;
     case BlendMode::kSourceOver:
       // r = s + (1-sa)*d
-      return src + dst * (1 - src.alpha);
+      return (src.Premultiply() + dst.Premultiply() * (1 - src.alpha))
+          .Unpremultiply();
     case BlendMode::kDestinationOver:
       // r = d + (1-da)*s
-      return dst + src * (1 - dst.alpha);
+      return (dst.Premultiply() + src.Premultiply() * (1 - dst.alpha))
+          .Unpremultiply();
     case BlendMode::kSourceIn:
       // r = s * da
-      return src * dst.alpha;
+      return (src.Premultiply() * dst.alpha).Unpremultiply();
     case BlendMode::kDestinationIn:
       // r = d * sa
-      return dst * src.alpha;
+      return (dst.Premultiply() * src.alpha).Unpremultiply();
     case BlendMode::kSourceOut:
       // r = s * ( 1- da)
-      return src * (1 - dst.alpha);
+      return (src.Premultiply() * (1 - dst.alpha)).Unpremultiply();
     case BlendMode::kDestinationOut:
       // r = d * (1-sa)
-      return dst * (1 - src.alpha);
+      return (dst.Premultiply() * (1 - src.alpha)).Unpremultiply();
     case BlendMode::kSourceATop:
       // r = s*da + d*(1-sa)
-      return src * dst.alpha + dst * (1 - src.alpha);
+      return (src.Premultiply() * dst.alpha +
+              dst.Premultiply() * (1 - src.alpha))
+          .Unpremultiply();
     case BlendMode::kDestinationATop:
       // r = d*sa + s*(1-da)
-      return dst * src.alpha + src * (1 - dst.alpha);
+      return (dst.Premultiply() * src.alpha +
+              src.Premultiply() * (1 - dst.alpha))
+          .Unpremultiply();
     case BlendMode::kXor:
       // r = s*(1-da) + d*(1-sa)
-      return src * (1 - dst.alpha) + dst * (1 - src.alpha);
+      return (src.Premultiply() * (1 - dst.alpha) +
+              dst.Premultiply() * (1 - src.alpha))
+          .Unpremultiply();
     case BlendMode::kPlus:
       // r = min(s + d, 1)
-      return Min(src + dst, 1);
+      return (Min(src.Premultiply() + dst.Premultiply(), 1)).Unpremultiply();
     case BlendMode::kModulate:
       // r = s*d
-      return src * dst;
+      return (src.Premultiply() * dst.Premultiply()).Unpremultiply();
     case BlendMode::kScreen: {
       // r = s + d - s*d
-      return src + dst - src * dst;
+      auto s = src.Premultiply();
+      auto d = dst.Premultiply();
+      return (s + d - s * d).Unpremultiply();
     }
     case BlendMode::kOverlay:
       return apply_rgb_srcover_alpha([&](auto s, auto d) {
-        if (d * 2 < dst.alpha) {
+        if (d * 2 <= dst.alpha) {
           return 2 * s * d;
         }
-        return src.alpha * dst.alpha - 2 * (dst.alpha - s) * (src.alpha - d);
+        return src.alpha * dst.alpha - 2 * (dst.alpha - d) * (src.alpha - s);
       });
     case BlendMode::kDarken: {
       return apply_rgb_srcover_alpha([&](auto s, auto d) {
@@ -302,13 +311,13 @@ Color Color::BlendColor(const Color& src,
                   std::sqrt(dst_rgb.z)),  //
           dst_rgb,                        //
           0.25);
-      Color blended =
-          FromRGB(ComponentChoose(
-                      dst_rgb - (1.0 - 2.0 * src) * dst * (1.0 - dst_rgb),  //
-                      dst_rgb + (2.0 * src_rgb - 1.0) * (d - dst_rgb),      //
-                      src_rgb,                                              //
-                      0.5),
-                  dst.alpha);
+      Color blended = FromRGB(
+          ComponentChoose(
+              dst_rgb - (1.0 - 2.0 * src_rgb) * dst_rgb * (1.0 - dst_rgb),  //
+              dst_rgb + (2.0 * src_rgb - 1.0) * (d - dst_rgb),              //
+              src_rgb,                                                      //
+              0.5),
+          dst.alpha);
       return blended + dst * (1 - blended.alpha);
     }
     case BlendMode::kDifference:
@@ -359,6 +368,38 @@ Color Color::BlendColor(const Color& src,
       return blended + dst * (1 - blended.alpha);
     }
   }
+}
+
+Color Color::ApplyColorMatrix(const ColorMatrix& color_matrix) const {
+  auto* c = color_matrix.array;
+  return Color(
+             c[0] * red + c[1] * green + c[2] * blue + c[3] * alpha + c[4],
+             c[5] * red + c[6] * green + c[7] * blue + c[8] * alpha + c[9],
+             c[10] * red + c[11] * green + c[12] * blue + c[13] * alpha + c[14],
+             c[15] * red + c[16] * green + c[17] * blue + c[18] * alpha + c[19])
+      .Clamp01();
+}
+
+Color Color::LinearToSRGB() const {
+  static auto conversion = [](Scalar component) {
+    if (component <= 0.0031308) {
+      return component * 12.92;
+    }
+    return 1.055 * pow(component, (1.0 / 2.4)) - 0.055;
+  };
+
+  return Color(conversion(red), conversion(green), conversion(blue), alpha);
+}
+
+Color Color::SRGBToLinear() const {
+  static auto conversion = [](Scalar component) {
+    if (component <= 0.04045) {
+      return component / 12.92;
+    }
+    return pow((component + 0.055) / 1.055, 2.4);
+  };
+
+  return Color(conversion(red), conversion(green), conversion(blue), alpha);
 }
 
 std::string ColorToString(const Color& color) {
