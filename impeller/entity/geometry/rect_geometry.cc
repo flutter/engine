@@ -48,6 +48,9 @@ std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
 }
 
 bool RectGeometry::CoversArea(const Matrix& transform, const Rect& rect) const {
+  if (!transform.IsTranslationScaleOnly()) {
+    return false;
+  }
   Rect coverage = rect_.TransformBounds(transform);
   return coverage.Contains(rect);
 }
