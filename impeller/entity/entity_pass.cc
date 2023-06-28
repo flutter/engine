@@ -919,12 +919,8 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
   flood_clip_ = Entity::IsBlendModeDestructive(blend_mode);
 }
 
-void EntityPass::SetClearColor(Color clear_color) {
-  clear_color_ = clear_color;
-}
-
 Color EntityPass::GetClearColor(ISize target_size) const {
-  Color result = clear_color_;
+  Color result = Color::BlackTransparent();
   for (const Element& element : elements_) {
     std::optional<Color> entity_color = AsBackgroundColor(element, target_size);
     if (entity_color.has_value()) {
