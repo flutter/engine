@@ -1390,6 +1390,7 @@ ORIGIN: ../../../flutter/impeller/golden_tests/golden_playground_test_mac.cc + .
 ORIGIN: ../../../flutter/impeller/golden_tests/golden_playground_test_stub.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/golden_tests.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/main.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot_tests.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshoter.h + ../../../flutter/LICENSE
@@ -4069,6 +4070,7 @@ FILE: ../../../flutter/impeller/golden_tests/golden_playground_test_mac.cc
 FILE: ../../../flutter/impeller/golden_tests/golden_playground_test_stub.cc
 FILE: ../../../flutter/impeller/golden_tests/golden_tests.cc
 FILE: ../../../flutter/impeller/golden_tests/main.cc
+FILE: ../../../flutter/impeller/golden_tests/metal_screenshot_tests.cc
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.h
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.mm
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshoter.h

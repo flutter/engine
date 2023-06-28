@@ -30,6 +30,8 @@ class MetalScreenshot {
 
  private:
   friend class MetalScreenshoter;
+  friend std::unique_ptr<MetalScreenshot> MetalScreenshotTestConstructor(
+      CGImageRef image);
   MetalScreenshot(CGImageRef cgImage);
   FML_DISALLOW_COPY_AND_ASSIGN(MetalScreenshot);
   CGImageRef cgImage_;

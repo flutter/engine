@@ -65,6 +65,7 @@ if (is_mac) {
     sources = [
       "golden_tests.cc",
       "main.cc",
+      "metal_screenshot_tests.cc",
     ]
 
     deps = [

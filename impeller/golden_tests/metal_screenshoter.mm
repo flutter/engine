@@ -51,6 +51,9 @@ std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
 
   CGImageRef cgImage = [cicontext createCGImage:flipped
                                        fromRect:[ciImage extent]];
+  if (!cgImage) {
+    return {};
+  }
 
   return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));
 }
