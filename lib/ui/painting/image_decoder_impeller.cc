@@ -33,6 +33,47 @@
 namespace flutter {
 
 namespace {
+
+class MallocDeviceBuffer : public impeller::DeviceBuffer {
+ public:
+  MallocDeviceBuffer(impeller::DeviceBufferDescriptor desc, uint8_t* data)
+      : impeller::DeviceBuffer(desc) {
+    data_ = data;
+  }
+
+  ~MallocDeviceBuffer() override { free(data_); }
+
+  bool SetLabel(const std::string& label) override { return true; }
+
+  bool SetLabel(const std::string& label, impeller::Range range) override {
+    return true;
+  }
+
+  void Flush() override {}
+
+  uint8_t* OnGetContents() const override { return data_; }
+
+  bool OnCopyHostBuffer(const uint8_t* source,
+                        impeller::Range source_range,
+                        size_t offset) override {
+    for (auto i = 0u; i < source_range.length; i++) {
+      data_[offset + i] = source[source_range.offset + i];
+    }
+    return true;
+  }
+
+ private:
+  uint8_t* data_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(MallocDeviceBuffer);
+};
+
+std::shared_ptr<MallocDeviceBuffer> CreateMallocDeviceBuffer(
+    impeller::DeviceBufferDescriptor desc) {
+  return std::make_shared<MallocDeviceBuffer>(
+      desc, static_cast<uint8_t*>(malloc(desc.size)));
+}
+
 /**
  *  Loads the gamut as a set of three points (triangle).
  */
@@ -483,7 +524,11 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
                                                  gpu_disabled_switch]() {
           sk_sp<DlImage> image;
           std::string decode_error;
+#ifdef FML_OS_ANDROID
+          if (false) {
+#else
           if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
+#endif  // FML_OS_ANDROID
             std::tie(image, decode_error) = UploadTextureToPrivate(
                 context, bitmap_result.device_buffer, bitmap_result.image_info,
                 bitmap_result.sk_bitmap, gpu_disabled_switch);
@@ -528,7 +573,14 @@ bool ImpellerAllocator::allocPixelRef(SkBitmap* bitmap) {
   descriptor.size = ((bitmap->height() - 1) * bitmap->rowBytes()) +
                     (bitmap->width() * bitmap->bytesPerPixel());
 
+#ifdef FML_OS_ANDROID
+  // TODO(jonahwilliams): See https://github.com/flutter/flutter/issues/129392
+  // Note that this must be changed to use UploadToPrivate, which assumes that
+  // the device buffer is an actual device buffer.
+  auto device_buffer = CreateMallocDeviceBuffer(descriptor);
+#else
   auto device_buffer = allocator_->CreateBuffer(descriptor);
+#endif  // FML_OS_ANDROID
 
   struct ImpellerPixelRef final : public SkPixelRef {
     ImpellerPixelRef(int w, int h, void* s, size_t r)
