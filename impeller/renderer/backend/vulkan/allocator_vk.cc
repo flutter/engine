@@ -15,6 +15,11 @@
 
 namespace impeller {
 
+// Maximum size to use VMA image suballocation. Any allocation greater than or
+// equal to this value will use a dedicated VkDeviceMemory.
+constexpr size_t kImageSizeThresholdForDedicatedMemoryAllocation =
+    4 * 1024 * 1024;
+
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
@@ -184,19 +189,25 @@ static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
 }
 
 static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
-                                                           bool is_texture) {
+                                                           bool is_texture,
+                                                           size_t size) {
   VmaAllocationCreateFlags flags = 0;
   switch (mode) {
     case StorageMode::kHostVisible:
       if (is_texture) {
-        flags |= {};
+        if (size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
+          flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        } else {
+          flags |= {};
+        }
       } else {
         flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
       }
       return flags;
     case StorageMode::kDevicePrivate:
-      if (is_texture) {
+      if (is_texture &&
+          size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
         flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
       }
       return flags;
@@ -234,7 +245,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
 
     alloc_nfo.usage = ToVMAMemoryUsage();
     alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
-    alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode, true);
+    alloc_nfo.flags = ToVmaAllocationCreateFlags(
+        desc.storage_mode, true, desc.GetByteSizeOfBaseMipLevel());
 
     auto create_info_native =
         static_cast<vk::ImageCreateInfo::NativeType>(image_info);
@@ -366,7 +378,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
   allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
-  allocation_info.flags = ToVmaAllocationCreateFlags(desc.storage_mode, false);
+  allocation_info.flags = ToVmaAllocationCreateFlags(
+      desc.storage_mode, /*is_texture=*/false, desc.size);
 
   VkBuffer buffer = {};
   VmaAllocation buffer_allocation = {};
