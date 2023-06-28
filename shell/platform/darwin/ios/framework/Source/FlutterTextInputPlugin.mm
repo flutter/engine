@@ -1252,7 +1252,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
   // `temporarilyDeletedComposedCharacter` should only be used during a single text change session.
-  // So it needs to be cleared at the start of each text editting session.
+  // So it needs to be cleared at the start of each text editing session.
+  NSLog(@"shouldChangeTextInRange");
   self.temporarilyDeletedComposedCharacter = nil;
 
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
@@ -1965,16 +1966,19 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     @"composingBase" : @(composingBase),
     @"composingExtent" : @(composingExtent),
   };
+  NSLog(@"update with deltas");
 
   [_pendingDeltas addObject:deltaToFramework];
 
   if (_pendingDeltas.count == 1) {
+    NSLog(@"scheduling deltas");
     CFStringRef runLoopMode = self.customRunLoopMode != nil
                                   ? (__bridge CFStringRef)self.customRunLoopMode
                                   : kCFRunLoopCommonModes;
 
     CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
       if (_pendingDeltas.count > 0) {
+        NSLog(@"sending deltas %lu", _pendingDeltas.count);
         NSDictionary* deltas = @{
           @"deltas" : _pendingDeltas,
         };
@@ -1993,6 +1997,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
+  NSLog(@"insertText");
   if (self.temporarilyDeletedComposedCharacter.length > 0 && text.length == 1 && !text.UTF8String &&
       [text characterAtIndex:0] == [self.temporarilyDeletedComposedCharacter characterAtIndex:0]) {
     // Workaround for https://github.com/flutter/flutter/issues/111494
