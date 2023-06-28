@@ -2091,6 +2091,16 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
 }
 
+TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
+  Canvas canvas;
+  canvas.DrawPaint(
+      {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
+  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
   Canvas canvas;
 
