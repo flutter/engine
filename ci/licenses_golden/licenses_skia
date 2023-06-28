@@ -1,4 +1,4 @@
-Signature: b207942dd8fd4d5b07fccbb6e9d5beba
+Signature: a389a0a543ad60d36c0d1ac6d420cd02
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8193,7 +8193,6 @@ ORIGIN: ../../../third_party/skia/include/private/base/SkAttributes.h + ../../..
 ORIGIN: ../../../third_party/skia/include/private/base/SkDebug.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkFeatures.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkLoadUserConfig.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/private/base/SkPathEnums.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/base/SkTypeTraits.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/sksl/SkSLVersion.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp + ../../../third_party/skia/LICENSE
@@ -8201,6 +8200,7 @@ ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_icu_bidi.cpp +
 ORIGIN: ../../../third_party/skia/src/android/SkAndroidFrameworkPerfettoStaticStorage.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkCapabilities.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDebugUtils.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkPathEnums.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPathUtils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkSLTypeShared.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkSLTypeShared.h + ../../../third_party/skia/LICENSE
@@ -8413,7 +8413,6 @@ FILE: ../../../third_party/skia/include/private/base/SkAttributes.h
 FILE: ../../../third_party/skia/include/private/base/SkDebug.h
 FILE: ../../../third_party/skia/include/private/base/SkFeatures.h
 FILE: ../../../third_party/skia/include/private/base/SkLoadUserConfig.h
-FILE: ../../../third_party/skia/include/private/base/SkPathEnums.h
 FILE: ../../../third_party/skia/include/private/base/SkTypeTraits.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp
@@ -8421,6 +8420,7 @@ FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_icu_bidi.cpp
 FILE: ../../../third_party/skia/src/android/SkAndroidFrameworkPerfettoStaticStorage.cpp
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
+FILE: ../../../third_party/skia/src/core/SkPathEnums.h
 FILE: ../../../third_party/skia/src/core/SkPathUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.cpp
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
