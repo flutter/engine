@@ -27,6 +27,10 @@ class AllocatorVK final : public Allocator {
 
   fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
+  VmaPool raster_buffer_pool_ = {};
+  VmaPool image_upload_buffer_pool_ = {};
+  VmaPool image_upload_texture_pool_ = {};
+
   std::weak_ptr<Context> context_;
   std::weak_ptr<DeviceHolder> device_holder_;
   ISize max_texture_size_;

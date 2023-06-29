@@ -268,6 +268,7 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
   texture_descriptor.compression_type = impeller::CompressionType::kLossy;
+  texture_descriptor.usage_hint = impeller::UsageHint::kImageUpload;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
@@ -527,6 +528,7 @@ bool ImpellerAllocator::allocPixelRef(SkBitmap* bitmap) {
   descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   descriptor.size = ((bitmap->height() - 1) * bitmap->rowBytes()) +
                     (bitmap->width() * bitmap->bytesPerPixel());
+  descriptor.usage_hint = impeller::UsageHint::kImageUpload;
 
   auto device_buffer = allocator_->CreateBuffer(descriptor);
 
