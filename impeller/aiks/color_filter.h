@@ -26,7 +26,7 @@ class ColorFilter {
   static std::shared_ptr<ColorFilter> MakeBlend(BlendMode blend_mode,
                                                 Color color);
 
-  static std::shared_ptr<ColorFilter> MakeMatrix(Matrix color_matrix);
+  static std::shared_ptr<ColorFilter> MakeMatrix(ColorMatrix color_matrix);
 
   static std::shared_ptr<ColorFilter> MakeSrgbToLinearGamma();
 

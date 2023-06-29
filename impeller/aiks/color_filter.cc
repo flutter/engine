@@ -17,6 +17,23 @@ ColorFilter::ColorFilter() = default;
 
 ColorFilter::~ColorFilter() = default;
 
+std::shared_ptr<ColorFilter> ColorFilter::MakeBlend(BlendMode blend_mode,
+                                                    Color color) {
+  return std::make_shared<BlendColorFilter>(blend_mode, color);
+}
+
+std::shared_ptr<ColorFilter> ColorFilter::MakeMatrix(ColorMatrix color_matrix) {
+  return std::make_shared<BlendColorFilter>(color_matrix);
+}
+
+std::shared_ptr<ColorFilter> ColorFilter::MakeSrgbToLinearGamma() {
+  return std::make_shared<SrgbToLinearColorFilter>();
+}
+
+std::shared_ptr<ColorFilter> ColorFilter::MakeLinearToSrgbGamma() {
+  return std::make_shared<LinearToSrgbColorFilter>();
+}
+
 /*******************************************************************************
  ******* BlendColorFilter
  ******************************************************************************/
