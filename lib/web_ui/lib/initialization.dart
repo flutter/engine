@@ -96,7 +96,7 @@ ui_web.AssetManager get webOnlyAssetManager {
 
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395
-void webOnlySetPluginHandler(ui_web.PluginMessageHandler handler) {
+void webOnlySetPluginHandler(PlatformMessageCallback handler) {
   assert(() {
     engine.printWarning(
       'The webOnlySetPluginHandler API is deprecated and will be removed in a '
