@@ -35,6 +35,10 @@ bool SwapchainImageVK::IsValid() const {
   return is_valid_;
 }
 
+void SwapchainImageVK::SetMsaaTexture(std::shared_ptr<Texture> msaa_tex) {
+  msaa_tex_ = std::move(msaa_tex);
+}
+
 PixelFormat SwapchainImageVK::GetPixelFormat() const {
   return desc_.format;
 }

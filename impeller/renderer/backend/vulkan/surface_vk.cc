@@ -12,11 +12,14 @@ namespace impeller {
 
 std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
     const std::shared_ptr<Context>& context,
-    const std::shared_ptr<SwapchainImageVK>& swapchain_image,
+    std::shared_ptr<SwapchainImageVK>& swapchain_image,
     SwapCallback swap_callback) {
   if (!context || !swapchain_image || !swap_callback) {
     return nullptr;
   }
+
+  bool supports_memoryless =
+      context->GetCapabilities()->SupportsMemorylessTextures();
 
   TextureDescriptor msaa_tex_desc;
   msaa_tex_desc.storage_mode = StorageMode::kDeviceTransient;
@@ -26,11 +29,24 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   msaa_tex_desc.size = swapchain_image->GetSize();
   msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-  auto msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
-  if (!msaa_tex) {
-    VALIDATION_LOG << "Could not allocate MSAA color texture.";
-    return nullptr;
+  std::shared_ptr<Texture> msaa_tex;
+  if (supports_memoryless) {
+    msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
+    if (!msaa_tex) {
+      VALIDATION_LOG << "Could not allocate MSAA color texture.";
+      return nullptr;
+    }
+  } else if (!swapchain_image->HasMsaaTexture()) {
+    msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
+    if (!msaa_tex) {
+      VALIDATION_LOG << "Could not allocate MSAA color texture.";
+      return nullptr;
+    }
+    swapchain_image->SetMsaaTexture(msaa_tex);
+  } else {
+    msaa_tex = swapchain_image->GetMsaaTexture();
   }
+
   msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
 
   TextureDescriptor resolve_tex_desc;
