@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -22,6 +23,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          PFN_vkGetInstanceProcAddr get_instance_proc_address,
                          PFN_vkGetDeviceProcAddr get_device_proc_address)
     : context_(std::move(context)), device_holder_(device_holder) {
+  TRACE_EVENT0("impeller", "CreateAllocatorVK");
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(get_instance_proc_address);
 
   auto instance_handle = vulkan::VulkanHandle<VkInstance>(instance);
@@ -94,6 +96,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
 }
 
 AllocatorVK::~AllocatorVK() {
+  TRACE_EVENT0("impeller", "DestroyAllocatorVK");
   if (allocator_) {
     ::vmaDestroyAllocator(allocator_);
   }
@@ -211,6 +214,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                            VmaAllocator allocator,
                            vk::Device device)
       : TextureSourceVK(desc) {
+    TRACE_EVENT0("impeller", "CreateDeviceTexture");
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
@@ -298,6 +302,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
   }
 
   ~AllocatedTextureSourceVK() {
+    TRACE_EVENT0("impeller", "DestroyDeviceTexture");
     image_view_.reset();
     if (image_) {
       ::vmaDestroyImage(
@@ -327,6 +332,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateTexture");
   if (!IsValid()) {
     return nullptr;
   }
@@ -348,6 +354,7 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |
