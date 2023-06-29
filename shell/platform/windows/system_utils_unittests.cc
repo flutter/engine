@@ -12,38 +12,6 @@
 namespace flutter {
 namespace testing {
 
-class MockWindowsRegistry : public WindowsRegistry {
- public:
-  MockWindowsRegistry() = default;
-  virtual ~MockWindowsRegistry() = default;
-
-  virtual LSTATUS GetRegistryValue(HKEY hkey,
-                                   LPCWSTR key,
-                                   LPCWSTR value,
-                                   DWORD flags,
-                                   LPDWORD type,
-                                   PVOID data,
-                                   LPDWORD data_size) const {
-    using namespace std::string_literals;
-    static const std::wstring locales =
-        L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0"s;
-    static DWORD locales_len = locales.size() * sizeof(wchar_t);
-    if (data != nullptr) {
-      if (*data_size < locales_len) {
-        return ERROR_MORE_DATA;
-      }
-      std::memcpy(data, locales.data(), locales_len);
-      *data_size = locales_len;
-    } else if (data_size != NULL) {
-      *data_size = locales_len;
-    }
-    return ERROR_SUCCESS;
-  }
-
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockWindowsRegistry);
-};
-
 TEST(SystemUtils, GetPreferredLanguageInfo) {
   WindowsRegistry registry;
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(registry);
@@ -63,15 +31,18 @@ TEST(SystemUtils, GetPreferredLanguages) {
   // There should not be a trailing null from the parsing step.
   EXPECT_EQ(languages[0].size(), wcslen(languages[0].c_str()));
 
-  // Test mock results
-  MockWindowsRegistry mock_registry;
-  languages = GetPreferredLanguages(mock_registry);
-  ASSERT_EQ(languages.size(), 5);
-  ASSERT_EQ(languages[0], std::wstring(L"en-US"));
-  ASSERT_EQ(languages[1], std::wstring(L"zh-Hans-CN"));
-  ASSERT_EQ(languages[2], std::wstring(L"ja"));
-  ASSERT_EQ(languages[3], std::wstring(L"zh-Hant-TW"));
-  ASSERT_EQ(languages[4], std::wstring(L"he"));
+  // Get actual system language.
+  std::wstring wdl_msz = GetPreferredLanguagesFromMUI();
+  auto wdl_itr = wdl_msz.begin();
+  for (auto languages_itr = languages.begin(); languages_itr != languages.end();
+       languages_itr++) {
+    for (auto lang_itr = languages_itr->begin();
+         lang_itr != languages_itr->end(); lang_itr++) {
+      EXPECT_EQ(*lang_itr, *wdl_itr++);
+    }
+    EXPECT_EQ(*wdl_itr++, 0);
+  }
+  EXPECT_EQ(*wdl_itr, 0);
 }
 
 TEST(SystemUtils, ParseLanguageNameGeneric) {
