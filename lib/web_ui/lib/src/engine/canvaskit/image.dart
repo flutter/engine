@@ -13,7 +13,7 @@ import 'package:ui/ui.dart' as ui;
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     [int? targetWidth, int? targetHeight]) {
   // If we have either a target width or target height, use canvaskit to decode.
-  if (browserSupportsImageDecoder && (targetWidth == null && targetHeight == null)) {
+  if (browserSupportsImageDecoder) {
     return CkBrowserImageDecoder.create(
       data: list,
       debugSource: 'encoded image bytes',

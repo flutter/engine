@@ -1873,11 +1873,9 @@ void _paragraphTests() {
 
       v8BreakIterator = Object();
       browserSupportsImageDecoder = false;
-      // TODO(mdebbar): we don't check image codecs for now.
-      // https://github.com/flutter/flutter/issues/122331
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;
