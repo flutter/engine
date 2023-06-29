@@ -54,33 +54,9 @@ std::wstring GetPreferredLanguagesFromMUI() {
 std::vector<std::wstring> GetPreferredLanguages(
     const WindowsRegistry& registry) {
   std::vector<std::wstring> languages;
-  BOOL languages_from_registry = TRUE;
-  ULONG buffer_size = 0;
-  ULONG count = 0;
-  DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
-
-  // Determine where languages are defined and get buffer length
-  if (registry.GetRegistryValue(HKEY_CURRENT_USER, kGetPreferredLanguageRegKey,
-                                kGetPreferredLanguageRegValue,
-                                RRF_RT_REG_MULTI_SZ, NULL, NULL,
-                                &buffer_size) != ERROR_SUCCESS) {
-    languages_from_registry = FALSE;
-  }
-
-  // Multi-string must be at least 3-long if non-empty,
-  // as a multi-string is terminated with 2 nulls.
-  //
-  // See:
-  // https://learn.microsoft.com/windows/win32/sysinfo/registry-value-types
-  if (languages_from_registry && buffer_size < 3) {
-    languages_from_registry = FALSE;
-  }
 
   // Initialize the buffer
-  std::wstring buffer =
-      languages_from_registry
-          ? GetPreferredLanguagesFromRegistry(registry, buffer_size)
-          : GetPreferredLanguagesFromMUI();
+  std::wstring buffer = GetPreferredLanguagesFromMUI();
 
   // Extract the individual languages from the buffer.
   size_t start = 0;
