@@ -35,7 +35,15 @@ bool SwapchainImageVK::IsValid() const {
   return is_valid_;
 }
 
-void SwapchainImageVK::SetMsaaTexture(std::shared_ptr<Texture> msaa_tex) {
+std::shared_ptr<Texture> SwapchainImageVK::GetMSAATexture() const {
+  return msaa_tex_;
+}
+
+bool SwapchainImageVK::HasMSAATexture() const {
+  return msaa_tex_ != nullptr;
+}
+
+void SwapchainImageVK::SetMSAATexture(std::shared_ptr<Texture> msaa_tex) {
   msaa_tex_ = std::move(msaa_tex);
 }
 

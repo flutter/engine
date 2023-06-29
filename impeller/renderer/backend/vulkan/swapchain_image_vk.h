@@ -30,14 +30,14 @@ class SwapchainImageVK final : public TextureSourceVK {
   // |TextureSourceVK|
   vk::Image GetImage() const override;
 
-  std::shared_ptr<Texture> GetMsaaTexture() const { return msaa_tex_; }
+  std::shared_ptr<Texture> GetMSAATexture() const;
 
-  bool HasMsaaTexture() const { return msaa_tex_ != nullptr; }
+  bool HasMSAATexture() const;
 
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
-  void SetMsaaTexture(std::shared_ptr<Texture> msaa_tex);
+  void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;
