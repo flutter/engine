@@ -112,9 +112,11 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
 }
 
-static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
-                                                         TextureUsageMask usage,
-                                                         StorageMode mode) {
+static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
+    PixelFormat format,
+    TextureUsageMask usage,
+    StorageMode mode,
+    bool supports_memoryless_textures) {
   vk::ImageUsageFlags vk_usage;
 
   switch (mode) {
@@ -122,7 +124,9 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     case StorageMode::kDevicePrivate:
       break;
     case StorageMode::kDeviceTransient:
-      vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      if (supports_memoryless_textures) {
+        vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      }
       break;
   }
 
@@ -245,7 +249,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
     image_info.usage =
-        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode);
+        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode,
+                            supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo alloc_nfo = {};
