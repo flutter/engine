@@ -31,6 +31,7 @@ class AllocatorVK final : public Allocator {
   std::weak_ptr<DeviceHolder> device_holder_;
   ISize max_texture_size_;
   bool is_valid_ = false;
+  bool supports_lazy_memory_ = false;
 
   AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
@@ -53,6 +54,8 @@ class AllocatorVK final : public Allocator {
 
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
+
+  void CheckForMemoryTypeSupport();
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };

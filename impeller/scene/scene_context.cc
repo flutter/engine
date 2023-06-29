@@ -39,33 +39,33 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
     return;
   }
 
-  pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
-      MakePipelineVariants<UnskinnedVertexShader, UnlitFragmentShader>(
-          *context_);
-  pipelines_[{PipelineKey{GeometryType::kSkinned, MaterialType::kUnlit}}] =
-      MakePipelineVariants<SkinnedVertexShader, UnlitFragmentShader>(*context_);
+  // pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
+  //     MakePipelineVariants<UnskinnedVertexShader, UnlitFragmentShader>(
+  //         *context_);
+  // pipelines_[{PipelineKey{GeometryType::kSkinned, MaterialType::kUnlit}}] =
+  //     MakePipelineVariants<SkinnedVertexShader, UnlitFragmentShader>(*context_);
 
-  {
-    impeller::TextureDescriptor texture_descriptor;
-    texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
-    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = {1, 1};
-    texture_descriptor.mip_count = 1u;
+  // {
+  //   impeller::TextureDescriptor texture_descriptor;
+  //   texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+  //   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  //   texture_descriptor.size = {1, 1};
+  //   texture_descriptor.mip_count = 1u;
 
-    placeholder_texture_ =
-        context_->GetResourceAllocator()->CreateTexture(texture_descriptor);
-    placeholder_texture_->SetLabel("Placeholder Texture");
-    if (!placeholder_texture_) {
-      FML_LOG(ERROR) << "Could not create placeholder texture.";
-      return;
-    }
+  //   placeholder_texture_ =
+  //       context_->GetResourceAllocator()->CreateTexture(texture_descriptor);
+  //   placeholder_texture_->SetLabel("Placeholder Texture");
+  //   if (!placeholder_texture_) {
+  //     FML_LOG(ERROR) << "Could not create placeholder texture.";
+  //     return;
+  //   }
 
-    uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
-    if (!placeholder_texture_->SetContents(pixel, 4)) {
-      FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
-      return;
-    }
-  }
+  //   uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
+  //   if (!placeholder_texture_->SetContents(pixel, 4)) {
+  //     FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
+  //     return;
+  //   }
+  // }
 
   is_valid_ = true;
 }

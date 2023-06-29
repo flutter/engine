@@ -91,6 +91,9 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     return;
   }
   allocator_ = allocator;
+
+  CheckForMemoryTypeSupport();
+
   is_valid_ = true;
 }
 
@@ -108,6 +111,24 @@ bool AllocatorVK::IsValid() const {
 // |Allocator|
 ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
+}
+
+void AllocatorVK::CheckForMemoryTypeSupport() {
+  auto device_holder = device_holder_.lock();
+  if (!device_holder) {
+    return;
+  }
+  auto device = device_holder->GetPhysicalDevice();
+
+  vk::PhysicalDeviceMemoryProperties memory_properties;
+  device.getMemoryProperties(&memory_properties);
+
+  for (auto i = 0u; i < memory_properties.memoryTypeCount; i++) {
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        vk::MemoryPropertyFlagBits::eLazilyAllocated) {
+      supports_lazy_memory_ = true;
+    }
+  }
 }
 
 static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
@@ -169,7 +190,8 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
 }
 
 static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
-    StorageMode mode) {
+    StorageMode mode,
+    bool supports_lazy_memory) {
   switch (mode) {
     case StorageMode::kHostVisible:
       // See https://github.com/flutter/flutter/issues/128556 . Some devices do
@@ -178,7 +200,10 @@ static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
-      return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      if (supports_lazy_memory) {
+        return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      }
+      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
   }
   FML_UNREACHABLE();
 }
@@ -196,9 +221,6 @@ static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
       }
       return flags;
     case StorageMode::kDevicePrivate:
-      if (is_texture) {
-        flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-      }
       return flags;
     case StorageMode::kDeviceTransient:
       return flags;
@@ -210,7 +232,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
  public:
   AllocatedTextureSourceVK(const TextureDescriptor& desc,
                            VmaAllocator allocator,
-                           vk::Device device)
+                           vk::Device device,
+                           bool supports_lazy_memory)
       : TextureSourceVK(desc) {
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
@@ -233,7 +256,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
+    alloc_nfo.preferredFlags =
+        ToVKMemoryPropertyFlags(desc.storage_mode, supports_lazy_memory);
     alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode, true);
 
     auto create_info_native =
@@ -337,9 +361,10 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     return nullptr;
   }
   auto source =
-      std::make_shared<AllocatedTextureSourceVK>(desc,                       //
-                                                 allocator_,                 //
-                                                 device_holder->GetDevice()  //
+      std::make_shared<AllocatedTextureSourceVK>(desc,                        //
+                                                 allocator_,                  //
+                                                 device_holder->GetDevice(),  //
+                                                 supports_lazy_memory_        //
       );
   if (!source->IsValid()) {
     return nullptr;
@@ -365,7 +390,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
+  allocation_info.preferredFlags =
+      ToVKMemoryPropertyFlags(desc.storage_mode, supports_lazy_memory_);
   allocation_info.flags = ToVmaAllocationCreateFlags(desc.storage_mode, false);
 
   VkBuffer buffer = {};
