@@ -50,7 +50,7 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
 
   void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWindows>
                     node_delegate) override {
-    focused_nodes_.push_back(node_delegate);
+    focused_nodes_.push_back(std::move(node_delegate));
   }
 
   void ResetRecords() {
