@@ -13,8 +13,7 @@ namespace flutter {
 namespace testing {
 
 TEST(SystemUtils, GetPreferredLanguageInfo) {
-  WindowsRegistry registry;
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(registry);
+  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
   // The info should have a valid languge.
@@ -22,8 +21,7 @@ TEST(SystemUtils, GetPreferredLanguageInfo) {
 }
 
 TEST(SystemUtils, GetPreferredLanguages) {
-  WindowsRegistry registry;
-  std::vector<std::wstring> languages = GetPreferredLanguages(registry);
+  std::vector<std::wstring> languages = GetPreferredLanguages();
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
   // The language should be non-empty.

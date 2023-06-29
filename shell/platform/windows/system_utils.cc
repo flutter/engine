@@ -12,9 +12,8 @@
 
 namespace flutter {
 
-std::vector<LanguageInfo> GetPreferredLanguageInfo(
-    const WindowsRegistry& registry) {
-  std::vector<std::wstring> languages = GetPreferredLanguages(registry);
+std::vector<LanguageInfo> GetPreferredLanguageInfo() {
+  std::vector<std::wstring> languages = GetPreferredLanguages();
   std::vector<LanguageInfo> language_info;
   language_info.reserve(languages.size());
 
@@ -22,18 +21,6 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo(
     language_info.push_back(ParseLanguageName(language));
   }
   return language_info;
-}
-
-std::wstring GetPreferredLanguagesFromRegistry(const WindowsRegistry& registry,
-                                               ULONG buffer_size) {
-  std::wstring buffer(buffer_size, '\0');
-  if (registry.GetRegistryValue(HKEY_CURRENT_USER, kGetPreferredLanguageRegKey,
-                                kGetPreferredLanguageRegValue,
-                                RRF_RT_REG_MULTI_SZ, NULL, buffer.data(),
-                                &buffer_size) != ERROR_SUCCESS) {
-    return std::wstring();
-  }
-  return buffer;
 }
 
 std::wstring GetPreferredLanguagesFromMUI() {
@@ -51,8 +38,7 @@ std::wstring GetPreferredLanguagesFromMUI() {
   return buffer;
 }
 
-std::vector<std::wstring> GetPreferredLanguages(
-    const WindowsRegistry& registry) {
+std::vector<std::wstring> GetPreferredLanguages() {
   std::vector<std::wstring> languages;
 
   // Initialize the buffer

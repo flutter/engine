@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter/shell/platform/windows/windows_registry.h"
-
 namespace flutter {
 
 // Registry key for user-preferred languages.
@@ -28,12 +26,7 @@ struct LanguageInfo {
 
 // Returns the list of user-preferred languages, in preference order,
 // parsed into LanguageInfo structures.
-std::vector<LanguageInfo> GetPreferredLanguageInfo(
-    const WindowsRegistry& registry);
-
-// Retrieve the preferred languages from the registry.
-std::wstring GetPreferredLanguagesFromRegistry(const WindowsRegistry& registry,
-                                               ULONG buffer_size);
+std::vector<LanguageInfo> GetPreferredLanguageInfo();
 
 // Retrieve the preferred languages from the MUI API.
 std::wstring GetPreferredLanguagesFromMUI();
@@ -41,8 +34,7 @@ std::wstring GetPreferredLanguagesFromMUI();
 // Returns the list of user-preferred languages, in preference order.
 // The language names are as described at:
 // https://docs.microsoft.com/en-us/windows/win32/intl/language-names
-std::vector<std::wstring> GetPreferredLanguages(
-    const WindowsRegistry& registry);
+std::vector<std::wstring> GetPreferredLanguages();
 
 // Parses a Windows language name into its components.
 LanguageInfo ParseLanguageName(std::wstring language_name);
