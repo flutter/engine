@@ -43,13 +43,14 @@ enum class SourceLanguage {
   kHLSL,
 };
 
-struct IPLRStageEntry {
+struct IPLRShaderEntry {
   std::string source_file_name;
+  SourceType type;
   SourceLanguage language;
   std::string entry_point;
 };
 
-using IPLRBundleEntry = std::map<std::string, IPLRStageEntry>;
+using IPLRBundleEntry = std::map<std::string, IPLRShaderEntry>;
 
 using IPLRBundleEntries = std::map<std::string, IPLRBundleEntry>;
 
