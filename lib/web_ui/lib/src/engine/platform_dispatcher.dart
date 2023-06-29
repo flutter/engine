@@ -914,7 +914,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     final List<ui.Locale> locales = <ui.Locale>[];
     for (final String language in languages) {
       final List<String> parts = language.split('-');
-      if (parts.length > 1) {
+      // Handle zh separately.
+      if (parts.first == 'zh') {
+        final String languageCode = parts.first;
+        final String? countryCode = parts.length > 1 ? parts.last : null;
+        final String scriptCode = countryCode == 'TW' || countryCode == 'HK' ? 'Hant' : 'Hans';
+        locales.add(ui.Locale.fromSubtags(
+          languageCode: languageCode,
+          countryCode: countryCode,
+          scriptCode: scriptCode,
+        ));
+      } else if (parts.length > 1) {
         locales.add(ui.Locale(parts.first, parts.last));
       } else {
         locales.add(ui.Locale(language));
