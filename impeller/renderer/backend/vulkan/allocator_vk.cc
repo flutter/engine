@@ -20,29 +20,89 @@ namespace impeller {
 constexpr size_t kImageSizeThresholdForDedicatedMemoryAllocation =
     4 * 1024 * 1024;
 
-static bool CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
+static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
+    StorageMode mode) {
+  switch (mode) {
+    case StorageMode::kHostVisible:
+      // See https://github.com/flutter/flutter/issues/128556 . Some devices do
+      // not have support for coherent host memory so we don't request it here.
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    case StorageMode::kDevicePrivate:
+      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    case StorageMode::kDeviceTransient:
+      return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+  }
+  FML_UNREACHABLE();
+}
+
+static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
+                                                           bool is_texture,
+                                                           size_t size) {
+  VmaAllocationCreateFlags flags = 0;
+  switch (mode) {
+    case StorageMode::kHostVisible:
+      if (is_texture) {
+        if (size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
+          flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        } else {
+          flags |= {};
+        }
+      } else {
+        flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+        flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+      }
+      return flags;
+    case StorageMode::kDevicePrivate:
+      if (is_texture &&
+          size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
+        flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+      }
+      return flags;
+    case StorageMode::kDeviceTransient:
+      return flags;
+  }
+  FML_UNREACHABLE();
+}
+
+vk::Flags<vk::BufferUsageFlagBits> VmaBufferUsageFlags(UsageHint usage) {
+  switch (usage) {
+    case UsageHint::kRasterWorkload:
+      return vk::BufferUsageFlagBits::eVertexBuffer |
+             vk::BufferUsageFlagBits::eIndexBuffer |
+             vk::BufferUsageFlagBits::eUniformBuffer |
+             vk::BufferUsageFlagBits::eStorageBuffer |
+             vk::BufferUsageFlagBits::eTransferSrc |
+             vk::BufferUsageFlagBits::eTransferDst;
+    case UsageHint::kImageUpload:
+      return vk::BufferUsageFlagBits::eTransferSrc;
+  }
+  FML_UNREACHABLE();
+}
+
+static bool CreateBufferPool(VmaAllocator allocator,
+                             UsageHint usage,
+                             VmaPool* pool) {
   vk::BufferCreateInfo buffer_info;
-  buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
-                      vk::BufferUsageFlagBits::eIndexBuffer |
-                      vk::BufferUsageFlagBits::eUniformBuffer |
-                      vk::BufferUsageFlagBits::eStorageBuffer |
-                      vk::BufferUsageFlagBits::eTransferSrc |
-                      vk::BufferUsageFlagBits::eTransferDst;
+  buffer_info.usage = VmaBufferUsageFlags(usage);
   buffer_info.size = 1u;  // doesn't matter
   buffer_info.sharingMode = vk::SharingMode::eExclusive;
   auto buffer_info_native =
       static_cast<vk::BufferCreateInfo::NativeType>(buffer_info);
 
-  VmaAllocationCreateInfo sampleAllocCreateInfo = {};
-  sampleAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  VmaAllocationCreateInfo allocation_info = {};
+  allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
+  allocation_info.preferredFlags =
+      ToVKMemoryPropertyFlags(StorageMode::kHostVisible);
+  allocation_info.flags =
+      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+      VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
   uint32_t memTypeIndex;
   VkResult res = vmaFindMemoryTypeIndexForBufferInfo(
-      allocator, &buffer_info_native, &sampleAllocCreateInfo, &memTypeIndex);
+      allocator, &buffer_info_native, &allocation_info, &memTypeIndex);
 
   VmaPoolCreateInfo poolCreateInfo = {};
   poolCreateInfo.memoryTypeIndex = memTypeIndex;
-  poolCreateInfo.blockSize = 128ull * 1024 * 1024;
 
   auto result = vk::Result{vmaCreatePool(allocator, &poolCreateInfo, pool)};
   if (result != vk::Result::eSuccess) {
@@ -127,10 +187,12 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VALIDATION_LOG << "Could not create memory allocator";
     return;
   }
-  if (!CreateBufferPool(allocator, &raster_buffer_pool_)) {
+  if (!CreateBufferPool(allocator, UsageHint::kRasterWorkload,
+                        &raster_buffer_pool_)) {
     return;
   }
-  if (!CreateBufferPool(allocator, &image_upload_buffer_pool_)) {
+  if (!CreateBufferPool(allocator, UsageHint::kImageUpload,
+                        &image_upload_buffer_pool_)) {
     return;
   }
 
@@ -160,7 +222,6 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VkResult res = vmaFindMemoryTypeIndexForImageInfo(
         allocator, &create_info_native, &sampleAllocCreateInfo, &memTypeIndex);
 
-    // Create a pool that can have at most 2 blocks, 128 MiB each.
     VmaPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.memoryTypeIndex = memTypeIndex;
     poolCreateInfo.blockSize = 128ull * 1024 * 1024;
@@ -258,50 +319,6 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
 
 static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
   return VMA_MEMORY_USAGE_AUTO;
-}
-
-static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
-    StorageMode mode) {
-  switch (mode) {
-    case StorageMode::kHostVisible:
-      // See https://github.com/flutter/flutter/issues/128556 . Some devices do
-      // not have support for coherent host memory so we don't request it here.
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    case StorageMode::kDevicePrivate:
-      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    case StorageMode::kDeviceTransient:
-      return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-  }
-  FML_UNREACHABLE();
-}
-
-static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
-                                                           bool is_texture,
-                                                           size_t size) {
-  VmaAllocationCreateFlags flags = 0;
-  switch (mode) {
-    case StorageMode::kHostVisible:
-      if (is_texture) {
-        if (size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
-          flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-        } else {
-          flags |= {};
-        }
-      } else {
-        flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-        flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-      }
-      return flags;
-    case StorageMode::kDevicePrivate:
-      if (is_texture &&
-          size >= kImageSizeThresholdForDedicatedMemoryAllocation) {
-        flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-      }
-      return flags;
-    case StorageMode::kDeviceTransient:
-      return flags;
-  }
-  FML_UNREACHABLE();
 }
 
 class AllocatedTextureSourceVK final : public TextureSourceVK {
@@ -459,12 +476,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
   TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
-  buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
-                      vk::BufferUsageFlagBits::eIndexBuffer |
-                      vk::BufferUsageFlagBits::eUniformBuffer |
-                      vk::BufferUsageFlagBits::eStorageBuffer |
-                      vk::BufferUsageFlagBits::eTransferSrc |
-                      vk::BufferUsageFlagBits::eTransferDst;
+  buffer_info.usage = VmaBufferUsageFlags(desc.usage_hint);
   buffer_info.size = desc.size;
   buffer_info.sharingMode = vk::SharingMode::eExclusive;
   auto buffer_info_native =
@@ -473,8 +485,14 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
   allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
-  allocation_info.flags = ToVmaAllocationCreateFlags(
-      desc.storage_mode, /*is_texture=*/false, desc.size);
+  if (desc.usage_hint == UsageHint::kRasterWorkload) {
+    allocation_info.flags = ToVmaAllocationCreateFlags(
+        desc.storage_mode, /*is_texture=*/false, desc.size);
+  } else {
+    allocation_info.flags =
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+        VMA_ALLOCATION_CREATE_MAPPED_BIT;
+  }
   auto image_upload = desc.usage_hint == UsageHint::kImageUpload;
   allocation_info.pool =
       image_upload ? image_upload_buffer_pool_ : raster_buffer_pool_;
