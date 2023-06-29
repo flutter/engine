@@ -28,9 +28,9 @@ class ColorFilter {
 
   static std::shared_ptr<ColorFilter> MakeMatrix(ColorMatrix color_matrix);
 
-  static std::shared_ptr<ColorFilter> MakeSrgbToLinearGamma();
+  static std::shared_ptr<ColorFilter> MakeSrgbToLinear();
 
-  static std::shared_ptr<ColorFilter> MakeLinearToSrgbGamma();
+  static std::shared_ptr<ColorFilter> MakeLinearToSrgb();
 
   virtual std::shared_ptr<ColorFilterContents> GetColorFilter(
       std::shared_ptr<FilterInput> input,

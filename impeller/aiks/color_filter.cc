@@ -23,14 +23,14 @@ std::shared_ptr<ColorFilter> ColorFilter::MakeBlend(BlendMode blend_mode,
 }
 
 std::shared_ptr<ColorFilter> ColorFilter::MakeMatrix(ColorMatrix color_matrix) {
-  return std::make_shared<BlendColorFilter>(color_matrix);
+  return std::make_shared<MatrixColorFilter>(color_matrix);
 }
 
-std::shared_ptr<ColorFilter> ColorFilter::MakeSrgbToLinearGamma() {
+std::shared_ptr<ColorFilter> ColorFilter::MakeSrgbToLinear() {
   return std::make_shared<SrgbToLinearColorFilter>();
 }
 
-std::shared_ptr<ColorFilter> ColorFilter::MakeLinearToSrgbGamma() {
+std::shared_ptr<ColorFilter> ColorFilter::MakeLinearToSrgb() {
   return std::make_shared<LinearToSrgbColorFilter>();
 }
 

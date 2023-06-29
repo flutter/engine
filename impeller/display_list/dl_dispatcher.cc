@@ -494,9 +494,9 @@ static std::shared_ptr<ColorFilter> ToColorFilter(
       return ColorFilter::MakeMatrix(color_matrix);
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return ColorFilter::MakeSrgbToLinearGamma();
+      return ColorFilter::MakeSrgbToLinear();
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return ColorFilter::MakeLinearToSrgbGamma();
+      return ColorFilter::MakeLinearToSrgb();
   }
   return nullptr;
 }
