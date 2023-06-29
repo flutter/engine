@@ -29,6 +29,8 @@ CAPABILITY_TEST(SupportsComputeSubgroups, false);
 CAPABILITY_TEST(SupportsReadFromOnscreenTexture, false);
 CAPABILITY_TEST(SupportsReadFromResolve, false);
 CAPABILITY_TEST(SupportsDecalTileMode, false);
+CAPABILITY_TEST(SupportsMemorylessTextures, false);
+CAPABILITY_TEST(SupportsHostVisibleTextures, false);
 
 }  // namespace testing
 }  // namespace impeller
