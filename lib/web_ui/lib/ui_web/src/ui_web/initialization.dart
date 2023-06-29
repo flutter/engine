@@ -14,7 +14,7 @@ import 'package:ui/ui.dart' as ui;
 /// The [runApp] callback is invoked to run the app after the engine is fully
 /// initialized.
 ///
-/// For more information, see what the `flutter_tools` doesin the entrypoint
+/// For more information, see what the `flutter_tools` does in the entrypoint
 /// that it generates around the app's main method:
 ///
 /// * https://github.com/flutter/flutter/blob/95be76ab7e3dca2def54454313e97f94f4ac4582/packages/flutter_tools/lib/src/web/file_generators/main_dart.dart#L14-L43
