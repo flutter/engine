@@ -3703,8 +3703,8 @@ FILE: ../../../flutter/impeller/aiks/aiks_playground.cc
 FILE: ../../../flutter/impeller/aiks/aiks_playground.h
 FILE: ../../../flutter/impeller/aiks/canvas.cc
 FILE: ../../../flutter/impeller/aiks/canvas.h
-File: ../../../flutter/impeller/aiks/color_filter.cc
-File: ../../../flutter/impeller/aiks/color_filter.h
+FILE: ../../../flutter/impeller/aiks/color_filter.cc
+FILE: ../../../flutter/impeller/aiks/color_filter.h
 FILE: ../../../flutter/impeller/aiks/color_source.cc
 FILE: ../../../flutter/impeller/aiks/color_source.h
 FILE: ../../../flutter/impeller/aiks/image.cc
