@@ -8,8 +8,6 @@
 
 #include <QuartzCore/QuartzCore.h>
 
-#include <vector>
-
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -33,26 +31,31 @@
   NSCursor.flutterIgnoreCursorChange = NO;
 }
 
+- (BOOL)cleanupScheduled {
+  return _cleanupScheduled;
+}
+
 // Processes the mouse event from given mutator view. This is called for each mutator view, in
 // z-order, from the top most down.
 - (void)processMouseMoveEvent:(NSEvent*)event
                forMutatorView:(FlutterMutatorView*)view
-                overlayRegion:(std::vector<CGRect>&)region {
+                overlayRegion:(const std::vector<CGRect>&)region {
   // [self frameCleanup] will be called once after current run loop turn.
   if (!_cleanupScheduled) {
     [[NSRunLoop mainRunLoop] performBlock:^{
       [self frameCleanup];
     }];
+    _cleanupScheduled = YES;
   }
 
-  // Mouse move was alrady handled by a mutator view above.
+  // Mouse move was already handled by a mutator view above.
   if (_mouseMoveHandled) {
     return;
   }
 
   NSPoint point = [view convertPoint:event.locationInWindow fromView:nil];
 
-  // If the mouse is above overaly region restore current Flutter cursor.
+  // If the mouse is above overlay region restore current Flutter cursor.
   for (const auto& r : region) {
     if (CGRectContainsPoint(r, point)) {
       [_flutterView cursorUpdate:event];

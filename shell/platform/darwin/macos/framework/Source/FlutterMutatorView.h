@@ -6,7 +6,10 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
+#include <vector>
+
 @class FlutterView;
+@class FlutterMutatorView;
 
 /// FlutterCursorCoordinator is responsible for coordinating cursor changes between
 /// platform views and overlays of single FlutterView.
@@ -14,6 +17,16 @@
 
 - (nonnull FlutterCursorCoordinator*)initWithFlutterView:(nonnull FlutterView*)flutterView;
 
+@end
+
+/// Exposed methods for testing.
+@interface FlutterCursorCoordinator (Private)
+
+@property(readonly, nonatomic) BOOL cleanupScheduled;
+
+- (void)processMouseMoveEvent:(nonnull NSEvent*)event
+               forMutatorView:(nonnull FlutterMutatorView*)view
+                overlayRegion:(const std::vector<CGRect>&)region;
 @end
 
 /// FlutterMutatorView contains platform view and is responsible for applying
