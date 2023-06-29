@@ -11,14 +11,10 @@
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/limits_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 namespace impeller {
-
-// Maximum size to use VMA image suballocation. Any allocation greater than or
-// equal to this value will use a dedicated VkDeviceMemory.
-constexpr size_t kImageSizeThresholdForDedicatedMemoryAllocation =
-    4 * 1024 * 1024;
 
 static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
     StorageMode mode) {
