@@ -1993,7 +1993,9 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
                     .blend_mode = BlendMode::kSourceOver});
 
   Picture picture = canvas.EndRecordingAsPicture();
-  ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
+  auto expected = Color::Red().Blend(Color::CornflowerBlue().WithAlpha(0.75),
+                                     BlendMode::kSourceOver);
+  ASSERT_EQ(picture.pass->GetClearColor(), expected);
 
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
