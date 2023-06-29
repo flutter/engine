@@ -1989,8 +1989,8 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
 TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawPaint(
-      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
 
   Picture picture = canvas.EndRecordingAsPicture();
   ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
@@ -2010,8 +2010,9 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
                   {.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawRect({0, 0, 300, 300}, {.color = Color::CornflowerBlue(),
-                                     .blend_mode = BlendMode::kSource});
+  canvas.DrawRect({0, 0, 300, 300},
+                  {.color = Color::CornflowerBlue().WithAlpha(0.75),
+                   .blend_mode = BlendMode::kSourceOver});
 
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   Picture picture = canvas.EndRecordingAsPicture();
@@ -2029,9 +2030,9 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   Canvas canvas;
   canvas.DrawRRect({0, 0, 300, 300}, 5.0,
                    {.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawRRect(
-      {0, 0, 300, 300}, 5.0,
-      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
+  canvas.DrawRRect({0, 0, 300, 300}, 5.0,
+                   {.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
 
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   Picture picture = canvas.EndRecordingAsPicture();
@@ -2069,8 +2070,9 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
                   {.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawRect({0, 0, 300, 300}, {.color = Color::CornflowerBlue(),
-                                     .blend_mode = BlendMode::kSource});
+  canvas.DrawRect({0, 0, 300, 300},
+                  {.color = Color::CornflowerBlue().WithAlpha(0.75),
+                   .blend_mode = BlendMode::kSourceOver});
 
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   Picture picture = canvas.EndRecordingAsPicture();
@@ -2089,7 +2091,8 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
   canvas.DrawPaint(
       {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
   canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
