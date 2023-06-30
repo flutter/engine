@@ -15,14 +15,15 @@ import 'surface_factory.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
 class CkPicture implements ui.Picture {
-  CkPicture(SkPicture skPicture, this.cullRect) {
+  CkPicture(SkPicture skPicture) {
     _ref = UniqueRef<SkPicture>(this, skPicture, 'Picture');
   }
 
   late final UniqueRef<SkPicture> _ref;
-  final ui.Rect? cullRect;
 
   SkPicture get skiaObject => _ref.nativeObject;
+
+  ui.Rect cullRect() => fromSkRect(skiaObject.cullRect());
 
   @override
   int get approximateBytesUsed => 0;

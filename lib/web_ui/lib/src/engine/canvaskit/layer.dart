@@ -466,7 +466,7 @@ class PictureLayer extends Layer {
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
-    paintBounds = picture.cullRect!.shift(offset);
+    paintBounds = picture.cullRect().shift(offset);
   }
 
   @override

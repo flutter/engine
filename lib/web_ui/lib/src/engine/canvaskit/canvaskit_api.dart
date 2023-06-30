@@ -2195,8 +2195,10 @@ class SkPictureRecorder {
 
 extension SkPictureRecorderExtension on SkPictureRecorder {
   @JS('beginRecording')
-  external SkCanvas _beginRecording(JSFloat32Array bounds);
-  SkCanvas beginRecording(Float32List bounds) => _beginRecording(bounds.toJS);
+  external SkCanvas _beginRecording(
+      JSFloat32Array bounds, JSBoolean computeBounds);
+  SkCanvas beginRecording(Float32List bounds) =>
+      _beginRecording(bounds.toJS, true.toJS);
 
   external SkPicture finishRecordingAsPicture();
   external JSVoid delete();
@@ -2594,6 +2596,10 @@ class SkPicture {}
 
 extension SkPictureExtension on SkPicture {
   external JSVoid delete();
+
+  @JS('cullRect')
+  external JSFloat32Array _cullRect();
+  Float32List cullRect() => _cullRect().toDart;
 }
 
 @JS()
