@@ -711,11 +711,6 @@ FLUTTER_ASSERT_ARC
   inputView.customRunLoopMode = runLoopMode;
 
   __block int updateCount = 0;
-  // OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg
-  // isNotNil]])
-  //     .andDo(^(NSInvocation* invocation) {
-  //       updateCount++;
-  //     });
 
   [inputView insertText:@"text to insert"];
   OCMExpect([engine
