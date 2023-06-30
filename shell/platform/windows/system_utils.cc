@@ -8,7 +8,6 @@
 
 #include <sstream>
 
-#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 
 namespace flutter {
@@ -19,10 +18,8 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
   language_info.reserve(languages.size());
 
   for (auto language : languages) {
-    FML_LOG(ERROR) << "Pushing " << fml::WideStringToUtf8(language);
     language_info.push_back(ParseLanguageName(language));
   }
-  FML_LOG(ERROR) << "Got " << language_info.size() << "langs";
   return language_info;
 }
 
@@ -31,16 +28,13 @@ std::wstring GetPreferredLanguagesFromMUI() {
   ULONG count = 0;
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
   if (!GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
-    FML_LOG(ERROR) << "Failure on first call " << GetLastError();
     return std::wstring();
   }
   std::wstring buffer(buffer_size, '\0');
   if (!GetThreadPreferredUILanguages(flags, &count, buffer.data(),
                                      &buffer_size)) {
-    FML_LOG(ERROR) << "Failure on second call " << GetLastError();
     return std::wstring();
   }
-  FML_LOG(ERROR) << "Succeeded and buffer=" << fml::WideStringToUtf8(buffer);
   return buffer;
 }
 
@@ -49,7 +43,6 @@ std::vector<std::wstring> GetPreferredLanguages() {
 
   // Initialize the buffer
   std::wstring buffer = GetPreferredLanguagesFromMUI();
-  FML_LOG(ERROR) << "Got buffer " << fml::WideStringToUtf8(buffer);
 
   // Extract the individual languages from the buffer.
   size_t start = 0;
@@ -60,9 +53,6 @@ std::vector<std::wstring> GetPreferredLanguages() {
     }
     // Read the next null-terminated language.
     std::wstring language(buffer.c_str() + start);
-    // TODO(schectman): Using for debugging on the devlab machine
-    FML_LOG(ERROR) << "GETTING LANGAUGES FROM MUI RETURNED: "
-                   << fml::WideStringToUtf8(language);
     if (language.empty()) {
       break;
     }
