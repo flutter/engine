@@ -27,7 +27,7 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
 }
 
 std::wstring GetPreferredLanguagesFromMUI() {
-  ULONG buffer_size;
+  ULONG buffer_size = 0;
   ULONG count = 0;
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
   if (!GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
