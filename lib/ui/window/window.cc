@@ -13,11 +13,12 @@
 
 namespace flutter {
 
-Window::Window(int64_t window_id, ViewportMetrics metrics)
-    : window_id_(window_id), viewport_metrics_(std::move(metrics)) {
-  library_.Set(tonic::DartState::Current(),
-               Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-}
+Window::Window(tonic::DartPersistentValue& library,
+               int64_t window_id,
+               ViewportMetrics metrics)
+    : library_(library),
+      window_id_(window_id),
+      viewport_metrics_(std::move(metrics)) {}
 
 Window::~Window() {}
 

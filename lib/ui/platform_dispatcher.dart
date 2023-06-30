@@ -66,6 +66,8 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
+const int _kImplicitViewId = 0;
+
 // A message channel to receive KeyData from the platform.
 //
 // See embedder.cc::kFlutterKeyDataChannel for more information.
@@ -116,6 +118,9 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+    if (_implicitViewEnabled) {
+      _doAddView(_kImplicitViewId);
+    }
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -213,10 +218,9 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
-
-  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
-  external static bool _implicitViewEnabled();
+  FlutterView? get implicitView {
+    return _views[_kImplicitViewId];
+  }
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -242,6 +246,28 @@ class PlatformDispatcher {
   set onMetricsChanged(VoidCallback? callback) {
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
+  }
+
+  FlutterView _createView(int id) {
+    return FlutterView._(id, this);
+  }
+
+  void _addView(int id) {
+    assert(id != _kImplicitViewId, 'The implicit view #$id can not be added.');
+    _doAddView(id);
+  }
+
+  void _doAddView(int id) {
+    assert(!_views.containsKey(id), 'View ID $id already exists.');
+    _views[id] = _createView(id);
+    _viewConfigurations[id] = const _ViewConfiguration();
+  }
+
+  void _removeView(int id) {
+    assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
+    assert(_views.containsKey(id), 'View ID $id does not exist.');
+    _views.remove(id);
+    _viewConfigurations.remove(id);
   }
 
   // Called from the engine, via hooks.dart.
@@ -283,9 +309,7 @@ class PlatformDispatcher {
   ) {
     final _ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const _ViewConfiguration();
-    if (!_views.containsKey(id)) {
-      _views[id] = FlutterView._(id, this);
-    }
+    _views.putIfAbsent(id, () => _createView(id));
     _viewConfigurations[id] = previousConfiguration.copyWith(
       view: _views[id],
       devicePixelRatio: devicePixelRatio,

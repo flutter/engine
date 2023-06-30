@@ -96,7 +96,6 @@ typedef CanvasPath Path;
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
-  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
   V(PlatformConfigurationNativeApi::Render, 1)                        \
@@ -377,6 +376,14 @@ void DartUI::InitForIsolate(const Settings& settings) {
 
   if (settings.enable_impeller) {
     result = Dart_SetField(dart_ui, ToDart("_impellerEnabled"), Dart_True());
+    if (Dart_IsError(result)) {
+      Dart_PropagateError(result);
+    }
+  }
+
+  if (settings.enable_implicit_view) {
+    result =
+        Dart_SetField(dart_ui, ToDart("_implicitViewEnabled"), Dart_True());
     if (Dart_IsError(result)) {
       Dart_PropagateError(result);
     }

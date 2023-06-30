@@ -224,6 +224,10 @@ struct Settings {
   // must be available to the application.
   bool enable_vulkan_validation = false;
 
+  // Enable the implicit view, so that the shell should create a view with
+  // kFlutterImplicitViewId without the platform calling FlutterEngineAddView.
+  bool enable_implicit_view = true;
+
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;
 

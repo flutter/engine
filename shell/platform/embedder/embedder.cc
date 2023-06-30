@@ -83,6 +83,8 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
+static constexpr int64_t kFlutterDefaultViewId = 0;
+
 // A message channel to send platform-independent FlutterKeyData to the
 // framework.
 //
@@ -1801,6 +1803,9 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
+  // TODO(dkwingsmt): Add a switch for this to FlutterProjectArgs so that
+  // platforms can configure whether to use the implicit view.
+  settings.enable_implicit_view = true;
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.
@@ -2186,6 +2191,8 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
+  // TODO(dkwingsmt): Use a real view ID when multiview is supported.
+  int64_t view_id = kFlutterDefaultViewId;
 
   flutter::ViewportMetrics metrics;
 
@@ -2227,7 +2234,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
-             metrics)
+             view_id, metrics)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Viewport metrics were invalid.");
