@@ -711,7 +711,8 @@ FLUTTER_ASSERT_ARC
   inputView.customRunLoopMode = runLoopMode;
 
   __block int updateCount = 0;
-  // OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
+  // OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg
+  // isNotNil]])
   //     .andDo(^(NSInvocation* invocation) {
   //       updateCount++;
   //     });
@@ -1428,7 +1429,7 @@ FLUTTER_ASSERT_ARC
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-      }); 
+      });
 
   [inputView unmarkText];
   // updateEditingClient shouldn't fire as the text is already unmarked.
