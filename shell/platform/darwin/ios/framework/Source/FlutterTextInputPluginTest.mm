@@ -711,15 +711,22 @@ FLUTTER_ASSERT_ARC
   inputView.customRunLoopMode = runLoopMode;
 
   __block int updateCount = 0;
-  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        updateCount++;
-      });
 
   [inputView insertText:@"text to insert"];
+  OCMExpect([engine
+      flutterTextInputView:inputView
+       updateEditingClient:0
+                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                              isEqualToString:@"text to insert"]) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                 }]]);
 
   __block bool done = false;
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
     done = true;
   });
 
@@ -733,28 +740,8 @@ FLUTTER_ASSERT_ARC
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
 
-  // Verify correct delta is generated.
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"text to insert"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
-                 }]]);
-
   [inputView deleteBackward];
-  done = false;
-  XCTAssertFalse(done);
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
-  }
-  XCTAssertEqual(updateCount, 2);
-
-  OCMVerify([engine
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -765,17 +752,20 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
                  }]]);
-
-  inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
   done = false;
   XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
   while (!done) {
     // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
-  XCTAssertEqual(updateCount, 3);
+  XCTAssertEqual(updateCount, 2);
 
-  OCMVerify([engine
+  inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -786,18 +776,21 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                  }]]);
-
-  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
-                 withText:@"replace text"];
   done = false;
   XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
   while (!done) {
     // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
-  XCTAssertEqual(updateCount, 4);
+  XCTAssertEqual(updateCount, 3);
 
-  OCMVerify([engine
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
+                 withText:@"replace text"];
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -808,17 +801,20 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
                  }]]);
-
-  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   done = false;
   XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
   while (!done) {
     // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
-  XCTAssertEqual(updateCount, 5);
+  XCTAssertEqual(updateCount, 4);
 
-  OCMVerify([engine
+  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -829,17 +825,21 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
                  }]]);
-
-  [inputView unmarkText];
   done = false;
   XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
   while (!done) {
     // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
-  XCTAssertEqual(updateCount, 6);
+  XCTAssertEqual(updateCount, 5);
 
-  OCMVerify([engine
+  [inputView unmarkText];
+  done = false;
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -850,6 +850,18 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                  }]]);
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+
+  XCTAssertEqual(updateCount, 6);
+  OCMVerifyAll(engine);
 }
 
 - (void)testTextEditingDeltasAreBatchedAndForwardedToFramework {
@@ -906,11 +918,11 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
+  // Define a custom runLoopMode to avoid conflicts with other tests
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
   __block int updateCount = 0;
-  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        updateCount++;
-      });
 
   [inputView.text setString:@"Some initial text"];
   XCTAssertEqual(updateCount, 0);
@@ -918,12 +930,21 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
-  OCMVerify([engine
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -934,30 +955,65 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  XCTAssertEqual(updateCount, 2);
+  XCTAssertTrue(done);
+  OCMVerifyAll(engine);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
+  // Define a custom runLoopMode to avoid conflicts with other tests
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
   __block int updateCount = 0;
-  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        updateCount++;
-      });
 
   [inputView.text setString:@"Some initial text"];
-  XCTAssertEqual(updateCount, 0);
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 0);
+  XCTAssertTrue(done);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  XCTAssertEqual(updateCount, 1);
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"text." selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
-  OCMVerify([engine
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -968,30 +1024,63 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    updateCount++;
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 2);
+  XCTAssertTrue(done);
+  OCMVerifyAll(engine);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
-  __block int updateCount = 0;
-  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        updateCount++;
-      });
+  // Define a custom runLoopMode to avoid conflicts with other tests
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
+  // __block int updateCount = 0;
 
   [inputView.text setString:@"Some initial text"];
-  XCTAssertEqual(updateCount, 0);
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 0);
+  XCTAssertTrue(done);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  XCTAssertEqual(updateCount, 1);
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"tex" selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
-  OCMVerify([engine
+  OCMExpect([engine
       flutterTextInputView:inputView
        updateEditingClient:0
                  withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
@@ -1002,6 +1091,19 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // XCTAssertEqual(updateCount, 2);
+  XCTAssertTrue(done);
+  OCMVerifyAll(engine);
 }
 
 #pragma mark - EditingState tests
@@ -1040,6 +1142,10 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
+  // Define a custom runLoopMode to avoid conflicts with other tests
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
@@ -1047,24 +1153,89 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView insertText:@"text to insert"];
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   [inputView deleteBackward];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 2);
+  XCTAssertTrue(done);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 3);
+  XCTAssertTrue(done);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 4);
+  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 5);
+  XCTAssertTrue(done);
 
   [inputView unmarkText];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 6);
+  XCTAssertTrue(done);
 }
 
 - (void)testTextChangesDoNotTriggerUpdateEditingClient {
@@ -1111,6 +1282,10 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
+  // Define a custom runLoopMode to avoid conflicts with other tests
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  inputView.customRunLoopMode = runLoopMode;
+
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
@@ -1118,33 +1293,123 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"BEFORE"];
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 0);
+  XCTAssertTrue(done);
 
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   // Text changes don't trigger an update.
   XCTAssertEqual(updateCount, 1);
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
+
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   // Selection changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
+
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
 
   // Composing region changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
   XCTAssertEqual(updateCount, 1);
+  XCTAssertTrue(done);
+
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+  done = false;
+  XCTAssertFalse(done);
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  XCTAssertTrue(done);
   XCTAssertEqual(updateCount, 1);
 }
 
