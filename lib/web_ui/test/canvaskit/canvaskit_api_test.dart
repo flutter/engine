@@ -296,7 +296,7 @@ void _imageTests() {
       ),
       isNotNull,
     );
-  });
+  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
 
   test('MakeAnimatedImageFromEncoded makes an animated image', () {
     final SkAnimatedImage animated =
@@ -311,7 +311,7 @@ void _imageTests() {
       expect(frame.height(), 1);
       expect(animated.decodeNextFrame(), 100);
     }
-  });
+  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
 }
 
 void _shaderTests() {
@@ -1153,7 +1153,7 @@ void _canvasTests() {
       canvasKit.BlendMode.SrcOver,
       Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
     );
-  });
+  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
 
   test('drawCircle', () {
     canvas.drawCircle(1, 2, 3, SkPaint());
@@ -1171,69 +1171,71 @@ void _canvasTests() {
     );
   });
 
-  test('drawImageOptions', () {
-    final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
-    canvas.drawImageOptions(
-      image.makeImageAtCurrentFrame(),
-      10,
-      20,
-      canvasKit.FilterMode.Linear,
-      canvasKit.MipmapMode.None,
-      SkPaint(),
-    );
-  });
+  group('[image codecs]', () {
+    test('drawImageOptions', () {
+      final SkAnimatedImage image =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
+      canvas.drawImageOptions(
+        image.makeImageAtCurrentFrame(),
+        10,
+        20,
+        canvasKit.FilterMode.Linear,
+        canvasKit.MipmapMode.None,
+        SkPaint(),
+      );
+    });
 
-  test('drawImageCubic', () {
-    final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
-    canvas.drawImageCubic(
-      image.makeImageAtCurrentFrame(),
-      10,
-      20,
-      0.3,
-      0.3,
-      SkPaint(),
-    );
-  });
+    test('drawImageCubic', () {
+      final SkAnimatedImage image =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
+      canvas.drawImageCubic(
+        image.makeImageAtCurrentFrame(),
+        10,
+        20,
+        0.3,
+        0.3,
+        SkPaint(),
+      );
+    });
 
-  test('drawImageRectOptions', () {
-    final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
-    canvas.drawImageRectOptions(
-      image.makeImageAtCurrentFrame(),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      canvasKit.FilterMode.Linear,
-      canvasKit.MipmapMode.None,
-      SkPaint(),
-    );
-  });
+    test('drawImageRectOptions', () {
+      final SkAnimatedImage image =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
+      canvas.drawImageRectOptions(
+        image.makeImageAtCurrentFrame(),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        canvasKit.FilterMode.Linear,
+        canvasKit.MipmapMode.None,
+        SkPaint(),
+      );
+    });
 
-  test('drawImageRectCubic', () {
-    final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
-    canvas.drawImageRectCubic(
-      image.makeImageAtCurrentFrame(),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      0.3,
-      0.3,
-      SkPaint(),
-    );
-  });
+    test('drawImageRectCubic', () {
+      final SkAnimatedImage image =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
+      canvas.drawImageRectCubic(
+        image.makeImageAtCurrentFrame(),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        0.3,
+        0.3,
+        SkPaint(),
+      );
+    });
 
-  test('drawImageNine', () {
-    final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
-    canvas.drawImageNine(
-      image.makeImageAtCurrentFrame(),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      Float32List.fromList(<double>[0, 0, 1, 1]),
-      canvasKit.FilterMode.Linear,
-      SkPaint(),
-    );
-  });
+    test('drawImageNine', () {
+      final SkAnimatedImage image =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
+      canvas.drawImageNine(
+        image.makeImageAtCurrentFrame(),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        Float32List.fromList(<double>[0, 0, 1, 1]),
+        canvasKit.FilterMode.Linear,
+        SkPaint(),
+      );
+    });
+  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
 
   test('drawLine', () {
     canvas.drawLine(0, 1, 2, 3, SkPaint());

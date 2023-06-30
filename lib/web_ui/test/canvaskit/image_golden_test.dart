@@ -111,68 +111,70 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       await expectFrameData(frame3, <int>[0, 0, 255, 255]);
     });
 
-    test('CkImage toString', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.toString(), '[1×1]');
-      image.dispose();
-    });
+    group('[image codecs]', () {
+      test('CkImage toString', () {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect(image.toString(), '[1×1]');
+        image.dispose();
+      });
 
-    test('CkImage can be explicitly disposed of', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.debugDisposed, isFalse);
-      expect(image.box.isDisposed, isFalse);
-      image.dispose();
-      expect(image.debugDisposed, isTrue);
-      expect(image.box.isDisposed, isTrue);
+      test('CkImage can be explicitly disposed of', () {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect(image.debugDisposed, isFalse);
+        expect(image.box.isDisposed, isFalse);
+        image.dispose();
+        expect(image.debugDisposed, isTrue);
+        expect(image.box.isDisposed, isTrue);
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-    });
+        // Disallow double-dispose.
+        expect(() => image.dispose(), throwsAssertionError);
+      });
 
-    test('CkImage can be explicitly disposed of when cloned', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final CountedRef<CkImage, SkImage> box = image.box;
-      expect(box.refCount, 1);
-      expect(box.debugGetStackTraces().length, 1);
+      test('CkImage can be explicitly disposed of when cloned', () async {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        final CountedRef<CkImage, SkImage> box = image.box;
+        expect(box.refCount, 1);
+        expect(box.debugGetStackTraces().length, 1);
 
-      final CkImage clone = image.clone();
-      expect(box.refCount, 2);
-      expect(box.debugGetStackTraces().length, 2);
+        final CkImage clone = image.clone();
+        expect(box.refCount, 2);
+        expect(box.debugGetStackTraces().length, 2);
 
-      expect(image.isCloneOf(clone), isTrue);
-      expect(box.isDisposed, isFalse);
+        expect(image.isCloneOf(clone), isTrue);
+        expect(box.isDisposed, isFalse);
 
-      expect(skImage.isDeleted(), isFalse);
-      image.dispose();
-      expect(box.refCount, 1);
-      expect(box.isDisposed, isFalse);
+        expect(skImage.isDeleted(), isFalse);
+        image.dispose();
+        expect(box.refCount, 1);
+        expect(box.isDisposed, isFalse);
 
-      expect(skImage.isDeleted(), isFalse);
-      clone.dispose();
-      expect(box.refCount, 0);
-      expect(box.isDisposed, isTrue);
+        expect(skImage.isDeleted(), isFalse);
+        clone.dispose();
+        expect(box.refCount, 0);
+        expect(box.isDisposed, isTrue);
 
-      expect(skImage.isDeleted(), isTrue);
-      expect(box.debugGetStackTraces().length, 0);
-    });
+        expect(skImage.isDeleted(), isTrue);
+        expect(box.debugGetStackTraces().length, 0);
+      });
 
-    test('CkImage toByteData', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect((await image.toByteData()).lengthInBytes, greaterThan(0));
-      expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
-    });
+      test('CkImage toByteData', () async {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect((await image.toByteData()).lengthInBytes, greaterThan(0));
+        expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
+      });
+    }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
 
     test('toByteData with decodeImageFromPixels on videoFrame formats', () async {
       // This test ensures that toByteData() returns pixels that can be used by decodeImageFromPixels
