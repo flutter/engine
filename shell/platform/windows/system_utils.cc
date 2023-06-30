@@ -19,8 +19,10 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
   language_info.reserve(languages.size());
 
   for (auto language : languages) {
+    FML_LOG(ERROR) << "Pushing " << fml::WideStringToUtf8(language);
     language_info.push_back(ParseLanguageName(language));
   }
+  FML_LOG(ERROR) << "Got " << language_info.size() << "langs";
   return language_info;
 }
 
@@ -36,6 +38,7 @@ std::wstring GetPreferredLanguagesFromMUI() {
                                      &buffer_size)) {
     return std::wstring();
   }
+  FML_LOG(ERROR) << "Succeeded and buffer=" << fml::WideStringToUtf8(buffer);
   return buffer;
 }
 
