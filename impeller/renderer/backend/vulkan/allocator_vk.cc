@@ -223,7 +223,6 @@ static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
           flags |= {};
         }
       } else {
-        flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
         flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
       }
       return flags;
