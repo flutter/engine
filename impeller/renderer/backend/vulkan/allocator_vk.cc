@@ -405,7 +405,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.requiredFlags =
+  allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationCreateFlags(
       desc.storage_mode, /*is_texture=*/false, desc.size);
