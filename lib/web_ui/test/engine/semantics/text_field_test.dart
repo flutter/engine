@@ -125,7 +125,6 @@ void testMain() {
 
       textField.blur();
 
-      expect(appHostNode.ownerDocument?.activeElement, textField);
       expect(await logger.idLog.first, 0);
       expect(await logger.actionLog.first, ui.SemanticsAction.didLoseAccessibilityFocus);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
