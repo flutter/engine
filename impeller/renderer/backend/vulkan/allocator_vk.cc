@@ -22,8 +22,10 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          const std::shared_ptr<DeviceHolder>& device_holder,
                          const vk::Instance& instance,
                          PFN_vkGetInstanceProcAddr get_instance_proc_address,
-                         PFN_vkGetDeviceProcAddr get_device_proc_address)
+                         PFN_vkGetDeviceProcAddr get_device_proc_address,
+                         const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
+  TRACE_EVENT0("impeller", "CreateAllocatorVK");
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(get_instance_proc_address);
 
   auto instance_handle = vulkan::VulkanHandle<VkInstance>(instance);
@@ -92,10 +94,12 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     return;
   }
   allocator_ = allocator;
+  supports_memoryless_textures_ = capabilities.SupportsMemorylessTextures();
   is_valid_ = true;
 }
 
 AllocatorVK::~AllocatorVK() {
+  TRACE_EVENT0("impeller", "DestroyAllocatorVK");
   if (allocator_) {
     ::vmaDestroyAllocator(allocator_);
   }
@@ -111,9 +115,11 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
 }
 
-static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
-                                                         TextureUsageMask usage,
-                                                         StorageMode mode) {
+static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
+    PixelFormat format,
+    TextureUsageMask usage,
+    StorageMode mode,
+    bool supports_memoryless_textures) {
   vk::ImageUsageFlags vk_usage;
 
   switch (mode) {
@@ -121,7 +127,9 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     case StorageMode::kDevicePrivate:
       break;
     case StorageMode::kDeviceTransient:
-      vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      if (supports_memoryless_textures) {
+        vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      }
       break;
   }
 
@@ -169,13 +177,31 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
   return VMA_MEMORY_USAGE_AUTO;
 }
 
-static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
+static constexpr VkMemoryPropertyFlags ToVKTextureMemoryPropertyFlags(
+    StorageMode mode,
+    bool supports_memoryless_textures) {
+  switch (mode) {
+    case StorageMode::kHostVisible:
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    case StorageMode::kDevicePrivate:
+      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    case StorageMode::kDeviceTransient:
+      if (supports_memoryless_textures) {
+        return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT |
+               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      }
+      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  }
+  FML_UNREACHABLE();
+}
+
+static constexpr VkMemoryPropertyFlags ToVKBufferMemoryPropertyFlags(
     StorageMode mode) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      // See https://github.com/flutter/flutter/issues/128556 . Some devices do
-      // not have support for coherent host memory so we don't request it here.
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
@@ -197,7 +223,6 @@ static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
           flags |= {};
         }
       } else {
-        flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
       }
       return flags;
@@ -217,8 +242,10 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
  public:
   AllocatedTextureSourceVK(const TextureDescriptor& desc,
                            VmaAllocator allocator,
-                           vk::Device device)
+                           vk::Device device,
+                           bool supports_memoryless_textures)
       : TextureSourceVK(desc) {
+    TRACE_EVENT0("impeller", "CreateDeviceTexture");
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
@@ -234,13 +261,15 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
     image_info.usage =
-        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode);
+        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode,
+                            supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
+    alloc_nfo.preferredFlags = ToVKTextureMemoryPropertyFlags(
+        desc.storage_mode, supports_memoryless_textures);
     alloc_nfo.flags =
         ToVmaAllocationCreateFlags(desc.storage_mode, /*is_texture=*/true,
                                    desc.GetByteSizeOfBaseMipLevel());
@@ -308,6 +337,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
   }
 
   ~AllocatedTextureSourceVK() {
+    TRACE_EVENT0("impeller", "DestroyDeviceTexture");
     image_view_.reset();
     if (image_) {
       ::vmaDestroyImage(
@@ -345,11 +375,12 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   if (!device_holder) {
     return nullptr;
   }
-  auto source =
-      std::make_shared<AllocatedTextureSourceVK>(desc,                       //
-                                                 allocator_,                 //
-                                                 device_holder->GetDevice()  //
-      );
+  auto source = std::make_shared<AllocatedTextureSourceVK>(
+      desc,                          //
+      allocator_,                    //
+      device_holder->GetDevice(),    //
+      supports_memoryless_textures_  //
+  );
   if (!source->IsValid()) {
     return nullptr;
   }
@@ -374,7 +405,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
+  allocation_info.requiredFlags =
+      ToVKBufferMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationCreateFlags(
       desc.storage_mode, /*is_texture=*/false, desc.size);
 
