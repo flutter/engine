@@ -26,7 +26,7 @@ class CkPicture implements ui.Picture {
   ui.Rect cullRect() => fromSkRect(skiaObject.cullRect());
 
   @override
-  int get approximateBytesUsed => 0;
+  int get approximateBytesUsed => skiaObject.approximateBytesUsed();
 
   @override
   bool get debugDisposed {

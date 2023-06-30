@@ -2600,6 +2600,10 @@ extension SkPictureExtension on SkPicture {
   @JS('cullRect')
   external JSFloat32Array _cullRect();
   Float32List cullRect() => _cullRect().toDart;
+
+  @JS('approximateBytesUsed')
+  external JSNumber _approximateBytesUsed();
+  int approximateBytesUsed() => _approximateBytesUsed().toDartInt;
 }
 
 @JS()
@@ -3550,11 +3554,13 @@ List<String> getCanvasKitJsFileNames(CanvasKitVariant variant) {
       return <String>[_kChromiumCanvasKitJsFileName];
   }
 }
+
 Iterable<String> get _canvasKitJsUrls {
   return getCanvasKitJsFileNames(configuration.canvasKitVariant).map(
     (String filename) => '$_canvasKitBaseUrl$filename',
   );
 }
+
 @visibleForTesting
 String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
@@ -3614,6 +3620,7 @@ Future<bool> _downloadCanvasKitJs(String url) {
     canvasKitScript.remove();
     canvasKitLoadCompleter.complete(true);
   }
+
   void errorEventHandler(DomEvent errorEvent) {
     canvasKitScript.remove();
     canvasKitLoadCompleter.complete(false);
