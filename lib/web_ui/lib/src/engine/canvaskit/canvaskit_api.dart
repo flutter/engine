@@ -27,6 +27,9 @@ import 'renderer.dart';
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 
+/// Whether the [canvasKit] being used is a Chromium variant.
+final bool isChromiumVariant = canvasKit.ParagraphBuilder.RequiresClientICU();
+
 bool get _enableCanvasKitChromiumInAutoMode => browserSupportsCanvaskitChromium;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
@@ -76,8 +79,14 @@ extension CanvasKitExtension on CanvasKit {
   @JS('MakeAnimatedImageFromEncoded')
   external SkAnimatedImage? _MakeAnimatedImageFromEncoded(
       JSUint8Array imageData);
-  SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData) =>
-      _MakeAnimatedImageFromEncoded(imageData.toJS);
+  SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData) {
+    assert(
+      !isChromiumVariant,
+      'This constructor should only be used with a non-Chromium build of '
+      'CanvasKit.',
+    );
+    return  _MakeAnimatedImageFromEncoded(imageData.toJS);
+  }
 
   external SkShaderNamespace get Shader;
   external SkMaskFilterNamespace get MaskFilter;

@@ -84,7 +84,7 @@ extension SegmentationCacheExtensions on SegmentationCache {
 /// without ICU data.
 void injectClientICU(SkParagraphBuilder builder) {
   assert(
-    canvasKit.ParagraphBuilder.RequiresClientICU(),
+    isChromiumVariant,
     'This method should only be used with the CanvasKit Chromium variant.',
   );
 

@@ -1615,7 +1615,7 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
-    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+    if (isChromiumVariant) {
       injectClientICU(builder);
     }
     final SkParagraph paragraph = builder.build();
@@ -1733,7 +1733,7 @@ void _paragraphTests() {
     );
     builder.addText('hello');
 
-    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+    if (isChromiumVariant) {
       injectClientICU(builder);
     }
 
