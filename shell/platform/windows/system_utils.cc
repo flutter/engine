@@ -8,6 +8,7 @@
 
 #include <sstream>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 
 namespace flutter {
@@ -53,6 +54,9 @@ std::vector<std::wstring> GetPreferredLanguages() {
     }
     // Read the next null-terminated language.
     std::wstring language(buffer.c_str() + start);
+    // TODO(schectman): Using for debugging on the devlab machine
+    FML_LOG(ERROR) << "GETTING LANGAUGES FROM MUI RETURNED: "
+                   << fml::WideStringToUtf8(language);
     if (language.empty()) {
       break;
     }
