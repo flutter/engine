@@ -20,7 +20,7 @@
 
 namespace flutter {
 
-constexpr uint64_t kFlutterDefaultViewId = 0ll;
+constexpr uint64_t kFlutterImplicitViewId = 0ll;
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
@@ -117,7 +117,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   // TODO(dkwingsmt): Needs a view ID here (or platform_data should probably
   // have multiple view metrics).
-  return SetViewportMetrics(kFlutterDefaultViewId,
+  return SetViewportMetrics(kFlutterImplicitViewId,
                             platform_data_.viewport_metrics) &&
          SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
@@ -345,7 +345,7 @@ void RuntimeController::ScheduleFrame() {
 // |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene) {
   // TODO(dkwingsmt): Currently only supports a single window.
-  int64_t view_id = kFlutterDefaultViewId;
+  int64_t view_id = kFlutterImplicitViewId;
   auto window =
       UIDartState::Current()->platform_configuration()->get_window(view_id);
   if (window == nullptr) {

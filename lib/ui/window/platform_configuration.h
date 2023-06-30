@@ -470,10 +470,7 @@ class PlatformConfiguration final {
 
   tonic::DartPersistentValue library_;
 
-  // All *actual* views that the app has.
-  //
-  // This means that, if implicit view is enabled but the implicit view is
-  // currently closed, `windows_` will not have an entry for ID 0.
+  // All current views mapped from view IDs.
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
   // ID starts at 1 because an ID of 0 indicates that no response is expected.

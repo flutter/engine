@@ -775,7 +775,7 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
-static constexpr int64_t kFlutterDefaultViewId = 0ll;
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
@@ -820,7 +820,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(surface));
           if (enable_implicit_view) {
-            rasterizer->AddView(kFlutterDefaultViewId);
+            rasterizer->AddView(kFlutterImplicitViewId);
           }
         }
 
@@ -1980,7 +1980,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     // TODO(dkwingsmt): Not sure what these fields are supposed to be after
     // multi-view. For now it sends the implicit view's dimension as before.
-    const auto& frame_size = ExpectedFrameSize(kFlutterDefaultViewId);
+    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 
@@ -2040,10 +2040,10 @@ void Shell::AddView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  if (view_id == kFlutterDefaultViewId) {
+  if (view_id == kFlutterImplicitViewId) {
     FML_DLOG(WARNING)
         << "Unexpected request to add the implicit view #"
-        << kFlutterDefaultViewId
+        << kFlutterImplicitViewId
         << ". This view should never be added. This call is no-op.";
     return;
   }
@@ -2070,10 +2070,10 @@ void Shell::RemoveView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  if (view_id == kFlutterDefaultViewId) {
+  if (view_id == kFlutterImplicitViewId) {
     FML_DLOG(WARNING)
         << "Unexpected request to remove the implicit view #"
-        << kFlutterDefaultViewId
+        << kFlutterImplicitViewId
         << ". This view should never be removed. This call is no-op.";
     return;
   }

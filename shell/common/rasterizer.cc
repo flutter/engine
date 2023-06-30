@@ -36,7 +36,7 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-static constexpr int64_t kFlutterDefaultViewId = 0;
+static constexpr int64_t kFlutterImplicitViewId = 0;
 
 Rasterizer::Rasterizer(Delegate& delegate,
                        MakeGpuImageBehavior gpu_image_behavior)
@@ -159,13 +159,13 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::AddView(int64_t view_id) {
-  FML_DCHECK(view_id == kFlutterDefaultViewId);
+  FML_DCHECK(view_id == kFlutterImplicitViewId);
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }
 
 void Rasterizer::RemoveSurface(int64_t view_id) {
-  FML_DCHECK(view_id == kFlutterDefaultViewId);
+  FML_DCHECK(view_id == kFlutterImplicitViewId);
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }
@@ -217,7 +217,7 @@ RasterStatus Rasterizer::Draw(
       [&](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
-        int64_t view_id = kFlutterDefaultViewId;
+        int64_t view_id = kFlutterImplicitViewId;
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);

@@ -31,7 +31,7 @@
 }
 
 - (nullable FlutterView*)viewForId:(FlutterViewId)viewId {
-  if (viewId == kFlutterDefaultViewId) {
+  if (viewId == kFlutterImplicitViewId) {
     return _defaultView;
   }
   return nil;
@@ -131,7 +131,7 @@ TEST(FlutterCompositorTest, TestPresent) {
   }};
   const FlutterLayer* layers_ptr = layers;
 
-  macos_compositor->Present(kFlutterDefaultViewId, &layers_ptr, 1);
+  macos_compositor->Present(kFlutterImplicitViewId, &layers_ptr, 1);
 
   ASSERT_EQ(presentedSurfaces.count, 1ul);
 }
