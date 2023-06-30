@@ -46,7 +46,8 @@ BlendColorFilter::~BlendColorFilter() = default;
 std::shared_ptr<ColorFilterContents> BlendColorFilter::GetColorFilter(
     std::shared_ptr<FilterInput> input,
     bool absorb_opacity) const {
-  auto filter = ColorFilterContents::MakeBlend(blend_mode_, {std::move(input)});
+  auto filter =
+      ColorFilterContents::MakeBlend(blend_mode_, {std::move(input)}, color_);
   filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
 }
