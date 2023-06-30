@@ -31,11 +31,13 @@ std::wstring GetPreferredLanguagesFromMUI() {
   ULONG count = 0;
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
   if (!GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
+    FML_LOG(ERROR) << "Failure on first call " << GetLastError();
     return std::wstring();
   }
   std::wstring buffer(buffer_size, '\0');
   if (!GetThreadPreferredUILanguages(flags, &count, buffer.data(),
                                      &buffer_size)) {
+    FML_LOG(ERROR) << "Failure on second call " << GetLastError();
     return std::wstring();
   }
   FML_LOG(ERROR) << "Succeeded and buffer=" << fml::WideStringToUtf8(buffer);
@@ -47,6 +49,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
 
   // Initialize the buffer
   std::wstring buffer = GetPreferredLanguagesFromMUI();
+  FML_LOG(ERROR) << "Got buffer " << fml::WideStringToUtf8(buffer);
 
   // Extract the individual languages from the buffer.
   size_t start = 0;
