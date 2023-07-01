@@ -19,6 +19,10 @@ class RenderPass;
 class RenderTarget;
 class BlitPass;
 
+namespace testing {
+class CommandBufferMock;
+}
+
 //------------------------------------------------------------------------------
 /// @brief      A collection of encoded commands to be submitted to the GPU for
 ///             execution. A command buffer is obtained from a graphics
@@ -39,6 +43,8 @@ class BlitPass;
 ///             different from the encoding order.
 ///
 class CommandBuffer {
+  friend class testing::CommandBufferMock;
+
  public:
   enum class Status {
     kPending,

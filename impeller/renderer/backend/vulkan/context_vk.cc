@@ -48,7 +48,7 @@ static std::optional<vk::PhysicalDevice> PickPhysicalDevice(
     const CapabilitiesVK& caps,
     const vk::Instance& instance) {
   for (const auto& device : instance.enumeratePhysicalDevices().value) {
-    if (caps.GetRequiredDeviceFeatures(device).has_value()) {
+    if (caps.GetEnabledDeviceFeatures(device).has_value()) {
       return device;
     }
   }
@@ -126,7 +126,8 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
-  raster_message_loop_ = fml::ConcurrentMessageLoop::Create(4u);
+  raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
+      std::min(4u, std::thread::hardware_concurrency()));
 #ifdef FML_OS_ANDROID
   raster_message_loop_->PostTaskToAllWorkers([]() {
     if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
@@ -148,8 +149,8 @@ void ContextVK::Setup(Settings settings) {
 
   gHasValidationLayers = caps->AreValidationsEnabled();
 
-  auto enabled_layers = caps->GetRequiredLayers();
-  auto enabled_extensions = caps->GetRequiredInstanceExtensions();
+  auto enabled_layers = caps->GetEnabledLayers();
+  auto enabled_extensions = caps->GetEnabledInstanceExtensions();
 
   if (!enabled_layers.has_value() || !enabled_extensions.has_value()) {
     VALIDATION_LOG << "Device has insufficient capabilities.";
@@ -276,7 +277,7 @@ void ContextVK::Setup(Settings settings) {
   /// Create the logical device.
   ///
   auto enabled_device_extensions =
-      caps->GetRequiredDeviceExtensions(device_holder->physical_device);
+      caps->GetEnabledDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
     // This shouldn't happen since we already did device selection. But doesn't
     // hurt to check again.
@@ -291,9 +292,9 @@ void ContextVK::Setup(Settings settings) {
   const auto queue_create_infos = GetQueueCreateInfos(
       {graphics_queue.value(), compute_queue.value(), transfer_queue.value()});
 
-  const auto required_features =
-      caps->GetRequiredDeviceFeatures(device_holder->physical_device);
-  if (!required_features.has_value()) {
+  const auto enabled_features =
+      caps->GetEnabledDeviceFeatures(device_holder->physical_device);
+  if (!enabled_features.has_value()) {
     // This shouldn't happen since the device can't be picked if this was not
     // true. But doesn't hurt to check.
     return;
@@ -303,7 +304,7 @@ void ContextVK::Setup(Settings settings) {
 
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPEnabledFeatures(&required_features.value());
+  device_info.setPEnabledFeatures(&enabled_features.value());
   // Device layers are deprecated and ignored.
 
   {
@@ -316,7 +317,7 @@ void ContextVK::Setup(Settings settings) {
     device_holder->device = std::move(device_result.value);
   }
 
-  if (!caps->SetDevice(device_holder->physical_device)) {
+  if (!caps->SetPhysicalDevice(device_holder->physical_device)) {
     VALIDATION_LOG << "Capabilities could not be updated.";
     return;
   }
@@ -331,7 +332,8 @@ void ContextVK::Setup(Settings settings) {
       device_holder,                     //
       device_holder->instance.get(),     //
       dispatcher.vkGetInstanceProcAddr,  //
-      dispatcher.vkGetDeviceProcAddr     //
+      dispatcher.vkGetDeviceProcAddr,    //
+      *caps                              //
       ));
 
   if (!allocator->IsValid()) {
@@ -472,6 +474,10 @@ const vk::Device& ContextVK::GetDevice() const {
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
+}
+
+void ContextVK::Shutdown() {
+  raster_message_loop_->Terminate();
 }
 
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {

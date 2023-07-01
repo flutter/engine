@@ -64,6 +64,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
+      .SetSupportsMemorylessTextures(true)
       .Build();
 }
 
@@ -83,8 +84,11 @@ ContextMTL::ContextMTL(
 
   // Worker task runner.
   {
-    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(4u);
+    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
+        std::min(4u, std::thread::hardware_concurrency()));
     raster_message_loop_->PostTaskToAllWorkers([]() {
+      // See https://github.com/flutter/flutter/issues/65752
+      // Intentionally opt out of QoS for raster task workloads.
       [[NSThread currentThread] setThreadPriority:1.0];
       sched_param param;
       int policy;
@@ -311,6 +315,11 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
 }
 
+// |Context|
+void ContextMTL::Shutdown() {
+  raster_message_loop_.reset();
+}
+
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextMTL::GetWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
@@ -353,8 +362,13 @@ bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   return true;
 }
 
-id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer() const {
-  return [command_queue_ commandBuffer];
+id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
+    const std::string& label) const {
+  auto buffer = [command_queue_ commandBuffer];
+  if (!label.empty()) {
+    [buffer setLabel:@(label.data())];
+  }
+  return buffer;
 }
 
 }  // namespace impeller

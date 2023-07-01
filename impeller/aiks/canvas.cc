@@ -58,10 +58,9 @@ void Canvas::Save() {
   Save(false);
 }
 
-void Canvas::Save(
-    bool create_subpass,
-    BlendMode blend_mode,
-    std::optional<EntityPass::BackdropFilterProc> backdrop_filter) {
+void Canvas::Save(bool create_subpass,
+                  BlendMode blend_mode,
+                  EntityPass::BackdropFilterProc backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
@@ -172,16 +171,6 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
-  if (xformation_stack_.size() == 1 &&  // If we're recording the root pass,
-      GetCurrentPass().GetElementCount() == 0 &&  // and this is the first item,
-      (paint.blend_mode == BlendMode::kSourceOver ||
-       paint.blend_mode == BlendMode::kSource) &&
-      paint.color.alpha >= 1.0f) {
-    // Then we can absorb this drawPaint as the clear color of the pass.
-    GetCurrentPass().SetClearColor(paint.color);
-    return;
-  }
-
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
@@ -492,10 +481,9 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::SaveLayer(
-    const Paint& paint,
-    std::optional<Rect> bounds,
-    const std::optional<Paint::ImageFilterProc>& backdrop_filter) {
+void Canvas::SaveLayer(const Paint& paint,
+                       std::optional<Rect> bounds,
+                       const Paint::ImageFilterProc& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -509,7 +497,7 @@ void Canvas::SaveLayer(
         std::make_unique<PaintPassDelegate>(paint, bounds));
   }
 
-  if (bounds.has_value() && !backdrop_filter.has_value()) {
+  if (bounds.has_value() && !backdrop_filter) {
     // Render target switches due to a save layer can be elided. In such cases
     // where passes are collapsed into their parent, the clipping effect to
     // the size of the render target that would have been allocated will be

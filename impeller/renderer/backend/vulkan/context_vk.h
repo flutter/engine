@@ -114,6 +114,9 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  // |Context|
+  void Shutdown() override;
+
   void SetOffscreenFormat(PixelFormat pixel_format);
 
   template <typename T>
