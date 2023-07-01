@@ -2176,7 +2176,7 @@ static Picture BlendModeTest(BlendMode blend_mode,
   canvas.DrawPaint({.color = Color::Black()});
 
   //----------------------------------------------------------------------------
-  /// 1. Save layer blending (top left).
+  /// 1. Save layer blending (top squares).
   ///
 
   canvas.Save();
@@ -2206,7 +2206,7 @@ static Picture BlendModeTest(BlendMode blend_mode,
   canvas.RestoreToCount(0);
 
   //----------------------------------------------------------------------------
-  /// 2. CPU blend modes (top left).
+  /// 2. CPU blend modes (bottom squares).
   ///
 
   canvas.Save();

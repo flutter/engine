@@ -251,7 +251,7 @@ bool EntityPass::Render(ContentContext& renderer,
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
     auto offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(), true,
-        GetClearColor(render_target.GetRenderTargetSize()).Premultiply());
+        GetClearColor(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
                   offscreen_target.GetRenderTarget()
@@ -356,8 +356,7 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   // Set up the clear color of the root pass.
-  color0.clear_color =
-      GetClearColor(render_target.GetRenderTargetSize()).Premultiply();
+  color0.clear_color = GetClearColor(render_target.GetRenderTargetSize());
   root_render_target.SetColorAttachment(color0, 0);
 
   EntityPassTarget pass_target(
@@ -928,7 +927,7 @@ Color EntityPass::GetClearColor(ISize target_size) const {
     }
     result = result.Blend(entity_color.value(), blend_mode);
   }
-  return result;
+  return result.Premultiply();
 }
 
 void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
