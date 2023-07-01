@@ -347,18 +347,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr                                // fence
   );
 
-<<<<<<< HEAD
   if (acq_result == vk::Result::eSuboptimalKHR ||
       acq_result == vk::Result::eErrorOutOfDateKHR ||
       acq_result == vk::Result::eTimeout) {
-=======
-  if (acq_result == vk::Result::eSuboptimalKHR) {
-    is_rotated_ = true;
-    return AcquireResult{true /* out of date */};
-  }
-
-  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
->>>>>>> 1419bdd04fc91992a7f5d7ce7c262d773b0e24b2
     return AcquireResult{true /* out of date */};
   }
 
@@ -399,85 +390,83 @@ bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
   auto current_frame = current_frame_;
   const auto encoders = context.GetCommandBufferQueue()->Take();
 
+  const auto& sync = synchronizers_[current_frame];
+
+  // Submit all command buffers.
+  {
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      return false;
+    };
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers;
+    for (const auto& encoder : encoders) {
+      buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+    }
+    submit_info.setCommandBuffers(buffers);
+    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+        vk::Result::eSuccess) {
+      return false;
+    }
+
+    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
+      return false;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  /// Transition the image to color-attachment-optimal.
+  ///
+  sync->final_cmd_buffer = context.CreateCommandBuffer();
+  if (!sync->final_cmd_buffer) {
+    return false;
+  }
+
+  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                                 .GetEncoder()
+                                 ->GetCommandBuffer();
+  {
+    LayoutTransition transition;
+    transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
+    transition.cmd_buffer = vk_final_cmd_buffer;
+    transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+    transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    transition.dst_access = {};
+    transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+    if (!image->SetLayout(transition)) {
+      return false;
+    }
+
+    if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+      return false;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  /// Signal that the presentation semaphore is ready.
+  ///
+  {
+    vk::SubmitInfo submit_info;
+    vk::PipelineStageFlags wait_stage =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    submit_info.setWaitDstStageMask(wait_stage);
+    submit_info.setWaitSemaphores(*sync->render_ready);
+    submit_info.setSignalSemaphores(*sync->present_ready);
+    submit_info.setCommandBuffers(vk_final_cmd_buffer);
+    auto result =
+        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+    if (result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not wait on render semaphore: "
+                     << vk::to_string(result);
+      return false;
+    }
+  }
+
   ContextVK::Cast(*context_strong)
       .GetConcurrentWorkerTaskRunner()
       ->PostTask([&, current_frame, index, encoders, image]() {
         const auto& sync = synchronizers_[current_frame];
-
-        // Submit all command buffers.
-        {
-          auto [fence_result, fence] =
-              context.GetDevice().createFenceUnique({});
-          if (fence_result != vk::Result::eSuccess) {
-            return false;
-          };
-          vk::SubmitInfo submit_info;
-          std::vector<vk::CommandBuffer> buffers;
-          for (const auto& encoder : encoders) {
-            buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
-          }
-          submit_info.setCommandBuffers(buffers);
-          if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
-              vk::Result::eSuccess) {
-            return false;
-          }
-
-          if (!context.GetFenceWaiter()->AddFence(std::move(fence),
-                                                  [encoders] {})) {
-            return false;
-          }
-        }
-
-        //----------------------------------------------------------------------------
-        /// Transition the image to color-attachment-optimal.
-        ///
-        sync->final_cmd_buffer = context.CreateCommandBuffer();
-        if (!sync->final_cmd_buffer) {
-          return false;
-        }
-
-        auto vk_final_cmd_buffer =
-            CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                .GetEncoder()
-                ->GetCommandBuffer();
-        {
-          LayoutTransition transition;
-          transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
-          transition.cmd_buffer = vk_final_cmd_buffer;
-          transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-          transition.src_stage =
-              vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          transition.dst_access = {};
-          transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
-
-          if (!image->SetLayout(transition)) {
-            return false;
-          }
-
-          if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
-            return false;
-          }
-        }
-
-        //----------------------------------------------------------------------------
-        /// Signal that the presentation semaphore is ready.
-        ///
-        {
-          vk::SubmitInfo submit_info;
-          vk::PipelineStageFlags wait_stage =
-              vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          submit_info.setWaitDstStageMask(wait_stage);
-          submit_info.setWaitSemaphores(*sync->render_ready);
-          submit_info.setSignalSemaphores(*sync->present_ready);
-          submit_info.setCommandBuffers(vk_final_cmd_buffer);
-          auto result =
-              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-          if (result != vk::Result::eSuccess) {
-            VALIDATION_LOG << "Could not wait on render semaphore: "
-                           << vk::to_string(result);
-            return false;
-          }
-        }
 
         //----------------------------------------------------------------------------
         /// Present the image.

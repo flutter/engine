@@ -134,7 +134,8 @@ void FenceWaiterVK::Main() {
     );
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
-                        "down the waiter thread.";
+                        "down the waiter thread: "
+                     << vk::to_string(result);
       break;
     }
 
