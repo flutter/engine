@@ -34,24 +34,18 @@ class FenceWaiterVK;
 
 class EnqueuedCommandBuffer {
  public:
-  explicit EnqueuedCommandBuffer()
-      : latch_(std::make_shared<fml::CountDownLatch>(1u)) {}
+  EnqueuedCommandBuffer() = default;
 
   ~EnqueuedCommandBuffer() = default;
 
-  std::shared_ptr<CommandEncoderVK>& WaitAndGet() {
-    latch_->Wait();
-    return encoder_;
-  }
+  std::shared_ptr<CommandEncoderVK>& WaitAndGet() { return encoder_; }
 
   void SetEncoder(std::shared_ptr<CommandEncoderVK> encoder) {
     encoder_ = std::move(encoder);
-    latch_->CountDown();
   }
 
  private:
   std::shared_ptr<CommandEncoderVK> encoder_;
-  std::shared_ptr<fml::CountDownLatch> latch_;
 };
 
 class CommandBufferQueue {
