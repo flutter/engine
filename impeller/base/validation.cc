@@ -11,7 +11,7 @@
 namespace impeller {
 
 static std::atomic_int32_t sValidationLogsDisabledCount = 0;
-static bool sValidationLogsAreFatal = true;
+static bool sValidationLogsAreFatal = false;
 
 void ImpellerValidationErrorsSetFatal(bool fatal) {
   sValidationLogsAreFatal = fatal;
