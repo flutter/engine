@@ -347,8 +347,12 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr                                // fence
   );
 
-  if (acq_result == vk::Result::eSuboptimalKHR ||
-      acq_result == vk::Result::eErrorOutOfDateKHR ||
+  if (acq_result == vk::Result::eSuboptimalKHR) {
+    is_rotated_ = true;
+    return AcquireResult{true /* out of date */};
+  }
+
+  if (acq_result == vk::Result::eErrorOutOfDateKHR ||
       acq_result == vk::Result::eTimeout) {
     return AcquireResult{true /* out of date */};
   }
@@ -490,6 +494,9 @@ bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
             // still complete successfully.
             [[fallthrough]];
           case vk::Result::eSuccess:
+            return true;
+          case vk::Result::eSuboptimalKHR:
+            is_rotated_ = true;
             return true;
           default:
             VALIDATION_LOG << "Could not present queue: "

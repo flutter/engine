@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/blit_pass_vk.h"
