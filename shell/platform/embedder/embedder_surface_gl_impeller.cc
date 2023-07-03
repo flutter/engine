@@ -49,6 +49,7 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
       fbo_reset_after_present_(fbo_reset_after_present),
       external_view_embedder_(std::move(external_view_embedder)),
       worker_(std::make_shared<ReactorWorker>()) {
+  worker_->SetReactionsAllowedOnCurrentThread(true);
   // Make sure all required members of the dispatch table are checked.
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
@@ -87,7 +88,6 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
   }
 
   FML_LOG(ERROR) << "Using the Impeller rendering backend (GLES/ANGLE).";
-  worker_->SetReactionsAllowedOnCurrentThread(true);
   valid_ = true;
 }
 
