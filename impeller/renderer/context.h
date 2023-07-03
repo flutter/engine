@@ -20,7 +20,7 @@ class PipelineLibrary;
 class Allocator;
 
 //------------------------------------------------------------------------------
-/// @brief      Do do anything rendering related with Impeller, you need a
+/// @brief      To do anything rendering related with Impeller, you need a
 ///             context.
 ///
 ///             Contexts are expensive to construct and typically you only need
@@ -34,8 +34,9 @@ class Allocator;
 ///             OpenGL ES, etc..).
 ///
 ///             Contexts are thread-safe. They may be created, used, and
-///             collected on any thread. They may also be accessed
-///             simultaneously from multiple threads.
+///             collected (though not from a thread used by an internal pool) on
+///             any thread. They may also be accessed simultaneously from
+///             multiple threads.
 ///
 ///             Contexts are abstract and a concrete instance must be created
 ///             using one of the subclasses of `Context` in
