@@ -28,6 +28,7 @@ namespace flutter {
 class AngleSurfaceManager {
  public:
   static std::unique_ptr<AngleSurfaceManager> Create();
+
   virtual ~AngleSurfaceManager();
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain

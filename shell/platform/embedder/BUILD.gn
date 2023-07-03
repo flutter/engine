@@ -95,16 +95,6 @@ template("embedder_source_set") {
     ]
 
     public_deps = [ ":embedder_headers" ]
-
-    if (embedder_enable_gl) {
-      sources += [
-        "embedder_external_texture_gl.cc",
-        "embedder_external_texture_gl.h",
-        "embedder_surface_gl.cc",
-        "embedder_surface_gl.h",
-      ]
-    }
-
     deps = [
       ":embedder_gpu_configuration",
       "//flutter/assets",
@@ -120,6 +110,23 @@ template("embedder_source_set") {
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
+
+
+    if (embedder_enable_gl) {
+      sources += [
+        "embedder_external_texture_gl.cc",
+        "embedder_external_texture_gl.h",
+        "embedder_surface_gl.cc",
+        "embedder_surface_gl.h",
+      ]
+
+      if (impeller_supports_rendering) {
+        sources += [
+          "embedder_surface_gl_impeller.cc",
+          "embedder_surface_gl_impeller.h",
+        ]
+      }
+    }
 
     if (impeller_supports_rendering) {
       sources += [
