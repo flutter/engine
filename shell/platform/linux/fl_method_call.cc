@@ -22,6 +22,9 @@ struct _FlMethodCall {
   FlBinaryMessengerResponseHandle* response_handle;
 };
 
+// Added here to stop the compiler from optimizing this function away.
+G_MODULE_EXPORT GType fl_method_call_get_type();
+
 G_DEFINE_TYPE(FlMethodCall, fl_method_call, G_TYPE_OBJECT)
 
 static void fl_method_call_dispose(GObject* object) {
