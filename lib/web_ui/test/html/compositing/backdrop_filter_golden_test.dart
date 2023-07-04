@@ -169,6 +169,36 @@ Future<void> testMain() async {
    await matchGoldenFile('backdrop_filter_colorFilter_as_imageFilter.png',
        region: region);
   });
+
+  test('nested filter with clip-path', () async {
+    const Rect region = Rect.fromLTWH(0, 0, 250, 250);
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground(region);
+    builder.addPicture(Offset.zero, backgroundPicture);
+    // Parent
+    builder.pushClipRRect(
+        RRect.fromLTRBR(0, 0, 200, 200, const Radius.circular(50)));
+    final Picture circleParent = _drawRectangeFilledColor(
+        region, 0, 0, 200, 200, const Color.fromRGBO(0, 100, 100, 0.8));
+    final ImageFilter blurFilterParent =
+        ImageFilter.blur(sigmaX: 10, sigmaY: 10);
+    builder.pushBackdropFilter(blurFilterParent);
+    builder.addPicture(Offset.zero, circleParent);
+    // Child
+    builder.pushClipRRect(
+        RRect.fromLTRBR(50, 50, 100, 100, const Radius.circular(40)));
+    final Picture circleChild = _drawRectangeFilledColor(
+        region, 50, 50, 100, 100, const Color.fromRGBO(200, 200, 0, 0.8));
+    final ImageFilter blurFilterChild =
+        ImageFilter.blur(sigmaX: 15, sigmaY: 15);
+    builder.pushBackdropFilter(blurFilterChild);
+    builder.addPicture(Offset.zero, circleChild);
+    builder.pop();
+
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+    await matchGoldenFile('backdrop_filter_nested_filter_with_clip_path.png',
+        region: region);
+  });
 }
 
 Picture _drawTestPictureWithCircles(Rect region, double offsetX, double offsetY) {
@@ -195,6 +225,19 @@ Picture _drawTestPictureWithCircles(Rect region, double offsetX, double offsetY)
       SurfacePaint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 0, 255, 1));
+  return recorder.endRecording();
+}
+
+Picture _drawRectangeFilledColor(Rect region, double offsetX, double offsetY,
+    double width, double height, Color color) {
+  final EnginePictureRecorder recorder =
+      PictureRecorder() as EnginePictureRecorder;
+  final RecordingCanvas canvas = recorder.beginRecording(region);
+  canvas.drawRect(
+      Rect.fromLTWH(offsetX, offsetY, width, height),
+      SurfacePaint()
+        ..style = PaintingStyle.fill
+        ..color = color);
   return recorder.endRecording();
 }
 
