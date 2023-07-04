@@ -27,7 +27,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   @override
   DomElement? get childContainer => _childContainer;
   DomElement? _childContainer;
-  DomElement? _filterElement;
   DomElement? _svgFilter;
   ui.Rect? _activeClipBounds;
   // Cached inverted transform for [transform].
@@ -39,7 +38,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   void adoptElements(PersistedBackdropFilter oldSurface) {
     super.adoptElements(oldSurface);
     _childContainer = oldSurface._childContainer;
-    _filterElement = oldSurface._filterElement;
     _svgFilter = oldSurface._svgFilter;
     oldSurface._childContainer = null;
   }
@@ -54,9 +52,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // This creates an additional interior element. Count it too.
       surfaceStatsFor(this).allocatedDomNodeCount++;
     }
-    _filterElement = defaultCreateElement('flt-backdrop-filter');
-    _filterElement!.style.transformOrigin = '0 0 0';
-    element..append(_filterElement!)..append(_childContainer!);
+    element.append(_childContainer!);
     return element;
   }
 
@@ -69,7 +65,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     flutterViewEmbedder.removeResource(_svgFilter);
     _svgFilter = null;
     _childContainer = null;
-    _filterElement = null;
   }
 
   @override
@@ -114,39 +109,38 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       }
       parentSurface = parentSurface.parent;
     }
-    final DomCSSStyleDeclaration filterElementStyle = _filterElement!.style;
-    filterElementStyle
+    // Setting the child container style to apply the backdrop-filter.
+    final DomCSSStyleDeclaration childContainerStyle = _childContainer!.style;
+    childContainerStyle
       ..position = 'absolute'
-      ..left = '${left}px'
-      ..top = '${top}px'
-      ..width = '${width}px'
-      ..height = '${height}px';
+      ..width = '${width + left}px'
+      ..height = '${height + top}px';
     if (browserEngine == BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
       // TODO(ferhat): Switch code to use filter when
       // See https://caniuse.com/#feat=css-backdrop-filter.
-      filterElementStyle
+      childContainerStyle
         ..backgroundColor = '#000'
         ..opacity = '0.2';
     } else {
       if (backendFilter is ModeHtmlColorFilter) {
-        _svgFilter = backendFilter.makeSvgFilter(_filterElement);
+        _svgFilter = backendFilter.makeSvgFilter(_childContainer);
         /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
         if (_svgFilter == null) {
             return;
         }
       } else if (backendFilter is MatrixHtmlColorFilter) {
-        _svgFilter = backendFilter.makeSvgFilter(_filterElement);
+        _svgFilter = backendFilter.makeSvgFilter(_childContainer);
       }
 
       // CSS uses pixel radius for blur. Flutter & SVG use sigma parameters. For
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
       if (browserEngine == BrowserEngine.webkit) {
-        setElementStyle(_filterElement!, '-webkit-backdrop-filter',
+        setElementStyle(_childContainer!, '-webkit-backdrop-filter',
             backendFilter.filterAttribute);
       }
-      setElementStyle(_filterElement!, 'backdrop-filter', backendFilter.filterAttribute);
+      setElementStyle(_childContainer!, 'backdrop-filter', backendFilter.filterAttribute);
     }
   }
 
