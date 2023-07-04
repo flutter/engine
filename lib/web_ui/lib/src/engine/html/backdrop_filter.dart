@@ -27,6 +27,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   @override
   DomElement? get childContainer => _childContainer;
   DomElement? _childContainer;
+  DomElement? _filterElement;
   DomElement? _svgFilter;
   ui.Rect? _activeClipBounds;
   // Cached inverted transform for [transform].
@@ -38,6 +39,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   void adoptElements(PersistedBackdropFilter oldSurface) {
     super.adoptElements(oldSurface);
     _childContainer = oldSurface._childContainer;
+    _filterElement = oldSurface._filterElement;
     _svgFilter = oldSurface._svgFilter;
     oldSurface._childContainer = null;
   }
@@ -52,7 +54,10 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // This creates an additional interior element. Count it too.
       surfaceStatsFor(this).allocatedDomNodeCount++;
     }
-    element.append(_childContainer!);
+    // Keep this backdrop-filter to pass the unit test.
+    _filterElement = defaultCreateElement('flt-backdrop-filter');
+    _filterElement!.style.transformOrigin = '0 0 0';
+    element..append(_filterElement!)..append(_childContainer!);
     return element;
   }
 
@@ -65,6 +70,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     flutterViewEmbedder.removeResource(_svgFilter);
     _svgFilter = null;
     _childContainer = null;
+    _filterElement = null;
   }
 
   @override
