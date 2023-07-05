@@ -29,7 +29,7 @@ class WindowsProcTable {
   // Get the preferred languages for the thread, and optionally the process,
   // and system, in that order, depending on the flags.
   // See
-  // https://learn.microsoft.com/en-us/windows/win32/api/winnls/nf-winnls-getthreadpreferreduilanguages
+  // https://learn.microsoft.com/windows/win32/api/winnls/nf-winnls-getthreadpreferreduilanguages
   virtual LRESULT GetThreadPreferredUILanguages(DWORD flags,
                                                 PULONG count,
                                                 PZZWSTR languages,
