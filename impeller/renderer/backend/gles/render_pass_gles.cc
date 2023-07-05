@@ -450,25 +450,25 @@ struct RenderPassData {
     }
   }
 
-  if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
-    if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
-    }
-    if (pass_data.discard_depth_attachment) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
-    }
-    if (pass_data.discard_stencil_attachment) {
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
-    }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
-    );
-  }
+  // if (gl.DiscardFramebufferEXT.IsAvailable()) {
+  //   std::vector<GLenum> attachments;
+  //   if (pass_data.discard_color_attachment) {
+  //     attachments.push_back(is_default_fbo ? GL_COLOR_EXT
+  //                                          : GL_COLOR_ATTACHMENT0);
+  //   }
+  //   if (pass_data.discard_depth_attachment) {
+  //     attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
+  //                                          : GL_DEPTH_ATTACHMENT);
+  //   }
+  //   if (pass_data.discard_stencil_attachment) {
+  //     attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
+  //                                          : GL_STENCIL_ATTACHMENT);
+  //   }
+  //   gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
+  //                            attachments.size(),  // attachments to discard
+  //                            attachments.data()   // size
+  //   );
+  // }
 
   return true;
 }
