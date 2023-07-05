@@ -21,7 +21,7 @@
 @end
 
 @interface UIViewController ()
-- (void)presentViewController:(UIViewController *)viewControllerToPresent
+- (void)presentViewController:(UIViewController*)viewControllerToPresent
                      animated:(BOOL)flag
                    completion:(void (^)(void))completion;
 @end
@@ -34,10 +34,12 @@
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
 
-  XCTestExpectation* presentExpectation = [self expectationWithDescription:@"Look Up view controller presented"];
+  XCTestExpectation* presentExpectation =
+      [self expectationWithDescription:@"Look Up view controller presented"];
 
-  FlutterViewController* engineViewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* engineViewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                      nibName:nil
+                                                                                       bundle:nil];
   FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
 
   FlutterPlatformPlugin* plugin =
@@ -47,8 +49,9 @@
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.invoke"
                                                                     arguments:@"Test"];
   FlutterResult result = ^(id result) {
-
-    OCMVerify([mockEngineViewController presentViewController:[OCMArg any] animated:YES completion:nil]);
+    OCMVerify([mockEngineViewController presentViewController:[OCMArg any]
+                                                     animated:YES
+                                                   completion:nil]);
     [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];

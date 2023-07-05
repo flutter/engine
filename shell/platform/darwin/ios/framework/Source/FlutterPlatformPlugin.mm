@@ -314,7 +314,9 @@ using namespace flutter;
   UIViewController* engineViewController = [_engine.get() viewController];
   UIReferenceLibraryViewController* referenceLibraryViewController =
       [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
-  [engineViewController presentViewController:referenceLibraryViewController animated:YES completion:nil];
+  [engineViewController presentViewController:referenceLibraryViewController
+                                     animated:YES
+                                   completion:nil];
 }
 
 - (UITextField*)textField {
