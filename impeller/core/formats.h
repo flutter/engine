@@ -293,13 +293,6 @@ constexpr const char* TextureUsageToString(TextureUsage usage) {
 
 std::string TextureUsageMaskToString(TextureUsageMask mask);
 
-enum class UsageHint {
-  /// @brief Texture or buffer is being used during the raster workload.
-  kRasterWorkload,
-  /// @brief Texture or buffer is being used as part of an async image upload.
-  kImageUpload,
-};
-
 enum class TextureIntent {
   kUploadFromHost,
   kRenderToTexture,

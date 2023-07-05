@@ -13,7 +13,6 @@ namespace impeller {
 struct DeviceBufferDescriptor {
   StorageMode storage_mode = StorageMode::kDeviceTransient;
   size_t size = 0u;
-  UsageHint usage_hint = UsageHint::kRasterWorkload;
 };
 
 }  // namespace impeller

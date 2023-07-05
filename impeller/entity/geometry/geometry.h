@@ -90,13 +90,7 @@ class Geometry {
 
   /// @return `true` if this geometry will completely cover all fragments in
   /// `rect` when the `transform` is applied to it.
-<<<<<<< HEAD
-  virtual bool CoversArea(const Matrix& transform, const Rect& rect) const {
-    return false;
-  }
-=======
   virtual bool CoversArea(const Matrix& transform, const Rect& rect) const;
->>>>>>> 1d9c8f35a5dc7e90f41996ab58c99da9be054016
 };
 
 }  // namespace impeller
