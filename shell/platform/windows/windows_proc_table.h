@@ -26,6 +26,11 @@ class WindowsProcTable {
   virtual BOOL GetPointerType(UINT32 pointer_id,
                               POINTER_INPUT_TYPE* pointer_type);
 
+  // Get the preferred languages for the thread, and optionally the process,
+  // and system, in that order, depending on the flags.
+  // See https://learn.microsoft.com/en-us/windows/win32/api/winnls/nf-winnls-getthreadpreferreduilanguages
+  virtual LRESULT GetThreadPreferredUILanguages(DWORD flags, PULONG count, PZZWSTR languages, PULONG length) const;
+
  private:
   using GetPointerType_ = BOOL __stdcall(UINT32 pointerId,
                                          POINTER_INPUT_TYPE* pointerType);

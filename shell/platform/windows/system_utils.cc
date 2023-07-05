@@ -12,8 +12,8 @@
 
 namespace flutter {
 
-std::vector<LanguageInfo> GetPreferredLanguageInfo() {
-  std::vector<std::wstring> languages = GetPreferredLanguages();
+std::vector<LanguageInfo> GetPreferredLanguageInfo(const WindowsProcTable& windows_proc_table) {
+  std::vector<std::wstring> languages = GetPreferredLanguages(windows_proc_table);
   std::vector<LanguageInfo> language_info;
   language_info.reserve(languages.size());
 
@@ -23,26 +23,26 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
   return language_info;
 }
 
-std::wstring GetPreferredLanguagesFromMUI() {
+std::wstring GetPreferredLanguagesFromMUI(const WindowsProcTable& windows_proc_table) {
   ULONG buffer_size = 0;
   ULONG count = 0;
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
-  if (!GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
+  if (!windows_proc_table.GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
     return std::wstring();
   }
   std::wstring buffer(buffer_size, '\0');
-  if (!GetThreadPreferredUILanguages(flags, &count, buffer.data(),
+  if (!windows_proc_table.GetThreadPreferredUILanguages(flags, &count, buffer.data(),
                                      &buffer_size)) {
     return std::wstring();
   }
   return buffer;
 }
 
-std::vector<std::wstring> GetPreferredLanguages() {
+std::vector<std::wstring> GetPreferredLanguages(const WindowsProcTable& windows_proc_table) {
   std::vector<std::wstring> languages;
 
   // Initialize the buffer
-  std::wstring buffer = GetPreferredLanguagesFromMUI();
+  std::wstring buffer = GetPreferredLanguagesFromMUI(windows_proc_table);
 
   // Extract the individual languages from the buffer.
   size_t start = 0;

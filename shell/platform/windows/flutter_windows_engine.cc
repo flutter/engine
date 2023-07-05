@@ -568,7 +568,7 @@ void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(windows_proc_table_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {

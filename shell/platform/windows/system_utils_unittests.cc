@@ -7,13 +7,15 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/system_utils.h"
+#include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
 TEST(SystemUtils, GetPreferredLanguageInfo) {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  WindowsProcTable proc_table;
+  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(WindowsProcTable());
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
   // The info should have a valid languge.
@@ -21,26 +23,28 @@ TEST(SystemUtils, GetPreferredLanguageInfo) {
 }
 
 TEST(SystemUtils, GetPreferredLanguages) {
-  std::vector<std::wstring> languages = GetPreferredLanguages();
+  MockWindowsProcTable proc_table;
+  ON_CALL(proc_table, GetThreadPreferredUILanguages).WillByDefault([](DWORD flags, PULONG count, PZZWSTR languages, PULONG size){
+    static const wchar_t lang[] = L"en-US\0\0";
+    static const size_t lang_len = sizeof(lang) / sizeof(wchar_t);
+    static const int cnt = 1;
+    if (languages == nullptr) {
+      *size = lang_len;
+      *count = cnt;
+    }
+    else if (*size >= lang_len) {
+      memcpy(languages, lang, lang_len * sizeof(wchar_t));
+    }
+    return TRUE;
+  });
+  std::vector<std::wstring> languages = GetPreferredLanguages(proc_table);
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
   // The language should be non-empty.
   EXPECT_FALSE(languages[0].empty());
   // There should not be a trailing null from the parsing step.
   EXPECT_EQ(languages[0].size(), wcslen(languages[0].c_str()));
-
-  // Get actual system language.
-  std::wstring wdl_msz = GetPreferredLanguagesFromMUI();
-  auto wdl_itr = wdl_msz.begin();
-  for (auto languages_itr = languages.begin(); languages_itr != languages.end();
-       languages_itr++) {
-    for (auto lang_itr = languages_itr->begin();
-         lang_itr != languages_itr->end(); lang_itr++) {
-      EXPECT_EQ(*lang_itr, *wdl_itr++);
-    }
-    EXPECT_EQ(*wdl_itr++, 0);
-  }
-  EXPECT_EQ(*wdl_itr, 0);
+  EXPECT_EQ(languages[0], L"en-US");
 }
 
 TEST(SystemUtils, ParseLanguageNameGeneric) {
