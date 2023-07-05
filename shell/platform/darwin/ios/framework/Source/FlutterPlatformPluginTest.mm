@@ -17,27 +17,42 @@
 
 @interface FlutterPlatformPlugin ()
 - (BOOL)isLiveTextInputAvailable;
-- (void)showLookUpView:(NSString*)term;
+- (void)showLookUpViewController:(NSString*)term;
+@end
+
+@interface UIViewController ()
+- (void)presentViewController:(UIViewController *)viewControllerToPresent
+                     animated:(BOOL)flag
+                   completion:(void (^)(void))completion;
 @end
 
 @implementation FlutterPlatformPluginTest
 
 - (void)testLookUpCallInitiated {
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  [engine runWithEntrypoint:nil];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
-  XCTestExpectation* invokeExpectation = [self expectationWithDescription:@"isLookUpInvoked"];
+
+  XCTestExpectation* presentExpectation = [self expectationWithDescription:@"Look Up view controller presented"];
+
+  FlutterViewController* engineViewController =
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
+
   FlutterPlatformPlugin* plugin =
       [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
-  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.initiate"
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.invoke"
                                                                     arguments:@"Test"];
   FlutterResult result = ^(id result) {
-    OCMVerify([mockPlugin showLookUpView:@"Test"]);
-    [invokeExpectation fulfill];
+
+    OCMVerify([mockEngineViewController presentViewController:[OCMArg any] animated:YES completion:nil]);
+    [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectationsWithTimeout:2 handler:nil];
 }
 
 - (void)testClipboardHasCorrectStrings {

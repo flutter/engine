@@ -115,8 +115,8 @@ using namespace flutter;
     result([self clipboardHasStrings]);
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
-  } else if ([method isEqualToString:@"LookUp.initiate"]) {
-    [self showLookUpView:args];
+  } else if ([method isEqualToString:@"LookUp.invoke"]) {
+    [self showLookUpViewController:args];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
@@ -310,11 +310,11 @@ using namespace flutter;
   return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
 }
 
-- (void)showLookUpView:(NSString*)term {
+- (void)showLookUpViewController:(NSString*)term {
   UIViewController* engineViewController = [_engine.get() viewController];
-  UIReferenceLibraryViewController* refVC =
+  UIReferenceLibraryViewController* referenceLibraryViewController =
       [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
-  [engineViewController presentViewController:refVC animated:YES completion:nil];
+  [engineViewController presentViewController:referenceLibraryViewController animated:YES completion:nil];
 }
 
 - (UITextField*)textField {
