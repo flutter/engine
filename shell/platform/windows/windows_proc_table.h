@@ -13,7 +13,7 @@
 namespace flutter {
 
 // Lookup table for Windows APIs that aren't available on all versions of
-// Windows.
+// Windows, or for mocking Windows API calls.
 class WindowsProcTable {
  public:
   WindowsProcTable();

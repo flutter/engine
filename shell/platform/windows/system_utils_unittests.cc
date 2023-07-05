@@ -28,7 +28,8 @@ TEST(SystemUtils, GetPreferredLanguages) {
   ON_CALL(proc_table, GetThreadPreferredUILanguages)
       .WillByDefault(
           [](DWORD flags, PULONG count, PZZWSTR languages, PULONG size) {
-            static const wchar_t lang[] = L"en-US\0\0";
+            // Languages string ends in a double-null.
+            static const wchar_t lang[] = L"en-US\0";
             static const size_t lang_len = sizeof(lang) / sizeof(wchar_t);
             static const int cnt = 1;
             if (languages == nullptr) {
