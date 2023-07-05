@@ -4271,6 +4271,12 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                                        "com.test.plugin", nullptr));
 
   EXPECT_EQ(stream->str(), "");
+
+  // Reset the log stream capturing after verifying no log was printed.
+  fml::CaptureNextLog(nullptr);
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
 }  // namespace testing
