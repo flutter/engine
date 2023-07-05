@@ -15,7 +15,8 @@ namespace testing {
 
 TEST(SystemUtils, GetPreferredLanguageInfo) {
   WindowsProcTable proc_table;
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(WindowsProcTable());
+  std::vector<LanguageInfo> languages =
+      GetPreferredLanguageInfo(WindowsProcTable());
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
   // The info should have a valid languge.
@@ -24,19 +25,20 @@ TEST(SystemUtils, GetPreferredLanguageInfo) {
 
 TEST(SystemUtils, GetPreferredLanguages) {
   MockWindowsProcTable proc_table;
-  ON_CALL(proc_table, GetThreadPreferredUILanguages).WillByDefault([](DWORD flags, PULONG count, PZZWSTR languages, PULONG size){
-    static const wchar_t lang[] = L"en-US\0\0";
-    static const size_t lang_len = sizeof(lang) / sizeof(wchar_t);
-    static const int cnt = 1;
-    if (languages == nullptr) {
-      *size = lang_len;
-      *count = cnt;
-    }
-    else if (*size >= lang_len) {
-      memcpy(languages, lang, lang_len * sizeof(wchar_t));
-    }
-    return TRUE;
-  });
+  ON_CALL(proc_table, GetThreadPreferredUILanguages)
+      .WillByDefault(
+          [](DWORD flags, PULONG count, PZZWSTR languages, PULONG size) {
+            static const wchar_t lang[] = L"en-US\0\0";
+            static const size_t lang_len = sizeof(lang) / sizeof(wchar_t);
+            static const int cnt = 1;
+            if (languages == nullptr) {
+              *size = lang_len;
+              *count = cnt;
+            } else if (*size >= lang_len) {
+              memcpy(languages, lang, lang_len * sizeof(wchar_t));
+            }
+            return TRUE;
+          });
   std::vector<std::wstring> languages = GetPreferredLanguages(proc_table);
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);

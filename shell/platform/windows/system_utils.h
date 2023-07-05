@@ -28,15 +28,18 @@ struct LanguageInfo {
 
 // Returns the list of user-preferred languages, in preference order,
 // parsed into LanguageInfo structures.
-std::vector<LanguageInfo> GetPreferredLanguageInfo(const WindowsProcTable& windows_proc_table);
+std::vector<LanguageInfo> GetPreferredLanguageInfo(
+    const WindowsProcTable& windows_proc_table);
 
 // Retrieve the preferred languages from the MUI API.
-std::wstring GetPreferredLanguagesFromMUI(const WindowsProcTable& windows_proc_table);
+std::wstring GetPreferredLanguagesFromMUI(
+    const WindowsProcTable& windows_proc_table);
 
 // Returns the list of user-preferred languages, in preference order.
 // The language names are as described at:
 // https://docs.microsoft.com/en-us/windows/win32/intl/language-names
-std::vector<std::wstring> GetPreferredLanguages(const WindowsProcTable& windows_proc_table);
+std::vector<std::wstring> GetPreferredLanguages(
+    const WindowsProcTable& windows_proc_table);
 
 // Parses a Windows language name into its components.
 LanguageInfo ParseLanguageName(std::wstring language_name);
