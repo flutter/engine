@@ -93,53 +93,6 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VALIDATION_LOG << "Could not create memory allocator";
     return;
   }
-  if (!CreateBufferPool(allocator, UsageHint::kRasterWorkload,
-                        &raster_buffer_pool_)) {
-    return;
-  }
-  if (!CreateBufferPool(allocator, UsageHint::kImageUpload,
-                        &image_upload_buffer_pool_)) {
-    return;
-  }
-
-  {
-    vk::ImageCreateInfo image_info;
-    image_info.flags = {};
-    image_info.imageType = vk::ImageType::e2D;
-    image_info.format = vk::Format::eR8G8B8A8Unorm;
-    image_info.extent = VkExtent3D{1u, 1u, 1u};
-    image_info.samples = vk::SampleCountFlagBits::e1;
-    image_info.mipLevels = 1u;
-    image_info.arrayLayers = 1u;
-    image_info.tiling = vk::ImageTiling::eOptimal;
-    image_info.initialLayout = vk::ImageLayout::eUndefined;
-    image_info.usage =
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-    image_info.sharingMode = vk::SharingMode::eExclusive;
-
-    auto create_info_native =
-        static_cast<vk::ImageCreateInfo::NativeType>(image_info);
-
-    VmaAllocationCreateInfo sampleAllocCreateInfo = {};
-    sampleAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    sampleAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-    uint32_t memTypeIndex;
-    VkResult res = vmaFindMemoryTypeIndexForImageInfo(
-        allocator, &create_info_native, &sampleAllocCreateInfo, &memTypeIndex);
-
-    VmaPoolCreateInfo poolCreateInfo = {};
-    poolCreateInfo.memoryTypeIndex = memTypeIndex;
-    poolCreateInfo.blockSize = 128ull * 1024 * 1024;
-
-    result = vk::Result{
-        vmaCreatePool(allocator, &poolCreateInfo, &image_upload_texture_pool_)};
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not create memory allocator";
-      return;
-    }
-  }
-
   allocator_ = allocator;
   supports_memoryless_textures_ = capabilities.SupportsMemorylessTextures();
   is_valid_ = true;
@@ -148,15 +101,6 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
 AllocatorVK::~AllocatorVK() {
   TRACE_EVENT0("impeller", "DestroyAllocatorVK");
   if (allocator_) {
-    if (raster_buffer_pool_) {
-      ::vmaDestroyPool(allocator_, raster_buffer_pool_);
-    }
-    if (image_upload_buffer_pool_) {
-      ::vmaDestroyPool(allocator_, image_upload_buffer_pool_);
-    }
-    if (image_upload_texture_pool_) {
-      ::vmaDestroyPool(allocator_, image_upload_texture_pool_);
-    }
     ::vmaDestroyAllocator(allocator_);
   }
 }
@@ -449,7 +393,12 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
   TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
-  buffer_info.usage = VmaBufferUsageFlags(desc.usage_hint);
+  buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
+                      vk::BufferUsageFlagBits::eIndexBuffer |
+                      vk::BufferUsageFlagBits::eUniformBuffer |
+                      vk::BufferUsageFlagBits::eStorageBuffer |
+                      vk::BufferUsageFlagBits::eTransferSrc |
+                      vk::BufferUsageFlagBits::eTransferDst;
   buffer_info.size = desc.size;
   buffer_info.sharingMode = vk::SharingMode::eExclusive;
   auto buffer_info_native =
