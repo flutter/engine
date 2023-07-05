@@ -39,8 +39,6 @@
 
 namespace flutter {
 
-static constexpr int64_t kDefaultViewId = 0ll;
-
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override { return nullptr; }
@@ -355,7 +353,7 @@ int RunTester(const flutter::Settings& settings,
   metrics.physical_width = physical_width;
   metrics.physical_height = physical_height;
   metrics.display_id = 0;
-  shell->GetPlatformView()->SetViewportMetrics(kDefaultViewId, metrics);
+  shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();

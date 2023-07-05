@@ -176,7 +176,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
-  bool SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
+  bool SetViewportMetrics(const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified display metrics to the running isolate.

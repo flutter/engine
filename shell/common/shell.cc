@@ -964,8 +964,7 @@ void Shell::OnPlatformViewScheduleFrame() {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
-                                             const ViewportMetrics& metrics) {
+void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
@@ -989,13 +988,16 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
       });
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), metrics, view_id]() {
+      [engine = engine_->GetWeakPtr(), metrics]() {
         if (engine) {
-          engine->SetViewportMetrics(view_id, metrics);
+          engine->SetViewportMetrics(metrics);
         }
       });
 
   {
+    // TODO(dkwingsmt): Use the correct view ID when this method supports
+    // multi-view.
+    int64_t view_id = kFlutterImplicitViewId;
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     expected_frame_sizes_[view_id] =
         SkISize::Make(metrics.physical_width, metrics.physical_height);

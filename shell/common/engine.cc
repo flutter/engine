@@ -300,9 +300,8 @@ void Engine::RemoveView(int64_t view_id) {
   runtime_controller_->RemoveView(view_id);
 }
 
-void Engine::SetViewportMetrics(int64_t view_id,
-                                const ViewportMetrics& metrics) {
-  runtime_controller_->SetViewportMetrics(view_id, metrics);
+void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
+  runtime_controller_->SetViewportMetrics(metrics);
   ScheduleFrame();
 }
 
