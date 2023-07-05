@@ -58,8 +58,7 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
-  static bool CreateBufferPool(VmaAllocator allocator,
-                               VmaPool* pool);
+  static bool CreateBufferPool(VmaAllocator allocator, VmaPool* pool);
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };

@@ -493,5 +493,4 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   return true;
 }
 
-
 }  // namespace impeller
