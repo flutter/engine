@@ -38,7 +38,14 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The view displaying Flutter content.
  *
- * This method may return |nil|, for instance in a headless environment.
+ * Some single-view APIs will eventually be replaced by their multi-view
+ * variant. During the deprecation period, the single-view APIs will coexist
+ * with and work with the multi-view APIs as if the other views don't exist.
+ * For backward compatibility, single-view APIs will always operate on this
+ * view, which is the first view assigned to the engine.
+ *
+ * This method may return |nil|, for instance in a headless environment, or when
+ * multi-view is supported in the future and the compatible mode is disabled.
  */
 @property(nullable, readonly) NSView* view;
 
