@@ -478,7 +478,7 @@ class PlatformConfiguration final {
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
 
-  void DoAddView(int64_t view_id);
+  void AddWindowRecord(int64_t view_id);
 };
 
 //----------------------------------------------------------------------------

@@ -36,7 +36,11 @@ PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
     : client_(client) {
   if (client_->ImplicitViewEnabled()) {
-    DoAddView(kFlutterImplicitViewId);
+    // Add PlatformConfiguration's window now, but don't add dart:ui's View
+    // here. The dart:ui needs another way to add the implicit view
+    // synchronously so that the view is available before the main function.
+    // See _implicitViewEnabled in natives.dart.
+    AddWindowRecord(kFlutterImplicitViewId);
   }
 }
 
@@ -88,18 +92,15 @@ void PlatformConfiguration::DidCreateIsolate() {
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
 }
 
-void PlatformConfiguration::AddView(int64_t view_id) {
-  FML_DCHECK(view_id != kFlutterImplicitViewId);
-  DoAddView(view_id);
-}
-
-void PlatformConfiguration::DoAddView(int64_t view_id) {
+void PlatformConfiguration::AddWindowRecord(int64_t view_id) {
   windows_.emplace(
       view_id, std::make_unique<Window>(library_, view_id,
                                         ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
-  if (view_id == kFlutterImplicitViewId) {
-    return;
-  }
+}
+
+void PlatformConfiguration::AddView(int64_t view_id) {
+  FML_DCHECK(view_id != kFlutterImplicitViewId);
+  AddWindowRecord(view_id);
   std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
   if (!dart_state) {
     return;
