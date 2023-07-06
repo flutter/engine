@@ -1,4 +1,4 @@
-Signature: 2c0fcbde9fc9a7d8b6614e8f5ec5166d
+Signature: 8f1b02e94364d75da9072158e6162328
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -1150,12 +1150,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/table.dart + ../../../fuchs
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/types.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/unknown_data.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia/lib/src/fakes/fuchsia_fakes.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/logger.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_fuchsia_log_writer.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_log_message.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_log_writer.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_stdout_log_writer.dart + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/logger/logger.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/services.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/service_provider_impl.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/internal/_error_node.dart + ../../../fuchsia/sdk/linux/LICENSE
@@ -1399,12 +1393,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/table.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/types.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/unknown_data.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/lib/src/fakes/fuchsia_fakes.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/logger.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_fuchsia_log_writer.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_log_message.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_log_writer.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_stdout_log_writer.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/logger/logger.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/services.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/service_provider_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/internal/_error_node.dart
@@ -2757,6 +2745,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/error.fidl + ../../../
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/types.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/interest.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/severity.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/driver_start_args.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/topology.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/iovar.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/crash_register.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_register.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -2917,6 +2907,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/error.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/interest.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/severity.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/driver_start_args.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/topology.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/iovar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/crash_register.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_register.fidl
@@ -3422,6 +3414,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/resolver.fi
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/publisher.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/composite_node_spec.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -3644,6 +3638,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/resolver.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/publisher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/composite_node_spec.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/overview.fidl
@@ -3864,6 +3860,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/media_session.dart + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/controller.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/names.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/graphical_presenter.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/endpoint.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -3898,6 +3895,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc + ../.
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/media_session.dart
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/names.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/graphical_presenter.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/endpoint.fidl

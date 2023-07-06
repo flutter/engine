@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '2d05e3ec6b6702eff0105940fd76b6b499acd031',
+  'skia_revision': '620de5ac9f6b9d47862dd1f2a09dc595c812ba87',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -290,7 +290,7 @@ deps = {
    Var('github_git') + '/google/flatbuffers.git' + '@' + '0a80646371179f8a7a5c1f42c31ee1d44dcf6709',
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'a2961dc659b4ae847a9c6120718cc2517ee57d9e',
+   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'e8c3bc9ea97d4423ad0515e5f1c064f486dae8b1',
 
   'src/third_party/khronos':
    Var('chromium_git') + '/chromium/src/third_party/khronos.git' + '@' + '676d544d2b8f48903b7da9fceffaa534a5613978',
@@ -889,7 +889,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'cytps4RRhs8-wbcVJpeyYqwIyB1JvIn_xNOdInHZKj0C'
+        'version': '3D0ft09qP4-Hp_3mQoSznlSZ6q9XPGl7Yt9lrqlk-0cC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -899,7 +899,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'nboAFpQUzwtrESDVo9WhDo_71uW-T16UjotopsEvxuUC'
+        'version': 'MEXi9Xyj7u24PSx_Jvgw9TuwyOPq0iNP_ntkEuuNNSYC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
