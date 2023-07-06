@@ -5,16 +5,12 @@
 part of dart.ui;
 
 @pragma('vm:entry-point')
-void _addView(
-  int id,
-) {
+void _addView(int id) {
   PlatformDispatcher.instance._addView(id);
 }
 
 @pragma('vm:entry-point')
-void _removeView(
-  int id,
-) {
+void _removeView(int id) {
   PlatformDispatcher.instance._removeView(id);
 }
 

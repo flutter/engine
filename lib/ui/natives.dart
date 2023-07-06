@@ -136,6 +136,6 @@ _ScheduleImmediateClosure _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 @pragma('vm:entry-point')
 bool _impellerEnabled = false;
 
-// Used internally to indicate whether the platform uses the implicit view.
+// Used internally to indicate whether the embedder enables the implicit view.
 @pragma('vm:entry-point')
 bool _implicitViewEnabled = false;
