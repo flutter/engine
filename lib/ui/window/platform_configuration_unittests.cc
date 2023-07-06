@@ -19,6 +19,8 @@
 namespace flutter {
 namespace testing {
 
+class PlatformConfigurationTest : public ShellTest {};
+
 TEST_F(PlatformConfigurationTest, Initialization) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
@@ -113,34 +115,19 @@ TEST_F(PlatformConfigurationTest, WindowMetricsUpdate) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-TEST_F(PlatformConfigurationTest,
-       RegularWindowIsUnavailableUntilMetricsUpdate) {
+TEST_F(PlatformConfigurationTest, RegularWindowIsUnavailableAtStartup) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-  auto nativeValidateConfiguration = [message_latch](
-                                         Dart_NativeArguments args) {
-    PlatformConfiguration* configuration =
-        UIDartState::Current()->platform_configuration();
+  auto nativeValidateConfiguration =
+      [message_latch](Dart_NativeArguments args) {
+        PlatformConfiguration* configuration =
+            UIDartState::Current()->platform_configuration();
 
-    // Non-implicit views should not be created at startup
-    ASSERT_EQ(configuration->get_window(1), nullptr);
-    configuration->get_window(1)->UpdateWindowMetrics(
-        ViewportMetrics{2.0, 10.0, 20.0, 22, 0});
-    ASSERT_EQ(
-        configuration->get_window(1)->viewport_metrics().device_pixel_ratio,
-        2.0);
-    ASSERT_EQ(configuration->get_window(1)->viewport_metrics().physical_width,
-              10.0);
-    ASSERT_EQ(configuration->get_window(1)->viewport_metrics().physical_height,
-              20.0);
-    ASSERT_EQ(
-        configuration->get_window(1)->viewport_metrics().physical_touch_slop,
-        22);
-    ASSERT_NE(configuration->get_window(1), nullptr);
-    ASSERT_EQ(configuration->get_window(2), nullptr);
+        ASSERT_EQ(configuration->get_window(1), nullptr);
+        ASSERT_EQ(configuration->get_window(2), nullptr);
 
-    message_latch->Signal();
-  };
+        message_latch->Signal();
+      };
 
   Settings settings = CreateSettingsForFixture();
   TaskRunners task_runners("test",                  // label

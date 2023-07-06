@@ -413,7 +413,8 @@ class PlatformConfiguration final {
   ///
   /// @param[in] window_id The id of the window to find and return.
   ///
-  /// @return     a pointer to the Window.
+  /// @return     a pointer to the Window. Nullptr if the ID is not registered
+  ///             yet.
   ///
   Window* get_window(int window_id);
 
