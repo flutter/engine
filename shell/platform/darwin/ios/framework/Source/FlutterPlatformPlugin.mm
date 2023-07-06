@@ -312,6 +312,7 @@ using namespace flutter;
 
 - (void)showLookUpViewController:(NSString*)term {
   UIViewController* engineViewController = [_engine.get() viewController];
+  FML_DCHECK(![engineViewController presentingViewController]);
   UIReferenceLibraryViewController* referenceLibraryViewController =
       [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
   [engineViewController presentViewController:referenceLibraryViewController
