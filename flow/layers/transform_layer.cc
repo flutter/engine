@@ -41,7 +41,7 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 void TransformLayer::Preroll(PrerollContext* context) {
   auto mutator = context->state_stack.save();
-  mutator.transform(transform_);
+  mutator.transform(transform_.asM33());
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_paint_bounds);
