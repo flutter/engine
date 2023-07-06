@@ -49,9 +49,10 @@
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.invoke"
                                                                     arguments:@"Test"];
   FlutterResult result = ^(id result) {
-    OCMVerify([mockEngineViewController presentViewController:[OCMArg any]
-                                                     animated:YES
-                                                   completion:nil]);
+    OCMVerify([mockEngineViewController
+        presentViewController:[OCMArg isKindOfClass:[UIReferenceLibraryViewController class]]
+                     animated:YES
+                   completion:nil]);
     [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
