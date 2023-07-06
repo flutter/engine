@@ -1105,7 +1105,6 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
   Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
-  FML_LOG(ERROR) << "drawTextBlob with scale " << scale;
   canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
                         impeller::Point{x, y},               //
                         paint_                               //
