@@ -474,8 +474,7 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible);
   allocation_info.flags =
-      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-      VMA_ALLOCATION_CREATE_MAPPED_BIT;
+      ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
 
   uint32_t memTypeIndex;
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
