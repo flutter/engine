@@ -450,7 +450,6 @@
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
 ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
@@ -497,6 +496,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.element/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
@@ -2611,6 +2611,7 @@
 ../../../third_party/skia/experimental
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gm/BUILD.bazel
+../../../third_party/skia/gm/android_gm_test.bzl
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
 ../../../third_party/skia/gn/bazel_build.py
