@@ -34,9 +34,8 @@ class EmbedderSurfaceGLImpeller final : public EmbedderSurface,
   EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table_;
   bool fbo_reset_after_present_;
   std::shared_ptr<impeller::ContextGLES> impeller_context_;
-  std::shared_ptr<ReactorWorker> worker_;
-
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<ReactorWorker> worker_;
 
   // |EmbedderSurface|
   bool IsValid() const override;
