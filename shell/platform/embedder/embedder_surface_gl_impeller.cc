@@ -11,6 +11,7 @@
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/scene/shaders/gles/scene_shaders_gles.h"
+#include "flutter/shell/common/shell_io_manager.h"
 
 namespace flutter {
 
@@ -171,8 +172,27 @@ std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
 }
 
 // |EmbedderSurface|
-std::shared_ptr<impeller::Context> EmbedderSurfaceGLImpeller::CreateImpellerContext() const {
+std::shared_ptr<impeller::Context>
+EmbedderSurfaceGLImpeller::CreateImpellerContext() const {
   return impeller_context_;
+}
+
+// |EmbedderSurface|
+sk_sp<GrDirectContext> EmbedderSurfaceGLImpeller::CreateResourceContext()
+    const {
+  sk_sp<GrDirectContext> resource_context;
+  if (gl_dispatch_table_.gl_make_resource_current_callback()) {
+    worker_->SetReactionsAllowedOnCurrentThread(true);
+    // TODO(chinmaygarde): Currently, this code depends on the fact that only
+    // the OpenGL surface will be able to make a resource context current. If
+    // this changes, this assumption breaks. Handle the same.
+    resource_context = ShellIOManager::CreateCompatibleResourceLoadingContext(
+        GrBackend::kOpenGL_GrBackend,
+        GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+  } else {
+    FML_DLOG(ERROR) << "Could not make the resource context current.";
+  }
+  return resource_context;
 }
 
 }  // namespace flutter

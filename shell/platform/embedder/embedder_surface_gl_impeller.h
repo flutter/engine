@@ -70,6 +70,9 @@ class EmbedderSurfaceGLImpeller final : public EmbedderSurface,
   // |GPUSurfaceGLDelegate|
   SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
+  // |EmbedderSurface|
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGLImpeller);
 };
 
