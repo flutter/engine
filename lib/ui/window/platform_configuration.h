@@ -415,14 +415,7 @@ class PlatformConfiguration final {
   ///
   /// @return     a pointer to the Window.
   ///
-  Window* get_window(int window_id) {
-    auto found = windows_.find(window_id);
-    if (found != windows_.end()) {
-      return found->second.get();
-    } else {
-      return nullptr;
-    }
-  }
+  Window* get_window(int window_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
