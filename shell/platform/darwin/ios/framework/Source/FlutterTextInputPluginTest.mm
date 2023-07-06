@@ -713,16 +713,19 @@ FLUTTER_ASSERT_ARC
   __block int updateCount = 0;
 
   [inputView insertText:@"text to insert"];
-  OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"text to insert"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
-                 }]]).andDo(^(NSInvocation* invocation) {
+  OCMExpect(
+      [engine
+          flutterTextInputView:inputView
+           updateEditingClient:0
+                     withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                       return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                  isEqualToString:@""]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                  isEqualToString:@"text to insert"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                     }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   XCTAssertEqual(updateCount, 0);
@@ -743,17 +746,19 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 1);
 
   [inputView deleteBackward];
-  OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to insert"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
-                 }]]).andDo(^(NSInvocation* invocation) {
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"text to insert"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@""]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == 13) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == 14);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   done = false;
@@ -768,17 +773,19 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
-  OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]).andDo(^(NSInvocation* invocation) {
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"text to inser"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@""]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == -1) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == -1);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   done = false;
@@ -794,17 +801,19 @@ FLUTTER_ASSERT_ARC
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
-  OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"replace text"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
-                 }]]).andDo(^(NSInvocation* invocation) {
+  OCMExpect(
+      [engine
+          flutterTextInputView:inputView
+           updateEditingClient:0
+                     withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                       return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                  isEqualToString:@"text to inser"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                  isEqualToString:@"replace text"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
+                     }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   done = false;
@@ -819,17 +828,19 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
-  OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"replace textext to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"marked text"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
-                 }]]).andDo(^(NSInvocation* invocation) {
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"replace textext to inser"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@"marked text"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == 12) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == 12);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   done = false;
@@ -846,16 +857,19 @@ FLUTTER_ASSERT_ARC
   [inputView unmarkText];
   done = false;
   OCMExpect([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"replace textmarked textext to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]).andDo(^(NSInvocation* invocation) {
+                flutterTextInputView:inputView
+                 updateEditingClient:0
+                           withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                             return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                        isEqualToString:@"replace textmarked textext to inser"]) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                        isEqualToString:@""]) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                                     -1) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] ==
+                                     -1);
+                           }]])
+      .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
   XCTAssertFalse(done);
