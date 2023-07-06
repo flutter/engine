@@ -722,11 +722,13 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@"text to insert"]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  XCTAssertEqual(updateCount, 0);
 
   __block bool done = false;
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
 
@@ -751,11 +753,12 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@""]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
   done = false;
   XCTAssertFalse(done);
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
   while (!done) {
@@ -775,11 +778,12 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@""]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
   done = false;
   XCTAssertFalse(done);
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
   while (!done) {
@@ -800,11 +804,12 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@"replace text"]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
   done = false;
   XCTAssertFalse(done);
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
   while (!done) {
@@ -824,11 +829,12 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@"marked text"]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
   done = false;
   XCTAssertFalse(done);
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
   while (!done) {
@@ -849,10 +855,11 @@ FLUTTER_ASSERT_ARC
                               isEqualToString:@""]) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]);
+                 }]]).andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
   XCTAssertFalse(done);
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
-    updateCount++;
     done = true;
   });
   while (!done) {
