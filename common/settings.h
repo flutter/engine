@@ -224,8 +224,30 @@ struct Settings {
   // must be available to the application.
   bool enable_vulkan_validation = false;
 
-  // Enable the implicit view, so that the shell should create a view with
-  // kFlutterImplicitViewId without the platform calling FlutterEngineAddView.
+  // Enable the implicit view.
+  //
+  // The implicit view is a compatibility mode to help the transition from
+  // single-view APIs to multi-view APIs, which use different models for views.
+  // Although single-view APIs will eventually be replaced by their multi-view
+  // variants, during the deprecation period, the single-view APIs will coexist
+  // with and work with the multi-view APIs as if the other views don't exist.
+  // To achieve this, the platform can enable "implicit view", which is a
+  // special view that keeps all behaviors of "the view" in a legacy
+  // single-view Flutter app, allowing single-view APIs to continue working,
+  // while new-style "regular" views created by new ways must be operated by
+  // multi-view APIs.
+  //
+  // If implicit view is disabled, then all views should be created by
+  // Shell::AddView before being used, and removed by Shell::RemoveView after
+  // they are gone.
+  //
+  // If implicit view is enabled, in addition to the "regular views" as above,
+  // the shell (including the engine and the dart:ui library) will implicitly
+  // create a view upon initialization without `Shell::AddView` (hence the
+  // name). This view will have a view ID of kFlutterImplicitViewId, and
+  // can never be removed, even if the window that shows the view is closed.
+  // The caller should adjust accordingly by providing contents and operations
+  // to the view without calling Shell::AddView or Shell::RemoveView.
   bool enable_implicit_view = true;
 
   // Data set by platform-specific embedders for use in font initialization.
