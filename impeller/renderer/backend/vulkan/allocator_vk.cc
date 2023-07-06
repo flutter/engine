@@ -478,14 +478,18 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
       VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
   uint32_t memTypeIndex;
-  VkResult res = vmaFindMemoryTypeIndexForBufferInfo(
-      allocator, &buffer_info_native, &allocation_info, &memTypeIndex);
+  auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
+      allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not find memory type for buffer pool.";
+    return false;
+  }
 
   VmaPoolCreateInfo pool_create_info = {};
   pool_create_info.memoryTypeIndex = memTypeIndex;
   pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
 
-  auto result = vk::Result{vmaCreatePool(allocator, &pool_create_info, pool)};
+  result = vk::Result{vmaCreatePool(allocator, &pool_create_info, pool)};
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create buffer pool.";
     return false;
