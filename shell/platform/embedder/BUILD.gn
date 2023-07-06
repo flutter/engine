@@ -111,7 +111,6 @@ template("embedder_source_set") {
       "//third_party/skia",
     ]
 
-
     if (embedder_enable_gl) {
       sources += [
         "embedder_external_texture_gl.cc",

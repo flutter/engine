@@ -11,7 +11,6 @@
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/scene/shaders/gles/scene_shaders_gles.h"
-#include "flutter/shell/common/shell_io_manager.h"
 
 namespace flutter {
 
