@@ -53,6 +53,10 @@ DiffContext::State::State()
       has_filter_bounds_adjustment(false),
       has_texture(false) {}
 
+void DiffContext::PushTransform(const SkM44& transform) {
+  clip_tracker_.transform(transform);
+}
+
 void DiffContext::PushTransform(const SkMatrix& transform) {
   clip_tracker_.transform(transform);
 }

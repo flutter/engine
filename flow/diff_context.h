@@ -68,8 +68,11 @@ class DiffContext {
     DiffContext* context_;
   };
 
-  // Pushes additional transform for current subtree
+  // Pushes additional 3x3 transform for current subtree.
   void PushTransform(const SkMatrix& transform);
+
+  // Pushes additional 4x4 transform for current subtree.
+  void PushTransform(const SkM44& transform);
 
   // Pushes cull rect for current subtree
   bool PushCullRect(const SkRect& clip);

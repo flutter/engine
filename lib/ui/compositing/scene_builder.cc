@@ -24,6 +24,7 @@
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -44,7 +45,7 @@ SceneBuilder::~SceneBuilder() = default;
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
                                  tonic::Float64List& matrix4,
                                  const fml::RefPtr<EngineLayer>& oldLayer) {
-  SkMatrix sk_matrix = ToSkMatrix(matrix4);
+  SkM44 sk_matrix = ToSkM44(matrix4);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
@@ -60,8 +61,8 @@ void SceneBuilder::pushOffset(Dart_Handle layer_handle,
                               double dx,
                               double dy,
                               const fml::RefPtr<EngineLayer>& oldLayer) {
-  SkMatrix sk_matrix = SkMatrix::Translate(SafeNarrow(dx), SafeNarrow(dy));
-  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  SkM44 sk_m44 = SkM44::Translate(SafeNarrow(dx), SafeNarrow(dy));
+  auto layer = std::make_shared<flutter::TransformLayer>(sk_m44);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

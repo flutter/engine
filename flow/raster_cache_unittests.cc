@@ -673,7 +673,7 @@ TEST(RasterCache, PrepareLayerTransform) {
       std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
   auto blur_layer = std::make_shared<ImageFilterLayer>(blur_filter);
   SkMatrix matrix = SkMatrix::Scale(2, 2);
-  auto transform_layer = std::make_shared<TransformLayer>(matrix);
+  auto transform_layer = std::make_shared<TransformLayer>(SkM44(matrix));
   SkMatrix cache_matrix = SkMatrix::Translate(-20, -20);
   cache_matrix.preConcat(matrix);
   child_layer->set_expected_paint_matrix(cache_matrix);

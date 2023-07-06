@@ -890,7 +890,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
     root->Add(platform_view_layer);
     auto transform_layer =
-        std::make_shared<TransformLayer>(SkMatrix::Translate(1, 1));
+        std::make_shared<TransformLayer>(SkM44::Translate(1, 1));
     root->Add(transform_layer);
     auto clip_rect_layer = std::make_shared<ClipRectLayer>(
         SkRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);

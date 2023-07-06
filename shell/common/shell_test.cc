@@ -203,7 +203,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        SkMatrix identity;
+        SkM44 identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
         auto layer_tree = std::make_unique<LayerTree>(

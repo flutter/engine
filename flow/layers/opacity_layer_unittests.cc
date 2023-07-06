@@ -534,7 +534,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
   auto opacity_layer =
       std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
-  auto transformLayer = std::make_shared<TransformLayer>(SkMatrix::Scale(2, 2));
+  auto transformLayer = std::make_shared<TransformLayer>(SkM44::Scale(2, 2));
   auto mock_layer = MockLayer::MakeOpacityCompatible(SkPath());
   transformLayer->Add(mock_layer);
   opacity_layer->Add(transformLayer);

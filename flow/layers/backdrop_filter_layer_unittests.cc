@@ -455,7 +455,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
 
   MockLayerTree l3;
-  auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
+  auto scale = std::make_shared<TransformLayer>(SkM44::Scale(2.0, 2.0));
   scale->Add(clip);
   l3.root()->Add(scale);
 
@@ -499,7 +499,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
   transform.setPerspX(0.1);
   transform.setPerspY(0.1);
 
-  auto transform_layer = std::make_shared<TransformLayer>(transform);
+  auto transform_layer = std::make_shared<TransformLayer>(SkM44(transform));
   l1.root()->Add(transform_layer);
   transform_layer->Add(std::make_shared<BackdropFilterLayer>(
       filter.shared(), DlBlendMode::kSrcOver));

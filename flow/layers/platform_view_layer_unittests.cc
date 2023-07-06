@@ -113,8 +113,8 @@ TEST_F(PlatformViewLayerTest, StateTransfer) {
   //   |- platform_layer
   //   |- transform_layer2
   //        |- child2
-  auto transform_layer1 = std::make_shared<TransformLayer>(transform1);
-  auto transform_layer2 = std::make_shared<TransformLayer>(transform2);
+  auto transform_layer1 = std::make_shared<TransformLayer>(SkM44(transform1));
+  auto transform_layer2 = std::make_shared<TransformLayer>(SkM44(transform2));
   auto platform_layer =
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
   auto child1 = std::make_shared<MockLayer>(path1);
