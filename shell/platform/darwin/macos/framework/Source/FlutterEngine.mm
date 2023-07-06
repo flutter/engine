@@ -1103,16 +1103,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
-    if ([self terminationHandler] != nil) {
-      [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
-    } else {
+    if ([self terminationHandler] == nil) {
       // If the termination handler isn't set, then either we haven't
       // initialized it yet, or (more likely) the NSApp delegate isn't a
       // FlutterAppDelegate, so it can't cancel requests to exit. So, in that
       // case, just terminate when requested.
       [NSApp terminate:self];
+      result(nil);
+    } else {
+      [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
     }
-    result(nil);
   } else if ([call.method isEqualToString:@"System.initializationComplete"]) {
     if ([self terminationHandler] != nil) {
       [self terminationHandler].acceptingRequests = YES;
