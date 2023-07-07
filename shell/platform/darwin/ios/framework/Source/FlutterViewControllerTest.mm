@@ -187,6 +187,17 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   return mockView;
 }
 
+- (void)testKeyboardAnimationWillNotCrashWhenEngineDestroyed {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController setupKeyboardAnimationVsyncClient:^(fml::TimePoint){
+  }];
+  [engine destroyContext];
+}
+
 - (void)testViewDidLoadWillInvokeCreateTouchRateCorrectionVSyncClient {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
