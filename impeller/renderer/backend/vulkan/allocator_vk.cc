@@ -480,8 +480,16 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
       allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
   if (result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not find memory type for buffer pool.";
-    return false;
+    // We're probably not running on a device with host visible + device local.
+    // fallback by removing device local bit.
+    allocation_info.preferredFlags &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
+        allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
+
+    if (result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not find memory type for buffer pool.";
+      return false;
+    }
   }
 
   VmaPoolCreateInfo pool_create_info = {};
