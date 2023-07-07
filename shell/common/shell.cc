@@ -979,7 +979,7 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
       });
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), metrics, view_id]() {
+      [engine = engine_->GetWeakPtr(), view_id, metrics]() {
         if (engine) {
           engine->SetViewportMetrics(view_id, metrics);
         }
