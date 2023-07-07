@@ -2859,9 +2859,17 @@ TEST_P(AiksTest, DrawPictureWithText) {
   auto picture = subcanvas.EndRecordingAsPicture();
 
   Canvas canvas;
+  canvas.Save();
   canvas.Translate({200, 200});
   canvas.Scale(Vector2(3.5, 3.5));  // The text must not be blurry after this.
   canvas.DrawPicture(picture);
+  canvas.Restore();
+
+  canvas.Scale(Vector2(1.5, 1.5));
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), canvas,
+      "the quick brown fox jumped over the smaller lazy dog!.?",
+      "Roboto-Regular.ttf"));
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
