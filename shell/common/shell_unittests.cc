@@ -2852,15 +2852,19 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
+    // This one is invalid for having 0 pixel ratio.
     shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
                                                  {0.0, 400, 200, 22, 0});
     task_runner->PostTask([&]() {
+      // This one is invalid for having 0 width.
       shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
                                                    {0.8, 0.0, 200, 22, 0});
       task_runner->PostTask([&]() {
+        // This one is invalid for having 0 height.
         shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
                                                      {0.8, 400, 0.0, 22, 0});
         task_runner->PostTask([&]() {
+          // This one makes it through.
           shell->GetPlatformView()->SetViewportMetrics(
               kImplicitViewId, {0.8, 400, 200.0, 22, 0});
         });
@@ -2881,6 +2885,52 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
   ASSERT_EQ(last_width, 600.0);
   ASSERT_EQ(last_height, 300.0);
+
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, IgnoresMetricsUpdateToInvalidView) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  // This callback will be called whenever any view's metrics change.
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    // The correct call will have a DPR of 3.
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_TRUE(last_device_pixel_ratio > 2.5);
+
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportMetrics",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportMetrics");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    // This one is invalid for having an nonexistent view ID.
+    // Also, it has a DPR of 2.0 for detection.
+    shell->GetPlatformView()->SetViewportMetrics(2, {2.0, 400, 200, 22, 0});
+    task_runner->PostTask([&]() {
+      // This one is valid with DPR 3.0.
+      shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                   {3.0, 400, 200, 22, 0});
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 3.0);
+  latch.Reset();
 
   DestroyShell(std::move(shell), task_runners);
 }

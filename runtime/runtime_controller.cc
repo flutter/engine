@@ -138,6 +138,8 @@ bool RuntimeController::SetViewportMetrics(int64_t view_id,
     if (window) {
       window->UpdateWindowMetrics(metrics);
       return true;
+    } else {
+      FML_LOG(WARNING) << "View ID " << view_id << " does not exist.";
     }
   }
 
