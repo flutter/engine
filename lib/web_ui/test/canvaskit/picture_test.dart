@@ -97,6 +97,21 @@ void testMain() {
       expect(bounds, equals(const ui.Rect.fromLTRB(20, 20, 300, 300)));
     });
 
+    test('cullRect bounds with infinite size draw', () async {
+      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawColor(red, ui.BlendMode.src);
+
+      final CkPicture picture = recorder.endRecording() as CkPicture;
+      final ui.Rect bounds = picture.cullRect();
+      // Since the drawColor command fills the entire canvas, the computed
+      // bounds default to the cullRect that is passed in when the
+      // PictureRecorder is created, ie ui.Rect.largest.
+      expect(bounds, equals(ui.Rect.largest));
+    });
+
     test('approximateBytesUsed', () async {
       const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
       const ui.Color green = ui.Color.fromRGBO(0, 255, 0, 1);
