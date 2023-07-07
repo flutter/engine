@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/blit_pass_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
@@ -45,6 +46,55 @@ bool CommandBufferVK::IsValid() const {
 
 const std::shared_ptr<CommandEncoderVK>& CommandBufferVK::GetEncoder() const {
   return encoder_;
+}
+
+bool CommandBufferVK::SubmitCommandsAsync(std::shared_ptr<BlitPass> blit_pass) {
+  TRACE_EVENT0("impeller", "CommandBufferVK::SubmitCommandsAsync");
+  if (!blit_pass->IsValid() || !IsValid()) {
+    return false;
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+
+  const auto& context_vk = ContextVK::Cast(*context);
+  auto pending = std::make_shared<EnqueuedCommandBuffer>();
+  context_vk.GetCommandBufferQueue()->Enqueue(pending);
+  auto encoder = std::move(encoder_);
+  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+      [pending, encoder, blit_pass, weak_context = context_]() {
+        auto context = weak_context.lock();
+        if (!context ||
+            !blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+            !encoder->Finish()) {
+          VALIDATION_LOG << "Failed to encode render pass.";
+        }
+        pending->SetEncoder(std::move(encoder));
+      });
+
+  return true;
+}
+
+bool CommandBufferVK::SubmitCommandsAsync(
+    std::shared_ptr<RenderPass> render_pass) {
+  TRACE_EVENT0("impeller", "CommandBufferVK::SubmitCommandsAsync");
+  if (!render_pass->IsValid() || !IsValid()) {
+    return false;
+  }
+  const auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+  const auto& context_vk = ContextVK::Cast(*context);
+  auto pending = std::make_shared<EnqueuedCommandBuffer>();
+  context_vk.GetCommandBufferQueue()->Enqueue(pending);
+  if (!render_pass->EncodeCommands() || !encoder_->Finish()) {
+    VALIDATION_LOG << "Failed to encode render pass.";
+    return false;
+  }
+  pending->SetEncoder(std::move(encoder_));
+  return true;
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {

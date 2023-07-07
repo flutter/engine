@@ -39,6 +39,12 @@ class CommandBufferVK final
   bool IsValid() const override;
 
   // |CommandBuffer|
+  bool SubmitCommandsAsync(std::shared_ptr<RenderPass> render_pass) override;
+
+  // |CommandBuffer|
+  bool SubmitCommandsAsync(std::shared_ptr<BlitPass> blit_pass) override;
+
+  // |CommandBuffer|
   bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|

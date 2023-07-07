@@ -7,6 +7,7 @@
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
@@ -351,7 +352,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
     return AcquireResult{true /* out of date */};
   }
 
-  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
+  if (acq_result == vk::Result::eErrorOutOfDateKHR ||
+      acq_result == vk::Result::eTimeout) {
     return AcquireResult{true /* out of date */};
   }
 
@@ -381,7 +383,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
+bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
                               uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
@@ -389,8 +391,32 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
+  auto current_frame = current_frame_;
+  const auto encoders = context.GetCommandBufferQueue()->Take();
 
-  const auto& sync = synchronizers_[current_frame_];
+  const auto& sync = synchronizers_[current_frame];
+
+  // Submit all command buffers.
+  {
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      return false;
+    };
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers;
+    for (const auto& encoder : encoders) {
+      buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+    }
+    submit_info.setCommandBuffers(buffers);
+    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+        vk::Result::eSuccess) {
+      return false;
+    }
+
+    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
+      return false;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
@@ -453,14 +479,14 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   switch (auto result = present_queue_.presentKHR(present_info)) {
     case vk::Result::eErrorOutOfDateKHR:
-      // Caller will recreate the impl on acquisition, not submission.
+      // Caller will recreate the impl on acquisition, not
+      // submission.
       [[fallthrough]];
     case vk::Result::eErrorSurfaceLostKHR:
-      // Vulkan guarantees that the set of queue operations will still complete
-      // successfully.
+      // Vulkan guarantees that the set of queue operations will
+      // still complete successfully.
       [[fallthrough]];
     case vk::Result::eSuccess:
-      is_rotated_ = false;
       return true;
     case vk::Result::eSuboptimalKHR:
       is_rotated_ = true;

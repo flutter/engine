@@ -125,6 +125,15 @@ bool CommandEncoderVK::IsValid() const {
   return is_valid_;
 }
 
+bool CommandEncoderVK::Finish() {
+  auto command_buffer = GetCommandBuffer();
+
+  if (command_buffer.end() != vk::Result::eSuccess) {
+    return false;
+  }
+  return true;
+}
+
 bool CommandEncoderVK::Submit(SubmitCallback callback) {
   // Make sure to call callback with `false` if anything returns early.
   bool fail_callback = !!callback;
