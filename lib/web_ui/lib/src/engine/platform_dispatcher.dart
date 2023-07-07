@@ -921,7 +921,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
     final List<ui.Locale> locales = <ui.Locale>[];
 
-    // TODO(dit): Use Intl.Locale to parse each language string, instead of doing it by hand.
+    // TODO(dit): Implement this with Intl.Locale, https://github.com/flutter/flutter/issues/130174
     // See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/Locale
     // See: https://www.rfc-editor.org/info/bcp47 for authority.
     for (final String language in languages) {
