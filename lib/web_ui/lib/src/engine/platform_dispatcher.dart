@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart' show visibleForTesting;
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -902,9 +903,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
-  static List<ui.Locale> parseBrowserLanguages() {
-    // TODO(yjbanov): find a solution for IE
-    final List<String>? languages = domWindow.navigator.languages;
+  // The country codes that use Hant (chinese traditional) script
+  static const Set<String> _hantCountryCodes = <String>{'TW', 'HK', 'MO', 'CHT'};
+
+  /// Converts a list of strings representing languages [domWindow.navigator.languages] into [ui.Locale].
+  ///
+  /// For tests, the list of languages can be overridden using the [debugLanguages] parameter.
+  static List<ui.Locale> parseBrowserLanguages({
+    @visibleForTesting List<String>? debugLanguages,
+  }) {
+    final List<String>? languages = debugLanguages ?? domWindow.navigator.languages;
     if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
@@ -912,13 +920,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
 
     final List<ui.Locale> locales = <ui.Locale>[];
+
+    // TODO(dit): Use Intl.Locale to parse each language string, instead of doing it by hand.
+    // See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/Locale
+    // See: https://www.rfc-editor.org/info/bcp47 for authority.
     for (final String language in languages) {
       final List<String> parts = language.split('-');
       // Handle zh separately.
       if (parts.first == 'zh') {
         final String languageCode = parts.first;
         final String? countryCode = parts.length > 1 ? parts.last : null;
-        final String scriptCode = countryCode == 'TW' || countryCode == 'HK' ? 'Hant' : 'Hans';
+        final String scriptCode = _hantCountryCodes.contains(countryCode) ? 'Hant' : 'Hans';
         locales.add(ui.Locale.fromSubtags(
           languageCode: languageCode,
           countryCode: countryCode,
