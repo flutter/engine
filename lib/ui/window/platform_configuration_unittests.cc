@@ -115,7 +115,7 @@ TEST_F(PlatformConfigurationTest, WindowMetricsUpdate) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-TEST_F(PlatformConfigurationTest, RegularWindowIsUnavailableAtStartup) {
+TEST_F(PlatformConfigurationTest, GetWindowReturnsNullForNonexistentId) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   auto nativeValidateConfiguration =
