@@ -45,6 +45,8 @@ class Allocator {
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
 
+  virtual void IncrementFrameIndex() {}
+
  protected:
   Allocator();
 

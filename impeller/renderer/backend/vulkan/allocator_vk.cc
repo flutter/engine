@@ -94,9 +94,15 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     return;
   }
 
-  if (!CreateBufferPool(allocator, &staging_buffer_pool_)) {
-    return;
+  for (auto i = 0u; i < 3u; i++) {
+    if (!CreateBufferPool(allocator, &staging_buffer_pools_[i])) {
+      return;
+    }
+    if (!CreateRenderTargetPool(allocator, &render_target_buffer_pools_[i])) {
+      return;
+    }
   }
+
   allocator_ = allocator;
   supports_memoryless_textures_ = capabilities.SupportsMemorylessTextures();
   is_valid_ = true;
@@ -105,9 +111,15 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
 AllocatorVK::~AllocatorVK() {
   TRACE_EVENT0("impeller", "DestroyAllocatorVK");
   if (allocator_) {
-    if (staging_buffer_pool_) {
-      ::vmaDestroyPool(allocator_, staging_buffer_pool_);
+    for (auto i = 0u; i < 3u; i++) {
+      if (staging_buffer_pools_[i]) {
+        ::vmaDestroyPool(allocator_, staging_buffer_pools_[i]);
+      }
+      if (render_target_buffer_pools_[i]) {
+        ::vmaDestroyPool(allocator_, render_target_buffer_pools_[i]);
+      }
     }
+
     ::vmaDestroyAllocator(allocator_);
   }
 }
@@ -258,6 +270,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
   AllocatedTextureSourceVK(const TextureDescriptor& desc,
                            VmaAllocator allocator,
                            vk::Device device,
+                           VmaPool pool,
                            bool supports_memoryless_textures)
       : TextureSourceVK(desc) {
     TRACE_EVENT0("impeller", "CreateDeviceTexture");
@@ -288,6 +301,15 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     alloc_nfo.usage = ToVMAMemoryUsage();
     alloc_nfo.preferredFlags = ToVKTextureMemoryPropertyFlags(
         desc.storage_mode, supports_memoryless_textures);
+    if (desc.usage &
+        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) && !desc.persistent) {
+      if (desc.storage_mode == StorageMode::kDevicePrivate ||
+          (desc.storage_mode == StorageMode::kDeviceTransient &&
+           !supports_memoryless_textures)) {
+        alloc_nfo.pool = pool;
+        use_dedicated = false;
+      }
+    }
     alloc_nfo.flags =
         ToVmaAllocationCreateFlags(desc.storage_mode, use_dedicated);
 
@@ -393,10 +415,11 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     return nullptr;
   }
   auto source = std::make_shared<AllocatedTextureSourceVK>(
-      desc,                          //
-      allocator_,                    //
-      device_holder->GetDevice(),    //
-      supports_memoryless_textures_  //
+      desc,                                            //
+      allocator_,                                      //
+      device_holder->GetDevice(),                      //
+      render_target_buffer_pools_[frame_index_ % 3u],  //
+      supports_memoryless_textures_                    //
   );
   if (!source->IsValid()) {
     return nullptr;
@@ -426,7 +449,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
       ToVKBufferMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
   if (desc.storage_mode == StorageMode::kHostVisible) {
-    allocation_info.pool = staging_buffer_pool_;
+    allocation_info.pool = staging_buffer_pools_[frame_index_ % 3u];
   }
 
   VkBuffer buffer = {};
@@ -480,25 +503,62 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
       allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
   if (result != vk::Result::eSuccess) {
-    // We're probably not running on a device with host visible + device local.
-    // fallback by removing device local bit.
-    allocation_info.preferredFlags &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
-        allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
-
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not find memory type for buffer pool.";
-      return false;
-    }
+    VALIDATION_LOG << "Could not find memory type for buffer pool.";
+    return false;
   }
 
   VmaPoolCreateInfo pool_create_info = {};
   pool_create_info.memoryTypeIndex = memTypeIndex;
-  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
+  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT |
+                           VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
 
   result = vk::Result{vmaCreatePool(allocator, &pool_create_info, pool)};
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create buffer pool.";
+    return false;
+  }
+  return true;
+}
+
+bool AllocatorVK::CreateRenderTargetPool(VmaAllocator allocator,
+                                         VmaPool* pool) {
+  vk::ImageCreateInfo image_info;
+  image_info.flags = {};
+  image_info.imageType = vk::ImageType::e2D;
+  image_info.format = vk::Format::eR8G8B8A8Unorm;
+  image_info.extent = VkExtent3D{1u, 1u, 1u};
+  image_info.samples = vk::SampleCountFlagBits::e1;
+  image_info.mipLevels = 1u;
+  image_info.arrayLayers = 1u;
+  image_info.tiling = vk::ImageTiling::eOptimal;
+  image_info.initialLayout = vk::ImageLayout::eUndefined;
+  image_info.usage =
+      vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+  image_info.sharingMode = vk::SharingMode::eExclusive;
+
+  auto create_info_native =
+      static_cast<vk::ImageCreateInfo::NativeType>(image_info);
+
+  VmaAllocationCreateInfo allocation_info = {};
+  allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
+  allocation_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+  uint32_t memTypeIndex;
+  auto result = vk::Result{vmaFindMemoryTypeIndexForImageInfo(
+      allocator, &create_info_native, &allocation_info, &memTypeIndex)};
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not find memory type for buffer pool.";
+    return false;
+  }
+
+  VmaPoolCreateInfo pool_create_info = {};
+  pool_create_info.memoryTypeIndex = memTypeIndex;
+  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT |
+                           VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+
+  result = vk::Result{vmaCreatePool(allocator, &pool_create_info, pool)};
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create render target pool.";
     return false;
   }
   return true;

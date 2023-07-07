@@ -268,6 +268,7 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
   texture_descriptor.compression_type = impeller::CompressionType::kLossy;
+  texture_descriptor.persistent = true;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
@@ -371,6 +372,7 @@ ImageDecoderImpeller::UploadTextureToShared(
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count =
       create_mips ? texture_descriptor.size.MipCount() : 1;
+  texture_descriptor.persistent = true;
 
   auto texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);

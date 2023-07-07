@@ -58,6 +58,7 @@ class RenderTarget final {
       ISize size,
       const std::string& label = "Offscreen",
       AttachmentConfig color_attachment_config = kDefaultColorAttachmentConfig,
+      bool persistent = false,
       std::optional<AttachmentConfig> stencil_attachment_config =
           kDefaultStencilAttachmentConfig);
 
@@ -67,6 +68,7 @@ class RenderTarget final {
       const std::string& label = "Offscreen MSAA",
       AttachmentConfigMSAA color_attachment_config =
           kDefaultColorAttachmentConfigMSAA,
+      bool persistent = false,
       std::optional<AttachmentConfig> stencil_attachment_config =
           kDefaultStencilAttachmentConfig);
 

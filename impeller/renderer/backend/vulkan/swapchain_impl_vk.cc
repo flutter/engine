@@ -389,6 +389,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
+  context.GetResourceAllocator()->IncrementFrameIndex();
 
   const auto& sync = synchronizers_[current_frame_];
 

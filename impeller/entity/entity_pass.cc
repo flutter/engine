@@ -215,6 +215,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
             .clear_color = clear_color},   // color_attachment_config
+        false,
         GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   } else {
@@ -228,6 +229,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
         },                                 // color_attachment_config
+        false,
         GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
   }

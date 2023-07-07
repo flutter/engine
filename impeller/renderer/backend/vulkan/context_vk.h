@@ -50,6 +50,10 @@ class ContextVK final : public Context,
 
   uint64_t GetHash() const { return hash_; }
 
+  uint32_t GetFrameIndex() const {
+    return frame_index_;
+  }
+
   // |Context|
   ~ContextVK() override;
 
@@ -163,6 +167,7 @@ class ContextVK final : public Context,
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   const uint64_t hash_;
+  uint32_t frame_index_ = 0u;
 
   bool is_valid_ = false;
 

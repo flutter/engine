@@ -61,7 +61,8 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
         size,                     // size
         "Picture Snapshot MSAA",  // label
         RenderTarget::
-            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+            kDefaultColorAttachmentConfigMSAA,  // color_attachment_config
+        true                                    // persistent
 #ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config
@@ -69,10 +70,11 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *impeller_context,                           // context
-        size,                                        // size
-        "Picture Snapshot",                          // label
-        RenderTarget::kDefaultColorAttachmentConfig  // color_attachment_config
+        *impeller_context,                            // context
+        size,                                         // size
+        "Picture Snapshot",                           // label
+        RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
+        true                                          // persistent
 #ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
         std::nullopt  // stencil_attachment_config

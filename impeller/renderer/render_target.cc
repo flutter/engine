@@ -212,6 +212,7 @@ RenderTarget RenderTarget::CreateOffscreen(
     ISize size,
     const std::string& label,
     AttachmentConfig color_attachment_config,
+    bool persistent,
     std::optional<AttachmentConfig> stencil_attachment_config) {
   if (size.IsEmpty()) {
     return {};
@@ -230,6 +231,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   color_tex0.size = size;
   color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
+  color_tex0.persistent = persistent;
 
   ColorAttachment color0;
   color0.clear_color = color_attachment_config.clear_color;
@@ -258,6 +260,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     ISize size,
     const std::string& label,
     AttachmentConfigMSAA color_attachment_config,
+    bool persistent,
     std::optional<AttachmentConfig> stencil_attachment_config) {
   if (size.IsEmpty()) {
     return {};
@@ -280,6 +283,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_tex_desc.format = pixel_format;
   color0_tex_desc.size = size;
   color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  color0_tex_desc.persistent = persistent;
 
   auto color0_msaa_tex =
       context.GetResourceAllocator()->CreateTexture(color0_tex_desc);

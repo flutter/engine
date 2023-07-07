@@ -27,13 +27,18 @@ class AllocatorVK final : public Allocator {
 
   fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
-  VmaPool staging_buffer_pool_ = {};
+
+  // Staging buffer pools.
+  VmaPool staging_buffer_pools_[3] = {};
+  // Render target buffer pools.
+  VmaPool render_target_buffer_pools_[3] = {};
 
   std::weak_ptr<Context> context_;
   std::weak_ptr<DeviceHolder> device_holder_;
   ISize max_texture_size_;
   bool is_valid_ = false;
   bool supports_memoryless_textures_ = false;
+  uint32_t frame_index_ = 0u;
 
   AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
@@ -58,7 +63,14 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
+  // |Allocator|
+  void IncrementFrameIndex() override {
+    frame_index_ += 1;
+  }
+
   static bool CreateBufferPool(VmaAllocator allocator, VmaPool* pool);
+
+  static bool CreateRenderTargetPool(VmaAllocator allocator, VmaPool* pool);
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };

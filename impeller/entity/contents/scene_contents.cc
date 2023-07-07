@@ -54,6 +54,7 @@ bool SceneContents::Render(const ContentContext& renderer,
           .load_action = LoadAction::kClear,
           .store_action = StoreAction::kMultisampleResolve,
       },  // color_attachment_config
+      false,
       RenderTarget::AttachmentConfig{
           .storage_mode = StorageMode::kDeviceTransient,
           .load_action = LoadAction::kDontCare,
