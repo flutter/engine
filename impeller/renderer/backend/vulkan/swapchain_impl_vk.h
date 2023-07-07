@@ -77,7 +77,7 @@ class SwapchainImplVK final
                   bool was_rotated,
                   vk::SwapchainKHR old_swapchain);
 
-  bool Present(std::shared_ptr<SwapchainImageVK> image, uint32_t index);
+  bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
 
   void WaitIdle() const;
 

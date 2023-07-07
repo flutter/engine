@@ -383,7 +383,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
+bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
                               uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
@@ -391,8 +391,7 @@ bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
-  auto current_frame = current_frame_;
-  const auto& sync = synchronizers_[current_frame];
+  const auto& sync = synchronizers_[current_frame_];
 
   // Submit all command buffers.
   context.Flush();
@@ -458,12 +457,11 @@ bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
 
   switch (auto result = present_queue_.presentKHR(present_info)) {
     case vk::Result::eErrorOutOfDateKHR:
-      // Caller will recreate the impl on acquisition, not
-      // submission.
+      // Caller will recreate the impl on acquisition, not submission.
       [[fallthrough]];
     case vk::Result::eErrorSurfaceLostKHR:
-      // Vulkan guarantees that the set of queue operations will
-      // still complete successfully.
+      // Vulkan guarantees that the set of queue operations will still complete
+      // successfully.
       [[fallthrough]];
     case vk::Result::eSuccess:
       return true;

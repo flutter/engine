@@ -403,7 +403,7 @@ bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsTextureToTextureBlits() const {
-  return false;
+  return true;
 }
 
 // |Capabilities|
