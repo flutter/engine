@@ -38,28 +38,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The view displaying Flutter content.
  *
- * Currently Flutter only supports one view, and this is the view.
- *
- * Flutter plans to support multiple views in the future. Although single-view
- * APIs will eventually be replaced by their multi-view variants, during the
- * deprecation period, the single-view APIs will coexist with and work with the
- * multi-view APIs as if the other views don't exist. To achieve this,
- * all behaviors of "the single view" (which is called "the implicit view") are
- * preserved, allowing legacy single-view APIs to continue working, while
- * new-style views created by new ways must be operated by the upcoming
- * multi-view APIs.
- *
- * Plugins written for a single view can keep operating on this view and expect
- * unchanged behavior for the implicit view. This includes that:
- *
- *  - The first view controller attached to the engine will be linked to the
- *    implicit view.
- *  - Single-view Flutter APIs will operate the implicit view.
- *
- * This method may return |nil| if the view is not assigned. In single-view
- * apps, this means that the app is running headlessly. In multi-view apps,
- * this means that the compatible mode is disabled, or that the compatible mode
- * is on but no view controller has been attached to the engine yet.
+ * This method may return |nil|, for instance in a headless environment.
  */
 @property(nullable, readonly) NSView* view;
 
