@@ -392,31 +392,10 @@ bool SwapchainImplVK::Present(std::shared_ptr<SwapchainImageVK> image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   auto current_frame = current_frame_;
-  const auto encoders = context.GetCommandBufferQueue()->Take();
-
   const auto& sync = synchronizers_[current_frame];
 
   // Submit all command buffers.
-  {
-    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
-    if (fence_result != vk::Result::eSuccess) {
-      return false;
-    };
-    vk::SubmitInfo submit_info;
-    std::vector<vk::CommandBuffer> buffers;
-    for (const auto& encoder : encoders) {
-      buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
-    }
-    submit_info.setCommandBuffers(buffers);
-    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
-        vk::Result::eSuccess) {
-      return false;
-    }
-
-    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
-      return false;
-    }
-  }
+  context.Flush();
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.

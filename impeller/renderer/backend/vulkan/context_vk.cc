@@ -480,6 +480,30 @@ void ContextVK::Shutdown() {
   raster_message_loop_->Terminate();
 }
 
+void ContextVK::Flush() const {
+  const auto encoders = GetCommandBufferQueue()->Take();
+  auto [fence_result, fence] = GetDevice().createFenceUnique({});
+  if (fence_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to create fence for flush.";
+    return;
+  };
+  vk::SubmitInfo submit_info;
+  std::vector<vk::CommandBuffer> buffers;
+  for (const auto& encoder : encoders) {
+    buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+  }
+  submit_info.setCommandBuffers(buffers);
+  if (GetGraphicsQueue()->Submit(submit_info, *fence) != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to submit for flush.";
+    return;
+  }
+
+  if (!GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
+    VALIDATION_LOG << "Failed to add fence waiter.";
+    return;
+  }
+}
+
 std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;

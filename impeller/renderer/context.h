@@ -137,6 +137,12 @@ class Context {
   ///
   virtual void Shutdown() = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Ensure all pending queue submissions have been processed.
+  ///
+  ///             This only performs an action on the Vulkan backend.
+  virtual void Flush() const {};
+
  protected:
   Context();
 

@@ -88,6 +88,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     VALIDATION_LOG << "Could not render Picture to Texture.";
     return nullptr;
   }
+  impeller_context->Flush();
 
   auto texture = target.GetRenderTargetTexture();
   if (!texture) {

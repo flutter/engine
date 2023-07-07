@@ -110,6 +110,9 @@ class ContextVK final : public Context,
   // |Context|
   void Shutdown() override;
 
+  // |Context|
+  void Flush() const override;
+
   void SetOffscreenFormat(PixelFormat pixel_format);
 
   template <typename T>
