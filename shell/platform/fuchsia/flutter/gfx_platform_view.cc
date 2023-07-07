@@ -8,7 +8,7 @@
 
 namespace flutter_runner {
 
-static constexpr int64_t kFlutterDefaultViewId = 0ll;
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 GfxPlatformView::GfxPlatformView(
     flutter::PlatformView::Delegate& delegate,
@@ -216,7 +216,7 @@ void GfxPlatformView::OnScenicEvent(
     const float pixel_ratio = *view_pixel_ratio_;
     const std::array<float, 2> logical_size = *view_logical_size_;
     SetViewportMetrics(
-        kFlutterDefaultViewId,
+        kFlutterImplicitViewId,
         {
             pixel_ratio,                                // device_pixel_ratio
             std::round(logical_size[0] * pixel_ratio),  // physical_width
