@@ -214,7 +214,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},   // color_attachment_config
+            .clear_color = clear_color},  // color_attachment_config
         false,
         GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );
@@ -228,7 +228,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                                 // color_attachment_config
+        },  // color_attachment_config
         false,
         GetDefaultStencilConfig(readable)  // stencil_attachment_config
     );

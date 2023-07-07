@@ -302,7 +302,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     alloc_nfo.preferredFlags = ToVKTextureMemoryPropertyFlags(
         desc.storage_mode, supports_memoryless_textures);
     if (desc.usage &
-        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) && !desc.persistent) {
+            static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) &&
+        !desc.persistent) {
       if (desc.storage_mode == StorageMode::kDevicePrivate ||
           (desc.storage_mode == StorageMode::kDeviceTransient &&
            !supports_memoryless_textures)) {

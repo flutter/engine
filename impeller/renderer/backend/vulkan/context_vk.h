@@ -50,9 +50,7 @@ class ContextVK final : public Context,
 
   uint64_t GetHash() const { return hash_; }
 
-  uint32_t GetFrameIndex() const {
-    return frame_index_;
-  }
+  uint32_t GetFrameIndex() const { return frame_index_; }
 
   // |Context|
   ~ContextVK() override;

@@ -64,9 +64,7 @@ class AllocatorVK final : public Allocator {
   ISize GetMaxTextureSizeSupported() const override;
 
   // |Allocator|
-  void IncrementFrameIndex() override {
-    frame_index_ += 1;
-  }
+  void IncrementFrameIndex() override { frame_index_ += 1; }
 
   static bool CreateBufferPool(VmaAllocator allocator, VmaPool* pool);
 
