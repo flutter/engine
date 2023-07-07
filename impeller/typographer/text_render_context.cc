@@ -29,7 +29,8 @@ const std::shared_ptr<Context>& TextRenderContext::GetContext() const {
 std::shared_ptr<GlyphAtlas> TextRenderContext::CreateGlyphAtlas(
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,
-    const TextFrame& frame) const {
+    const TextFrame& frame,
+    Scalar scale) const {
   size_t count = 0;
   FrameIterator iterator = [&]() -> const TextFrame* {
     count++;
@@ -38,7 +39,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContext::CreateGlyphAtlas(
     }
     return nullptr;
   };
-  return CreateGlyphAtlas(type, std::move(atlas_context), iterator);
+  return CreateGlyphAtlas(type, std::move(atlas_context), iterator, scale);
 }
 
 }  // namespace impeller

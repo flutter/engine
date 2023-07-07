@@ -166,7 +166,6 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
 
   const char* test_string =
       "QWERTYUIOPASDFGHJKLZXCVBNMqewrtyuiopasdfghjklzxcvbnm,.<>[]{};':"
@@ -174,16 +173,18 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
       "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
       "* Í˝ */¸˛Ç◊ı˜Â¯˘¿";
 
-  auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
-  ASSERT_TRUE(blob);
-
   TextFrame frame;
   size_t count = 0;
   const int size_count = 8;
   TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
     if (count < size_count) {
+      SkFont sk_font;
+      sk_font.setSize(sk_font.getSize() + 0.6 * count);
+      auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
+      EXPECT_TRUE(blob);
+
       count++;
-      frame = TextFrameFromTextBlob(blob, 0.6 * count);
+      frame = TextFrameFromTextBlob(blob);
       return &frame;
     }
     return nullptr;

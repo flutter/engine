@@ -19,7 +19,8 @@ class TextRenderContextSkia : public TextRenderContext {
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      FrameIterator iterator) const override;
+      FrameIterator iterator,
+      Scalar scale = 1.0f) const override;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(TextRenderContextSkia);

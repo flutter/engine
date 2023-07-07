@@ -2851,5 +2851,20 @@ TEST_P(AiksTest, CanCanvasDrawPicture) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, DrawPictureWithText) {
+  Canvas subcanvas;
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), subcanvas,
+      "the quick brown fox jumped over the lazy dog!.?", "Roboto-Regular.ttf"));
+  auto picture = subcanvas.EndRecordingAsPicture();
+
+  Canvas canvas;
+  canvas.Translate({200, 200});
+  canvas.Scale(Vector2(3.5, 3.5));  // The text must not be blurry after this.
+  canvas.DrawPicture(picture);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller

@@ -61,7 +61,8 @@ static size_t PairsFitInAtlasOfSize(
     const FontGlyphPair::Set& pairs,
     const ISize& atlas_size,
     std::vector<Rect>& glyph_positions,
-    const std::shared_ptr<RectanglePacker>& rect_packer) {
+    const std::shared_ptr<RectanglePacker>& rect_packer,
+    Scalar scale) {
   if (atlas_size.IsEmpty()) {
     return false;
   }
@@ -73,8 +74,7 @@ static size_t PairsFitInAtlasOfSize(
   for (auto it = pairs.begin(); it != pairs.end(); ++i, ++it) {
     const auto& pair = *it;
 
-    const auto glyph_size =
-        ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
+    const auto glyph_size = ISize::Ceil((pair.glyph.bounds * scale).size);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -97,7 +97,8 @@ static bool CanAppendToExistingAtlas(
     const FontGlyphPairRefVector& extra_pairs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
-    const std::shared_ptr<RectanglePacker>& rect_packer) {
+    const std::shared_ptr<RectanglePacker>& rect_packer,
+    Scalar scale) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!rect_packer || atlas_size.IsEmpty()) {
     return false;
@@ -111,8 +112,7 @@ static bool CanAppendToExistingAtlas(
   for (size_t i = 0; i < extra_pairs.size(); i++) {
     const FontGlyphPair& pair = extra_pairs[i];
 
-    const auto glyph_size =
-        ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
+    const auto glyph_size = ISize::Ceil((pair.glyph.bounds * scale).size);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -135,7 +135,8 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-    GlyphAtlas::Type type) {
+    GlyphAtlas::Type type,
+    Scalar scale) {
   static constexpr auto kMinAtlasSize = 8u;
   static constexpr auto kMinAlphaBitmapSize = 1024u;
   static constexpr auto kMaxAtlasSize = 4096u;
@@ -150,8 +151,8 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
     auto rect_packer = std::shared_ptr<RectanglePacker>(
         RectanglePacker::Factory(current_size.width, current_size.height));
 
-    auto remaining_pairs = PairsFitInAtlasOfSize(pairs, current_size,
-                                                 glyph_positions, rect_packer);
+    auto remaining_pairs = PairsFitInAtlasOfSize(
+        pairs, current_size, glyph_positions, rect_packer, scale);
     if (remaining_pairs == 0) {
       atlas_context->UpdateRectPacker(rect_packer);
       return current_size;
@@ -174,10 +175,11 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
 static void DrawGlyph(SkCanvas* canvas,
                       const FontGlyphPair& font_glyph,
                       const Rect& location,
-                      bool has_color) {
+                      bool has_color,
+                      Scalar scale) {
   const auto& metrics = font_glyph.font.GetMetrics();
-  const auto position = SkPoint::Make(location.origin.x / metrics.scale,
-                                      location.origin.y / metrics.scale);
+  const auto position =
+      SkPoint::Make(location.origin.x / scale, location.origin.y / scale);
   SkGlyphID glyph_id = font_glyph.glyph.index;
 
   SkFont sk_font(
@@ -192,7 +194,7 @@ static void DrawGlyph(SkCanvas* canvas,
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   canvas->resetMatrix();
-  canvas->scale(metrics.scale, metrics.scale);
+  canvas->scale(scale, scale);
   canvas->drawGlyphs(
       1u,         // count
       &glyph_id,  // glyphs
@@ -206,7 +208,8 @@ static void DrawGlyph(SkCanvas* canvas,
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<SkBitmap>& bitmap,
-                              const FontGlyphPairRefVector& new_pairs) {
+                              const FontGlyphPairRefVector& new_pairs,
+                              Scalar scale) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FML_DCHECK(bitmap != nullptr);
 
@@ -226,13 +229,14 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(canvas, pair, pos.value(), has_color);
+    DrawGlyph(canvas, pair, pos.value(), has_color, scale);
   }
   return true;
 }
 
 static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
-                                                   const ISize& atlas_size) {
+                                                   const ISize& atlas_size,
+                                                   Scalar scale) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
   SkImageInfo image_info;
@@ -262,11 +266,12 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
-  atlas.IterateGlyphs([canvas, has_color](const FontGlyphPair& font_glyph,
-                                          const Rect& location) -> bool {
-    DrawGlyph(canvas, font_glyph, location, has_color);
-    return true;
-  });
+  atlas.IterateGlyphs(
+      [canvas, has_color, scale](const FontGlyphPair& font_glyph,
+                                 const Rect& location) -> bool {
+        DrawGlyph(canvas, font_glyph, location, has_color, scale);
+        return true;
+      });
 
   return bitmap;
 }
@@ -331,7 +336,8 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,
-    FrameIterator frame_iterator) const {
+    FrameIterator frame_iterator,
+    Scalar scale) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
     return nullptr;
@@ -371,7 +377,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   if (last_atlas->GetType() == type &&
       CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
-                               atlas_context->GetRectPacker())) {
+                               atlas_context->GetRectPacker(), scale)) {
     // The old bitmap will be reused and only the additional glyphs will be
     // added.
 
@@ -387,7 +393,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
     // Step 5: Draw new font-glyph pairs into the existing bitmap.
     // ---------------------------------------------------------------------------
     auto bitmap = atlas_context->GetBitmap();
-    if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
+    if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs, scale)) {
       return nullptr;
     }
 
@@ -406,7 +412,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
   auto atlas_size = OptimumAtlasSizeForFontGlyphPairs(
-      font_glyph_pairs, glyph_positions, atlas_context, type);
+      font_glyph_pairs, glyph_positions, atlas_context, type, scale);
 
   atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
   if (atlas_size.IsEmpty()) {
@@ -436,7 +442,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 7: Draw font-glyph pairs in the correct spot in the atlas.
   // ---------------------------------------------------------------------------
-  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
+  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size, scale);
   if (!bitmap) {
     return nullptr;
   }

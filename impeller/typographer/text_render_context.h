@@ -45,12 +45,14 @@ class TextRenderContext {
   virtual std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      FrameIterator iterator) const = 0;
+      FrameIterator iterator,
+      Scalar scale = 1.0f) const = 0;
 
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      const TextFrame& frame) const;
+      const TextFrame& frame,
+      Scalar scale = 1.0f) const;
 
  protected:
   //----------------------------------------------------------------------------

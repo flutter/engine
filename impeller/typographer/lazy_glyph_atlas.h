@@ -24,7 +24,8 @@ class LazyGlyphAtlas {
   std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      std::shared_ptr<Context> context) const;
+      std::shared_ptr<Context> context,
+      Scalar scale = 1.0f) const;
 
  private:
   std::vector<TextFrame> alpha_frames_;

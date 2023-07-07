@@ -27,7 +27,8 @@ void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame) {
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,
-    std::shared_ptr<Context> context) const {
+    std::shared_ptr<Context> context,
+    Scalar scale) const {
   {
     auto atlas_it = atlas_map_.find(type);
     if (atlas_it != atlas_map_.end()) {
@@ -50,8 +51,8 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     i++;
     return &result;
   };
-  auto atlas =
-      text_context->CreateGlyphAtlas(type, std::move(atlas_context), iterator);
+  auto atlas = text_context->CreateGlyphAtlas(type, std::move(atlas_context),
+                                              iterator, scale);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;

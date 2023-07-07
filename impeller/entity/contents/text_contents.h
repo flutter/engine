@@ -60,7 +60,8 @@ class TextContents final : public Contents {
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      std::shared_ptr<Context> context) const;
+      std::shared_ptr<Context> context,
+      Scalar scale) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextContents);
 };
