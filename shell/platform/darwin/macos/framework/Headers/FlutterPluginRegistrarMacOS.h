@@ -38,6 +38,10 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The view displaying Flutter content.
  *
+ * This property is provided for backwards compatibility for apps
+ * that assume a single view. This will eventually be replaced by
+ * a multi-view API variant.
+ *
  * This method may return |nil|, for instance in a headless environment.
  */
 @property(nullable, readonly) NSView* view;
