@@ -36,11 +36,9 @@ FLUTTER_DARWIN_EXPORT
 @property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
- * The default view displaying Flutter content.
+ * The view displaying Flutter content.
  *
  * This method may return |nil|, for instance in a headless environment.
- *
- * The default view is a special view operated by single-view APIs.
  */
 @property(nullable, readonly) NSView* view;
 
