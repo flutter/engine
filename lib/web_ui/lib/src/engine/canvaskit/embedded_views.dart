@@ -424,7 +424,6 @@ class HtmlViewEmbedder {
         final CkCanvas canvas = frame.skiaCanvas;
         final CkPicture ckPicture =
             _context.pictureRecorders[pictureRecorderIndex].endRecording();
-        print(ckPicture.cullRect());
         canvas.clear(const ui.Color(0x00000000));
         canvas.drawPicture(ckPicture);
         pictureRecorderIndex++;
