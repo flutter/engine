@@ -224,4 +224,17 @@ bool TextContents::Render(const ContentContext& renderer,
                       cmd);
 }
 
+// |Contents|
+void TextContents::AdoptLazyGlyphAtlas(
+    std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas,
+    Scalar scale) {
+  FML_DCHECK(lazy_atlas_);
+  if (!lazy_atlas_) {
+    VALIDATION_LOG << "TextContents asked to adopt a lazy glyph atlas, but "
+                      "does not have one to begin with.";
+    return;
+  }
+  lazy_atlas_->Absorb(lazy_glyph_atlas, scale);
+}
+
 }  // namespace impeller

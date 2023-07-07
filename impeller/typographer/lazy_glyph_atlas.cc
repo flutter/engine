@@ -6,6 +6,7 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/typographer/text_render_context.h"
+#include "lazy_glyph_atlas.h"
 
 #include <utility>
 
@@ -58,6 +59,28 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
   }
   atlas_map_[type] = atlas;
   return atlas;
+}
+
+void LazyGlyphAtlas::Absorb(std::shared_ptr<LazyGlyphAtlas> atlas,
+                            Scalar scale) {
+  if (!atlas) {
+    return;
+  }
+  FML_DCHECK(atlas->atlas_map_.empty());
+  FML_DCHECK(atlas_map_.empty());
+
+  if (!atlas->atlas_map_.empty() || !atlas_map_.empty()) {
+    VALIDATION_LOG << "LazyGlyphAtlas::Absorb must only be called before "
+                      "CreateOrGetGlyphAtlas.";
+    return;
+  }
+
+  for (const auto& frame : atlas->alpha_frames_) {
+    alpha_frames_.push_back(frame.Scaled(scale));
+  }
+  for (const auto& frame : atlas->color_frames_) {
+    color_frames_.push_back(frame.Scaled(scale));
+  }
 }
 
 }  // namespace impeller

@@ -50,6 +50,10 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  void AdoptLazyGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas,
+                           Scalar scale) override;
+
  private:
   TextFrame frame_;
   Color color_;

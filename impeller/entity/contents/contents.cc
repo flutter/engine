@@ -155,4 +155,8 @@ void Contents::SetColorSourceSize(Size size) {
   color_source_size_ = size;
 }
 
+void Contents::AdoptLazyGlyphAtlas(
+    std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas,
+    Scalar scale) {}
+
 }  // namespace impeller

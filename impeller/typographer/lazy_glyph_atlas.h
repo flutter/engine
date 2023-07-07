@@ -26,6 +26,8 @@ class LazyGlyphAtlas {
       std::shared_ptr<GlyphAtlasContext> atlas_context,
       std::shared_ptr<Context> context) const;
 
+  void Absorb(std::shared_ptr<LazyGlyphAtlas> atlas, Scalar scale);
+
  private:
   std::vector<TextFrame> alpha_frames_;
   std::vector<TextFrame> color_frames_;

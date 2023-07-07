@@ -42,6 +42,8 @@ class Font : public Comparable<Font> {
     Scalar skewX = 0.0f;
     Scalar scaleX = 1.0f;
 
+    Metrics Scaled(Scalar new_scale) const;
+
     constexpr bool operator==(const Metrics& o) const {
       return scale == o.scale && point_size == o.point_size &&
              embolden == o.embolden && skewX == o.skewX && scaleX == o.scaleX;
@@ -63,6 +65,8 @@ class Font : public Comparable<Font> {
 
   const Metrics& GetMetrics() const;
 
+  Font Scaled(Scalar scale) const;
+
   // |Comparable<Font>|
   std::size_t GetHash() const override;
 
@@ -80,6 +84,7 @@ class Font : public Comparable<Font> {
 template <>
 struct std::hash<impeller::Font::Metrics> {
   constexpr std::size_t operator()(const impeller::Font::Metrics& m) const {
-    return fml::HashCombine(m.scale, m.point_size);
+    return fml::HashCombine(m.scale, m.point_size, m.embolden, m.skewX,
+                            m.scaleX);
   }
 };

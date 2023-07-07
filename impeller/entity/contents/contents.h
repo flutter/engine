@@ -14,6 +14,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/snapshot.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -125,6 +126,15 @@ class Contents {
   ///        subpass clear colors.
   virtual std::optional<Color> AsBackgroundColor(const Entity& entity,
                                                  ISize target_size) const;
+
+  /// @brief If this contents uses the LazyGlyphAtlas, notifies it that the
+  ///        atlas has changed and potentially that the scale has changed.
+  ///
+  ///        For example, a TextContents implements this by updating the scale
+  ///        of its text frame and merging its atlas into the incoming one.
+  virtual void AdoptLazyGlyphAtlas(
+      std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas,
+      Scalar scale);
 
  private:
   std::optional<Rect> coverage_hint_;

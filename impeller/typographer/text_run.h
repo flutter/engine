@@ -72,6 +72,12 @@ class TextRun {
   /// @brief      Whether any glyph in this run has color.
   bool HasColor() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new TextRun containing a font scaled by the scale
+  ///             value.
+  ///
+  TextRun Scaled(Scalar scale) const;
+
  private:
   Font font_;
   std::vector<GlyphPosition> glyphs_;

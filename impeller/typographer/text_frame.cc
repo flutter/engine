@@ -79,4 +79,14 @@ bool TextFrame::MaybeHasOverlapping() const {
   return false;
 }
 
+TextFrame TextFrame::Scaled(Scalar scale) const {
+  TextFrame frame;
+  frame.runs_.reserve(runs_.size());
+  for (const auto run : runs_) {
+    frame.runs_.push_back(run.Scaled(scale));
+  }
+  frame.has_color_ = has_color_;
+  return frame;
+}
+
 }  // namespace impeller

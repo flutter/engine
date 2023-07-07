@@ -23,6 +23,12 @@ class TextFrame {
   ~TextFrame();
 
   //----------------------------------------------------------------------------
+  /// @brief      Creates a new TextFrame containing runs scaled by the scale
+  ///             value.
+  ///
+  TextFrame Scaled(Scalar scale) const;
+
+  //----------------------------------------------------------------------------
   /// @brief      The conservative bounding box for this text frame.
   ///
   /// @return     The bounds rectangle. If there are no glyphs in this text

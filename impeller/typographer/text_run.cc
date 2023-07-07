@@ -41,4 +41,12 @@ bool TextRun::HasColor() const {
   return has_color_;
 }
 
+TextRun TextRun::Scaled(Scalar scale) const {
+  TextRun run(font_.Scaled(scale));
+  run.glyphs_ = std::vector<GlyphPosition>(glyphs_);
+  run.is_valid_ = is_valid_;
+  run.has_color_ = has_color_;
+  return run;
+}
+
 }  // namespace impeller

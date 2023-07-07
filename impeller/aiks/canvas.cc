@@ -411,10 +411,14 @@ void Canvas::DrawPicture(const Picture& picture) {
 
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
+  auto scale = GetCurrentTransformation().GetMaxBasisLengthXY();
   pass->IterateAllEntities([&](auto& entity) -> bool {
     entity.IncrementStencilDepth(GetStencilDepth());
     entity.SetTransformation(GetCurrentTransformation() *
                              entity.GetTransformation());
+    if (auto contents = entity.GetContents()) {
+      contents->AdoptLazyGlyphAtlas(lazy_glyph_atlas_, scale);
+    }
     return true;
   });
   GetCurrentPass().AddSubpassInline(std::move(pass));
