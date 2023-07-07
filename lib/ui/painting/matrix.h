@@ -14,8 +14,6 @@ namespace flutter {
 SkMatrix ToSkMatrix(const tonic::Float64List& matrix4);
 tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix);
 SkM44 ToSkM44(const tonic::Float64List& matrix4);
-tonic::Float64List ToMatrix4FromSkM44(const SkM44& m44);
-
 }  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_MATRIX_H_

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/transform_layer.h"
+#include "third_party/skia/src/core/SkMatrixPriv.h"
 
 #include <optional>
 
@@ -41,12 +42,11 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 void TransformLayer::Preroll(PrerollContext* context) {
   auto mutator = context->state_stack.save();
-  mutator.transform(transform_.asM33());
+  mutator.transform(transform_);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_paint_bounds);
-
-  transform_.asM33().mapRect(&child_paint_bounds);
+  SkMatrixPriv::MapRect(transform_, child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 }
 

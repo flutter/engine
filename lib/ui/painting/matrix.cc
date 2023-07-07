@@ -33,20 +33,14 @@ SkMatrix ToSkMatrix(const tonic::Float64List& matrix4) {
 }
 
 SkM44 ToSkM44(const tonic::Float64List& matrix4) {
-  FML_DCHECK(matrix4.data());
-  SkM44 sk_m44;
-  for (int i = 0; i < 16; ++i) {
-    sk_m44.setRC(i % 4, i / 4, SafeNarrow(matrix4[i]));
-  }
-  return sk_m44;
-}
-
-tonic::Float64List ToMatrix4FromSkM44(const SkM44& m44) {
-  tonic::Float64List matrix4(Dart_NewTypedData(Dart_TypedData_kFloat64, 16));
-  for (int i = 0; i < 16; ++i) {
-    matrix4[i] = m44.row(i % 4)[i / 4];
-  }
-  return matrix4;
+  FML_DCHECK(matrix4.data() && matrix4.num_elements() >= 16);
+  return SkM44(
+      SafeNarrow(matrix4[0]), SafeNarrow(matrix4[4]), SafeNarrow(matrix4[8]),
+      SafeNarrow(matrix4[12]), SafeNarrow(matrix4[1]), SafeNarrow(matrix4[5]),
+      SafeNarrow(matrix4[9]), SafeNarrow(matrix4[13]), SafeNarrow(matrix4[2]),
+      SafeNarrow(matrix4[6]), SafeNarrow(matrix4[10]), SafeNarrow(matrix4[14]),
+      SafeNarrow(matrix4[3]), SafeNarrow(matrix4[7]), SafeNarrow(matrix4[11]),
+      SafeNarrow(matrix4[15]));
 }
 
 tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix) {
