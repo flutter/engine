@@ -2768,8 +2768,9 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &origin_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            kImplicitViewId, {1.0, static_cast<double>(origin_size.width()),
-                             static_cast<double>(origin_size.height()), 22, 0});
+            kImplicitViewId,
+            {1.0, static_cast<double>(origin_size.width()),
+             static_cast<double>(origin_size.height()), 22, 0});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2788,7 +2789,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       [&shell, &new_size, &resize_latch]() {
         shell->GetPlatformView()->SetViewportMetrics(
             kImplicitViewId, {1.0, static_cast<double>(new_size.width()),
-                             static_cast<double>(new_size.height()), 22, 0});
+                              static_cast<double>(new_size.height()), 22, 0});
         resize_latch.Signal();
       });
 
