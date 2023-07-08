@@ -200,48 +200,6 @@ void testMain() {
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
     });
-
-    group('parseBrowserLanguages', () {
-      test('returns default en_US for empty list of languages', () async {
-        final List<ui.Locale> locales = EnginePlatformDispatcher.parseBrowserLanguages(
-          debugLanguages:<String>[],
-        );
-        expect(locales, hasLength(1));
-        expect(locales[0], const ui.Locale('en', 'US'));
-      });
-
-      test('converts language strings into Locale objects', () async {
-        final List<ui.Locale> locales = EnginePlatformDispatcher.parseBrowserLanguages(
-          debugLanguages: <String>['en-US', 'ast'],
-        );
-
-        expect(locales, <ui.Locale>[
-          const ui.Locale('en', 'US'),
-          const ui.Locale('ast'),
-        ]);
-      });
-
-      test('computes Hant/Hans script for common zh locales', () async {
-        final List<ui.Locale> hantLocales = EnginePlatformDispatcher.parseBrowserLanguages(
-          debugLanguages:<String>['zh-CHT', 'zh-HK', 'zh-MO', 'zh-TW'],
-        );
-        final List<ui.Locale> hansLocales = EnginePlatformDispatcher.parseBrowserLanguages(
-          debugLanguages:<String>['zh', 'zh-CHS', 'zh-CN', 'zh-SG'],
-        );
-
-        expect(hansLocales, everyElement(
-          predicate(
-            (ui.Locale locale) => locale.scriptCode == 'Hans',
-            'scriptCode should be "Hans"',
-          )));
-
-        expect(hantLocales, everyElement(
-          predicate(
-            (ui.Locale locale) => locale.scriptCode == 'Hant',
-            'scriptCode should be "Hant"',
-          )));
-      });
-    });
   });
 }
 

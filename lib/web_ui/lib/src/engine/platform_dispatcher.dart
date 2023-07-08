@@ -7,11 +7,11 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:meta/meta.dart' show visibleForTesting;
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart';
+import 'platform_dispatcher/locale_utils.dart';
 
 /// Requests that the browser schedule a frame.
 ///
@@ -903,48 +903,21 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
-  // The country codes that use Hant (chinese traditional) script
-  static const Set<String> _hantCountryCodes = <String>{'TW', 'HK', 'MO', 'CHT'};
-
-  /// Converts a list of strings representing languages [domWindow.navigator.languages] into [ui.Locale].
+  /// Converts `navigator.languages` to `List<ui.Locale>`.
   ///
-  /// For tests, the list of languages can be overridden using the [debugLanguages] parameter.
-  static List<ui.Locale> parseBrowserLanguages({
-    @visibleForTesting List<String>? debugLanguages,
-  }) {
-    final List<String>? languages = debugLanguages ?? domWindow.navigator.languages;
-    if (languages == null || languages.isEmpty) {
-      // To make it easier for the app code, let's not leave the locales list
-      // empty. This way there's fewer corner cases for apps to handle.
-      return const <ui.Locale>[_defaultLocale];
-    }
-
-    final List<ui.Locale> locales = <ui.Locale>[];
-
-    // TODO(dit): Implement this with Intl.Locale, https://github.com/flutter/flutter/issues/130174
-    // See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/Locale
-    // See: https://www.rfc-editor.org/info/bcp47 for authority.
-    for (final String language in languages) {
-      final List<String> parts = language.split('-');
-      // Handle zh separately.
-      if (parts.first == 'zh') {
-        final String languageCode = parts.first;
-        final String? countryCode = parts.length > 1 ? parts.last : null;
-        final String scriptCode = _hantCountryCodes.contains(countryCode) ? 'Hant' : 'Hans';
-        locales.add(ui.Locale.fromSubtags(
-          languageCode: languageCode,
-          countryCode: countryCode,
-          scriptCode: scriptCode,
-        ));
-      } else if (parts.length > 1) {
-        locales.add(ui.Locale(parts.first, parts.last));
-      } else {
-        locales.add(ui.Locale(language));
-      }
-    }
-
-    assert(locales.isNotEmpty);
-    return locales;
+  /// The returned list is primarily used by the framework to determine the best
+  /// Locale for an App that specifies `supportedLocales`.
+  ///
+  /// If the parsed list of languages is empty, this method returns a list with
+  /// at least [_defaultLocale]. This way there's fewer corner cases for apps to
+  /// handle.
+  ///
+  /// See: https://api.flutter.dev/flutter/widgets/basicLocaleListResolution.html
+  static List<ui.Locale> parseBrowserLanguages() {
+    final List<ui.Locale> locales = parseLanguages(
+      domWindow.navigator.languages ?? <String>[],
+    );
+    return locales.isNotEmpty ? locales : const <ui.Locale>[_defaultLocale];
   }
 
   /// Engine code should use this method instead of the callback directly.
