@@ -93,6 +93,25 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void attachToFlutterEngine_twoFlutterViewsAttachToTheSameEngineConsecutively() {
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+
+    FlutterView flutterView1 = spy(new FlutterView(ctx));
+    when(flutterView1.getContext()).thenReturn(ctx);
+    flutterView1.attachToFlutterEngine(flutterEngine);
+    assertTrue(flutterView1.isAttachedToFlutterEngine());
+    assertTrue(flutterEngine.getAttachedFlutterView() == flutterView1);
+
+    FlutterView flutterView2 = spy(new FlutterView(ctx));
+    when(flutterView2.getContext()).thenReturn(ctx);
+    flutterView2.attachToFlutterEngine(flutterEngine);
+
+    assertFalse(flutterView1.isAttachedToFlutterEngine());
+    assertTrue(flutterView2.isAttachedToFlutterEngine());
+    assertTrue(flutterEngine.getAttachedFlutterView() == flutterView2);
+  }
+
+  @Test
   public void flutterView_importantForAutofillDoesNotExcludeDescendants() {
     FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
 

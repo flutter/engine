@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
+import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
@@ -105,6 +106,9 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
 
   // Engine Lifecycle.
   @NonNull private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
+
+  // Attached FlutterView.
+  @Nullable private FlutterView attachedFlutterView;
 
   @NonNull
   private final EngineLifecycleListener engineLifecycleListener =
@@ -652,5 +656,19 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
   @Override
   public void updateDisplayMetrics(float width, float height, float density) {
     flutterJNI.updateDisplayMetrics(0 /* display ID */, width, height, density);
+  }
+
+  /**
+   * Returns the {@code FlutterView} that is attached to this {@code FlutterEngine}, or null if no
+   * {@code FlutterView} is currently attached.
+   */
+  @Nullable
+  public FlutterView getAttachedFlutterView() {
+    return attachedFlutterView;
+  }
+
+  /** Set the {@code FlutterView} for this {@code FlutterEngine}. */
+  public void setAttachedFlutterView(@Nullable FlutterView flutterView) {
+    attachedFlutterView = flutterView;
   }
 }

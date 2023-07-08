@@ -1145,7 +1145,15 @@ public class FlutterView extends FrameLayout
       detachFromFlutterEngine();
     }
 
+    // Detach the previous FlutterView from this FlutterEngine before attaching a new one
+    if (flutterEngine.getAttachedFlutterView() != null) {
+      flutterEngine.getAttachedFlutterView().detachFromFlutterEngine();
+    }
+
     this.flutterEngine = flutterEngine;
+
+    // Set a new FlutterView for this FlutterEngine
+    this.flutterEngine.setAttachedFlutterView(this);
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     FlutterRenderer flutterRenderer = this.flutterEngine.getRenderer();
@@ -1294,6 +1302,9 @@ public class FlutterView extends FrameLayout
     releaseImageView();
 
     previousRenderSurface = null;
+
+    // No FlutterView is currently attached
+    flutterEngine.setAttachedFlutterView(null);
     flutterEngine = null;
   }
 
