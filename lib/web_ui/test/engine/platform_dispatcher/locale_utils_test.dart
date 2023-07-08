@@ -28,10 +28,11 @@ void testMain() {
           countryCode: 'GB',
           scriptCode: 'oxendict',
         ),
-        const ui.Locale('zh'),
         const ui.Locale.fromSubtags(
-          languageCode: 'ast',
+          languageCode: 'zh',
+          scriptCode: 'Hans',
         ),
+        const ui.Locale('ast'),
       ]);
     });
 
@@ -41,8 +42,8 @@ void testMain() {
       ).first;
       expect(
         zhLocale.scriptCode,
-        isNull,
-        reason: 'zh language should be left untouched.',
+        'Hans',
+        reason: '"Hans" is the default script code for Chinese.',
       );
 
       final List<ui.Locale> hantLocales = parseLanguages(

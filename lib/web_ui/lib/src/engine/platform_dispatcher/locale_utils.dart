@@ -26,13 +26,12 @@ List<ui.Locale> parseLanguages(List<String> languages) {
   for (final String language in languages) {
     final List<String> parts = language.split('-');
     ui.Locale? locale;
-    if (parts.length == 1) {
-      // The language only has one part, like 'zh' or 'ast'. Take as is.
-      locale = ui.Locale(language);
-    } else if (parts.length > 1) {
-      // The language has multiple parts, like: 'zh-CN' or 'sr-Cyrl-RS'. Parse.
+    if (parts.isNotEmpty) {
+      // The first part tends to be the language code.
       final String languageCode = parts.first;
-      // Attempt to determine country and script from parts.
+      assert(languageCode.trim().isNotEmpty, '"$language" is not a valid IETF language tag.');
+
+      // Attempt to determine country and script from the next parts (if present).
       String? country;
       String? script;
       if (parts.length == 2) {
@@ -55,7 +54,7 @@ List<ui.Locale> parseLanguages(List<String> languages) {
       }
 
       // For Chinese, if the script is not found, compute from the country.
-      if (languageCode == 'zh' && country != null && script == null) {
+      if (languageCode == 'zh' && script == null) {
         script = _hantCountryCodes.contains(country) ? 'Hant' : 'Hans';
       }
 
