@@ -16,10 +16,12 @@ Allocator::~Allocator() = default;
 
 std::shared_ptr<DeviceBuffer> Allocator::CreateBufferWithCopy(
     const uint8_t* buffer,
-    size_t length) {
+    size_t length,
+    BufferUsageMask usage_mask) {
   DeviceBufferDescriptor desc;
   desc.size = length;
   desc.storage_mode = StorageMode::kHostVisible;
+  desc.buffer_usage = usage_mask;
   auto new_buffer = CreateBuffer(desc);
 
   if (!new_buffer) {
@@ -36,8 +38,10 @@ std::shared_ptr<DeviceBuffer> Allocator::CreateBufferWithCopy(
 }
 
 std::shared_ptr<DeviceBuffer> Allocator::CreateBufferWithCopy(
-    const fml::Mapping& mapping) {
-  return CreateBufferWithCopy(mapping.GetMapping(), mapping.GetSize());
+    const fml::Mapping& mapping,
+    BufferUsageMask usage_mask) {
+  return CreateBufferWithCopy(mapping.GetMapping(), mapping.GetSize(),
+                              usage_mask);
 }
 
 std::shared_ptr<DeviceBuffer> Allocator::CreateBuffer(

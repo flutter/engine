@@ -37,11 +37,14 @@ class Allocator {
   ///
   virtual uint16_t MinimumBytesPerRow(PixelFormat format) const;
 
-  std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(const uint8_t* buffer,
-                                                     size_t length);
+  std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(
+      const uint8_t* buffer,
+      size_t length,
+      BufferUsageMask usage_mask = 0u);
 
   std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(
-      const fml::Mapping& mapping);
+      const fml::Mapping& mapping,
+      BufferUsageMask usage_mask = 0u);
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
 

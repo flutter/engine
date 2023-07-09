@@ -49,8 +49,9 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
     return false;
   }
 
-  auto staging_buffer =
-      context->GetResourceAllocator()->CreateBufferWithCopy(contents, length);
+  auto staging_buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
+      contents, length,
+      static_cast<BufferUsageMask>(BufferUsage::kTransferSrc));
 
   if (!staging_buffer) {
     VALIDATION_LOG << "Could not create staging buffer.";

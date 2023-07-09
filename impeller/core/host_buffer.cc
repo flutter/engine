@@ -77,7 +77,9 @@ std::shared_ptr<const DeviceBuffer> HostBuffer::GetDeviceBuffer(
   if (generation_ == device_buffer_generation_) {
     return device_buffer_;
   }
-  auto new_buffer = allocator.CreateBufferWithCopy(GetBuffer(), GetLength());
+  auto new_buffer = allocator.CreateBufferWithCopy(
+      GetBuffer(), GetLength(),
+      static_cast<BufferUsageMask>(BufferUsage::kShaderRead));
   if (!new_buffer) {
     return nullptr;
   }
