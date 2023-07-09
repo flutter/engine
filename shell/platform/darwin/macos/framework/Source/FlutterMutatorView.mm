@@ -113,6 +113,11 @@
 
 @implementation FlutterPlatformViewContainer
 
+- (NSView*)hitTest:(NSPoint)point {
+  NSView* res = [super hitTest:point];
+  return res != self ? res : nil;
+}
+
 - (BOOL)isFlipped {
   // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
   // coordinate values increasing downwards. This affects the view, view transforms, and
@@ -143,6 +148,11 @@
   // coordinate values increasing downwards. This affects the view, view transforms, and
   // sublayerTransforms.
   return YES;
+}
+
+- (NSView*)hitTest:(NSPoint)point {
+  NSView* res = [super hitTest:point];
+  return res != self ? res : nil;
 }
 
 /// Clip the view to the given path. Offset top left corner of platform view
@@ -529,7 +539,8 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
       return nil;
     }
   }
-  return [super hitTest:point];
+  NSView* res = [super hitTest:point];
+  return res != self ? res : nil;
 }
 
 - (BOOL)isFlipped {

@@ -98,7 +98,7 @@ void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
       for (size_t j = i + 1; j < layers_count; j++) {
         FlutterLayer* overlayLayer = (FlutterLayer*)layers[j];
         if (overlayLayer->type == kFlutterLayerContentTypeBackingStore) {
-          auto present_info = overlayLayer->backing_store->present_info;
+          auto present_info = overlayLayer->backing_store_present_info;
           if (present_info != nullptr && present_info->paint_region != nullptr) {
             for (size_t k = 0; k < present_info->paint_region->rects_count; k++) {
               FlutterRect flutter_rect = present_info->paint_region->rects[k];
