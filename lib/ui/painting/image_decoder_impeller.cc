@@ -34,7 +34,7 @@ namespace flutter {
 
 class MallocDeviceBuffer : public impeller::DeviceBuffer {
  public:
-  MallocDeviceBuffer(impeller::DeviceBufferDescriptor desc)
+  explicit MallocDeviceBuffer(impeller::DeviceBufferDescriptor desc)
       : impeller::DeviceBuffer(desc) {
     data_ = static_cast<uint8_t*>(malloc(desc.size));
   }
