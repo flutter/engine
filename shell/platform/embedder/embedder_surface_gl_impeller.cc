@@ -57,7 +57,6 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
       !gl_dispatch_table_.gl_fbo_callback ||
       !gl_dispatch_table_.gl_populate_existing_damage ||
       !gl_dispatch_table_.gl_proc_resolver) {
-    // TODO: add default to gl proc resolver?
     return;
   }
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
@@ -163,7 +162,6 @@ EmbedderSurfaceGLImpeller::GLContextFramebufferInfo() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
-  const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<GPUSurfaceGLImpeller>(
       this,              // GPU surface GL delegate
       impeller_context_  // render to surface
