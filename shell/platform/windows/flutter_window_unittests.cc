@@ -324,5 +324,28 @@ TEST(FlutterWindowTest, AlertNode) {
   EXPECT_EQ(role.lVal, ROLE_SYSTEM_ALERT);
 }
 
+TEST(FlutterWindowTest, LifecycleFocusMessages) {
+  MockFlutterWindow win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  WindowStateEvent last_event;
+  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&last_event](HWND hwnd, WindowStateEvent event) {
+    last_event = event;
+  });
+
+  win32window.InjectWindowMessage(WM_SIZE, 0, 0);
+  EXPECT_EQ(last_event, HIDE);
+
+  win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
+  EXPECT_EQ(last_event, SHOW);
+
+  win32window.InjectWindowMessage(WM_SETFOCUS, 0, 0);;
+  EXPECT_EQ(last_event, FOCUS);
+
+  win32window.InjectWindowMessage(WM_KILLFOCUS, 0, 0);
+  EXPECT_EQ(last_event, UNFOCUS);
+}
+
 }  // namespace testing
 }  // namespace flutter
