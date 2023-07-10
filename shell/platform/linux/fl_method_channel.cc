@@ -88,7 +88,7 @@ static void channel_closed_cb(gpointer user_data) {
 static void fl_method_channel_dispose(GObject* object) {
   FlMethodChannel* self = FL_METHOD_CHANNEL(object);
 
-  // Note we don't have the clear the handler in messenger as it holds
+  // Note we don't have to clear the handler in messenger as it holds
   // a reference to this object so the following code is only run after
   // the messenger has closed the channel already.
 
