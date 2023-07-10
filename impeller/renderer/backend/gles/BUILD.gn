@@ -12,9 +12,7 @@ config("gles_config") {
 
 impeller_component("gles_unittests") {
   testonly = true
-  sources = [
-    "pass_bindings_cache_unittests.cc",
-  ]
+  sources = [ "pass_bindings_cache_unittests.cc" ]
   deps = [
     ":gles",
     "//flutter/testing:testing_lib",

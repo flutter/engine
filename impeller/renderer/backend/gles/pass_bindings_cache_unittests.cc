@@ -8,10 +8,7 @@
 namespace impeller {
 namespace testing {
 
-TEST(PassBindingsTest, WIP) {
-
-}
-
+TEST(PassBindingsTest, WIP) {}
 
 }  // namespace testing
 }  // namespace impeller
