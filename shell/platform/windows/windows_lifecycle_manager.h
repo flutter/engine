@@ -45,7 +45,12 @@ class WindowsLifecycleManager {
                     std::optional<LPARAM> lparam,
                     UINT exit_code);
 
-  // Intercept top level window messages, only paying attention to WM_CLOSE.
+  // TODO(schectman): Provide an API function for non-Flutter windows' WndProc
+  // function to call in order to contribute to the application lifecycle.
+  // https://github.com/flutter/flutter/issues/103637
+
+  // Intercept top level window WM_CLOSE message and listen to events that may
+  // update the application lifecycle.
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
   // Signal to start consuming WM_CLOSE messages.
