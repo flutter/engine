@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/config.h"
@@ -16,28 +17,8 @@
 
 namespace impeller {
 
-RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
-                               const RenderTarget& target,
-                               ReactorGLES::Ref reactor)
-    : RenderPass(std::move(context), target),
-      reactor_(std::move(reactor)),
-      is_valid_(reactor_ && reactor_->IsValid()) {}
-
-// |RenderPass|
-RenderPassGLES::~RenderPassGLES() = default;
-
-// |RenderPass|
-bool RenderPassGLES::IsValid() const {
-  return is_valid_;
-}
-
-// |RenderPass|
-void RenderPassGLES::OnSetLabel(std::string label) {
-  label_ = std::move(label);
-}
-
-void ConfigureBlending(const ProcTableGLES& gl,
-                       const ColorAttachmentDescriptor* color) {
+static void ConfigureBlending(const ProcTableGLES& gl,
+                              const ColorAttachmentDescriptor* color) {
   if (color->blending_enabled) {
     gl.Enable(GL_BLEND);
     gl.BlendFuncSeparate(
@@ -71,10 +52,10 @@ void ConfigureBlending(const ProcTableGLES& gl,
   }
 }
 
-void ConfigureStencil(GLenum face,
-                      const ProcTableGLES& gl,
-                      const StencilAttachmentDescriptor& stencil,
-                      uint32_t stencil_reference) {
+static void ConfigureStencil(GLenum face,
+                             const ProcTableGLES& gl,
+                             const StencilAttachmentDescriptor& stencil,
+                             uint32_t stencil_reference) {
   gl.StencilOpSeparate(
       face,                                    // face
       ToStencilOp(stencil.stencil_failure),    // stencil fail
@@ -89,9 +70,9 @@ void ConfigureStencil(GLenum face,
   gl.StencilMaskSeparate(face, stencil.write_mask);
 }
 
-void ConfigureStencil(const ProcTableGLES& gl,
-                      const PipelineDescriptor& pipeline,
-                      uint32_t stencil_reference) {
+static void ConfigureStencil(const ProcTableGLES& gl,
+                             const PipelineDescriptor& pipeline,
+                             uint32_t stencil_reference) {
   if (!pipeline.HasStencilAttachmentDescriptors()) {
     gl.Disable(GL_STENCIL_TEST);
     return;
@@ -109,6 +90,200 @@ void ConfigureStencil(const ProcTableGLES& gl,
   } else {
     FML_UNREACHABLE();
   }
+}
+
+PassBindingsCache::PassBindingsCache(const ProcTableGLES& gl) : gl_(gl) {}
+
+bool PassBindingsCache::Reset() {
+  if (last_pipeline_) {
+    return PipelineGLES::Cast(*last_pipeline_).UnbindProgram();
+  }
+  return true;
+}
+
+bool PassBindingsCache::ConfigurePipeline(
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline) {
+  if (last_pipeline_ != nullptr &&
+      pipeline->GetDescriptor().IsEqual(last_pipeline_->GetDescriptor())) {
+    return true;
+  }
+  last_pipeline_ = pipeline;
+
+  const auto& gles_pipeline = PipelineGLES::Cast(*pipeline);
+
+  const auto* color_attachment =
+      gles_pipeline.GetDescriptor().GetLegacyCompatibleColorAttachment();
+  if (!color_attachment) {
+    VALIDATION_LOG
+        << "Color attachment is too complicated for a legacy renderer.";
+    return false;
+  }
+
+  //--------------------------------------------------------------------------
+  /// Configure blending.
+  ///
+  ConfigureBlending(gl_, color_attachment);
+
+  if (last_pipeline_ != nullptr) {
+    if (!PipelineGLES::Cast(*last_pipeline_).UnbindProgram()) {
+      return false;
+    }
+    if (!gles_pipeline.BindProgram()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void PassBindingsCache::ConfigureDepth(
+    std::optional<DepthAttachmentDescriptor> depth) {
+  if (!depth.has_value()) {
+    if (had_depth_) {
+      gl_.Disable(GL_DEPTH_TEST);
+    }
+    had_depth_ = false;
+    return;
+  }
+  had_depth_ = true;
+
+  gl_.Enable(GL_DEPTH_TEST);
+  gl_.DepthFunc(ToCompareFunction(depth->depth_compare));
+  gl_.DepthMask(depth->depth_write_enabled ? GL_TRUE : GL_FALSE);
+}
+
+bool PassBindingsCache::BindVertexBuffer(
+    BufferView vertex_buffer_view,
+    const std::shared_ptr<Allocator>& transients_allocator) {
+  return BindBuffer(vertex_buffer_view,
+                    DeviceBufferGLES::BindingType::kArrayBuffer,
+                    transients_allocator);
+}
+
+bool PassBindingsCache::BindIndexBuffer(
+    BufferView index_buffer_view,
+    const std::shared_ptr<Allocator>& transients_allocator) {
+  return BindBuffer(index_buffer_view,
+                    DeviceBufferGLES::BindingType::kElementArrayBuffer,
+                    transients_allocator);
+}
+
+bool PassBindingsCache::BindBuffer(
+    BufferView buffer_view,
+    DeviceBufferGLES::BindingType binding_type,
+    const std::shared_ptr<Allocator>& transients_allocator) {
+  auto existing = bound_buffers_.find(static_cast<int>(binding_type));
+  if (existing->second == buffer_view.buffer) {
+    return true;
+  }
+
+  auto buffer = buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+
+  if (!buffer) {
+    return false;
+  }
+
+  const auto& buffer_gles = DeviceBufferGLES::Cast(*buffer);
+  if (!buffer_gles.BindAndUploadDataIfNecessary(binding_type)) {
+    return false;
+  }
+  bound_buffers_[static_cast<int>(binding_type)] = buffer_view.buffer;
+  return true;
+}
+
+void PassBindingsCache::ConfigureScissor(std::optional<IRect> maybe_scissor,
+                                         ISize target_size) {
+  if (!maybe_scissor.has_value()) {
+    if (had_scissor_) {
+      gl_.Disable(GL_SCISSOR_TEST);
+    }
+    return;
+  }
+  had_scissor_ = true;
+  const auto& scissor = maybe_scissor.value();
+  gl_.Enable(GL_SCISSOR_TEST);
+  gl_.Scissor(scissor.origin.x,                                             // x
+              target_size.height - scissor.origin.y - scissor.size.height,  // y
+              scissor.size.width,  // width
+              scissor.size.height  // height
+  );
+}
+
+void PassBindingsCache::ConfigureViewport(Viewport viewport,
+                                          ISize target_size,
+                                          bool has_depth) {
+  if (viewport == last_viewport_ && target_size == last_target_size_ &&
+      has_depth == viewport_had_depth_) {
+    return;
+  }
+  last_viewport_ = viewport;
+  last_target_size_ = target_size;
+  viewport_had_depth_ = has_depth;
+
+  gl_.Viewport(viewport.rect.origin.x,  // x
+               target_size.height - viewport.rect.origin.y -
+                   viewport.rect.size.height,  // y
+               viewport.rect.size.width,       // width
+               viewport.rect.size.height       // height
+  );
+
+  if (has_depth) {
+    gl_.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+  }
+}
+
+void PassBindingsCache::SetCullMode(CullMode cull_mode) {
+  if (last_cull_mode_ == cull_mode) {
+    return;
+  }
+  last_cull_mode_ = cull_mode;
+  switch (cull_mode) {
+    case CullMode::kNone:
+      gl_.Disable(GL_CULL_FACE);
+      break;
+    case CullMode::kFrontFace:
+      gl_.Enable(GL_CULL_FACE);
+      gl_.CullFace(GL_FRONT);
+      break;
+    case CullMode::kBackFace:
+      gl_.Enable(GL_CULL_FACE);
+      gl_.CullFace(GL_BACK);
+      break;
+  }
+}
+
+void PassBindingsCache::SetWindingOrder(WindingOrder winding_order) {
+  if (last_winding_order_ == winding_order) {
+    return;
+  }
+  last_winding_order_ = winding_order;
+  switch (winding_order) {
+    case WindingOrder::kClockwise:
+      gl_.FrontFace(GL_CW);
+      break;
+    case WindingOrder::kCounterClockwise:
+      gl_.FrontFace(GL_CCW);
+      break;
+  }
+}
+
+RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
+                               const RenderTarget& target,
+                               ReactorGLES::Ref reactor)
+    : RenderPass(std::move(context), target),
+      reactor_(std::move(reactor)),
+      is_valid_(reactor_ && reactor_->IsValid()) {}
+
+// |RenderPass|
+RenderPassGLES::~RenderPassGLES() = default;
+
+// |RenderPass|
+bool RenderPassGLES::IsValid() const {
+  return is_valid_;
+}
+
+// |RenderPass|
+void RenderPassGLES::OnSetLabel(std::string label) {
+  label_ = std::move(label);
 }
 
 //------------------------------------------------------------------------------
@@ -228,9 +403,10 @@ struct RenderPassData {
   gl.Disable(GL_CULL_FACE);
   gl.Disable(GL_BLEND);
   gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
+  gl.FrontFace(GL_CW);
   gl.Clear(clear_bits);
 
+  PassBindingsCache pass_bindings(gl);
   for (const auto& command : commands) {
     if (command.instance_count != 1u) {
       VALIDATION_LOG << "GLES backend does not support instanced rendering.";
@@ -242,6 +418,9 @@ struct RenderPassData {
       return false;
     }
 
+    // This can be re-enabled locally, but in production builds it adds a
+    // substantial amount of overhead per render pass.
+#if 0
     fml::ScopedCleanupClosure pop_cmd_debug_marker(
         [&gl]() { gl.PopDebugGroup(); });
     if (!command.label.empty()) {
@@ -249,21 +428,13 @@ struct RenderPassData {
     } else {
       pop_cmd_debug_marker.Release();
     }
+#endif
 
     const auto& pipeline = PipelineGLES::Cast(*command.pipeline);
 
-    const auto* color_attachment =
-        pipeline.GetDescriptor().GetLegacyCompatibleColorAttachment();
-    if (!color_attachment) {
-      VALIDATION_LOG
-          << "Color attachment is too complicated for a legacy renderer.";
+    if (!pass_bindings.ConfigurePipeline(command.pipeline)) {
       return false;
     }
-
-    //--------------------------------------------------------------------------
-    /// Configure blending.
-    ///
-    ConfigureBlending(gl, color_attachment);
 
     //--------------------------------------------------------------------------
     /// Setup stencil.
@@ -273,15 +444,8 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Configure depth.
     ///
-    if (auto depth =
-            pipeline.GetDescriptor().GetDepthStencilAttachmentDescriptor();
-        depth.has_value()) {
-      gl.Enable(GL_DEPTH_TEST);
-      gl.DepthFunc(ToCompareFunction(depth->depth_compare));
-      gl.DepthMask(depth->depth_write_enabled ? GL_TRUE : GL_FALSE);
-    } else {
-      gl.Disable(GL_DEPTH_TEST);
-    }
+    pass_bindings.ConfigureDepth(
+        pipeline.GetDescriptor().GetDepthStencilAttachmentDescriptor());
 
     // Both the viewport and scissor are specified in framebuffer coordinates.
     // Impeller's framebuffer coordinate system is top left origin, but OpenGL's
@@ -291,60 +455,22 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Setup the viewport.
     ///
-    const auto& viewport = command.viewport.value_or(pass_data.viewport);
-    gl.Viewport(viewport.rect.origin.x,  // x
-                target_size.height - viewport.rect.origin.y -
-                    viewport.rect.size.height,  // y
-                viewport.rect.size.width,       // width
-                viewport.rect.size.height       // height
-    );
-    if (pass_data.depth_attachment) {
-      gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
-    }
+    pass_bindings.ConfigureViewport(
+        command.viewport.value_or(pass_data.viewport), target_size,
+        pipeline.GetDescriptor()
+            .GetDepthStencilAttachmentDescriptor()
+            .has_value());
 
     //--------------------------------------------------------------------------
     /// Setup the scissor rect.
     ///
-    if (command.scissor.has_value()) {
-      const auto& scissor = command.scissor.value();
-      gl.Enable(GL_SCISSOR_TEST);
-      gl.Scissor(
-          scissor.origin.x,                                             // x
-          target_size.height - scissor.origin.y - scissor.size.height,  // y
-          scissor.size.width,                                           // width
-          scissor.size.height  // height
-      );
-    } else {
-      gl.Disable(GL_SCISSOR_TEST);
-    }
+    pass_bindings.ConfigureScissor(command.scissor, target_size);
 
     //--------------------------------------------------------------------------
-    /// Setup culling.
+    /// Setup culling and winding order.
     ///
-    switch (pipeline.GetDescriptor().GetCullMode()) {
-      case CullMode::kNone:
-        gl.Disable(GL_CULL_FACE);
-        break;
-      case CullMode::kFrontFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_FRONT);
-        break;
-      case CullMode::kBackFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_BACK);
-        break;
-    }
-    //--------------------------------------------------------------------------
-    /// Setup winding order.
-    ///
-    switch (pipeline.GetDescriptor().GetWindingOrder()) {
-      case WindingOrder::kClockwise:
-        gl.FrontFace(GL_CW);
-        break;
-      case WindingOrder::kCounterClockwise:
-        gl.FrontFace(GL_CCW);
-        break;
-    }
+    pass_bindings.SetCullMode(pipeline.GetDescriptor().GetCullMode());
+    pass_bindings.SetWindingOrder(pipeline.GetDescriptor().GetWindingOrder());
 
     if (command.index_type == IndexType::kUnknown) {
       return false;
@@ -360,24 +486,8 @@ struct RenderPassData {
     if (!vertex_buffer_view) {
       return false;
     }
-
-    auto vertex_buffer =
-        vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
-
-    if (!vertex_buffer) {
-      return false;
-    }
-
-    const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
-    if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
-            DeviceBufferGLES::BindingType::kArrayBuffer)) {
-      return false;
-    }
-
-    //--------------------------------------------------------------------------
-    /// Bind the pipeline program.
-    ///
-    if (!pipeline.BindProgram()) {
+    if (!pass_bindings.BindVertexBuffer(vertex_buffer_view,
+                                        transients_allocator)) {
       return false;
     }
 
@@ -419,19 +529,15 @@ struct RenderPassData {
       gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
     } else {
       // Bind the index buffer if necessary.
-      auto index_buffer_view = command.index_buffer;
-      auto index_buffer =
-          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
-      const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
-      if (!index_buffer_gles.BindAndUploadDataIfNecessary(
-              DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
+      if (!pass_bindings.BindIndexBuffer(command.index_buffer,
+                                         transients_allocator)) {
         return false;
       }
       gl.DrawElements(mode,                             // mode
                       command.vertex_count,             // count
                       ToIndexType(command.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                          index_buffer_view.range.offset))  // indices
+                          command.index_buffer.range.offset))  // indices
       );
     }
 
@@ -441,13 +547,13 @@ struct RenderPassData {
     if (!vertex_desc_gles->UnbindVertexAttributes(gl)) {
       return false;
     }
+  }
 
-    //--------------------------------------------------------------------------
-    /// Unbind the program pipeline.
-    ///
-    if (!pipeline.UnbindProgram()) {
-      return false;
-    }
+  //--------------------------------------------------------------------------
+  /// Unbind the last program pipeline.
+  ///
+  if (!pass_bindings.Reset()) {
+    return false;
   }
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {

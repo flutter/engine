@@ -10,6 +10,17 @@ config("gles_config") {
   include_dirs = [ "//third_party/angle/include" ]
 }
 
+impeller_component("gles_unittests") {
+  testonly = true
+  sources = [
+    "pass_bindings_cache_unittests.cc",
+  ]
+  deps = [
+    ":gles",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
 impeller_component("gles") {
   public_configs = []
 
