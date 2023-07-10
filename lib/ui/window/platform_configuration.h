@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/shell/common/display.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
@@ -268,10 +269,14 @@ class PlatformConfiguration final {
   void DidCreateIsolate();
 
   //----------------------------------------------------------------------------
-  /// @brief      Update the specified locale data in the framework.
+  /// @brief      Update the specified display data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
+  /// @param[in]  displays  The display data to send to Dart.
+  ///
+  void UpdateDisplays(const std::vector<DisplayData>& displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the specified locale data in the framework.
   ///
   /// @param[in]  locale_data  The locale data. This should consist of groups of
   ///             4 strings, each group representing a single locale.
@@ -281,18 +286,12 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Update the user settings data in the framework.
   ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
-  ///
   /// @param[in]  data  The user settings data.
   ///
   void UpdateUserSettingsData(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the lifecycle state data in the framework.
-  ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
   ///
   /// @param[in]  data  The lifecycle state data.
   ///
@@ -414,9 +413,10 @@ class PlatformConfiguration final {
   ///
   /// @param[in] window_id The id of the window to find and return.
   ///
-  /// @return     a pointer to the Window.
+  /// @return     a pointer to the Window. Returns nullptr if the ID is not
+  ///             found.
   ///
-  Window* get_window(int window_id) { return windows_[window_id].get(); }
+  Window* get_window(int window_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -443,6 +443,7 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_initial_lifecycle_state_;

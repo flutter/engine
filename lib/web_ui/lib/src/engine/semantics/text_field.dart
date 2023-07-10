@@ -209,9 +209,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// browser gestures when in pointer mode. In Safari on iOS pointer events are
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
-class TextField extends RoleManager {
-  TextField(SemanticsObject semanticsObject)
-      : super(Role.textField, semanticsObject) {
+class TextField extends PrimaryRoleManager {
+  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
@@ -408,6 +407,8 @@ class TextField extends RoleManager {
 
   @override
   void update() {
+    super.update();
+
     // Ignore the update if editableElement has not been created yet.
     // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
     // we recieve a `blur` event from the browswer and a semantic update with
@@ -450,6 +451,7 @@ class TextField extends RoleManager {
 
   @override
   void dispose() {
+    super.dispose();
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = null;
     // on iOS, the `blur` event listener callback will remove the element.

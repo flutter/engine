@@ -29,6 +29,14 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/skia/include/codec/SkBmpDecoder.h"
+#include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/codec/SkGifDecoder.h"
+#include "third_party/skia/include/codec/SkIcoDecoder.h"
+#include "third_party/skia/include/codec/SkJpegDecoder.h"
+#include "third_party/skia/include/codec/SkPngDecoder.h"
+#include "third_party/skia/include/codec/SkWbmpDecoder.h"
+#include "third_party/skia/include/codec/SkWebpDecoder.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
@@ -54,19 +62,35 @@ std::unique_ptr<Engine> CreateEngine(
     const fml::WeakPtr<IOManager>& io_manager,
     const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
     const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
-    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
-  return std::make_unique<Engine>(delegate,             //
-                                  dispatcher_maker,     //
-                                  vm,                   //
-                                  isolate_snapshot,     //
-                                  task_runners,         //
-                                  platform_data,        //
-                                  settings,             //
-                                  std::move(animator),  //
-                                  io_manager,           //
-                                  unref_queue,          //
-                                  snapshot_delegate,    //
-                                  volatile_path_tracker);
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+  return std::make_unique<Engine>(delegate,               //
+                                  dispatcher_maker,       //
+                                  vm,                     //
+                                  isolate_snapshot,       //
+                                  task_runners,           //
+                                  platform_data,          //
+                                  settings,               //
+                                  std::move(animator),    //
+                                  io_manager,             //
+                                  unref_queue,            //
+                                  snapshot_delegate,      //
+                                  volatile_path_tracker,  //
+                                  gpu_disabled_switch);
+}
+
+void RegisterCodecsWithSkia() {
+  // These are in the order they will be attempted to be decoded from.
+  // If we have data to back it up, we can order these by "frequency used in
+  // the wild" for a very small performance bump, but for now we mirror the
+  // order Skia had them in.
+  SkCodecs::Register(SkPngDecoder::Decoder());
+  SkCodecs::Register(SkJpegDecoder::Decoder());
+  SkCodecs::Register(SkWebpDecoder::Decoder());
+  SkCodecs::Register(SkGifDecoder::Decoder());
+  SkCodecs::Register(SkBmpDecoder::Decoder());
+  SkCodecs::Register(SkWbmpDecoder::Decoder());
+  SkCodecs::Register(SkIcoDecoder::Decoder());
 }
 
 // Though there can be multiple shells, some settings apply to all components in
@@ -101,6 +125,7 @@ void PerformInitializationTasks(Settings& settings) {
     } else {
       FML_DLOG(INFO) << "Skia deterministic rendering is enabled.";
     }
+    RegisterCodecsWithSkia();
 
     if (settings.icu_initialization_required) {
       if (!settings.icu_data_path.empty()) {
@@ -301,7 +326,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                              weak_io_manager_future.get(),    //
                              unref_queue_future.get(),        //
                              snapshot_delegate_future.get(),  //
-                             shell->volatile_path_tracker_));
+                             shell->volatile_path_tracker_,
+                             shell->is_gpu_disabled_sync_switch_));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -538,7 +564,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::WeakPtr<IOManager>& io_manager,
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
+          const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
         return engine->Spawn(
             /*delegate=*/delegate,
             /*dispatcher_maker=*/dispatcher_maker,
@@ -546,7 +573,8 @@ std::unique_ptr<Shell> Shell::Spawn(
             /*animator=*/std::move(animator),
             /*initial_route=*/initial_route,
             /*io_manager=*/io_manager,
-            /*snapshot_delegate=*/std::move(snapshot_delegate));
+            /*snapshot_delegate=*/std::move(snapshot_delegate),
+            /*gpu_disabled_switch=*/is_gpu_disabled_sync_switch);
       },
       is_gpu_disabled);
   result->RunEngine(std::move(run_configuration));
@@ -926,7 +954,8 @@ void Shell::OnPlatformViewScheduleFrame() {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
+void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
+                                             const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
@@ -950,9 +979,9 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
       });
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), metrics]() {
+      [engine = engine_->GetWeakPtr(), view_id, metrics]() {
         if (engine) {
-          engine->SetViewportMetrics(metrics);
+          engine->SetViewportMetrics(view_id, metrics);
         }
       });
 
@@ -968,7 +997,24 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 void Shell::OnPlatformViewDispatchPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+    std::scoped_lock lock(misbehaving_message_channels_mutex_);
+    auto inserted = misbehaving_message_channels_.insert(message->channel());
+    if (inserted.second) {
+      FML_LOG(ERROR)
+          << "The '" << message->channel()
+          << "' channel sent a message from native to Flutter on a "
+             "non-platform thread. Platform channel messages must be sent on "
+             "the platform thread. Failure to do so may result in data loss or "
+             "crashes, and must be fixed in the plugin or application code "
+             "creating that channel.\n"
+             "See https://docs.flutter.dev/platform-integration/"
+             "platform-channels#channels-and-platform-threading for more "
+             "information.";
+    }
+  }
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -1525,6 +1571,8 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   std::scoped_lock time_recorder_lock(time_recorder_mutex_);
   FML_CHECK(latest_frame_target_time_.has_value())
       << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
+  // Covered by FML_CHECK().
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return latest_frame_target_time_.value();
 }
 
@@ -2071,9 +2119,23 @@ void Shell::SetGpuAvailability(GpuAvailability availability) {
   }
 }
 
-void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
-                             std::vector<std::unique_ptr<Display>> displays) {
-  display_manager_->HandleDisplayUpdates(update_type, std::move(displays));
+void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  std::vector<DisplayData> display_data;
+  for (const auto& display : displays) {
+    display_data.push_back(display->GetDisplayData());
+  }
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = engine_->GetWeakPtr(),
+       display_data = std::move(display_data)]() {
+        if (engine) {
+          engine->SetDisplays(display_data);
+        }
+      });
+
+  display_manager_->HandleDisplayUpdates(std::move(displays));
 }
 
 fml::TimePoint Shell::GetCurrentTimePoint() {
@@ -2086,7 +2148,19 @@ Shell::GetPlatformMessageHandler() const {
 }
 
 const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
+  if (!engine_) {
+    return {};
+  }
   return engine_->GetVsyncWaiter();
+}
+
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+Shell::GetConcurrentWorkerTaskRunner() const {
+  FML_DCHECK(vm_);
+  if (!vm_) {
+    return nullptr;
+  }
+  return vm_->GetConcurrentWorkerTaskRunner();
 }
 
 }  // namespace flutter

@@ -470,6 +470,7 @@ class BrowserPlatform extends PlatformPlugin {
     '.json': 'application/json',
     '.map': 'application/json',
     '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
   };
@@ -1009,7 +1010,8 @@ class BrowserManager {
           );
 
           final Map<String, Uri> packageMap = <String, Uri>{
-            for (Package p in packageConfig.packages) p.name: p.packageUriRoot
+            for (final Package p in packageConfig.packages)
+              p.name: p.packageUriRoot
           };
           final JSStackTraceMapper mapper = JSStackTraceMapper(
             await File(mapPath).readAsString(),

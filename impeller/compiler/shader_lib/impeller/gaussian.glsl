@@ -9,7 +9,13 @@
 #include <impeller/types.glsl>
 
 /// Gaussian distribution function.
-float16_t IPGaussian(float16_t x, float16_t sigma) {
+float IPGaussian(float x, float sigma) {
+  float variance = sigma * sigma;
+  return exp(-0.5f * x * x / variance) / (kSqrtTwoPi * sigma);
+}
+
+/// Gaussian distribution function.
+float16_t IPHalfGaussian(float16_t x, float16_t sigma) {
   float16_t variance = sigma * sigma;
   return exp(-0.5hf * x * x / variance) / (float16_t(kSqrtTwoPi) * sigma);
 }
@@ -46,7 +52,12 @@ f16vec2 IPVec2GaussianIntegral(f16vec2 x, float16_t sigma) {
 }
 
 /// Simpler (but less accurate) approximation of the Gaussian integral.
-f16vec2 IPVec2FastGaussianIntegral(f16vec2 x, float16_t sigma) {
+vec2 IPVec2FastGaussianIntegral(vec2 x, float sigma) {
+  return 1.0 / (1.0 + exp(-kSqrtThree / sigma * x));
+}
+
+/// Simpler (but less accurate) approximation of the Gaussian integral.
+f16vec2 IPHalfVec2FastGaussianIntegral(f16vec2 x, float16_t sigma) {
   return 1.0hf / (1.0hf + exp(float16_t(-kSqrtThree) / sigma * x));
 }
 

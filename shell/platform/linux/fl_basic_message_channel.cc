@@ -33,9 +33,6 @@ struct _FlBasicMessageChannelResponseHandle {
   FlBinaryMessengerResponseHandle* response_handle;
 };
 
-// Added here to stop the compiler from optimizing this function away.
-G_MODULE_EXPORT GType fl_basic_message_channel_get_type();
-
 G_DEFINE_TYPE(FlBasicMessageChannel, fl_basic_message_channel, G_TYPE_OBJECT)
 G_DEFINE_TYPE(FlBasicMessageChannelResponseHandle,
               fl_basic_message_channel_response_handle,
@@ -232,7 +229,6 @@ G_MODULE_EXPORT void fl_basic_message_channel_send(FlBasicMessageChannel* self,
                                                    GAsyncReadyCallback callback,
                                                    gpointer user_data) {
   g_return_if_fail(FL_IS_BASIC_MESSAGE_CHANNEL(self));
-  g_return_if_fail(message != nullptr);
 
   g_autoptr(GTask) task =
       callback != nullptr ? g_task_new(self, cancellable, callback, user_data)

@@ -24,6 +24,9 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace flutter {
 namespace testing {
 
@@ -175,11 +178,11 @@ TEST(RasterCache, SetCheckboardCacheImages) {
   };
 
   cache.SetCheckboardCacheImages(false);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, nullptr, dummy_draw_function, draw_checkerboard);
   ASSERT_FALSE(did_draw_checkerboard);
 
   cache.SetCheckboardCacheImages(true);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, nullptr, dummy_draw_function, draw_checkerboard);
   ASSERT_TRUE(did_draw_checkerboard);
 }
 
@@ -885,3 +888,5 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

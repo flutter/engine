@@ -4,7 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
-#include "fml/logging.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -23,6 +24,7 @@ DeviceBufferVK::DeviceBufferVK(DeviceBufferDescriptor desc,
       buffer_(buffer) {}
 
 DeviceBufferVK::~DeviceBufferVK() {
+  TRACE_EVENT0("impeller", "DestroyDeviceBuffer");
   if (buffer_) {
     ::vmaDestroyBuffer(allocator_,
                        static_cast<decltype(buffer_)::NativeType>(buffer_),
@@ -37,6 +39,7 @@ uint8_t* DeviceBufferVK::OnGetContents() const {
 bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
                                       Range source_range,
                                       size_t offset) {
+  TRACE_EVENT0("impeller", "CopyToDeviceBuffer");
   uint8_t* dest = OnGetContents();
 
   if (!dest) {

@@ -14,9 +14,10 @@ namespace impeller {
 
 class TrackedObjectsVK {
  public:
-  explicit TrackedObjectsVK(const vk::Device& device,
-                            const std::shared_ptr<CommandPoolVK>& pool)
-      : desc_pool_(device) {
+  explicit TrackedObjectsVK(
+      const std::weak_ptr<const DeviceHolder>& device_holder,
+      const std::shared_ptr<CommandPoolVK>& pool)
+      : desc_pool_(device_holder) {
     if (!pool) {
       return;
     }
@@ -35,8 +36,8 @@ class TrackedObjectsVK {
     }
     auto pool = pool_.lock();
     if (!pool) {
-      VALIDATION_LOG
-          << "Command pool died before a command buffer could be recycled.";
+      // The buffer can not be freed if its command pool has been destroyed.
+      buffer_.release();
       return;
     }
     pool->CollectGraphicsCommandBuffer(std::move(buffer_));
@@ -51,14 +52,14 @@ class TrackedObjectsVK {
     tracked_objects_.insert(std::move(object));
   }
 
-  void Track(std::shared_ptr<const DeviceBuffer> buffer) {
+  void Track(std::shared_ptr<const Buffer> buffer) {
     if (!buffer) {
       return;
     }
     tracked_buffers_.insert(std::move(buffer));
   }
 
-  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& buffer) const {
+  bool IsTracking(const std::shared_ptr<const Buffer>& buffer) const {
     if (!buffer) {
       return false;
     }
@@ -88,19 +89,21 @@ class TrackedObjectsVK {
   std::weak_ptr<CommandPoolVK> pool_;
   vk::UniqueCommandBuffer buffer_;
   std::set<std::shared_ptr<SharedObjectVK>> tracked_objects_;
-  std::set<std::shared_ptr<const DeviceBuffer>> tracked_buffers_;
+  std::set<std::shared_ptr<const Buffer>> tracked_buffers_;
   std::set<std::shared_ptr<const TextureSourceVK>> tracked_textures_;
   bool is_valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TrackedObjectsVK);
 };
 
-CommandEncoderVK::CommandEncoderVK(vk::Device device,
-                                   const std::shared_ptr<QueueVK>& queue,
-                                   const std::shared_ptr<CommandPoolVK>& pool,
-                                   std::shared_ptr<FenceWaiterVK> fence_waiter)
+CommandEncoderVK::CommandEncoderVK(
+    const std::weak_ptr<const DeviceHolder>& device_holder,
+    const std::shared_ptr<QueueVK>& queue,
+    const std::shared_ptr<CommandPoolVK>& pool,
+    std::shared_ptr<FenceWaiterVK> fence_waiter)
     : fence_waiter_(std::move(fence_waiter)),
-      tracked_objects_(std::make_shared<TrackedObjectsVK>(device, pool)) {
+      tracked_objects_(
+          std::make_shared<TrackedObjectsVK>(device_holder, pool)) {
   if (!fence_waiter_ || !tracked_objects_->IsValid() || !queue) {
     return;
   }
@@ -111,7 +114,7 @@ CommandEncoderVK::CommandEncoderVK(vk::Device device,
     VALIDATION_LOG << "Could not begin command buffer.";
     return;
   }
-  device_ = device;
+  device_holder_ = device_holder;
   queue_ = queue;
   is_valid_ = true;
 }
@@ -122,13 +125,23 @@ bool CommandEncoderVK::IsValid() const {
   return is_valid_;
 }
 
-bool CommandEncoderVK::Submit() {
+bool CommandEncoderVK::Submit(SubmitCallback callback) {
+  // Make sure to call callback with `false` if anything returns early.
+  bool fail_callback = !!callback;
   if (!IsValid()) {
+    if (fail_callback) {
+      callback(false);
+    }
     return false;
   }
 
   // Success or failure, you only get to submit once.
-  fml::ScopedCleanupClosure reset([&]() { Reset(); });
+  fml::ScopedCleanupClosure reset([&]() {
+    if (fail_callback) {
+      callback(false);
+    }
+    Reset();
+  });
 
   InsertDebugMarker("QueueSubmit");
 
@@ -137,7 +150,11 @@ bool CommandEncoderVK::Submit() {
   if (command_buffer.end() != vk::Result::eSuccess) {
     return false;
   }
-  auto [fence_result, fence] = device_.createFenceUnique({});
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return false;
+  }
+  auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
     return false;
   }
@@ -149,9 +166,16 @@ bool CommandEncoderVK::Submit() {
     return false;
   }
 
+  // Submit will proceed, call callback with true when it is done and do not
+  // call when `reset` is collected.
+  fail_callback = false;
+
   return fence_waiter_->AddFence(
-      std::move(fence), [tracked_objects = std::move(tracked_objects_)] {
-        // Nothing to do, we just drop the tracked objects on the floor.
+      std::move(fence),
+      [callback, tracked_objects = std::move(tracked_objects_)] {
+        if (callback) {
+          callback(true);
+        }
       });
 }
 
@@ -166,7 +190,7 @@ void CommandEncoderVK::Reset() {
   tracked_objects_.reset();
 
   queue_ = nullptr;
-  device_ = nullptr;
+  device_holder_ = {};
   is_valid_ = false;
 }
 
@@ -178,7 +202,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {
   return true;
 }
 
-bool CommandEncoderVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
+bool CommandEncoderVK::Track(std::shared_ptr<const Buffer> buffer) {
   if (!IsValid()) {
     return false;
   }
@@ -187,7 +211,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
 }
 
 bool CommandEncoderVK::IsTracking(
-    const std::shared_ptr<const DeviceBuffer>& buffer) const {
+    const std::shared_ptr<const Buffer>& buffer) const {
   if (!IsValid()) {
     return false;
   }

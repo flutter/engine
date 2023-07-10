@@ -21,7 +21,15 @@ std::optional<Rect> ToRect(const SkRect* rect) {
 std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
-    result.push_back(ToRect(&tex[i]).value());
+    result.push_back(ToRect(tex[i]));
+  }
+  return result;
+}
+
+std::vector<Point> ToPoints(const SkPoint points[], int count) {
+  std::vector<Point> result(count);
+  for (auto i = 0; i < count; i++) {
+    result[i] = ToPoint(points[i]);
   }
   return result;
 }
@@ -109,12 +117,15 @@ Path ToPath(const SkPath& path) {
       fill_type = FillType::kNonZero;
       break;
   }
+  builder.SetConvexity(path.isConvex() ? Convexity::kConvex
+                                       : Convexity::kUnknown);
   return builder.TakePath(fill_type);
 }
 
 Path ToPath(const SkRRect& rrect) {
   return PathBuilder{}
       .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+      .SetConvexity(Convexity::kConvex)
       .TakePath();
 }
 

@@ -10,12 +10,12 @@
 #include <vector>
 
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
 
 class ContentContext;
-class Entity;
 class FilterContents;
 
 /// `FilterInput` is a lazy/single eval `Snapshot` which may be shared across
@@ -45,9 +45,11 @@ class FilterInput {
 
   virtual Variant GetInput() const = 0;
 
-  virtual std::optional<Snapshot> GetSnapshot(const std::string& label,
-                                              const ContentContext& renderer,
-                                              const Entity& entity) const = 0;
+  virtual std::optional<Snapshot> GetSnapshot(
+      const std::string& label,
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 

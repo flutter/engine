@@ -54,8 +54,7 @@ void testMain() {
         value: 'hi',
         isFocused: true,
       );
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
 
       // ensureInitialized() isn't called prior to calling dispose() here.
       // Since we are conditionally calling dispose() on our
@@ -111,7 +110,6 @@ void testMain() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
       // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine != BrowserEngine.blink);
 
     test('Syncs semantic state from framework', () {
@@ -137,8 +135,7 @@ void testMain() {
         rect: const ui.Rect.fromLTWH(0, 0, 10, 15),
       );
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'greeting');
@@ -182,8 +179,7 @@ void testMain() {
           isFocused: true,
           rect: const ui.Rect.fromLTWH(0, 0, 10, 15));
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       final DomHTMLInputElement editableElement =
           textField.activeEditableElement as DomHTMLInputElement;
 
@@ -213,8 +209,7 @@ void testMain() {
           isFocused: true,
           rect: const ui.Rect.fromLTWH(0, 0, 10, 15));
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       final DomHTMLInputElement editableElement =
           textField.activeEditableElement as DomHTMLInputElement;
 
@@ -254,8 +249,7 @@ void testMain() {
         isFocused: true,
       );
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(textField.editableElement, strategy.domElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
@@ -287,8 +281,7 @@ void testMain() {
       expect(strategy.domElement, isNull);
 
       // It doesn't remove the DOM element.
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(appHostNode.contains(textField.editableElement), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
@@ -518,9 +511,8 @@ void testMain() {
         isFocused: true,
         rect: const ui.Rect.fromLTWH(0, 0, 10, 15),
       );
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
 
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'greeting');
@@ -564,8 +556,7 @@ void testMain() {
           isFocused: true,
           rect: const ui.Rect.fromLTWH(0, 0, 10, 15));
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       final DomHTMLInputElement editableElement =
           textField.activeEditableElement as DomHTMLInputElement;
 
@@ -595,8 +586,7 @@ void testMain() {
           isFocused: true,
           rect: const ui.Rect.fromLTWH(0, 0, 10, 15));
 
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       final DomHTMLInputElement editableElement =
           textField.activeEditableElement as DomHTMLInputElement;
 
@@ -635,9 +625,8 @@ void testMain() {
         value: 'hello',
         isFocused: true,
       );
-      final TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
 
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(textField.editableElement, strategy.domElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
@@ -672,7 +661,7 @@ void testMain() {
       expect(strategy.domElement, isNull);
 
       // It removes the DOM element.
-      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(appHostNode.contains(textField.editableElement), isFalse);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
@@ -851,8 +840,7 @@ void testMain() {
       SemanticsObject textFieldSemantics = createTextFieldSemanticsForIos(
         value: 'hello',
       );
-      TextField textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(textField.editableElement, isNull);
       textField.dispose();
       expect(textField.editableElement, isNull);
@@ -861,8 +849,7 @@ void testMain() {
         value: 'hi',
         isFocused: true,
       );
-      textField =
-          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      textField = textFieldSemantics.primaryRole! as TextField;
 
       expect(textField.editableElement, isNotNull);
       textField.dispose();
@@ -939,8 +926,7 @@ SemanticsObject createTextFieldSemanticsForIos({
   );
 
   if (isFocused) {
-    final TextField textField =
-        textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+    final TextField textField = textFieldSemantics.primaryRole! as TextField;
 
     simulateTap(textField.semanticsObject.element);
 

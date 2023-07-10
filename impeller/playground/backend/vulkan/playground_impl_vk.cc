@@ -20,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/vk/compute_shaders_vk.h"
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace impeller {
@@ -38,6 +39,8 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_imgui_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
                                              impeller_scene_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_compute_shaders_vk_data, impeller_compute_shaders_vk_length),
   };
 }
 
@@ -49,9 +52,7 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 }
 
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
-    : PlaygroundImpl(switches),
-      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
-      handle_(nullptr, &DestroyWindowHandle) {
+    : PlaygroundImpl(switches), handle_(nullptr, &DestroyWindowHandle) {
   if (!::glfwVulkanSupported()) {
 #ifdef TARGET_OS_MAC
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on macOS "
@@ -83,7 +84,6 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
           &::glfwGetInstanceProcAddress);
   context_settings.shader_libraries_data = ShaderLibraryMappingsForPlayground();
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
-  context_settings.worker_task_runner = concurrent_loop_->GetTaskRunner();
   context_settings.enable_validation = switches_.enable_vulkan_validation;
 
   auto context = ContextVK::Create(std::move(context_settings));

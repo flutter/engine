@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <objc/objc.h>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #include "gtest/gtest.h"
@@ -24,6 +25,8 @@
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
+constexpr int64_t kImplicitViewId = 0ll;
+
 @interface FlutterEngine (Test)
 /**
  * The FlutterCompositor object currently in use by the FlutterEngine.
@@ -31,6 +34,7 @@
  * May be nil if the compositor has not been initialized yet.
  */
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+
 @end
 
 @interface TestPlatformViewFactory : NSObject <FlutterPlatformViewFactory>
@@ -134,7 +138,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -163,7 +168,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   latch.Wait();
 }
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -348,7 +354,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterSemanticsNode2* nodes[] = {&root, &child1};
   update.nodes = nodes;
   update.custom_action_count = 0;
-  // This call updates semantics for the default view, which does not exist,
+  // This call updates semantics for the implicit view, which does not exist,
   // and therefore this call is invalid. But the engine should not crash.
   update_semantics_callback(&update, (__bridge void*)engine);
 
@@ -435,7 +441,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                 result:^(id result){
                 }];
 
-  [viewController.flutterView.threadSynchronizer blockUntilFrameAvailable];
+  [engine.testThreadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
@@ -626,9 +632,10 @@ TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown
   [threadSynchronizer shutdown];
 
   std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommit:CGSizeMake(100, 100)
-                               notify:^{
-                               }];
+    [threadSynchronizer performCommitForView:kImplicitViewId
+                                        size:CGSizeMake(100, 100)
+                                      notify:^{
+                                      }];
   });
 
   rasterThread.join();
@@ -646,7 +653,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -663,7 +670,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -677,7 +684,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -685,7 +692,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -694,13 +701,13 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   id engineMock = CreateMockFlutterEngine(nil);
   __block NSString* nextResponse = @"exit";
-  __block BOOL triedToTerminate = FALSE;
+  __block BOOL triedToTerminate = NO;
   FlutterEngineTerminationHandler* terminationHandler =
       [[FlutterEngineTerminationHandler alloc] initWithEngine:engineMock
                                                    terminator:^(id sender) {
@@ -742,14 +749,24 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
                                         arguments:@{@"type" : @"cancelable"}];
 
-  triedToTerminate = FALSE;
+  // Always terminate when the binding isn't ready (which is the default).
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+
+  // Once the binding is ready, handle the request.
+  terminationHandler.acceptingRequests = YES;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"exit";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
   EXPECT_TRUE(triedToTerminate);
 
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"cancel";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -757,7 +774,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   EXPECT_FALSE(triedToTerminate);
 
   // Check that it doesn't crash on error.
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"error";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -766,7 +783,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
 }
 
 TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
-  __block BOOL announced = FALSE;
+  __block BOOL announced = NO;
   id engineMock = CreateMockFlutterEngine(nil);
 
   OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
@@ -786,6 +803,77 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   [engineMock handleAccessibilityEvent:annotatedEvent];
 
   EXPECT_TRUE(announced);
+}
+
+TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
+  __block flutter::AppLifecycleState sentState;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  // Have to enumerate all the values because OCMStub can't capture
+  // non-Objective-C object arguments.
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kDetached])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kDetached;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kResumed])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kResumed;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kInactive])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kInactive;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kHidden])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kHidden;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kPaused])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kPaused;
+      }));
+
+  __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
+  id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
+  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation setReturnValue:&visibility];
+      });
+
+  NSNotification* willBecomeActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillBecomeActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+  NSNotification* willResignActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillResignActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  NSNotification* didChangeOcclusionState;
+  didChangeOcclusionState =
+      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kResumed);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  visibility = 0;
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [mockApplication stopMocking];
 }
 
 }  // namespace flutter::testing

@@ -22,7 +22,7 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
   // TODO(dkwingsmt): This class only supports single-view for now. As more
   // classes are gradually converted to multi-view, it should get the view ID
   // from somewhere.
-  FlutterView* view = [view_provider_ viewForId:kFlutterDefaultViewId];
+  FlutterView* view = [view_provider_ viewForId:kFlutterImplicitViewId];
   if (!view) {
     return false;
   }
@@ -37,7 +37,7 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
   return true;
 }
 
-bool FlutterCompositor::Present(uint64_t view_id,
+bool FlutterCompositor::Present(FlutterViewId view_id,
                                 const FlutterLayer** layers,
                                 size_t layers_count) {
   FlutterView* view = [view_provider_ viewForId:view_id];

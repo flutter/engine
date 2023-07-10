@@ -58,6 +58,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/benchmark', // only used by tests
   r'third_party/boringssl/src/crypto/err/err_data_generate.go',
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
+  r'third_party/boringssl/src/rust', // rust-related code is not shipped
   r'third_party/boringssl/src/util', // code generators, not shipped
   r'third_party/colorama/src/demos',
   r'third_party/colorama/src/screenshots',
@@ -90,6 +91,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/flatbuffers/python',
   r'third_party/flatbuffers/rust',
   r'third_party/flatbuffers/ts',
+  r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/fontconfig', // not used in standard configurations
   r'third_party/freetype2/builds',
   r'third_party/freetype2/src/tools',

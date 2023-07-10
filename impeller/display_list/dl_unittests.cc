@@ -21,7 +21,7 @@
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_playground.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
@@ -44,6 +44,19 @@ flutter::DlColor toColor(const float* components) {
 
 using DisplayListTest = DlPlayground;
 INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
+
+TEST_P(DisplayListTest, DrawPictureWithAClip) {
+  flutter::DisplayListBuilder sub_builder;
+  sub_builder.ClipRect(SkRect::MakeXYWH(0, 0, 24, 24));
+  sub_builder.DrawPaint(flutter::DlPaint(flutter::DlColor::kBlue()));
+
+  auto display_list = sub_builder.Build();
+  flutter::DisplayListBuilder builder;
+  builder.DrawDisplayList(display_list);
+  builder.DrawRect(SkRect::MakeXYWH(30, 30, 24, 24),
+                   flutter::DlPaint(flutter::DlColor::kRed()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
 
 TEST_P(DisplayListTest, CanDrawRect) {
   flutter::DisplayListBuilder builder;
@@ -844,21 +857,21 @@ TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
   dispatcher.drawDisplayList(dl, 1);
   auto picture = dispatcher.EndRecordingAsPicture();
 
-  std::shared_ptr<RRectShadowContents> rrect_shadow;
-  picture.pass->IterateAllEntities([&rrect_shadow](Entity& entity) {
+  std::shared_ptr<SolidRRectBlurContents> rrect_blur;
+  picture.pass->IterateAllEntities([&rrect_blur](Entity& entity) {
     if (ScalarNearlyEqual(entity.GetTransformation().GetScale().x, 1.618f)) {
-      rrect_shadow =
-          std::static_pointer_cast<RRectShadowContents>(entity.GetContents());
+      rrect_blur = std::static_pointer_cast<SolidRRectBlurContents>(
+          entity.GetContents());
       return false;
     }
     return true;
   });
 
-  ASSERT_NE(rrect_shadow, nullptr);
-  ASSERT_EQ(rrect_shadow->GetColor().red, 0);
-  ASSERT_EQ(rrect_shadow->GetColor().green, 0);
-  ASSERT_EQ(rrect_shadow->GetColor().blue, 0);
-  ASSERT_EQ(rrect_shadow->GetColor().alpha, 0);
+  ASSERT_NE(rrect_blur, nullptr);
+  ASSERT_EQ(rrect_blur->GetColor().red, 0);
+  ASSERT_EQ(rrect_blur->GetColor().green, 0);
+  ASSERT_EQ(rrect_blur->GetColor().blue, 0);
+  ASSERT_EQ(rrect_blur->GetColor().alpha, 0);
 }
 
 // Draw a hexagon using triangle fan
@@ -1366,6 +1379,35 @@ TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
 
   paint.setColorSource(&image_source);
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest,
+       DrawVerticesImageSourceWithTextureCoordinatesAndColorBlending) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  auto dl_image = DlImageImpeller::Make(texture);
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
+                                          flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kWhite()};
+  std::vector<SkPoint> texture_coordinates = {
+      SkPoint::Make(0, 0), SkPoint::Make(100, 200), SkPoint::Make(200, 100)};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      texture_coordinates.data(), colors.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  auto image_source = flutter::DlImageColorSource(
+      dl_image, flutter::DlTileMode::kRepeat, flutter::DlTileMode::kRepeat);
+
+  paint.setColorSource(&image_source);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kModulate, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

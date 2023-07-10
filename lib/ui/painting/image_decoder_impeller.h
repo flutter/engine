@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
@@ -29,18 +30,18 @@ class ImpellerAllocator : public SkBitmap::Allocator {
   // |Allocator|
   bool allocPixelRef(SkBitmap* bitmap) override;
 
-  std::optional<std::shared_ptr<impeller::DeviceBuffer>> GetDeviceBuffer()
-      const;
+  std::shared_ptr<impeller::DeviceBuffer> GetDeviceBuffer() const;
 
  private:
   std::shared_ptr<impeller::Allocator> allocator_;
-  std::optional<std::shared_ptr<impeller::DeviceBuffer>> buffer_;
+  std::shared_ptr<impeller::DeviceBuffer> buffer_;
 };
 
 struct DecompressResult {
   std::shared_ptr<impeller::DeviceBuffer> device_buffer;
   std::shared_ptr<SkBitmap> sk_bitmap;
   SkImageInfo image_info;
+  std::string decode_error;
 };
 
 class ImageDecoderImpeller final : public ImageDecoder {
@@ -49,7 +50,8 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
       const fml::WeakPtr<IOManager>& io_manager,
-      bool supports_wide_gamut);
+      bool supports_wide_gamut,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   ~ImageDecoderImpeller() override;
 
@@ -59,7 +61,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
               uint32_t target_height,
               const ImageResult& result) override;
 
-  static std::optional<DecompressResult> DecompressTexture(
+  static DecompressResult DecompressTexture(
       ImageDescriptor* descriptor,
       SkISize target_size,
       impeller::ISize max_texture_size,
@@ -71,27 +73,36 @@ class ImageDecoderImpeller final : public ImageDecoder {
   /// @param context    The Impeller graphics context.
   /// @param buffer     A host buffer containing the image to be uploaded.
   /// @param image_info Format information about the particular image.
+  /// @param bitmap      A bitmap containg the image to be uploaded.
+  /// @param gpu_disabled_switch Whether the GPU is available command encoding.
   /// @return           A DlImage.
-  static sk_sp<DlImage> UploadTextureToPrivate(
+  static std::pair<sk_sp<DlImage>, std::string> UploadTextureToPrivate(
       const std::shared_ptr<impeller::Context>& context,
       const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-      const SkImageInfo& image_info);
+      const SkImageInfo& image_info,
+      const std::shared_ptr<SkBitmap>& bitmap,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   /// @brief Create a host visible texture from the provided bitmap.
   /// @param context     The Impeller graphics context.
   /// @param bitmap      A bitmap containg the image to be uploaded.
   /// @param create_mips Whether mipmaps should be generated for the given
   /// image.
+  /// @param gpu_disabled_switch Whether the GPU is available for mipmap
+  /// creation.
   /// @return            A DlImage.
-  static sk_sp<DlImage> UploadTextureToShared(
+  static std::pair<sk_sp<DlImage>, std::string> UploadTextureToStorage(
       const std::shared_ptr<impeller::Context>& context,
       std::shared_ptr<SkBitmap> bitmap,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+      impeller::StorageMode storage_mode,
       bool create_mips = true);
 
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
   const bool supports_wide_gamut_;
+  std::shared_ptr<fml::SyncSwitch> gpu_disabled_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };

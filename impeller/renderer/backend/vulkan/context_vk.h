@@ -12,6 +12,7 @@
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
+#include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -30,13 +31,14 @@ class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
 
-class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
+class ContextVK final : public Context,
+                        public BackendCast<ContextVK, Context>,
+                        public std::enable_shared_from_this<ContextVK> {
  public:
   struct Settings {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner;
     bool enable_validation = false;
 
     Settings() = default;
@@ -75,13 +77,18 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  // |Context|
+  void Shutdown() override;
+
+  void SetOffscreenFormat(PixelFormat pixel_format);
+
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
-    return SetDebugName(*device_, handle, label);
+    return SetDebugName(GetDevice(), handle, label);
   }
 
   template <typename T>
-  static bool SetDebugName(vk::Device device,
+  static bool SetDebugName(const vk::Device& device,
                            T handle,
                            std::string_view label) {
     if (!HasValidationLayers()) {
@@ -104,9 +111,16 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     return true;
   }
 
+  std::shared_ptr<DeviceHolder> GetDeviceHolder() const {
+    return device_holder_;
+  }
+
   vk::Instance GetInstance() const;
 
-  vk::Device GetDevice() const;
+  const vk::Device& GetDevice() const;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 
@@ -123,10 +137,21 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<FenceWaiterVK> GetFenceWaiter() const;
 
  private:
-  vk::UniqueInstance instance_;
+  struct DeviceHolderImpl : public DeviceHolder {
+    // |DeviceHolder|
+    const vk::Device& GetDevice() const override { return device.get(); }
+    // |DeviceHolder|
+    const vk::PhysicalDevice& GetPhysicalDevice() const override {
+      return physical_device;
+    }
+
+    vk::UniqueInstance instance;
+    vk::PhysicalDevice physical_device;
+    vk::UniqueDevice device;
+  };
+
+  std::shared_ptr<DeviceHolderImpl> device_holder_;
   std::unique_ptr<DebugReportVK> debug_report_;
-  vk::PhysicalDevice physical_device_;
-  vk::UniqueDevice device_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
@@ -136,6 +161,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   const uint64_t hash_;
 
   bool is_valid_ = false;

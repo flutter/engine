@@ -156,12 +156,9 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(
-    const FlutterProjectBundle& project,
-    std::unique_ptr<WindowsRegistry> registry)
+FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
-      windows_registry_(std::move(registry)),
       lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
@@ -397,6 +394,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                                     displays.data(), displays.size());
 
   SendSystemLocales();
+  SetLifecycleState(flutter::AppLifecycleState::kResumed);
 
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
@@ -562,9 +560,16 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
       this);
 }
 
+void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
+  const char* state_name = flutter::AppLifecycleStateToString(state);
+  SendPlatformMessage("flutter/lifecycle",
+                      reinterpret_cast<const uint8_t*>(state_name),
+                      strlen(state_name), nullptr, nullptr);
+}
+
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages =
-      GetPreferredLanguageInfo(*windows_registry_);
+      GetPreferredLanguageInfo(windows_proc_table_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -776,6 +781,10 @@ FlutterWindowsEngine::accessibility_bridge() {
 
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
+}
+
+void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
+  lifecycle_manager_->BeginProcessingClose();
 }
 
 }  // namespace flutter

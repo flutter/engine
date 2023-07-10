@@ -6,8 +6,10 @@
 #define FLUTTER_DISPLAY_LIST_GEOMETRY_DL_RTREE_H_
 
 #include <list>
+#include <optional>
 #include <vector>
 
+#include "flutter/display_list/geometry/dl_region.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -50,7 +52,7 @@ class DlRTree : public SkRefCnt {
   /// If an array of IDs is not specified then all leaf nodes will be
   /// represented by the |invalid_id| (which defaults to -1).
   ///
-  /// Invallid rects that are empty or contain a NaN value will not be
+  /// Invalid rects that are empty or contain a NaN value will not be
   /// stored in the R-Tree. And, if a |predicate| function is provided,
   /// that function will be called to query if the rectangle associated
   /// with the ID should be included.
@@ -73,8 +75,8 @@ class DlRTree : public SkRefCnt {
   /// The returned indices may not themselves be in numerical order,
   /// but they will represent the rectangles and IDs in the order in
   /// which they were passed into the constructor. The actual rectangle
-  /// and ID associated with each index can be retreived using the
-  /// |DlRTree::id| and |DlRTree::bouds| methods.
+  /// and ID associated with each index can be retrieved using the
+  /// |DlRTree::id| and |DlRTree::bounds| methods.
   void search(const SkRect& query, std::vector<int>* results) const;
 
   /// Return the ID for the indicated result of a query or
@@ -84,6 +86,10 @@ class DlRTree : public SkRefCnt {
                ? nodes_[result_index].id
                : invalid_id_;
   }
+
+  /// Returns maximum and minimum axis values of rectangles in this R-Tree.
+  /// If R-Tree is empty returns an empty SkRect.
+  const SkRect& bounds() const;
 
   /// Return the rectangle bounds for the indicated result of a query
   /// or an empty rect if the index is not a valid leaf node index.
@@ -109,11 +115,25 @@ class DlRTree : public SkRefCnt {
 
   /// Finds the rects in the tree that intersect with the query rect.
   ///
-  /// When two matching query results intersect with each other, they are
-  /// joined into a single rect which also intersects with the query rect.
+  /// The returned list of rectangles will be non-overlapping.
   /// In other words, the bounds of each rect in the result list are mutually
   /// exclusive.
-  std::list<SkRect> searchAndConsolidateRects(const SkRect& query) const;
+  ///
+  /// If |deband| is true, then matching rectangles from adjacent DlRegion
+  /// spanlines will be joined together. This reduces the number of
+  /// rectangles returned, but requires some extra computation.
+  std::list<SkRect> searchAndConsolidateRects(const SkRect& query,
+                                              bool deband = true) const;
+
+  /// Returns DlRegion that represents the union of all rectangles in the
+  /// R-Tree.
+  const DlRegion& region() const;
+
+  /// Returns DlRegion that represents the union of all rectangles in the
+  /// R-Tree intersected with the query rect.
+  DlRegion region(const SkRect& query) const {
+    return DlRegion::MakeIntersection(region(), DlRegion(query.roundOut()));
+  }
 
  private:
   static constexpr SkRect empty_ = SkRect::MakeEmpty();
@@ -125,6 +145,7 @@ class DlRTree : public SkRefCnt {
   std::vector<Node> nodes_;
   int leaf_count_;
   int invalid_id_;
+  mutable std::optional<DlRegion> region_;
 };
 
 }  // namespace flutter

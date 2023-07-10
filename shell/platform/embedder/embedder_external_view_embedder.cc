@@ -125,6 +125,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -172,8 +173,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     // the context must be reset.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    auto render_target =
-        create_render_target_callback_(context, backing_store_config);
+    auto render_target = create_render_target_callback_(context, aiks_context,
+                                                        backing_store_config);
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
@@ -224,6 +225,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
       const auto& external_view = pending_views_.at(view_id);
       if (external_view->HasPlatformView()) {
         presented_layers.PushPlatformViewLayer(
+            // Covered by HasPlatformView().
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
             external_view->GetViewIdentifier()
                 .platform_view_id.value(),           // view id
             *external_view->GetEmbeddedViewParams()  // view params

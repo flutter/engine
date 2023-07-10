@@ -62,13 +62,21 @@ class EntityPass {
 
   void SetElements(std::vector<Element> elements);
 
+  /// @brief  Appends a given pass as a subpass.
   EntityPass* AddSubpass(std::unique_ptr<EntityPass> pass);
+
+  /// @brief  Merges a given pass into this pass. Useful for drawing
+  ///         pre-recorded pictures that don't require rendering into a separate
+  ///         subpass.
+  void AddSubpassInline(std::unique_ptr<EntityPass> pass);
 
   EntityPass* GetSuperpass() const;
 
   bool Render(ContentContext& renderer,
               const RenderTarget& render_target) const;
 
+  /// @brief  Iterate all entities in this pass, recursively including entities
+  ///         of child passes. The iteration order is depth-first.
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
   /// @brief  Iterate entities in this pass up until the first subpass is found.
@@ -86,20 +94,18 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  void SetClearColor(Color clear_color);
+  Color GetClearColor(ISize size = ISize::Infinite()) const;
 
-  Color GetClearColor() const;
-
-  void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
+  void SetBackdropFilter(BackdropFilterProc proc);
 
   void SetEnableOffscreenCheckerboard(bool enabled);
 
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
   std::optional<Rect> GetElementsCoverage(
-      std::optional<Rect> coverage_crop) const;
+      std::optional<Rect> coverage_limit) const;
 
  private:
   struct EntityResult {
@@ -209,8 +215,7 @@ class EntityPass {
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  bool cover_whole_screen_ = false;
-  Color clear_color_ = Color::BlackTransparent();
+  bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
 
   /// These values are incremented whenever something is added to the pass that
@@ -226,7 +231,7 @@ class EntityPass {
 
   uint32_t GetTotalPassReads(ContentContext& renderer) const;
 
-  std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
+  BackdropFilterProc backdrop_filter_proc_ = nullptr;
 
   std::unique_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();

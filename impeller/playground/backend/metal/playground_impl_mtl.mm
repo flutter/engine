@@ -63,7 +63,9 @@ void PlaygroundImplMTL::DestroyWindowHandle(WindowHandle handle) {
 PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
     : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
-      data_(std::make_unique<Data>()) {
+      data_(std::make_unique<Data>()),
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch(false)) {
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -71,8 +73,9 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
   if (!window) {
     return;
   }
-  auto context = ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
-                                    "Playground Library");
+  auto context =
+      ContextMTL::Create(ShaderLibraryMappingsForPlayground(),
+                         is_gpu_disabled_sync_switch_, "Playground Library");
   if (!context) {
     return;
   }
@@ -117,7 +120,7 @@ std::unique_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
 
   auto drawable =
       SurfaceMTL::GetMetalDrawableAndValidate(context, data_->metal_layer);
-  return SurfaceMTL::WrapCurrentMetalLayerDrawable(context, drawable);
+  return SurfaceMTL::MakeFromMetalLayerDrawable(context, drawable);
 }
 
 }  // namespace impeller

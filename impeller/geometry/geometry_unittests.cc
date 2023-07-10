@@ -2,13 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "gtest/gtest.h"
 #include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
 #include <sstream>
+#include <type_traits>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/geometry/half.h"
@@ -19,6 +22,9 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 namespace testing {
@@ -336,6 +342,21 @@ TEST(GeometryTest, MatrixGetMaxBasisLength) {
   }
 }
 
+TEST(GeometryTest, MatrixGetMaxBasisLengthXY) {
+  {
+    auto m = Matrix::MakeScale({3, 1, 1});
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 3);
+
+    m = m * Matrix::MakeSkew(0, 4);
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 5);
+  }
+
+  {
+    auto m = Matrix::MakeScale({-3, 4, 7});
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 4);
+  }
+}
+
 TEST(GeometryTest, MatrixMakeOrthographic) {
   {
     auto m = Matrix::MakeOrthographic(Size(100, 200));
@@ -649,6 +670,16 @@ TEST(GeometryTest, BoundingBoxOfCompositePathIsCorrect) {
   Rect expected(10, 10, 300, 300);
   ASSERT_TRUE(actual.has_value());
   ASSERT_RECT_NEAR(actual.value(), expected);
+}
+
+TEST(GeometryTest, ExtremaOfCubicPathComponentIsCorrect) {
+  CubicPathComponent cubic{{11.769268, 252.883148},
+                           {-6.2857933, 204.356461},
+                           {-4.53997231, 156.552902},
+                           {17.0067291, 109.472488}};
+  auto points = cubic.Extrema();
+  ASSERT_EQ(points.size(), static_cast<size_t>(3));
+  ASSERT_POINT_NEAR(points[2], cubic.Solve(0.455916));
 }
 
 TEST(GeometryTest, PathGetBoundingBoxForCubicWithNoDerivativeRootsIsCorrect) {
@@ -1391,20 +1422,40 @@ TEST(GeometryTest, ColorLerp) {
     Color a(0.0, 0.0, 0.0, 0.0);
     Color b(1.0, 1.0, 1.0, 1.0);
 
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
   }
 
   {
     Color a(0.2, 0.4, 1.0, 0.5);
     Color b(0.4, 1.0, 0.2, 0.3);
 
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+  }
+}
+
+TEST(GeometryTest, ColorClamp01) {
+  {
+    Color result = Color(0.5, 0.5, 0.5, 0.5).Clamp01();
+    Color expected = Color(0.5, 0.5, 0.5, 0.5);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    Color result = Color(-1, -1, -1, -1).Clamp01();
+    Color expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    Color result = Color(2, 2, 2, 2).Clamp01();
+    Color expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
   }
 }
 
@@ -1425,6 +1476,86 @@ TEST(GeometryTest, ColorMakeRGBA8) {
     Color a = Color::MakeRGBA8(63, 127, 191, 127);
     Color b(0.247059, 0.498039, 0.74902, 0.498039);
     ASSERT_COLOR_NEAR(a, b);
+  }
+}
+
+TEST(GeometryTest, ColorApplyColorMatrix) {
+  {
+    ColorMatrix color_matrix = {
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+    };
+    auto result = Color::White().ApplyColorMatrix(color_matrix);
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    ColorMatrix color_matrix = {
+        0.1, 0,   0,   0,   0.01,  //
+        0,   0.2, 0,   0,   0.02,  //
+        0,   0,   0.3, 0,   0.03,  //
+        0,   0,   0,   0.4, 0.04,  //
+    };
+    auto result = Color::White().ApplyColorMatrix(color_matrix);
+    auto expected = Color(0.11, 0.22, 0.33, 0.44);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+TEST(GeometryTest, ColorLinearToSRGB) {
+  {
+    auto result = Color::White().LinearToSRGB();
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color::BlackTransparent().LinearToSRGB();
+    auto expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color(0.2, 0.4, 0.6, 0.8).LinearToSRGB();
+    auto expected = Color(0.484529, 0.665185, 0.797738, 0.8);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+TEST(GeometryTest, ColorSRGBToLinear) {
+  {
+    auto result = Color::White().SRGBToLinear();
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color::BlackTransparent().SRGBToLinear();
+    auto expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color(0.2, 0.4, 0.6, 0.8).SRGBToLinear();
+    auto expected = Color(0.0331048, 0.132868, 0.318547, 0.8);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+#define _BLEND_MODE_NAME_CHECK(blend_mode) \
+  case BlendMode::k##blend_mode:           \
+    ASSERT_STREQ(result, #blend_mode);     \
+    break;
+
+TEST(GeometryTest, BlendModeToString) {
+  using BlendT = std::underlying_type_t<BlendMode>;
+  for (BlendT i = 0; i <= static_cast<BlendT>(BlendMode::kLast); i++) {
+    auto mode = static_cast<BlendMode>(i);
+    auto result = BlendModeToString(mode);
+    switch (mode) { IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_NAME_CHECK) }
   }
 }
 
@@ -1768,6 +1899,34 @@ TEST(GeometryTest, RectMakePointBounds) {
   }
 }
 
+TEST(GeometryTest, RectExpand) {
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(1);
+    auto expected = Rect::MakeLTRB(99, 99, 201, 201);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(-1);
+    auto expected = Rect::MakeLTRB(101, 101, 199, 199);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(1, 2, 3, 4);
+    auto expected = Rect::MakeLTRB(99, 98, 203, 204);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(-1, -2, -3, -4);
+    auto expected = Rect::MakeLTRB(101, 102, 197, 196);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+}
+
 TEST(GeometryTest, RectGetPositive) {
   {
     Rect r{100, 200, 300, 400};
@@ -1778,6 +1937,62 @@ TEST(GeometryTest, RectGetPositive) {
     Rect r{100, 200, -100, -100};
     auto actual = r.GetPositive();
     Rect expected(0, 100, 100, 100);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectScale) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(0);
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(-2);
+    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Point{0, 0});
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Size{-1, -2});
+    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectDirections) {
+  auto r = Rect::MakeLTRB(1, 2, 3, 4);
+
+  ASSERT_EQ(r.GetLeft(), 1);
+  ASSERT_EQ(r.GetTop(), 2);
+  ASSERT_EQ(r.GetRight(), 3);
+  ASSERT_EQ(r.GetBottom(), 4);
+
+  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
+  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
+  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
+  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
+}
+
+TEST(GeometryTest, RectProject) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(r);
+    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
+    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
     ASSERT_RECT_NEAR(expected, actual);
   }
 }
@@ -2100,8 +2315,8 @@ TEST(GeometryTest, Gradient) {
     std::vector<Color> lerped_colors = {
         Color::Red(),
         Color::Blue(),
-        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
-        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
+        Color::Lerp(Color::Blue(), Color::Green(), 0.3333),
+        Color::Lerp(Color::Blue(), Color::Green(), 0.6666),
         Color::Green(),
     };
     ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, lerped_colors);
@@ -2160,3 +2375,5 @@ TEST(GeometryTest, HalfConversions) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

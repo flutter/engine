@@ -189,7 +189,7 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
             SkSafeRef(image.get());
             sk_sp<SkImage> texture_image = SkImages::RasterFromPixmap(
                 pixmap,
-                [](const void* pixels, SkImage::ReleaseContext context) {
+                [](const void* pixels, SkImages::ReleaseContext context) {
                   SkSafeUnref(static_cast<SkImage*>(context));
                 },
                 image.get());
@@ -254,7 +254,7 @@ void ImageDecoderSkia::Decode(fml::RefPtr<ImageDescriptor> descriptor_ref_ptr,
               // terminate without a base trace. Add one explicitly.
               TRACE_EVENT0("flutter", "ImageDecodeCallback");
               flow.End();
-              callback(DlImageGPU::Make(std::move(image)));
+              callback(DlImageGPU::Make(std::move(image)), {});
               raw_descriptor->Release();
             }));
       };

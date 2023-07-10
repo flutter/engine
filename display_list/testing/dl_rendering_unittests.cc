@@ -16,11 +16,14 @@
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 
+#include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
 
 namespace flutter {
 namespace testing {
@@ -490,7 +493,10 @@ class RenderEnvironment {
     canvas->restoreToCount(restore_count);
 
     canvas->flush();
-    surface->flushAndSubmit(true);
+    if (GrDirectContext* dContext =
+            GrAsDirectContext(surface->recordingContext())) {
+      dContext->flushAndSubmit(surface, /*syncCpu=*/true);
+    }
     return std::make_unique<RenderResult>(surface);
   }
 
@@ -2381,8 +2387,8 @@ class CanvasCompareTester {
 
   static const sk_sp<SkImage> kTestImage;
   static const sk_sp<SkImage> makeTestImage() {
-    sk_sp<SkSurface> surface =
-        SkSurface::MakeRasterN32Premul(kRenderWidth, kRenderHeight);
+    sk_sp<SkSurface> surface = SkSurfaces::Raster(
+        SkImageInfo::MakeN32Premul(kRenderWidth, kRenderHeight));
     SkCanvas* canvas = surface->getCanvas();
     SkPaint p0, p1;
     p0.setStyle(SkPaint::kFill_Style);

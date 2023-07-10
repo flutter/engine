@@ -11,30 +11,28 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #import "flutter/testing/testing.h"
 
-extern const uint64_t kFlutterDefaultViewId;
-
 @interface FlutterViewMockProvider : NSObject <FlutterViewProvider> {
-  FlutterView* _defaultView;
+  FlutterView* _implicitView;
 }
 /**
- * Create a FlutterViewMockProvider with the provided view as the default view.
+ * Create a FlutterViewMockProvider with the provided view as the implicit view.
  */
-- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view;
+- (nonnull instancetype)initWithImplicitView:(nonnull FlutterView*)view;
 @end
 
 @implementation FlutterViewMockProvider
 
-- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view {
+- (nonnull instancetype)initWithImplicitView:(nonnull FlutterView*)view {
   self = [super init];
   if (self != nil) {
-    _defaultView = view;
+    _implicitView = view;
   }
   return self;
 }
 
-- (nullable FlutterView*)viewForId:(uint64_t)viewId {
-  if (viewId == kFlutterDefaultViewId) {
-    return _defaultView;
+- (nullable FlutterView*)viewForId:(FlutterViewId)viewId {
+  if (viewId == kFlutterImplicitViewId) {
+    return _implicitView;
   }
   return nil;
 }
@@ -83,7 +81,7 @@ id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
 
   OCMStub([surfaceMock asFlutterMetalTexture]).andReturn(texture);
 
-  return [[FlutterViewMockProvider alloc] initWithDefaultView:viewMock];
+  return [[FlutterViewMockProvider alloc] initWithImplicitView:viewMock];
 }
 }  // namespace
 
@@ -133,7 +131,7 @@ TEST(FlutterCompositorTest, TestPresent) {
   }};
   const FlutterLayer* layers_ptr = layers;
 
-  macos_compositor->Present(kFlutterDefaultViewId, &layers_ptr, 1);
+  macos_compositor->Present(kFlutterImplicitViewId, &layers_ptr, 1);
 
   ASSERT_EQ(presentedSurfaces.count, 1ul);
 }

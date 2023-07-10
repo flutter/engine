@@ -11,7 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -48,6 +48,9 @@ class SolidColorContents final : public ColorSourceContents {
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                         ISize target_size) const override;
 
  private:
   Color color_;
