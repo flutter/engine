@@ -87,7 +87,7 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
     return;
   }
 
-  FML_LOG(ERROR) << "Using the Impeller rendering backend (GLES/ANGLE).";
+  FML_LOG(ERROR) << "Using the Impeller rendering backend (OpenGL).";
   valid_ = true;
 }
 
