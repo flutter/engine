@@ -2877,6 +2877,20 @@ TEST_P(AiksTest, DrawPictureWithText) {
       GetContext(), canvas,
       "the quick brown fox jumped over the smaller lazy dog!.?",
       "Roboto-Regular.ttf"));
+}
+
+TEST_P(AiksTest, MatrixBackdropFilter) {
+  Canvas canvas;
+  canvas.SaveLayer({}, std::nullopt,
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeMatrixFilter(
+                         input, Matrix::MakeTranslation(Vector2(100, 100)), {},
+                         Matrix(), true);
+                   });
+  canvas.DrawCircle(Point(100, 100), 100,
+                    {.color = Color::Green(), .blend_mode = BlendMode::kPlus});
+  canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
