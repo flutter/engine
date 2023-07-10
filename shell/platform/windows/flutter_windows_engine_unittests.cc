@@ -668,6 +668,7 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
                     UINT));
   MOCK_METHOD4(DispatchMessage, void(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(IsLastWindowOfProcess, bool(void));
+  MOCK_METHOD1(SetLifecycleState, void(AppLifecycleState));
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
@@ -893,6 +894,23 @@ TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
                                                                0);
+}
+
+TEST_F(FlutterWindowsEngineTest, AppStartsInResumedState) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  EXPECT_CALL(*handler, SetLifecycleState(AppLifecycleState::kResumed)).Times(1);
+  modifier.SetLifecycleManager(std::move(handler));
+  engine->Run();
 }
 
 }  // namespace testing

@@ -163,4 +163,14 @@ void WindowsLifecycleManager::BeginProcessingClose() {
   process_close_ = true;
 }
 
+void WindowsLifecycleManager::SetLifecycleState(flutter::AppLifecycleState state) {
+  state_ = state;
+  if (engine_) {
+    const char* state_name = flutter::AppLifecycleStateToString(state);
+    engine_->SendPlatformMessage("flutter/lifecycle",
+                                 reinterpret_cast<const uint8_t*>(state_name),
+                                 strlen(state_name), nullptr, nullptr);
+  }
+}
+
 }  // namespace flutter
