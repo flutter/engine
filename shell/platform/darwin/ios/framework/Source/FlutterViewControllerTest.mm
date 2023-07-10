@@ -440,6 +440,44 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     XCTAssertTrue(shouldIgnore == YES);
   }
 }
+- (void)testKeyboardAnimationWillNotCrashWhenEngineDestroyed {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController setupKeyboardAnimationVsyncClient:^(fml::TimePoint){
+  }];
+  [engine destroyContext];
+}
+
+- (void)testKeyboardAnimationWillWaitUIThreadVsync {
+  // We need to make sure the new viewport metrics get sent after the
+  // begin frame event has processed. And this test is to expect that the callback
+  // will sync with UI thread. So just simulate a lot of works on UI thread and
+  // test the keyboard animation callback will execute until UI task completed.
+  // Related issue: https://github.com/flutter/flutter/issues/120555.
+
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // Post a task to UI thread to block the thread.
+  const int delayTime = 1;
+  [engine uiTaskRunner]->PostTask([] { sleep(delayTime); });
+  XCTestExpectation* expectation = [self expectationWithDescription:@"keyboard animation callback"];
+
+  __block CFTimeInterval fulfillTime;
+  FlutterKeyboardAnimationCallback callback = ^(fml::TimePoint targetTime) {
+    fulfillTime = CACurrentMediaTime();
+    [expectation fulfill];
+  };
+  CFTimeInterval startTime = CACurrentMediaTime();
+  [viewController setupKeyboardAnimationVsyncClient:callback];
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  XCTAssertTrue(fulfillTime - startTime > delayTime);
+}
 
 - (void)testKeyboardAnimationWillWaitUIThreadVsync {
   // We need to make sure the new viewport metrics get sent after the
