@@ -212,7 +212,9 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd, WindowStateEvent eve
       break;
     }
     case HIDE: {
-      if (visible_windows_.erase(hwnd) && visible_windows_.empty() && (state_ == AppLifecycleState::kResumed || state_ == AppLifecycleState::kInactive)) {
+      bool present = visible_windows_.erase(hwnd);
+      bool empty = visible_windows_.empty();
+      if (present && empty && (state_ == AppLifecycleState::kResumed || state_ == AppLifecycleState::kInactive)) {
         SetLifecycleState(AppLifecycleState::kHidden);
       }
       break;

@@ -913,5 +913,28 @@ TEST_F(FlutterWindowsEngineTest, AppStartsInResumedState) {
   engine->Run();
 }
 
+TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  engine->Run();
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_RESTORED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kResumed);
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_MINIMIZED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kHidden);
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_RESTORED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kInactive);
+}
+
 }  // namespace testing
 }  // namespace flutter
