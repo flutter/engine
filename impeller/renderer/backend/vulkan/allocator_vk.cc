@@ -173,24 +173,6 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
   return vk_usage;
 }
 
-static constexpr vk::BufferUsageFlags ToVKBufferUsageFlags(
-    BufferUsageMask usage_mask) {
-  vk::BufferUsageFlags flags = {};
-  if (usage_mask & static_cast<BufferUsageMask>(BufferUsage::kTransferSrc)) {
-    flags |= vk::BufferUsageFlagBits::eTransferSrc;
-  }
-  if (usage_mask & static_cast<BufferUsageMask>(BufferUsage::kTransferDst)) {
-    flags |= vk::BufferUsageFlagBits::eTransferDst;
-  }
-  if (usage_mask & static_cast<BufferUsageMask>(BufferUsage::kShaderRead)) {
-    flags |= vk::BufferUsageFlagBits::eVertexBuffer |
-             vk::BufferUsageFlagBits::eIndexBuffer |
-             vk::BufferUsageFlagBits::eUniformBuffer |
-             vk::BufferUsageFlagBits::eStorageBuffer;
-  }
-  return flags;
-}
-
 static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
   return VMA_MEMORY_USAGE_AUTO;
 }
@@ -411,7 +393,12 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
   TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
-  buffer_info.usage = ToVKBufferUsageFlags(desc.buffer_usage);
+  buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
+                      vk::BufferUsageFlagBits::eIndexBuffer |
+                      vk::BufferUsageFlagBits::eUniformBuffer |
+                      vk::BufferUsageFlagBits::eStorageBuffer |
+                      vk::BufferUsageFlagBits::eTransferSrc |
+                      vk::BufferUsageFlagBits::eTransferDst;
   buffer_info.size = desc.size;
   buffer_info.sharingMode = vk::SharingMode::eExclusive;
   auto buffer_info_native =
