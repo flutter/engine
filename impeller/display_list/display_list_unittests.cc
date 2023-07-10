@@ -48,7 +48,7 @@ INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
 TEST_P(DisplayListTest, DrawPictureWithAClip) {
   flutter::DisplayListBuilder sub_builder;
   sub_builder.ClipRect(SkRect::MakeXYWH(0, 0, 24, 24),
-                       flutter::ClipOp::kIntersect,
+                       flutter::DlCanvas::ClipOp::kIntersect,
                        /*is_aa=*/false);
   sub_builder.DrawPaint(flutter::DlPaint(flutter::DlColor::kBlue()));
 
