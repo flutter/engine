@@ -2877,6 +2877,7 @@ TEST_P(AiksTest, DrawPictureWithText) {
       GetContext(), canvas,
       "the quick brown fox jumped over the smaller lazy dog!.?",
       "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, MatrixBackdropFilter) {
