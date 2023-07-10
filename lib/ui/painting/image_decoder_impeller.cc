@@ -208,10 +208,10 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
 
   if (bitmap->dimensions() == target_size) {
     auto buffer = bitmap_allocator->GetDeviceBuffer();
-    if (!buffer.has_value()) {
+    if (!buffer) {
       return DecompressResult{.decode_error = "Unable to get device buffer"};
     }
-    return DecompressResult{.device_buffer = buffer.value(),
+    return DecompressResult{.device_buffer = buffer,
                             .sk_bitmap = bitmap,
                             .image_info = bitmap->info()};
   }
@@ -240,10 +240,10 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
   scaled_bitmap->setImmutable();
 
   auto buffer = scaled_allocator->GetDeviceBuffer();
-  if (!buffer.has_value()) {
+  if (!buffer) {
     return DecompressResult{.decode_error = "Unable to get device buffer"};
   }
-  return DecompressResult{.device_buffer = buffer.value(),
+  return DecompressResult{.device_buffer = buffer,
                           .sk_bitmap = scaled_bitmap,
                           .image_info = scaled_bitmap->info()};
 }
@@ -456,11 +456,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
     });
   };
 
-#ifdef FML_OS_ANDROID
-  runners_.GetIOTaskRunner()->PostTask(
-#else
   concurrent_task_runner_->PostTask(
-#endif
       [raw_descriptor,                                            //
        context = context_.get(),                                  //
        target_size = SkISize::Make(target_width, target_height),  //
@@ -499,16 +495,12 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
             result(image, decode_error);
           }
         };
-// TODO(jonahwilliams):
-// https://github.com/flutter/flutter/issues/123058 Technically we
-// don't need to post tasks to the io runner, but without this
-// forced serialization we can end up overloading the GPU and/or
-// competing with raster workloads.
-#ifdef FML_OS_ANDROID
-        upload_texture_and_invoke_result();
-#else
+        // TODO(jonahwilliams):
+        // https://github.com/flutter/flutter/issues/123058 Technically we
+        // don't need to post tasks to the io runner, but without this
+        // forced serialization we can end up overloading the GPU and/or
+        // competing with raster workloads.
         io_runner->PostTask(upload_texture_and_invoke_result);
-#endif
       });
 }
 
@@ -516,8 +508,8 @@ ImpellerAllocator::ImpellerAllocator(
     std::shared_ptr<impeller::Allocator> allocator)
     : allocator_(std::move(allocator)) {}
 
-std::optional<std::shared_ptr<impeller::DeviceBuffer>>
-ImpellerAllocator::GetDeviceBuffer() const {
+std::shared_ptr<impeller::DeviceBuffer> ImpellerAllocator::GetDeviceBuffer()
+    const {
   return buffer_;
 }
 

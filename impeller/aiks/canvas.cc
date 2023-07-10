@@ -58,10 +58,9 @@ void Canvas::Save() {
   Save(false);
 }
 
-void Canvas::Save(
-    bool create_subpass,
-    BlendMode blend_mode,
-    std::optional<EntityPass::BackdropFilterProc> backdrop_filter) {
+void Canvas::Save(bool create_subpass,
+                  BlendMode blend_mode,
+                  EntityPass::BackdropFilterProc backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
@@ -402,10 +401,14 @@ void Canvas::DrawPoints(std::vector<Point> points,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawPicture(Picture picture) {
+void Canvas::DrawPicture(const Picture& picture) {
   if (!picture.pass) {
     return;
   }
+
+  auto save_count = GetSaveCount();
+  Save();
+
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
   pass->IterateAllEntities([&](auto& entity) -> bool {
@@ -414,7 +417,9 @@ void Canvas::DrawPicture(Picture picture) {
                              entity.GetTransformation());
     return true;
   });
-  return;
+  GetCurrentPass().AddSubpassInline(std::move(pass));
+
+  RestoreToCount(save_count);
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -482,10 +487,9 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::SaveLayer(
-    const Paint& paint,
-    std::optional<Rect> bounds,
-    const std::optional<Paint::ImageFilterProc>& backdrop_filter) {
+void Canvas::SaveLayer(const Paint& paint,
+                       std::optional<Rect> bounds,
+                       const Paint::ImageFilterProc& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -499,7 +503,7 @@ void Canvas::SaveLayer(
         std::make_unique<PaintPassDelegate>(paint, bounds));
   }
 
-  if (bounds.has_value() && !backdrop_filter.has_value()) {
+  if (bounds.has_value() && !backdrop_filter) {
     // Render target switches due to a save layer can be elided. In such cases
     // where passes are collapsed into their parent, the clipping effect to
     // the size of the render target that would have been allocated will be

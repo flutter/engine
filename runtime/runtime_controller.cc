@@ -20,7 +20,7 @@
 
 namespace flutter {
 
-constexpr uint64_t kFlutterDefaultViewId = 0ll;
+constexpr uint64_t kFlutterImplicitViewId = 0ll;
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
@@ -117,7 +117,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   // TODO(dkwingsmt): Needs a view ID here (or platform_data should probably
   // have multiple view metrics).
-  return SetViewportMetrics(kFlutterDefaultViewId,
+  return SetViewportMetrics(kFlutterImplicitViewId,
                             platform_data_.viewport_metrics) &&
          SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
@@ -156,6 +156,8 @@ bool RuntimeController::SetViewportMetrics(int64_t view_id,
     if (window) {
       window->UpdateWindowMetrics(metrics);
       return true;
+    } else {
+      FML_LOG(WARNING) << "View ID " << view_id << " does not exist.";
     }
   }
 

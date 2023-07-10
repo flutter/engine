@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "gtest/gtest.h"
 #include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
@@ -1478,181 +1479,6 @@ TEST(GeometryTest, ColorMakeRGBA8) {
   }
 }
 
-TEST(GeometryTest, ColorBlend) {
-  {
-    Color src = {1, 0, 0, 0.5};
-    Color dst = {1, 0, 1, 1};
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(1, 0, 0, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver), Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn), Color(1, 0, 0, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop), Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(1, 0, 0, 0.5));
-  }
-
-  {
-    Color src = {1, 1, 0, 1};
-    Color dst = {1, 0, 1, 1};
-
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(1, 1, 0, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver), Color(1, 1, 0, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn), Color(1, 1, 0, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop), Color(1, 1, 0, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop), Color(1, 0, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(1, 1, 1, 1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(1, 0, 0, 1));
-  }
-
-  {
-    Color src = {1, 1, 0, 0.2};
-    Color dst = {1, 1, 1, 0.5};
-
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(1, 1, 0, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(1, 1, 1, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver),
-              Color(1.8, 1.8, 0.8, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver),
-              Color(1.5, 1.5, 1, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn), Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.2, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut), Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.8, 0.4));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop),
-              Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.7, 0.7, 0.2, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(1, 1, 1, 0.7));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(1, 1, 0, 0.1));
-  }
-
-  {
-    Color src = {1, 0.5, 0, 0.2};
-    Color dst = {1, 1, 0.5, 0.5};
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(1, 0.5, 0, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(1, 1, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver),
-              Color(1.8, 1.3, 0.4, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver),
-              Color(1.5, 1.25, 0.5, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn), Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut), Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.4, 0.4));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop),
-              Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.7, 0.45, 0.1, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(1, 1, 0.5, 0.7));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(1, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0, 0.2};
-    Color dst = {0, 1, 0.5, 0.5};
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(0.5, 0.5, 0, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(0, 1, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver),
-              Color(0.5, 1.3, 0.4, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver),
-              Color(0.25, 1.25, 0.5, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn), Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0, 0.2, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut), Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0, 0.8, 0.4, 0.4));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop),
-              Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.25, 0.45, 0.1, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(0.5, 1, 0.5, 0.7));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(0, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 1, 0.5, 0.5};
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination), Color(0.2, 1, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver),
-              Color(0.66, 1.3, 0.6, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver),
-              Color(0.45, 1.25, 0.6, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0.04, 0.2, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0.16, 0.8, 0.4, 0.4));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop),
-              Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.29, 0.45, 0.2, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(0.7, 1, 0.7, 0.7));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(0.1, 0.5, 0.1, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 0.2, 0.5, 0.5};
-    ASSERT_EQ(dst.Blend(src, BlendMode::kClear), Color(0, 0, 0, 0));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSource), Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestination),
-              Color(0.2, 0.2, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOver),
-              Color(0.66, 0.66, 0.6, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOver),
-              Color(0.45, 0.45, 0.6, 0.6));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationIn),
-              Color(0.04, 0.04, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationOut),
-              Color(0.16, 0.16, 0.4, 0.4));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kSourceATop),
-              Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kDestinationATop),
-              Color(0.29, 0.29, 0.2, 0.2));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kXor), Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kPlus), Color(0.7, 0.7, 0.7, 0.7));
-    ASSERT_EQ(dst.Blend(src, BlendMode::kModulate), Color(0.1, 0.1, 0.1, 0.1));
-  }
-}
-
 TEST(GeometryTest, ColorApplyColorMatrix) {
   {
     ColorMatrix color_matrix = {
@@ -2111,6 +1937,62 @@ TEST(GeometryTest, RectGetPositive) {
     Rect r{100, 200, -100, -100};
     auto actual = r.GetPositive();
     Rect expected(0, 100, 100, 100);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectScale) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(0);
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(-2);
+    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Point{0, 0});
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Size{-1, -2});
+    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectDirections) {
+  auto r = Rect::MakeLTRB(1, 2, 3, 4);
+
+  ASSERT_EQ(r.GetLeft(), 1);
+  ASSERT_EQ(r.GetTop(), 2);
+  ASSERT_EQ(r.GetRight(), 3);
+  ASSERT_EQ(r.GetBottom(), 4);
+
+  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
+  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
+  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
+  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
+}
+
+TEST(GeometryTest, RectProject) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(r);
+    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
+    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
     ASSERT_RECT_NEAR(expected, actual);
   }
 }

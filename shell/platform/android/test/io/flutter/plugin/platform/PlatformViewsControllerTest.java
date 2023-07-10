@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Presentation;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.content.res.AssetManager;
@@ -38,6 +39,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
+import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewTouch;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.MethodCall;
@@ -57,6 +59,7 @@ import org.mockito.ArgumentCaptor;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.shadows.ShadowSurfaceView;
 
 @Config(manifest = Config.NONE)
@@ -77,6 +80,8 @@ public class PlatformViewsControllerTest {
 
     @Override
     public void dispose() {
+      // We have been removed from the view hierarhy before the call to dispose.
+      assertNull(view.getParent());
       disposeCalls++;
     }
 
@@ -94,6 +99,46 @@ public class PlatformViewsControllerTest {
     public void onFlutterViewDetached() {
       detachCalls++;
     }
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  public void itRemovesPlatformViewBeforeDiposeIsCalled() {
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+    // Get the platform view registry.
+    PlatformViewRegistry registry = platformViewsController.getRegistry();
+
+    // Register a factory for our platform view.
+    registry.registerViewFactory(
+        CountingPlatformView.VIEW_TYPE_ID,
+        new PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+          @Override
+          public PlatformView create(Context context, int viewId, Object args) {
+            return new CountingPlatformView(context);
+          }
+        });
+
+    // Create the platform view.
+    int viewId = 0;
+    final PlatformViewsChannel.PlatformViewCreationRequest request =
+        new PlatformViewsChannel.PlatformViewCreationRequest(
+            viewId,
+            CountingPlatformView.VIEW_TYPE_ID,
+            0,
+            0,
+            128,
+            128,
+            View.LAYOUT_DIRECTION_LTR,
+            null);
+    PlatformView pView = platformViewsController.createPlatformView(request, true);
+    assertTrue(pView instanceof CountingPlatformView);
+    CountingPlatformView cpv = (CountingPlatformView) pView;
+    platformViewsController.configureForTextureLayerComposition(pView, request);
+    assertEquals(0, cpv.disposeCalls);
+    platformViewsController.disposePlatformView(viewId);
+    assertEquals(1, cpv.disposeCalls);
   }
 
   @Test
@@ -119,7 +164,7 @@ public class PlatformViewsControllerTest {
     int viewId = 0;
     final PlatformViewsChannel.PlatformViewCreationRequest request =
         new PlatformViewsChannel.PlatformViewCreationRequest(
-            viewId++,
+            viewId,
             CountingPlatformView.VIEW_TYPE_ID,
             0,
             0,
@@ -570,7 +615,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onDetachedFromJNI_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -601,7 +647,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onPreEngineRestart_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -1501,6 +1548,7 @@ public class PlatformViewsControllerTest {
     when(engine.getPlatformViewsController()).thenReturn(platformViewsController);
     when(engine.getLocalizationPlugin()).thenReturn(mock(LocalizationPlugin.class));
     when(engine.getAccessibilityChannel()).thenReturn(mock(AccessibilityChannel.class));
+    when(engine.getDartExecutor()).thenReturn(executor);
 
     flutterView.attachToFlutterEngine(engine);
     platformViewsController.attachToView(flutterView);
@@ -1517,6 +1565,34 @@ public class PlatformViewsControllerTest {
     @Implementation
     public void dispatch(Runnable runnable) {
       runnable.run();
+    }
+  }
+
+  /**
+   * The shadow class of {@link Presentation} to simulate Presentation showing logic.
+   *
+   * <p>Robolectric doesn't support VirtualDisplay creating correctly now, so this shadow class is
+   * used to simulate custom logic for Presentation.
+   */
+  @Implements(Presentation.class)
+  public static class ShadowPresentation extends ShadowDialog {
+    private boolean isShowing = false;
+
+    public ShadowPresentation() {}
+
+    @Implementation
+    protected void show() {
+      isShowing = true;
+    }
+
+    @Implementation
+    protected void dismiss() {
+      isShowing = false;
+    }
+
+    @Implementation
+    protected boolean isShowing() {
+      return isShowing;
     }
   }
 
