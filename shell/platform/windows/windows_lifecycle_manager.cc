@@ -163,13 +163,47 @@ void WindowsLifecycleManager::BeginProcessingClose() {
   process_close_ = true;
 }
 
-void WindowsLifecycleManager::SetLifecycleState(flutter::AppLifecycleState state) {
+void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
   state_ = state;
   if (engine_) {
-    const char* state_name = flutter::AppLifecycleStateToString(state);
+    const char* state_name = AppLifecycleStateToString(state);
     engine_->SendPlatformMessage("flutter/lifecycle",
                                  reinterpret_cast<const uint8_t*>(state_name),
                                  strlen(state_name), nullptr, nullptr);
+  }
+}
+
+void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
+  std::lock_guard guard(state_update_lock_);
+  switch (event) {
+    case SHOW: {
+      bool first_shown_window = visible_windows_.empty();
+      auto pair = visible_windows_.insert(hwnd);
+      if (first_shown_window && pair.second && state_ == AppLifecycleState::kHidden) {
+        SetLifecycleState(AppLifecycleState::kInactive);
+      }
+      break;
+    }
+    case HIDE: {
+      if (visible_windows_.erase(hwnd) && visible_windows_.empty() && (state_ == AppLifecycleState::kResumed || state_ == AppLifecycleState::kInactive)) {
+        SetLifecycleState(AppLifecycleState::kHidden);
+      }
+      break;
+    }
+    case FOCUS: {
+      bool first_focused_window = focused_windows_.empty();
+      auto pair = focused_windows_.insert(hwnd);
+      if (first_focused_window && pair.second && state_ == AppLifecycleState::kInactive) {
+        SetLifecycleState(AppLifecycleState::kResumed);
+      }
+      break;
+    }
+    case UNFOCUS: {
+      if (focused_windows_.erase(hwnd) && focused_windows_.empty() && state_ == AppLifecycleState::kResumed) {
+        SetLifecycleState(AppLifecycleState::kInactive);
+      }
+      break;
+    }
   }
 }
 

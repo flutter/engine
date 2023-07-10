@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 #include <optional>
+#include <set>
 
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
 
@@ -18,9 +19,11 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
-struct WindowState {
-  bool is_visible;
-  bool is_focused;
+enum WindowStateEvent {
+  SHOW,
+  HIDE,
+  FOCUS,
+  UNFOCUS,
 };
 
 /// A manager for lifecycle events of the top-level window.
@@ -48,7 +51,11 @@ class WindowsLifecycleManager {
   // Signal to start consuming WM_CLOSE messages.
   void BeginProcessingClose();
 
-  virtual void SetLifecycleState(flutter::AppLifecycleState state);
+  virtual void SetLifecycleState(AppLifecycleState state);
+
+  virtual void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);
+
+  AppLifecycleState GetLifecycleState() { return state_; }
 
  protected:
   // Check the number of top-level windows associated with this process, and
@@ -69,7 +76,9 @@ class WindowsLifecycleManager {
 
   bool process_close_;
 
-  std::map<HWND, WindowState> window_states_;
+  std::set<HWND> visible_windows_;
+
+  std::set<HWND> focused_windows_;
 
   std::mutex state_update_lock_;
 
