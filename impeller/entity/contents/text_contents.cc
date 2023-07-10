@@ -90,7 +90,7 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   auto type = frame_.GetAtlasType();
-  auto scale = entity.GetTransformation().GetMaxBasisLengthXY();
+  auto scale = entity.DeriveTextScale();
   auto atlas =
       ResolveAtlas(type, renderer.GetLazyGlyphAtlas(),
                    renderer.GetGlyphAtlasContext(type), renderer.GetContext());

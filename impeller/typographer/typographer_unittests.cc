@@ -194,7 +194,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
     TextFrameFromTextBlob(blob).CollectUniqueFontGlyphPairs(set, 0.6 * index);
   };
   auto atlas = context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap,
-                                         atlas_context, set);
+                                         std::move(atlas_context), set);
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
