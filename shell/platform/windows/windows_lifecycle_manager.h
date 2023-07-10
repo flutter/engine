@@ -24,6 +24,7 @@ enum WindowStateEvent {
   HIDE,
   FOCUS,
   UNFOCUS,
+  DESTROY,
 };
 
 /// A manager for lifecycle events of the top-level window.

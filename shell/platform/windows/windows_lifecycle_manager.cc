@@ -204,6 +204,11 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd, WindowStateEvent eve
       }
       break;
     }
+    case DESTROY: {
+      focused_windows_.erase(hwnd);
+      visible_windows_.erase(hwnd);
+      break;
+    }
   }
 }
 
