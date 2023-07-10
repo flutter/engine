@@ -75,6 +75,25 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
     case WM_DWMCOMPOSITIONCHANGED:
       engine_->OnDwmCompositionChanged();
       break;
+
+    case WM_SIZE:
+      if (wpar == SIZE_MAXIMIZED || wpar == SIZE_RESTORED) {
+        OnWindowStateEvent(hwnd, SHOW);
+      }
+      else if (wpar == SIZE_MINIMIZED) {
+        OnWindowStateEvent(hwnd, HIDE);
+      }
+      break;
+
+    case WM_SHOWWINDOW:
+      if (!wpar) {
+        OnWindowStateEvent(hwnd, HIDE);
+      }
+      break;
+
+    case WM_DESTROY:
+      OnWindowStateEvent(hwnd, HIDE);
+      break;
   }
   return false;
 }
@@ -164,6 +183,9 @@ void WindowsLifecycleManager::BeginProcessingClose() {
 }
 
 void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
+  if (state_ == state) {
+    return;
+  }
   state_ = state;
   if (engine_) {
     const char* state_name = AppLifecycleStateToString(state);
@@ -174,6 +196,11 @@ void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
 }
 
 void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
+  // Synthesize an unfocus event when a focused window is hidden.
+  if (event == HIDE && focused_windows_.find(hwnd) != focused_windows_.end()) {
+    OnWindowStateEvent(hwnd, UNFOCUS);
+  }
+
   std::lock_guard guard(state_update_lock_);
   switch (event) {
     case SHOW: {
@@ -202,11 +229,6 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd, WindowStateEvent eve
       if (focused_windows_.erase(hwnd) && focused_windows_.empty() && state_ == AppLifecycleState::kResumed) {
         SetLifecycleState(AppLifecycleState::kInactive);
       }
-      break;
-    }
-    case DESTROY: {
-      focused_windows_.erase(hwnd);
-      visible_windows_.erase(hwnd);
       break;
     }
   }

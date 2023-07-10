@@ -795,4 +795,8 @@ void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
   lifecycle_manager_->BeginProcessingClose();
 }
 
+void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
+  lifecycle_manager_->OnWindowStateEvent(hwnd, event);
+}
+
 }  // namespace flutter

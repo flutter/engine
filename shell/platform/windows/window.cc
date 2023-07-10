@@ -352,6 +352,8 @@ Window::HandleMessage(UINT const message,
       current_width_ = width;
       current_height_ = height;
       HandleResize(width, height);
+
+      OnWindowStateEvent(width == 0 && height == 0 ? HIDE : SHOW);
       break;
     case WM_PAINT:
       OnPaint();
@@ -430,9 +432,11 @@ Window::HandleMessage(UINT const message,
       break;
     }
     case WM_SETFOCUS:
+      OnWindowStateEvent(FOCUS);
       ::CreateCaret(window_handle_, nullptr, 1, 1);
       break;
     case WM_KILLFOCUS:
+      OnWindowStateEvent(UNFOCUS);
       ::DestroyCaret();
       break;
     case WM_LBUTTONDOWN:
@@ -612,6 +616,7 @@ void Window::UpdateScrollOffsetMultiplier() {
 
 void Window::Destroy() {
   if (window_handle_) {
+    OnWindowStateEvent(HIDE);
     text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
