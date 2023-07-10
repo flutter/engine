@@ -5953,6 +5953,7 @@ FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.h
 FILE: ../../../flutter/shell/platform/windows/window_state.h
 FILE: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.cc
 FILE: ../../../flutter/shell/platform/windows/windows_lifecycle_manager.h
+FILE: ../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/windows_proc_table.cc
 FILE: ../../../flutter/shell/platform/windows/windows_proc_table.h
 FILE: ../../../flutter/shell/platform/windows/windowsx_shim.h
