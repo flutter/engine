@@ -566,6 +566,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
+      int64_t view_id,
       const ViewportMetrics& metrics) override;
 
   // |PlatformView::Delegate|

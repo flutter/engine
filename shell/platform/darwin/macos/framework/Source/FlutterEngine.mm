@@ -95,7 +95,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * An internal method that adds the view controller with the given ID.
  *
  * This method assigns the controller with the ID, puts the controller into the
- * map, and does assertions related to the default view ID.
+ * map, and does assertions related to the implicit view ID.
  */
 - (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId;
 
@@ -422,7 +422,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_isResponseValid addObject:@YES];
   _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
                                                                      terminator:nil];
-  // kFlutterImplicitViewId is reserved for the default view.
+  // kFlutterImplicitViewId is reserved for the implicit view.
   // All IDs above it are for regular views.
   _nextViewId = kFlutterImplicitViewId + 1;
 
@@ -506,7 +506,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                                    void* user_data) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a
+    // only operates on the implicit view. To support multi-view, we need a
     // way to pass in the ID (probably through FlutterSemanticsUpdate).
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
     [[engine viewControllerForId:kFlutterImplicitViewId] updateSemantics:update];
@@ -669,8 +669,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     // From non-nil to a different non-nil view controller.
     NSAssert(NO,
              @"Failed to set view controller to the engine: "
-             @"The engine already has a default view controller %@. "
-             @"If you wanted to make the default view render in a different window, "
+             @"The engine already has an implicit view controller %@. "
+             @"If you wanted to make the implicit view render in a different window, "
              @"you should attach the current view controller to the window instead.",
              [_viewControllers objectForKey:@(kFlutterImplicitViewId)]);
   }
@@ -705,7 +705,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            void* user_data               //
                                         ) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a new
+    // only operates on the implicit view. To support multi-view, we need a new
     // callback that also receives a view ID.
     return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
                                                                              layers, layers_count);

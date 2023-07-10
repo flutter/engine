@@ -12,27 +12,27 @@
 #import "flutter/testing/testing.h"
 
 @interface FlutterViewMockProvider : NSObject <FlutterViewProvider> {
-  FlutterView* _defaultView;
+  FlutterView* _implicitView;
 }
 /**
- * Create a FlutterViewMockProvider with the provided view as the default view.
+ * Create a FlutterViewMockProvider with the provided view as the implicit view.
  */
-- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view;
+- (nonnull instancetype)initWithImplicitView:(nonnull FlutterView*)view;
 @end
 
 @implementation FlutterViewMockProvider
 
-- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view {
+- (nonnull instancetype)initWithImplicitView:(nonnull FlutterView*)view {
   self = [super init];
   if (self != nil) {
-    _defaultView = view;
+    _implicitView = view;
   }
   return self;
 }
 
 - (nullable FlutterView*)viewForId:(FlutterViewId)viewId {
   if (viewId == kFlutterImplicitViewId) {
-    return _defaultView;
+    return _implicitView;
   }
   return nil;
 }
@@ -81,7 +81,7 @@ id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
 
   OCMStub([surfaceMock asFlutterMetalTexture]).andReturn(texture);
 
-  return [[FlutterViewMockProvider alloc] initWithDefaultView:viewMock];
+  return [[FlutterViewMockProvider alloc] initWithImplicitView:viewMock];
 }
 }  // namespace
 
