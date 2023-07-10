@@ -184,4 +184,12 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   return true;
 }
 
+bool LinearGradientContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  for (Color& color : colors_) {
+    color = color_filter_proc(color);
+  }
+  return true;
+}
+
 }  // namespace impeller

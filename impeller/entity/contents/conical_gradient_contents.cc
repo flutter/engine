@@ -8,6 +8,7 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/gradient.h"
@@ -189,6 +190,14 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
     auto restore = ClipRestoreContents();
     restore.SetRestoreCoverage(GetCoverage(entity));
     return restore.Render(renderer, entity, pass);
+  }
+  return true;
+}
+
+bool ConicalGradientContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  for (Color& color : colors_) {
+    color = color_filter_proc(color);
   }
   return true;
 }

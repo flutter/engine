@@ -33,6 +33,10 @@ class SweepGradientContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
   void SetCenterAndAngles(Point center, Degrees start_angle, Degrees end_angle);
 
   void SetColors(std::vector<Color> colors);

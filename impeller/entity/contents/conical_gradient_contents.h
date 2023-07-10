@@ -29,6 +29,10 @@ class ConicalGradientContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
   void SetCenterAndRadius(Point center, Scalar radius);
 
   void SetColors(std::vector<Color> colors);
