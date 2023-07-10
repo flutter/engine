@@ -616,7 +616,6 @@ void Window::UpdateScrollOffsetMultiplier() {
 
 void Window::Destroy() {
   if (window_handle_) {
-    OnWindowStateEvent(HIDE);
     text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;

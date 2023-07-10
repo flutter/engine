@@ -76,16 +76,18 @@ FlutterWindow::FlutterWindow(int width, int height)
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  OnWindowStateEvent(HIDE);
+}
 
 void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
   direct_manipulation_owner_->SetBindingHandlerDelegate(window);
   if (restored_) {
-    binding_handler_delegate_->OnWindowStateEvent(GetWindowHandle(), SHOW);
+    OnWindowStateEvent(SHOW);
   }
   if (focused_) {
-    binding_handler_delegate_->OnWindowStateEvent(GetWindowHandle(), FOCUS);
+    OnWindowStateEvent(FOCUS);
   }
 }
 

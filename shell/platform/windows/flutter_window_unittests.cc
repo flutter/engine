@@ -27,7 +27,9 @@ class MockFlutterWindow : public FlutterWindow {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindow::GetDpiScale()));
   }
-  virtual ~MockFlutterWindow() {}
+  virtual ~MockFlutterWindow() {
+    SetView(nullptr);
+  }
 
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
@@ -61,6 +63,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
   MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
+  //MOCK_METHOD1(OnWindowStateEvent, void(WindowStateEvent));
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -229,6 +232,8 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
                           kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindStylus,
                              kDefaultPointerDeviceId);
+
+  win32window.SetView(nullptr);
 }
 
 // Tests that calls to OnScroll in turn calls GetScrollOffsetMultiplier

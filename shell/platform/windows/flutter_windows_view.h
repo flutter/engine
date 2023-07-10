@@ -211,7 +211,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     return accessibility_bridge_;
   }
 
-  // |WindowBidningHandlerDelegate|
+  // |WindowBindingHandlerDelegate|
   void OnWindowStateEvent(HWND hwnd, WindowStateEvent event) override;
 
  protected:
