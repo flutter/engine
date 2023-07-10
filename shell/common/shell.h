@@ -298,10 +298,26 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  /// @brief  Add a non-implicit render surface. The implicit render surface
-  ///         is created in OnPlatformViewCreated.
+  /// @brief  Add a non-implicit view.
+  ///
+  ///         This method returns immediately and does not wait for the tasks
+  ///         on the rasterizer thread and the UI thread to finish. This is
+  ///         because the rasterizer thread can be blocked by the platform
+  ///         thread to render platform views.
+  ///
+  ///         The implicit view is added internally on Shell initialization
+  ///         depending on `Settings.enable_implicit_view`. Trying to add
+  ///         `kFlutterImplicitViewId` is a no-op with warning.
   /// @param view_id
   void AddView(int64_t view_id);
+
+  /// @brief  Remove a non-implicit view.
+  ///
+  ///         This method waits for the tasks on the rasterizer thread and the
+  ///         UI thread to finish before returning.
+  ///
+  ///         The implicit view should never be removed. Trying to remove
+  ///         `kFlutterImplicitViewId` is a no-op with warning.
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------

@@ -206,12 +206,20 @@ class Rasterizer final : public SnapshotDelegate,
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Add a surface, implicit or not.
+  /// @brief      Add a view, implicit or not.
   void AddView(int64_t view_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Remove a view, implicit or not.
   void RemoveSurface(int64_t view_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Sometimes, it may be necessary to render the same frame again
+  ///             without having to wait for the framework to build a whole new
+  ///             layer tree describing the same contents. One such case is when
+  ///             external textures (video or camera streams for example) are
+  ///             updated in an otherwise static layer tree. To support this use
+  ///             case, the rasterizer holds onto the last rendered layer tree.
   ///
   /// @bug        https://github.com/flutter/flutter/issues/33939
   ///

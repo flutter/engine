@@ -1819,6 +1819,9 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
+  // TODO(dkwingsmt): Add a switch for this to FlutterProjectArgs so that
+  // platforms can configure whether to use the implicit view.
+  settings.enable_implicit_view = true;
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.

@@ -118,12 +118,9 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
-    // TODO(dkwingsmt): Can not call _implicitViewEnabled here because
-    // the Dart state has not finished initialization.
-    // if (_implicitViewEnabled()) {
-    //   print('PlatformDispatcher ctor 2');
-    //   _implicitView = FlutterView._(_kImplicitViewId, this);
-    // }
+    if (_implicitViewEnabled) {
+      _doAddView(_kImplicitViewId);
+    }
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -231,15 +228,8 @@ class PlatformDispatcher {
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   FlutterView? get implicitView {
-    if (_implicitView == null && _implicitViewEnabled()) {
-      _implicitView = FlutterView._(_kImplicitViewId, this);
-    }
-    return _implicitView;
+    return _views[_kImplicitViewId];
   }
-  FlutterView? _implicitView;
-
-  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
-  external static bool _implicitViewEnabled();
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -268,28 +258,25 @@ class PlatformDispatcher {
   }
 
   FlutterView _createView(int id) {
-    if (id == _kImplicitViewId) {
-      assert(_implicitViewEnabled());
-      return implicitView!;
-    }
     return FlutterView._(id, this);
   }
 
   void _addView(int id) {
+    assert(id != _kImplicitViewId, 'The implicit view #$id can not be added.');
+    _doAddView(id);
+  }
+
+  void _doAddView(int id) {
     assert(!_views.containsKey(id), 'View ID $id already exists.');
     _views[id] = _createView(id);
     _viewConfigurations[id] = const _ViewConfiguration();
   }
 
   void _removeView(int id) {
+    assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
-    // TODO(dkwingsmt): Reset _implicitView?
     _views.remove(id);
     _viewConfigurations.remove(id);
-  }
-
-  void _onSentViewConfigurations(List<int> viewIds) {
-    viewIds.forEach(_addView);
   }
 
   // Called from the engine, via hooks.dart.

@@ -22,7 +22,7 @@
 namespace flutter {
 namespace {
 
-constexpr int64_t kFlutterDefaultViewId = 0ll;
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
   return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
@@ -36,7 +36,11 @@ PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
     : client_(client) {
   if (client_->ImplicitViewEnabled()) {
-    AddView(kFlutterDefaultViewId);
+    // Add PlatformConfiguration's window now, but don't add dart:ui's View
+    // here. The dart:ui needs another way to add the implicit view
+    // synchronously so that the view is available before the main function.
+    // See _implicitViewEnabled in natives.dart.
+    AddWindowRecord(kFlutterImplicitViewId);
   }
 }
 
@@ -86,31 +90,17 @@ void PlatformConfiguration::DidCreateIsolate() {
 
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-
-  SendViewConfigurations();
 }
 
-void PlatformConfiguration::SendViewConfigurations() {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  FML_DCHECK(dart_state);
-  tonic::DartState::Scope scope(dart_state);
-
-  // TODO(dkwingsmt): send all of ViewportMetrics
-  std::vector<int64_t> view_ids;
-  for (const auto& [view_id, window] : windows_) {
-    view_ids.push_back(view_id);
-  }
-
-  tonic::CheckAndHandleError(tonic::DartInvokeField(
-      library_.value(), "_sendViewConfigurations", {tonic::ToDart(view_ids)}));
-}
-
-void PlatformConfiguration::AddView(int64_t view_id) {
-  // TODO(dkwingsmt): How do I access the current dart state after
-  // DidCreateIsolate?
+void PlatformConfiguration::AddWindowRecord(int64_t view_id) {
   windows_.emplace(
       view_id, std::make_unique<Window>(library_, view_id,
                                         ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
+}
+
+void PlatformConfiguration::AddView(int64_t view_id) {
+  FML_DCHECK(view_id != kFlutterImplicitViewId);
+  AddWindowRecord(view_id);
   std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
   if (!dart_state) {
     return;
@@ -123,6 +113,7 @@ void PlatformConfiguration::AddView(int64_t view_id) {
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {
+  FML_DCHECK(view_id != kFlutterImplicitViewId);
   windows_.erase(view_id);
   std::shared_ptr<tonic::DartState> dart_state =
       remove_view_.dart_state().lock();
@@ -552,16 +543,6 @@ Dart_Handle PlatformConfigurationNativeApi::ComputePlatformResolvedLocale(
            ->ComputePlatformResolvedLocale(supportedLocales);
 
   return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
-}
-
-Dart_Handle PlatformConfigurationNativeApi::ImplicitViewEnabled() {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  bool enabled = UIDartState::Current()
-                     ->platform_configuration()
-                     ->client()
-                     ->ImplicitViewEnabled();
-
-  return Dart_NewBoolean(enabled);
 }
 
 std::string PlatformConfigurationNativeApi::DefaultRouteName() {
