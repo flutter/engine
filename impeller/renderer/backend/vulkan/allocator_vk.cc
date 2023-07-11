@@ -340,7 +340,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
   ~AllocatedTextureSourceVK() {
     image_view_.reset();
     auto context = context_.lock();
-    if (context && ContextVK::Cast(*context).IsOnRasterThread()) {
+    if (context && ContextVK::Cast(*context).IsOnRasterThread() && image_) {
       ContextVK::Cast(*context).GetConcurrentWorkerTaskRunner()->PostTask(
           [image = std::move(image_), allocation = std::move(allocation_),
            allocator = allocator_] {
