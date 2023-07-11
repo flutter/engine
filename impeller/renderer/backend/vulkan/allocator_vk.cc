@@ -94,9 +94,8 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     return;
   }
   for (auto i = 0u; i < kPoolCount; i++) {
-    if (!CreateBufferPool(allocator, &staging_buffer_pools_[i])) {
-      return;
-    }
+    created_buffer_pools_ &=
+        CreateBufferPool(allocator, &staging_buffer_pools_[i]);
   }
   allocator_ = allocator;
   supports_memoryless_textures_ = capabilities.SupportsMemorylessTextures();
@@ -192,7 +191,9 @@ static constexpr VkMemoryPropertyFlags ToVKTextureMemoryPropertyFlags(
     bool supports_memoryless_textures) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
@@ -438,7 +439,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
-  if (desc.storage_mode == StorageMode::kHostVisible &&
+  if (created_buffer_pools_ && desc.storage_mode == StorageMode::kHostVisible &&
       raster_thread_id_ == std::this_thread::get_id()) {
     allocation_info.pool = staging_buffer_pools_[frame_count_ % kPoolCount];
   }
@@ -487,9 +488,8 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible);
-  // TESTING
-  // allocation_info.flags =
-  //     ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
+  allocation_info.flags =
+      ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
 
   uint32_t memTypeIndex;
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
