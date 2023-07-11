@@ -1107,7 +1107,7 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
   Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
   const auto text_frame = TextFrameFromTextBlob(blob, scale);
   if (paint_.style == Paint::Style::kStroke) {
-    auto path = PathDataFromTextBlob(blob);
+    auto path = skia_conversions::PathDataFromTextBlob(blob);
     auto bounds = text_frame.GetBounds();
     if (!bounds.has_value()) {
       return;
@@ -1119,7 +1119,6 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
     return;
   }
 
-  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
   canvas_.DrawTextFrame(text_frame,             //
                         impeller::Point{x, y},  //
                         paint_                  //
