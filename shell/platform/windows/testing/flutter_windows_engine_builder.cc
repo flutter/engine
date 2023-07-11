@@ -62,11 +62,6 @@ void FlutterWindowsEngineBuilder::AddDartEntrypointArgument(std::string arg) {
   dart_entrypoint_arguments_.emplace_back(std::move(arg));
 }
 
-void FlutterWindowsEngineBuilder::SetSwitches(
-    std::vector<std::string> switches) {
-  switches_ = std::move(switches);
-}
-
 void FlutterWindowsEngineBuilder::SetCreateKeyboardHandlerCallbacks(
     KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
     KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
