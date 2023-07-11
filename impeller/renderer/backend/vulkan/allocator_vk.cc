@@ -439,8 +439,6 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   allocation_info.usage = ToVMAMemoryUsage();
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(desc.storage_mode);
-  allocation_info.flags = ToVmaAllocationCreateFlags(
-      desc.storage_mode, /*is_texture=*/false, desc.size);
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
   if (desc.storage_mode == StorageMode::kHostVisible &&
       raster_thread_id_ == std::this_thread::get_id()) {
@@ -491,6 +489,7 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible);
+  // TESTING
   allocation_info.flags =
       ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
 
@@ -498,15 +497,8 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
       allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
   if (result != vk::Result::eSuccess) {
-    // We might be on a machine without host coherent/host visible/device local.
-    // Fall back to host visible.
-    allocation_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
-        allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not find memory type for buffer pool.";
-      return false;
-    }
+    VALIDATION_LOG << "Could not find memory type for buffer pool.";
+    return false;
   }
 
   VmaPoolCreateInfo pool_create_info = {};
