@@ -440,6 +440,16 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     XCTAssertTrue(shouldIgnore == YES);
   }
 }
+- (void)testKeyboardAnimationWillNotCrashWhenEngineDestroyed {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController setupKeyboardAnimationVsyncClient:^(fml::TimePoint){
+  }];
+  [engine destroyContext];
+}
 
 - (void)testKeyboardAnimationWillWaitUIThreadVsync {
   // We need to make sure the new viewport metrics get sent after the
