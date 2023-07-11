@@ -4,6 +4,7 @@
 
 precision mediump float;
 
+#include <impeller/color.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
@@ -36,6 +37,5 @@ void main() {
                                  frag_info.half_texel,                     //
                                  frag_info.tile_mode,                      //
                                  frag_info.decal_border_color);
-  frag_color =
-      vec4(frag_color.xyz * frag_color.a, frag_color.a) * frag_info.alpha;
+  frag_color = IPPremultiply(frag_color) * frag_info.alpha;
 }

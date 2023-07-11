@@ -395,6 +395,30 @@ TEST_P(AiksTest, CanRenderLinearGradientDecal) {
   CanRenderLinearGradient(this, Entity::TileMode::kDecal);
 }
 
+TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  canvas.Translate({100.0f, 0, 0});
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 0.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
+      Entity::TileMode::kDecal, {});
+  // Overlay the gradient with 50% green. This should appear as the entire
+  // rectangle being drawn with 50% green, including the border area outside the
+  // decal gradient.
+  paint.color_filter = ColorFilter::MakeBlend(BlendMode::kSourceOver,
+                                              Color::Green().WithAlpha(0.50));
+
+  paint.color = Color(1.0, 1.0, 1.0, 1.0);
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 namespace {
 void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
                                                  Entity::TileMode tile_mode) {
