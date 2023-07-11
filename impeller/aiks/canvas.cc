@@ -42,7 +42,6 @@ void Canvas::Initialize(std::optional<Rect> cull_rect) {
   base_pass_ = std::make_unique<EntityPass>();
   current_pass_ = base_pass_.get();
   xformation_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
-  lazy_glyph_atlas_ = std::make_shared<LazyGlyphAtlas>();
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -51,17 +50,15 @@ void Canvas::Reset() {
   base_pass_ = nullptr;
   current_pass_ = nullptr;
   xformation_stack_ = {};
-  lazy_glyph_atlas_ = nullptr;
 }
 
 void Canvas::Save() {
   Save(false);
 }
 
-void Canvas::Save(
-    bool create_subpass,
-    BlendMode blend_mode,
-    std::optional<EntityPass::BackdropFilterProc> backdrop_filter) {
+void Canvas::Save(bool create_subpass,
+                  BlendMode blend_mode,
+                  EntityPass::BackdropFilterProc backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
@@ -402,10 +399,14 @@ void Canvas::DrawPoints(std::vector<Point> points,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawPicture(Picture picture) {
+void Canvas::DrawPicture(const Picture& picture) {
   if (!picture.pass) {
     return;
   }
+
+  auto save_count = GetSaveCount();
+  Save();
+
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
   pass->IterateAllEntities([&](auto& entity) -> bool {
@@ -414,7 +415,9 @@ void Canvas::DrawPicture(Picture picture) {
                              entity.GetTransformation());
     return true;
   });
-  return;
+  GetCurrentPass().AddSubpassInline(std::move(pass));
+
+  RestoreToCount(save_count);
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -482,10 +485,9 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::SaveLayer(
-    const Paint& paint,
-    std::optional<Rect> bounds,
-    const std::optional<Paint::ImageFilterProc>& backdrop_filter) {
+void Canvas::SaveLayer(const Paint& paint,
+                       std::optional<Rect> bounds,
+                       const Paint::ImageFilterProc& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -499,7 +501,7 @@ void Canvas::SaveLayer(
         std::make_unique<PaintPassDelegate>(paint, bounds));
   }
 
-  if (bounds.has_value() && !backdrop_filter.has_value()) {
+  if (bounds.has_value() && !backdrop_filter) {
     // Render target switches due to a save layer can be elided. In such cases
     // where passes are collapsed into their parent, the clipping effect to
     // the size of the render target that would have been allocated will be
@@ -512,15 +514,12 @@ void Canvas::SaveLayer(
 void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            Point position,
                            const Paint& paint) {
-  lazy_glyph_atlas_->AddTextFrame(text_frame);
-
   Entity entity;
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
 
   if (paint.color_source.GetType() != ColorSource::Type::kColor) {
     auto color_text_contents = std::make_shared<ColorSourceTextContents>();

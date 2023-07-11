@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_DART_PROJECT_H_
 
 #include <glib-object.h>
+#include <gmodule.h>
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
@@ -13,6 +14,7 @@
 
 G_BEGIN_DECLS
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlDartProject, fl_dart_project, FL, DART_PROJECT, GObject)
 
 /**
@@ -34,6 +36,18 @@ G_DECLARE_FINAL_TYPE(FlDartProject, fl_dart_project, FL, DART_PROJECT, GObject)
  * Returns: a new #FlDartProject.
  */
 FlDartProject* fl_dart_project_new();
+
+/**
+ * fl_dart_project_set_aot_library_path:
+ * @project: an #FlDartProject.
+ * @path: the absolute path to the AOT library in the Flutter application.
+ *
+ * Sets the path to the AOT library in the Flutter application, which is
+ * the path to libapp.so. By default this is lib/libapp.so relative to the
+ * executable directory.
+ */
+void fl_dart_project_set_aot_library_path(FlDartProject* project,
+                                          const gchar* path);
 
 /**
  * fl_dart_project_get_aot_library_path:

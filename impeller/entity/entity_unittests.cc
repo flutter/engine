@@ -1069,7 +1069,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetRect(input_rect);
+      texture->SetDestinationRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1192,7 +1192,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetRect(input_rect);
+    texture->SetDestinationRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -2184,7 +2184,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = TextFrameFromTextBlob(blob);
   auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame);
+  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(frame);
@@ -2413,6 +2413,26 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Caps at 140.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+}
+
+TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto src_contents = std::make_shared<SolidColorContents>();
+  src_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-300, -500, 30000, 50000)));
+  src_contents->SetColor(Color::Red());
+
+  auto dst_contents = std::make_shared<SolidColorContents>();
+  dst_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(300, 500, 20000, 30000)));
+  dst_contents->SetColor(Color::Blue());
+
+  auto contents = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
+                               FilterInput::Make(src_contents, false)});
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
 }  // namespace testing

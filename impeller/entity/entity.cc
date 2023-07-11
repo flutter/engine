@@ -124,6 +124,10 @@ bool Entity::SetInheritedOpacity(Scalar alpha) {
   return true;
 }
 
+std::optional<Color> Entity::AsBackgroundColor(ISize target_size) const {
+  return contents_->AsBackgroundColor(*this, target_size);
+}
+
 /// @brief  Returns true if the blend mode is "destructive", meaning that even
 ///         fully transparent source colors would result in the destination
 ///         getting changed.
@@ -154,7 +158,16 @@ bool Entity::Render(const ContentContext& renderer,
     return true;
   }
 
+  if (!contents_->GetCoverageHint().has_value()) {
+    contents_->SetCoverageHint(
+        Rect::MakeSize(parent_pass.GetRenderTargetSize()));
+  }
+
   return contents_->Render(renderer, *this, parent_pass);
+}
+
+Scalar Entity::DeriveTextScale() const {
+  return GetTransformation().GetMaxBasisLengthXY();
 }
 
 }  // namespace impeller

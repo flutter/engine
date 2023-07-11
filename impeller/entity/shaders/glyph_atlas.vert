@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <impeller/transform.glsl>
-#include <impeller/types.glsl>
 
 uniform FrameInfo {
   mat4 mvp;

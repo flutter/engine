@@ -195,7 +195,7 @@ bool DartTestComponentController::CreateAndBindNamespace() {
             zx_status_get_string(ns_create_status));
   }
 
-  dart_utils::RunnerTemp::SetupComponent(namespace_);
+  dart_utils::BindTemp(namespace_);
 
   // Bind each directory in start_info's namespace to the controller's namespace
   // instance.
@@ -207,7 +207,7 @@ bool DartTestComponentController::CreateAndBindNamespace() {
     }
 
     if (ns_entry.path() == kTmpPath) {
-      // /tmp is covered by the local memfs.
+      // /tmp is covered by a locally served virtual filesystem.
       continue;
     }
 

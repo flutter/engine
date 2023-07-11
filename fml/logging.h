@@ -12,6 +12,18 @@
 
 namespace fml {
 
+namespace testing {
+struct LogCapture {
+  LogCapture();
+  ~LogCapture();
+
+  std::string str() const;
+
+ private:
+  std::ostringstream stream_;
+};
+}  // namespace testing
+
 class LogMessageVoidify {
  public:
   void operator&(std::ostream&) {}
@@ -27,7 +39,12 @@ class LogMessage {
 
   std::ostream& stream() { return stream_; }
 
+  static void CaptureNextLog(std::ostringstream* stream);
+
  private:
+  // This is a raw pointer so that we avoid having a non-trivially-destructible
+  // static. It is only ever for use in unit tests.
+  static thread_local std::ostringstream* capture_next_log_stream_;
   std::ostringstream stream_;
   const LogSeverity severity_;
   const char* file_;

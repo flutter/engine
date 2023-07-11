@@ -38,6 +38,8 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
+
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
@@ -308,7 +310,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(viewportMetrics);
+  self.platformView->SetViewportMetrics(kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -333,7 +335,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
-- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
+- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner {
+  FML_DCHECK(_shell);
+  return _shell->GetTaskRunners().GetUITaskRunner();
+}
+
+- (fml::RefPtr<fml::TaskRunner>)rasterTaskRunner {
   FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
@@ -673,7 +680,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         // TODO(gaaclarke): Find way to eliminate this data copy.
         NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
                                       length:screenshot.data->size()];
-        NSString* format = [NSString stringWithCString:screenshot.format.c_str()];
+        NSString* format = [NSString stringWithUTF8String:screenshot.format.c_str()];
         NSNumber* width = @(screenshot.frame_size.fWidth);
         NSNumber* height = @(screenshot.frame_size.fHeight);
         return result(@[ width, height, format, data ]);
@@ -816,8 +823,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
-    self.initialRoute = [NSString stringWithCString:settings.route.c_str()
-                                           encoding:NSUTF8StringEncoding];
+    self.initialRoute = [NSString stringWithUTF8String:settings.route.c_str()];
   }
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;

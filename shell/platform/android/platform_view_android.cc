@@ -63,7 +63,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     uint8_t msaa_samples,
     bool enable_impeller,
     const std::optional<std::string>& impeller_backend,
@@ -72,10 +71,8 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   if (enable_impeller) {
-    // TODO(gaaclarke): We need to devise a more complete heuristic about what
-    //                  backend to use by default.
-    // Default value is OpenGLES.
-    AndroidRenderingAPI backend = AndroidRenderingAPI::kOpenGLES;
+    // Default value is Vulkan with GLES fallback.
+    AndroidRenderingAPI backend = AndroidRenderingAPI::kAutoselect;
     if (impeller_backend.has_value()) {
       if (impeller_backend.value() == "opengles") {
         backend = AndroidRenderingAPI::kOpenGLES;
@@ -92,7 +89,16 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
             std::make_unique<impeller::egl::Display>());
       case AndroidRenderingAPI::kVulkan:
         return std::make_unique<AndroidContextVulkanImpeller>(
-            enable_vulkan_validation, worker_task_runner);
+            enable_vulkan_validation);
+      case AndroidRenderingAPI::kAutoselect: {
+        auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation);
+        if (!vulkan_backend->IsValid()) {
+          return std::make_unique<AndroidContextGLImpeller>(
+              std::make_unique<impeller::egl::Display>());
+        }
+        return vulkan_backend;
+      }
       default:
         FML_UNREACHABLE();
     }
@@ -108,7 +114,6 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool use_software_rendering,
     uint8_t msaa_samples)
@@ -119,7 +124,6 @@ PlatformViewAndroid::PlatformViewAndroid(
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
-              worker_task_runner,
               msaa_samples,
               delegate.OnPlatformViewGetSettings().enable_impeller,
               delegate.OnPlatformViewGetSettings().impeller_backend,

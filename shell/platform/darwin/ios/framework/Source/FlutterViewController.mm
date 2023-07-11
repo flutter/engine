@@ -69,11 +69,11 @@ typedef struct MouseState {
 /**
  * Keyboard animation properties
  */
-@property(nonatomic, assign) double targetViewInsetBottom;
+@property(nonatomic, assign) CGFloat targetViewInsetBottom;
+@property(nonatomic, assign) CGFloat originalViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 @property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
-@property(nonatomic, assign) CGFloat originalViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
 
 /// VSyncClient for touch events delivery frame rate correction.
@@ -146,6 +146,7 @@ typedef struct MouseState {
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
+@synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -342,7 +343,7 @@ typedef struct MouseState {
 
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
-                 name:UIAccessibilityVoiceOverStatusChanged
+                 name:UIAccessibilityVoiceOverStatusDidChangeNotification
                object:nil];
 
   [center addObserver:self
@@ -574,8 +575,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Start on the platform thread.
   weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
                                           platformTaskRunner = [_engine.get() platformTaskRunner],
-                                          RasterTaskRunner = [_engine.get() RasterTaskRunner]]() {
-    FML_DCHECK(RasterTaskRunner->RunsTasksOnCurrentThread());
+                                          rasterTaskRunner = [_engine.get() rasterTaskRunner]]() {
+    FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
       if (weakSelf) {
@@ -617,9 +618,17 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     if (self.viewIfLoaded == nil) {
       FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
     }
-    return self.viewIfLoaded.window.windowScene.screen;
+    return [self windowSceneIfViewLoaded].screen;
   }
   return UIScreen.mainScreen;
+}
+
+- (UIWindowScene*)windowSceneIfViewLoaded {
+  if (self.viewIfLoaded == nil) {
+    FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
+    return nil;
+  }
+  return self.viewIfLoaded.window.windowScene;
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1596,7 +1605,55 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
-  [self setupKeyboardAnimationVsyncClient];
+
+  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  FlutterKeyboardAnimationCallback keyboardAnimationCallback = ^(
+      fml::TimePoint keyboardAnimationTargetTime) {
+    if (!weakSelf) {
+      return;
+    }
+    fml::scoped_nsobject<FlutterViewController> flutterViewController(
+        [(FlutterViewController*)weakSelf.get() retain]);
+    if (!flutterViewController) {
+      return;
+    }
+
+    // If the view controller's view is not loaded, bail out.
+    if (!flutterViewController.get().isViewLoaded) {
+      return;
+    }
+    // If the view for tracking keyboard animation is nil, means it is not
+    // created, bail out.
+    if ([flutterViewController keyboardAnimationView] == nil) {
+      return;
+    }
+    // If keyboardAnimationVSyncClient is nil, means the animation ends.
+    // And should bail out.
+    if (flutterViewController.get().keyboardAnimationVSyncClient == nil) {
+      return;
+    }
+
+    if ([flutterViewController keyboardAnimationView].superview == nil) {
+      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+      [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
+    }
+
+    if ([flutterViewController keyboardSpringAnimation] == nil) {
+      if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
+        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+            flutterViewController.get()
+                .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+        [flutterViewController updateViewportMetricsIfNeeded];
+      }
+    } else {
+      fml::TimeDelta timeElapsed =
+          keyboardAnimationTargetTime - flutterViewController.get().keyboardAnimationStartTime;
+      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+          [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
+      [flutterViewController updateViewportMetricsIfNeeded];
+    }
+  };
+  [self setupKeyboardAnimationVsyncClient:keyboardAnimationCallback];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
@@ -1639,45 +1696,27 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                 toValue:self.targetViewInsetBottom]);
 }
 
-- (void)setupKeyboardAnimationVsyncClient {
-  auto callback = [weakSelf =
-                       [self getWeakPtr]](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
-    if (!weakSelf) {
-      return;
-    }
-    fml::scoped_nsobject<FlutterViewController> flutterViewController(
-        [(FlutterViewController*)weakSelf.get() retain]);
-    if (!flutterViewController) {
-      return;
-    }
-
-    if ([flutterViewController keyboardAnimationView].superview == nil) {
-      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-      [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
-    }
-
-    if ([flutterViewController keyboardSpringAnimation] == nil) {
-      if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
-        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-            flutterViewController.get()
-                .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        [flutterViewController updateViewportMetricsIfNeeded];
-      }
-    } else {
-      fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
-                                   flutterViewController.get().keyboardAnimationStartTime;
-
-      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-          [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      [flutterViewController updateViewportMetricsIfNeeded];
-    }
-  };
-  flutter::Shell& shell = [_engine.get() shell];
+- (void)setupKeyboardAnimationVsyncClient:
+    (FlutterKeyboardAnimationCallback)keyboardAnimationCallback {
+  if (!keyboardAnimationCallback) {
+    return;
+  }
   NSAssert(_keyboardAnimationVSyncClient == nil,
            @"_keyboardAnimationVSyncClient must be nil when setup");
-  _keyboardAnimationVSyncClient =
-      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
-                                     callback:callback];
+
+  // Make sure the new viewport metrics get sent after the begin frame event has processed.
+  fml::scoped_nsprotocol<FlutterKeyboardAnimationCallback> animationCallback(
+      [keyboardAnimationCallback copy]);
+  auto uiCallback = [animationCallback](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
+    fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
+    dispatch_async(dispatch_get_main_queue(), ^(void) {
+      animationCallback.get()(keyboardAnimationTargetTime);
+    });
+  };
+
+  _keyboardAnimationVSyncClient = [[VSyncClient alloc] initWithTaskRunner:[_engine uiTaskRunner]
+                                                                 callback:uiCallback];
   _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVSyncClient await];
 }
@@ -1826,8 +1865,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self setNeedsUpdateOfSupportedInterfaceOrientations];
       }
     } else {
-      UIInterfaceOrientationMask currentInterfaceOrientation =
-          1 << [[UIApplication sharedApplication] statusBarOrientation];
+      UIInterfaceOrientationMask currentInterfaceOrientation;
+      if (@available(iOS 13.0, *)) {
+        UIWindowScene* windowScene = [self windowSceneIfViewLoaded];
+        if (!windowScene) {
+          // When the view is not loaded, it does not make sense to access the interface
+          // orientation, bail.
+          FML_LOG(WARNING) << "Trying to access the window scene before the view is loaded.";
+          return;
+        }
+        currentInterfaceOrientation = 1 << windowScene.interfaceOrientation;
+      } else {
+        currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
+      }
       if (!(_orientationPreferences & currentInterfaceOrientation)) {
         [UIViewController attemptRotationToDeviceOrientation];
         // Force orientation switch if the current orientation is not allowed
@@ -2079,6 +2129,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [self setNeedsStatusBarAppearanceUpdate];
     }
   });
+}
+
+- (void)setPrefersStatusBarHidden:(BOOL)hidden {
+  if (hidden != _flutterPrefersStatusBarHidden) {
+    _flutterPrefersStatusBarHidden = hidden;
+    [self setNeedsStatusBarAppearanceUpdate];
+  }
+}
+
+- (BOOL)prefersStatusBarHidden {
+  return _flutterPrefersStatusBarHidden;
 }
 
 #pragma mark - Platform views

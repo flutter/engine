@@ -14,6 +14,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/snapshot.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -48,6 +49,11 @@ class Contents {
   Contents();
 
   virtual ~Contents();
+
+  /// @brief  Add any text data to the specified lazy atlas.
+  virtual void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale) const {}
 
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
@@ -116,6 +122,15 @@ class Contents {
   ///
   ///        Use of this method is invalid if CanAcceptOpacity returns false.
   virtual void SetInheritedOpacity(Scalar opacity);
+
+  /// @brief Returns a color if this Contents will flood the given `target_size`
+  ///        with a color. This output color is the "Source" color that will be
+  ///        used for the Entity's blend operation.
+  ///
+  ///        This is useful for absorbing full screen solid color draws into
+  ///        subpass clear colors.
+  virtual std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                                 ISize target_size) const;
 
  private:
   std::optional<Rect> coverage_hint_;

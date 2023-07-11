@@ -12,7 +12,7 @@ namespace impeller {
 
 std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
     const std::shared_ptr<Context>& context,
-    const std::shared_ptr<SwapchainImageVK>& swapchain_image,
+    std::shared_ptr<SwapchainImageVK>& swapchain_image,
     SwapCallback swap_callback) {
   if (!context || !swapchain_image || !swap_callback) {
     return nullptr;
@@ -26,12 +26,18 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   msaa_tex_desc.size = swapchain_image->GetSize();
   msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-  auto msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
-  if (!msaa_tex) {
-    VALIDATION_LOG << "Could not allocate MSAA color texture.";
-    return nullptr;
+  std::shared_ptr<Texture> msaa_tex;
+  if (!swapchain_image->HasMSAATexture()) {
+    msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
+    msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
+    if (!msaa_tex) {
+      VALIDATION_LOG << "Could not allocate MSAA color texture.";
+      return nullptr;
+    }
+    swapchain_image->SetMSAATexture(msaa_tex);
+  } else {
+    msaa_tex = swapchain_image->GetMSAATexture();
   }
-  msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
 
   TextureDescriptor resolve_tex_desc;
   resolve_tex_desc.type = TextureType::kTexture2D;

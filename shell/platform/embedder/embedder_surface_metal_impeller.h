@@ -41,7 +41,6 @@ class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
   MetalDispatchTable metal_dispatch_table_;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   std::shared_ptr<impeller::Context> context_;
-  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
 
   // |EmbedderSurface|
   bool IsValid() const override;
@@ -61,6 +60,9 @@ class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
 
   // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
+
+  // |EmbedderSurface|
+  std::shared_ptr<impeller::Context> CreateImpellerContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceMetalImpeller);
 };
