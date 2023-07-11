@@ -199,8 +199,7 @@ class TouchInputListenerServer
       events_received_;
 };
 
-class FlutterTapTestBase : public PortableUITest,
-                           public ::testing::Test {
+class FlutterTapTestBase : public PortableUITest, public ::testing::Test {
  protected:
   ~FlutterTapTestBase() override {
     FML_CHECK(touch_injection_request_count() > 0)
@@ -219,11 +218,14 @@ class FlutterTapTestBase : public PortableUITest,
         },
         kTimeout);
 
-    // Get the display information using the |fuchsia.ui.display.singleton.Info|.
+    // Get the display information using the
+    // |fuchsia.ui.display.singleton.Info|.
     FML_LOG(INFO) << "Waiting for scenic display info";
     std::optional<bool> display_metrics_obtained;
     fuchsia::ui::display::singleton::InfoPtr display_info =
-        realm_root()->component().Connect<fuchsia::ui::display::singleton::Info>();
+        realm_root()
+            ->component()
+            .Connect<fuchsia::ui::display::singleton::Info>();
     display_info->GetMetrics([this, &display_metrics_obtained](auto info) {
       display_width_ = info.extent_in_px().width;
       display_height_ = info.extent_in_px().height;
@@ -232,7 +234,7 @@ class FlutterTapTestBase : public PortableUITest,
     RunLoopUntil([&display_metrics_obtained] {
       return display_metrics_obtained.has_value();
     });
-    
+
     // Register input injection device.
     FML_LOG(INFO) << "Registering input injection device";
     RegisterTouchScreen();
@@ -340,11 +342,14 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
   void LaunchClientWithEmbeddedView() {
     BuildRealm();
 
-    // Get the display information using the |fuchsia.ui.display.singleton.Info|.
+    // Get the display information using the
+    // |fuchsia.ui.display.singleton.Info|.
     FML_LOG(INFO) << "Waiting for scenic display info";
     std::optional<bool> display_metrics_obtained;
     fuchsia::ui::display::singleton::InfoPtr display_info =
-        realm_root()->component().Connect<fuchsia::ui::display::singleton::Info>();
+        realm_root()
+            ->component()
+            .Connect<fuchsia::ui::display::singleton::Info>();
     display_info->GetMetrics([this, &display_metrics_obtained](auto info) {
       display_width_ = info.extent_in_px().width;
       display_height_ = info.extent_in_px().height;
