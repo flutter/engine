@@ -93,7 +93,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VALIDATION_LOG << "Could not create memory allocator";
     return;
   }
-  for (auto i = 0u; i < 3u; i++) {
+  for (auto i = 0u; i < kPoolCount; i++) {
     if (!CreateBufferPool(allocator, &staging_buffer_pools_[i])) {
       return;
     }
@@ -442,7 +442,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
   if (desc.storage_mode == StorageMode::kHostVisible &&
       raster_thread_id_ == std::this_thread::get_id()) {
-    allocation_info.pool = staging_buffer_pools_[frame_count_ % 3u];
+    allocation_info.pool = staging_buffer_pools_[frame_count_ % kPoolCount];
   }
 
   VkBuffer buffer = {};
@@ -490,8 +490,8 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
   allocation_info.preferredFlags =
       ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible);
   // TESTING
-  allocation_info.flags =
-      ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
+  // allocation_info.flags =
+  //     ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
 
   uint32_t memTypeIndex;
   auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(

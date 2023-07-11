@@ -25,9 +25,11 @@ class AllocatorVK final : public Allocator {
  private:
   friend class ContextVK;
 
+  static constexpr size_t kPoolCount = 3;
+
   fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
-  VmaPool staging_buffer_pools_[3] = {};
+  VmaPool staging_buffer_pools_[kPoolCount] = {};
   std::weak_ptr<Context> context_;
   std::weak_ptr<DeviceHolder> device_holder_;
   ISize max_texture_size_;
