@@ -282,7 +282,7 @@ class FlutterTapTestBase : public PortableUITest,
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
 
-  ParamType GetTestUIStackUrl() override { return kTestUIStackUrl; };
+  std::string GetTestUIStackUrl() override { return kTestUIStackUrl; };
 
   TouchInputListenerServer* touch_input_listener_server_;
 };
@@ -344,7 +344,7 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
     FML_LOG(INFO) << "Waiting for scenic display info";
     std::optional<bool> display_metrics_obtained;
     fuchsia::ui::display::singleton::InfoPtr display_info =
-        realm_->component().Connect<fuchsia::ui::display::singleton::Info>();
+        realm_root()->component().Connect<fuchsia::ui::display::singleton::Info>();
     display_info->GetMetrics([this, &display_metrics_obtained](auto info) {
       display_width_ = info.extent_in_px().width;
       display_height_ = info.extent_in_px().height;
