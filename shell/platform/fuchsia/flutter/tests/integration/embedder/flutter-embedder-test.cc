@@ -246,7 +246,8 @@ void FlutterEmbedderTest::SetUpRealmBase() {
 
   // Route UI capabilities from test UI stack to flutter runners.
   realm_builder_.AddRoute(Route{
-      .capabilities = {Protocol{fuchsia::ui::composition::Flatland::Name_},
+      .capabilities = {Protocol{fuchsia::ui::composition::Allocator::Name_},
+                       Protocol{fuchsia::ui::composition::Flatland::Name_},
                        Protocol{fuchsia::ui::scenic::Scenic::Name_}},
       .source = kTestUiStackRef,
       .targets = {kFlutterJitRunnerRef, kFlutterJitProductRunnerRef,
@@ -254,11 +255,13 @@ void FlutterEmbedderTest::SetUpRealmBase() {
 
   // Route test capabilities from test UI stack to test driver.
   realm_builder_.AddRoute(Route{
-      .capabilities = {Protocol{fuchsia::ui::test::input::Registry::Name_},
+      .capabilities = {Protocol{fuchsia::ui::composition::Allocator::Name_},
+                       Protocol{fuchsia::ui::composition::Flatland::Name_},
+                       Protocol{fuchsia::ui::test::input::Registry::Name_},
                        Protocol{fuchsia::ui::test::scene::Controller::Name_},
                        Protocol{fuchsia::ui::scenic::Scenic::Name_}},
       .source = kTestUiStackRef,
-      .targets = {ParentRef{}}});
+      .targets = {ParentRef()}});
 
   // Route ViewProvider from child to parent, and parent to test.
   realm_builder_.AddRoute(
