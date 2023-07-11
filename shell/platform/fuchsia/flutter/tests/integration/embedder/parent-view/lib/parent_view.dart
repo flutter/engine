@@ -20,17 +20,15 @@ void main(List<String> args) async {
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)
     ..addFlag('hitTestable', defaultsTo: true)
-    ..addFlag('focusable', defaultsTo: true)
-    ..addFlag('useFlatland', defaultsTo: false);
+    ..addFlag('focusable', defaultsTo: true);
   final arguments = parser.parse(args);
   for (final option in arguments.options) {
     print('parent-view: $option: ${arguments[option]}');
   }
 
   TestApp app;
-  final useFlatland = arguments['useFlatland'];
   app = TestApp(
-    ChildView(await _launchChildView(useFlatland)),
+    ChildView(await _launchChildView()),
     showOverlay: arguments['showOverlay'],
     hitTestable: arguments['hitTestable'],
     focusable: arguments['focusable'],
@@ -184,8 +182,8 @@ class ChildView {
   }
 }
 
-Future<int> _launchChildView(bool useFlatland) async {
-  final message = Int8List.fromList([useFlatland ? 0x31 : 0x30]);
+Future<int> _launchChildView() async {
+  final message = Int8List.fromList([0x31]);
   final completer = new Completer<ByteData>();
   PlatformDispatcher.instance.sendPlatformMessage(
       'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {

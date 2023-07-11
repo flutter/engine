@@ -28,9 +28,8 @@ void main(List<String> args) async {
     print('embedding-flutter-view args: $option: ${arguments[option]}');
   }
 
-  // TODO(fxbug.dev/125514): Support Flatland Child View.
   TestApp app = TestApp(
-    ChildView(await _launchChildView(false)),
+    ChildView(await _launchChildView()),
     showOverlay: arguments['showOverlay'],
     hitTestable: arguments['hitTestable'],
     focusable: arguments['focusable'],
@@ -220,8 +219,8 @@ class ChildView {
   }
 }
 
-Future<int> _launchChildView(bool useFlatland) async {
-  final message = Int8List.fromList([useFlatland ? 0x31 : 0x30]);
+Future<int> _launchChildView() async {
+  final message = Int8List.fromList([0x31]);
   final completer = new Completer<ByteData>();
   PlatformDispatcher.instance.sendPlatformMessage(
       'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {

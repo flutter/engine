@@ -66,7 +66,8 @@ constexpr char kChildViewUrl[] =
 constexpr char kParentViewUrl[] =
     "fuchsia-pkg://fuchsia.com/parent-view#meta/parent-view.cm";
 static constexpr auto kTestUiStackUrl =
-    "fuchsia-pkg://fuchsia.com/test-ui-stack#meta/test-ui-stack.cm";
+    "fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
+    "test-ui-stack.cm";
 
 constexpr auto kFlutterRunnerEnvironment = "flutter_runner_env";
 constexpr auto kFlutterJitRunner = "flutter_jit_runner";
@@ -84,33 +85,19 @@ constexpr auto kParentViewRef = ChildRef{kParentView};
 constexpr auto kTestUiStack = "ui";
 constexpr auto kTestUiStackRef = ChildRef{kTestUiStack};
 
-constexpr fuchsia_test_utils::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
+// Background and foreground color values.
+constexpr fuchsia_test_utils::Color kParentBackgroundColor = {0xFF, 0x00, 0x00,
                                                               0xFF};  // Blue
 constexpr fuchsia_test_utils::Color kChildBackgroundColor = {0xFF, 0x00, 0xFF,
                                                              0xFF};  // Pink
-
-// TODO(fxb/64201): Remove forced opacity colors when Flatland is enabled.
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor1 = {
-    0x00, 0xFF, 0x0E, 0xFF};  // Green, blended with blue (FEMU local)
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor2 = {
-    0x0E, 0xFF, 0x0E, 0xFF};  // Green, blended with pink (FEMU local)
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor3 = {
-    0x00, 0xFF, 0x0D, 0xFF};  // Green, blended with blue (AEMU infra)
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor4 = {
-    0x0D, 0xFF, 0x0D, 0xFF};  // Green, blended with pink (AEMU infra)
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor5 = {
-    0x00, 0xFE, 0x0D, 0xFF};  // Green, blended with blue (NUC)
-constexpr fuchsia_test_utils::Color kOverlayBackgroundColor6 = {
-    0x0D, 0xFF, 0x00, 0xFF};  // Green, blended with pink (NUC)
+constexpr fuchsia_test_utils::Color kChildTappedColor = {0x00, 0xFF, 0xFF,
+                                                         0xFF};  // Yellow
+constexpr fuchsia_test_utils::Color kFlatlandOverlayColor = {0x00, 0xFF, 0x00,
+                                                             0xFF};  // Green
 
 static size_t OverlayPixelCount(
     std::map<fuchsia_test_utils::Color, size_t>& histogram) {
-  return histogram[kOverlayBackgroundColor1] +
-         histogram[kOverlayBackgroundColor2] +
-         histogram[kOverlayBackgroundColor3] +
-         histogram[kOverlayBackgroundColor4] +
-         histogram[kOverlayBackgroundColor5] +
-         histogram[kOverlayBackgroundColor6];
+  return histogram[kFlatlandOverlayColor];
 }
 
 // Timeout for Scenic's |TakeScreenshot| FIDL call.
