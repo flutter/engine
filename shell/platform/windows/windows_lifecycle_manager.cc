@@ -78,20 +78,20 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
 
     case WM_SIZE:
       if (wpar == SIZE_MAXIMIZED || wpar == SIZE_RESTORED) {
-        OnWindowStateEvent(hwnd, SHOW);
+        OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
       } else if (wpar == SIZE_MINIMIZED) {
-        OnWindowStateEvent(hwnd, HIDE);
+        OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
       }
       break;
 
     case WM_SHOWWINDOW:
       if (!wpar) {
-        OnWindowStateEvent(hwnd, HIDE);
+        OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
       }
       break;
 
     case WM_DESTROY:
-      OnWindowStateEvent(hwnd, HIDE);
+      OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
       break;
   }
   return false;
@@ -197,13 +197,13 @@ void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
 void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
                                                  WindowStateEvent event) {
   // Synthesize an unfocus event when a focused window is hidden.
-  if (event == HIDE && focused_windows_.find(hwnd) != focused_windows_.end()) {
-    OnWindowStateEvent(hwnd, UNFOCUS);
+  if (event == WindowStateEvent::kHide && focused_windows_.find(hwnd) != focused_windows_.end()) {
+    OnWindowStateEvent(hwnd, WindowStateEvent::kUnfocus);
   }
 
   std::lock_guard guard(state_update_lock_);
   switch (event) {
-    case SHOW: {
+    case WindowStateEvent::kShow: {
       bool first_shown_window = visible_windows_.empty();
       auto pair = visible_windows_.insert(hwnd);
       if (first_shown_window && pair.second &&
@@ -212,7 +212,7 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
       }
       break;
     }
-    case HIDE: {
+    case WindowStateEvent::kHide: {
       bool present = visible_windows_.erase(hwnd);
       bool empty = visible_windows_.empty();
       if (present && empty &&
@@ -222,7 +222,7 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
       }
       break;
     }
-    case FOCUS: {
+    case WindowStateEvent::kFocus: {
       bool first_focused_window = focused_windows_.empty();
       auto pair = focused_windows_.insert(hwnd);
       if (first_focused_window && pair.second &&
@@ -231,7 +231,7 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
       }
       break;
     }
-    case UNFOCUS: {
+    case WindowStateEvent::kUnfocus: {
       if (focused_windows_.erase(hwnd) && focused_windows_.empty() &&
           state_ == AppLifecycleState::kResumed) {
         SetLifecycleState(AppLifecycleState::kInactive);

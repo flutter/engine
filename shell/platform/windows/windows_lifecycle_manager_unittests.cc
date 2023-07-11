@@ -19,41 +19,41 @@ TEST_F(WindowsLifecycleManagerTest, StateTransitions) {
 
   // Hidden to inactive upon window shown.
   manager.SetLifecycleState(AppLifecycleState::kHidden);
-  manager.OnWindowStateEvent(win1, SHOW);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kShow);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kInactive);
 
   // Showing a second window does not change state.
-  manager.OnWindowStateEvent(win2, SHOW);
+  manager.OnWindowStateEvent(win2, WindowStateEvent::kShow);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kInactive);
 
   // Inactive to resumed upon window focus.
-  manager.OnWindowStateEvent(win2, FOCUS);
+  manager.OnWindowStateEvent(win2, WindowStateEvent::kFocus);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kResumed);
 
   // Showing a second window does not change state.
-  manager.OnWindowStateEvent(win1, FOCUS);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kFocus);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kResumed);
 
   // Unfocusing one window does not change state while another is focused.
-  manager.OnWindowStateEvent(win1, UNFOCUS);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kUnfocus);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kResumed);
 
   // Unfocusing final remaining focused window transitions to inactive.
-  manager.OnWindowStateEvent(win2, UNFOCUS);
+  manager.OnWindowStateEvent(win2, WindowStateEvent::kUnfocus);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kInactive);
 
   // Hiding one of two visible windows does not change state.
-  manager.OnWindowStateEvent(win2, HIDE);
+  manager.OnWindowStateEvent(win2, WindowStateEvent::kHide);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kInactive);
 
   // Hiding only visible window transitions to hidden.
-  manager.OnWindowStateEvent(win1, HIDE);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kHide);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kHidden);
 
   // Transition directly from resumed to hidden when the window is hidden.
-  manager.OnWindowStateEvent(win1, SHOW);
-  manager.OnWindowStateEvent(win1, FOCUS);
-  manager.OnWindowStateEvent(win1, HIDE);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kShow);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kFocus);
+  manager.OnWindowStateEvent(win1, WindowStateEvent::kHide);
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kHidden);
 }
 

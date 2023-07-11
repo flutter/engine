@@ -61,7 +61,6 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
   MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
-  // MOCK_METHOD1(OnWindowStateEvent, void(WindowStateEvent));
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -231,6 +230,8 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
   win32window.OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindStylus,
                              kDefaultPointerDeviceId);
 
+  // Destruction of win32window sends a HIDE update. In situ, the window is
+  // owned by the delegate, and so is destructed first. Not so here.
   win32window.SetView(nullptr);
 }
 
@@ -339,17 +340,16 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
       });
 
   win32window.InjectWindowMessage(WM_SIZE, 0, 0);
-  EXPECT_EQ(last_event, HIDE);
+  EXPECT_EQ(last_event, WindowStateEvent::kHide);
 
   win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
-  EXPECT_EQ(last_event, SHOW);
+  EXPECT_EQ(last_event, WindowStateEvent::kShow);
 
   win32window.InjectWindowMessage(WM_SETFOCUS, 0, 0);
-  ;
-  EXPECT_EQ(last_event, FOCUS);
+  EXPECT_EQ(last_event, WindowStateEvent::kFocus);
 
   win32window.InjectWindowMessage(WM_KILLFOCUS, 0, 0);
-  EXPECT_EQ(last_event, UNFOCUS);
+  EXPECT_EQ(last_event, WindowStateEvent::kUnfocus);
 }
 
 }  // namespace testing

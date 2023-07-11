@@ -176,13 +176,13 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   // The cursor rect set by Flutter.
   RECT cursor_rect_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindow);
-
   // The window receives resize and focus messages before its view is set, so
   // these values cache the state of the window in the meantime so that the
   // proper application lifecycle state can be updated once the view is set.
   bool restored_;
   bool focused_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindow);
 };
 
 }  // namespace flutter

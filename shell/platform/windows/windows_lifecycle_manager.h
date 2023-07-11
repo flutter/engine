@@ -19,11 +19,11 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
-enum WindowStateEvent {
-  SHOW,
-  HIDE,
-  FOCUS,
-  UNFOCUS,
+enum class WindowStateEvent {
+  kShow,
+  kHide,
+  kFocus,
+  kUnfocus,
 };
 
 /// A manager for lifecycle events of the top-level window.

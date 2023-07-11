@@ -75,17 +75,17 @@ FlutterWindow::FlutterWindow(int width, int height)
 }
 
 FlutterWindow::~FlutterWindow() {
-  OnWindowStateEvent(HIDE);
+  OnWindowStateEvent(WindowStateEvent::kHide);
 }
 
 void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
   direct_manipulation_owner_->SetBindingHandlerDelegate(window);
   if (restored_) {
-    OnWindowStateEvent(SHOW);
+    OnWindowStateEvent(WindowStateEvent::kShow);
   }
   if (focused_) {
-    OnWindowStateEvent(FOCUS);
+    OnWindowStateEvent(WindowStateEvent::kFocus);
   }
 }
 
@@ -338,16 +338,18 @@ bool FlutterWindow::NeedsVSync() {
 
 void FlutterWindow::OnWindowStateEvent(WindowStateEvent event) {
   switch (event) {
-    case SHOW:
+    case WindowStateEvent::kShow:
       restored_ = true;
       break;
-    case HIDE:
-      restored_ = focused_ = false;
+    case WindowStateEvent::kHide:
+      restored_ = false;
+      focused_ = false;
       break;
-    case FOCUS:
-      restored_ = focused_ = true;
+    case WindowStateEvent::kFocus:
+      restored_ = true;
+      focused_ = false;
       break;
-    case UNFOCUS:
+    case WindowStateEvent::kUnfocus:
       focused_ = false;
       break;
   }
