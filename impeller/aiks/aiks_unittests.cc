@@ -408,11 +408,11 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
   paint.color_source = ColorSource::MakeLinearGradient(
       {0, 0}, {200, 200}, std::move(colors), std::move(stops),
       Entity::TileMode::kDecal, {});
-  // Overlay the gradient with 50% green. This should appear as the entire
-  // rectangle being drawn with 50% green, including the border area outside the
+  // Overlay the gradient with 25% green. This should appear as the entire
+  // rectangle being drawn with 25% green, including the border area outside the
   // decal gradient.
   paint.color_filter = ColorFilter::MakeBlend(BlendMode::kSourceOver,
-                                              Color::Green().WithAlpha(0.50));
+                                              Color::Green().WithAlpha(0.25));
 
   paint.color = Color(1.0, 1.0, 1.0, 1.0);
   canvas.DrawRect({0, 0, 600, 600}, paint);
