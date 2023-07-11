@@ -1065,6 +1065,16 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMVerify([self.mockEngine binaryMessenger]);
 }
 
+- (void)testViewControllerIsReleased {
+  __weak FlutterViewController* weakViewController;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+    weakViewController = viewController;
+    [viewController viewDidLoad];
+  }
+  XCTAssertNil(weakViewController);
+}
+
 #pragma mark - Platform Brightness
 
 - (void)testItReportsLightPlatformBrightnessByDefault {
