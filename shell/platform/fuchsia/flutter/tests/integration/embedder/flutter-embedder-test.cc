@@ -90,8 +90,6 @@ constexpr fuchsia_test_utils::Color kParentBackgroundColor = {0xFF, 0x00, 0x00,
                                                               0xFF};  // Blue
 constexpr fuchsia_test_utils::Color kChildBackgroundColor = {0xFF, 0x00, 0xFF,
                                                              0xFF};  // Pink
-constexpr fuchsia_test_utils::Color kChildTappedColor = {0x00, 0xFF, 0xFF,
-                                                         0xFF};  // Yellow
 constexpr fuchsia_test_utils::Color kFlatlandOverlayColor = {0x00, 0xFF, 0x00,
                                                              0xFF};  // Green
 
