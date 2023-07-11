@@ -126,10 +126,13 @@ void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
   g_state.resize_pending = true;
 
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = g_pixelRatio;
+  // TODO(dkwingsmt)
+  event.view_id = kImplicitViewId;
   FlutterEngineSendWindowMetricsEvent(g_state.engine, &event);
 }
 

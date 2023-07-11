@@ -43,7 +43,7 @@
 namespace flutter {
 namespace testing {
 
-static constexpr int64_t kDefaultViewId = 0ll;
+static constexpr int64_t kImplicitViewId = 0ll;
 
 using EmbedderTest = testing::EmbedderTest;
 
@@ -164,7 +164,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -258,7 +258,7 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -331,7 +331,7 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -433,7 +433,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -526,7 +526,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -692,7 +692,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -813,7 +813,7 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-    event.view_id = kDefaultViewId;
+    event.view_id = kImplicitViewId;
     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
               kSuccess);
     ASSERT_TRUE(engine.is_valid());
@@ -888,7 +888,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -999,7 +999,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1181,7 +1181,7 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1211,7 +1211,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1245,7 +1245,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1273,7 +1273,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1308,7 +1308,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1337,7 +1337,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1376,7 +1376,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1481,7 +1481,7 @@ TEST_P(EmbedderTestMultiBackend,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1597,7 +1597,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1701,7 +1701,7 @@ TEST_F(EmbedderTest, VerifyB141980393) {
   event.width = flutter_application_rect.width();
   event.height = flutter_application_rect.height();
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1747,7 +1747,7 @@ TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   task_latch.Wait();
@@ -1809,7 +1809,7 @@ TEST_P(EmbedderTestMultiBackend,
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-    event.view_id = kDefaultViewId;
+    event.view_id = kImplicitViewId;
     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
               kSuccess);
   });
@@ -1919,7 +1919,7 @@ TEST_P(EmbedderTestMultiBackend,
   event.width = 400 * 2.0;
   event.height = 300 * 2.0;
   event.pixel_ratio = 2.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2016,7 +2016,7 @@ TEST_F(
   event.width = 400 * 2.0;
   event.height = 300 * 2.0;
   event.pixel_ratio = 2.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2051,7 +2051,7 @@ TEST_F(EmbedderTest,
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2092,7 +2092,7 @@ TEST_F(EmbedderTest,
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2200,7 +2200,7 @@ TEST_P(EmbedderTestMultiBackend, PlatformViewMutatorsAreValid) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2297,7 +2297,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 2.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2401,7 +2401,7 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 2.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2430,7 +2430,7 @@ TEST_F(EmbedderTest, EmptySceneIsAcceptable) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   latch.Wait();
@@ -2459,7 +2459,7 @@ TEST_F(EmbedderTest, SceneWithNoRootContainerIsAcceptable) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   latch.Wait();
@@ -2495,7 +2495,7 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
   event.width = 800;
   event.height = 1024;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2575,7 +2575,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
   event.width = 400;
   event.height = 300;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2660,7 +2660,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2891,7 +2891,7 @@ TEST_F(EmbedderTest, CompositorCanPostZeroLayersForPresentation) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2955,7 +2955,7 @@ TEST_F(EmbedderTest, CompositorCanPostOnlyPlatformViews) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -2995,7 +2995,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3073,7 +3073,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3100,7 +3100,7 @@ TEST_F(EmbedderTest, FrameInfoContainsValidWidthAndHeight) {
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -3232,7 +3232,7 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -3307,7 +3307,7 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3384,7 +3384,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3460,7 +3460,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3518,7 +3518,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 }
@@ -3565,7 +3565,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesInvalidID) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 }
@@ -3606,7 +3606,7 @@ TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithDisplayId) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3649,7 +3649,7 @@ TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithoutDisplayId) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3699,7 +3699,7 @@ TEST_F(EmbedderTest, SetValidMultiDisplayConfiguration) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3746,7 +3746,7 @@ TEST_F(EmbedderTest, MultipleDisplaysWithSingleDisplayTrueIsInvalid) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3793,7 +3793,7 @@ TEST_F(EmbedderTest, MultipleDisplaysWithSameDisplayIdIsInvalid) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3835,7 +3835,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsNotRecycledWhenAvoidsCacheSet) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -3998,7 +3998,7 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLTexture) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -4062,7 +4062,7 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLFramebuffer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kDefaultViewId;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
