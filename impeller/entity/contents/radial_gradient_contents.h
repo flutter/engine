@@ -61,6 +61,7 @@ class RadialGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
 
   FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
 };

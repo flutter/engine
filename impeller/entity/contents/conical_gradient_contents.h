@@ -60,6 +60,7 @@ class ConicalGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
   std::optional<Point> focus_;
   Scalar focus_radius_ = 0.0f;
 
