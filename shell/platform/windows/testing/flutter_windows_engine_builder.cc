@@ -91,7 +91,6 @@ std::unique_ptr<FlutterWindowsEngine> FlutterWindowsEngineBuilder::Build() {
   }
 
   FlutterProjectBundle project(properties_);
-  project.SetSwitches(switches_);
 
   return std::make_unique<TestFlutterWindowsEngine>(project, get_key_state_,
                                                     map_vk_to_scan_);

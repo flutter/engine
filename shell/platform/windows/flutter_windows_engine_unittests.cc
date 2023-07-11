@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -24,6 +25,26 @@
 
 namespace flutter {
 namespace testing {
+
+namespace {
+// Sets |key=value| in the environment of this process.
+void SetEnvironmentVariable(const char* key, const char* value) {
+#ifdef _WIN32
+  _putenv_s(key, value);
+#else
+  setenv(key, value, 1);
+#endif
+}
+
+// Removes |key| from the environment of this process, if present.
+void ClearEnvironmentVariable(const char* key) {
+#ifdef _WIN32
+  _putenv_s(key, "");
+#else
+  unsetenv(key);
+#endif
+}
+}  // namespace
 
 class FlutterWindowsEngineTest : public WindowsTest {};
 
@@ -224,8 +245,10 @@ TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEUsesSoftware) {
 }
 
 TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEOnImpellerFailsToStart) {
+  SetEnvironmentVariable("FLUTTER_ENGINE_SWITCHES", "1");
+  SetEnvironmentVariable("FLUTTER_ENGINE_SWITCH_1", "enable-impeller=true");
+
   FlutterWindowsEngineBuilder builder{GetContext()};
-  builder.SetSwitches({"--enable-impeller"});
   std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
@@ -255,6 +278,7 @@ TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEOnImpellerFailsToStart) {
   // Set the AngleSurfaceManager to nullptr to test software fallback path.
   modifier.SetSurfaceManager(nullptr);
 
+  ClearEnvironmentVariable("FLUTTER_ENGINE_SWITCHES");
   EXPECT_FALSE(engine->Run());
 }
 
