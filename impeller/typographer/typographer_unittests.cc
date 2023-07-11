@@ -27,7 +27,7 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const TextRenderContext* context,
     GlyphAtlas::Type type,
     Scalar scale,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const TextFrame& frame) {
   FontGlyphPair::Set set;
   frame.CollectUniqueFontGlyphPairs(set, scale);
