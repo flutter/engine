@@ -197,7 +197,8 @@ void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
 void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
                                                  WindowStateEvent event) {
   // Synthesize an unfocus event when a focused window is hidden.
-  if (event == WindowStateEvent::kHide && focused_windows_.find(hwnd) != focused_windows_.end()) {
+  if (event == WindowStateEvent::kHide &&
+      focused_windows_.find(hwnd) != focused_windows_.end()) {
     OnWindowStateEvent(hwnd, WindowStateEvent::kUnfocus);
   }
 

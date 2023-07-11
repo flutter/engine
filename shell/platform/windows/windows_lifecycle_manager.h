@@ -19,6 +19,8 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
+/// An event representing a change in window state that may update the
+// application lifecycle state.
 enum class WindowStateEvent {
   kShow,
   kHide,
@@ -56,8 +58,18 @@ class WindowsLifecycleManager {
   // Signal to start consuming WM_CLOSE messages.
   void BeginProcessingClose();
 
+  // Update the app lifecycle state in response to a change in window state.
+  // When the app lifecycle state actually changes, this sends a platform
+  // message to the framework notifying it of the state change.
   virtual void SetLifecycleState(AppLifecycleState state);
 
+  // Respond to a change in window state. Transitions as follows:
+  // When the only visible window is hidden, transition from resumed or
+  // inactive to hidden.
+  // When the only focused window is unfocused, transition from resumed to
+  // inactive.
+  // When a window is focused, transition from inactive to resumed.
+  // When a window is shown, transition from hidden to inactive.
   virtual void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);
 
   AppLifecycleState GetLifecycleState() { return state_; }

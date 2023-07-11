@@ -353,7 +353,8 @@ Window::HandleMessage(UINT const message,
       current_height_ = height;
       HandleResize(width, height);
 
-      OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide : WindowStateEvent::kShow);
+      OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide
+                                                   : WindowStateEvent::kShow);
       break;
     case WM_PAINT:
       OnPaint();
