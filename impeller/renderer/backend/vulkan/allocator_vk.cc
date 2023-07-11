@@ -209,9 +209,7 @@ static constexpr VkMemoryPropertyFlags ToVKBufferMemoryPropertyFlags(
     StorageMode mode) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
-             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
