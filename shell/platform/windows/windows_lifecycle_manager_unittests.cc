@@ -7,8 +7,8 @@
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "gtest/gtest.h"
 
-namespace flutter{
-namespace testing{
+namespace flutter {
+namespace testing {
 
 class WindowsLifecycleManagerTest : public WindowsTest {};
 
@@ -57,5 +57,5 @@ TEST_F(WindowsLifecycleManagerTest, StateTransitions) {
   EXPECT_EQ(manager.GetLifecycleState(), AppLifecycleState::kHidden);
 }
 
-}
-}
+}  // namespace testing
+}  // namespace flutter

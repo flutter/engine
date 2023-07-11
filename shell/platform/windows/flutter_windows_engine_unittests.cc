@@ -908,7 +908,8 @@ TEST_F(FlutterWindowsEngineTest, AppStartsInResumedState) {
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
-  EXPECT_CALL(*handler, SetLifecycleState(AppLifecycleState::kResumed)).Times(1);
+  EXPECT_CALL(*handler, SetLifecycleState(AppLifecycleState::kResumed))
+      .Times(1);
   modifier.SetLifecycleManager(std::move(handler));
   engine->Run();
 }
@@ -926,14 +927,20 @@ TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   engine->Run();
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_RESTORED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kResumed);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
+      (HWND)1, WM_SIZE, SIZE_RESTORED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+            AppLifecycleState::kResumed);
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_MINIMIZED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kHidden);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
+      (HWND)1, WM_SIZE, SIZE_MINIMIZED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+            AppLifecycleState::kHidden);
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc((HWND)1, WM_SIZE, SIZE_RESTORED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kInactive);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
+      (HWND)1, WM_SIZE, SIZE_RESTORED, 0);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+            AppLifecycleState::kInactive);
 }
 
 }  // namespace testing

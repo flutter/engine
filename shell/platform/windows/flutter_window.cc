@@ -69,9 +69,7 @@ static HCURSOR GetCursorByName(const std::string& cursor_name) {
 }  // namespace
 
 FlutterWindow::FlutterWindow(int width, int height)
-    : binding_handler_delegate_(nullptr),
-      restored_(false),
-      focused_(false) {
+    : binding_handler_delegate_(nullptr), restored_(false), focused_(false) {
   Window::InitializeChild("FLUTTERVIEW", width, height);
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
@@ -340,10 +338,18 @@ bool FlutterWindow::NeedsVSync() {
 
 void FlutterWindow::OnWindowStateEvent(WindowStateEvent event) {
   switch (event) {
-    case SHOW: restored_ = true; break;
-    case HIDE: restored_ = focused_ = false; break;
-    case FOCUS: restored_ = focused_ = true; break;
-    case UNFOCUS: focused_ = false; break;
+    case SHOW:
+      restored_ = true;
+      break;
+    case HIDE:
+      restored_ = focused_ = false;
+      break;
+    case FOCUS:
+      restored_ = focused_ = true;
+      break;
+    case UNFOCUS:
+      focused_ = false;
+      break;
   }
   HWND hwnd = GetWindowHandle();
   if (hwnd && binding_handler_delegate_) {

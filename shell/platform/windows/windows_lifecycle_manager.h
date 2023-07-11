@@ -73,8 +73,6 @@ class WindowsLifecycleManager {
                                LPARAM lparam);
 
  private:
-  
-
   FlutterWindowsEngine* engine_;
 
   std::map<std::tuple<HWND, WPARAM, LPARAM>, int> sent_close_messages_;

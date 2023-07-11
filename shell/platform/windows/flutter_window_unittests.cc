@@ -27,9 +27,7 @@ class MockFlutterWindow : public FlutterWindow {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindow::GetDpiScale()));
   }
-  virtual ~MockFlutterWindow() {
-    SetView(nullptr);
-  }
+  virtual ~MockFlutterWindow() { SetView(nullptr); }
 
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
@@ -63,7 +61,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
   MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
-  //MOCK_METHOD1(OnWindowStateEvent, void(WindowStateEvent));
+  // MOCK_METHOD1(OnWindowStateEvent, void(WindowStateEvent));
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -335,9 +333,10 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
   win32window.SetView(&delegate);
 
   WindowStateEvent last_event;
-  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&last_event](HWND hwnd, WindowStateEvent event) {
-    last_event = event;
-  });
+  ON_CALL(delegate, OnWindowStateEvent)
+      .WillByDefault([&last_event](HWND hwnd, WindowStateEvent event) {
+        last_event = event;
+      });
 
   win32window.InjectWindowMessage(WM_SIZE, 0, 0);
   EXPECT_EQ(last_event, HIDE);
@@ -345,7 +344,8 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
   win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
   EXPECT_EQ(last_event, SHOW);
 
-  win32window.InjectWindowMessage(WM_SETFOCUS, 0, 0);;
+  win32window.InjectWindowMessage(WM_SETFOCUS, 0, 0);
+  ;
   EXPECT_EQ(last_event, FOCUS);
 
   win32window.InjectWindowMessage(WM_KILLFOCUS, 0, 0);
