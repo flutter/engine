@@ -136,6 +136,14 @@ class ContextVK final : public Context,
 
   std::shared_ptr<FenceWaiterVK> GetFenceWaiter() const;
 
+  void MarkRasterThread() const {
+    raster_thread_id_ = std::this_thread::get_id();
+  }
+
+  bool IsOnRasterThread() const {
+    return raster_thread_id_ == std::this_thread::get_id();
+  }
+
  private:
   struct DeviceHolderImpl : public DeviceHolder {
     // |DeviceHolder|
@@ -162,6 +170,7 @@ class ContextVK final : public Context,
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  mutable std::thread::id raster_thread_id_;
   const uint64_t hash_;
 
   bool is_valid_ = false;

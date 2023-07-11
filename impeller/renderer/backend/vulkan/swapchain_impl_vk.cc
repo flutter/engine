@@ -326,6 +326,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
+  context.MarkRasterThread();
 
   current_frame_ = (current_frame_ + 1u) % synchronizers_.size();
 
