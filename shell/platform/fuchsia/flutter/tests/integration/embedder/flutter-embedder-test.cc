@@ -84,18 +84,18 @@ constexpr auto kTestUiStack = "ui";
 constexpr auto kTestUiStackRef = ChildRef{kTestUiStack};
 
 // Background and foreground color values.
-constexpr fuchsia_test_utils::Pixel kParentBackgroundColor = (0xFF,
-                                                              0x00,
-                                                              0x00,
-                                                              0xFF);  // Blue
-constexpr fuchsia_test_utils::Pixel kChildBackgroundColor = (0xFF,
-                                                             0x00,
-                                                             0xFF,
-                                                             0xFF);  // Pink
-constexpr fuchsia_test_utils::Pixel kFlatlandOverlayColor = (0x00,
-                                                             0xFF,
-                                                             0x00,
-                                                             0xFF);  // Green
+const fuchsia_test_utils::Pixel kParentBackgroundColor(0xFF,
+                                                       0x00,
+                                                       0x00,
+                                                       0xFF);  // Blue
+const fuchsia_test_utils::Pixel kChildBackgroundColor(0xFF,
+                                                      0x00,
+                                                      0xFF,
+                                                      0xFF);  // Pink
+const fuchsia_test_utils::Pixel kFlatlandOverlayColor(0x00,
+                                                      0xFF,
+                                                      0x00,
+                                                      0xFF);  // Green
 
 static size_t OverlayPixelCount(
     std::map<fuchsia_test_utils::Pixel, size_t>& histogram) {
@@ -141,7 +141,7 @@ class FlutterEmbedderTest : public ::loop_fixture::RealLoop,
 
   bool TakeScreenshotUntil(
       fuchsia_test_utils::Pixel color,
-      fit::function<void(std::map<fuchsia_test_utils::Pixel, size_t>)>
+      fit::function<void(std::map<fuchsia_test_utils::Pixel, uint32_t>)>
           callback = nullptr,
       zx::duration timeout = kTestTimeout);
 
@@ -390,7 +390,7 @@ fuchsia_test_utils::Screenshot FlutterEmbedderTest::TakeScreenshot() {
 
 bool FlutterEmbedderTest::TakeScreenshotUntil(
     fuchsia_test_utils::Pixel color,
-    fit::function<void(std::map<fuchsia_test_utils::Pixel, size_t>)> callback,
+    fit::function<void(std::map<fuchsia_test_utils::Pixel, uint32_t>)> callback,
     zx::duration timeout) {
   return RunLoopWithTimeoutOrUntil(
       [this, &callback, &color] {
@@ -412,7 +412,7 @@ TEST_F(FlutterEmbedderTest, Embedding) {
   // Take screenshot until we see the child-view's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildBackgroundColor,
-      [](std::map<fuchsia_test_utils::Pixel, size_t> histogram) {
+      [](std::map<fuchsia_test_utils::Pixel, uint32_t> histogram) {
         // Expect parent and child background colors, with parent color > child
         // color.
         EXPECT_GT(histogram[kParentBackgroundColor], 0u);
@@ -428,7 +428,7 @@ TEST_F(FlutterEmbedderTest, EmbeddingWithOverlay) {
   // Take screenshot until we see the child-view's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildBackgroundColor,
-      [](std::map<fuchsia_test_utils::Pixel, size_t> histogram) {
+      [](std::map<fuchsia_test_utils::Pixel, uint32_t> histogram) {
         // Expect parent, overlay and child background colors.
         // With parent color > child color and overlay color > child color.
         const size_t overlay_pixel_count = OverlayPixelCount(histogram);
