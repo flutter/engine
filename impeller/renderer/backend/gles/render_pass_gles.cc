@@ -463,7 +463,7 @@ struct RenderPassData {
     }
 
 // TODO(jonahwilliams): discarding the stencil on the default fbo when running
-// on Windows. Causes Angle to discard the entire render target. Until we know
+// on Windows causes Angle to discard the entire render target. Until we know
 // the reason, default to storing.
 #ifdef FML_OS_WIN
     if (pass_data.discard_stencil_attachment && !is_default_fbo) {
