@@ -277,7 +277,7 @@ class PlatformDispatcher {
   }
 
   void _removeView(Object id) {
-    assert(!_views.containsKey(id));
+    assert(_views.containsKey(id));
     // TODO(dkwingsmt): Reset _implicitView?
     _views.remove(id);
     _viewConfigurations.remove(id);
