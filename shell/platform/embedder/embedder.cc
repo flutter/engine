@@ -64,7 +64,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
 
-#ifdef SHELL_ENABLE_GL
+#if SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
@@ -77,7 +77,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #endif  // SHELL_ENABLE_GL
 
-#ifdef SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 #if IMPELLER_SUPPORTS_RENDERING
