@@ -66,7 +66,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
-#ifdef IMPELLER_SUPPORTS_RENDERING
+#if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
 #include "impeller/core/texture.h"
@@ -80,7 +80,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
-#ifdef IMPELLER_SUPPORTS_RENDERING
+#if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
 #include "impeller/core/texture.h"
