@@ -1,4 +1,4 @@
-Signature: 1efc0e199fc3824f2221533963e4877b
+Signature: 81e9baaa75f3a21e1ad3b90daa9016c2
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8098,6 +8098,7 @@ ORIGIN: ../../../third_party/skia/modules/skottie/src/text/Font.cpp + ../../../t
 ORIGIN: ../../../third_party/skia/modules/skottie/src/text/Font.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_libgrapheme.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/codec/SkAvifCodec.cpp + ../../../third_party/skia/LICENSE
@@ -8125,6 +8126,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/text/Font.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.h
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.cpp
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.h
+FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_libgrapheme.cpp
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp
 FILE: ../../../third_party/skia/src/codec/SkAvifCodec.cpp
