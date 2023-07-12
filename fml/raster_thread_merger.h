@@ -16,6 +16,7 @@
 namespace fml {
 
 class MessageLoopImpl;
+static int id_count = 0;
 
 enum class RasterThreadStatus {
   kRemainsMerged,
@@ -135,6 +136,7 @@ class RasterThreadMerger
   // The platform_queue_id and gpu_queue_id are exactly the same.
   // We consider the threads are always merged and cannot be unmerged.
   bool TaskQueuesAreSame() const;
+  int id_ = 0;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);

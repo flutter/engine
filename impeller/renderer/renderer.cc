@@ -56,7 +56,6 @@ bool Renderer::Render(std::unique_ptr<Surface> surface,
   const auto present_result = surface->Present();
 
   frames_in_flight_sema_->Signal();
-
   return present_result;
 }
 

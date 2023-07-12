@@ -66,6 +66,7 @@ bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
                         "caller is erased in UnMergeNowIfLastOne(). caller="
                      << caller;
   }
+  FML_DLOG(ERROR) << "lease term " << entry->first << " " << entry->second;
   if (IsAllLeaseTermsZeroUnSafe()) {
     // Unmerge now because lease_term_ decreased to zero.
     UnMergeNowUnSafe();
