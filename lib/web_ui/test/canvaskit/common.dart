@@ -15,6 +15,9 @@ import '../common/test_initialization.dart';
 
 const MethodCodec codec = StandardMethodCodec();
 
+bool get canvasKitContainsCodecs =>
+    configuration.canvasKitVariant == CanvasKitVariant.full;
+
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
   setUpUnitTests(

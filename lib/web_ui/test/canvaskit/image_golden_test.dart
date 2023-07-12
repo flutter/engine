@@ -62,6 +62,15 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
   final List<String> warnings = <String>[];
   late void Function(String) oldPrintWarning;
 
+  final bool runGroup;
+  if (useBrowserImageDecoder) {
+    // We can't use browser codecs if the browser doesn't support them.
+    runGroup = browserSupportsImageDecoder;
+  } else {
+    // If CanvasKit doesn't contain codecs, we can't use them.
+    runGroup = canvasKitContainsCodecs;
+  }
+
   group('($mode)', () {
     setUp(() {
       browserSupportsImageDecoder = useBrowserImageDecoder;
@@ -96,7 +105,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
       // Disallow double-dispose.
       expect(() => image.dispose(), throwsAssertionError);
-    });
+    }, skip: !canvasKitContainsCodecs);
 
     test('CkAnimatedImage iterates frames correctly', () async {
       final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
@@ -109,7 +118,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       await expectFrameData(frame2, <int>[0, 255, 0, 255]);
       final ui.FrameInfo frame3 = await image.getNextFrame();
       await expectFrameData(frame3, <int>[0, 0, 255, 255]);
-    });
+    }, skip: !canvasKitContainsCodecs);
 
     group('[image codecs]', () {
       test('CkImage toString', () {
@@ -174,7 +183,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         expect((await image.toByteData()).lengthInBytes, greaterThan(0));
         expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
       });
-    }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+    }, skip: !canvasKitContainsCodecs);
 
     test('toByteData with decodeImageFromPixels on videoFrame formats', () async {
       // This test ensures that toByteData() returns pixels that can be used by decodeImageFromPixels
@@ -320,7 +329,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         expect(image.height, 1);
         image.dispose();
         codec.dispose();
-    });
+    }, skip: !canvasKitContainsCodecs);
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
         () async {
@@ -793,7 +802,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           Uint8List.fromList(<int>[0xff, 0xd8, 0xff, 0xe2, 0x0c, 0x58, 0x49, 0x43, 0x43, 0x5f])),
         'image/jpeg');
     });
-  }, timeout: const Timeout.factor(10)); // These tests can take a while. Allow for a longer timeout.
+  }, skip: !runGroup, timeout: const Timeout.factor(10)); // These tests can take a while. Allow for a longer timeout.
 }
 
 /// Tests specific to WASM codecs bundled with CanvasKit.

@@ -128,7 +128,7 @@ void testMain() {
         expect(imageShader.ref, isNull);
         expect(image.debugDisposed, true);
       });
-    }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+    }, skip: !canvasKitContainsCodecs);
   });
 }
 

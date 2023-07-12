@@ -296,7 +296,7 @@ void _imageTests() {
       ),
       isNotNull,
     );
-  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+  }, skip: !canvasKitContainsCodecs);
 
   test('MakeAnimatedImageFromEncoded makes an animated image', () {
     final SkAnimatedImage animated =
@@ -311,14 +311,14 @@ void _imageTests() {
       expect(frame.height(), 1);
       expect(animated.decodeNextFrame(), 100);
     }
-  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+  }, skip: !canvasKitContainsCodecs);
 
   test('MakeAnimatedImageFromEncoded throws with Chromium variant', () {
     expect(
       () => canvasKit.MakeAnimatedImageFromEncoded(kAnimatedGif),
-      throwsA(isA<AssertionError>()),
+      canvasKitContainsCodecs ? returnsNormally : throwsAssertionError,
     );
-  }, skip: configuration.canvasKitVariant != CanvasKitVariant.chromium);
+  });
 }
 
 void _shaderTests() {
@@ -1160,7 +1160,7 @@ void _canvasTests() {
       canvasKit.BlendMode.SrcOver,
       Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
     );
-  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+  }, skip: !canvasKitContainsCodecs);
 
   test('drawCircle', () {
     canvas.drawCircle(1, 2, 3, SkPaint());
@@ -1242,7 +1242,7 @@ void _canvasTests() {
         SkPaint(),
       );
     });
-  }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+  }, skip: !canvasKitContainsCodecs);
 
   test('drawLine', () {
     canvas.drawLine(0, 1, 2, 3, SkPaint());
