@@ -14,8 +14,6 @@
 #include <tuple>
 #include <vector>
 
-#include "color.h"
-
 namespace fuchsia_test_utils {
 static uint8_t linear_to_srgb(const float val) {
   // Function to convert from linear RGB to sRGB.
@@ -77,7 +75,7 @@ class Screenshot {
              uint64_t width,
              uint64_t height,
              int rotation);
-             
+
   // Returns the |Pixel| located at (x,y) coordinates. |x| and |y| should range
   // from [0,width_) and [0,height_) respectively.
   //
