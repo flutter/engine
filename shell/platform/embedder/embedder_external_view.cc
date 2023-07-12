@@ -143,6 +143,12 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     return false;
   }
 
+  bool invalidate_gl_state = render_target.MaybeMakeCurrent();
+  // TODO(ardera): Implement
+  // if (invalidate_gl_state) {
+  //   skia_surface->recordingContext()->asDirectContext()->resetContext(kAll_GrBackendState);
+  // }
+
   FML_DCHECK(render_target.GetRenderTargetSize() == render_surface_size_);
 
   auto canvas = skia_surface->getCanvas();

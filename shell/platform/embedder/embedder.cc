@@ -278,6 +278,13 @@ static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
                   static_cast<int32_t>(flutter_rect.bottom)};
   return rect;
 }
+
+// We need GL_BGRA8_EXT for creating SkSurfaces from FlutterOpenGLSurfaces
+// below.
+#ifndef GL_BGRA8_EXT
+#define GL_BGRA8_EXT 0x93A1
+#endif
+
 #endif
 
 static inline flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -829,6 +836,47 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
+    const FlutterOpenGLSurface* surface) {
+#ifdef SHELL_ENABLE_GL
+  GrGLFramebufferInfo framebuffer_info = {};
+  framebuffer_info.fFormat = GL_BGRA8_EXT;
+  framebuffer_info.fFBOID = 0;
+
+  GrBackendRenderTarget backend_render_target(
+      config.size.width,   // width
+      config.size.height,  // height
+      1,                   // sample count
+      0,                   // stencil bits
+      framebuffer_info     // framebuffer info
+  );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  auto sk_surface = SkSurfaces::WrapBackendRenderTarget(
+      context,                      //  context
+      backend_render_target,        // backend render target
+      kBottomLeft_GrSurfaceOrigin,  // surface origin
+      kN32_SkColorType,             // color type
+      SkColorSpace::MakeSRGB(),     // color space
+      &surface_properties,          // surface properties
+      static_cast<SkSurfaces::RenderTargetReleaseProc>(
+          surface->destruction_callback),  // release proc
+      surface->user_data                   // release context
+  );
+
+  if (!sk_surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied frame-buffer.";
+    return nullptr;
+  }
+  return sk_surface;
+#else
+  return nullptr;
+#endif
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
     const FlutterSoftwareBackingStore* software) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(config.size.width, config.size.height);
@@ -1155,12 +1203,22 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 static std::unique_ptr<flutter::EmbedderRenderTarget>
 MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
                               sk_sp<SkSurface> skia_surface,
-                              fml::closure on_release) {
+                              fml::closure on_release,
+                              fml::closure on_make_current) {
   if (!skia_surface) {
     return nullptr;
   }
   return std::make_unique<flutter::EmbedderRenderTargetSkia>(
-      backing_store, std::move(skia_surface), std::move(on_release));
+      backing_store, std::move(skia_surface), std::move(on_release),
+      std::move(on_make_current));
+}
+
+static std::unique_ptr<flutter::EmbedderRenderTarget>
+MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
+                              sk_sp<SkSurface> skia_surface,
+                              fml::closure on_release) {
+  return MakeRenderTargetFromSkSurface(backing_store, skia_surface, on_release,
+                                       nullptr);
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -1229,6 +1287,24 @@ CreateEmbedderRenderTarget(
             render_target = MakeRenderTargetFromSkSurface(
                 backing_store, std::move(skia_surface),
                 collect_callback.Release());
+            break;
+          }
+
+          case kFlutterOpenGLTargetTypeSurface: {
+            auto skia_surface = MakeSkSurfaceFromBackingStore(
+                context, config, &backing_store.open_gl.surface);
+
+            auto make_current_callback =
+                backing_store.open_gl.surface.make_current_callback;
+            auto make_current_context = backing_store.open_gl.surface.user_data;
+
+            auto on_make_current = [=] {
+              make_current_callback(make_current_context);
+            };
+
+            render_target = MakeRenderTargetFromSkSurface(
+                backing_store, std::move(skia_surface),
+                collect_callback.Release(), on_make_current);
             break;
           }
         }

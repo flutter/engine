@@ -77,6 +77,18 @@ class EmbedderRenderTarget {
   ///
   const FlutterBackingStore* GetBackingStore() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Sometimes render targets are actually (for example)
+  ///             EGL surfaces instead of framebuffers or textures.
+  ///             In that case, we can't fully wrap them as SkSurfaces, instead,
+  ///             the embedder will provide a callback that should be called
+  ///             when the target surface should be made current.
+  ///
+  /// @return     True if any GL (not EGL) state has changed and skia should
+  ///             not assume any GL state values are the same as before
+  ///             MaybeMakeCurrent was called.
+  virtual bool MaybeMakeCurrent() const { return false; }
+
  protected:
   //----------------------------------------------------------------------------
   /// @brief      Creates a render target whose backing store is managed by the

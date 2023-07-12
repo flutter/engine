@@ -13,7 +13,8 @@ class EmbedderRenderTargetSkia final : public EmbedderRenderTarget {
  public:
   EmbedderRenderTargetSkia(FlutterBackingStore backing_store,
                            sk_sp<SkSurface> render_surface,
-                           fml::closure on_release);
+                           fml::closure on_release,
+                           fml::closure on_make_current);
 
   // |EmbedderRenderTarget|
   ~EmbedderRenderTargetSkia() override;
@@ -30,8 +31,21 @@ class EmbedderRenderTargetSkia final : public EmbedderRenderTarget {
   // |EmbedderRenderTarget|
   SkISize GetRenderTargetSize() const override;
 
+  bool MaybeMakeCurrent() const override {
+    if (on_make_current_ != nullptr) {
+      on_make_current_();
+
+      /// TODO: Implement return value
+      return false;
+    }
+
+    return false;
+  }
+
  private:
   sk_sp<SkSurface> render_surface_;
+
+  fml::closure on_make_current_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderRenderTargetSkia);
 };

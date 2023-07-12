@@ -11,9 +11,11 @@ namespace flutter {
 EmbedderRenderTargetSkia::EmbedderRenderTargetSkia(
     FlutterBackingStore backing_store,
     sk_sp<SkSurface> render_surface,
-    fml::closure on_release)
+    fml::closure on_release,
+    fml::closure on_make_current)
     : EmbedderRenderTarget(backing_store, std::move(on_release)),
-      render_surface_(std::move(render_surface)) {
+      render_surface_(std::move(render_surface)),
+      on_make_current_(std::move(on_make_current)) {
   FML_DCHECK(render_surface_);
 }
 

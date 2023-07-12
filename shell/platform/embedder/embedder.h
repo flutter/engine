@@ -304,6 +304,9 @@ typedef enum {
   /// Specifies an OpenGL frame-buffer target type. Framebuffers are specified
   /// using the FlutterOpenGLFramebuffer struct.
   kFlutterOpenGLTargetTypeFramebuffer,
+  /// Specifies an OpenGL on-screen surface target type. Surfaces are specified
+  /// using the FlutterOpenGLSurface struct.
+  kFlutterOpenGLTargetTypeSurface,
 } FlutterOpenGLTargetType;
 
 /// A pixel format to be used for software rendering.
@@ -407,6 +410,21 @@ typedef struct {
   /// collect the framebuffer.
   VoidCallback destruction_callback;
 } FlutterOpenGLFramebuffer;
+
+typedef struct {
+  size_t struct_size;
+
+  /// User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+
+  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// make the window surface current.
+  VoidCallback make_current_callback;
+
+  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// collect the framebuffer.
+  VoidCallback destruction_callback;
+} FlutterOpenGLSurface;
 
 typedef bool (*BoolCallback)(void* /* user data */);
 typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
@@ -1619,6 +1637,9 @@ typedef struct {
     /// A framebuffer for Flutter to render into. The embedder must ensure that
     /// the framebuffer is complete.
     FlutterOpenGLFramebuffer framebuffer;
+    /// A surface for Flutter to render into. Basically a wrapper around
+    /// a closure that'll be called when the surface should be made current.
+    FlutterOpenGLSurface surface;
   };
 } FlutterOpenGLBackingStore;
 
