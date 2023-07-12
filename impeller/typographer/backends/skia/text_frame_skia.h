@@ -5,7 +5,6 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
-#include "impeller/geometry/path.h"
 #include "impeller/typographer/text_frame.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
