@@ -92,7 +92,8 @@ const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
     return GetSwitchesFromEnvironment();
   }
   std::vector<std::string> switches;
-  switches.insert(switches.end(), engine_switches_.begin(), engine_switches_.end());
+  switches.insert(switches.end(), engine_switches_.begin(),
+                  engine_switches_.end());
 
   auto env_switches = GetSwitchesFromEnvironment();
   switches.insert(switches.end(), env_switches.begin(), env_switches.end());

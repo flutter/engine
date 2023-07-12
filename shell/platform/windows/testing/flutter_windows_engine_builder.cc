@@ -62,7 +62,8 @@ void FlutterWindowsEngineBuilder::AddDartEntrypointArgument(std::string arg) {
   dart_entrypoint_arguments_.emplace_back(std::move(arg));
 }
 
-void FlutterWindowsEngineBuilder::SetSwitches(std::vector<std::string> switches) {
+void FlutterWindowsEngineBuilder::SetSwitches(
+    std::vector<std::string> switches) {
   switches_ = std::move(switches);
 }
 
