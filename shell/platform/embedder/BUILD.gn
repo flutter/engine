@@ -124,6 +124,7 @@ template("embedder_source_set") {
           "embedder_surface_gl_impeller.cc",
           "embedder_surface_gl_impeller.h",
         ]
+        deps += [ "//flutter/impeller/renderer/backend/gles" ]
       }
     }
 
@@ -152,6 +153,7 @@ template("embedder_source_set") {
           "embedder_surface_metal_impeller.h",
           "embedder_surface_metal_impeller.mm",
         ]
+        deps += [ "//flutter/impeller/renderer/backend/metal" ]
       }
 
       cflags_objc = flutter_cflags_objc
