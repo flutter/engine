@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "flutter/shell/common/shell_io_manager.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -49,7 +48,6 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
       fbo_reset_after_present_(fbo_reset_after_present),
       external_view_embedder_(std::move(external_view_embedder)),
       worker_(std::make_shared<ReactorWorker>()) {
-  worker_->SetReactionsAllowedOnCurrentThread(true);
   // Make sure all required members of the dispatch table are checked.
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
@@ -80,6 +78,7 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
     return;
   }
 
+  worker_->SetReactionsAllowedOnCurrentThread(true);
   auto worker_id = impeller_context_->AddReactorWorker(worker_);
   if (!worker_id.has_value()) {
     FML_LOG(ERROR) << "Could not add reactor worker.";
@@ -177,19 +176,13 @@ EmbedderSurfaceGLImpeller::CreateImpellerContext() const {
 // |EmbedderSurface|
 sk_sp<GrDirectContext> EmbedderSurfaceGLImpeller::CreateResourceContext()
     const {
-  sk_sp<GrDirectContext> resource_context;
   if (gl_dispatch_table_.gl_make_resource_current_callback()) {
     worker_->SetReactionsAllowedOnCurrentThread(true);
-    // TODO(chinmaygarde): Currently, this code depends on the fact that only
-    // the OpenGL surface will be able to make a resource context current. If
-    // this changes, this assumption breaks. Handle the same.
-    resource_context = ShellIOManager::CreateCompatibleResourceLoadingContext(
-        GrBackend::kOpenGL_GrBackend,
-        GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
   } else {
     FML_DLOG(ERROR) << "Could not make the resource context current.";
+    worker_->SetReactionsAllowedOnCurrentThread(false);
   }
-  return resource_context;
+  return nullptr;
 }
 
 }  // namespace flutter
