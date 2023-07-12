@@ -14,8 +14,6 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_DEBUG=1" ]
   }
 
-  print("THERE!!!")
-  print(impeller_supports_rendering)
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }

@@ -64,28 +64,30 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
 
-#if SHELL_ENABLE_GL
+// Note: the IMPELLER_SUPPORTS_RENDERING may be defined even when the
+// embedder/BUILD.gn variable impeller_supports_rendering is disabled.
+#ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
-#if IMPELLER_SUPPORTS_RENDERING
-#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
-#include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
-#include "impeller/core/texture.h"
-#include "impeller/renderer/backend/gles/context_gles.h"
-#include "impeller/renderer/backend/gles/texture_gles.h"
-#include "impeller/renderer/context.h"
-#include "impeller/renderer/render_target.h"
+#ifdef IMPELLER_SUPPORTS_RENDERING
+#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
+#include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
+#include "impeller/core/texture.h"                        // nogncheck
+#include "impeller/renderer/backend/gles/context_gles.h"  // nogncheck
+#include "impeller/renderer/backend/gles/texture_gles.h"  // nogncheck
+#include "impeller/renderer/context.h"                    // nogncheck
+#include "impeller/renderer/render_target.h"              // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #endif  // SHELL_ENABLE_GL
 
-#if SHELL_ENABLE_METAL
+#ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
-#if IMPELLER_SUPPORTS_RENDERING
-#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"
-#include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"
-#include "impeller/core/texture.h"
-#include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"
-#include "impeller/renderer/render_target.h"
+#ifdef IMPELLER_SUPPORTS_RENDERING
+#include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
+#include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"  // nogncheck
+#include "impeller/core/texture.h"                                // nogncheck
+#include "impeller/renderer/backend/metal/texture_wrapper_mtl.h"  // nogncheck
+#include "impeller/renderer/render_target.h"                      // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #endif  // SHELL_ENABLE_METAL
 
