@@ -91,7 +91,7 @@ void testMain() {
       );
 
       final CkPicture picture = recorder.endRecording() as CkPicture;
-      final ui.Rect bounds = picture.cullRect();
+      final ui.Rect bounds = picture.cullRect;
       // Top left bounded by the red rrect, right bounded by right edge
       // of red rrect, bottom bounded by bottom of green circle.
       expect(bounds, equals(const ui.Rect.fromLTRB(20, 20, 300, 300)));
@@ -105,7 +105,7 @@ void testMain() {
       canvas.drawColor(red, ui.BlendMode.src);
 
       final CkPicture picture = recorder.endRecording() as CkPicture;
-      final ui.Rect bounds = picture.cullRect();
+      final ui.Rect bounds = picture.cullRect;
       // Since the drawColor command fills the entire canvas, the computed
       // bounds default to the cullRect that is passed in when the
       // PictureRecorder is created, ie ui.Rect.largest.

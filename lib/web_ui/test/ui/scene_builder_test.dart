@@ -218,7 +218,6 @@ Future<void> testMain() async {
       sceneBuilder.pushImageFilter(ui.ImageFilter.blur(
         sigmaX: 5.0,
         sigmaY: 5.0,
-        tileMode: ui.TileMode.decal,
       ));
 
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
