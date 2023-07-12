@@ -198,7 +198,10 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                                : caps.maxImageCount  // max zero means no limit
   );
   swapchain_info.imageArrayLayers = 1u;
-  swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+  // Swapchain images are primarily used as color attachments (via resolve) or
+  // blit targets.
+  swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
+                              vk::ImageUsageFlagBits::eTransferDst;
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back
@@ -404,15 +407,15 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
                                  .GetEncoder()
                                  ->GetCommandBuffer();
   {
-    LayoutTransition transition;
-    transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
-    transition.cmd_buffer = vk_final_cmd_buffer;
-    transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-    transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    transition.dst_access = {};
-    transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+    BarrierVK barrier;
+    barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+    barrier.cmd_buffer = vk_final_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    barrier.dst_access = {};
+    barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
 
-    if (!image->SetLayout(transition)) {
+    if (!image->SetLayout(barrier)) {
       return false;
     }
 
