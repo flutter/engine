@@ -39,7 +39,6 @@ sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
   auto context = GetDelegate().GetAiksContext();
   if (context) {
-    context->GetContext()->GetResourceAllocator()->IncrementFrame();
     auto max_size = context->GetContext()
                         ->GetResourceAllocator()
                         ->GetMaxTextureSizeSupported();

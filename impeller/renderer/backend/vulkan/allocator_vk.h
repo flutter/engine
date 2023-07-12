@@ -53,7 +53,7 @@ class AllocatorVK final : public Allocator {
   bool IsValid() const;
 
   // |Allocator|
-  void IncrementFrame() override;
+  void DidAcquireSurfaceFrame() override;
 
   // |Allocator|
   std::shared_ptr<DeviceBuffer> OnCreateBuffer(

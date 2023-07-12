@@ -105,7 +105,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
 AllocatorVK::~AllocatorVK() {
   TRACE_EVENT0("impeller", "DestroyAllocatorVK");
   if (allocator_) {
-    for (auto i = 0u; i < 3u; i++) {
+    for (auto i = 0u; i < kPoolCount; i++) {
       if (staging_buffer_pools_[i]) {
         ::vmaDestroyPool(allocator_, staging_buffer_pools_[i]);
       }
@@ -413,7 +413,7 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   return std::make_shared<TextureVK>(context_, std::move(source));
 }
 
-void AllocatorVK::IncrementFrame() {
+void AllocatorVK::DidAcquireSurfaceFrame() {
   frame_count_++;
   raster_thread_id_ = std::this_thread::get_id();
 }

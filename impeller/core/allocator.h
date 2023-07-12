@@ -47,7 +47,7 @@ class Allocator {
 
   /// @brief Increment an internal frame used to cycle through a ring buffer of
   /// allocation pools.
-  virtual void IncrementFrame();
+  virtual void DidAcquireSurfaceFrame();
 
  protected:
   Allocator();
