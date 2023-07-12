@@ -54,7 +54,7 @@ config("embedder_jit_snapshot_setup") {
 # different flags.
 template("embedder_source_set") {
   forward_variables_from(invoker, "*")
-  print("HERE!!!!!!!!!!!!!!!!!!!!!)
+  print("HERE!!!!!!!!!!!!!!!!!!!!!")
   print(impeller_supports_rendering)
   print(shell_enable_gl)
 
