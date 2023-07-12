@@ -150,6 +150,9 @@ class FlutterEmbedderTest : public ::loop_fixture::RealLoop,
   // Wrapped in optional since the view is not created until the middle of SetUp
   component_testing::RealmBuilder realm_builder_;
   std::unique_ptr<component_testing::RealmRoot> realm_;
+
+  uint64_t display_width_ = 0;
+  uint64_t display_height_ = 0;
 };
 
 void FlutterEmbedderTest::SetUpRealmBase() {
