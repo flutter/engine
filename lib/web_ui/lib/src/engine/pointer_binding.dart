@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:js_interop';
 import 'dart:math' as math;
 
@@ -25,7 +26,7 @@ const bool _debugLogPointerEvents = false;
 const bool _debugLogFlutterEvents = false;
 
 /// The signature of a callback that handles pointer events.
-typedef _PointerDataCallback = void Function(Iterable<ui.PointerData>);
+typedef _PointerDataCallback = void Function(DomEvent event, List<ui.PointerData>);
 
 // The mask for the bitfield of event buttons. Buttons not contained in this
 // mask are cut off.
@@ -103,6 +104,8 @@ class PointerBinding {
     }
   }
 
+  final ClickDebouncer clickDebouncer = ClickDebouncer();
+
   /// Performs necessary clean up for PointerBinding including removing event listeners
   /// and clearing the existing pointer state
   void dispose() {
@@ -156,20 +159,195 @@ class PointerBinding {
   // TODO(dit): remove old API fallbacks, https://github.com/flutter/flutter/issues/116141
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
-      return _PointerAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
+      return _PointerAdapter(clickDebouncer.onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     // Fallback for Safari Mobile < 13. To be removed.
     if (_detector.hasTouchEvents) {
-      return _TouchAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
+      return _TouchAdapter(clickDebouncer.onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     // Fallback for Safari Desktop < 13. To be removed.
     if (_detector.hasMouseEvents) {
-      return _MouseAdapter(_onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
+      return _MouseAdapter(clickDebouncer.onPointerData, flutterViewElement, _pointerDataConverter, _keyboardConverter);
     }
     throw UnsupportedError('This browser does not support pointer, touch, or mouse events.');
   }
+}
 
-  void _onPointerData(Iterable<ui.PointerData> data) {
+typedef QueuedEvent = ({ DomEvent event, Duration timeStamp, List<ui.PointerData> data });
+
+typedef _DebounceState = ({
+  DomElement target,
+  Timer timer,
+  List<QueuedEvent> queue,
+});
+
+/// Disambiguates taps and clicks that are produced both by the framework from
+/// `pointerdown`/`pointerup` events and those detected as DOM "click" events by
+/// the browser.
+///
+/// The implementation is waiting for a `pointerdown`, and as soon as it sees
+/// one stops forwarding pointer events to the framework, and instead queues
+/// them in a list. The queuing process stops as soon as one of the following
+/// two conditions happens first:
+///
+/// * 200ms passes after the `pointerdown` event. Most clicks, even slow ones,
+///   are typically done by then. Importantly, screen readers simulate clicks
+///   much faster than 200ms. So if the timer expires, it is likely the user is
+///   not interested in producing a click, so the debouncing process stops and
+///   all queued events are forwarded to the framework. If, for example, a
+///   tappable node is inside a scrollable viewport, the events can be
+///   intrepreted by the framework to initiate scrolling.
+/// * A `click` event arrives. If the event queue has not been flushed to the
+///   framework, the event is forwarded to the framework as a
+///   `SemanticsAction.tap`, and all the pointer events are dropped. If, by the
+///   time the click event arrives, the queue was flushed (but no more than 50ms
+///   ago), then the click event is dropped instead under the assumption that
+///   the flushed pointer events are interpreted by the framework as the desired
+///   gesture.
+///
+/// This mechanism is in place to deal with https://github.com/flutter/flutter/issues/130162.
+class ClickDebouncer {
+  _DebounceState? _state;
+
+  bool get isDebouncing => _state != null;
+
+  void onPointerData(DomEvent event, List<ui.PointerData> data) {
+    if (!EnginePlatformDispatcher.instance.semanticsEnabled) {
+      _sendToFramework(event, data);
+      return;
+    }
+
+    if (isDebouncing) {
+      _debounce(event, data);
+    } else if (event.type == 'pointerdown') {
+      _startDebouncing(event, data);
+    } else {
+      _sendToFramework(event, data);
+    }
+  }
+
+  /// Notifies the debouncer about a browser-recognized click event.
+  ///
+  /// Returns true if the click event should be deduplicated. Returns false if
+  /// the click event should not be deduplicated.
+  bool onClick(DomEvent click) {
+    assert(click.type == 'click');
+
+    if (!isDebouncing) {
+      return _shouldDeduplicateClickEvent(click);
+    }
+
+    final _DebounceState state = _state!;
+    _state = null;
+    state.timer.cancel();
+    return false;
+  }
+
+  void _startDebouncing(DomEvent event, List<ui.PointerData> data) {
+    assert(
+      _state == null,
+      'Cannot start debouncing. Already debouncing.'
+    );
+    assert(
+      event.type == 'pointerdown',
+      'Click debouncing must begin with a pointerdown'
+    );
+
+    final DomEventTarget? target = event.target;
+    if (target is DomElement && target.hasAttribute('flt-tappable')) {
+      _state = (
+        target: target,
+        // The 200ms duration was chosen empirically by testing tapping, mouse
+        // clicking, trackpad tapping and clicking, as well as the following
+        // screen readers: TalkBack on Android, VoiceOver on macOS, Narrator/
+        // NVDA/JAWS on Windows. 200ms seemed to hit the sweet spot by
+        // satisfying the following:
+        //   * It was short enough that delaying the `pointerdown` still allowed
+        //     drag gestures to begin reasonably soon (e.g. scrolling).
+        //   * It was long enough to register taps and clicks.
+        //   * It was successful at detecting taps generated by all tested
+        //     screen readers.
+        timer: Timer(const Duration(milliseconds: 200), _onTimerExpired),
+        queue: <QueuedEvent>[(
+          event: event,
+          timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+          data: data,
+        )],
+      );
+    } else {
+      // The event landed on an non-tappable target. Assume this won't lead to
+      // double clicks and forward the event to the framework.
+      _sendToFramework(event, data);
+    }
+  }
+
+  void _debounce(DomEvent event, List<ui.PointerData> data) {
+    assert(
+      _state != null,
+      'Cannot debounce event. Debouncing state not established by _startDebouncing.'
+    );
+
+    final _DebounceState state = _state!;
+    state.queue.add((
+      event: event,
+      timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+      data: data,
+    ));
+
+    // It's only interesting to debounce clicks when both `pointerdown` and
+    // `pointerup` land on the same element.
+    if (event.type == 'pointerup') {
+      final bool targetChanged = event.target != state.target;
+      if (targetChanged) {
+        _flush();
+      }
+    }
+  }
+
+  void _onTimerExpired() {
+    if (!isDebouncing) {
+      return;
+    }
+    _flush();
+  }
+
+  Duration? _lastFlushedPointerUpTimeStamp;
+
+  // If the click event happens soon after the last `pointerup` event that was
+  // already flushed to the framework, the click event is dropped to avoid
+  // double click.
+  bool _shouldDeduplicateClickEvent(DomEvent click) {
+    final Duration? lastFlushedPointerUpTimeStamp = _lastFlushedPointerUpTimeStamp;
+
+    if (lastFlushedPointerUpTimeStamp == null) {
+      // We haven't seen a pointerup. It's standalone click event. Let it through.
+      return false;
+    }
+
+    final Duration clickTimeStamp = _BaseAdapter._eventTimeStampToDuration(click.timeStamp!);
+    final Duration delta = clickTimeStamp - lastFlushedPointerUpTimeStamp;
+    return delta < const Duration(milliseconds: 50);
+  }
+
+  void _flush() {
+    assert(_state != null);
+
+    final _DebounceState state = _state!;
+    state.timer.cancel();
+
+    final List<ui.PointerData> aggregateData = <ui.PointerData>[];
+    for (final QueuedEvent queuedEvent in state.queue) {
+      if (queuedEvent.event.type == 'pointerup') {
+        _lastFlushedPointerUpTimeStamp = queuedEvent.timeStamp;
+      }
+      aggregateData.addAll(queuedEvent.data);
+    }
+
+    _sendToFramework(null, aggregateData);
+    _state = null;
+  }
+
+  void _sendToFramework(DomEvent? event, List<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data.toList());
     if (_debugLogFlutterEvents) {
       for(final ui.PointerData datum in data) {
@@ -198,65 +376,50 @@ class _Listener {
     required this.target,
     required this.handler,
     required this.useCapture,
-    required this.isNative,
   });
 
-  /// Registers a listener for the given [event] on [target] using the Dart-to-JS API.
+  /// Registers a listener for the given `event` on a `target`.
+  ///
+  /// If `passive` is null uses the default behavior determined by the event
+  /// type. If `passive` is true, marks the handler as non-blocking for the
+  /// built-in browser behavior. This means the browser will not wait for the
+  /// handler to finish execution before performing the default action
+  /// associated with this event. If `passive` is false, the browser will wait
+  /// for the handler to finish execution before performing the respective
+  /// action.
   factory _Listener.register({
     required String event,
     required DomEventTarget target,
     required DartDomEventListener handler,
     bool capture = false,
+    bool? passive,
   }) {
     final DomEventListener jsHandler = createDomEventListener(handler);
-    final _Listener listener = _Listener._(
-      event: event,
-      target: target,
-      handler: jsHandler,
-      useCapture: capture,
-      isNative: false,
-    );
-    target.addEventListener(event, jsHandler, capture);
-    return listener;
-  }
+    if (passive == null) {
+      target.addEventListener(event, jsHandler, capture);
+    } else {
+      final Map<String, Object> eventOptions = <String, Object>{
+        'capture': capture,
+        'passive': passive,
+      };
+      target.addEventListenerWithOptions(event, jsHandler, eventOptions);
+    }
 
-  /// Registers a listener for the given [event] on [target] using the native JS API.
-  factory _Listener.registerNative({
-    required String event,
-    required DomEventTarget target,
-    required DomEventListener jsHandler,
-    bool capture = false,
-    bool passive = false,
-  }) {
-    final Map<String, Object> eventOptions = <String, Object>{
-      'capture': capture,
-      'passive': passive,
-    };
-    final _Listener listener = _Listener._(
+    return _Listener._(
       event: event,
       target: target,
       handler: jsHandler,
       useCapture: capture,
-      isNative: true,
     );
-    target.addEventListenerWithOptions(event, jsHandler, eventOptions);
-    return listener;
   }
 
   final String event;
-
   final DomEventTarget target;
   final DomEventListener handler;
-
   final bool useCapture;
-  final bool isNative;
 
   void unregister() {
-    if (isNative) {
-      target.removeEventListener(event, handler, useCapture);
-    } else {
-      target.removeEventListener(event, handler, useCapture);
-    }
+    target.removeEventListener(event, handler, useCapture);
   }
 }
 
@@ -496,10 +659,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(DartDomEventListener handler) {
-    _listeners.add(_Listener.registerNative(
+    _listeners.add(_Listener.register(
       event: 'wheel',
       target: flutterViewElement,
-      jsHandler: createDomEventListener(handler),
+      handler: handler,
+      passive: false,
     ));
   }
 
@@ -509,7 +673,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(_convertWheelEventToPointerData(event));
+    _callback(e, _convertWheelEventToPointerData(event));
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
     //
@@ -759,7 +923,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
           buttons: event.buttons!.toInt(),
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
@@ -776,7 +940,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
         _convertEventsToPointerData(data: pointerData, event: event, details: move);
       }
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     _addPointerEventListener(flutterViewElement, 'pointerleave', (DomPointerEvent event) {
@@ -786,7 +950,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final _SanitizedDetails? details = sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
       if (details != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
-        _callback(pointerData);
+        _callback(event, pointerData);
       }
     }, useCapture: false, checkModifiers: false);
 
@@ -799,7 +963,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         _removePointerIfUnhoverable(event);
         if (details != null) {
           _convertEventsToPointerData(data: pointerData, event: event, details: details);
-          _callback(pointerData);
+          _callback(event, pointerData);
         }
       }
     });
@@ -815,7 +979,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
         _removePointerIfUnhoverable(event);
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
-        _callback(pointerData);
+        _callback(event, pointerData);
       }
     }, checkModifiers: false);
 
@@ -954,7 +1118,7 @@ class _TouchAdapter extends _BaseAdapter {
           );
         }
       }
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     _addTouchEventListener(flutterViewElement, 'touchmove', (DomTouchEvent event) {
@@ -973,7 +1137,7 @@ class _TouchAdapter extends _BaseAdapter {
           );
         }
       }
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     _addTouchEventListener(flutterViewElement, 'touchend', (DomTouchEvent event) {
@@ -995,7 +1159,7 @@ class _TouchAdapter extends _BaseAdapter {
           );
         }
       }
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     _addTouchEventListener(flutterViewElement, 'touchcancel', (DomTouchEvent event) {
@@ -1014,7 +1178,7 @@ class _TouchAdapter extends _BaseAdapter {
           );
         }
       }
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
   }
 
@@ -1112,7 +1276,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
           buttons: event.buttons!.toInt(),
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
@@ -1124,7 +1288,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
       final _SanitizedDetails move = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
       _convertEventsToPointerData(data: pointerData, event: event, details: move);
-      _callback(pointerData);
+      _callback(event, pointerData);
     });
 
     _addMouseEventListener(flutterViewElement, 'mouseleave', (DomMouseEvent event) {
@@ -1132,7 +1296,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final _SanitizedDetails? details = _sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
       if (details != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
-        _callback(pointerData);
+        _callback(event, pointerData);
       }
     }, useCapture: false);
 
@@ -1142,7 +1306,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons?.toInt());
       if (sanitizedDetails != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
-        _callback(pointerData);
+        _callback(event, pointerData);
       }
     });
 
