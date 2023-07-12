@@ -535,15 +535,9 @@ std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
 
 std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
     const {
-  auto tls_pool = CommandPoolVK::GetThreadLocal(this);
-  if (!tls_pool) {
-    return nullptr;
-  }
   auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      device_holder_,          //
-      queues_.graphics_queue,  //
-      tls_pool,                //
-      fence_waiter_            //
+      weak_from_this(),  //
+      fence_waiter_      //
       ));
   if (!encoder->IsValid()) {
     return nullptr;

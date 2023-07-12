@@ -26,9 +26,7 @@ int32_t CountStringViewInstances(const std::vector<std::string>& strings,
 TEST(PassBindingsCacheTest, bindPipeline) {
   auto context = CreateMockVulkanContext();
   PassBindingsCache cache;
-  auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context->GetDeviceHolder(),
-                           context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context,
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   VkPipeline vk_pipeline = reinterpret_cast<VkPipeline>(0xfeedface);
@@ -43,9 +41,7 @@ TEST(PassBindingsCacheTest, bindPipeline) {
 TEST(PassBindingsCacheTest, setStencilReference) {
   auto context = CreateMockVulkanContext();
   PassBindingsCache cache;
-  auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context->GetDeviceHolder(),
-                           context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context,
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   cache.SetStencilReference(
@@ -61,9 +57,7 @@ TEST(PassBindingsCacheTest, setStencilReference) {
 TEST(PassBindingsCacheTest, setScissor) {
   auto context = CreateMockVulkanContext();
   PassBindingsCache cache;
-  auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context->GetDeviceHolder(),
-                           context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context,
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   vk::Rect2D scissors;
@@ -78,8 +72,7 @@ TEST(PassBindingsCacheTest, setViewport) {
   auto context = CreateMockVulkanContext();
   PassBindingsCache cache;
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context->GetDeviceHolder(),
-                           context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context,
                            context->GetFenceWaiter());
   auto buffer = encoder.GetCommandBuffer();
   vk::Viewport viewports;

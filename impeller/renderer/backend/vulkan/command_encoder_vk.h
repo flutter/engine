@@ -10,6 +10,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
@@ -31,9 +32,7 @@ class CommandEncoderVK {
   using SubmitCallback = std::function<void(bool)>;
 
   // Visible for testing.
-  CommandEncoderVK(const std::weak_ptr<const DeviceHolder>& device_holder,
-                   const std::shared_ptr<QueueVK>& queue,
-                   const std::shared_ptr<CommandPoolVK>& pool,
+  CommandEncoderVK(const std::weak_ptr<const ContextVK>& context,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);
 
   ~CommandEncoderVK();
@@ -68,11 +67,14 @@ class CommandEncoderVK {
  private:
   friend class ContextVK;
 
-  std::weak_ptr<const DeviceHolder> device_holder_;
-  std::shared_ptr<QueueVK> queue_;
+  bool Prepare() const;
+
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
-  std::shared_ptr<TrackedObjectsVK> tracked_objects_;
+  std::weak_ptr<const ContextVK> context_;
+  mutable std::shared_ptr<QueueVK> queue_;
+  mutable std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   bool is_valid_ = false;
+  mutable bool is_initialized_ = false;
 
   void Reset();
 
