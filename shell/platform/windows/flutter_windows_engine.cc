@@ -378,13 +378,13 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   FlutterRendererConfig renderer_config;
 
   if (enable_impeller_) {
+    // Impeller does not support a Software backend. Avoid falling back and
+    // confusing the engine on which renderer is selected.
     if (!surface_manager_) {
       FML_LOG(ERROR) << "Could not create surface manager. Impeller backend "
                         "does not support software rendering.";
       return false;
     }
-    // Impeller does not support a Software backend. Avoid falling back and
-    // confusing the engine on which renderer is selected.
     renderer_config = GetOpenGLRendererConfig();
   } else {
     renderer_config = surface_manager_ ? GetOpenGLRendererConfig()
