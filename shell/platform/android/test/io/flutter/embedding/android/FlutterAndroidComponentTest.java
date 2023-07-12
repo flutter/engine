@@ -390,6 +390,11 @@ public class FlutterAndroidComponentTest {
     }
 
     @Override
+    public boolean shouldAttachToEngineManually() {
+      return false;
+    }
+
+    @Override
     public void onFlutterSurfaceViewCreated(@NonNull FlutterSurfaceView flutterSurfaceView) {}
 
     @Override

@@ -1407,6 +1407,19 @@ public class FlutterActivity extends Activity
     return true;
   }
 
+  /**
+   * Whether to manually attach the {@link FlutterView} to the engine by the host application.
+   *
+   * <p>Returning {@code true} means that the responsibility of attaching the {@link FlutterView} to
+   * the engine will be taken over by the host application.
+   *
+   * <p>Defaults to {@code false}.
+   */
+  @Override
+  public boolean shouldAttachToEngineManually() {
+    return false;
+  }
+
   @Override
   public boolean popSystemNavigator() {
     // Hook for subclass. No-op if returns false.
