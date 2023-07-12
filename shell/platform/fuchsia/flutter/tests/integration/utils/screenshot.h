@@ -39,13 +39,6 @@ struct Pixel {
   Pixel(uint8_t blue, uint8_t green, uint8_t red, uint8_t alpha)
       : blue(blue), green(green), red(red), alpha(alpha) {}
 
-  static Pixel from_unorm_bgra(float blue, float green, float red,
-                               float alpha) {
-    return Pixel{linear_to_srgb(blue), linear_to_srgb(green),
-                 linear_to_srgb(red),
-                 static_cast<uint8_t>(roundf(alpha * 255U))};
-  }
-
   bool operator==(const Pixel& rhs) const {
     return blue == rhs.blue && green == rhs.green && red == rhs.red &&
            alpha == rhs.alpha;
@@ -80,9 +73,11 @@ class Screenshot {
   // |rotation| - The display rotation value in degrees. The width and the
   //    height of the screenshot are flipped if this value is 90 or 270 degrees,
   //    as the screenshot shows how content is seen by the user.
-  Screenshot(const zx::vmo& screenshot_vmo, uint64_t width, uint64_t height,
+  Screenshot(const zx::vmo& screenshot_vmo,
+             uint64_t width,
+             uint64_t height,
              int rotation);
-
+             
   // Returns the |Pixel| located at (x,y) coordinates. |x| and |y| should range
   // from [0,width_) and [0,height_) respectively.
   //

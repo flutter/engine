@@ -39,7 +39,6 @@ executable("flutter-embedder-test-bin") {
     "$fuchsia_sdk_root/pkg:zx",
     "//flutter/fml",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:check_view",
-    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:color",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",

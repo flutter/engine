@@ -84,11 +84,17 @@ constexpr auto kTestUiStack = "ui";
 constexpr auto kTestUiStackRef = ChildRef{kTestUiStack};
 
 // Background and foreground color values.
-constexpr fuchsia_test_utils::Pixel kParentBackgroundColor = (0xFF, 0x00, 0x00,
+constexpr fuchsia_test_utils::Pixel kParentBackgroundColor = (0xFF,
+                                                              0x00,
+                                                              0x00,
                                                               0xFF);  // Blue
-constexpr fuchsia_test_utils::Pixel kChildBackgroundColor = (0xFF, 0x00, 0xFF,
+constexpr fuchsia_test_utils::Pixel kChildBackgroundColor = (0xFF,
+                                                             0x00,
+                                                             0xFF,
                                                              0xFF);  // Pink
-constexpr fuchsia_test_utils::Pixel kFlatlandOverlayColor = (0x00, 0xFF, 0x00,
+constexpr fuchsia_test_utils::Pixel kFlatlandOverlayColor = (0x00,
+                                                             0xFF,
+                                                             0x00,
                                                              0xFF);  // Green
 
 static size_t OverlayPixelCount(
@@ -326,7 +332,7 @@ void FlutterEmbedderTest::LaunchParentViewInRealm(
     return display_metrics_obtained.has_value();
   });
   FML_LOG(INFO) << "Got display_width " << display_width_ << " display_height "
-            << display_height_;
+                << display_height_;
 
   // Instruct Test UI Stack to present parent-view's View.
   std::optional<zx_koid_t> view_ref_koid;
@@ -378,8 +384,8 @@ fuchsia_test_utils::Screenshot FlutterEmbedderTest::TakeScreenshot() {
       << "Timed out waiting for screenshot.";
   FML_LOG(INFO) << "Screenshot captured.";
 
-  return fuchsia_test_utils::Screenshot(response->vmo(), display_width_,
-                                display_height_, /*display_rotation*/ 0);
+  return fuchsia_test_utils::Screenshot(
+      response->vmo(), display_width_, display_height_, /*display_rotation*/ 0);
 }
 
 bool FlutterEmbedderTest::TakeScreenshotUntil(

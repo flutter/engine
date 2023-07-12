@@ -15,11 +15,13 @@
 
 namespace fuchsia_test_utils {
 namespace {
-  constexpr uint64_t kBytesPerPixel = 4;
+constexpr uint64_t kBytesPerPixel = 4;
 }  // namespace
 
-Screenshot::Screenshot(const zx::vmo& screenshot_vmo, uint64_t width,
-                       uint64_t height, int rotation)
+Screenshot::Screenshot(const zx::vmo& screenshot_vmo,
+                       uint64_t width,
+                       uint64_t height,
+                       int rotation)
     : width_(width), height_(height) {
   FML_CHECK(rotation == 0 || rotation == 90 || rotation == 270);
   if (rotation == 90 || rotation == 270) {
@@ -40,6 +42,7 @@ Screenshot::Screenshot(const zx::vmo& screenshot_vmo, uint64_t width,
   status = zx::vmar::root_self()->unmap(address, vmo_size);
   FML_CHECK(status == ZX_OK);
 }
+
 std::ostream& operator<<(std::ostream& stream, const Pixel& pixel) {
   return stream << "{Pixel:"
                 << " r:" << static_cast<unsigned int>(pixel.red)
@@ -47,10 +50,13 @@ std::ostream& operator<<(std::ostream& stream, const Pixel& pixel) {
                 << " b:" << static_cast<unsigned int>(pixel.blue)
                 << " a:" << static_cast<unsigned int>(pixel.alpha) << "}";
 }
+
 Pixel Screenshot::GetPixelAt(uint64_t x, uint64_t y) const {
-  FML_CHECK(x >= 0 && x < width_ && y >= 0 && y < height_) << "Index out of bounds";
+  FML_CHECK(x >= 0 && x < width_ && y >= 0 && y < height_)
+      << "Index out of bounds";
   return screenshot_[y][x];
 }
+
 std::map<Pixel, uint32_t> Screenshot::Histogram() const {
   std::map<Pixel, uint32_t> histogram;
   FML_CHECK(screenshot_.size() == height_ && screenshot_[0].size() == width_);
@@ -61,6 +67,7 @@ std::map<Pixel, uint32_t> Screenshot::Histogram() const {
   }
   return histogram;
 }
+
 void Screenshot::ExtractScreenshotFromVMO(uint8_t* screenshot_vmo) {
   FML_CHECK(screenshot_vmo);
   for (size_t i = 0; i < height_; i++) {
@@ -69,6 +76,7 @@ void Screenshot::ExtractScreenshotFromVMO(uint8_t* screenshot_vmo) {
     screenshot_.push_back(GetPixelsInRow(screenshot_vmo, i));
   }
 }
+
 std::vector<Pixel> Screenshot::GetPixelsInRow(uint8_t* screenshot_vmo,
                                               size_t row_index) {
   std::vector<Pixel> row;
