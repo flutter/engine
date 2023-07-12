@@ -97,8 +97,8 @@ const fuchsia_test_utils::Pixel kFlatlandOverlayColor(0x00,
                                                       0x00,
                                                       0xFF);  // Green
 
-static size_t OverlayPixelCount(
-    std::map<fuchsia_test_utils::Pixel, size_t>& histogram) {
+static uint32_t OverlayPixelCount(
+    std::map<fuchsia_test_utils::Pixel, uint32_t>& histogram) {
   return histogram[kFlatlandOverlayColor];
 }
 
@@ -431,7 +431,7 @@ TEST_F(FlutterEmbedderTest, EmbeddingWithOverlay) {
       [](std::map<fuchsia_test_utils::Pixel, uint32_t> histogram) {
         // Expect parent, overlay and child background colors.
         // With parent color > child color and overlay color > child color.
-        const size_t overlay_pixel_count = OverlayPixelCount(histogram);
+        const uint32_t overlay_pixel_count = OverlayPixelCount(histogram);
         EXPECT_GT(histogram[kParentBackgroundColor], 0u);
         EXPECT_GT(overlay_pixel_count, 0u);
         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
