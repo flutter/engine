@@ -133,7 +133,10 @@ template("embedder_source_set") {
         "embedder_render_target_impeller.h",
       ]
 
-      deps += [ "//flutter/impeller" ]
+      deps += [
+        "//flutter/impeller",
+        "//flutter/impeller/renderer",
+      ]
     }
 
     if (embedder_enable_metal) {
