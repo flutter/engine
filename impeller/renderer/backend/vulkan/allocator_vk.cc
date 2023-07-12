@@ -186,35 +186,35 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
   return VMA_MEMORY_USAGE_AUTO;
 }
 
-static constexpr VkMemoryPropertyFlags ToVKTextureMemoryPropertyFlags(
-    StorageMode mode,
-    bool supports_memoryless_textures) {
+static constexpr vk::Flags<vk::MemoryPropertyFlagBits>
+ToVKTextureMemoryPropertyFlags(StorageMode mode,
+                               bool supports_memoryless_textures) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
-             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+      return vk::MemoryPropertyFlagBits::eHostVisible |
+             vk::MemoryPropertyFlagBits::eDeviceLocal |
+             vk::MemoryPropertyFlagBits::eHostCoherent;
     case StorageMode::kDevicePrivate:
-      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
     case StorageMode::kDeviceTransient:
       if (supports_memoryless_textures) {
-        return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT |
-               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        return vk::MemoryPropertyFlagBits::eLazilyAllocated |
+               vk::MemoryPropertyFlagBits::eDeviceLocal;
       }
-      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
   }
   FML_UNREACHABLE();
 }
 
-static constexpr VkMemoryPropertyFlags ToVKBufferMemoryPropertyFlags(
-    StorageMode mode) {
+static constexpr vk::Flags<vk::MemoryPropertyFlagBits>
+ToVKBufferMemoryPropertyFlags(StorageMode mode) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+      return vk::MemoryPropertyFlagBits::eHostVisible;
     case StorageMode::kDevicePrivate:
-      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
     case StorageMode::kDeviceTransient:
-      return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      return vk::MemoryPropertyFlagBits::eLazilyAllocated;
   }
   FML_UNREACHABLE();
 }
@@ -294,8 +294,9 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKTextureMemoryPropertyFlags(
-        desc.storage_mode, supports_memoryless_textures);
+    alloc_nfo.preferredFlags =
+        static_cast<VkMemoryPropertyFlags>(ToVKTextureMemoryPropertyFlags(
+            desc.storage_mode, supports_memoryless_textures));
     alloc_nfo.flags =
         ToVmaAllocationCreateFlags(desc.storage_mode, /*is_texture=*/true,
                                    desc.GetByteSizeOfBaseMipLevel());
@@ -436,8 +437,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags =
-      ToVKBufferMemoryPropertyFlags(desc.storage_mode);
+  allocation_info.preferredFlags = static_cast<VkMemoryPropertyFlags>(
+      ToVKBufferMemoryPropertyFlags(desc.storage_mode));
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
   if (created_buffer_pools_ && desc.storage_mode == StorageMode::kHostVisible &&
       raster_thread_id_ == std::this_thread::get_id()) {
@@ -486,8 +487,8 @@ bool AllocatorVK::CreateBufferPool(VmaAllocator allocator, VmaPool* pool) {
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
-  allocation_info.preferredFlags =
-      ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible);
+  allocation_info.preferredFlags = static_cast<VkMemoryPropertyFlags>(
+      ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible));
   allocation_info.flags =
       ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
 
