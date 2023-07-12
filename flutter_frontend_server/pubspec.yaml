@@ -18,7 +18,7 @@ homepage: https://flutter.dev
 # relative to this directory into //third_party/dart
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: '>=3.0.0-0 <4.0.0'
 
 dependencies:
   args: any
@@ -49,6 +49,8 @@ dependency_overrides:
     path: ../../third_party/dart/pkg/compiler
   crypto:
     path: ../../third_party/dart/third_party/pkg/crypto
+  dart_internal:
+    path: ../../third_party/dart/pkg/dart_internal
   dart2js_info:
     path: ../../third_party/dart/pkg/dart2js_info
   dev_compiler:

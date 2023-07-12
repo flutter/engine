@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'common.dart';
 
@@ -92,6 +93,37 @@ void testMain() {
       expect(await matchImage(tabImage, spaceImage), isTrue);
       expect(await matchImage(tabImage, tofuImage), isFalse);
     });
+
+    group('test fonts in flutterTester environment', () {
+      final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
+      ui_web.debugEmulateFlutterTesterEnvironment = true;
+      tearDownAll(() => ui_web.debugEmulateFlutterTesterEnvironment = resetValue);
+      const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
+
+      test('The default test font is used when a non-test fontFamily is specified', () {
+        final String defaultTestFontFamily = testFonts.first;
+
+        expect(CkTextStyle(fontFamily: 'BogusFontFamily').fontFamily, defaultTestFontFamily);
+        expect(CkParagraphStyle(fontFamily: 'BogusFontFamily').getTextStyle().fontFamily, defaultTestFontFamily);
+        expect(CkStrutStyle(fontFamily: 'BogusFontFamily'), CkStrutStyle(fontFamily: defaultTestFontFamily));
+      });
+
+      test('The default test font is used when fontFamily is unspecified', () {
+        final String defaultTestFontFamily = testFonts.first;
+
+        expect(CkTextStyle().fontFamily, defaultTestFontFamily);
+        expect(CkParagraphStyle().getTextStyle().fontFamily, defaultTestFontFamily);
+        expect(CkStrutStyle(), CkStrutStyle(fontFamily: defaultTestFontFamily));
+      });
+
+      test('Can specify test fontFamily to use', () {
+        for (final String testFont in testFonts) {
+          expect(CkTextStyle(fontFamily: testFont).fontFamily, testFont);
+          expect(CkParagraphStyle(fontFamily: testFont).getTextStyle().fontFamily, testFont);
+        }
+      });
+    });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);
+
 }

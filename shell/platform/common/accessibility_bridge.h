@@ -48,18 +48,13 @@ class AccessibilityBridge
   AccessibilityBridge();
   virtual ~AccessibilityBridge();
 
-  //-----------------------------------------------------------------------------
-  /// @brief      The ID of the root node in the accessibility tree. In Flutter,
-  //              this is always 0.
-  static constexpr int32_t kRootNodeId = 0;
-
   //------------------------------------------------------------------------------
   /// @brief      Adds a semantics node update to the pending semantics update.
   ///             Calling this method alone will NOT update the semantics tree.
   ///             To flush the pending updates, call the CommitUpdates().
   ///
-  /// @param[in]  node           A pointer to the semantics node update.
-  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node);
+  /// @param[in]  node           A reference to the semantics node update.
+  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode2& node);
 
   //------------------------------------------------------------------------------
   /// @brief      Adds a custom semantics action update to the pending semantics
@@ -67,10 +62,10 @@ class AccessibilityBridge
   ///             semantics tree. To flush the pending updates, call the
   ///             CommitUpdates().
   ///
-  /// @param[in]  action           A pointer to the custom semantics action
+  /// @param[in]  action           A reference to the custom semantics action
   ///                              update.
   void AddFlutterSemanticsCustomActionUpdate(
-      const FlutterSemanticsCustomAction* action);
+      const FlutterSemanticsCustomAction2& action);
 
   //------------------------------------------------------------------------------
   /// @brief      Flushes the pending updates and applies them to this
@@ -162,16 +157,6 @@ class AccessibilityBridge
   virtual std::shared_ptr<FlutterPlatformNodeDelegate>
   CreateFlutterPlatformNodeDelegate() = 0;
 
-  //------------------------------------------------------------------------------
-  /// @brief      Recreate all FlutterPlatformNodeDelegates.
-  ///
-  ///             This can be useful for subclasses when updating some
-  ///             properties that are used by node delegates, such as views.
-  ///             Each node is recreated using
-  ///             CreateFlutterPlatformNodeDelegate, then initialized using
-  ///             AXNodes from their corresponding old one.
-  void RecreateNodeDelegates();
-
  private:
   // See FlutterSemanticsNode in embedder.h
   typedef struct {
@@ -250,9 +235,9 @@ class AccessibilityBridge
                                    const SemanticsNode& node);
   void SetTreeData(const SemanticsNode& node, ui::AXTreeUpdate& tree_update);
   SemanticsNode FromFlutterSemanticsNode(
-      const FlutterSemanticsNode* flutter_node);
+      const FlutterSemanticsNode2& flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(
-      const FlutterSemanticsCustomAction* flutter_custom_action);
+      const FlutterSemanticsCustomAction2& flutter_custom_action);
 
   // |AXTreeObserver|
   void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;

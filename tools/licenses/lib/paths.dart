@@ -58,6 +58,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/benchmark', // only used by tests
   r'third_party/boringssl/src/crypto/err/err_data_generate.go',
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
+  r'third_party/boringssl/src/rust', // rust-related code is not shipped
   r'third_party/boringssl/src/util', // code generators, not shipped
   r'third_party/colorama/src/demos',
   r'third_party/colorama/src/screenshots',
@@ -90,6 +91,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/flatbuffers/python',
   r'third_party/flatbuffers/rust',
   r'third_party/flatbuffers/ts',
+  r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/fontconfig', // not used in standard configurations
   r'third_party/freetype2/builds',
   r'third_party/freetype2/src/tools',
@@ -132,6 +134,17 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libwebp/webp_js',
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/ocmock', // only used for tests
+  r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/protos', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/python/perfetto/trace_processor', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/ipc', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/profiling/memory', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/tools', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
+  r'third_party/protobuf', // build-time dependency only
   r'third_party/pkg/archive', // contains nothing that ends up in the binary executable
   r'third_party/pkg/equatable',
   r'third_party/pkg/file',
@@ -167,6 +180,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/skia/third_party/libjpeg-turbo', // we use our own version
   r'third_party/skia/third_party/libpng', // we use our own version
   r'third_party/skia/third_party/lua', // not linked in
+  r'third_party/skia/third_party/vello', // not linked in
   r'third_party/skia/tools', // contains nothing that ends up in the binary executable
   r'third_party/swiftshader', // only used on hosts for tests
   r'third_party/tinygltf',
@@ -399,6 +413,7 @@ final Set<String> skippedCommonFiles = <String>{
 // Keep this list in lexical order.
 final Set<String> skippedCommonExtensions = <String>{
   r'.1',
+  r'.3',
   r'.5',
   r'.autopkg',
   r'.build',

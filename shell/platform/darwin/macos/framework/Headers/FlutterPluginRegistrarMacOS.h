@@ -36,10 +36,13 @@ FLUTTER_DARWIN_EXPORT
 @property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
- * The view displaying Flutter content. May return |nil|, for instance in a headless environment.
+ * The view displaying Flutter content.
  *
- * WARNING: If/when multiple Flutter views within the same application are supported (#30701), this
- * API will change.
+ * This property is provided for backwards compatibility for apps
+ * that assume a single view. This will eventually be replaced by
+ * a multi-view API variant.
+ *
+ * This method may return |nil|, for instance in a headless environment.
  */
 @property(nullable, readonly) NSView* view;
 
@@ -60,6 +63,27 @@ FLUTTER_DARWIN_EXPORT
  */
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId;
+
+/**
+ * Returns the file name for the given asset.
+ * The returned file name can be used to access the asset in the application's main bundle.
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @return the file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset;
+
+/**
+ * Returns the file name for the given asset which originates from the specified package.
+ * The returned file name can be used to access the asset in the application's main bundle.
+ *
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @param package The name of the package from which the asset originates.
+ * @return the file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                           fromPackage:(nonnull NSString*)package;
 
 @end
 

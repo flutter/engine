@@ -8,8 +8,6 @@ import 'package:image/image.dart';
 import 'package:path/path.dart' as p;
 import 'package:skia_gold_client/skia_gold_client.dart';
 
-import 'environment.dart';
-
 /// Compares a screenshot taken through a test with its golden.
 ///
 /// Used by Flutter Web Engine unit tests and the integration tests.
@@ -22,14 +20,16 @@ Future<String> compareImage(
   Image screenshot,
   bool doUpdateScreenshotGoldens,
   String filename,
+  Directory suiteGoldenDirectory,
   SkiaGoldClient? skiaClient, {
   required bool isCanvaskitTest,
+  required bool verbose,
 }) async {
   if (skiaClient == null) {
     return 'OK';
   }
 
-  final String screenshotPath = _getFullScreenshotPath(filename);
+  final String screenshotPath = p.join(suiteGoldenDirectory.path, filename);
   final File screenshotFile = File(screenshotPath);
   await screenshotFile.create(recursive: true);
   await screenshotFile.writeAsBytes(encodePng(screenshot), flush: true);
@@ -69,20 +69,17 @@ Future<String> compareImage(
     // At the moment, we don't support local screenshot testing because we use
     // Skia Gold to handle our screenshots and diffing. In the future, we might
     // implement local screenshot testing if there's a need.
-    print('Screenshot generated: file://$screenshotPath'); // ignore: avoid_print
+    if (verbose) {
+      print('Screenshot generated: file://$screenshotPath'); // ignore: avoid_print
+    }
     return 'OK';
   }
 
   // TODO(mdebbar): Use the Gold tool to locally diff the golden.
-
   return 'OK';
 }
 
 Future<Image?> _getGolden(String filename) {
   // TODO(mdebbar): Fetch the golden from Skia Gold.
   return Future<Image?>.value();
-}
-
-String _getFullScreenshotPath(String filename) {
-  return p.join(environment.webUiSkiaGoldDirectory.path, filename);
 }

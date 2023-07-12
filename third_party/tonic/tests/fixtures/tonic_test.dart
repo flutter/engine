@@ -65,18 +65,6 @@ void callEchoIntPtr() {
   }
 }
 
-// Test helpers for calls with float through Tonic.
-
-@Native<Float Function(Float)>(symbol: 'EchoFloat')
-external double echoFloat(double arg);
-
-@pragma('vm:entry-point')
-void callEchoFloat() {
-  if (echoFloat(23.0) == 23.0) {
-    signalDone();
-  }
-}
-
 // Test helpers for calls with double through Tonic.
 
 @Native<Double Function(Double)>(symbol: 'EchoDouble')
@@ -139,7 +127,7 @@ void callEchoVector() {
 
 // Test helpers for calls with DartWrappable through Tonic.
 
-class MyNativeClass extends NativeFieldWrapperClass1 {
+base class MyNativeClass extends NativeFieldWrapperClass1 {
   MyNativeClass(int value) {
     _Create(this, value);
   }

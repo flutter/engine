@@ -14,17 +14,14 @@ declare_args() {
   # The runtime mode ("debug", "profile", "release", or "jit_release")
   flutter_runtime_mode = "debug"
 
-  # Whether to link the Skia text shaper module into the engine
-  flutter_enable_skshaper = false
-
-  # Whether to use the Skia text shaper module for all text rendering
-  flutter_always_use_skshaper = false
-
   # Whether to use a prebuilt Dart SDK instead of building one.
   flutter_prebuilt_dart_sdk = false
 
-  # Whether to build the flutter web sdk outline/DDC artifacts.
-  flutter_build_web_sdk = false
+  # Whether to build host-side development artifacts.
+  flutter_build_engine_artifacts = true
+
+  # Whether to include backtrace support.
+  enable_backtrace = true
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -64,6 +61,10 @@ if (is_ios || is_mac) {
     "-Werror=overriding-method-mismatch",
     "-Werror=undeclared-selector",
   ]
+  if (is_mac) {
+    flutter_cflags_objc += [ "-fapplication-extension" ]
+  }
+
   flutter_cflags_objcc = flutter_cflags_objc
   flutter_cflags_objc_arc = flutter_cflags_objc + [ "-fobjc-arc" ]
   flutter_cflags_objcc_arc = flutter_cflags_objc_arc
@@ -131,5 +132,6 @@ if (flutter_prebuilt_dart_sdk) {
 # TODO: We can't build the engine artifacts for arm (32-bit) right now;
 # see https://github.com/flutter/flutter/issues/74322
 build_engine_artifacts =
-    current_toolchain == host_toolchain ||
-    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac || is_win
+    flutter_build_engine_artifacts &&
+    (current_toolchain == host_toolchain ||
+     (is_linux && !is_chromeos && current_cpu != "arm") || is_mac || is_win)

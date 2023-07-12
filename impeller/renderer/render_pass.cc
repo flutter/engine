@@ -49,7 +49,7 @@ bool RenderPass::AddCommand(Command command) {
     }
   }
 
-  if (command.index_count == 0u) {
+  if (command.vertex_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
     return true;
@@ -72,6 +72,10 @@ bool RenderPass::EncodeCommands() const {
     return false;
   }
   return OnEncodeCommands(*context);
+}
+
+const std::weak_ptr<const Context>& RenderPass::GetContext() const {
+  return context_;
 }
 
 }  // namespace impeller

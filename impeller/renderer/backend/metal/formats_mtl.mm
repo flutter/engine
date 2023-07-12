@@ -64,8 +64,13 @@ MTLDepthStencilDescriptor* ToMTLDepthStencilDescriptor(
 
   auto des = [[MTLDepthStencilDescriptor alloc] init];
 
-  des.depthCompareFunction = ToMTLCompareFunction(depth->depth_compare);
-  des.depthWriteEnabled = depth->depth_write_enabled;
+  // These temporary variables are necessary for clang-tidy (Fuchsia LLVM
+  // version 17.0.0git) to not crash.
+  auto compare_function = ToMTLCompareFunction(depth->depth_compare);
+  auto depth_write_enabled = depth->depth_write_enabled;
+
+  des.depthCompareFunction = compare_function;
+  des.depthWriteEnabled = depth_write_enabled;
 
   if (front.has_value()) {
     des.frontFaceStencil = ToMTLStencilDescriptor(front.value());
@@ -102,6 +107,30 @@ MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc) {
     mtl_desc.usage |= MTLTextureUsageRenderTarget;
   }
   return mtl_desc;
+}
+
+MTLPixelFormat SafeMTLPixelFormatBGR10_XR_sRGB() {
+  if (@available(iOS 11, macOS 11.0, *)) {
+    return MTLPixelFormatBGR10_XR_sRGB;
+  } else {
+    return MTLPixelFormatInvalid;
+  }
+}
+
+MTLPixelFormat SafeMTLPixelFormatBGR10_XR() {
+  if (@available(iOS 10, macOS 11.0, *)) {
+    return MTLPixelFormatBGR10_XR;
+  } else {
+    return MTLPixelFormatInvalid;
+  }
+}
+
+MTLPixelFormat SafeMTLPixelFormatBGRA10_XR() {
+  if (@available(iOS 10, macOS 11.0, *)) {
+    return MTLPixelFormatBGRA10_XR;
+  } else {
+    return MTLPixelFormatInvalid;
+  }
 }
 
 }  // namespace impeller

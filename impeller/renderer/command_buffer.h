@@ -18,6 +18,10 @@ class Context;
 class RenderPass;
 class RenderTarget;
 
+namespace testing {
+class CommandBufferMock;
+}
+
 //------------------------------------------------------------------------------
 /// @brief      A collection of encoded commands to be submitted to the GPU for
 ///             execution. A command buffer is obtained from a graphics
@@ -38,6 +42,8 @@ class RenderTarget;
 ///             different from the encoding order.
 ///
 class CommandBuffer {
+  friend class testing::CommandBufferMock;
+
  public:
   enum class Status {
     kPending,
@@ -55,7 +61,8 @@ class CommandBuffer {
 
   //----------------------------------------------------------------------------
   /// @brief      Schedule the command encoded by render passes within this
-  ///             command buffer on the GPU.
+  ///             command buffer on the GPU. The encoding of these commnands is
+  ///             performed immediately on the calling thread.
   ///
   ///             A command buffer may only be committed once.
   ///
@@ -64,6 +71,22 @@ class CommandBuffer {
   [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
 
   [[nodiscard]] bool SubmitCommands();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Schedule the command encoded by render passes within this
+  ///             command buffer on the GPU. The enqueing of this buffer is
+  ///             performed immediately but encoding is pushed to a worker
+  ///             thread if possible.
+  ///
+  ///             A command buffer may only be committed once.
+  ///
+  [[nodiscard]] virtual bool SubmitCommandsAsync(
+      std::shared_ptr<RenderPass> render_pass);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Force execution of pending GPU commands.
+  ///
+  void WaitUntilScheduled();
 
   //----------------------------------------------------------------------------
   /// @brief      Create a render pass to record render commands into.
@@ -101,6 +124,8 @@ class CommandBuffer {
   virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
 
   [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
+
+  virtual void OnWaitUntilScheduled() = 0;
 
   virtual std::shared_ptr<ComputePass> OnCreateComputePass() const = 0;
 

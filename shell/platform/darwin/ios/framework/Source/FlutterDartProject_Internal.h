@@ -8,13 +8,18 @@
 #include "flutter/common/settings.h"
 #include "flutter/runtime/platform_data.h"
 #include "flutter/shell/common/engine.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterNSBundleUtils.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* _Nullable bundle = nil,
+                                              NSProcessInfo* _Nullable processInfoOrNil = nil);
 
 @interface FlutterDartProject ()
+
+@property(nonatomic, readonly) BOOL isWideGamutEnabled;
+@property(nonatomic, readonly) BOOL isImpellerEnabled;
 
 /**
  * This is currently used for *only for tests* to override settings.

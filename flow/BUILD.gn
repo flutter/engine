@@ -4,6 +4,8 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("flow") {
@@ -55,8 +57,6 @@ source_set("flow") {
     "layers/opacity_layer.h",
     "layers/performance_overlay_layer.cc",
     "layers/performance_overlay_layer.h",
-    "layers/physical_shape_layer.cc",
-    "layers/physical_shape_layer.h",
     "layers/platform_view_layer.cc",
     "layers/platform_view_layer.h",
     "layers/shader_mask_layer.cc",
@@ -85,10 +85,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    "//flutter/vulkan:vulkan_config",
-  ]
+  public_configs = [ "//flutter:config" ]
+  if (shell_enable_vulkan) {
+    public_configs += [ "//flutter/vulkan:vulkan_config" ]
+  }
 
   deps = [
     "//flutter/common",
@@ -96,6 +96,10 @@ source_set("flow") {
     "//flutter/fml",
     "//third_party/skia",
   ]
+
+  if (impeller_supports_rendering) {
+    deps += [ "//flutter/impeller" ]
+  }
 
   public_deps = [ "//flutter/display_list" ]
 }
@@ -122,8 +126,6 @@ if (enable_unittests) {
       "testing/mock_raster_cache.h",
       "testing/mock_texture.cc",
       "testing/mock_texture.h",
-      "testing/skia_gpu_object_layer_test.cc",
-      "testing/skia_gpu_object_layer_test.h",
     ]
 
     public_deps = [
@@ -163,7 +165,6 @@ if (enable_unittests) {
       "layers/offscreen_surface_unittests.cc",
       "layers/opacity_layer_unittests.cc",
       "layers/performance_overlay_layer_unittests.cc",
-      "layers/physical_shape_layer_unittests.cc",
       "layers/platform_view_layer_unittests.cc",
       "layers/shader_mask_layer_unittests.cc",
       "layers/texture_layer_unittests.cc",
@@ -183,7 +184,7 @@ if (enable_unittests) {
       ":flow_fixtures",
       ":flow_testing",
       "//flutter/common/graphics",
-      "//flutter/display_list:display_list_testing",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",

@@ -5,17 +5,17 @@
 #include <impeller/transform.glsl>
 #include <impeller/types.glsl>
 
-uniform VertInfo {
+uniform FrameInfo {
   mat4 mvp;
 }
-vert_info;
+frame_info;
 
 in vec2 position;
 in vec4 color;
 
-out vec4 v_color;
+out f16vec4 v_color;
 
 void main() {
-  gl_Position = vert_info.mvp * vec4(position, 0.0, 1.0);
-  v_color = color;
+  gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
+  v_color = f16vec4(color);
 }

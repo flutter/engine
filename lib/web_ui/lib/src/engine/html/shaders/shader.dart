@@ -186,9 +186,11 @@ class GradientLinear extends EngineGradient {
         assert(offsetIsValid(to)),
         matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
-    if (assertionsEnabled) {
+    // ignore: prefer_asserts_in_initializer_lists
+    assert(() {
       validateColorStops(colors, colorStops);
-    }
+      return true;
+    }());
   }
 
   final ui.Offset from;
@@ -407,13 +409,13 @@ void _addColorStopsToCanvasGradient(DomCanvasGradient gradient,
   }
   if (colorStops == null) {
     assert(colors.length == 2);
-    gradient.addColorStop(offset, colorToCssString(colors[0])!);
-    gradient.addColorStop(1 - offset, colorToCssString(colors[1])!);
+    gradient.addColorStop(offset, colors[0].toCssString());
+    gradient.addColorStop(1 - offset, colors[1].toCssString());
   } else {
     for (int i = 0; i < colors.length; i++) {
       final double colorStop = colorStops[i].clamp(0.0, 1.0);
       gradient.addColorStop(
-          colorStop * scale + offset, colorToCssString(colors[i])!);
+          colorStop * scale + offset, colors[i].toCssString());
     }
   }
   if (isDecal) {
@@ -444,7 +446,6 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
     case ui.TileMode.clamp:
       method.addStatement('float tiled_st = clamp(st, 0.0, 1.0);');
       probeName = 'tiled_st';
-      break;
     case ui.TileMode.decal:
       break;
     case ui.TileMode.repeated:
@@ -453,13 +454,11 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
       // pattern center is at origin.
       method.addStatement('float tiled_st = fract(st);');
       probeName = 'tiled_st';
-      break;
     case ui.TileMode.mirror:
       method.addStatement('float t_1 = (st - 1.0);');
       method.addStatement(
           'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
       probeName = 'tiled_st';
-      break;
   }
   writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
       probe: probeName,
@@ -812,7 +811,6 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
         // Since we don't have a size, we can't use background color.
         // Use svg filter srcIn instead.
         blendMode = ui.BlendMode.srcIn;
-        break;
       case ui.BlendMode.dstOver:
       case ui.BlendMode.srcIn:
       case ui.BlendMode.srcATop:
@@ -845,7 +843,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
     if (blendMode == ui.BlendMode.saturation ||
         blendMode == ui.BlendMode.multiply ||
         blendMode == ui.BlendMode.modulate) {
-          filterElement!.style.backgroundColor = colorToCssString(color)!;
+          filterElement!.style.backgroundColor = color.toCssString();
     }
     return svgFilter.element;
   }

@@ -7,7 +7,7 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/host_buffer.h"
+#include "impeller/core/host_buffer.h"
 
 namespace impeller {
 
@@ -20,12 +20,12 @@ HostBuffer& ComputePass::GetTransientsBuffer() {
   return *transients_buffer_;
 }
 
-void ComputePass::SetLabel(std::string label) {
+void ComputePass::SetLabel(const std::string& label) {
   if (label.empty()) {
     return;
   }
   transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
-  OnSetLabel(std::move(label));
+  OnSetLabel(label);
 }
 
 void ComputePass::SetGridSize(const ISize& size) {
@@ -38,7 +38,8 @@ void ComputePass::SetThreadGroupSize(const ISize& size) {
 
 bool ComputePass::AddCommand(ComputeCommand command) {
   if (!command) {
-    VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
+    VALIDATION_LOG
+        << "Attempted to add an invalid command to the compute pass.";
     return false;
   }
 
@@ -47,6 +48,11 @@ bool ComputePass::AddCommand(ComputeCommand command) {
 }
 
 bool ComputePass::EncodeCommands() const {
+  if (grid_size_.IsEmpty() || thread_group_size_.IsEmpty()) {
+    FML_DLOG(WARNING) << "Attempted to encode a compute pass with an empty "
+                         "grid or thread group size.";
+    return false;
+  }
   auto context = context_.lock();
   // The context could have been collected in the meantime.
   if (!context) {

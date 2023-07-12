@@ -16,19 +16,15 @@ constexpr std::string_view kReflectionHeaderTemplate =
 {# Note: The nogncheck decorations are only to make GN not mad at the template#}
 {# this file is generated from. There are no GN rule violations in the generated#}
 {# file itself and the no-check declarations will be stripped in generated files.#}
-#include "impeller/renderer/buffer_view.h"                {# // nogncheck #}
+#include "impeller/core/buffer_view.h"                {# // nogncheck #}
 
-#include "impeller/renderer/command.h"                    {# // nogncheck #}
+#include "impeller/core/sampler.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/compute_command.h"            {# // nogncheck #}
+#include "impeller/core/shader_types.h"               {# // nogncheck #}
 
-#include "impeller/renderer/descriptor_set_layout.h"      {# // nogncheck #}
+#include "impeller/core/resource_binder.h"            {# // nogncheck #}
 
-#include "impeller/renderer/sampler.h"                    {# // nogncheck #}
-
-#include "impeller/renderer/shader_types.h"               {# // nogncheck #}
-
-#include "impeller/renderer/texture.h"                    {# // nogncheck #}
+#include "impeller/core/texture.h"                    {# // nogncheck #}
 
 
 namespace impeller {
@@ -90,7 +86,8 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
     {{stage_input.type.type_name}},     // type
     {{stage_input.type.bit_width}}u,    // bit width of type
     {{stage_input.type.vec_size}}u,     // vec size
-    {{stage_input.type.columns}}u       // number of columns
+    {{stage_input.type.columns}}u,      // number of columns
+    {{stage_input.offset}}u,            // offset for interleaved layout
   };
 {% endfor %}
 {% endif %}
@@ -100,6 +97,20 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
     &kInput{{camel_case(stage_input.name)}}, // {{stage_input.name}}
 {% endfor %}
   };
+
+{% if shader_stage == "vertex" %}
+  static constexpr auto kInterleavedLayout = ShaderStageBufferLayout {
+{% if length(stage_inputs) > 0 %}
+    sizeof(PerVertexData),                 // stride for interleaved layout
+{% else %}
+    0u,
+{% endif %}
+    0u,                                    // attribute binding
+  };
+  static constexpr std::array<const ShaderStageBufferLayout*, 1> kInterleavedBufferLayout = {
+    &kInterleavedLayout
+  };
+{% endif %}
 
 {% if length(sampled_images) > 0 %}
   // ===========================================================================
@@ -166,17 +177,15 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
 {% for buffer in buffers %}
     DescriptorSetLayout{
       {{buffer.binding}}, // binding = {{buffer.binding}}
-      DescriptorType::kUniformBuffer, // descriptorType = Uniform Buffer
-      1, // descriptorCount = 1
-      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+      {{buffer.descriptor_type}}, // descriptor_type = {{buffer.descriptor_type}}
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
 {% for sampled_image in sampled_images %}
     DescriptorSetLayout{
       {{sampled_image.binding}}, // binding = {{sampled_image.binding}}
-      DescriptorType::kSampledImage, // descriptorType = Sampled Image
-      1, // descriptorCount = 1
-      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+      {{sampled_image.descriptor_type}}, // descriptor_type = {{sampled_image.descriptor_type}}
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
     },
 {% endfor %}
   };

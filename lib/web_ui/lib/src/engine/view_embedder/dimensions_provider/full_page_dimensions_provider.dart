@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:js/js.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/window.dart';
@@ -33,7 +32,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     _domResizeSubscription = DomSubscription(
       resizeEventTarget,
       'resize',
-      allowInterop(_onVisualViewportResize),
+      _onVisualViewportResize,
     );
   }
 
@@ -98,7 +97,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
   }
 
   @override
-  WindowPadding computeKeyboardInsets(
+  ViewPadding computeKeyboardInsets(
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
@@ -118,6 +117,6 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     }
     final double bottomPadding = physicalHeight - windowInnerHeight;
 
-    return WindowPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
+    return ViewPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
   }
 }

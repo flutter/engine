@@ -237,13 +237,13 @@ class ClangTidy {
     final List<Command> totalCommands = <Command>[];
     if (sharedBuildCommandsData.isNotEmpty) {
       final List<Command> buildCommands = <Command>[
-        for (Object? data in buildCommandsData)
+        for (final Object? data in buildCommandsData)
           Command.fromMap((data as Map<String, Object?>?)!)
       ];
       final List<Set<String>> shardFilePaths = <Set<String>>[
-        for (List<Object?> list in sharedBuildCommandsData)
+        for (final List<Object?> list in sharedBuildCommandsData)
           <String>{
-            for (Object? data in list)
+            for (final Object? data in list)
               Command.fromMap((data as Map<String, Object?>?)!).filePath
           }
       ];
@@ -255,7 +255,7 @@ class ClangTidy {
         }
       }
       final List<Command> intersection = <Command>[
-        for (_SetStatusCommand result in intersectionResults)
+        for (final _SetStatusCommand result in intersectionResults)
           if (result.setStatus == _SetStatus.Intersection) result.command
       ];
       // Make sure to sort results so the sharding scheme is guaranteed to work
@@ -266,7 +266,7 @@ class ClangTidy {
           _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
     } else {
       totalCommands.addAll(<Command>[
-        for (Object? data in buildCommandsData)
+        for (final Object? data in buildCommandsData)
           Command.fromMap((data as Map<String, Object?>?)!)
       ]);
     }
@@ -299,24 +299,19 @@ class ClangTidy {
       switch (action) {
         case LintAction.skipNoLint:
           _outSink.writeln('🔷 ignoring $relativePath (FLUTTER_NOLINT)');
-          break;
         case LintAction.failMalformedNoLint:
           _errSink.writeln('❌ malformed opt-out $relativePath');
           _errSink.writeln(
             '   Required format: // FLUTTER_NOLINT: $issueUrlPrefix/ISSUE_ID',
           );
           sawMalformed = true;
-          break;
         case LintAction.lint:
           _outSink.writeln('🔶 linting $relativePath');
           jobs.add(command.createLintJob(options));
-          break;
         case LintAction.skipThirdParty:
           _outSink.writeln('🔷 ignoring $relativePath (third_party)');
-          break;
         case LintAction.skipMissing:
           _outSink.writeln('🔷 ignoring $relativePath (missing)');
-          break;
       }
     }
     return _ComputeJobsResult(jobs, sawMalformed);

@@ -55,18 +55,27 @@
     @"--platform-view-with-other-backdrop-filter" : @"platform_view_with_other_backdrop_filter",
     @"--two-platform-views-with-other-backdrop-filter" :
         @"two_platform_views_with_other_backdrop_filter",
+    @"--platform-view-with-negative-backdrop-filter" :
+        @"platform_view_with_negative_backdrop_filter",
     @"--platform-view-rotate" : @"platform_view_rotate",
     @"--non-full-screen-flutter-view-platform-view" : @"non_full_screen_flutter_view_platform_view",
     @"--gesture-reject-after-touches-ended" : @"platform_view_gesture_reject_after_touches_ended",
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
+    @"--gesture-accept-with-overlapping-platform-views" :
+        @"platform_view_gesture_accept_with_overlapping_platform_views",
     @"--tap-status-bar" : @"tap_status_bar",
     @"--animated-color-square" : @"animated_color_square",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
     @"--pointer-events" : @"pointer_events",
-    @"--platform-view-scrolling-under-widget" : @"platform_view_scrolling_under_widget"
+    @"--platform-view-scrolling-under-widget" : @"platform_view_scrolling_under_widget",
+    @"--platform-views-with-clips-scrolling" : @"platform_views_with_clips_scrolling",
+    @"--platform-view-cliprect-after-moved" : @"platform_view_cliprect_after_moved",
+    @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
+    @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
+    @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap

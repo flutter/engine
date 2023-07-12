@@ -9,6 +9,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr_internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 #ifdef SHELL_ENABLE_METAL
@@ -16,7 +18,7 @@
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
-#include "flutter/testing/test_vulkan_context.h"
+#include "flutter/testing/test_vulkan_context.h"  // nogncheck
 #endif
 
 namespace flutter {
@@ -38,10 +40,10 @@ class EmbedderTestBackingStoreProducer {
     kVulkanImage,
   };
 
-  EmbedderTestBackingStoreProducer(
-      sk_sp<GrDirectContext> context,
-      RenderTargetType type,
-      FlutterSoftwarePixelFormat software_pixfmt = kNative32);
+  EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,
+                                   RenderTargetType type,
+                                   FlutterSoftwarePixelFormat software_pixfmt =
+                                       kFlutterSoftwarePixelFormatNative32);
   ~EmbedderTestBackingStoreProducer();
 
   bool Create(const FlutterBackingStoreConfig* config,

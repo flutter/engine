@@ -6,11 +6,15 @@
 #define FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_H_
 
 #include "flutter/common/settings.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+
+namespace impeller {
+class AiksContext;
+}
 
 namespace flutter {
 
@@ -20,6 +24,7 @@ class SnapshotController {
    public:
     virtual ~Delegate() = default;
     virtual const std::unique_ptr<Surface>& GetSurface() const = 0;
+    virtual std::shared_ptr<impeller::AiksContext> GetAiksContext() const = 0;
     virtual const std::unique_ptr<SnapshotSurfaceProducer>&
     GetSnapshotSurfaceProducer() const = 0;
     virtual std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
@@ -31,6 +36,9 @@ class SnapshotController {
 
   virtual ~SnapshotController() = default;
 
+  // Note that this image is not guaranteed to be UIThreadSafe and must
+  // be converted to a DlImageGPU if it is to be handed back to the UI
+  // thread.
   virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
                                             SkISize size) = 0;
 

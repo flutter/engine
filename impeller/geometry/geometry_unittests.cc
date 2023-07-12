@@ -2,14 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/geometry/geometry_unittests.h"
+#include "gtest/gtest.h"
+#include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
 #include <sstream>
+#include <type_traits>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -17,7 +22,9 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
-#include "path_component.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 namespace testing {
@@ -335,13 +342,28 @@ TEST(GeometryTest, MatrixGetMaxBasisLength) {
   }
 }
 
+TEST(GeometryTest, MatrixGetMaxBasisLengthXY) {
+  {
+    auto m = Matrix::MakeScale({3, 1, 1});
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 3);
+
+    m = m * Matrix::MakeSkew(0, 4);
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 5);
+  }
+
+  {
+    auto m = Matrix::MakeScale({-3, 4, 7});
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 4);
+  }
+}
+
 TEST(GeometryTest, MatrixMakeOrthographic) {
   {
     auto m = Matrix::MakeOrthographic(Size(100, 200));
     auto expect = Matrix{
         0.02, 0,     0,   0,  //
         0,    -0.01, 0,   0,  //
-        0,    0,     1,   0,  //
+        0,    0,     0,   0,  //
         -1,   1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -352,7 +374,7 @@ TEST(GeometryTest, MatrixMakeOrthographic) {
     auto expect = Matrix{
         0.005, 0,     0,   0,  //
         0,     -0.02, 0,   0,  //
-        0,     0,     1,   0,  //
+        0,     0,     0,   0,  //
         -1,    1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -577,7 +599,7 @@ TEST(GeometryTest, EmptyPath) {
   path.GetContourComponentAtIndex(0, c);
   ASSERT_POINT_NEAR(c.destination, Point());
 
-  Path::Polyline polyline = path.CreatePolyline();
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
   ASSERT_TRUE(polyline.points.empty());
   ASSERT_TRUE(polyline.contours.empty());
 }
@@ -590,6 +612,10 @@ TEST(GeometryTest, SimplePath) {
       .AddCubicComponent({300, 300}, {400, 400}, {500, 500}, {600, 600});
 
   ASSERT_EQ(path.GetComponentCount(), 4u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 1u);
 
   path.EnumerateComponents(
       [](size_t index, const LinearPathComponent& linear) {
@@ -646,6 +672,16 @@ TEST(GeometryTest, BoundingBoxOfCompositePathIsCorrect) {
   ASSERT_RECT_NEAR(actual.value(), expected);
 }
 
+TEST(GeometryTest, ExtremaOfCubicPathComponentIsCorrect) {
+  CubicPathComponent cubic{{11.769268, 252.883148},
+                           {-6.2857933, 204.356461},
+                           {-4.53997231, 156.552902},
+                           {17.0067291, 109.472488}};
+  auto points = cubic.Extrema();
+  ASSERT_EQ(points.size(), static_cast<size_t>(3));
+  ASSERT_POINT_NEAR(points[2], cubic.Solve(0.455916));
+}
+
 TEST(GeometryTest, PathGetBoundingBoxForCubicWithNoDerivativeRootsIsCorrect) {
   PathBuilder builder;
   // Straight diagonal line.
@@ -666,6 +702,8 @@ TEST(GeometryTest, CanGenerateMipCounts) {
   ASSERT_EQ((Size{128, 0}.MipCount()), 1u);
   ASSERT_EQ((Size{128, -25}.MipCount()), 1u);
   ASSERT_EQ((Size{-128, 25}.MipCount()), 1u);
+  ASSERT_EQ((Size{1, 1}.MipCount()), 1u);
+  ASSERT_EQ((Size{0, 0}.MipCount()), 1u);
 }
 
 TEST(GeometryTest, CanConvertTTypesExplicitly) {
@@ -1058,6 +1096,111 @@ TEST(GeometryTest, PointAngleTo) {
   }
 }
 
+TEST(GeometryTest, PointMin) {
+  Point p(1, 2);
+  Point result = p.Min({0, 10});
+  Point expected(0, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Min) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Min({0, 10, 2});
+  Vector3 expected(0, 2, 2);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Min) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Min({0, 10, 2, 1});
+  Vector4 expected(0, 2, 2, 1);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointMax) {
+  Point p(1, 2);
+  Point result = p.Max({0, 10});
+  Point expected(1, 10);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Max) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Max({0, 10, 2});
+  Vector3 expected(1, 10, 3);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Max) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Max({0, 10, 2, 1});
+  Vector4 expected(1, 10, 3, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointFloor) {
+  Point p(1.5, 2.3);
+  Point result = p.Floor();
+  Point expected(1, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Floor) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Floor();
+  Vector3 expected(1, 2, 3);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Floor) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Floor();
+  Vector4 expected(1, 2, 3, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointCeil) {
+  Point p(1.5, 2.3);
+  Point result = p.Ceil();
+  Point expected(2, 3);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Ceil) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Ceil();
+  Vector3 expected(2, 3, 4);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Ceil) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Ceil();
+  Vector4 expected(2, 3, 4, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointRound) {
+  Point p(1.5, 2.3);
+  Point result = p.Round();
+  Point expected(2, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Round) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Round();
+  Vector3 expected(2, 2, 4);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Round) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Round();
+  Vector4 expected(2, 2, 4, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
 TEST(GeometryTest, PointLerp) {
   Point p(1, 2);
   Point result = p.Lerp({5, 10}, 0.75);
@@ -1167,35 +1310,67 @@ TEST(GeometryTest, CanPerformAlgebraicVector3OpsWithArithmeticTypes) {
   // LHS
   {
     Vector3 p1(1, 2, 3);
+    Vector3 p2 = p1 + 2.0f;
+    ASSERT_EQ(p2.x, 3);
+    ASSERT_EQ(p2.y, 4);
+    ASSERT_EQ(p2.z, 5);
+  }
+
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = p1 - 2.0f;
+    ASSERT_EQ(p2.x, -1);
+    ASSERT_EQ(p2.y, 0);
+    ASSERT_EQ(p2.z, 1);
+  }
+
+  {
+    Vector3 p1(1, 2, 3);
     Vector3 p2 = p1 * 2.0f;
-    ASSERT_EQ(p2.x, 2u);
-    ASSERT_EQ(p2.y, 4u);
-    ASSERT_EQ(p2.z, 6u);
+    ASSERT_EQ(p2.x, 2);
+    ASSERT_EQ(p2.y, 4);
+    ASSERT_EQ(p2.z, 6);
   }
 
   {
     Vector3 p1(2, 6, 12);
     Vector3 p2 = p1 / 2.0f;
-    ASSERT_EQ(p2.x, 1u);
-    ASSERT_EQ(p2.y, 3u);
-    ASSERT_EQ(p2.z, 6u);
+    ASSERT_EQ(p2.x, 1);
+    ASSERT_EQ(p2.y, 3);
+    ASSERT_EQ(p2.z, 6);
   }
 
   // RHS
   {
     Vector3 p1(1, 2, 3);
+    Vector3 p2 = 2.0f + p1;
+    ASSERT_EQ(p2.x, 3);
+    ASSERT_EQ(p2.y, 4);
+    ASSERT_EQ(p2.z, 5);
+  }
+
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = 2.0f - p1;
+    ASSERT_EQ(p2.x, 1);
+    ASSERT_EQ(p2.y, 0);
+    ASSERT_EQ(p2.z, -1);
+  }
+
+  {
+    Vector3 p1(1, 2, 3);
     Vector3 p2 = 2.0f * p1;
-    ASSERT_EQ(p2.x, 2u);
-    ASSERT_EQ(p2.y, 4u);
-    ASSERT_EQ(p2.z, 6u);
+    ASSERT_EQ(p2.x, 2);
+    ASSERT_EQ(p2.y, 4);
+    ASSERT_EQ(p2.z, 6);
   }
 
   {
     Vector3 p1(2, 6, 12);
     Vector3 p2 = 12.0f / p1;
-    ASSERT_EQ(p2.x, 6u);
-    ASSERT_EQ(p2.y, 2u);
-    ASSERT_EQ(p2.z, 1u);
+    ASSERT_EQ(p2.x, 6);
+    ASSERT_EQ(p2.y, 2);
+    ASSERT_EQ(p2.z, 1);
   }
 }
 
@@ -1247,20 +1422,40 @@ TEST(GeometryTest, ColorLerp) {
     Color a(0.0, 0.0, 0.0, 0.0);
     Color b(1.0, 1.0, 1.0, 1.0);
 
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
   }
 
   {
     Color a(0.2, 0.4, 1.0, 0.5);
     Color b(0.4, 1.0, 0.2, 0.3);
 
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
-    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::Lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+  }
+}
+
+TEST(GeometryTest, ColorClamp01) {
+  {
+    Color result = Color(0.5, 0.5, 0.5, 0.5).Clamp01();
+    Color expected = Color(0.5, 0.5, 0.5, 0.5);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    Color result = Color(-1, -1, -1, -1).Clamp01();
+    Color expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    Color result = Color(2, 2, 2, 2).Clamp01();
+    Color expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
   }
 }
 
@@ -1281,6 +1476,86 @@ TEST(GeometryTest, ColorMakeRGBA8) {
     Color a = Color::MakeRGBA8(63, 127, 191, 127);
     Color b(0.247059, 0.498039, 0.74902, 0.498039);
     ASSERT_COLOR_NEAR(a, b);
+  }
+}
+
+TEST(GeometryTest, ColorApplyColorMatrix) {
+  {
+    ColorMatrix color_matrix = {
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+        1, 1, 1, 1, 1,  //
+    };
+    auto result = Color::White().ApplyColorMatrix(color_matrix);
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    ColorMatrix color_matrix = {
+        0.1, 0,   0,   0,   0.01,  //
+        0,   0.2, 0,   0,   0.02,  //
+        0,   0,   0.3, 0,   0.03,  //
+        0,   0,   0,   0.4, 0.04,  //
+    };
+    auto result = Color::White().ApplyColorMatrix(color_matrix);
+    auto expected = Color(0.11, 0.22, 0.33, 0.44);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+TEST(GeometryTest, ColorLinearToSRGB) {
+  {
+    auto result = Color::White().LinearToSRGB();
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color::BlackTransparent().LinearToSRGB();
+    auto expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color(0.2, 0.4, 0.6, 0.8).LinearToSRGB();
+    auto expected = Color(0.484529, 0.665185, 0.797738, 0.8);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+TEST(GeometryTest, ColorSRGBToLinear) {
+  {
+    auto result = Color::White().SRGBToLinear();
+    auto expected = Color(1, 1, 1, 1);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color::BlackTransparent().SRGBToLinear();
+    auto expected = Color(0, 0, 0, 0);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+
+  {
+    auto result = Color(0.2, 0.4, 0.6, 0.8).SRGBToLinear();
+    auto expected = Color(0.0331048, 0.132868, 0.318547, 0.8);
+    ASSERT_COLOR_NEAR(result, expected);
+  }
+}
+
+#define _BLEND_MODE_NAME_CHECK(blend_mode) \
+  case BlendMode::k##blend_mode:           \
+    ASSERT_STREQ(result, #blend_mode);     \
+    break;
+
+TEST(GeometryTest, BlendModeToString) {
+  using BlendT = std::underlying_type_t<BlendMode>;
+  for (BlendT i = 0; i <= static_cast<BlendT>(BlendMode::kLast); i++) {
+    auto mode = static_cast<BlendMode>(i);
+    auto result = BlendModeToString(mode);
+    switch (mode) { IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_NAME_CHECK) }
   }
 }
 
@@ -1387,6 +1662,22 @@ TEST(GeometryTest, RectIntersection) {
     auto u = a.Intersection(b);
     ASSERT_FALSE(u.has_value());
   }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(10, 10, 300, 300);
+    auto u = a.Intersection(b);
+    ASSERT_TRUE(u);
+    ASSERT_RECT_NEAR(u.value(), b);
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b = Rect::MakeMaximum();
+    auto u = a.Intersection(b);
+    ASSERT_TRUE(u);
+    ASSERT_EQ(u, Rect::MakeMaximum());
+  }
 }
 
 TEST(GeometryTest, RectIntersectsWithRect) {
@@ -1412,6 +1703,18 @@ TEST(GeometryTest, RectIntersectsWithRect) {
     Rect a(0, 0, 100, 100);
     Rect b(100, 100, 100, 100);
     ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(10, 10, 100, 100);
+    ASSERT_TRUE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b = Rect::MakeMaximum();
+    ASSERT_TRUE(a.IntersectsWithRect(b));
   }
 }
 
@@ -1497,6 +1800,12 @@ TEST(GeometryTest, RectContainsPoint) {
     Point p(199, 199);
     ASSERT_TRUE(r.Contains(p));
   }
+
+  {
+    Rect r = Rect::MakeMaximum();
+    Point p(199, 199);
+    ASSERT_TRUE(r.Contains(p));
+  }
 }
 
 TEST(GeometryTest, RectContainsRect) {
@@ -1529,15 +1838,42 @@ TEST(GeometryTest, RectContainsRect) {
     Rect b(0, 0, 300, 300);
     ASSERT_FALSE(a.Contains(b));
   }
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(0, 0, 300, 300);
+    ASSERT_TRUE(a.Contains(b));
+  }
 }
 
 TEST(GeometryTest, RectGetPoints) {
-  Rect r(100, 200, 300, 400);
-  auto points = r.GetPoints();
-  ASSERT_POINT_NEAR(points[0], Point(100, 200));
-  ASSERT_POINT_NEAR(points[1], Point(400, 200));
-  ASSERT_POINT_NEAR(points[2], Point(100, 600));
-  ASSERT_POINT_NEAR(points[3], Point(400, 600));
+  {
+    Rect r(100, 200, 300, 400);
+    auto points = r.GetPoints();
+    ASSERT_POINT_NEAR(points[0], Point(100, 200));
+    ASSERT_POINT_NEAR(points[1], Point(400, 200));
+    ASSERT_POINT_NEAR(points[2], Point(100, 600));
+    ASSERT_POINT_NEAR(points[3], Point(400, 600));
+  }
+
+  {
+    Rect r = Rect::MakeMaximum();
+    auto points = r.GetPoints();
+    ASSERT_EQ(points[0], Point(-std::numeric_limits<float>::infinity(),
+                               -std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[1], Point(std::numeric_limits<float>::infinity(),
+                               -std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[2], Point(-std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[3], Point(std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::infinity()));
+  }
+}
+
+TEST(GeometryTest, RectShift) {
+  auto r = Rect::MakeLTRB(0, 0, 100, 100);
+
+  ASSERT_EQ(r.Shift(Point(10, 5)), Rect::MakeLTRB(10, 5, 110, 105));
+  ASSERT_EQ(r.Shift(Point(-10, -5)), Rect::MakeLTRB(-10, -5, 90, 95));
 }
 
 TEST(GeometryTest, RectGetTransformedPoints) {
@@ -1551,14 +1887,43 @@ TEST(GeometryTest, RectGetTransformedPoints) {
 
 TEST(GeometryTest, RectMakePointBounds) {
   {
-    Rect r =
-        Rect::MakePointBounds({Point(1, 5), Point(4, -1), Point(0, 6)}).value();
+    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
+    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
     auto expected = Rect(0, -1, 4, 7);
     ASSERT_RECT_NEAR(r, expected);
   }
   {
-    std::optional<Rect> r = Rect::MakePointBounds({});
+    std::vector<Point> points;
+    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
     ASSERT_FALSE(r.has_value());
+  }
+}
+
+TEST(GeometryTest, RectExpand) {
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(1);
+    auto expected = Rect::MakeLTRB(99, 99, 201, 201);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(-1);
+    auto expected = Rect::MakeLTRB(101, 101, 199, 199);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(1, 2, 3, 4);
+    auto expected = Rect::MakeLTRB(99, 98, 203, 204);
+    ASSERT_RECT_NEAR(b, expected);
+  }
+  {
+    auto a = Rect::MakeLTRB(100, 100, 200, 200);
+    auto b = a.Expand(-1, -2, -3, -4);
+    auto expected = Rect::MakeLTRB(101, 102, 197, 196);
+    ASSERT_RECT_NEAR(b, expected);
   }
 }
 
@@ -1576,9 +1941,65 @@ TEST(GeometryTest, RectGetPositive) {
   }
 }
 
+TEST(GeometryTest, RectScale) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(0);
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(-2);
+    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Point{0, 0});
+    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Scale(Size{-1, -2});
+    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
+TEST(GeometryTest, RectDirections) {
+  auto r = Rect::MakeLTRB(1, 2, 3, 4);
+
+  ASSERT_EQ(r.GetLeft(), 1);
+  ASSERT_EQ(r.GetTop(), 2);
+  ASSERT_EQ(r.GetRight(), 3);
+  ASSERT_EQ(r.GetBottom(), 4);
+
+  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
+  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
+  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
+  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
+}
+
+TEST(GeometryTest, RectProject) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(r);
+    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
+    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
+    ASSERT_RECT_NEAR(expected, actual);
+  }
+}
+
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline();
+  auto polyline = component.CreatePolyline(1.0f);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1593,7 +2014,7 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   path.AddContourComponent({40, 40});
   path.AddLinearComponent({40, 40}, {50, 50});
 
-  auto polyline = path.CreatePolyline();
+  auto polyline = path.CreatePolyline(1.0f);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -1679,7 +2100,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.points.size(), 6u);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].is_closed, false);
@@ -1696,7 +2117,7 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   size_t a1, a2, b1, b2;
   std::tie(a1, a2) = polyline.GetContourPointBounds(0);
   std::tie(b1, b2) = polyline.GetContourPointBounds(1);
@@ -1710,7 +2131,7 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
   Path::Polyline polyline = PathBuilder{}
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
@@ -1735,7 +2156,7 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
-          .CreatePolyline();
+          .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
@@ -1842,6 +2263,12 @@ TEST(GeometryTest, ColorPrinting) {
   }
 }
 
+TEST(GeometryTest, ToIColor) {
+  ASSERT_EQ(Color::ToIColor(Color(0, 0, 0, 0)), 0u);
+  ASSERT_EQ(Color::ToIColor(Color(1.0, 1.0, 1.0, 1.0)), 0xFFFFFFFF);
+  ASSERT_EQ(Color::ToIColor(Color(0.5, 0.5, 1.0, 1.0)), 0xFF8080FF);
+}
+
 TEST(GeometryTest, Gradient) {
   {
     // Simple 2 color gradient produces color buffer containing exactly those
@@ -1888,8 +2315,8 @@ TEST(GeometryTest, Gradient) {
     std::vector<Color> lerped_colors = {
         Color::Red(),
         Color::Blue(),
-        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
-        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
+        Color::Lerp(Color::Blue(), Color::Green(), 0.3333),
+        Color::Lerp(Color::Blue(), Color::Green(), 0.6666),
         Color::Green(),
     };
     ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, lerped_colors);
@@ -1912,73 +2339,41 @@ TEST(GeometryTest, Gradient) {
   }
 }
 
-TEST(GeometryTest, GradientSSBO) {
-  {
-    // Simple 2 color gradient produces std::nullopt, as original
-    // color vector should be used.
-    std::vector<Color> colors = {Color::Red(), Color::Blue()};
-    std::vector<Scalar> stops = {0.0, 1.0};
+TEST(GeometryTest, HalfConversions) {
+#ifdef FML_OS_WIN
+  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
+                  "unavailable on Windows.";
+#else
+  ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
+  ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
+  ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
+  ASSERT_EQ(ScalarToHalf(-1.45), -1.45f16);
 
-    auto gradient = CreateGradientColors(colors, stops);
+  // 65504 is the largest possible half.
+  ASSERT_EQ(ScalarToHalf(65504.0f), 65504.0f16);
+  ASSERT_EQ(ScalarToHalf(65504.0f + 1), 65504.0f16);
 
-    ASSERT_EQ(gradient, std::nullopt);
-  }
+  // Colors
+  ASSERT_EQ(HalfVector4(Color::Red()),
+            HalfVector4(1.0f16, 0.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Green()),
+            HalfVector4(0.0f16, 1.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Blue()),
+            HalfVector4(0.0f16, 0.0f16, 1.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Black().WithAlpha(0)),
+            HalfVector4(0.0f16, 0.0f16, 0.0f16, 0.0f16));
 
-  {
-    // Gradient with duplicate stops does not create an empty texture.
-    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
-                                 Color::Blue()};
-    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+  ASSERT_EQ(HalfVector3(Vector3(4.0, 6.0, -1.0)),
+            HalfVector3(4.0f16, 6.0f16, -1.0f16));
+  ASSERT_EQ(HalfVector2(Vector2(4.0, 6.0)), HalfVector2(4.0f16, 6.0f16));
 
-    auto gradient = CreateGradientColors(colors, stops);
-    ASSERT_EQ(gradient.value().size(), 5u);
-  }
-
-  {
-    // Simple N color gradient produces color buffer containing exactly those
-    // values.
-    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
-                                 Color::White()};
-    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    ASSERT_EQ(gradient, std::nullopt);
-  }
-
-  {
-    // Gradient with color stops will lerp and scale buffer.
-    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
-    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    std::vector<Color> lerped_colors = {
-        Color::Red(),
-        Color::Blue(),
-        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
-        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
-        Color::Green(),
-    };
-
-    ASSERT_COLORS_NEAR(gradient.value(), lerped_colors);
-    ASSERT_EQ(gradient.value().size(), 5u);
-  }
-
-  {
-    // Gradient size is capped at 1024.
-    std::vector<Color> colors = {};
-    std::vector<Scalar> stops = {};
-    for (auto i = 0u; i < 1025; i++) {
-      colors.push_back(Color::Blue());
-      stops.push_back(i / 1025.0);
-    }
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    ASSERT_EQ(gradient.value().size(), 1024u);
-  }
+  ASSERT_EQ(Half(0.5f), Half(0.5f16));
+  ASSERT_EQ(Half(0.5), Half(0.5f16));
+  ASSERT_EQ(Half(5), Half(5.0f16));
+#endif  // FML_OS_WIN
 }
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

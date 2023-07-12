@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../browser_detection.dart';
 import '../dom.dart';
@@ -89,8 +90,9 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   String toString() {
-    if (assertionsEnabled) {
-      return 'LineMetrics(hardBreak: $hardBreak, '
+    String result = super.toString();
+    assert(() {
+      result = 'LineMetrics(hardBreak: $hardBreak, '
           'ascent: $ascent, '
           'descent: $descent, '
           'unscaledAscent: $unscaledAscent, '
@@ -99,9 +101,9 @@ class EngineLineMetrics implements ui.LineMetrics {
           'left: $left, '
           'baseline: $baseline, '
           'lineNumber: $lineNumber)';
-    } else {
-      return super.toString();
-    }
+      return true;
+    }());
+    return result;
   }
 }
 
@@ -343,10 +345,11 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
 
   @override
   String toString() {
-    if (assertionsEnabled) {
+    String result = super.toString();
+    assert(() {
       final double? fontSize = this.fontSize;
       final double? height = this.height;
-      return 'ParagraphStyle('
+      result = 'ParagraphStyle('
           'textAlign: ${textAlign ?? "unspecified"}, '
           'textDirection: ${textDirection ?? "unspecified"}, '
           'fontWeight: ${fontWeight ?? "unspecified"}, '
@@ -359,9 +362,9 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'ellipsis: ${ellipsis != null ? '"$ellipsis"' : "unspecified"}, '
           'locale: ${locale ?? "unspecified"}'
           ')';
-    } else {
-      return super.toString();
-    }
+      return true;
+    }());
+    return result;
   }
 }
 
@@ -464,18 +467,19 @@ class EngineTextStyle implements ui.TextStyle {
   final ui.Paint? foreground;
   final List<ui.Shadow>? shadows;
 
+  static final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
   String get effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In the flutter tester environment, we use a predictable-size font
-      // "Ahem". This makes widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
+    final String fontFamily = this.fontFamily.isEmpty ? FlutterViewEmbedder.defaultFontFamily : this.fontFamily;
+    // In the flutter tester environment, we use predictable-size test fonts.
+    // This makes widget tests predictable and less flaky.
+    String result = fontFamily;
+    assert(() {
+      if (ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)) {
+        result = _testFonts.first;
       }
-    }
-    if (fontFamily.isEmpty) {
-      return FlutterViewEmbedder.defaultFontFamily;
-    }
-    return fontFamily;
+      return true;
+    }());
+    return result;
   }
 
   String? _cssFontString;
@@ -604,11 +608,12 @@ class EngineTextStyle implements ui.TextStyle {
 
   @override
   String toString() {
-    if (assertionsEnabled) {
+    String result = super.toString();
+    assert(() {
       final List<String>? fontFamilyFallback = this.fontFamilyFallback;
       final double? fontSize = this.fontSize;
       final double? height = this.height;
-      return 'TextStyle('
+      result = 'TextStyle('
           'color: ${color ?? "unspecified"}, '
           'decoration: ${decoration ?? "unspecified"}, '
           'decorationColor: ${decorationColor ?? "unspecified"}, '
@@ -630,9 +635,9 @@ class EngineTextStyle implements ui.TextStyle {
           'fontFeatures: ${fontFeatures ?? "unspecified"}, '
           'fontVariations: ${fontVariations ?? "unspecified"}'
           ')';
-    } else {
-      return super.toString();
-    }
+      return true;
+    }());
+    return result;
   }
 }
 
@@ -795,13 +800,13 @@ void applyTextStyleToElement({
     final double adaptedWidth = strokeWidth != null && strokeWidth > 0
         ? strokeWidth
         : 1.0 / ui.window.devicePixelRatio;
-    cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
+    cssStyle.textStroke = '${adaptedWidth}px ${color?.toCssString()}';
   } else if (color != null) {
-    cssStyle.color = colorToCssString(color)!;
+    cssStyle.color = color.toCssString();
   }
   final ui.Color? background = style.background?.color;
   if (background != null) {
-    cssStyle.backgroundColor = colorToCssString(background)!;
+    cssStyle.backgroundColor = background.toCssString();
   }
   final double? fontSize = style.fontSize;
   if (fontSize != null) {
@@ -815,8 +820,8 @@ void applyTextStyleToElement({
         style.fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
   }
   // For test environment use effectiveFontFamily since we need to
-  // consistently use Ahem font.
-  if (ui.debugEmulateFlutterTesterEnvironment) {
+  // consistently use the correct test font.
+  if (ui_web.debugEmulateFlutterTesterEnvironment) {
     cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)!;
   } else {
     cssStyle.fontFamily = canonicalizeFontFamily(style.fontFamily)!;
@@ -847,7 +852,7 @@ void applyTextStyleToElement({
         }
         final ui.Color? decorationColor = style.decorationColor;
         if (decorationColor != null) {
-          cssStyle.textDecorationColor = colorToCssString(decorationColor)!;
+          cssStyle.textDecorationColor = decorationColor.toCssString();
         }
       }
     }
@@ -882,7 +887,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
     }
     final ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
+        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
   }
   return sb.toString();
 }

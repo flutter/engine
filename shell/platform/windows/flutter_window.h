@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -155,6 +156,9 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   // |WindowBindingHandler|
   ui::AXPlatformNodeWin* GetAlert() override;
 
+  // |WindowBindingHandler|
+  bool NeedsVSync() override;
+
   // |Window|
   ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
 
@@ -168,6 +172,8 @@ class FlutterWindow : public Window, public WindowBindingHandler {
 
   // The cursor rect set by Flutter.
   RECT cursor_rect_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindow);
 };
 
 }  // namespace flutter

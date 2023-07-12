@@ -41,10 +41,6 @@ common_libs = [
     path = rebase_path("$fuchsia_sdk_dist")
   },
   {
-    name = "libmemfs.so"
-    path = rebase_path("$fuchsia_sdk_dist")
-  },
-  {
     name = "libsyslog.so"
     path = rebase_path("$fuchsia_sdk_dist")
   },
@@ -59,6 +55,7 @@ common_libs = [
   {
     name = "ld.so.1"
     path = rebase_path("$sysroot_dist_lib/$ld_so_path")
+    output_path = ld_so_path
   },
 ]
 

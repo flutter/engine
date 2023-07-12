@@ -11,6 +11,8 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 namespace flutter {
@@ -60,7 +62,7 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
 
   SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
                                           SkColorSpace::MakeSRGB());
-  sk_surface_ = SkSurface::MakeRaster(info, nullptr);
+  sk_surface_ = SkSurfaces::Raster(info, nullptr);
   return sk_surface_;
 }
 

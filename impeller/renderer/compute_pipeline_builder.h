@@ -8,9 +8,9 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/shader_library.h"
 #include "impeller/renderer/vertex_descriptor.h"
 
@@ -45,9 +45,8 @@ struct ComputePipelineBuilder {
     ComputePipelineDescriptor desc;
     if (InitializePipelineDescriptorDefaults(context, desc)) {
       return {std::move(desc)};
-    } else {
-      return std::nullopt;
     }
+    return std::nullopt;
   }
 
   [[nodiscard]] static bool InitializePipelineDescriptorDefaults(
@@ -66,6 +65,14 @@ struct ComputePipelineBuilder {
                        << ComputeShader::kEntrypointName
                        << "' for pipeline named '" << ComputeShader::kLabel
                        << "'.";
+        return false;
+      }
+
+      if (!desc.RegisterDescriptorSetLayouts(
+              ComputeShader::kDescriptorSetLayouts)) {
+        VALIDATION_LOG << "Could not configure compute descriptor set layout "
+                          "for pipeline named '"
+                       << ComputeShader::kLabel << "'.";
         return false;
       }
 

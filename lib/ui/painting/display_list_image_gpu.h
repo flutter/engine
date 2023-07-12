@@ -5,7 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_IMAGE_GPU_H_
 #define FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_IMAGE_GPU_H_
 
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 
@@ -29,6 +29,9 @@ class DlImageGPU final : public DlImage {
 
   // |DlImage|
   bool isTextureBacked() const override;
+
+  // |DlImage|
+  bool isUIThreadSafe() const override;
 
   // |DlImage|
   SkISize dimensions() const override;

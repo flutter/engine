@@ -14,12 +14,29 @@
 
 namespace impeller {
 
+enum class Cap {
+  kButt,
+  kRound,
+  kSquare,
+};
+
+enum class Join {
+  kMiter,
+  kRound,
+  kBevel,
+};
+
 enum class FillType {
   kNonZero,  // The default winding order.
   kOdd,
   kPositive,
   kNegative,
   kAbsGeqTwo,
+};
+
+enum class Convexity {
+  kUnknown,
+  kConvex,
 };
 
 //------------------------------------------------------------------------------
@@ -76,11 +93,13 @@ class Path {
 
   ~Path();
 
-  size_t GetComponentCount() const;
+  size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   void SetFillType(FillType fill);
 
   FillType GetFillType() const;
+
+  bool IsConvex() const;
 
   Path& AddLinearComponent(Point p1, Point p2);
 
@@ -122,7 +141,12 @@ class Path {
   bool UpdateContourComponentAtIndex(size_t index,
                                      const ContourComponent& contour);
 
-  Polyline CreatePolyline(Scalar tolerance = kDefaultCurveTolerance) const;
+  /// Callers must provide the scale factor for how this path will be
+  /// transformed.
+  ///
+  /// It is suitable to use the max basis length of the matrix used to transform
+  /// the path. If the provided scale is 0, curves will revert to lines.
+  Polyline CreatePolyline(Scalar scale) const;
 
   std::optional<Rect> GetBoundingBox() const;
 
@@ -131,6 +155,10 @@ class Path {
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
  private:
+  friend class PathBuilder;
+
+  void SetConvexity(Convexity value);
+
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
     size_t index = 0;
@@ -142,6 +170,7 @@ class Path {
   };
 
   FillType fill_ = FillType::kNonZero;
+  Convexity convexity_ = Convexity::kUnknown;
   std::vector<ComponentIndexPair> components_;
   std::vector<LinearPathComponent> linears_;
   std::vector<QuadraticPathComponent> quads_;

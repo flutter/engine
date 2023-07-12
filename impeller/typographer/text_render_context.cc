@@ -6,15 +6,7 @@
 
 #include <utility>
 
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
-
 namespace impeller {
-
-std::unique_ptr<TextRenderContext> TextRenderContext::Create(
-    std::shared_ptr<Context> context) {
-  // There is only one backend today.
-  return std::make_unique<TextRenderContextSkia>(std::move(context));
-}
 
 TextRenderContext::TextRenderContext(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
@@ -32,21 +24,6 @@ bool TextRenderContext::IsValid() const {
 
 const std::shared_ptr<Context>& TextRenderContext::GetContext() const {
   return context_;
-}
-
-std::shared_ptr<GlyphAtlas> TextRenderContext::CreateGlyphAtlas(
-    GlyphAtlas::Type type,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
-    const TextFrame& frame) const {
-  size_t count = 0;
-  FrameIterator iterator = [&]() -> const TextFrame* {
-    count++;
-    if (count == 1) {
-      return &frame;
-    }
-    return nullptr;
-  };
-  return CreateGlyphAtlas(type, std::move(atlas_context), iterator);
 }
 
 }  // namespace impeller

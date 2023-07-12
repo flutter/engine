@@ -2,33 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 #include <impeller/types.glsl>
 
-uniform sampler2D glyph_atlas_sampler;
+uniform f16sampler2D glyph_atlas_sampler;
 
 uniform FragInfo {
-  vec2 atlas_size;
-  vec4 text_color;
+  f16vec4 text_color;
 }
 frag_info;
 
-in vec2 v_unit_position;
-in vec2 v_source_position;
-in vec2 v_source_glyph_size;
-in float v_has_color;
+in highp vec2 v_uv;
 
-out vec4 frag_color;
+out f16vec4 frag_color;
 
 void main() {
-  vec2 uv_size = v_source_glyph_size / frag_info.atlas_size;
-  vec2 uv_position = v_source_position / frag_info.atlas_size;
-  if (v_has_color == 1.0) {
-    frag_color =
-        texture(glyph_atlas_sampler, v_unit_position * uv_size + uv_position);
-  } else {
-    frag_color =
-        texture(glyph_atlas_sampler, v_unit_position * uv_size + uv_position)
-            .aaaa *
-        frag_info.text_color;
-  }
+  f16vec4 value = texture(glyph_atlas_sampler, v_uv);
+  frag_color = value.aaaa * frag_info.text_color;
 }

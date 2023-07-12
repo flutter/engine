@@ -5,21 +5,20 @@
 #pragma once
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
-#include "impeller/renderer/texture.h"
+#include "impeller/core/texture.h"
 
 namespace flutter {
 
 class DlDeferredImageGPUImpeller final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPUImpeller> Make(
-      std::shared_ptr<LayerTree> layer_tree,
-      const SkISize& size,
+      std::unique_ptr<LayerTree> layer_tree,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -45,6 +44,9 @@ class DlDeferredImageGPUImpeller final : public DlImage {
   bool isTextureBacked() const override;
 
   // |DlImage|
+  bool isUIThreadSafe() const override;
+
+  // |DlImage|
   SkISize dimensions() const override;
 
   // |DlImage|
@@ -68,8 +70,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
     static std::shared_ptr<ImageWrapper> Make(
-        std::shared_ptr<LayerTree> layer_tree,
-        const SkISize& size,
+        std::unique_ptr<LayerTree> layer_tree,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -101,10 +102,10 @@ class DlDeferredImageGPUImpeller final : public DlImage {
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
     // If a layer tree is provided, it will be flattened during the raster
-    // thread task spwaned by this method. After being flattened into a display
+    // thread task spawned by this method. After being flattened into a display
     // list, the image wrapper will be updated to hold this display list and the
     // layer tree can be dropped.
-    void SnapshotDisplayList(std::shared_ptr<LayerTree> layer_tree = nullptr);
+    void SnapshotDisplayList(std::unique_ptr<LayerTree> layer_tree = nullptr);
 
     // |ContextListener|
     void OnGrContextCreated() override;

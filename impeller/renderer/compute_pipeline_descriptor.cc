@@ -4,7 +4,7 @@
 
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/shader_function.h"
 #include "impeller/renderer/shader_library.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -61,6 +61,21 @@ ComputePipelineDescriptor::GetStageEntrypoint() const {
 
 const std::string& ComputePipelineDescriptor::GetLabel() const {
   return label_;
+}
+
+bool ComputePipelineDescriptor::RegisterDescriptorSetLayouts(
+    const DescriptorSetLayout desc_set_layout[],
+    size_t count) {
+  descriptor_set_layouts_.reserve(descriptor_set_layouts_.size() + count);
+  for (size_t i = 0; i < count; i++) {
+    descriptor_set_layouts_.emplace_back(desc_set_layout[i]);
+  }
+  return true;
+}
+
+const std::vector<DescriptorSetLayout>&
+ComputePipelineDescriptor::GetDescriptorSetLayouts() const {
+  return descriptor_set_layouts_;
 }
 
 }  // namespace impeller

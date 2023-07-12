@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOWS_PROC_TABLE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOWS_PROC_TABLE_H_
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/windows_proc_table.h"
 #include "gmock/gmock.h"
 
@@ -19,6 +20,9 @@ class MockWindowsProcTable : public WindowsProcTable {
 
   MOCK_METHOD2(GetPointerType,
                BOOL(UINT32 pointer_id, POINTER_INPUT_TYPE* pointer_type));
+
+  MOCK_CONST_METHOD4(GetThreadPreferredUILanguages,
+                     LRESULT(DWORD, PULONG, PZZWSTR, PULONG));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockWindowsProcTable);

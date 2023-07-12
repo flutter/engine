@@ -54,16 +54,6 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, nonnull, readonly) FlutterEngine* engine;
 
 /**
- * The identifier for this view controller.
- *
- * The ID is assigned by FlutterEngine when the view controller is attached.
- *
- * If the view controller is unattached (see FlutterViewController#attached),
- * reading this property throws an assertion.
- */
-@property(nonatomic, readonly) uint64_t id;
-
-/**
  * The style of mouse tracking to use for the view. Defaults to
  * FlutterMouseTrackingModeInKeyWindow.
  */
@@ -89,7 +79,9 @@ FLUTTER_DARWIN_EXPORT
     NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 /**
- * Initializes this FlutterViewController with the specified `FlutterEngine`.
+ * Initializes this FlutterViewController with an existing `FlutterEngine`.
+ *
+ * The initialized view controller will add itself to the engine as part of this process.
  *
  * This initializer is suitable for both the first Flutter view controller and
  * the following ones of the app.
@@ -116,6 +108,29 @@ FLUTTER_DARWIN_EXPORT
 - (void)onPreEngineRestart;
 
 /**
+ * Returns the file name for the given asset.
+ * The returned file name can be used to access the asset in the application's
+ * main bundle.
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @return The file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset;
+
+/**
+ * Returns the file name for the given asset which originates from the specified
+ * package.
+ * The returned file name can be used to access the asset in the application's
+ * main bundle.
+ *
+ * @param asset The name of the asset. The name can be hierarchical.
+ * @param package The name of the package from which the asset originates.
+ * @return The file name to be used for lookup in the main bundle.
+ */
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                           fromPackage:(nonnull NSString*)package;
+
+/**
  * The contentView (FlutterView)'s background color is set to black during
  * its instantiation.
  *
@@ -129,7 +144,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * class MainFlutterWindow: NSWindow {
  *   override func awakeFromNib() {
- *     let flutterViewController = FlutterViewController.init()
+ *     let flutterViewController = FlutterViewController()
  *
  *     // The background color of the window and `FlutterViewController`
  *     // are retained separately.

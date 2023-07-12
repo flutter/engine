@@ -5,17 +5,14 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 #define FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 
-#include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_op_flags.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/picture_recorder.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/vertices.h"
-#include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/utils/SkShadowUtils.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
@@ -61,7 +58,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 double top,
                 double right,
                 double bottom,
-                SkClipOp clipOp,
+                DlCanvas::ClipOp clipOp,
                 bool doAntiAlias = true);
   void clipRRect(const RRect& rrect, bool doAntiAlias = true);
   void clipPath(const CanvasPath* path, bool doAntiAlias = true);
@@ -164,7 +161,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
 
   void drawPoints(Dart_Handle paint_objects,
                   Dart_Handle paint_data,
-                  SkCanvas::PointMode point_mode,
+                  DlCanvas::PointMode point_mode,
                   const tonic::Float32List& points);
 
   void drawVertices(const Vertices* vertices,
@@ -187,29 +184,14 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                   double elevation,
                   bool transparentOccluder);
 
-  SkCanvas* canvas() const { return canvas_; }
   void Invalidate();
 
-  DisplayListBuilder* builder() {
-    return display_list_recorder_ ? display_list_recorder_->builder().get()
-                                  : nullptr;
-  }
+  DisplayListBuilder* builder() { return display_list_builder_.get(); }
 
  private:
-  explicit Canvas(SkCanvas* canvas);
+  explicit Canvas(sk_sp<DisplayListBuilder> builder);
 
-  // The SkCanvas is supplied by a call to SkPictureRecorder::beginRecording,
-  // which does not transfer ownership.  For this reason, we hold a raw
-  // pointer and manually set to null in Clear.
-  SkCanvas* canvas_;
-
-  // A copy of the recorder used by the SkCanvas->DisplayList adapter for cases
-  // where we cannot record the SkCanvas method call through the various OnOp()
-  // virtual methods or where we can be more efficient by talking directly in
-  // the DisplayList operation lexicon. The recorder has a method for recording
-  // paint attributes from an SkPaint and an operation type as well as access
-  // to the raw DisplayListBuilder for emitting custom rendering operations.
-  sk_sp<DisplayListCanvasRecorder> display_list_recorder_;
+  sk_sp<DisplayListBuilder> display_list_builder_;
 };
 
 }  // namespace flutter

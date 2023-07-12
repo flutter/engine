@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <type_traits>
+#include <variant>
 #include <vector>
 
 #include "impeller/geometry/point.h"
@@ -22,14 +24,7 @@ namespace impeller {
 // points for the given scale.
 static constexpr Scalar kDefaultCurveTolerance = .1f;
 
-struct PathComponent {
-  virtual ~PathComponent();
-
-  virtual std::optional<Vector2> GetStartDirection() const = 0;
-  virtual std::optional<Vector2> GetEndDirection() const = 0;
-};
-
-struct LinearPathComponent : public PathComponent {
+struct LinearPathComponent {
   Point p1;
   Point p2;
 
@@ -47,12 +42,12 @@ struct LinearPathComponent : public PathComponent {
     return p1 == other.p1 && p2 == other.p2;
   }
 
-  std::optional<Vector2> GetStartDirection() const override;
+  std::optional<Vector2> GetStartDirection() const;
 
-  std::optional<Vector2> GetEndDirection() const override;
+  std::optional<Vector2> GetEndDirection() const;
 };
 
-struct QuadraticPathComponent : public PathComponent {
+struct QuadraticPathComponent {
   Point p1;
   Point cp;
   Point p2;
@@ -76,11 +71,10 @@ struct QuadraticPathComponent : public PathComponent {
   //   making it trivially parallelizable.
   //
   // See also the implementation in kurbo: https://github.com/linebender/kurbo.
-  std::vector<Point> CreatePolyline(
-      Scalar tolerance = kDefaultCurveTolerance) const;
+  std::vector<Point> CreatePolyline(Scalar scale) const;
 
   void FillPointsForPolyline(std::vector<Point>& points,
-                             Scalar tolerance = kDefaultCurveTolerance) const;
+                             Scalar scale_factor) const;
 
   std::vector<Point> Extrema() const;
 
@@ -88,12 +82,12 @@ struct QuadraticPathComponent : public PathComponent {
     return p1 == other.p1 && cp == other.cp && p2 == other.p2;
   }
 
-  std::optional<Vector2> GetStartDirection() const override;
+  std::optional<Vector2> GetStartDirection() const;
 
-  std::optional<Vector2> GetEndDirection() const override;
+  std::optional<Vector2> GetEndDirection() const;
 };
 
-struct CubicPathComponent : public PathComponent {
+struct CubicPathComponent {
   Point p1;
   Point cp1;
   Point cp2;
@@ -118,8 +112,7 @@ struct CubicPathComponent : public PathComponent {
   // generates a polyline from those quadratics.
   //
   // See the note on QuadraticPathComponent::CreatePolyline for references.
-  std::vector<Point> CreatePolyline(
-      Scalar tolerance = kDefaultCurveTolerance) const;
+  std::vector<Point> CreatePolyline(Scalar scale) const;
 
   std::vector<Point> Extrema() const;
 
@@ -133,9 +126,9 @@ struct CubicPathComponent : public PathComponent {
            p2 == other.p2;
   }
 
-  std::optional<Vector2> GetStartDirection() const override;
+  std::optional<Vector2> GetStartDirection() const;
 
-  std::optional<Vector2> GetEndDirection() const override;
+  std::optional<Vector2> GetEndDirection() const;
 
  private:
   QuadraticPathComponent Lower() const;
@@ -154,5 +147,32 @@ struct ContourComponent {
     return destination == other.destination && is_closed == other.is_closed;
   }
 };
+
+using PathComponentVariant = std::variant<std::monostate,
+                                          const LinearPathComponent*,
+                                          const QuadraticPathComponent*,
+                                          const CubicPathComponent*>;
+
+struct PathComponentStartDirectionVisitor {
+  std::optional<Vector2> operator()(const LinearPathComponent* component);
+  std::optional<Vector2> operator()(const QuadraticPathComponent* component);
+  std::optional<Vector2> operator()(const CubicPathComponent* component);
+  std::optional<Vector2> operator()(std::monostate monostate) {
+    return std::nullopt;
+  }
+};
+
+struct PathComponentEndDirectionVisitor {
+  std::optional<Vector2> operator()(const LinearPathComponent* component);
+  std::optional<Vector2> operator()(const QuadraticPathComponent* component);
+  std::optional<Vector2> operator()(const CubicPathComponent* component);
+  std::optional<Vector2> operator()(std::monostate monostate) {
+    return std::nullopt;
+  }
+};
+
+static_assert(!std::is_polymorphic<LinearPathComponent>::value);
+static_assert(!std::is_polymorphic<QuadraticPathComponent>::value);
+static_assert(!std::is_polymorphic<CubicPathComponent>::value);
 
 }  // namespace impeller

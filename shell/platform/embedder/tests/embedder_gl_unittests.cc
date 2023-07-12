@@ -2977,7 +2977,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
   builder.SetCompositor();
-  builder.SetDartEntrypoint("render_targets_are_recycled");
+  builder.SetDartEntrypoint("render_targets_are_in_stable_order");
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
 
@@ -4018,11 +4018,15 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   TestGLSurface surface(SkISize::Make(100, 100));
   auto context = surface.GetGrContext();
 
-  typedef void (*glGenTexturesProc)(uint32_t n, uint32_t * textures);
+  typedef void (*glGenTexturesProc)(uint32_t n, uint32_t* textures);
+  typedef void (*glFinishProc)();
+
   glGenTexturesProc glGenTextures;
+  glFinishProc glFinish;
 
   glGenTextures = reinterpret_cast<glGenTexturesProc>(
       surface.GetProcAddress("glGenTextures"));
+  glFinish = reinterpret_cast<glFinishProc>(surface.GetProcAddress("glFinish"));
 
   uint32_t name;
   glGenTextures(1, &name);
@@ -4044,29 +4048,31 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   EmbedderExternalTextureGL texture(1, callback);
 
   auto skia_surface = surface.GetOnscreenSurface();
-  auto canvas = skia_surface->getCanvas();
+  DlSkCanvasAdapter canvas(skia_surface->getCanvas());
 
   Texture* texture_ = &texture;
   Texture::PaintContext ctx{
-      .canvas = canvas,
+      .canvas = &canvas,
       .gr_context = context.get(),
   };
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_TRUE(resolve_called);
   resolve_called = false;
 
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_FALSE(resolve_called);
 
   texture_->MarkNewFrameAvailable();
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
-                  SkSamplingOptions(SkFilterMode::kLinear));
+                  DlImageSampling::kLinear);
 
   EXPECT_TRUE(resolve_called);
+
+  glFinish();
 }
 
 TEST_F(EmbedderTest,

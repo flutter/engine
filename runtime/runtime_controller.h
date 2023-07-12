@@ -168,11 +168,20 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
+  /// @param[in]  view_id  The ID for the view that `metrics` describes.
   /// @param[in]  metrics  The window's viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
-  bool SetViewportMetrics(const ViewportMetrics& metrics);
+  bool SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Forward the specified display metrics to the running isolate.
+  ///             If the isolate is not running, these metrics will be saved and
+  ///             flushed to the isolate when it starts.
+  ///
+  /// @param[in]  displays  The available displays.
+  bool SetDisplays(const std::vector<DisplayData>& displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
@@ -205,9 +214,11 @@ class RuntimeController : public PlatformConfigurationClient {
   bool SetUserSettingsData(const std::string& data);
 
   //----------------------------------------------------------------------------
-  /// @brief      Forward the lifecycle state data to the running isolate. If
-  ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
+  /// @brief      Forward the initial lifecycle state data to the running
+  ///             isolate. If the isolate is not running, this data will be
+  ///             saved and flushed to the isolate when it starts running.
+  ///             After the isolate starts running, the current lifecycle
+  ///             state is pushed to it via the "flutter/lifecycle" channel.
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
@@ -217,7 +228,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the lifecycle state data was forwarded to the running
   ///             isolate.
   ///
-  bool SetLifecycleState(const std::string& data);
+  bool SetInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate about whether the semantics tree
@@ -609,6 +620,9 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
+
+  // |PlatformConfigurationClient|
+  bool ImplicitViewEnabled() override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

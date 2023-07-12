@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
@@ -36,10 +37,21 @@ static constexpr char kClipboardHasStringsFakeContentTypeMessage[] =
     "{\"method\":\"Clipboard.hasStrings\",\"args\":\"text/madeupcontenttype\"}";
 static constexpr char kClipboardSetDataMessage[] =
     "{\"method\":\"Clipboard.setData\",\"args\":{\"text\":\"hello\"}}";
+static constexpr char kClipboardSetDataNullTextMessage[] =
+    "{\"method\":\"Clipboard.setData\",\"args\":{\"text\":null}}";
 static constexpr char kClipboardSetDataUnknownTypeMessage[] =
     "{\"method\":\"Clipboard.setData\",\"args\":{\"madeuptype\":\"hello\"}}";
 static constexpr char kSystemSoundTypeAlertMessage[] =
     "{\"method\":\"SystemSound.play\",\"args\":\"SystemSoundType.alert\"}";
+static constexpr char kSystemExitApplicationRequiredMessage[] =
+    "{\"method\":\"System.exitApplication\",\"args\":{\"type\":\"required\","
+    "\"exitCode\":1}}";
+static constexpr char kSystemExitApplicationCancelableMessage[] =
+    "{\"method\":\"System.exitApplication\",\"args\":{\"type\":\"cancelable\","
+    "\"exitCode\":2}}";
+static constexpr char kExitResponseCancelMessage[] =
+    "[{\"response\":\"cancel\"}]";
+static constexpr char kExitResponseExitMessage[] = "[{\"response\":\"exit\"}]";
 
 static constexpr int kAccessDeniedErrorCode = 5;
 static constexpr int kErrorSuccess = 0;
@@ -69,15 +81,30 @@ class MockPlatformHandler : public PlatformHandler {
   MOCK_METHOD2(SystemSoundPlay,
                void(const std::string&,
                     std::unique_ptr<MethodResult<rapidjson::Document>>));
+
+  MOCK_METHOD4(QuitApplication,
+               void(std::optional<HWND> hwnd,
+                    std::optional<WPARAM> wparam,
+                    std::optional<LPARAM> lparam,
+                    UINT exit_code));
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockPlatformHandler);
 };
 
 // A test version of the private ScopedClipboard.
 class MockScopedClipboard : public ScopedClipboardInterface {
  public:
+  MockScopedClipboard() = default;
+  virtual ~MockScopedClipboard() = default;
+
   MOCK_METHOD(int, Open, (HWND window), (override));
   MOCK_METHOD(bool, HasString, (), (override));
   MOCK_METHOD((std::variant<std::wstring, int>), GetString, (), (override));
   MOCK_METHOD(int, SetString, (const std::wstring string), (override));
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockScopedClipboard);
 };
 
 std::string SimulatePlatformMessage(TestBinaryMessenger* messenger,
@@ -98,6 +125,10 @@ std::string SimulatePlatformMessage(TestBinaryMessenger* messenger,
 }  // namespace
 
 class PlatformHandlerTest : public WindowsTest {
+ public:
+  PlatformHandlerTest() = default;
+  virtual ~PlatformHandlerTest() = default;
+
  protected:
   FlutterWindowsEngine* engine() { return engine_.get(); }
 
@@ -120,6 +151,8 @@ class PlatformHandlerTest : public WindowsTest {
  private:
   std::unique_ptr<FlutterWindowsEngine> engine_;
   std::unique_ptr<FlutterWindowsView> view_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandlerTest);
 };
 
 TEST_F(PlatformHandlerTest, GetClipboardData) {
@@ -352,6 +385,19 @@ TEST_F(PlatformHandlerTest, ClipboardSetData) {
   EXPECT_EQ(result, "[null]");
 }
 
+// Regression test for: https://github.com/flutter/flutter/issues/121976
+TEST_F(PlatformHandlerTest, ClipboardSetDataTextMustBeString) {
+  use_engine_with_view();
+
+  TestBinaryMessenger messenger;
+  PlatformHandler platform_handler(&messenger, engine());
+
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardSetDataNullTextMessage);
+
+  EXPECT_EQ(result, "[\"Clipboard error\",\"Unknown clipboard format\",null]");
+}
+
 TEST_F(PlatformHandlerTest, ClipboardSetDataUnknownType) {
   use_engine_with_view();
 
@@ -437,6 +483,77 @@ TEST_F(PlatformHandlerTest, PlaySystemSound) {
       SimulatePlatformMessage(&messenger, kSystemSoundTypeAlertMessage);
 
   EXPECT_EQ(result, "[null]");
+}
+
+TEST_F(PlatformHandlerTest, SystemExitApplicationRequired) {
+  use_headless_engine();
+  UINT exit_code = 0;
+
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t size,
+                                   BinaryReply reply) {});
+  MockPlatformHandler platform_handler(&messenger, engine());
+
+  ON_CALL(platform_handler, QuitApplication)
+      .WillByDefault([&exit_code](std::optional<HWND> hwnd,
+                                  std::optional<WPARAM> wparam,
+                                  std::optional<LPARAM> lparam,
+                                  UINT ec) { exit_code = ec; });
+  EXPECT_CALL(platform_handler, QuitApplication).Times(1);
+
+  std::string result = SimulatePlatformMessage(
+      &messenger, kSystemExitApplicationRequiredMessage);
+  EXPECT_EQ(result, "[{\"response\":\"exit\"}]");
+  EXPECT_EQ(exit_code, 1);
+}
+
+TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableCancel) {
+  use_headless_engine();
+  bool called_cancel = false;
+
+  TestBinaryMessenger messenger(
+      [&called_cancel](const std::string& channel, const uint8_t* message,
+                       size_t size, BinaryReply reply) {
+        reply(reinterpret_cast<const uint8_t*>(kExitResponseCancelMessage),
+              sizeof(kExitResponseCancelMessage));
+        called_cancel = true;
+      });
+  MockPlatformHandler platform_handler(&messenger, engine());
+
+  EXPECT_CALL(platform_handler, QuitApplication).Times(0);
+
+  std::string result = SimulatePlatformMessage(
+      &messenger, kSystemExitApplicationCancelableMessage);
+  EXPECT_EQ(result, "[{\"response\":\"cancel\"}]");
+  EXPECT_TRUE(called_cancel);
+}
+
+TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableExit) {
+  use_headless_engine();
+  bool called_cancel = false;
+  UINT exit_code = 0;
+
+  TestBinaryMessenger messenger(
+      [&called_cancel](const std::string& channel, const uint8_t* message,
+                       size_t size, BinaryReply reply) {
+        reply(reinterpret_cast<const uint8_t*>(kExitResponseExitMessage),
+              sizeof(kExitResponseExitMessage));
+        called_cancel = true;
+      });
+  MockPlatformHandler platform_handler(&messenger, engine());
+
+  ON_CALL(platform_handler, QuitApplication)
+      .WillByDefault([&exit_code](std::optional<HWND> hwnd,
+                                  std::optional<WPARAM> wparam,
+                                  std::optional<LPARAM> lparam,
+                                  UINT ec) { exit_code = ec; });
+  EXPECT_CALL(platform_handler, QuitApplication).Times(1);
+
+  std::string result = SimulatePlatformMessage(
+      &messenger, kSystemExitApplicationCancelableMessage);
+  EXPECT_EQ(result, "[{\"response\":\"cancel\"}]");
+  EXPECT_TRUE(called_cancel);
+  EXPECT_EQ(exit_code, 2);
 }
 
 }  // namespace testing

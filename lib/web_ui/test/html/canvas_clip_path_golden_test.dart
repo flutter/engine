@@ -7,8 +7,10 @@ import 'dart:js_util' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
+import '../common/test_initialization.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -16,12 +18,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-    await webOnlyInitializePlatform();
-    await engine.renderer.fontCollection.debugDownloadTestFonts();
-    engine.renderer.fontCollection.registerDownloadedFonts();
-  });
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
   // Should clip image with oval.
@@ -117,6 +116,50 @@ Future<void> testMain() async {
         const Rect.fromLTWH(-50, 0, testWidth, testHeight), engine.SurfacePaint());
     rc.restore();
     await canvasScreenshot(rc, 'image_clipped_by_oval_path',
+        region: const Rect.fromLTWH(0, 0, 600, 800));
+  });
+
+  test('Clips with fillType evenOdd', () async {
+    final engine.RecordingCanvas rc = engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+    rc.save();
+    const double testWidth = 400;
+    const double testHeight = 350;
+
+    // draw RGB test image
+    rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
+        const Rect.fromLTWH(0, 0, testWidth, testHeight), engine.SurfacePaint());
+
+    // draw a clipping path with:
+    // 1) an outside larger rectangle
+    // 2) a smaller inner rectangle specified by a path
+    final Path path = Path();
+    path.addRect(const Rect.fromLTWH(0, 0, testWidth, testHeight));
+    const double left = 25;
+    const double top = 30;
+    const double right = 300;
+    const double bottom = 250;
+    path
+      ..moveTo(left, top)
+      ..lineTo(right,top)
+      ..lineTo(right,bottom)
+      ..lineTo(left, bottom)
+      ..close();
+    path.fillType = PathFillType.evenOdd;
+    rc.clipPath(path);
+
+    // draw an orange paint path of size testWidth and testHeight
+    final Path paintPath = Path();
+    paintPath.addRect(const Rect.fromLTWH(0, 0, testWidth, testHeight));
+    paintPath.close();
+    rc.drawPath(paintPath,
+        engine.SurfacePaint()
+          ..color = const Color(0xFFFF9800)
+          ..style = PaintingStyle.fill);
+    rc.restore();
+
+    // when fillType is set to evenOdd from the clipping path, expect the inner
+    // rectangle should clip some of the orange painted portion, revealing the RGB testImage
+    await canvasScreenshot(rc, 'clipPath_uses_fillType_evenOdd',
         region: const Rect.fromLTWH(0, 0, 600, 800));
   });
 }

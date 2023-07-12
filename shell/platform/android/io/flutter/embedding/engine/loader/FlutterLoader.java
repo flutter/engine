@@ -39,10 +39,12 @@ public class FlutterLoader {
 
   private static final String OLD_GEN_HEAP_SIZE_META_DATA_KEY =
       "io.flutter.embedding.android.OldGenHeapSize";
-  private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
-      "io.flutter.embedding.android.EnableSkParagraph";
   private static final String ENABLE_IMPELLER_META_DATA_KEY =
       "io.flutter.embedding.android.EnableImpeller";
+  private static final String ENABLE_VULKAN_VALIDATION_META_DATA_KEY =
+      "io.flutter.embedding.android.EnableVulkanValidation";
+  private static final String IMPELLER_BACKEND_META_DATA_KEY =
+      "io.flutter.embedding.android.ImpellerBackend";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -318,12 +320,17 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      boolean enableSkParagraph =
-          metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true);
-      shellArgs.add("--enable-skparagraph=" + enableSkParagraph);
-
-      if (metaData != null && metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
-        shellArgs.add("--enable-impeller");
+      if (metaData != null) {
+        if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
+          shellArgs.add("--enable-impeller");
+        }
+        if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
+          shellArgs.add("--enable-vulkan-validation");
+        }
+        String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
+        if (backend != null) {
+          shellArgs.add("--impeller-backend=" + backend);
+        }
       }
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";

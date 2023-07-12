@@ -66,7 +66,7 @@ FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
 
 FlatlandExternalViewEmbedder::~FlatlandExternalViewEmbedder() = default;
 
-SkCanvas* FlatlandExternalViewEmbedder::GetRootCanvas() {
+flutter::DlCanvas* FlatlandExternalViewEmbedder::GetRootCanvas() {
   auto found = frame_layers_.find(kRootLayerId);
   if (found == frame_layers_.end()) {
     FML_LOG(WARNING)
@@ -79,24 +79,8 @@ SkCanvas* FlatlandExternalViewEmbedder::GetRootCanvas() {
   return found->second.canvas_spy->GetSpyingCanvas();
 }
 
-std::vector<SkCanvas*> FlatlandExternalViewEmbedder::GetCurrentCanvases() {
-  std::vector<SkCanvas*> canvases;
-  for (const auto& layer : frame_layers_) {
-    // This method (for legacy reasons) expects non-root current canvases.
-    if (layer.first.has_value()) {
-      canvases.push_back(layer.second.canvas_spy->GetSpyingCanvas());
-    }
-  }
-  return canvases;
-}
-
-std::vector<flutter::DisplayListBuilder*>
-FlatlandExternalViewEmbedder::GetCurrentBuilders() {
-  return std::vector<flutter::DisplayListBuilder*>();
-}
-
 void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   FML_CHECK(frame_layers_.count(handle) == 0);
@@ -107,13 +91,13 @@ void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
   frame_composition_order_.push_back(handle);
 }
 
-flutter::EmbedderPaintContext
-FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+flutter::DlCanvas* FlatlandExternalViewEmbedder::CompositeEmbeddedView(
+    int64_t view_id) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   auto found = frame_layers_.find(handle);
   FML_CHECK(found != frame_layers_.end());
 
-  return {found->second.canvas_spy->GetSpyingCanvas(), nullptr};
+  return found->second.canvas_spy->GetSpyingCanvas();
 }
 
 flutter::PostPrerollResult FlatlandExternalViewEmbedder::PostPrerollAction(
@@ -148,6 +132,7 @@ void FlatlandExternalViewEmbedder::EndFrame(
 
 void FlatlandExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<flutter::SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "FlatlandExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
@@ -250,8 +235,26 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         const ViewMutators view_mutators =
             ParseMutatorStack(view_params.mutatorsStack());
         const SkSize view_size = view_params.sizePoints();
-        FML_CHECK(view_mutators.total_transform ==
-                  view_params.transformMatrix());
+
+        // Verify that we're unpacking the mutators' transform matrix correctly.
+        // Use built-in get method for SkMatrix to get values, see:
+        // https://source.corp.google.com/piper///depot/google3/third_party/skia/HEAD/include/core/SkMatrix.h;l=391
+        for (int index = 0; index < 9; index++) {
+          const SkScalar mutators_transform_value =
+              view_mutators.total_transform.get(index);
+          const SkScalar params_transform_value =
+              view_params.transformMatrix().get(index);
+          if (!SkScalarNearlyEqual(mutators_transform_value,
+                                   params_transform_value, 0.0005f)) {
+            FML_LOG(ERROR)
+                << "Assertion failed: view_mutators.total_transform[" << index
+                << "] (" << mutators_transform_value
+                << ") != view_params.transformMatrix()[" << index << "] ("
+                << params_transform_value
+                << "). This likely means there is a bug with the "
+                << "logic for parsing embedded views' transform matrices.";
+          }
+        }
 
         if (viewport.pending_create_viewport_callback) {
           if (view_size.fWidth && view_size.fHeight) {

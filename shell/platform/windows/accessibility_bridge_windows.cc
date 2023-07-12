@@ -10,11 +10,8 @@
 
 namespace flutter {
 
-AccessibilityBridgeWindows::AccessibilityBridgeWindows(
-    FlutterWindowsEngine* engine,
-    FlutterWindowsView* view)
-    : engine_(engine), view_(view) {
-  FML_DCHECK(engine_);
+AccessibilityBridgeWindows::AccessibilityBridgeWindows(FlutterWindowsView* view)
+    : view_(view) {
   FML_DCHECK(view_);
 }
 
@@ -48,10 +45,8 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
       // only for the focused node whose selection has changed. If a valid
       // caret and selection exist in the app tree, they must both be within
       // the focus node.
-      ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
-      auto focus_delegate =
-          GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
-      if (!focus_delegate) {
+      auto focus_delegate = GetFocusedNode().lock();
+      if (focus_delegate) {
         win_delegate =
             std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
                 focus_delegate);
@@ -168,7 +163,7 @@ void AccessibilityBridgeWindows::DispatchAccessibilityAction(
     AccessibilityNodeId target,
     FlutterSemanticsAction action,
     fml::MallocMapping data) {
-  engine_->DispatchSemanticsAction(target, action, std::move(data));
+  view_->GetEngine()->DispatchSemanticsAction(target, action, std::move(data));
 }
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
@@ -190,7 +185,12 @@ void AccessibilityBridgeWindows::SetFocus(
 
 gfx::NativeViewAccessible
 AccessibilityBridgeWindows::GetChildOfAXFragmentRoot() {
-  return view_->GetNativeViewAccessible();
+  ui::AXPlatformNodeDelegate* root_delegate = RootDelegate();
+  if (!root_delegate) {
+    return nullptr;
+  }
+
+  return root_delegate->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible
@@ -200,6 +200,12 @@ AccessibilityBridgeWindows::GetParentOfAXFragmentRoot() {
 
 bool AccessibilityBridgeWindows::IsAXFragmentRootAControlElement() {
   return true;
+}
+
+std::weak_ptr<FlutterPlatformNodeDelegate>
+AccessibilityBridgeWindows::GetFocusedNode() {
+  ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
+  return GetFlutterPlatformNodeDelegateFromID(focus_id);
 }
 
 }  // namespace flutter

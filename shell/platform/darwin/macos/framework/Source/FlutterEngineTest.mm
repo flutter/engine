@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <objc/objc.h>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#include "gtest/gtest.h"
 
 #include <functional>
 #include <thread>
@@ -11,6 +13,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
@@ -22,6 +25,8 @@
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
+constexpr int64_t kImplicitViewId = 0ll;
+
 @interface FlutterEngine (Test)
 /**
  * The FlutterCompositor object currently in use by the FlutterEngine.
@@ -29,6 +34,7 @@
  * May be nil if the compositor has not been initialized yet.
  */
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+
 @end
 
 @interface TestPlatformViewFactory : NSObject <FlutterPlatformViewFactory>
@@ -68,6 +74,24 @@ TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
 
   latch.Wait();
 }
+
+#ifndef FLUTTER_RELEASE
+TEST_F(FlutterEngineTest, Switches) {
+  setenv("FLUTTER_ENGINE_SWITCHES", "2", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_1", "abc", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_2", "foo=\"bar, baz\"", 1);
+
+  FlutterEngine* engine = GetFlutterEngine();
+  std::vector<std::string> switches = engine.switches;
+  ASSERT_EQ(switches.size(), 2UL);
+  EXPECT_EQ(switches[0], "--abc");
+  EXPECT_EQ(switches[1], "--foo=\"bar, baz\"");
+
+  unsetenv("FLUTTER_ENGINE_SWITCHES");
+  unsetenv("FLUTTER_ENGINE_SWITCH_1");
+  unsetenv("FLUTTER_ENGINE_SWITCH_2");
+}
+#endif  // !FLUTTER_RELEASE
 
 TEST_F(FlutterEngineTest, MessengerSend) {
   FlutterEngine* engine = GetFlutterEngine();
@@ -114,7 +138,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -143,7 +168,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   latch.Wait();
 }
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -177,12 +203,12 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
+  std::function<void(const FlutterSemanticsUpdate2*, void*)> update_semantics_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_semantics_callback = args->update_semantics_callback;
+        update_semantics_callback = args->update_semantics_callback2;
         return original_init(version, config, args, user_data, engine_out);
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -201,7 +227,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   engine.semanticsEnabled = YES;
   EXPECT_TRUE(enabled_called);
   // Send flutter semantics updates.
-  FlutterSemanticsNode root;
+  FlutterSemanticsNode2 root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
   root.actions = static_cast<FlutterSemanticsAction>(0);
@@ -218,7 +244,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
 
-  FlutterSemanticsNode child1;
+  FlutterSemanticsNode2 child1;
   child1.id = 1;
   child1.flags = static_cast<FlutterSemanticsFlag>(0);
   child1.actions = static_cast<FlutterSemanticsAction>(0);
@@ -233,11 +259,11 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
 
-  FlutterSemanticsUpdate update;
-  update.nodes_count = 2;
-  FlutterSemanticsNode nodes[] = {root, child1};
+  FlutterSemanticsUpdate2 update;
+  update.node_count = 2;
+  FlutterSemanticsNode2* nodes[] = {&root, &child1};
   update.nodes = nodes;
-  update.custom_actions_count = 0;
+  update.custom_action_count = 0;
   update_semantics_callback(&update, (__bridge void*)engine);
 
   // Verify the accessibility tree is attached to the flutter view.
@@ -271,12 +297,12 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
+  std::function<void(const FlutterSemanticsUpdate2*, void*)> update_semantics_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_semantics_callback = args->update_semantics_callback;
+        update_semantics_callback = args->update_semantics_callback2;
         return original_init(version, config, args, user_data, engine_out);
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -291,7 +317,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   engine.semanticsEnabled = YES;
   EXPECT_TRUE(enabled_called);
   // Send flutter semantics updates.
-  FlutterSemanticsNode root;
+  FlutterSemanticsNode2 root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
   root.actions = static_cast<FlutterSemanticsAction>(0);
@@ -308,7 +334,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
 
-  FlutterSemanticsNode child1;
+  FlutterSemanticsNode2 child1;
   child1.id = 1;
   child1.flags = static_cast<FlutterSemanticsFlag>(0);
   child1.actions = static_cast<FlutterSemanticsAction>(0);
@@ -323,12 +349,12 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
 
-  FlutterSemanticsUpdate update;
-  update.nodes_count = 2;
-  FlutterSemanticsNode nodes[] = {root, child1};
+  FlutterSemanticsUpdate2 update;
+  update.node_count = 2;
+  FlutterSemanticsNode2* nodes[] = {&root, &child1};
   update.nodes = nodes;
-  update.custom_actions_count = 0;
-  // This call updates semantics for the default view, which does not exist,
+  update.custom_action_count = 0;
+  // This call updates semantics for the implicit view, which does not exist,
   // and therefore this call is invalid. But the engine should not crash.
   update_semantics_callback(&update, (__bridge void*)engine);
 
@@ -348,6 +374,31 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   EXPECT_EQ(engine.viewController, nil);
 }
 
+TEST_F(FlutterEngineTest, ProducesAccessibilityTreeWhenAddingViews) {
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  // Enable the semantics without attaching a view controller.
+  bool enabled_called = false;
+  engine.embedderAPI.UpdateSemanticsEnabled =
+      MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
+                         enabled_called = enabled;
+                         return kSuccess;
+                       }));
+  engine.semanticsEnabled = YES;
+  EXPECT_TRUE(enabled_called);
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  // Assign the view controller after enabling semantics
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  engine.viewController = viewController;
+
+  EXPECT_NE(viewController.accessibilityBridge.lock(), nullptr);
+}
+
 TEST_F(FlutterEngineTest, NativeCallbacks) {
   fml::AutoResetWaitableEvent latch;
   bool latch_called = false;
@@ -364,7 +415,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
   ASSERT_TRUE(latch_called);
 }
 
-TEST(FlutterEngine, Compositor) {
+TEST_F(FlutterEngineTest, Compositor) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -390,7 +441,7 @@ TEST(FlutterEngine, Compositor) {
                 result:^(id result){
                 }];
 
-  [viewController.flutterView.threadSynchronizer blockUntilFrameAvailable];
+  [engine.testThreadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
@@ -403,7 +454,7 @@ TEST(FlutterEngine, Compositor) {
   [engine shutDownEngine];
 }  // namespace flutter::testing
 
-TEST(FlutterEngine, DartEntrypointArguments) {
+TEST_F(FlutterEngineTest, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -498,7 +549,7 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   EXPECT_EQ(record, 21);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
+TEST_F(FlutterEngineTest, HasStringsWhenPasteboardEmpty) {
   id engineMock = CreateMockFlutterEngine(nil);
 
   // Call hasStrings and expect it to be false.
@@ -516,7 +567,7 @@ TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
   EXPECT_FALSE(valueAfterClear);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
+TEST_F(FlutterEngineTest, HasStringsWhenPasteboardFull) {
   id engineMock = CreateMockFlutterEngine(@"some string");
 
   // Call hasStrings and expect it to be true.
@@ -576,17 +627,253 @@ TEST_F(FlutterEngineTest, ResponseFromBackgroundThread) {
   }
 }
 
-TEST(EngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
+TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
   FlutterThreadSynchronizer* threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [threadSynchronizer shutdown];
 
   std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommit:CGSizeMake(100, 100)
-                               notify:^{
-                               }];
+    [threadSynchronizer performCommitForView:kImplicitViewId
+                                        size:CGSizeMake(100, 100)
+                                      notify:^{
+                                      }];
   });
 
   rasterThread.join();
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+
+  FlutterEngine* engine;
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    // Create FVC1.
+    viewController1 = [[FlutterViewController alloc] initWithProject:project];
+    EXPECT_EQ(viewController1.viewId, 0ll);
+
+    engine = viewController1.engine;
+    engine.viewController = nil;
+
+    // Create FVC2 based on the same engine.
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.viewId, 0ll);
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
+  // Don't create the engine with `CreateMockFlutterEngine`, because it adds
+  // additional references to FlutterViewControllers, which is crucial to this
+  // test case.
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:nil
+                                       allowHeadlessExecution:NO];
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(engine.viewController, viewController1);
+
+    engine.viewController = nil;
+
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(viewController2.viewId, 0ll);
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.viewId, 0ll);
+}
+
+TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
+  id engineMock = CreateMockFlutterEngine(nil);
+  __block NSString* nextResponse = @"exit";
+  __block BOOL triedToTerminate = NO;
+  FlutterEngineTerminationHandler* terminationHandler =
+      [[FlutterEngineTerminationHandler alloc] initWithEngine:engineMock
+                                                   terminator:^(id sender) {
+                                                     triedToTerminate = TRUE;
+                                                     // Don't actually terminate, of course.
+                                                   }];
+  OCMStub([engineMock terminationHandler]).andReturn(terminationHandler);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  OCMStub([engineMock sendOnChannel:@"flutter/platform"
+                            message:[OCMArg any]
+                        binaryReply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        [invocation retainArguments];
+        FlutterBinaryReply callback;
+        NSData* returnedMessage;
+        [invocation getArgument:&callback atIndex:4];
+        if ([nextResponse isEqualToString:@"error"]) {
+          FlutterError* errorResponse = [FlutterError errorWithCode:@"Error"
+                                                            message:@"Failed"
+                                                            details:@"Details"];
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeErrorEnvelope:errorResponse];
+        } else {
+          NSDictionary* responseDict = @{@"response" : nextResponse};
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeSuccessEnvelope:responseDict];
+        }
+        callback(returnedMessage);
+      }));
+  __block NSString* calledAfterTerminate = @"";
+  FlutterResult appExitResult = ^(id result) {
+    NSDictionary* resultDict = result;
+    calledAfterTerminate = resultDict[@"response"];
+  };
+  FlutterMethodCall* methodExitApplication =
+      [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
+                                        arguments:@{@"type" : @"cancelable"}];
+
+  // Always terminate when the binding isn't ready (which is the default).
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+
+  // Once the binding is ready, handle the request.
+  terminationHandler.acceptingRequests = YES;
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"exit";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
+  EXPECT_TRUE(triedToTerminate);
+
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "cancel");
+  EXPECT_FALSE(triedToTerminate);
+
+  // Check that it doesn't crash on error.
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"error";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+}
+
+TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
+  __block BOOL announced = NO;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
+                                      withPriority:NSAccessibilityPriorityMedium])
+      .andDo((^(NSInvocation* invocation) {
+        announced = TRUE;
+        [invocation retainArguments];
+        NSString* message;
+        [invocation getArgument:&message atIndex:2];
+        EXPECT_EQ(message, @"error message");
+      }));
+
+  NSDictionary<NSString*, id>* annotatedEvent =
+      @{@"type" : @"announce",
+        @"data" : @{@"message" : @"error message"}};
+
+  [engineMock handleAccessibilityEvent:annotatedEvent];
+
+  EXPECT_TRUE(announced);
+}
+
+TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
+  __block flutter::AppLifecycleState sentState;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  // Have to enumerate all the values because OCMStub can't capture
+  // non-Objective-C object arguments.
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kDetached])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kDetached;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kResumed])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kResumed;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kInactive])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kInactive;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kHidden])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kHidden;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kPaused])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kPaused;
+      }));
+
+  __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
+  id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
+  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation setReturnValue:&visibility];
+      });
+
+  NSNotification* willBecomeActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillBecomeActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+  NSNotification* willResignActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillResignActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  NSNotification* didChangeOcclusionState;
+  didChangeOcclusionState =
+      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kResumed);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  visibility = 0;
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [mockApplication stopMocking];
 }
 
 }  // namespace flutter::testing

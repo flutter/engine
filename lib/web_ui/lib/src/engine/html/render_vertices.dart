@@ -64,9 +64,16 @@ class SurfaceVertices implements ui.Vertices {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError('Vertices.debugDisposed is only available when asserts are enabled.');
   }
 }
@@ -466,10 +473,8 @@ class _WebGlRenderer implements GlRenderer {
         switch (triangleVertexIndex) {
           case 0:
             ctx.moveTo(dx, dy);
-            break;
           case 1:
             ctx.lineTo(dx, dy);
-            break;
           case 2:
             ctx.lineTo(dx, dy);
             ctx.closePath();

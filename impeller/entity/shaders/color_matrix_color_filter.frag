@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
@@ -31,27 +33,26 @@
 
 uniform FragInfo {
   mat4 color_m;
-  vec4 color_v;
-  float texture_sampler_y_coord_scale;
-  float input_alpha;
+  f16vec4 color_v;
+  float16_t input_alpha;
 }
 frag_info;
 
-uniform sampler2D input_texture;
+uniform f16sampler2D input_texture;
 
-in vec2 v_position;
-out vec4 frag_color;
+in highp vec2 v_texture_coords;
+out f16vec4 frag_color;
 
 void main() {
-  vec4 input_color = IPSample(input_texture, v_position,
-                              frag_info.texture_sampler_y_coord_scale) *
-                     frag_info.input_alpha;
+  f16vec4 input_color =
+      texture(input_texture, v_texture_coords) * frag_info.input_alpha;
 
   // unpremultiply first, as filter inputs are premultiplied.
-  vec4 color = IPUnpremultiply(input_color);
+  f16vec4 color = IPHalfUnpremultiply(input_color);
 
-  color = clamp(frag_info.color_m * color + frag_info.color_v, 0.0, 1.0);
+  color = clamp(f16mat4(frag_info.color_m) * color + frag_info.color_v,
+                float16_t(0), float16_t(1.0));
 
   // premultiply the outputs
-  frag_color = vec4(color.rgb * color.a, color.a);
+  frag_color = f16vec4(color.rgb * color.a, color.a);
 }

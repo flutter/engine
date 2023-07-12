@@ -7,9 +7,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
 import '../text_editing/text_editing.dart';
 import 'semantics.dart';
 
@@ -33,8 +31,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// This method must be called prior to accessing [instance].
   static SemanticsTextEditingStrategy ensureInitialized(
       HybridTextEditing owner) {
-    if (_instance != null && instance.owner == owner) {
-      return instance;
+    if (_instance != null && _instance?.owner == owner) {
+      return _instance!;
     }
     return _instance = SemanticsTextEditingStrategy(owner);
   }
@@ -139,13 +137,13 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 
     // Subscribe to text and selection changes.
     subscriptions.add(
-        DomSubscription(activeDomElement, 'input', allowInterop(handleChange)));
+        DomSubscription(activeDomElement, 'input', handleChange));
     subscriptions.add(
         DomSubscription(activeDomElement, 'keydown',
-            allowInterop(maybeSendAction)));
+            maybeSendAction));
     subscriptions.add(
         DomSubscription(domDocument, 'selectionchange',
-            allowInterop(handleChange)));
+            handleChange));
     preventDefaultForMouseEvents();
   }
 
@@ -211,9 +209,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// browser gestures when in pointer mode. In Safari on iOS pointer events are
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
-class TextField extends RoleManager {
-  TextField(SemanticsObject semanticsObject)
-      : super(Role.textField, semanticsObject) {
+class TextField extends PrimaryRoleManager {
+  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
@@ -286,10 +283,8 @@ class TextField extends RoleManager {
       case BrowserEngine.blink:
       case BrowserEngine.firefox:
         _initializeForBlink();
-        break;
       case BrowserEngine.webkit:
         _initializeForWebkit();
-        break;
     }
   }
 
@@ -300,7 +295,7 @@ class TextField extends RoleManager {
   void _initializeForBlink() {
     _initializeEditableElement();
     activeEditableElement.addEventListener('focus',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
           if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
             return;
           }
@@ -341,14 +336,14 @@ class TextField extends RoleManager {
     num? lastPointerDownOffsetY;
 
     semanticsObject.element.addEventListener('pointerdown',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
           lastPointerDownOffsetX = pointerEvent.clientX;
           lastPointerDownOffsetY = pointerEvent.clientY;
         }), true);
 
     semanticsObject.element.addEventListener('pointerup',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
       final DomPointerEvent pointerEvent = event as DomPointerEvent;
 
       if (lastPointerDownOffsetX != null) {
@@ -398,10 +393,10 @@ class TextField extends RoleManager {
     semanticsObject.element.removeAttribute('role');
 
     activeEditableElement.addEventListener('blur',
-        allowInterop((DomEvent event) {
+        createDomEventListener((DomEvent event) {
       semanticsObject.element.setAttribute('role', 'textbox');
       activeEditableElement.remove();
-      SemanticsTextEditingStrategy.instance.deactivate(this);
+      SemanticsTextEditingStrategy._instance?.deactivate(this);
 
       // Focus on semantics element before removing the editable element, so that
       // the user can continue navigating the page with the assistive technology.
@@ -412,6 +407,8 @@ class TextField extends RoleManager {
 
   @override
   void update() {
+    super.update();
+
     // Ignore the update if editableElement has not been created yet.
     // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
     // we recieve a `blur` event from the browswer and a semantic update with
@@ -424,17 +421,17 @@ class TextField extends RoleManager {
         ..height = '${semanticsObject.rect!.height}px';
 
       if (semanticsObject.hasFocus) {
-        if (flutterViewEmbedder.glassPaneShadow!.activeElement !=
+        if (domDocument.activeElement !=
             activeEditableElement) {
           semanticsObject.owner.addOneTimePostUpdateCallback(() {
             activeEditableElement.focus();
           });
         }
-        SemanticsTextEditingStrategy.instance.activate(this);
-      } else if (flutterViewEmbedder.glassPaneShadow!.activeElement ==
+        SemanticsTextEditingStrategy._instance?.activate(this);
+      } else if (domDocument.activeElement ==
           activeEditableElement) {
         if (!isIosSafari) {
-          SemanticsTextEditingStrategy.instance.deactivate(this);
+          SemanticsTextEditingStrategy._instance?.deactivate(this);
           // Only apply text, because this node is not focused.
         }
         activeEditableElement.blur();
@@ -454,12 +451,13 @@ class TextField extends RoleManager {
 
   @override
   void dispose() {
+    super.dispose();
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = null;
     // on iOS, the `blur` event listener callback will remove the element.
     if (!isIosSafari) {
       editableElement?.remove();
     }
-    SemanticsTextEditingStrategy.instance.deactivate(this);
+    SemanticsTextEditingStrategy._instance?.deactivate(this);
   }
 }

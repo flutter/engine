@@ -22,7 +22,9 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
                              std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                              CreateVsyncWaiter create_vsync_waiter,
                              std::shared_ptr<ShellTestExternalViewEmbedder>
-                                 shell_test_external_view_embedder);
+                                 shell_test_external_view_embedder,
+                             const std::shared_ptr<const fml::SyncSwitch>&
+                                 is_gpu_disabled_sync_switch);
 
   // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewMetal() override;
@@ -48,6 +50,9 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override;
 
   // |GPUSurfaceMetalDelegate|
   GPUCAMetalLayerHandle GetCAMetalLayer(

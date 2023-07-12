@@ -113,6 +113,11 @@ void testNoCrashes() {
 
     // Regression test for https://github.com/flutter/flutter/issues/115143
     testCanvas((Canvas canvas) => canvas.drawPaint(Paint()..imageFilter = const ColorFilter.mode(Color(0x00000000), BlendMode.xor)));
+
+    // Regression test for https://github.com/flutter/flutter/issues/120278
+    testCanvas((Canvas canvas) => canvas.drawPaint(Paint()..imageFilter = ImageFilter.compose(
+      outer: ImageFilter.matrix(Matrix4.identity().storage),
+      inner: ImageFilter.blur())));
   });
 }
 
@@ -326,6 +331,7 @@ void main() {
       builder.pushStyle(TextStyle(
         decoration: TextDecoration.underline,
         decorationColor: const Color(0xFF0000FF),
+        fontFamily: 'Ahem',
         fontSize: 10,
         color: const Color(0xFF000000),
         decorationStyle: style,
@@ -435,7 +441,10 @@ void main() {
         canvas.drawImage(image, Offset.zero, Paint());
       } on PictureRasterizationException catch (e) {
         caughtException = true;
-        expect(e.message, contains('unable to create render target at specified size'));
+        expect(
+          e.message,
+          contains('unable to create bitmap render target at specified size ${image.width}x${image.height}'),
+        );
         break;
       }
       // Let the event loop turn.

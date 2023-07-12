@@ -132,6 +132,11 @@ public class SpellCheckPlugin
     ArrayList<HashMap<String, Object>> spellCheckerSuggestionSpans =
         new ArrayList<HashMap<String, Object>>();
     SentenceSuggestionsInfo spellCheckResults = results[0];
+    if (spellCheckResults == null) {
+      pendingResult.success(new ArrayList<HashMap<String, Object>>());
+      pendingResult = null;
+      return;
+    }
 
     for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
       SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
@@ -149,10 +154,20 @@ public class SpellCheckPlugin
       spellCheckerSuggestionSpan.put(END_INDEX_KEY, end);
 
       ArrayList<String> suggestions = new ArrayList<String>();
+      boolean validSuggestionsFound = false;
       for (int j = 0; j < suggestionsCount; j++) {
-        suggestions.add(suggestionsInfo.getSuggestionAt(j));
+        String suggestion = suggestionsInfo.getSuggestionAt(j);
+        // TODO(camsim99): Support spell check on Samsung by retrieving accurate spell check
+        // results, then remove this check: https://github.com/flutter/flutter/issues/120608.
+        if (!suggestion.equals("")) {
+          validSuggestionsFound = true;
+          suggestions.add(suggestion);
+        }
       }
 
+      if (!validSuggestionsFound) {
+        continue;
+      }
       spellCheckerSuggestionSpan.put(SUGGESTIONS_KEY, suggestions);
       spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
     }

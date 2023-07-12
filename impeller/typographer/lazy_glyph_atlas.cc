@@ -6,7 +6,6 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/typographer/text_render_context.h"
-#include "lazy_glyph_atlas.h"
 
 #include <utility>
 
@@ -16,14 +15,13 @@ LazyGlyphAtlas::LazyGlyphAtlas() = default;
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
-void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame) {
+void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame, Scalar scale) {
   FML_DCHECK(atlas_map_.empty());
-  has_color_ |= frame.HasColor();
-  frames_.emplace_back(frame);
-}
-
-bool LazyGlyphAtlas::HasColor() const {
-  return has_color_;
+  if (frame.GetAtlasType() == GlyphAtlas::Type::kAlphaBitmap) {
+    frame.CollectUniqueFontGlyphPairs(alpha_set_, scale);
+  } else {
+    frame.CollectUniqueFontGlyphPairs(color_set_, scale);
+  }
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
@@ -41,17 +39,9 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
   if (!text_context || !text_context->IsValid()) {
     return nullptr;
   }
-  size_t i = 0;
-  TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
-    if (i >= frames_.size()) {
-      return nullptr;
-    }
-    const auto& result = frames_[i];
-    i++;
-    return &result;
-  };
+  auto& set = type == GlyphAtlas::Type::kAlphaBitmap ? alpha_set_ : color_set_;
   auto atlas =
-      text_context->CreateGlyphAtlas(type, std::move(atlas_context), iterator);
+      text_context->CreateGlyphAtlas(type, std::move(atlas_context), set);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;

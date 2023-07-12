@@ -6,13 +6,18 @@
 // KEEP THIS SYNCHRONIZED WITH ../web_ui/lib/channel_buffers.dart
 part of dart.ui;
 
+/// Deprecated. Migrate to [ChannelCallback] instead.
+///
 /// Signature for [ChannelBuffers.drain]'s `callback` argument.
 ///
 /// The first argument is the data sent by the plugin.
 ///
 /// The second argument is a closure that, when called, will send messages
 /// back to the plugin.
-// TODO(ianh): deprecate this once the framework is migrated to [ChannelCallback].
+@Deprecated(
+  'Migrate to ChannelCallback instead. '
+  'This feature was deprecated after v3.11.0-20.0.pre.',
+)
 typedef DrainChannelCallback = Future<void> Function(ByteData? data, PlatformMessageResponseCallback callback);
 
 /// Signature for [ChannelBuffers.setListener]'s `callback` argument.
@@ -330,7 +335,8 @@ class ChannelBuffers {
         'framework has had an opportunity to register a listener. See the ChannelBuffers '
         'API documentation for details on how to configure the channel to expect more '
         'messages, or to expect messages to get discarded:\n'
-        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html'
+        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html\n'
+        'The capacity of the $name channel is ${channel._capacity} message${channel._capacity != 1 ? 's' : ''}.',
       );
     }
   }
@@ -376,6 +382,8 @@ class ChannelBuffers {
     }
   }
 
+  /// Deprecated. Migrate to [setListener] instead.
+  ///
   /// Remove and process all stored messages for a given channel.
   ///
   /// This should be called once a channel is prepared to handle messages
@@ -383,7 +391,10 @@ class ChannelBuffers {
   ///
   /// The messages are processed by calling the given `callback`. Each message
   /// is processed in its own microtask.
-  // TODO(ianh): deprecate once framework uses [setListener].
+  @Deprecated(
+    'Migrate to setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   Future<void> drain(String name, DrainChannelCallback callback) async {
     final _Channel? channel = _channels[name];
     while (channel != null && !channel._queue.isEmpty) {
@@ -468,7 +479,6 @@ class ChannelBuffers {
           }
           index += 1;
           resize(channelName, data.getUint32(index, Endian.host));
-          break;
         case 'overflow':
           if (bytes[index] != 0x0C) { // 12 = value code for list
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)");
@@ -493,7 +503,6 @@ class ChannelBuffers {
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (second argument must be a boolean)");
           }
           allowOverflow(channelName, bytes[index] == 0x01);
-          break;
         default:
           throw Exception("Unrecognized method '$methodName' sent to $kControlChannelName");
       }

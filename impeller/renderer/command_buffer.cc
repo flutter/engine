@@ -32,6 +32,25 @@ bool CommandBuffer::SubmitCommands() {
   return SubmitCommands(nullptr);
 }
 
+void CommandBuffer::WaitUntilScheduled() {
+  return OnWaitUntilScheduled();
+}
+
+bool CommandBuffer::SubmitCommandsAsync(
+    std::shared_ptr<RenderPass>
+        render_pass  // NOLINT(performance-unnecessary-value-param)
+) {
+  TRACE_EVENT0("impeller", "CommandBuffer::SubmitCommandsAsync");
+  if (!render_pass->IsValid() || !IsValid()) {
+    return false;
+  }
+  if (!render_pass->EncodeCommands()) {
+    return false;
+  }
+
+  return SubmitCommands(nullptr);
+}
+
 std::shared_ptr<RenderPass> CommandBuffer::CreateRenderPass(
     const RenderTarget& render_target) {
   auto pass = OnCreateRenderPass(render_target);

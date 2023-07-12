@@ -6,9 +6,9 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -37,7 +37,7 @@ class TextureGLES final : public Texture,
 
   [[nodiscard]] bool Bind() const;
 
-  [[nodiscard]] bool GenerateMipmaps() const;
+  [[nodiscard]] bool GenerateMipmap();
 
   enum class AttachmentPoint {
     kColor0,

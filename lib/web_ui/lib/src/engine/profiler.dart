@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'dom.dart';
@@ -12,7 +12,8 @@ import 'platform_dispatcher.dart';
 import 'safe_browser_api.dart';
 
 @JS('window._flutter_internal_on_benchmark')
-external Object? get onBenchmark;
+external JSAny? get _onBenchmark;
+Object? get onBenchmark => _onBenchmark?.toObjectShallow;
 
 /// A function that computes a value of type [R].
 ///

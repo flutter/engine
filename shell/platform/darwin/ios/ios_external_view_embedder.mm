@@ -16,7 +16,7 @@ IOSExternalViewEmbedder::IOSExternalViewEmbedder(
 IOSExternalViewEmbedder::~IOSExternalViewEmbedder() = default;
 
 // |ExternalViewEmbedder|
-SkCanvas* IOSExternalViewEmbedder::GetRootCanvas() {
+DlCanvas* IOSExternalViewEmbedder::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;
@@ -42,7 +42,7 @@ void IOSExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PrerollCompositeEmbeddedView");
   FML_CHECK(platform_views_controller_);
@@ -59,27 +59,17 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
 }
 
 // |ExternalViewEmbedder|
-std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentCanvases() {
-  FML_CHECK(platform_views_controller_);
-  return platform_views_controller_->GetCurrentCanvases();
-}
-
-// |ExternalViewEmbedder|
-std::vector<DisplayListBuilder*> IOSExternalViewEmbedder::GetCurrentBuilders() {
-  FML_CHECK(platform_views_controller_);
-  return platform_views_controller_->GetCurrentBuilders();
-}
-
-// |ExternalViewEmbedder|
-EmbedderPaintContext IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
   FML_CHECK(platform_views_controller_);
   return platform_views_controller_->CompositeEmbeddedView(view_id);
 }
 
 // |ExternalViewEmbedder|
-void IOSExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
-                                          std::unique_ptr<SurfaceFrame> frame) {
+void IOSExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
+    std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFrame");
   FML_CHECK(platform_views_controller_);
   platform_views_controller_->SubmitFrame(context, ios_context_, std::move(frame));

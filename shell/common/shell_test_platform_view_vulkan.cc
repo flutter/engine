@@ -12,6 +12,9 @@
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+
 #if OS_FUCHSIA
 #define VULKAN_SO_PATH "libvulkan.so"
 #elif FML_OS_MACOSX
@@ -194,11 +197,11 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     const SkISize& size) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(), skgpu::Budgeted::kNo, image_info, 0, nullptr);
+  auto surface = SkSurfaces::RenderTarget(context_.get(), skgpu::Budgeted::kNo,
+                                          image_info, 0, nullptr);
   SurfaceFrame::SubmitCallback callback = [](const SurfaceFrame&,
-                                             SkCanvas* canvas) -> bool {
-    canvas->flush();
+                                             DlCanvas* canvas) -> bool {
+    canvas->Flush();
     return true;
   };
 

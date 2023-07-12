@@ -5,6 +5,7 @@
 # found in the LICENSE file.
 
 import argparse
+import platform
 import subprocess
 import shutil
 import sys
@@ -14,8 +15,9 @@ buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
 )
 
+ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
 DSYMUTIL = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'buildtools', 'mac-x64',
+    os.path.dirname(__file__), '..', '..', '..', 'buildtools', ARCH_SUBPATH,
     'clang', 'bin', 'dsymutil'
 )
 
@@ -127,15 +129,32 @@ def regenerate_symlinks(fat_framework):
   )
 
 
+def embed_codesign_configuration(config_path, content):
+  with open(config_path, 'w') as file:
+    file.write(content)
+
+
 def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
+      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
+      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'],
+                            cwd=dsym_dst)
+      # Double zip to make it consistent with legacy artifacts.
+      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
       subprocess.check_call([
-          'zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', 'FlutterMacOS.dSYM'
+          'zip',
+          '-y',
+          'FlutterMacOS.dSYM_.zip',
+          'FlutterMacOS.dSYM.zip',
       ],
-                            cwd=dst)
+                            cwd=dsym_dst)
+      # Use doubled zipped file.
+      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
+      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
+      shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
   if args.strip:
     # copy unstripped
@@ -146,11 +165,47 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
   # Zip FlutterMacOS.framework.
   if args.zip:
+    filepath_with_entitlements = ''
+
+    framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
+    # TODO(xilaizhang): Remove the zip file from the path when outer zip is removed.
+    filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
+
+    embed_codesign_configuration(
+        os.path.join(framework_dst, 'entitlements.txt'),
+        filepath_with_entitlements
+    )
+
+    embed_codesign_configuration(
+        os.path.join(framework_dst, 'without_entitlements.txt'),
+        filepath_without_entitlements
+    )
     subprocess.check_call([
-        'zip', '-r', '-y', 'FlutterMacOS.framework.zip',
-        'FlutterMacOS.framework'
+        'zip',
+        '-r',
+        '-y',
+        'FlutterMacOS.framework.zip',
+        '.',
     ],
-                          cwd=dst)
+                          cwd=framework_dst)
+    # Double zip to make it consistent with legacy artifacts.
+    # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
+    subprocess.check_call(
+        [
+            'zip',
+            '-y',
+            'FlutterMacOS.framework_.zip',
+            'FlutterMacOS.framework.zip',
+            # TODO(xilaizhang): Move these files to inner zip before removing the outer zip.
+            'entitlements.txt',
+            'without_entitlements.txt',
+        ],
+        cwd=framework_dst
+    )
+    # Use doubled zipped file.
+    final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
+    final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
+    shutil.move(final_src_path, final_dst_path)
 
 
 if __name__ == '__main__':

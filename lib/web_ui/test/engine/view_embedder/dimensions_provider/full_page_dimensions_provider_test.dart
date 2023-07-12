@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('browser')
+library;
 
 import 'dart:async';
 
@@ -53,7 +54,7 @@ void doTests() {
           (domWindow.visualViewport!.height! + keyboardGap) * dpr;
       const double expectedBottom = keyboardGap * dpr;
 
-      final WindowPadding computed =
+      final ViewPadding computed =
           provider.computeKeyboardInsets(physicalHeight, false);
 
       expect(computed.top, 0);

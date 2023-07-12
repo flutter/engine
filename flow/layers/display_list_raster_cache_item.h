@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_utils.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "include/core/SkCanvas.h"
@@ -23,26 +22,27 @@ namespace flutter {
 
 class DisplayListRasterCacheItem : public RasterCacheItem {
  public:
-  DisplayListRasterCacheItem(DisplayList* display_list,
+  DisplayListRasterCacheItem(const sk_sp<DisplayList>& display_list,
                              const SkPoint& offset,
                              bool is_complex = true,
                              bool will_change = false);
 
-  static std::unique_ptr<DisplayListRasterCacheItem> Make(DisplayList*,
-                                                          const SkPoint& offset,
-                                                          bool is_complex,
-                                                          bool will_change);
+  static std::unique_ptr<DisplayListRasterCacheItem> Make(
+      const sk_sp<DisplayList>&,
+      const SkPoint& offset,
+      bool is_complex,
+      bool will_change);
 
   void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
 
   void PrerollFinalize(PrerollContext* context,
                        const SkMatrix& matrix) override;
 
-  bool Draw(const PaintContext& context, const SkPaint* paint) const override;
+  bool Draw(const PaintContext& context, const DlPaint* paint) const override;
 
   bool Draw(const PaintContext& context,
-            SkCanvas* canvas,
-            const SkPaint* paint) const override;
+            DlCanvas* canvas,
+            const DlPaint* paint) const override;
 
   bool TryToPrepareRasterCache(const PaintContext& context,
                                bool parent_cached = false) const override;
@@ -51,11 +51,11 @@ class DisplayListRasterCacheItem : public RasterCacheItem {
     matrix_ = matrix_.preTranslate(offset.x(), offset.y());
   }
 
-  const DisplayList* display_list() const { return display_list_; }
+  const DisplayList* display_list() const { return display_list_.get(); }
 
  private:
   SkMatrix transformation_matrix_;
-  DisplayList* display_list_;
+  sk_sp<DisplayList> display_list_;
   SkPoint offset_;
   bool is_complex_;
   bool will_change_;

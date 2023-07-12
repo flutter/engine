@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/blending.glsl>
+precision mediump float;
 
-vec3 Blend(vec3 dst, vec3 src) {
+#include <impeller/blending.glsl>
+#include <impeller/types.glsl>
+
+f16vec3 Blend(f16vec3 dst, f16vec3 src) {
   return IPBlendScreen(dst, src);
 }
 

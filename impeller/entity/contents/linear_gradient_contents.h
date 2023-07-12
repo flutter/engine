@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "flutter/impeller/renderer/texture.h"
+#include "flutter/impeller/core/texture.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
@@ -26,9 +26,16 @@ class LinearGradientContents final : public ColorSourceContents {
   ~LinearGradientContents() override;
 
   // |Contents|
+  bool IsOpaque() const override;
+
+  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
   void SetEndPoints(Point start_point, Point end_point);
 
@@ -56,6 +63,7 @@ class LinearGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
 };

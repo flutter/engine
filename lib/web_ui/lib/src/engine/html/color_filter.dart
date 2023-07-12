@@ -121,24 +121,18 @@ SvgFilter svgFilterFromBlendMode(
     case ui.BlendMode.srcIn:
     case ui.BlendMode.srcATop:
       svgFilter = _srcInColorFilterToSvg(filterColor);
-      break;
     case ui.BlendMode.srcOut:
       svgFilter = _srcOutColorFilterToSvg(filterColor);
-      break;
     case ui.BlendMode.dstATop:
       svgFilter = _dstATopColorFilterToSvg(filterColor);
-      break;
     case ui.BlendMode.xor:
       svgFilter = _xorColorFilterToSvg(filterColor);
-      break;
     case ui.BlendMode.plus:
       // Porter duff source + destination.
       svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
-      break;
     case ui.BlendMode.modulate:
       // Porter duff source * destination but preserves alpha.
       svgFilter = _modulateColorFilterToSvg(filterColor!);
-      break;
     case ui.BlendMode.overlay:
       // Since overlay is the same as hard-light by swapping layers,
       // pass hard-light blend function.
@@ -147,7 +141,6 @@ SvgFilter svgFilterFromBlendMode(
         blendModeToSvgEnum(ui.BlendMode.hardLight)!,
         swapLayers: true,
       );
-      break;
     // Several of the filters below (although supported) do not render the
     // same (close but not exact) as native flutter when used as blend mode
     // for a background-image with a background color. They only look
@@ -175,7 +168,6 @@ SvgFilter svgFilterFromBlendMode(
     case ui.BlendMode.exclusion:
       svgFilter = _blendColorFilterToSvg(
           filterColor, blendModeToSvgEnum(colorFilterBlendMode)!);
-      break;
     case ui.BlendMode.src:
     case ui.BlendMode.dst:
     case ui.BlendMode.dstIn:
@@ -360,7 +352,7 @@ SvgFilter _srcInColorFilterToSvg(ui.Color? color) {
     result: 'destalpha',
   );
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );
@@ -382,7 +374,7 @@ SvgFilter _srcInColorFilterToSvg(ui.Color? color) {
 SvgFilter _dstATopColorFilterToSvg(ui.Color? color) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );
@@ -398,7 +390,7 @@ SvgFilter _dstATopColorFilterToSvg(ui.Color? color) {
 SvgFilter _srcOutColorFilterToSvg(ui.Color? color) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );
@@ -414,7 +406,7 @@ SvgFilter _srcOutColorFilterToSvg(ui.Color? color) {
 SvgFilter _xorColorFilterToSvg(ui.Color? color) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );
@@ -433,7 +425,7 @@ SvgFilter _compositeColorFilterToSvg(
     ui.Color? color, double k1, double k2, double k3, double k4) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );
@@ -486,7 +478,7 @@ SvgFilter _blendColorFilterToSvg(ui.Color? color, SvgBlendMode svgBlendMode,
     {bool swapLayers = false}) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeFlood(
-    floodColor: colorToCssString(color) ?? '',
+    floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
     result: 'flood',
   );

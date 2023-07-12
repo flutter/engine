@@ -29,8 +29,7 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
   if (context->has_raster_cache()) {
-    context->SetTransform(
-        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+    context->WillPaintWithIntegralTransform();
   }
   DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -80,7 +79,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   mutator.applyOpacity(child_paint_bounds(), opacity());
 
   if (!children_can_accept_opacity()) {
-    SkPaint paint;
+    DlPaint paint;
     if (layer_raster_cache_item_->Draw(context,
                                        context.state_stack.fill(paint))) {
       return;

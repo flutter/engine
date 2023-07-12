@@ -7,6 +7,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 
 @class FlutterEngine;
@@ -38,12 +39,6 @@ class AccessibilityBridgeMac : public AccessibilityBridge {
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
-
-  // Update the default view controller, and recreate the corresponding
-  // accessibility node delegate.
-  //
-  // This is called by the engine when the default view controller is updated.
-  void UpdateDefaultViewController(__weak FlutterViewController* view_controller);
 
  protected:
   // |AccessibilityBridge|
@@ -94,6 +89,8 @@ class AccessibilityBridgeMac : public AccessibilityBridge {
 
   __weak FlutterEngine* flutter_engine_;
   __weak FlutterViewController* view_controller_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeMac);
 };
 
 }  // namespace flutter

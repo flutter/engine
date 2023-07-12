@@ -7,10 +7,10 @@
 #include "impeller/entity/contents/gradient_generator.h"
 
 #include "flutter/fml/logging.h"
+#include "impeller/core/texture.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -40,6 +40,17 @@ std::shared_ptr<Texture> CreateGradientTexture(
   }
   texture->SetLabel(impeller::SPrintF("Gradient(%p)", texture.get()).c_str());
   return texture;
+}
+
+std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
+                                           const std::vector<Scalar>& stops) {
+  FML_DCHECK(stops.size() == colors.size());
+
+  std::vector<StopData> result(stops.size());
+  for (auto i = 0u; i < stops.size(); i++) {
+    result[i] = {.color = colors[i], .stop = stops[i]};
+  }
+  return result;
 }
 
 }  // namespace impeller

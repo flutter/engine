@@ -17,7 +17,7 @@
 
 namespace impeller {
 
-static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
+static Font ToFont(const SkTextBlobRunIterator& run) {
   auto& font = run.font();
   auto typeface = std::make_shared<TypefaceSkia>(font.refTypefaceOrDefault());
 
@@ -25,8 +25,10 @@ static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
   font.getMetrics(&sk_metrics);
 
   Font::Metrics metrics;
-  metrics.scale = scale;
   metrics.point_size = font.getSize();
+  metrics.embolden = font.isEmbolden();
+  metrics.skewX = font.getSkewX();
+  metrics.scaleX = font.getScaleX();
 
   return Font{std::move(typeface), metrics};
 }
@@ -35,7 +37,7 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
+TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob) {
   if (!blob) {
     return {};
   }
@@ -43,7 +45,7 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
   TextFrame frame;
 
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    TextRun text_run(ToFont(run, scale));
+    TextRun text_run(ToFont(run));
 
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
     // https://github.com/flutter/flutter/issues/112005

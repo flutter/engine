@@ -22,9 +22,9 @@ import 'package:ui/ui.dart' as ui;
 /// contents is less than the size of the viewport the browser snaps
 /// "scrollTop" back to zero. If there is more content than available in the
 /// viewport "scrollTop" may take positive values.
-class Scrollable extends RoleManager {
+class Scrollable extends PrimaryRoleManager {
   Scrollable(SemanticsObject semanticsObject)
-      : super(Role.scrollable, semanticsObject) {
+      : super.withBasics(PrimaryRole.scrollable, semanticsObject) {
     _scrollOverflowElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0'
@@ -95,6 +95,8 @@ class Scrollable extends RoleManager {
 
   @override
   void update() {
+    super.update();
+
     semanticsObject.owner.addOneTimePostUpdateCallback(() {
       _neutralizeDomScrollPosition();
       semanticsObject.recomputePositionAndSize();
@@ -121,7 +123,7 @@ class Scrollable extends RoleManager {
       };
       semanticsObject.owner.addGestureModeListener(_gestureModeListener);
 
-      _scrollListener = allowInterop((_) {
+      _scrollListener = createDomEventListener((_) {
         _recomputeScrollPosition();
       });
       semanticsObject.element.addEventListener('scroll', _scrollListener);
@@ -209,7 +211,6 @@ class Scrollable extends RoleManager {
           assert(semanticsObject.isHorizontalScrollContainer);
           element.style.overflowX = 'scroll';
         }
-        break;
       case GestureMode.pointerEvents:
         // We use "hidden" instead of "scroll" so that the browser does
         // not "steal" pointer events. Flutter gesture recognizers need
@@ -220,12 +221,12 @@ class Scrollable extends RoleManager {
           assert(semanticsObject.isHorizontalScrollContainer);
           element.style.overflowX = 'hidden';
         }
-        break;
     }
   }
 
   @override
   void dispose() {
+    super.dispose();
     final DomCSSStyleDeclaration style = semanticsObject.element.style;
     assert(_gestureModeListener != null);
     style.removeProperty('overflowY');

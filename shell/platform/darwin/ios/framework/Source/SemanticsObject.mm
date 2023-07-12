@@ -267,6 +267,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
+  NSMutableArray<SemanticsObject*>* _childrenInHitTestOrder;
   BOOL _inDealloc;
 }
 
@@ -295,6 +296,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     _bridge = bridge;
     _uid = uid;
     _children = [[NSMutableArray alloc] init];
+    _childrenInHitTestOrder = [[NSMutableArray alloc] init];
   }
 
   return self;
@@ -305,7 +307,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     [child privateSetParent:nil];
   }
   [_children removeAllObjects];
+  [_childrenInHitTestOrder removeAllObjects];
   [_children release];
+  [_childrenInHitTestOrder release];
+
   _parent = nil;
   _container.get().semanticsObject = nil;
   _inDealloc = YES;
@@ -321,6 +326,17 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [_children release];
   _children = [[NSMutableArray alloc] initWithArray:children];
   for (SemanticsObject* child in _children) {
+    [child privateSetParent:self];
+  }
+}
+
+- (void)setChildrenInHitTestOrder:(NSArray<SemanticsObject*>*)childrenInHitTestOrder {
+  for (SemanticsObject* child in _childrenInHitTestOrder) {
+    [child privateSetParent:nil];
+  }
+  [_childrenInHitTestOrder release];
+  _childrenInHitTestOrder = [[NSMutableArray alloc] initWithArray:childrenInHitTestOrder];
+  for (SemanticsObject* child in _childrenInHitTestOrder) {
     [child privateSetParent:self];
   }
 }
@@ -444,6 +460,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return attributedString;
 }
 
+- (void)showOnScreen {
+  [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
+}
+
 #pragma mark - UIAccessibility overrides
 
 - (BOOL)isAccessibilityElement {
@@ -460,6 +480,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return false;
   }
 
+  return [self isFocusable];
+}
+
+- (bool)isFocusable {
   // If the node is scrollable AND hidden OR
   // The node has a label, value, or hint OR
   // The node has non-scrolling related actions.
@@ -517,6 +541,56 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return label;
 }
 
+- (bool)containsPoint:(CGPoint)point {
+  // The point is in global coordinates, so use the global rect here.
+  return CGRectContainsPoint([self globalRect], point);
+}
+
+// Finds the first eligiable semantics object in hit test order.
+- (SemanticsObject*)search:(CGPoint)point {
+  // Search children in hit test order.
+  for (SemanticsObject* child in [self childrenInHitTestOrder]) {
+    if ([child containsPoint:point]) {
+      SemanticsObject* childSearchResult = [child search:point];
+      if (childSearchResult != nil) {
+        return childSearchResult;
+      }
+    }
+  }
+
+  // Check if the current semantic object should be returned.
+  if ([self containsPoint:point] && [self isFocusable]) {
+    return self.nativeAccessibility;
+  }
+  return nil;
+}
+
+// iOS uses this method to determine the hittest results when users touch
+// explore in VoiceOver.
+//
+// For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus
+// goes to the smallest object before IOS 16, but to the top-left object in
+// IOS 16. Overrides this method to focus the first eligiable semantics
+// object in hit test order.
+- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
+  return [self search:point];
+}
+
+// iOS calls this method when this item is swipe-to-focusd in VoiceOver.
+- (BOOL)accessibilityScrollToVisible {
+  [self showOnScreen];
+  return YES;
+}
+
+// iOS calls this method when this item is swipe-to-focusd in VoiceOver.
+- (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
+  if ([child isKindOfClass:[SemanticsObject class]]) {
+    [child showOnScreen];
+    return YES;
+  }
+  return NO;
+}
+
 - (NSAttributedString*)accessibilityAttributedLabel {
   NSString* label = [self accessibilityLabel];
   if (label.length == 0) {
@@ -551,6 +625,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   if (![self node].value.empty()) {
     return @([self node].value.data());
+  }
+
+  // iOS does not announce values of native radio buttons.
+  if ([self node].HasFlag(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup)) {
+    return nil;
   }
 
   // FlutterSwitchSemanticsObject should supercede these conditionals.
@@ -693,7 +772,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [self bridge]->AccessibilityObjectDidBecomeFocused([self uid]);
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
       [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
-    [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
+    [self showOnScreen];
   }
   if ([self node].HasAction(flutter::SemanticsAction::kDidGainAccessibilityFocus)) {
     [self bridge]->DispatchSemanticsAction([self uid],
@@ -742,7 +821,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
       [self node].HasAction(flutter::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
-  // FlutterSwitchSemanticsObject should supercede these conditionals.
+  // This should also capture radio buttons.
   if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
       [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     traits |= UIAccessibilityTraitButton;
