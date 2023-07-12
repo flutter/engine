@@ -82,8 +82,8 @@ extension CanvasKitExtension on CanvasKit {
   SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData) {
     assert(
       !isChromiumVariant,
-      'This constructor should only be used with a non-Chromium build of '
-      'CanvasKit.',
+      'CanvasKit.MakeAnimatedImageFromEncoded cannot be used with the Chromium '
+      'build of CanvasKit.',
     );
     return  _MakeAnimatedImageFromEncoded(imageData.toJS);
   }

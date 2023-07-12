@@ -312,6 +312,13 @@ void _imageTests() {
       expect(animated.decodeNextFrame(), 100);
     }
   }, skip: configuration.canvasKitVariant != CanvasKitVariant.full);
+
+  test('MakeAnimatedImageFromEncoded throws with Chromium variant', () {
+    expect(
+      () => canvasKit.MakeAnimatedImageFromEncoded(kAnimatedGif),
+      throwsA(isA<AssertionError>()),
+    );
+  }, skip: configuration.canvasKitVariant != CanvasKitVariant.chromium);
 }
 
 void _shaderTests() {

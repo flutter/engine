@@ -27,8 +27,8 @@ class CkAnimatedImage implements ui.Codec {
     this.targetHeight,
   }) : assert(
           !isChromiumVariant,
-          'This constructor should only be used with a non-Chromium build of '
-          'CanvasKit.',
+          'CkAnimatedImage.decodeFromBytes cannot be used with the Chromium '
+          'build of CanvasKit.',
         ) {
     final SkAnimatedImage skAnimatedImage = createSkAnimatedImage();
     _ref = UniqueRef<SkAnimatedImage>(this, skAnimatedImage, 'Codec');
