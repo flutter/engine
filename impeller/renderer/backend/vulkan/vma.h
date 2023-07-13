@@ -89,7 +89,8 @@ struct BufferVMATraits {
 
   static void Free(const BufferVMA& buffer) {
     TRACE_EVENT0("impeller", "DestroyBuffer");
-    ::vmaDestroyBuffer(buffer.allocator, buffer.buffer, buffer.allocation);
+    ::vmaDestroyBuffer(buffer.allocator, static_cast<VkBuffer>(buffer.buffer),
+                       buffer.allocation);
   }
 };
 
@@ -123,7 +124,8 @@ struct ImageVMATraits {
 
   static void Free(const ImageVMA& image) {
     TRACE_EVENT0("impeller", "DestroyImage");
-    ::vmaDestroyImage(image.allocator, image.image, image.allocation);
+    ::vmaDestroyImage(image.allocator, static_cast<VkImage>(image.image),
+                      image.allocation);
   }
 };
 
