@@ -30,9 +30,9 @@ void testMain() {
 
     _testCkAnimatedImage();
     _testForImageCodecs(useBrowserImageDecoder: false);
+    _testForImageCodecs(useBrowserImageDecoder: true);
 
     if (browserSupportsImageDecoder) {
-      _testForImageCodecs(useBrowserImageDecoder: true);
       _testCkBrowserImageDecoder();
     }
 
@@ -64,16 +64,19 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
   final bool runGroup;
   if (useBrowserImageDecoder) {
-    // We can't use browser codecs if the browser doesn't support them.
+    // We can only use browser codecs if the browser supports them.
     runGroup = browserSupportsImageDecoder;
   } else {
-    // If CanvasKit doesn't contain codecs, we can't use them.
+    // We can only use wasm codecs if the CanvasKit build contains them.
     runGroup = canvasKitContainsCodecs;
+  }
+
+  if (!runGroup) {
+    return;
   }
 
   group('($mode)', () {
     setUp(() {
-      browserSupportsImageDecoder = useBrowserImageDecoder;
       warnings.clear();
     });
 
@@ -84,43 +87,39 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       };
     });
 
-    tearDown(() {
-      debugResetBrowserSupportsImageDecoder();
-    });
-
     tearDownAll(() {
       printWarning = oldPrintWarning;
     });
 
-    test('CkAnimatedImage can be explicitly disposed of', () {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
-      expect(image.debugDisposed, isFalse);
-      image.dispose();
-      expect(image.debugDisposed, isTrue);
+    group('[wasm codecs]', () {
+      test('CkAnimatedImage can be explicitly disposed of', () {
+        final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
+        expect(image.debugDisposed, isFalse);
+        image.dispose();
+        expect(image.debugDisposed, isTrue);
 
-      // Disallow usage after disposal
-      expect(() => image.frameCount, throwsAssertionError);
-      expect(() => image.repetitionCount, throwsAssertionError);
-      expect(() => image.getNextFrame(), throwsAssertionError);
+        // Disallow usage after disposal
+        expect(() => image.frameCount, throwsAssertionError);
+        expect(() => image.repetitionCount, throwsAssertionError);
+        expect(() => image.getNextFrame(), throwsAssertionError);
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-    }, skip: !canvasKitContainsCodecs);
+        // Disallow double-dispose.
+        expect(() => image.dispose(), throwsAssertionError);
+      });
 
-    test('CkAnimatedImage iterates frames correctly', () async {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-      expect(image.frameCount, 3);
-      expect(image.repetitionCount, -1);
+      test('CkAnimatedImage iterates frames correctly', () async {
+        final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+        expect(image.frameCount, 3);
+        expect(image.repetitionCount, -1);
 
-      final ui.FrameInfo frame1 = await image.getNextFrame();
-      await expectFrameData(frame1, <int>[255, 0, 0, 255]);
-      final ui.FrameInfo frame2 = await image.getNextFrame();
-      await expectFrameData(frame2, <int>[0, 255, 0, 255]);
-      final ui.FrameInfo frame3 = await image.getNextFrame();
-      await expectFrameData(frame3, <int>[0, 0, 255, 255]);
-    }, skip: !canvasKitContainsCodecs);
+        final ui.FrameInfo frame1 = await image.getNextFrame();
+        await expectFrameData(frame1, <int>[255, 0, 0, 255]);
+        final ui.FrameInfo frame2 = await image.getNextFrame();
+        await expectFrameData(frame2, <int>[0, 255, 0, 255]);
+        final ui.FrameInfo frame3 = await image.getNextFrame();
+        await expectFrameData(frame3, <int>[0, 0, 255, 255]);
+      });
 
-    group('[image codecs]', () {
       test('CkImage toString', () {
         final SkImage skImage =
             canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
@@ -316,13 +315,13 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         final ui.Image image = (await codec.getNextFrame()).image;
 
         expect(
-        warnings,
-        containsAllInOrder(
-          <String>[
-            'targetWidth and targetHeight for multi-frame images not supported',
-          ],
-        ),
-      );
+          warnings,
+          containsAllInOrder(
+            <String>[
+              'targetWidth and targetHeight for multi-frame images not supported',
+            ],
+          ),
+        );
 
         // expect the re-size did not happen, kAnimatedGif is [1x1]
         expect(image.width, 1);
@@ -802,36 +801,38 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           Uint8List.fromList(<int>[0xff, 0xd8, 0xff, 0xe2, 0x0c, 0x58, 0x49, 0x43, 0x43, 0x5f])),
         'image/jpeg');
     });
-  }, skip: !runGroup, timeout: const Timeout.factor(10)); // These tests can take a while. Allow for a longer timeout.
+  }, timeout: const Timeout.factor(10)); // These tests can take a while. Allow for a longer timeout.
 }
 
 /// Tests specific to WASM codecs bundled with CanvasKit.
 void _testCkAnimatedImage() {
-  test('ImageDecoder toByteData(PNG)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    final ui.FrameInfo frame = await image.getNextFrame();
-    final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
-    expect(png, isNotNull);
-
-    // The precise PNG encoding is browser-specific, but we can check the file
-    // signature.
-    expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
-  });
-
-  test('CkAnimatedImage toByteData(RGBA)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    const List<List<int>> expectedColors = <List<int>>[
-      <int>[255, 0, 0, 255],
-      <int>[0, 255, 0, 255],
-      <int>[0, 0, 255, 255],
-    ];
-    for (int i = 0; i < image.frameCount; i++) {
+  group('CkAnimatedImage', () {
+    test('toByteData(PNG)', () async {
+      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
       final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData();
-      expect(rgba, isNotNull);
-      expect(rgba!.buffer.asUint8List(), expectedColors[i]);
-    }
-  });
+      final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      expect(png, isNotNull);
+
+      // The precise PNG encoding is browser-specific, but we can check the file
+      // signature.
+      expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
+    });
+
+    test('toByteData(RGBA)', () async {
+      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+      const List<List<int>> expectedColors = <List<int>>[
+        <int>[255, 0, 0, 255],
+        <int>[0, 255, 0, 255],
+        <int>[0, 0, 255, 255],
+      ];
+      for (int i = 0; i < image.frameCount; i++) {
+        final ui.FrameInfo frame = await image.getNextFrame();
+        final ByteData? rgba = await frame.image.toByteData();
+        expect(rgba, isNotNull);
+        expect(rgba!.buffer.asUint8List(), expectedColors[i]);
+      }
+    });
+  }, skip: !canvasKitContainsCodecs);
 }
 
 /// Tests specific to browser image codecs based functionality.

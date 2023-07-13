@@ -60,7 +60,7 @@ void testMain() {
       expect(gradient.getSkShader(ui.FilterQuality.none), isNotNull);
     });
 
-    group('[image codecs]', () {
+    group('[wasm codecs]', () {
       test('Image shader initialize/dispose cycle', () {
         final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
         final CkImage image = CkImage(skImage);

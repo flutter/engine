@@ -1178,7 +1178,7 @@ void _canvasTests() {
     );
   });
 
-  group('[image codecs]', () {
+  group('[wasm codecs]', () {
     test('drawImageOptions', () {
       final SkAnimatedImage image =
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
