@@ -15,17 +15,6 @@
 #include <vector>
 
 namespace fuchsia_test_utils {
-static uint8_t linear_to_srgb(const float val) {
-  // Function to convert from linear RGB to sRGB.
-  // (https://en.wikipedia.org/wiki/SRGB#From_CIE_XYZ_to_sRGB)
-  if (0.f <= val && val <= 0.0031308f) {
-    return static_cast<uint8_t>(roundf((val * 12.92f) * 255U));
-  } else {
-    return static_cast<uint8_t>(
-        roundf(((std::powf(val, 1.0f / 2.4f) * 1.055f) - 0.055f) * 255U));
-  }
-}
-
 // Represents a Pixel in BGRA format.
 // Uses the sRGB color space.
 struct Pixel {
