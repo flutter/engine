@@ -44,10 +44,10 @@ bool SharedThreadMerger::UnMergeNowUnSafe() {
 bool SharedThreadMerger::UnMergeNowIfLastOne(RasterThreadMergerId caller) {
   std::scoped_lock lock(mutex_);
   lease_term_by_caller_.erase(caller);
-  if (!lease_term_by_caller_.empty()) {
-    return true;
+  if (lease_term_by_caller_.empty() || IsAllLeaseTermsZeroUnSafe()) {
+    return UnMergeNowUnSafe();
   }
-  return UnMergeNowUnSafe();
+  return true;
 }
 
 bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
@@ -66,7 +66,6 @@ bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
                         "caller is erased in UnMergeNowIfLastOne(). caller="
                      << caller;
   }
-  FML_DLOG(ERROR) << "lease term " << entry->first << " " << entry->second;
   if (IsAllLeaseTermsZeroUnSafe()) {
     // Unmerge now because lease_term_ decreased to zero.
     UnMergeNowUnSafe();

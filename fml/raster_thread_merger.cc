@@ -17,9 +17,7 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
     : RasterThreadMerger(
           MakeRefCounted<SharedThreadMerger>(platform_queue_id, gpu_queue_id),
           platform_queue_id,
-          gpu_queue_id) {
-  id_ = id_count++;
-}
+          gpu_queue_id) {}
 
 RasterThreadMerger::RasterThreadMerger(
     fml::RefPtr<fml::SharedThreadMerger> shared_merger,
@@ -27,9 +25,7 @@ RasterThreadMerger::RasterThreadMerger(
     fml::TaskQueueId gpu_queue_id)
     : platform_queue_id_(platform_queue_id),
       gpu_queue_id_(gpu_queue_id),
-      shared_merger_(std::move(shared_merger)) {
-  id_ = id_count++;
-}
+      shared_merger_(std::move(shared_merger)) {}
 
 void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
   merge_unmerge_callback_ = callback;
@@ -72,7 +68,6 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
 
   bool success = shared_merger_->MergeWithLease(this, lease_term);
   if (success && merge_unmerge_callback_ != nullptr) {
-    FML_DLOG(ERROR) << id_ << " merged";
     merge_unmerge_callback_();
   }
   merged_condition_.notify_one();
@@ -91,7 +86,6 @@ void RasterThreadMerger::UnMergeNowIfLastOne() {
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
   }
-  FML_DLOG(ERROR) << id_ << "un-merged";
 }
 
 bool RasterThreadMerger::IsOnPlatformThread() const {
