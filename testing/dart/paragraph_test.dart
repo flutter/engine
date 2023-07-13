@@ -234,7 +234,15 @@ void main() {
     }
   });
 
-  test('disableRoundingHack works', () {
+  test('disableRoundingHack works in tests', () {
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+    if (!assertsEnabled){
+      return;
+    }
     const double fontSize = 1.25;
     const String text = '12345';
     assert((fontSize * text.length).truncate() != fontSize * text.length);
@@ -253,5 +261,17 @@ void main() {
         expect(metrics, hasLength(1));
     }
     ParagraphBuilder.setDisableRoundingHack(roundingHackWasDisabled);
+  });
+
+  test('rounding hack applied by default', () {
+    const double fontSize = 1.25;
+    const String text = '12345';
+    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    expect(ParagraphBuilder.shouldDisableRoundingHack, isFalse);
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: text.length * fontSize));
+    expect(paragraph.computeLineMetrics().length, greaterThan(1));
   });
 }
