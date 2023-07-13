@@ -1,4 +1,4 @@
-Signature: 0376b67f8b900163fce690bd1ff87de8
+Signature: c556c4853a84881a197460fbb1ed56f1
 
 ====================================================================================================
 LIBRARY: etc1
@@ -384,6 +384,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
+FILE: ../../../third_party/skia/relnotes/async_read.md
 FILE: ../../../third_party/skia/relnotes/canvas_flush.md
 FILE: ../../../third_party/skia/relnotes/const_context.md
 FILE: ../../../third_party/skia/relnotes/runtimeeffect_const.md
@@ -6908,8 +6909,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/ganesh/glsl/GrGLSLUniformHandler.cpp +
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMSAALoadManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMSAALoadManager.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkManagedResource.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/image/SkRescaleAndReadPixelsUtils.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/image/SkRescaleAndReadPixelsUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkImageEncoder_NDK.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkImageGeneratorNDK.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/SkNDKConversions.cpp + ../../../third_party/skia/LICENSE
@@ -7046,8 +7047,8 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMSAALoadManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMSAALoadManager.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkManagedResource.h
-FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.cpp
-FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.h
+FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixelsUtils.cpp
+FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixelsUtils.h
 FILE: ../../../third_party/skia/src/ports/SkImageEncoder_NDK.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorNDK.cpp
 FILE: ../../../third_party/skia/src/ports/SkNDKConversions.cpp
