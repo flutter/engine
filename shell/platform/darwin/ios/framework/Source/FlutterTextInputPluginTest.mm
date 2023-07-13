@@ -133,6 +133,18 @@ FLUTTER_ASSERT_ARC
                              }];
 }
 
+- (void)runDefaultRunLoop {
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
+  }
+}
+
 - (NSMutableDictionary*)mutableTemplateCopy {
   if (!_template) {
     _template = @{
@@ -726,17 +738,7 @@ FLUTTER_ASSERT_ARC
       });
   XCTAssertEqual(updateCount, 0);
 
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
-
-  XCTAssertTrue(done);
+  [self runDefaultRunLoop];
 
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
@@ -757,15 +759,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
@@ -784,15 +778,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 3);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
@@ -812,15 +798,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
@@ -839,19 +817,10 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
-  done = false;
   OCMExpect([engine
                 flutterTextInputView:inputView
                  updateEditingClient:0
@@ -868,14 +837,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
 
   XCTAssertEqual(updateCount, 6);
   OCMVerifyAll(engine);
@@ -913,17 +875,7 @@ FLUTTER_ASSERT_ARC
   [inputView deleteBackward];
   [inputView insertText:@"—"];
 
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
-
-  XCTAssertTrue(done);
+  [self runDefaultRunLoop];
   OCMVerifyAll(engine);
 }
 
@@ -943,17 +895,8 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
   OCMVerify([engine
@@ -967,18 +910,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 2);
-  XCTAssertTrue(done);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
@@ -992,33 +925,14 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 0);
-  XCTAssertTrue(done);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"text." selectedRange:NSMakeRange(0, 1)];
   OCMVerify([engine
@@ -1032,18 +946,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 2);
-  XCTAssertTrue(done);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
@@ -1057,33 +961,14 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 0);
-  XCTAssertTrue(done);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"tex" selectedRange:NSMakeRange(0, 1)];
   OCMVerify([engine
@@ -1097,18 +982,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 2);
-  XCTAssertTrue(done);
 }
 
 #pragma mark - EditingState tests
@@ -1154,89 +1029,30 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView insertText:@"text to insert"];
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView deleteBackward];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 2);
-  XCTAssertTrue(done);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 3);
-  XCTAssertTrue(done);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 4);
-  XCTAssertTrue(done);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 5);
-  XCTAssertTrue(done);
 
   [inputView unmarkText];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 6);
-  XCTAssertTrue(done);
 }
 
 - (void)testTextChangesDoNotTriggerUpdateEditingClient {
@@ -1290,123 +1106,44 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"BEFORE"];
-  __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 0);
-  XCTAssertTrue(done);
 
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   // Text changes don't trigger an update.
   XCTAssertEqual(updateCount, 1);
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   // Selection changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   // Composing region changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
-  XCTAssertTrue(done);
 
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  done = false;
-  XCTAssertFalse(done);
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
-    done = true;
-  });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
-  XCTAssertTrue(done);
+  [self runDefaultRunLoop];
   XCTAssertEqual(updateCount, 1);
 }
 
