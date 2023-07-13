@@ -47,6 +47,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   auto context = renderer.GetContext();
   auto library = context->GetShaderLibrary();
 
+#ifdef FML_OS_ANDROID
+  return true;
+#endif
+
   //--------------------------------------------------------------------------
   /// Get or register shader.
   ///
