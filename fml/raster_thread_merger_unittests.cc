@@ -610,15 +610,15 @@ TEST(RasterThreadMerger, TheLastMergedCallerOfMultipleMergersCanUnmergeNow) {
   raster_thread_merger1->MergeWithLease(kNumFramesMerged);
   ASSERT_TRUE(raster_thread_merger1->IsMerged());
 
-  for (size_t i = 0; i < kNumFramesMerged; i ++) {
+  for (size_t i = 0; i < kNumFramesMerged; i++) {
     // Un-merge thread merger 1.
     raster_thread_merger1->DecrementLease();
   }
   ASSERT_FALSE(raster_thread_merger1->IsMerged());
 
   const auto raster_thread_merger2 =
-    fml::RasterThreadMerger::CreateOrShareThreadMerger(raster_thread_merger1,
-                                                        qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(raster_thread_merger1,
+                                                         qid1, qid2);
   ASSERT_FALSE(raster_thread_merger2->IsMerged());
   raster_thread_merger2->MergeWithLease(kNumFramesMerged);
   ASSERT_TRUE(raster_thread_merger2->IsMerged());

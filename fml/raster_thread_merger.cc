@@ -70,6 +70,7 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
   }
+
   merged_condition_.notify_one();
 }
 
