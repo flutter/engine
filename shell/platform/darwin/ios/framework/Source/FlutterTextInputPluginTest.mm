@@ -886,10 +886,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
-  
-  
-  
-
   // Expected call.
   OCMExpect([engine flutterTextInputView:inputView
                      updateEditingClient:0
