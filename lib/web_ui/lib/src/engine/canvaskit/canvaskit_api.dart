@@ -2732,8 +2732,6 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   @JS('replaceTabCharacters')
   external set _replaceTabCharacters(JSBoolean? bool);
   set replaceTabCharacters(bool? bool) => _replaceTabCharacters = bool?.toJS;
-
-  external set applyRoundingHack(bool applyRoundingHack);
 }
 
 @JS()
