@@ -20,7 +20,7 @@ vars = {
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'd58324bf653df78837bcf46685ca6141d86540ba',
 
-  'dart_sdk_revision': '69fdf1867dc65697420febd94d061e6ab90e5d7c',
+  'dart_sdk_revision': '78beb09cf76859bf2abce3f153ee27cd351b3219',
   'dart_sdk_git': 'https://github.com/shorebirdtech/dart-sdk.git',
   'updater_git': 'https://github.com/shorebirdtech/updater.git',
   'updater_rev': 'bce15087879a06d7e7f4ce37c1a54dd13bc4b8b1',
@@ -262,7 +262,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + 'd2c15fa78bcf053e4da31aef912c39daf4c6493b',
+  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + '59ef3bc35a2aa6d27d065ef4be146d0d042ff191',
 
    # Fuchsia compatibility
    #
