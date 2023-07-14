@@ -1368,16 +1368,15 @@ class _PlatformConfiguration {
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
-    required this.devicePixelRatio,
-    required this.geometry,
-    required this.visible,
-    required this.viewInsets,
-    required this.viewPadding,,
-    required this.systemGestureInsets,,
-    required this.padding,,
-    required this.gestureSettings,
-    required this.displayFeatures,
-    required this.displayId,
+    this.devicePixelRatio = 1.0,
+    this.geometry = Rect.zero,
+    this.viewInsets = ViewPadding.zero,
+    this.viewPadding = ViewPadding.zero,
+    this.systemGestureInsets = ViewPadding.zero,
+    this.padding = ViewPadding.zero,
+    this.gestureSettings = const GestureSettings(),
+    this.displayFeatures = const <DisplayFeature>[],
+    this.displayId = 0,
   });
 
   /// The identifier for a display for this view, in
@@ -1390,9 +1389,6 @@ class _ViewConfiguration {
   /// The geometry requested for the view on the screen or within its parent
   /// window, in logical pixels.
   final Rect geometry;
-
-  /// Whether or not the view is currently visible on the screen.
-  final bool visible;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely

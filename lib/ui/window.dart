@@ -405,8 +405,15 @@ class SingletonFlutterWindow extends FlutterView {
     'Deprecated to prepare for the upcoming multi-window support. '
     'This feature was deprecated after v3.7.0-32.0.pre.'
   )
-  SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
-      : super._();
+  SingletonFlutterWindow._() : super._(
+    _kImplicitViewId,
+    PlatformDispatcher.instance,
+    const _ViewConfiguration(),
+  );
+
+  // Shares a configuration with the FlutterView with the same ID.
+  @override
+  _ViewConfiguration get _viewConfiguration => platformDispatcher._views[viewId]?._viewConfiguration ?? super._viewConfiguration;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views], or
@@ -1016,7 +1023,7 @@ enum Brightness {
   'Deprecated to prepare for the upcoming multi-window support. '
   'This feature was deprecated after v3.7.0-32.0.pre.'
 )
-final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
+final SingletonFlutterWindow window = SingletonFlutterWindow._();
 
 /// Additional data available on each flutter frame.
 class FrameData {
