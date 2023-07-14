@@ -145,9 +145,8 @@ class EntityPass {
 
   /// The bottom of the rendering routine. The list of entities is a fully
   /// prepared list of entities and passes to render.
-  bool RenderEntities(
-      ContentContext& renderer,
-      std::vector<RenderableEntity>& entities_to_render) const;
+  bool RenderEntities(ContentContext& renderer,
+                      std::vector<RenderableEntity>& entities_to_render) const;
 
   EntityResult GetEntityForElement(
       const EntityPass::Element& element,
