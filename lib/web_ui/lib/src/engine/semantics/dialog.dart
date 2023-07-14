@@ -67,6 +67,10 @@ class RouteName extends RoleManager {
 
   @override
   void update() {
+    if (!semanticsObject.namesRoute) {
+      return;
+    }
+
     // NOTE(yjbanov): this does not handle the case when the node structure
     // changes such that this RouteName is no longer attached to the same
     // dialog. While this is technically expressible using the semantics API,
