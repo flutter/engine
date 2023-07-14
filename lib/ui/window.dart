@@ -411,7 +411,7 @@ class SingletonFlutterWindow extends FlutterView {
     const _ViewConfiguration(),
   );
 
-  // Shares a configuration with the FlutterView with the same ID.
+  // Gets its configuration from the FlutterView with the same ID.
   @override
   _ViewConfiguration get _viewConfiguration => platformDispatcher._views[viewId]?._viewConfiguration ?? super._viewConfiguration;
 
