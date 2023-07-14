@@ -179,7 +179,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
     [[NSApplication sharedApplication] terminate:sender];
   };
   id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
-  if ([[appDelegate class] instancesRespondToSelector:@selector(setTerminationHandler:)]) {
+  if ([appDelegate respondsToSelector:@selector(setTerminationHandler:)]) {
     FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
     flutterAppDelegate.terminationHandler = self;
   }
@@ -444,7 +444,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpNotificationCenterListeners];
   id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
   const SEL selector = @selector(addApplicationLifecycleDelegate:);
-  if ([[appDelegate class] instancesRespondToSelector:selector]) {
+  if ([appDelegate respondsToSelector:selector]) {
     _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
                                                                        terminator:nil];
     FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
