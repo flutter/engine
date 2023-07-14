@@ -132,7 +132,8 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
   }
 
   if (label_.has_value()) {
-    context_vk.SetDebugName(tracked_objects->GetCommandBuffer(), label_.value());
+    context_vk.SetDebugName(tracked_objects->GetCommandBuffer(),
+                            label_.value());
   }
 
   return std::make_shared<CommandEncoderVK>(context_vk.GetDeviceHolder(),

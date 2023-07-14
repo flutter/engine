@@ -171,7 +171,8 @@ class ContextVK final : public Context,
 
   void Setup(Settings settings);
 
-  std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory() const;
+  std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
+      const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

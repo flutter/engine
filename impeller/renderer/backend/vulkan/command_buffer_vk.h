@@ -18,7 +18,7 @@ class CommandEncoderVK;
 class CommandBufferVK final
     : public CommandBuffer,
       public BackendCast<CommandBufferVK, CommandBuffer>,
-      public std::enable_shared_from_this<CommandBufferVK>  {
+      public std::enable_shared_from_this<CommandBufferVK> {
  public:
   // |CommandBuffer|
   ~CommandBufferVK() override;

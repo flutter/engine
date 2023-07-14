@@ -5,10 +5,10 @@
 #include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 
 namespace impeller {
 
