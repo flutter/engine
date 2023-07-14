@@ -270,10 +270,12 @@ class PlatformDispatcher {
     return FlutterView._(id as int, this);
   }
 
+  // TODO(goderbauer): This should also get the ViewConfiguration instead of requiring a separate call to _updateWindowMetrics.
   void _addView(Object id) {
     assert(!_views.containsKey(id));
     _views[id as int] = _createView(id);
     _viewConfigurations[id] = const _ViewConfiguration();
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
   void _removeView(Object id) {
@@ -281,6 +283,7 @@ class PlatformDispatcher {
     // TODO(dkwingsmt): Reset _implicitView?
     _views.remove(id);
     _viewConfigurations.remove(id);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
   void _onSentViewConfigurations(List<int> viewIds) {
