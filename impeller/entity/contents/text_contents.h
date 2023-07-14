@@ -57,7 +57,7 @@ class TextContents final : public Contents {
 
  private:
   TextFrame frame_;
-  Scalar scale_;
+  Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
