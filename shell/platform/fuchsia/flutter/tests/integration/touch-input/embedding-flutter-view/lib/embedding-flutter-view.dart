@@ -163,7 +163,7 @@ class TestApp {
 
   void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
-    final message = utf8.encoder.convert(json.encode({
+    final message = utf8.encode(json.encode({
       'method': 'TouchInputListener.ReportTouchInput',
       'local_x': localX,
       'local_y': localY,
@@ -199,7 +199,7 @@ class ChildView {
       ],
     };
 
-    final ByteData createViewMessage = utf8.encoder.convert(
+    final ByteData createViewMessage = utf8.encode(
       json.encode(<String, Object>{
         'method': 'View.create',
         'args': args,
