@@ -67,10 +67,6 @@ class RouteName extends RoleManager {
 
   @override
   void update() {
-    if (!semanticsObject.namesRoute) {
-      return;
-    }
-
     // NOTE(yjbanov): this does not handle the case when the node structure
     // changes such that this RouteName is no longer attached to the same
     // dialog. While this is technically expressible using the semantics API,
@@ -80,6 +76,10 @@ class RouteName extends RoleManager {
     // semantics code. Since reparenting can be done with no update to either
     // the Dialog or RouteName we'd have to scan intermediate nodes for
     // structural changes.
+    if (!semanticsObject.namesRoute) {
+      return;
+    }
+
     if (semanticsObject.isLabelDirty) {
       final Dialog? dialog = _dialog;
       if (dialog != null) {

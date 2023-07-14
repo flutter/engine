@@ -38,21 +38,14 @@ class Focusable extends RoleManager {
 
   @override
   void update() {
-    if (!_focusManager.isManaging && !semanticsObject.isFocusable) {
-      // Nothing to do about this node. It's neither focusable, nor being managed.
-      return;
+    if (semanticsObject.isFocusable) {
+      if (!_focusManager.isManaging) {
+        _focusManager.manage(semanticsObject.id, semanticsObject.element);
+      }
+      _focusManager.changeFocus(semanticsObject.hasFocus && (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
+    } else {
+      _focusManager.stopManaging();
     }
-
-    if (!_focusManager.isManaging) {
-      // This line is only reachable iff the node is focusable but not being
-      // managed. So the focus manager is told to start managing it.
-      _focusManager.manage(semanticsObject.id, semanticsObject.element);
-    }
-    _updateFocus();
-  }
-
-  void _updateFocus() {
-    _focusManager.changeFocus(semanticsObject.hasFocus && (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
   }
 
   @override
