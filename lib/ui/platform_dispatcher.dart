@@ -283,7 +283,7 @@ class PlatformDispatcher {
     List<int> displayFeaturesState,
     int displayId,
   ) {
-    final _ViewConfiguration _viewConfiguration = _ViewConfiguration(
+    final _ViewConfiguration viewConfiguration = _ViewConfiguration(
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: ViewPadding._(
@@ -326,10 +326,10 @@ class PlatformDispatcher {
     if (id == _kImplicitViewId && view == null) {
       // TODO(goderbauer): Remove the implicit creation of the implicit view
       //   when we have an addView API and the implicit view is added via that.
-      _views[id] = FlutterView._(id, this, _viewConfiguration);
+      _views[id] = FlutterView._(id, this, viewConfiguration);
     } else {
       assert(view != null);
-      view!._viewConfiguration = _viewConfiguration;
+      view!._viewConfiguration = viewConfiguration;
     }
 
     _invoke(onMetricsChanged, _onMetricsChangedZone);
