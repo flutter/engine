@@ -147,7 +147,7 @@ class EntityPass {
   /// prepared list of entities and passes to render.
   bool RenderEntities(
       ContentContext& renderer,
-      const std::vector<RenderableEntity>& entities_to_render) const;
+      std::vector<RenderableEntity>& entities_to_render) const;
 
   EntityResult GetEntityForElement(
       const EntityPass::Element& element,
