@@ -15,6 +15,8 @@
     shorebird_free_string;
     shorebird_check_for_update;
     shorebird_update;
+    shorebird_next_boot_patch_number;
+    shorebird_current_boot_patch_number;
   local:
     *;
 };
