@@ -46,6 +46,10 @@ struct GLPresentInfo {
   // The buffer damage refers to the region that needs to be set as damaged
   // within the frame buffer.
   const std::optional<SkIRect>& buffer_damage;
+
+  // Opaque identifier to pass to the platform compositor to help it present
+  // this frame at the correct time.
+  int64_t vsync_id = kInvalidVSyncId;
 };
 
 class GPUSurfaceGLDelegate {

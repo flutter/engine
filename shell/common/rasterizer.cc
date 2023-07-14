@@ -515,7 +515,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   const fml::TimePoint raster_finish_time =
       frame_timings_recorder->GetRasterEndTime();
   fml::TimePoint frame_target_time =
-      frame_timings_recorder->GetVsyncTargetTime();
+      frame_timings_recorder->GetCurrentVSyncInfo().target;
   if (raster_finish_time > frame_target_time) {
     fml::TimePoint latest_frame_target_time =
         delegate_.GetLatestFrameTargetTime();
@@ -640,11 +640,13 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   // have been resubmitted. `presentation_time` on SubmitInfo is not set
   // in this case.
   {
-    const auto vsync_target_time = frame_timings_recorder.GetVsyncTargetTime();
+    const auto vsync_target_time =
+        frame_timings_recorder.GetCurrentVSyncInfo().target;
     if (vsync_target_time > fml::TimePoint::Now()) {
       presentation_time = vsync_target_time;
     }
   }
+  int64_t vsync_id = frame_timings_recorder.GetCurrentVSyncInfo().id;
 
   frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
@@ -656,7 +658,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     float device_pixel_ratio = task->device_pixel_ratio;
 
     DrawSurfaceStatus status = DrawToSurfaceUnsafe(
-        view_id, *layer_tree, device_pixel_ratio, presentation_time);
+        view_id, *layer_tree, device_pixel_ratio, presentation_time, vsync_id);
     FML_DCHECK(status != DrawSurfaceStatus::kDiscarded);
 
     auto& view_record = EnsureViewRecord(task->view_id);
@@ -697,7 +699,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     int64_t view_id,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio,
-    std::optional<fml::TimePoint> presentation_time) {
+    std::optional<fml::TimePoint> presentation_time,
+    int64_t vsync_id) {
   FML_DCHECK(surface_);
 
   DlCanvas* embedder_root_canvas = nullptr;
@@ -780,6 +783,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
     SurfaceFrame::SubmitInfo submit_info;
     submit_info.presentation_time = presentation_time;
+    submit_info.vsync_id = vsync_id;
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();

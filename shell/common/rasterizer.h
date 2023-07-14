@@ -736,7 +736,8 @@ class Rasterizer final : public SnapshotDelegate,
       int64_t view_id,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio,
-      std::optional<fml::TimePoint> presentation_time);
+      std::optional<fml::TimePoint> presentation_time,
+      int64_t vsync_id);
 
   ViewRecord& EnsureViewRecord(int64_t view_id);
 

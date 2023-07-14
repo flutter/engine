@@ -84,10 +84,9 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
   AwaitVSyncForSecondaryCallback();
 }
 
-void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
-                               fml::TimePoint frame_target_time,
+void VsyncWaiter::FireCallback(FrameTimingsRecorder::VSyncInfo vsync_info,
                                bool pause_secondary_tasks) {
-  FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
+  FML_DCHECK(fml::TimePoint::Now() >= vsync_info.start);
 
   Callback callback;
   std::vector<fml::closure> secondary_callbacks;
@@ -128,23 +127,23 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     fml::TaskQueueId ui_task_queue_id =
         task_runners_.GetUITaskRunner()->GetTaskQueueId();
 
-    task_runners_.GetUITaskRunner()->PostTask(
-        [ui_task_queue_id, callback, flow_identifier, frame_start_time,
-         frame_target_time, pause_secondary_tasks]() {
-          FML_TRACE_EVENT_WITH_FLOW_IDS(
-              "flutter", kVsyncTraceName, /*flow_id_count=*/1,
-              /*flow_ids=*/&flow_identifier, "StartTime", frame_start_time,
-              "TargetTime", frame_target_time);
-          std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
-              std::make_unique<FrameTimingsRecorder>();
-          frame_timings_recorder->RecordVsync(frame_start_time,
-                                              frame_target_time);
-          callback(std::move(frame_timings_recorder));
-          TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
-          if (pause_secondary_tasks) {
-            ResumeDartEventLoopTasks(ui_task_queue_id);
-          }
-        });
+    task_runners_.GetUITaskRunner()->PostTask([ui_task_queue_id, callback,
+                                               flow_identifier, vsync_info,
+                                               pause_secondary_tasks]() {
+      FML_TRACE_EVENT_WITH_FLOW_IDS(
+          "flutter", kVsyncTraceName, /*flow_id_count=*/1,
+          /*flow_ids=*/&flow_identifier, "StartTime", vsync_info.start,
+          "TargetTime", vsync_info.target, "NextStartTime",
+          vsync_info.next_start, "VsyncId", vsync_info.id);
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+          std::make_unique<FrameTimingsRecorder>();
+      frame_timings_recorder->RecordVsync(vsync_info);
+      callback(std::move(frame_timings_recorder));
+      TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
+      if (pause_secondary_tasks) {
+        ResumeDartEventLoopTasks(ui_task_queue_id);
+      }
+    });
   }
 
   for (auto& secondary_callback : secondary_callbacks) {

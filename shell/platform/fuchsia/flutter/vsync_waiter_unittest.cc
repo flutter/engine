@@ -52,7 +52,7 @@ TEST(VSyncWaiterFuchsia, FrameScheduledForStartTime) {
     vsync_waiter.AsyncWaitForVsync(
         [&](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
           const auto now = fml::TimePoint::Now();
-          EXPECT_GT(now, recorder->GetVsyncStartTime());
+          EXPECT_GT(now, recorder->GetCurrentVSyncInfo().start);
           latch.Signal();
         });
   });

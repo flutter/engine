@@ -14,13 +14,15 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
     const AndroidContext& android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     std::shared_ptr<AndroidSurfaceFactory> surface_factory,
-    const TaskRunners& task_runners)
+    const TaskRunners& task_runners,
+    AndroidSurfaceTransaction& android_surface_transaction)
     : ExternalViewEmbedder(),
       android_context_(android_context),
       jni_facade_(std::move(jni_facade)),
       surface_factory_(std::move(surface_factory)),
       surface_pool_(std::make_unique<SurfacePool>()),
-      task_runners_(task_runners) {}
+      task_runners_(task_runners),
+      android_surface_transaction_(android_surface_transaction) {}
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
@@ -79,6 +81,18 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     return;
   }
 
+  auto submit_info = frame->submit_info();
+  int64_t vsync_id = submit_info.vsync_id;
+  if (vsync_id != kInvalidVSyncId) {
+    // This frame should be presented within an AndroidSurfaceTransaction.
+    // Start the transaction now, and steal the vsync_id from the SurfaceFrame,
+    // so that it doesn't start its own transaction.
+    submit_info.vsync_id = kInvalidVSyncId;
+    frame->set_submit_info(submit_info);
+    android_surface_transaction_.Begin();
+    android_surface_transaction_.SetVsyncId(vsync_id);
+  }
+
   std::unordered_map<int64_t, SkRect> view_rects;
   for (auto platform_id : composition_order_) {
     view_rects[platform_id] = GetViewRect(platform_id);
@@ -130,6 +144,10 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     if (should_submit_current_frame) {
       frame->Submit();
     }
+  }
+
+  if (vsync_id != kInvalidVSyncId) {
+    android_surface_transaction_.End();
   }
 }
 

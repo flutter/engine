@@ -50,16 +50,11 @@ FrameTimingsRecorder::FrameTimingsRecorder(uint64_t frame_number)
 
 FrameTimingsRecorder::~FrameTimingsRecorder() = default;
 
-fml::TimePoint FrameTimingsRecorder::GetVsyncStartTime() const {
+FrameTimingsRecorder::VSyncInfo FrameTimingsRecorder::GetCurrentVSyncInfo()
+    const {
   std::scoped_lock state_lock(state_mutex_);
   FML_DCHECK(state_ >= State::kVsync);
-  return vsync_start_;
-}
-
-fml::TimePoint FrameTimingsRecorder::GetVsyncTargetTime() const {
-  std::scoped_lock state_lock(state_mutex_);
-  FML_DCHECK(state_ >= State::kVsync);
-  return vsync_target_;
+  return vsync_info_;
 }
 
 fml::TimePoint FrameTimingsRecorder::GetBuildStartTime() const {
@@ -126,9 +121,8 @@ size_t FrameTimingsRecorder::GetPictureCacheBytes() const {
   return picture_cache_bytes_;
 }
 
-void FrameTimingsRecorder::RecordVsync(fml::TimePoint vsync_start,
-                                       fml::TimePoint vsync_target) {
-  fml::Status status = RecordVsyncImpl(vsync_start, vsync_target);
+void FrameTimingsRecorder::RecordVsync(VSyncInfo vsync_info) {
+  fml::Status status = RecordVsyncImpl(vsync_info);
   FML_DCHECK(status.ok());
   (void)status;
 }
@@ -151,16 +145,14 @@ void FrameTimingsRecorder::RecordRasterStart(fml::TimePoint raster_start) {
   (void)status;
 }
 
-fml::Status FrameTimingsRecorder::RecordVsyncImpl(fml::TimePoint vsync_start,
-                                                  fml::TimePoint vsync_target) {
+fml::Status FrameTimingsRecorder::RecordVsyncImpl(VSyncInfo vsync_info) {
   std::scoped_lock state_lock(state_mutex_);
   if (state_ != State::kUninitialized) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
                        "Check failed: state_ == State::kUninitialized.");
   }
   state_ = State::kVsync;
-  vsync_start_ = vsync_start;
-  vsync_target_ = vsync_target;
+  vsync_info_ = vsync_info;
   return fml::Status();
 }
 
@@ -218,7 +210,7 @@ FrameTiming FrameTimingsRecorder::RecordRasterEnd(const RasterCache* cache) {
     layer_cache_count_ = layer_cache_bytes_ = picture_cache_count_ =
         picture_cache_bytes_ = 0;
   }
-  timing_.Set(FrameTiming::kVsyncStart, vsync_start_);
+  timing_.Set(FrameTiming::kVsyncStart, vsync_info_.start);
   timing_.Set(FrameTiming::kBuildStart, build_start_);
   timing_.Set(FrameTiming::kBuildFinish, build_end_);
   timing_.Set(FrameTiming::kRasterStart, raster_start_);
@@ -245,8 +237,7 @@ std::unique_ptr<FrameTimingsRecorder> FrameTimingsRecorder::CloneUntil(
   recorder->state_ = state;
 
   if (state >= State::kVsync) {
-    recorder->vsync_start_ = vsync_start_;
-    recorder->vsync_target_ = vsync_target_;
+    recorder->vsync_info_ = vsync_info_;
   }
 
   if (state >= State::kBuildStart) {

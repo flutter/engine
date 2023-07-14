@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
@@ -52,7 +53,10 @@ void VsyncWaiterFallback::AwaitVSync() {
   task_runners_.GetUITaskRunner()->PostTaskForTime(
       [frame_start_time, frame_target_time, weak_this]() {
         if (auto vsync_waiter = weak_this.lock()) {
-          vsync_waiter->FireCallback(frame_start_time, frame_target_time,
+          vsync_waiter->FireCallback({.start = frame_start_time,
+                                      .target = frame_target_time,
+                                      .next_start = frame_target_time,
+                                      .id = kInvalidVSyncId},
                                      !vsync_waiter->for_testing_);
         }
       },

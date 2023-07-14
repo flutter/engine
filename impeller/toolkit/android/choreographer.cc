@@ -14,7 +14,7 @@ Choreographer& Choreographer::GetInstance() {
 }
 
 Choreographer::Choreographer() {
-  if (!IsAvailableOnPlatform()) {
+  if (GetPlatformSupport() == ChoreographerSupportStatus::kUnsupported) {
     return;
   }
 
@@ -75,10 +75,72 @@ bool Choreographer::PostFrameCallback(FrameCallback callback) const {
   return false;
 }
 
-bool Choreographer::IsAvailableOnPlatform() {
-  return GetProcTable().AChoreographer_getInstance &&
-         (GetProcTable().AChoreographer_postFrameCallback64 ||
-          GetProcTable().AChoreographer_postFrameCallback);
+bool Choreographer::PostVsyncCallback(VsyncCallback callback,
+                                      size_t latency) const {
+  if (!callback || !IsValid()) {
+    return false;
+  }
+
+  struct InFlightData {
+    VsyncCallback callback;
+    size_t latency;
+  };
+
+  auto data = std::make_unique<InFlightData>();
+  data->callback = std::move(callback);
+  data->latency = latency;
+
+  const auto& table = GetProcTable();
+  if (table.AChoreographer_postVsyncCallback) {
+    table.AChoreographer_postVsyncCallback(
+        const_cast<AChoreographer*>(instance_),
+        [](const AChoreographerFrameCallbackData* callback_data, void* p_data) {
+          auto data = reinterpret_cast<InFlightData*>(p_data);
+          const auto& table = GetProcTable();
+          auto frame_time_nanos =
+              table.AChoreographerFrameCallbackData_getFrameTimeNanos(
+                  callback_data);
+          size_t frame_index = std::min(
+              table.AChoreographerFrameCallbackData_getPreferredFrameTimelineIndex(
+                  callback_data) +
+                  data->latency,
+              table.AChoreographerFrameCallbackData_getFrameTimelinesLength(
+                  callback_data) -
+                  1);
+          auto target_time_nanos =
+              table
+                  .AChoreographerFrameCallbackData_getFrameTimelineDeadlineNanos(
+                      callback_data, frame_index);
+          auto vsync_id =
+              table.AChoreographerFrameCallbackData_getFrameTimelineVsyncId(
+                  callback_data, frame_index);
+
+          ChoreographerVsyncTimings timings = {
+              .start = ClockMonotonicNanosToFrameTimePoint(frame_time_nanos),
+              .target = ClockMonotonicNanosToFrameTimePoint(target_time_nanos),
+              .id = vsync_id};
+          data->callback(timings);
+          delete data;
+        },
+        data.release());
+    return true;
+  }
+
+  // The validity check should have tripped by now.
+  FML_UNREACHABLE();
+  return false;
+}
+
+ChoreographerSupportStatus Choreographer::GetPlatformSupport() {
+  if (GetProcTable().AChoreographer_postVsyncCallback) {
+    return ChoreographerSupportStatus::kSupportedVsync;
+  } else if (GetProcTable().AChoreographer_getInstance &&
+             (GetProcTable().AChoreographer_postFrameCallback64 ||
+              GetProcTable().AChoreographer_postFrameCallback)) {
+    return ChoreographerSupportStatus::kSupported;
+  } else {
+    return ChoreographerSupportStatus::kUnsupported;
+  }
 }
 
 }  // namespace impeller::android

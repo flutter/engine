@@ -12,6 +12,22 @@
 
 namespace impeller::android {
 
+enum class ChoreographerSupportStatus {
+  // Unavailable, API level < 24.
+  kUnsupported,
+  // Available with postFrameCallback64 or postFrameCallback.
+  kSupported,
+  // Available with postVsyncCallback.
+  kSupportedVsync,
+};
+
+// TODO(moffatman) document
+struct ChoreographerVsyncTimings {
+  std::chrono::time_point<std::chrono::steady_clock> start;
+  std::chrono::time_point<std::chrono::steady_clock> target;
+  int64_t id;
+};
+
 //------------------------------------------------------------------------------
 /// @brief      This class describes access to the choreographer instance for
 ///             the current thread. Choreographers are only available on API
@@ -23,7 +39,7 @@ namespace impeller::android {
 ///
 class Choreographer {
  public:
-  static bool IsAvailableOnPlatform();
+  static ChoreographerSupportStatus GetPlatformSupport();
 
   //----------------------------------------------------------------------------
   /// @brief      Create or get the thread local instance of a choreographer. A
@@ -58,6 +74,8 @@ class Choreographer {
   ///
   using FrameTimePoint = std::chrono::time_point<FrameClock>;
   using FrameCallback = std::function<void(FrameTimePoint)>;
+  // TODO: Need a new struct type here
+  using VsyncCallback = std::function<void(ChoreographerVsyncTimings)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Posts a frame callback. The time that the frame is being
@@ -72,6 +90,9 @@ class Choreographer {
   ///             See `IsAvailableOnPlatform`.
   ///
   bool PostFrameCallback(FrameCallback callback) const;
+
+  // TODO(moffatman): document
+  bool PostVsyncCallback(VsyncCallback callback, size_t latency) const;
 
  private:
   AChoreographer* instance_ = nullptr;

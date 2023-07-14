@@ -149,6 +149,14 @@
                               arg2_name, arg2_val);                        \
   __FML__AUTO_TRACE_END(name)
 
+#define TRACE_EVENT4(category_group, name, arg1_name, arg1_val, arg2_name, \
+                     arg2_val, arg3_name, arg3_val, arg4_name, arg4_val)   \
+  ::fml::tracing::TraceEvent4(category_group, name, /*flow_id_count=*/0,   \
+                              /*flow_ids=*/nullptr, arg1_name, arg1_val,   \
+                              arg2_name, arg2_val, arg3_name, arg3_val,    \
+                              arg4_name, arg4_val);                        \
+  __FML__AUTO_TRACE_END(name)
+
 #define TRACE_EVENT_ASYNC_BEGIN0_WITH_FLOW_IDS(category_group, name, id, \
                                                flow_id_count, flow_ids)  \
   ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id,        \
@@ -205,6 +213,16 @@
   const auto __arg2_val_str = std::to_string(arg2_val);                        \
   TRACE_EVENT2(category_group, name, arg1_name, __arg1_val_str.c_str(),        \
                arg2_name, __arg2_val_str.c_str());
+
+#define TRACE_EVENT4_INT(category_group, name, arg1_name, arg1_val, arg2_name, \
+                         arg2_val, arg3_name, arg3_val, arg4_name, arg4_val)   \
+  const auto __arg1_val_str = std::to_string(arg1_val);                        \
+  const auto __arg2_val_str = std::to_string(arg2_val);                        \
+  const auto __arg3_val_str = std::to_string(arg3_val);                        \
+  const auto __arg4_val_str = std::to_string(arg4_val);                        \
+  TRACE_EVENT4(category_group, name, arg1_name, __arg1_val_str.c_str(),        \
+               arg2_name, __arg2_val_str.c_str(), arg3_name,                   \
+               __arg3_val_str.c_str(), arg4_name, __arg4_val_str.c_str());
 
 namespace fml {
 namespace tracing {
@@ -307,14 +325,16 @@ void TraceCounter(TraceArg category,
                   Args... args) {
 #if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
-  TraceTimelineEvent(category, name, identifier, /*flow_id_count=*/0,
+  TraceTimelineEvent(category, name, identifier,
+                     /*flow_id_count=*/0,
                      /*flow_ids=*/nullptr, Dart_Timeline_Event_Counter,
                      split.first, split.second);
 #endif  // FLUTTER_TIMELINE_ENABLED
 }
 
-// HACK: Used to NOP FML_TRACE_COUNTER macro without triggering unused var
-// warnings at usage sites.
+// HACK: Used to NOP FML_TRACE_COUNTER macro
+// without triggering unused var warnings at usage
+// sites.
 template <typename... Args>
 void TraceCounterNopHACK(TraceArg category,
                          TraceArg name,
@@ -354,6 +374,19 @@ void TraceEvent2(TraceArg category_group,
                  TraceArg arg1_val,
                  TraceArg arg2_name,
                  TraceArg arg2_val);
+
+void TraceEvent4(TraceArg category_group,
+                 TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids,
+                 TraceArg arg1_name,
+                 TraceArg arg1_val,
+                 TraceArg arg2_name,
+                 TraceArg arg2_val,
+                 TraceArg arg3_name,
+                 TraceArg arg3_val,
+                 TraceArg arg4_name,
+                 TraceArg arg4_val);
 
 void TraceEventEnd(TraceArg name);
 

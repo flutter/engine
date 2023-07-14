@@ -112,8 +112,9 @@ void Animator::BeginFrame(
   // to service potential frame.
   FML_DCHECK(producer_continuation_);
   const fml::TimePoint frame_target_time =
-      frame_timings_recorder_->GetVsyncTargetTime();
-  dart_frame_deadline_ = frame_target_time.ToEpochDelta();
+      frame_timings_recorder_->GetCurrentVSyncInfo().target;
+  dart_frame_deadline_ =
+      frame_timings_recorder_->GetCurrentVSyncInfo().next_start.ToEpochDelta();
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 }
@@ -130,7 +131,7 @@ void Animator::EndFrame() {
     frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
 
     delegate_.OnAnimatorUpdateLatestFrameTargetTime(
-        frame_timings_recorder_->GetVsyncTargetTime());
+        frame_timings_recorder_->GetCurrentVSyncInfo().target);
 
     // Commit the pending continuation.
     std::vector<std::unique_ptr<LayerTreeTask>> layer_tree_task_list;
@@ -195,7 +196,10 @@ void Animator::Render(int64_t view_id,
     // to render warm up frames.
     frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
     const fml::TimePoint placeholder_time = fml::TimePoint::Now();
-    frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
+    frame_timings_recorder_->RecordVsync({.start = placeholder_time,
+                                          .target = placeholder_time,
+                                          .next_start = placeholder_time,
+                                          .id = kInvalidVSyncId});
     frame_timings_recorder_->RecordBuildStart(placeholder_time);
   }
 

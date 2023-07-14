@@ -11,6 +11,7 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
+#include "flutter/shell/platform/android/surface/android_surface_transaction.h"
 
 namespace flutter {
 
@@ -158,7 +159,16 @@ bool AndroidSurfaceGLSkia::GLContextPresent(const GLPresentInfo& present_info) {
   if (present_info.presentation_time) {
     onscreen_surface_->SetPresentationTime(*present_info.presentation_time);
   }
-  return onscreen_surface_->SwapBuffers(present_info.frame_damage);
+  auto& transaction = AndroidSurfaceTransaction::GetInstance();
+  if (present_info.vsync_id) {
+    transaction.Begin();
+    transaction.SetVsyncId(present_info.vsync_id);
+  }
+  bool ret = onscreen_surface_->SwapBuffers(present_info.frame_damage);
+  if (present_info.vsync_id) {
+    transaction.End();
+  }
+  return ret;
 }
 
 GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {

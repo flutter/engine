@@ -33,6 +33,7 @@
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_message_response_android.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/platform/android/surface/android_surface_transaction.h"
 #include "flutter/shell/platform/android/surface/snapshot_surface_producer.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
@@ -360,7 +361,8 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 std::shared_ptr<ExternalViewEmbedder>
 PlatformViewAndroid::CreateExternalViewEmbedder() {
   return std::make_shared<AndroidExternalViewEmbedder>(
-      *android_context_, jni_facade_, surface_factory_, task_runners_);
+      *android_context_, jni_facade_, surface_factory_, task_runners_,
+      AndroidSurfaceTransaction::GetInstance());
 }
 
 // |PlatformView|

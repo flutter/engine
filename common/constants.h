@@ -33,6 +33,10 @@ constexpr double kMegaByteSizeInBytes = (1 << 20);
 // implicit view if the target ID is `kFlutterImplicitViewId`, unless specified
 // otherwise.
 constexpr int64_t kFlutterImplicitViewId = 0;
+
+// If this is the vsync ID recorded for a frame, it should not be applied as
+// part of any vsync transaction.
+constexpr int64_t kInvalidVSyncId = 0;
 }  // namespace flutter
 
 #endif  // FLUTTER_COMMON_CONSTANTS_H_

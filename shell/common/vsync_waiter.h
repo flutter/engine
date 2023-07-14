@@ -10,6 +10,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/fml/time/time_point.h"
@@ -70,8 +71,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   // Schedules the callback on the UI task runner. Needs to be invoked as close
   // to the `frame_start_time` as possible.
-  void FireCallback(fml::TimePoint frame_start_time,
-                    fml::TimePoint frame_target_time,
+  void FireCallback(FrameTimingsRecorder::VSyncInfo vsync_info,
                     bool pause_secondary_tasks = true);
 
  private:

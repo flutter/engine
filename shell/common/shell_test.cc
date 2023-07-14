@@ -187,7 +187,10 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
               frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
           std::unique_ptr<FrameTimingsRecorder> recorder =
               std::make_unique<FrameTimingsRecorder>();
-          recorder->RecordVsync(frame_begin_time, frame_end_time);
+          recorder->RecordVsync({.start = frame_begin_time,
+                                 .target = frame_end_time,
+                                 .next_start = frame_end_time,
+                                 .id = kInvalidVSyncId});
           engine->animator_->BeginFrame(std::move(recorder));
           engine->animator_->EndFrame();
         }
@@ -229,7 +232,10 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
         std::unique_ptr<FrameTimingsRecorder> recorder =
             std::make_unique<FrameTimingsRecorder>();
-        recorder->RecordVsync(frame_begin_time, frame_end_time);
+        recorder->RecordVsync({.start = frame_begin_time,
+                               .target = frame_end_time,
+                               .next_start = frame_end_time,
+                               .id = kInvalidVSyncId});
         engine->animator_->BeginFrame(std::move(recorder));
 
         // The BeginFrame phase and the EndFrame phase must be performed in a

@@ -101,14 +101,17 @@ TEST(ToolkitAndroidTest, SurfacControlsAreAvailable) {
 }
 
 TEST(ToolkitAndroidTest, ChoreographerIsAvailable) {
-  if (!Choreographer::IsAvailableOnPlatform()) {
+  if (Choreographer::GetPlatformSupport() ==
+      ChoreographerSupportStatus::kUnsupported) {
     GTEST_SKIP() << "Choreographer is not supported on this platform.";
   }
-  ASSERT_TRUE(Choreographer::IsAvailableOnPlatform());
+  ASSERT_TRUE(Choreographer::GetPlatformSupport() !=
+              ChoreographerSupportStatus::kUnsupported);
 }
 
 TEST(ToolkitAndroidTest, CanPostAndNotWaitForFrameCallbacks) {
-  if (!Choreographer::IsAvailableOnPlatform()) {
+  if (Choreographer::GetPlatformSupport() ==
+      ChoreographerSupportStatus::kUnsupported) {
     GTEST_SKIP() << "Choreographer is not supported on this platform.";
   }
   const auto& choreographer = Choreographer::GetInstance();
@@ -117,7 +120,8 @@ TEST(ToolkitAndroidTest, CanPostAndNotWaitForFrameCallbacks) {
 }
 
 TEST(ToolkitAndroidTest, CanPostAndWaitForFrameCallbacks) {
-  if (!Choreographer::IsAvailableOnPlatform()) {
+  if (Choreographer::GetPlatformSupport() ==
+      ChoreographerSupportStatus::kUnsupported) {
     GTEST_SKIP() << "Choreographer is not supported on this platform.";
   }
   if ((true)) {

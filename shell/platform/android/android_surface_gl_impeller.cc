@@ -7,6 +7,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
+#include "flutter/shell/platform/android/surface/android_surface_transaction.h"
 
 namespace flutter {
 
@@ -136,7 +137,16 @@ bool AndroidSurfaceGLImpeller::GLContextPresent(
   if (!onscreen_surface_) {
     return false;
   }
-  return onscreen_surface_->Present();
+  auto& transaction = AndroidSurfaceTransaction::GetInstance();
+  if (present_info.vsync_id) {
+    transaction.Begin();
+    transaction.SetVsyncId(present_info.vsync_id);
+  }
+  bool ret = onscreen_surface_->Present();
+  if (present_info.vsync_id) {
+    transaction.End();
+  }
+  return ret;
 }
 
 // |GPUSurfaceGLDelegate|

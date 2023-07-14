@@ -1820,8 +1820,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   fml::scoped_nsprotocol<FlutterKeyboardAnimationCallback> animationCallback(
       [keyboardAnimationCallback copy]);
   auto uiCallback = [animationCallback](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
-    fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
-    fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
+    fml::TimeDelta frameInterval =
+        recorder->GetCurrentVSyncInfo().target - recorder->GetCurrentVSyncInfo().start;
+    fml::TimePoint keyboardAnimationTargetTime =
+        recorder->GetCurrentVSyncInfo().target + frameInterval;
     dispatch_async(dispatch_get_main_queue(), ^(void) {
       animationCallback.get()(keyboardAnimationTargetTime);
     });

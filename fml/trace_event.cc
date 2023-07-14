@@ -180,6 +180,32 @@ void TraceEvent2(TraceArg category_group,
   );
 }
 
+void TraceEvent4(TraceArg category_group,
+                 TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids,
+                 TraceArg arg1_name,
+                 TraceArg arg1_val,
+                 TraceArg arg2_name,
+                 TraceArg arg2_val,
+                 TraceArg arg3_name,
+                 TraceArg arg3_val,
+                 TraceArg arg4_name,
+                 TraceArg arg4_val) {
+  const char* arg_names[] = {arg1_name, arg2_name, arg3_name, arg4_name};
+  const char* arg_values[] = {arg1_val, arg2_val, arg3_val, arg4_val};
+  FlutterTimelineEvent(name,                            // label
+                       gTimelineMicrosSource.load()(),  // timestamp0
+                       0,              // timestamp1_or_async_id
+                       flow_id_count,  // flow_id_count
+                       reinterpret_cast<const int64_t*>(flow_ids),  // flow_ids
+                       Dart_Timeline_Event_Begin,  // event type
+                       4,                          // argument_count
+                       arg_names,                  // argument_names
+                       arg_values                  // argument_values
+  );
+}
+
 void TraceEventEnd(TraceArg name) {
   FlutterTimelineEvent(name,                            // label
                        gTimelineMicrosSource.load()(),  // timestamp0
@@ -425,6 +451,19 @@ void TraceEvent2(TraceArg category_group,
                  TraceArg arg1_val,
                  TraceArg arg2_name,
                  TraceArg arg2_val) {}
+
+void TraceEvent4(TraceArg category_group,
+                 TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids,
+                 TraceArg arg1_name,
+                 TraceArg arg1_val,
+                 TraceArg arg2_name,
+                 TraceArg arg2_val,
+                 TraceArg arg3_name,
+                 TraceArg arg3_val,
+                 TraceArg arg4_name,
+                 TraceArg arg4_val) {}
 
 void TraceEventEnd(TraceArg name) {}
 

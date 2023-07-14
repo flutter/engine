@@ -51,7 +51,11 @@ void ShellTestVsyncWaiter::AwaitVSync() {
     //
     // For example, HandlesActualIphoneXsInputEvents will fail without this.
     task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
-      FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now());
+      FireCallback({.start = fml::TimePoint::Now(),
+                    .target = fml::TimePoint::Now(),
+                    .next_start = fml::TimePoint::Now(),
+                    .id = kInvalidVSyncId},
+                   0);
     });
   });
 }
@@ -59,8 +63,13 @@ void ShellTestVsyncWaiter::AwaitVSync() {
 void ConstantFiringVsyncWaiter::AwaitVSync() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   auto async_wait = std::async([this]() {
-    task_runners_.GetPlatformTaskRunner()->PostTask(
-        [this]() { FireCallback(kFrameBeginTime, kFrameTargetTime); });
+    task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
+      FireCallback({.start = kFrameBeginTime,
+                    .target = kFrameTargetTime,
+                    .next_start = kFrameTargetTime,
+                    .id = kInvalidVSyncId},
+                   0);
+    });
   });
 }
 
