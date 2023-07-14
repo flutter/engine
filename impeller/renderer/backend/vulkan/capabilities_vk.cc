@@ -428,7 +428,9 @@ bool CapabilitiesVK::SupportsReadFromResolve() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
-  return false;
+  // We can read from the onscreen texture but had additional restrictions on
+  // whether it is a resolve texture.
+  return SupportsReadFromOnscreenTexture();
 }
 
 bool CapabilitiesVK::SupportsDecalTileMode() const {
