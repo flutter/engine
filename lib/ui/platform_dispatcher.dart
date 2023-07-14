@@ -66,6 +66,11 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
+// The view ID of PlatformDispatcher.implicitView.
+//
+// Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
+const int _kImplicitViewId = 0;
+
 // A message channel to receive KeyData from the platform.
 //
 // See embedder.cc::kFlutterKeyDataChannel for more information.
@@ -185,9 +190,6 @@ class PlatformDispatcher {
   /// otherwise.
   FlutterView? view({required int id}) => _views[id];
 
-  // A map of opaque platform view identifiers to view configurations.
-  final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
-
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
   ///
@@ -213,7 +215,7 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+  FlutterView? get implicitView => _implicitViewEnabled() ? _views[_kImplicitViewId] : null;
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
   external static bool _implicitViewEnabled();
@@ -281,13 +283,7 @@ class PlatformDispatcher {
     List<int> displayFeaturesState,
     int displayId,
   ) {
-    final _ViewConfiguration previousConfiguration =
-        _viewConfigurations[id] ?? const _ViewConfiguration();
-    if (!_views.containsKey(id)) {
-      _views[id] = FlutterView._(id, this);
-    }
-    _viewConfigurations[id] = previousConfiguration.copyWith(
-      view: _views[id],
+    final _ViewConfiguration _viewConfiguration = _ViewConfiguration(
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: ViewPadding._(
@@ -314,7 +310,6 @@ class PlatformDispatcher {
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
       ),
-      // -1 is used as a sentinel for an undefined touch slop
       gestureSettings: GestureSettings(
         physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
@@ -326,6 +321,17 @@ class PlatformDispatcher {
       ),
       displayId: displayId,
     );
+
+    final FlutterView? view = _views[id];
+    if (id == _kImplicitViewId && view == null) {
+      // TODO(goderbauer): Remove the implicit creation of the implicit view
+      //   when we have an addView API and the implicit view is added via that.
+      _views[id] = FlutterView._(id, this, _viewConfiguration);
+    } else {
+      assert(view != null);
+      view!._viewConfiguration = _viewConfiguration;
+    }
+
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
@@ -1362,49 +1368,17 @@ class _PlatformConfiguration {
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
-    this.view,
-    this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
-    this.visible = false,
-    this.viewInsets = ViewPadding.zero,
-    this.viewPadding = ViewPadding.zero,
-    this.systemGestureInsets = ViewPadding.zero,
-    this.padding = ViewPadding.zero,
-    this.gestureSettings = const GestureSettings(),
-    this.displayFeatures = const <DisplayFeature>[],
-    this.displayId = 0,
+    required this.devicePixelRatio,
+    required this.geometry,
+    required this.visible,
+    required this.viewInsets,
+    required this.viewPadding,,
+    required this.systemGestureInsets,,
+    required this.padding,,
+    required this.gestureSettings,
+    required this.displayFeatures,
+    required this.displayId,
   });
-
-  /// Copy this configuration with some fields replaced.
-  _ViewConfiguration copyWith({
-    FlutterView? view,
-    double? devicePixelRatio,
-    Rect? geometry,
-    bool? visible,
-    ViewPadding? viewInsets,
-    ViewPadding? viewPadding,
-    ViewPadding? systemGestureInsets,
-    ViewPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
-    int? displayId,
-  }) {
-    return _ViewConfiguration(
-      view: view ?? this.view,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      viewInsets: viewInsets ?? this.viewInsets,
-      viewPadding: viewPadding ?? this.viewPadding,
-      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
-      padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gestureSettings,
-      displayFeatures: displayFeatures ?? this.displayFeatures,
-      displayId: displayId ?? this.displayId,
-    );
-  }
-
-  final FlutterView?  view;
 
   /// The identifier for a display for this view, in
   /// [PlatformDispatcher._displays].
@@ -1488,7 +1462,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[geometry: $geometry]';
   }
 }
 

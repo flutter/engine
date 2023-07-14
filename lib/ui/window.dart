@@ -86,7 +86,7 @@ class Display {
 /// that in the [padding], which is always safe to use for such
 /// calculations.
 class FlutterView {
-  FlutterView._(this.viewId, this.platformDispatcher);
+  FlutterView._(this.viewId, this.platformDispatcher, this._viewConfiguration);
 
   /// The opaque ID for this view.
   final int viewId;
@@ -96,10 +96,7 @@ class FlutterView {
   final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  _ViewConfiguration get _viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(viewId));
-    return platformDispatcher._viewConfigurations[viewId]!;
-  }
+  _ViewConfiguration _viewConfiguration;
 
   /// The [Display] this view is drawn in.
   Display get display {
@@ -373,6 +370,9 @@ class FlutterView {
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(_NativeSemanticsUpdate update);
+
+  @override
+  String toString() => 'FlutterView(id: $viewId)';
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
