@@ -92,7 +92,7 @@ void main() {
 
   test('FlutterView.toString contains the viewId', () {
     final FlutterView flutterView = PlatformDispatcher.instance.implicitView!;
-    expect(flutterView.viewId, 0)
+    expect(flutterView.viewId, 0);
     expect(flutterView.toString(), 'FlutterView(id: 0)');
   });
 }
