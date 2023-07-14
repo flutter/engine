@@ -246,6 +246,8 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
+  std::vector<RenderableEntity> entities_to_render;
+
   auto root_render_target = render_target;
 
   if (root_render_target.GetColorAttachments().empty()) {
@@ -256,14 +258,6 @@ bool EntityPass::Render(ContentContext& renderer,
   renderer.SetLazyGlyphAtlas(std::make_shared<LazyGlyphAtlas>());
   fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
       [&renderer]() { renderer.SetLazyGlyphAtlas(nullptr); });
-
-  IterateAllEntities([lazy_glyph_atlas =
-                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
-    if (auto contents = entity.GetContents()) {
-      contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
-    }
-    return true;
-  });
 
   StencilCoverageStack stencil_coverage_stack = {StencilCoverageLayer{
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
@@ -290,7 +284,8 @@ bool EntityPass::Render(ContentContext& renderer,
                   Point(),                     // global_pass_position
                   Point(),                     // local_pass_position
                   0,                           // pass_depth
-                  stencil_coverage_stack       // stencil_coverage_stack
+                  stencil_coverage_stack,      // stencil_coverage_stack
+                  entities_to_render           // entities_to_render
                   )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
@@ -341,6 +336,7 @@ bool EntityPass::Render(ContentContext& renderer,
         return false;
       }
     }
+
     if (!command_buffer->SubmitCommands()) {
       VALIDATION_LOG << "Failed to submit root pass command buffer.";
       return false;
@@ -393,24 +389,46 @@ bool EntityPass::Render(ContentContext& renderer,
       root_render_target,
       renderer.GetDeviceCapabilities().SupportsReadFromResolve());
 
-  return OnRender(                               //
-      renderer,                                  // renderer
-      root_render_target.GetRenderTargetSize(),  // root_pass_size
-      pass_target,                               // pass_target
-      Point(),                                   // global_pass_position
-      Point(),                                   // local_pass_position
-      0,                                         // pass_depth
-      stencil_coverage_stack);                   // stencil_coverage_stack
+  if (!OnRender(                                     //
+          renderer,                                  // renderer
+          root_render_target.GetRenderTargetSize(),  // root_pass_size
+          pass_target,                               // pass_target
+          Point(),                                   // global_pass_position
+          Point(),                                   // local_pass_position
+          0,                                         // pass_depth
+          stencil_coverage_stack,                    // stencil_coverage_stack
+          entities_to_render                         // entities_to_render
+          )) {
+    VALIDATION_LOG << "Failed to render";
+    return false;
+  }
+
+  for (const auto& info : entities_to_render) {
+    if (auto contents = info.entity.GetContents()) {
+      contents->PopulateGlyphAtlas(renderer.GetLazyGlyphAtlas(),
+                                   info.entity.DeriveTextScale());
+    }
+  }
+  for (auto& info : entities_to_render) {
+    fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
+        [&info]() { info.pass_context.reset(); });
+    if (!info.entity.Render(renderer, *info.pass)) {
+      VALIDATION_LOG << "Failed to render entity.";
+      return false;
+    }
+  }
+  return true;
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
     const EntityPass::Element& element,
     ContentContext& renderer,
-    InlinePassContext& pass_context,
+    const std::shared_ptr<InlinePassContext>& pass_context,
     ISize root_pass_size,
     Point global_pass_position,
     uint32_t pass_depth,
     StencilCoverageStack& stencil_coverage_stack,
+    std::vector<RenderableEntity>& entities_to_render,
     size_t stencil_depth_floor) const {
   Entity element_entity;
 
@@ -446,16 +464,17 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(
-              renderer,                      // renderer
-              root_pass_size,                // root_pass_size
-              pass_context.GetPassTarget(),  // pass_target
-              global_pass_position,          // global_pass_position
-              Point(),                       // local_pass_position
-              pass_depth,                    // pass_depth
-              stencil_coverage_stack,        // stencil_coverage_stack
-              stencil_depth_,                // stencil_depth_floor
-              nullptr,                       // backdrop_filter_contents
-              pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
+              renderer,                       // renderer
+              root_pass_size,                 // root_pass_size
+              pass_context->GetPassTarget(),  // pass_target
+              global_pass_position,           // global_pass_position
+              Point(),                        // local_pass_position
+              pass_depth,                     // pass_depth
+              stencil_coverage_stack,         // stencil_coverage_stack
+              entities_to_render,             // entities_to_render
+              stencil_depth_,                 // stencil_depth_floor
+              nullptr,                        // backdrop_filter_contents
+              pass_context->GetRenderPass(pass_depth)  // collapsed_parent_pass
               )) {
         // Validation error messages are triggered for all `OnRender()` failure
         // cases.
@@ -466,7 +485,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     std::shared_ptr<Contents> backdrop_filter_contents = nullptr;
     if (subpass->backdrop_filter_proc_) {
-      auto texture = pass_context.GetTexture();
+      auto texture = pass_context->GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
       backdrop_filter_contents =
@@ -476,7 +495,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
       // rendering the subpass.
-      pass_context.EndPass();
+      pass_context->EndPass();
     }
 
     if (stencil_coverage_stack.empty()) {
@@ -492,7 +511,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // The maximum coverage of the subpass. Subpasses textures should never
     // extend outside the parent pass texture or the current clip coverage.
     auto coverage_limit =
-        Rect(global_pass_position, Size(pass_context.GetPassTarget()
+        Rect(global_pass_position, Size(pass_context->GetPassTarget()
                                             .GetRenderTarget()
                                             .GetRenderTargetSize()))
             .Intersection(stencil_coverage_back.value());
@@ -539,6 +558,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
                                global_pass_position,  // local_pass_position
                            ++pass_depth,              // pass_depth
                            stencil_coverage_stack,    // stencil_coverage_stack
+                           entities_to_render,        // entities_to_render
                            subpass->stencil_depth_,   // stencil_depth_floor
                            backdrop_filter_contents  // backdrop_filter_contents
                            )) {
@@ -589,6 +609,7 @@ bool EntityPass::OnRender(
     Point local_pass_position,
     uint32_t pass_depth,
     StencilCoverageStack& stencil_coverage_stack,
+    std::vector<RenderableEntity>& entities_to_render,
     size_t stencil_depth_floor,
     std::shared_ptr<Contents> backdrop_filter_contents,
     const std::optional<InlinePassContext::RenderPassResult>&
@@ -596,9 +617,9 @@ bool EntityPass::OnRender(
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(
+  auto pass_context = std::make_shared<InlinePassContext>(
       context, pass_target, GetTotalPassReads(renderer), collapsed_parent_pass);
-  if (!pass_context.IsValid()) {
+  if (!pass_context->IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
   }
@@ -608,14 +629,15 @@ bool EntityPass::OnRender(
     // is present. The `EndPass` first ensures that the clear color will get
     // applied even if this EntityPass is getting collapsed into the parent
     // pass.
-    pass_context.EndPass();
-    pass_context.GetRenderPass(pass_depth);
+    pass_context->EndPass();
+    pass_context->GetRenderPass(pass_depth);
   }
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
                          &renderer, &stencil_coverage_stack,
-                         &global_pass_position](Entity& element_entity) {
-    auto result = pass_context.GetRenderPass(pass_depth);
+                         &global_pass_position,
+                         &entities_to_render](Entity& element_entity) {
+    auto result = pass_context->GetRenderPass(pass_depth);
 
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
@@ -722,10 +744,7 @@ bool EntityPass::OnRender(
 
     element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
                                    stencil_depth_floor);
-    if (!element_entity.Render(renderer, *result.pass)) {
-      VALIDATION_LOG << "Failed to render entity.";
-      return false;
-    }
+    entities_to_render.push_back({element_entity, pass_context, result.pass});
     return true;
   };
 
@@ -768,6 +787,7 @@ bool EntityPass::OnRender(
                             global_pass_position,    // global_pass_position
                             pass_depth,              // pass_depth
                             stencil_coverage_stack,  // stencil_coverage_stack
+                            entities_to_render,      // entities_to_render
                             stencil_depth_floor);    // stencil_depth_floor
 
     switch (result.status) {
@@ -804,7 +824,7 @@ bool EntityPass::OnRender(
         // for blending (otherwise the blend pass will end up executing before
         // all the previous commands in the active pass).
 
-        if (!pass_context.EndPass()) {
+        if (!pass_context->EndPass()) {
           VALIDATION_LOG
               << "Failed to end the current render pass in order to read from "
                  "the backdrop texture and apply an advanced blend.";
@@ -813,7 +833,7 @@ bool EntityPass::OnRender(
 
         // Amend an advanced blend filter to the contents, attaching the pass
         // texture.
-        auto texture = pass_context.GetTexture();
+        auto texture = pass_context->GetTexture();
         if (!texture) {
           VALIDATION_LOG << "Failed to fetch the color texture in order to "
                             "apply an advanced blend.";
@@ -851,7 +871,7 @@ bool EntityPass::OnRender(
   // offscreen texture.
   if (enable_offscreen_debug_checkerboard_ &&
       !collapsed_parent_pass.has_value() && pass_depth > 0) {
-    auto result = pass_context.GetRenderPass(pass_depth);
+    auto result = pass_context->GetRenderPass(pass_depth);
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
       // in `InlinePassContext::GetRenderPass()`.

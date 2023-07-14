@@ -137,14 +137,22 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
-  EntityResult GetEntityForElement(const EntityPass::Element& element,
-                                   ContentContext& renderer,
-                                   InlinePassContext& pass_context,
-                                   ISize root_pass_size,
-                                   Point global_pass_position,
-                                   uint32_t pass_depth,
-                                   StencilCoverageStack& stencil_coverage_stack,
-                                   size_t stencil_depth_floor) const;
+  struct RenderableEntity {
+    const Entity entity;
+    std::shared_ptr<InlinePassContext> pass_context;
+    const std::shared_ptr<RenderPass> pass;
+  };
+
+  EntityResult GetEntityForElement(
+      const EntityPass::Element& element,
+      ContentContext& renderer,
+      const std::shared_ptr<InlinePassContext>& pass_context,
+      ISize root_pass_size,
+      Point global_pass_position,
+      uint32_t pass_depth,
+      StencilCoverageStack& stencil_coverage_stack,
+      std::vector<RenderableEntity>& entities_to_render,
+      size_t stencil_depth_floor) const;
 
   /// @brief     OnRender is the internal command recording routine for
   ///            `EntityPass`. Its job is to walk through each `Element` which
@@ -208,6 +216,7 @@ class EntityPass {
                 Point local_pass_position,
                 uint32_t pass_depth,
                 StencilCoverageStack& stencil_coverage_stack,
+                std::vector<RenderableEntity>& entities_to_render,
                 size_t stencil_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&

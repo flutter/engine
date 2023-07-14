@@ -2952,5 +2952,24 @@ APPLY_COLOR_FILTER_GRADIENT_TEST(Radial);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Conical);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Sweep);
 
+TEST_P(AiksTest, DrawScaledTextWithPerspective) {
+  Canvas canvas;
+  Paint save_paint;
+  canvas.SaveLayer(save_paint);
+  // clang-format off
+  canvas.Transform(Matrix(
+       2.000000,       0.000000,   0.000000,  0.000000,
+       1.445767,       2.637070,  -0.507928,  0.001524,
+      -2.451887,      -0.534662,   0.861399, -0.002584,
+    1063.481934,    1025.951416, -48.300270,  1.144901
+  ));
+  // clang-format on
+
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "Hello world",
+                                 "Roboto-Regular.ttf"));
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
