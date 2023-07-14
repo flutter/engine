@@ -108,7 +108,7 @@ class MyApp {
       double wheelXPhysicalPixel,
       double wheelYPhysicalPixel}) {
     print('mouse-input-view reporting mouse input to MouseInputListener');
-    final message = utf8.encode(json.encode({
+    final message = ByteData.sublistView(utf8.encode(json.encode({
         'method': 'MouseInputListener.ReportMouseInput',
         'local_x': localX,
         'local_y': localY,
@@ -118,9 +118,7 @@ class MyApp {
         'phase': 'asdf',
         'wheel_x_physical_pixel': wheelXPhysicalPixel,
         'wheel_y_physical_pixel': wheelYPhysicalPixel,
-      }))
-      .buffer
-      .asByteData();
+      })));
     PlatformDispatcher.instance
         .sendPlatformMessage('fuchsia/input_test', message, null);
   }
