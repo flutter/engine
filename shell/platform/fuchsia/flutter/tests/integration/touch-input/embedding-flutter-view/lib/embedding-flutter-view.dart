@@ -7,10 +7,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:zircon';
 
 import 'package:args/args.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
-import 'package:zircon/zircon.dart';
 
 final _argsCsvFilePath = '/config/data/args.csv';
 
@@ -168,7 +168,7 @@ class TestApp {
 
   void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
-    final message = utf8.encoder.convert(json.encode({
+    final message = utf8.encode(json.encode({
       'method': 'TouchInputListener.ReportTouchInput',
       'local_x': localX,
       'local_y': localY,
@@ -204,7 +204,7 @@ class ChildView {
       ],
     };
 
-    final ByteData createViewMessage = utf8.encoder.convert(
+    final ByteData createViewMessage = utf8.encode(
       json.encode(<String, Object>{
         'method': 'View.create',
         'args': args,

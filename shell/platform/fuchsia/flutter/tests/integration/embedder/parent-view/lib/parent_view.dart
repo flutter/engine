@@ -10,7 +10,6 @@ import 'dart:ui';
 
 import 'package:args/args.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
-import 'package:zircon/zircon.dart';
 
 final _argsCsvFilePath = '/config/data/args.csv';
 
@@ -170,13 +169,11 @@ class ChildView {
       ],
     };
 
-    final ByteData createViewMessage = utf8.encoder
-        .convert(json.encode(<String, Object>{
-          'method': 'View.create',
-          'args': args,
-        }))
-        .buffer
-        .asByteData();
+    final ByteData createViewMessage =
+        ByteData.sublistView(utf8.encode(json.encode(<String, Object>{
+      'method': 'View.create',
+      'args': args,
+    })));
 
     final platformViewsChannel = 'flutter/platform_views';
 
