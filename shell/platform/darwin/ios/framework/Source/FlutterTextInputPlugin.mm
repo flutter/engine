@@ -2191,6 +2191,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, retain) FlutterTextInputView* activeView;
 @property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @property(nonatomic, readonly, weak) id<FlutterViewResponder> viewResponder;
+@property(nonatomic, assign) CGRect keyboardRect;
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -2199,16 +2200,35 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (instancetype)initWithDelegate:(id<FlutterTextInputDelegate>)textInputDelegate {
   self = [super init];
-
-  if (self) {
-    // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
-    _textInputDelegate = textInputDelegate;
-    _autofillContext = [[NSMutableDictionary alloc] init];
-    _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
-    _scribbleElements = [[NSMutableDictionary alloc] init];
-  }
+  //Notifcation code here
+    if (self) {
+        // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
+        _textInputDelegate = textInputDelegate;
+        _autofillContext = [[NSMutableDictionary alloc] init];
+        _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
+        _scribbleElements = [[NSMutableDictionary alloc] init];
+ 
+        [[NSNotificationCenter defaultCenter] addObserver:self
+               selector:@selector(handleKeyboardWillShow:)
+               name: UIKeyboardWillShowNotification
+               object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+               selector:@selector(handleKeyboardWillHide:)
+               name: UIKeyboardWillHideNotification
+               object:nil];
+    }
 
   return self;
+}
+
+- (void)handleKeyboardWillShow:(NSNotification *)notification{
+    NSDictionary* keyboardInfo = [notification userInfo];
+    NSValue* keyboardFrameEnd = [keyboardInfo valueForKey:UIKeyboardFrameEndUserInfoKey];
+    _keyboardRect = [keyboardFrameEnd CGRectValue];
+}
+
+- (void)handleKeyboardWillHide:(NSNotification *)notification{
+    
 }
 
 - (void)dealloc {
@@ -2272,10 +2292,34 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kUpdateConfigMethod]) {
     [self updateConfig:args];
     result(nil);
-  } else {
+  } else if ([method isEqualToString:@"TextInput.onMouseDown"]){
+    NSLog(@"onMouseDown");  
+    [self takeScreenshot];  
+  } else if ([method isEqualToString:@"TextInput.onMouseMove"]){
+    NSLog(@"onMouseMove");  
+
+  } else if ([method isEqualToString:@"TextInput.onMouseUP"]){
+    NSLog(@"onMouseUp");  
+
+  }else {
     result(FlutterMethodNotImplemented);
   }
 }
+
+-(void)takeScreenshot{
+    NSLog(@"Screenshot attempted");  
+    UIWindow* mainWindow = [UIApplication sharedApplication].delegate.window;
+    //UIWindow* mainWindow = UIApplication.shared.delegate?.window!;
+    UIView* s = [[UIScreen mainScreen] snapshotViewAfterScreenUpdates:true];
+    //CGRect keyboardRect = CGRectMake(0,500,300, 300);
+//
+//    CGRect keyboardRect = CGRectMake(0,UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, 0);
+    s = [s resizableSnapshotViewFromRect:_keyboardRect afterScreenUpdates:true withCapInsets: UIEdgeInsetsZero];
+    s.frame = _keyboardRect;
+    //s.frame = CGRectMake(100,50,300, 300);
+    [mainWindow.rootViewController.view addSubview:s];
+  
+ }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   [_activeView setEditableTransform:dictionary[@"transform"]];
