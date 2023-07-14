@@ -143,6 +143,8 @@ class EntityPass {
     const std::shared_ptr<RenderPass> pass;
   };
 
+  bool RenderEntities(const std::vector<RenderableEntity>& entities_to_render);
+
   EntityResult GetEntityForElement(
       const EntityPass::Element& element,
       ContentContext& renderer,

@@ -244,7 +244,7 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
                    advanced_blend_reads_from_pass_texture_;
 }
 
-static bool RenderEntities(
+bool EntityPass::RenderEntities(
     const std::vector<RenderableEntity>& entities_to_render) {
   for (const auto& info : entities_to_render) {
     if (auto contents = info.entity.GetContents()) {
