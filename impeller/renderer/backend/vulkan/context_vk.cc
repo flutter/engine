@@ -536,6 +536,10 @@ std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
   return fence_waiter_;
 }
 
+std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
+  return resource_manager_;
+}
+
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
