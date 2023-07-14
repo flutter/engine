@@ -27,6 +27,7 @@ namespace impeller {
 
 bool HasValidationLayers();
 
+class CommandEncoderFactoryVK;
 class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
@@ -170,7 +171,7 @@ class ContextVK final : public Context,
 
   void Setup(Settings settings);
 
-  std::unique_ptr<CommandEncoderVK> CreateGraphicsCommandEncoder() const;
+  std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

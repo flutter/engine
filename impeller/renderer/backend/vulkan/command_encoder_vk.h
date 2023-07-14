@@ -27,12 +27,29 @@ class TextureSourceVK;
 class TrackedObjectsVK;
 class FenceWaiterVK;
 
+class CommandEncoderFactoryVK {
+ public:
+  CommandEncoderFactoryVK(const std::weak_ptr<const ContextVK>& context);
+
+  std::shared_ptr<CommandEncoderVK> Create();
+
+  void SetLabel(const std::string& label);
+
+ private:
+  std::weak_ptr<const ContextVK> context_;
+  std::optional<std::string> label_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderFactoryVK);
+};
+
 class CommandEncoderVK {
  public:
   using SubmitCallback = std::function<void(bool)>;
 
   // Visible for testing.
-  CommandEncoderVK(const std::weak_ptr<const ContextVK>& context,
+  CommandEncoderVK(std::weak_ptr<const DeviceHolder> device_holder,
+                   std::shared_ptr<TrackedObjectsVK> tracked_objects,
+                   const std::shared_ptr<QueueVK>& queue,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);
 
   ~CommandEncoderVK();
@@ -67,14 +84,11 @@ class CommandEncoderVK {
  private:
   friend class ContextVK;
 
-  bool Prepare() const;
-
-  std::shared_ptr<FenceWaiterVK> fence_waiter_;
-  std::weak_ptr<const ContextVK> context_;
-  mutable std::shared_ptr<QueueVK> queue_;
-  mutable std::shared_ptr<TrackedObjectsVK> tracked_objects_;
-  bool is_valid_ = false;
-  mutable bool is_initialized_ = false;
+  std::weak_ptr<const DeviceHolder> device_holder_;
+  std::shared_ptr<TrackedObjectsVK> tracked_objects_;
+  std::shared_ptr<QueueVK> queue_;
+  const std::shared_ptr<FenceWaiterVK> fence_waiter_;
+  bool is_valid_ = true;
 
   void Reset();
 

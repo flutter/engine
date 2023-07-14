@@ -448,13 +448,9 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  auto encoder = CreateGraphicsCommandEncoder();
-  if (!encoder) {
-    return nullptr;
-  }
   return std::shared_ptr<CommandBufferVK>(
-      new CommandBufferVK(shared_from_this(),  //
-                          std::move(encoder))  //
+      new CommandBufferVK(shared_from_this(),                     //
+                          CreateGraphicsCommandEncoderFactory())  //
   );
 }
 
@@ -533,16 +529,9 @@ std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
   return fence_waiter_;
 }
 
-std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
-    const {
-  auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      weak_from_this(),  //
-      fence_waiter_      //
-      ));
-  if (!encoder->IsValid()) {
-    return nullptr;
-  }
-  return encoder;
+std::unique_ptr<CommandEncoderFactoryVK>
+ContextVK::CreateGraphicsCommandEncoderFactory() const {
+  return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
 }
 
 }  // namespace impeller

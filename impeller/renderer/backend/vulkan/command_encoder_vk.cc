@@ -96,46 +96,64 @@ class TrackedObjectsVK {
   FML_DISALLOW_COPY_AND_ASSIGN(TrackedObjectsVK);
 };
 
-CommandEncoderVK::CommandEncoderVK(
-    const std::weak_ptr<const ContextVK>& context,
-    std::shared_ptr<FenceWaiterVK> fence_waiter)
-    : fence_waiter_(std::move(fence_waiter)), context_(context) {
-  is_valid_ = true;
+CommandEncoderFactoryVK::CommandEncoderFactoryVK(
+    const std::weak_ptr<const ContextVK>& context)
+    : context_(context) {}
+
+void CommandEncoderFactoryVK::SetLabel(const std::string& label) {
+  label_ = label;
 }
+
+std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
+  auto& context_vk = ContextVK::Cast(*context);
+  auto tls_pool = CommandPoolVK::GetThreadLocal(&context_vk);
+  if (!tls_pool) {
+    return nullptr;
+  }
+
+  auto tracked_objects = std::make_shared<TrackedObjectsVK>(
+      context_vk.GetDeviceHolder(), tls_pool);
+  auto queue = context_vk.GetGraphicsQueue();
+
+  if (!tracked_objects || !tracked_objects->IsValid() || !queue) {
+    return nullptr;
+  }
+
+  vk::CommandBufferBeginInfo begin_info;
+  begin_info.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+  if (tracked_objects->GetCommandBuffer().begin(begin_info) !=
+      vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not begin command buffer.";
+    return nullptr;
+  }
+
+  if (label_.has_value()) {
+    context_vk.SetDebugName(tracked_objects->GetCommandBuffer(), label_.value());
+  }
+
+  return std::make_shared<CommandEncoderVK>(context_vk.GetDeviceHolder(),
+                                            tracked_objects, queue,
+                                            context_vk.GetFenceWaiter());
+}
+
+CommandEncoderVK::CommandEncoderVK(
+    std::weak_ptr<const DeviceHolder> device_holder,
+    std::shared_ptr<TrackedObjectsVK> tracked_objects,
+    const std::shared_ptr<QueueVK>& queue,
+    std::shared_ptr<FenceWaiterVK> fence_waiter)
+    : device_holder_(std::move(device_holder)),
+      tracked_objects_(std::move(tracked_objects)),
+      queue_(queue),
+      fence_waiter_(fence_waiter) {}
 
 CommandEncoderVK::~CommandEncoderVK() = default;
 
 bool CommandEncoderVK::IsValid() const {
   return is_valid_;
-}
-
-bool CommandEncoderVK::Prepare() const {
-  if (is_initialized_) {
-    return true;
-  }
-  auto context = context_.lock();
-  if (!context) {
-    return false;
-  }
-  auto& context_vk = ContextVK::Cast(*context);
-  auto tls_pool = CommandPoolVK::GetThreadLocal(&context_vk);
-  if (!tls_pool) {
-    return false;
-  }
-
-  tracked_objects_ = std::make_shared<TrackedObjectsVK>(
-      context_vk.GetDeviceHolder(), tls_pool);
-  queue_ = context_vk.GetGraphicsQueue();
-
-  vk::CommandBufferBeginInfo begin_info;
-  begin_info.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-  if (tracked_objects_->GetCommandBuffer().begin(begin_info) !=
-      vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not begin command buffer.";
-    return false;
-  }
-  is_initialized_ = true;
-  return true;
 }
 
 bool CommandEncoderVK::Submit(SubmitCallback callback) {
@@ -163,12 +181,11 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   if (command_buffer.end() != vk::Result::eSuccess) {
     return false;
   }
-  auto context = context_.lock();
-  if (!context) {
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
     return false;
   }
-  auto [fence_result, fence] =
-      ContextVK::Cast(*context).GetDevice().createFenceUnique({});
+  auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
     return false;
   }
@@ -183,7 +200,6 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   // Submit will proceed, call callback with true when it is done and do not
   // call when `reset` is collected.
   fail_callback = false;
-
   return fence_waiter_->AddFence(
       std::move(fence),
       [callback, tracked_objects = std::move(tracked_objects_)] {
@@ -194,9 +210,6 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 }
 
 vk::CommandBuffer CommandEncoderVK::GetCommandBuffer() const {
-  if (!Prepare()) {
-    return {};
-  }
   if (tracked_objects_) {
     return tracked_objects_->GetCommandBuffer();
   }
@@ -211,7 +224,7 @@ void CommandEncoderVK::Reset() {
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {
-  if (!IsValid() || !Prepare()) {
+  if (!IsValid()) {
     return false;
   }
   tracked_objects_->Track(std::move(object));
@@ -219,7 +232,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<const Buffer> buffer) {
-  if (!IsValid() || !Prepare()) {
+  if (!IsValid()) {
     return false;
   }
   tracked_objects_->Track(std::move(buffer));
@@ -228,9 +241,6 @@ bool CommandEncoderVK::Track(std::shared_ptr<const Buffer> buffer) {
 
 bool CommandEncoderVK::IsTracking(
     const std::shared_ptr<const Buffer>& buffer) const {
-  if (!IsValid() || !Prepare()) {
-    return false;
-  }
   if (!IsValid()) {
     return false;
   }
@@ -238,9 +248,6 @@ bool CommandEncoderVK::IsTracking(
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
-  if (!IsValid() || !Prepare()) {
-    return false;
-  }
   if (!IsValid()) {
     return false;
   }
@@ -249,7 +256,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
 }
 
 bool CommandEncoderVK::Track(const std::shared_ptr<const Texture>& texture) {
-  if (!IsValid() || !Prepare()) {
+  if (!IsValid()) {
     return false;
   }
   if (!texture) {
@@ -260,7 +267,7 @@ bool CommandEncoderVK::Track(const std::shared_ptr<const Texture>& texture) {
 
 bool CommandEncoderVK::IsTracking(
     const std::shared_ptr<const Texture>& texture) const {
-  if (!IsValid() || !Prepare()) {
+  if (!IsValid()) {
     return false;
   }
   std::shared_ptr<const TextureSourceVK> source =
@@ -270,7 +277,7 @@ bool CommandEncoderVK::IsTracking(
 
 std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(
     const vk::DescriptorSetLayout& layout) {
-  if (!IsValid() || !Prepare()) {
+  if (!IsValid()) {
     return std::nullopt;
   }
 
