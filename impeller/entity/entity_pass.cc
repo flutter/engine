@@ -244,6 +244,25 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
                    advanced_blend_reads_from_pass_texture_;
 }
 
+static bool RenderEntities(
+    const std::vector<RenderableEntity>& entities_to_render) {
+  for (const auto& info : entities_to_render) {
+    if (auto contents = info.entity.GetContents()) {
+      contents->PopulateGlyphAtlas(renderer.GetLazyGlyphAtlas(),
+                                   info.entity.DeriveTextScale());
+    }
+  }
+  for (auto& info : entities_to_render) {
+    fml::ScopedCleanupClosure reset_pass_context(
+        [&info]() { info.pass_context.reset(); });
+    if (!info.entity.Render(renderer, *info.pass)) {
+      VALIDATION_LOG << "Failed to render entity.";
+      return false;
+    }
+  }
+  return true;
+}
+
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
   std::vector<RenderableEntity> entities_to_render;
@@ -289,6 +308,10 @@ bool EntityPass::Render(ContentContext& renderer,
                   )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
+      return false;
+    }
+
+    if (!RenderEntities(entities_to_render)) {
       return false;
     }
 
@@ -403,21 +426,7 @@ bool EntityPass::Render(ContentContext& renderer,
     return false;
   }
 
-  for (const auto& info : entities_to_render) {
-    if (auto contents = info.entity.GetContents()) {
-      contents->PopulateGlyphAtlas(renderer.GetLazyGlyphAtlas(),
-                                   info.entity.DeriveTextScale());
-    }
-  }
-  for (auto& info : entities_to_render) {
-    fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
-        [&info]() { info.pass_context.reset(); });
-    if (!info.entity.Render(renderer, *info.pass)) {
-      VALIDATION_LOG << "Failed to render entity.";
-      return false;
-    }
-  }
-  return true;
+  return RenderEntities(entities_to_render);
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
