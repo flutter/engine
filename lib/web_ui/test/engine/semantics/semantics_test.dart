@@ -44,6 +44,9 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
+  group('Role managers', () {
+    _testRoleManagerLifecycle();
+  });
   group('container', () {
     _testContainer();
   });
@@ -88,6 +91,102 @@ void runSemanticsTests() {
   });
   group('focusable', () {
     _testFocusable();
+  });
+}
+
+void _testRoleManagerLifecycle() {
+  test('Secondary role managers are added upon node creation', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      isFocusable: true,
+      label: 'this is a label',
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    tester.apply();
+
+    expectSemanticsTree('''
+<sem role="button" aria-label="this is a label" style="$rootSemanticStyle"></sem>
+''');
+
+    final SemanticsObject node = semantics().debugSemanticsTree![0]!;
+    expect(node.primaryRole?.role, PrimaryRole.button);
+    expect(
+      node.primaryRole?.debugSecondaryRoles,
+      containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+    );
+    expect(tester.getSemanticsObject(0).element.tabIndex, 0);
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('Secondary role managers are added upon node update', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    // Create without a label
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        isFocusable: true,
+        label: 'this is a label',
+        hasTap: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+
+      expectSemanticsTree('''
+<sem role="button" aria-label="this is a label" style="$rootSemanticStyle"></sem>
+''');
+
+      final SemanticsObject node = semantics().debugSemanticsTree![0]!;
+      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(
+        node.primaryRole?.debugSecondaryRoles,
+        containsAll(<Role>[Role.focusable, Role.tappable]),
+      );
+      expect(tester.getSemanticsObject(0).element.tabIndex, 0);
+    }
+
+    // Update with a label
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        isFocusable: true,
+        hasTap: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+
+      expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+
+      final SemanticsObject node = semantics().debugSemanticsTree![0]!;
+      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(
+        node.primaryRole?.debugSecondaryRoles,
+        containsAll(<Role>[Role.focusable, Role.tappable]),
+      );
+      expect(tester.getSemanticsObject(0).element.tabIndex, 0);
+    }
+
+    semantics().semanticsEnabled = false;
   });
 }
 

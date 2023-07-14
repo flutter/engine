@@ -413,6 +413,14 @@ enum Role {
   routeName,
 }
 
+/// Creates a secondary [RoleManager] for a [SemanticsObject].
+///
+/// The implementation is expected to inspect the semantics object (flags,
+/// actions, etc) and determine whether it _should_ have this secondary role.
+/// If the node should _not_ have this role, the funtion would return `null`.
+/// Otherwise, the function would instantiate the role manager and return it.
+typedef RoleManagerFactory = RoleManager? Function(SemanticsObject);
+
 /// Responsible for setting the `role` ARIA attribute and for attaching zero or
 /// more secondary [RoleManager]s to a [SemanticsObject].
 abstract class PrimaryRoleManager {
@@ -443,6 +451,9 @@ abstract class PrimaryRoleManager {
   List<RoleManager>? get secondaryRoleManagers => _secondaryRoleManagers;
   List<RoleManager>? _secondaryRoleManagers;
 
+  /// Factories for role managers that have not yet been instantiated.
+  Map<Role, RoleManagerFactory>? _secondaryRoleFactories;
+
   /// Identifiers of secondary roles used by this primary role manager.
   ///
   /// This is only meant to be used in tests.
@@ -451,37 +462,52 @@ abstract class PrimaryRoleManager {
 
   /// Adds generic focus management features, if applicable.
   void addFocusManagement() {
-    if (semanticsObject.isFocusable) {
-      addSecondaryRole(Focusable(semanticsObject));
-    }
+    addSecondaryRole(Role.focusable, (SemanticsObject semanticsObject) {
+      if (semanticsObject.isFocusable) {
+        return Focusable(semanticsObject);
+      }
+      return null;
+    });
   }
 
   /// Adds generic live region features, if applicable.
   void addLiveRegion() {
-    if (semanticsObject.isLiveRegion) {
-      addSecondaryRole(LiveRegion(semanticsObject));
-    }
+    addSecondaryRole(Role.liveRegion, (SemanticsObject semanticsObject) {
+      if (semanticsObject.isLiveRegion) {
+        return LiveRegion(semanticsObject);
+      }
+      return null;
+    });
   }
 
   /// Adds generic route name features, if applicable.
   void addRouteName() {
-    if (semanticsObject.namesRoute) {
-      addSecondaryRole(RouteName(semanticsObject));
-    }
+    addSecondaryRole(Role.routeName, (SemanticsObject semanticsObject) {
+      if (semanticsObject.namesRoute) {
+        return RouteName(semanticsObject);
+      }
+      return null;
+    });
   }
 
   /// Adds generic label features, if applicable.
   void addLabelAndValue() {
-    if (semanticsObject.hasLabel || semanticsObject.hasValue || semanticsObject.hasTooltip) {
-      addSecondaryRole(LabelAndValue(semanticsObject));
-    }
+    addSecondaryRole(Role.labelAndValue, (SemanticsObject semanticsObject) {
+      if (semanticsObject.hasLabel || semanticsObject.hasValue || semanticsObject.hasTooltip) {
+        return LabelAndValue(semanticsObject);
+      }
+      return null;
+    });
   }
 
   /// Adds generic functionality for handling taps and clicks.
   void addTappable() {
-    if (semanticsObject.isTappable) {
-      addSecondaryRole(Tappable(semanticsObject));
-    }
+    addSecondaryRole(Role.tappable, (SemanticsObject semanticsObject) {
+      if (semanticsObject.isTappable) {
+        return Tappable(semanticsObject);
+      }
+      return null;
+    });
   }
 
   /// Adds a secondary role to this primary role manager.
@@ -489,13 +515,16 @@ abstract class PrimaryRoleManager {
   /// This method should be called by concrete implementations of
   /// [PrimaryRoleManager] during initialization.
   @protected
-  void addSecondaryRole(RoleManager secondaryRoleManager) {
+  void addSecondaryRole(Role role, RoleManagerFactory roleManagerFactory) {
+    _secondaryRoleFactories ??= <Role, RoleManagerFactory>{};
+    final Map<Role, RoleManagerFactory> secondaryRoleFactories = _secondaryRoleFactories!;
+
     assert(
-      _secondaryRoleManagers?.any((RoleManager manager) => manager.role == secondaryRoleManager.role) != true,
-      'Cannot add secondary role ${secondaryRoleManager.role}. This object already has this secondary role.',
+      !secondaryRoleFactories.containsKey(role),
+      'Cannot add secondary role $role. This semantic node already has this role.',
     );
-    _secondaryRoleManagers ??= <RoleManager>[];
-    _secondaryRoleManagers!.add(secondaryRoleManager);
+
+    secondaryRoleFactories[role] = roleManagerFactory;
   }
 
   /// Called immediately after the fields of the [semanticsObject] are updated
@@ -509,6 +538,23 @@ abstract class PrimaryRoleManager {
   /// the object.
   @mustCallSuper
   void update() {
+    final Map<Role, RoleManagerFactory>? secondaryRoleFactories = _secondaryRoleFactories;
+    if (secondaryRoleFactories != null && secondaryRoleFactories.isNotEmpty) {
+      secondaryRoleFactories.forEach((Role role, RoleManagerFactory roleFactory) {
+        final RoleManager? secondaryRoleManager = roleFactory(semanticsObject);
+        if (secondaryRoleManager != null) {
+          _secondaryRoleManagers ??= <RoleManager>[];
+          _secondaryRoleManagers!.add(secondaryRoleManager);
+        }
+      });
+
+      // A role manager should only be added once. So remove any factories that
+      // contributed a role manager.
+      _secondaryRoleManagers?.forEach((RoleManager roleManager) {
+        secondaryRoleFactories.remove(roleManager.role);
+      });
+    }
+
     final List<RoleManager>? secondaryRoles = _secondaryRoleManagers;
     if (secondaryRoles == null) {
       return;
