@@ -68,8 +68,7 @@ class Canvas {
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const std::optional<Paint::ImageFilterProc>& backdrop_filter =
-                     std::nullopt);
+                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -138,7 +137,7 @@ class Canvas {
       Scalar corner_radius,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawPicture(Picture picture);
+  void DrawPicture(const Picture& picture);
 
   void DrawTextFrame(const TextFrame& text_frame,
                      Point position,
@@ -182,8 +181,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            std::optional<EntityPass::BackdropFilterProc> backdrop_filter =
-                std::nullopt);
+            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
 
   void RestoreClip();
 

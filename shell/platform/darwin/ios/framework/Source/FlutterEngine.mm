@@ -38,6 +38,8 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
+
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
@@ -308,7 +310,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(viewportMetrics);
+  self.platformView->SetViewportMetrics(kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -869,6 +871,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
+    // TODO(vashworth): Remove once done debugging https://github.com/flutter/flutter/issues/129836
+    FML_LOG(INFO) << "Enabled VM Service Publication: " << settings.enable_vm_service_publication;
     [self setupShell:std::move(shell)
         withVMServicePublication:settings.enable_vm_service_publication];
     if ([FlutterEngine isProfilerEnabled]) {

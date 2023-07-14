@@ -23,8 +23,6 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -245,19 +243,21 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
 
 static bool UpdateBindingLayouts(const Bindings& bindings,
                                  const vk::CommandBuffer& buffer) {
-  LayoutTransition transition;
-  transition.cmd_buffer = buffer;
-  transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                          vk::AccessFlagBits::eTransferWrite;
-  transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                         vk::PipelineStageFlagBits::eTransfer;
-  transition.dst_access = vk::AccessFlagBits::eShaderRead;
-  transition.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+  // All previous writes via a render or blit pass must be done before another
+  // shader attempts to read the resource.
+  BarrierVK barrier;
+  barrier.cmd_buffer = buffer;
+  barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                       vk::AccessFlagBits::eTransferWrite;
+  barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                      vk::PipelineStageFlagBits::eTransfer;
+  barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+  barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 
-  transition.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
   for (const auto& [_, texture] : bindings.textures) {
-    if (!TextureVK::Cast(*texture.resource).SetLayout(transition)) {
+    if (!TextureVK::Cast(*texture.resource).SetLayout(barrier)) {
       return false;
     }
   }
