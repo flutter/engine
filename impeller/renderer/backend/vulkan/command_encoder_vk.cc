@@ -149,7 +149,7 @@ CommandEncoderVK::CommandEncoderVK(
     : device_holder_(std::move(device_holder)),
       tracked_objects_(std::move(tracked_objects)),
       queue_(queue),
-      fence_waiter_(fence_waiter) {}
+      fence_waiter_(std::move(fence_waiter)) {}
 
 CommandEncoderVK::~CommandEncoderVK() = default;
 

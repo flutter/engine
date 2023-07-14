@@ -2168,14 +2168,14 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto tiled_texture = std::make_shared<TiledTextureContents>();
   tiled_texture->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  tiled_texture->SetOpacity(0.5);
+  tiled_texture->SetOpacityFactor(0.5);
 
   ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
 
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
   // overlap
@@ -2184,7 +2184,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = TextFrameFromTextBlob(blob);
   auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
+  lazy_glyph_atlas->AddTextFrame(frame);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(frame);

@@ -4,7 +4,6 @@
 
 #include "impeller/entity/contents/color_source_text_contents.h"
 
-#include "color_source_text_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/renderer/render_pass.h"
@@ -34,12 +33,6 @@ void ColorSourceTextContents::SetTextPosition(Point position) {
   position_ = position;
 }
 
-void ColorSourceTextContents::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) const {
-  text_contents_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
-}
-
 bool ColorSourceTextContents::Render(const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) const {
@@ -55,7 +48,8 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
   // offset the color source so it behaves as if it were drawn in the original
   // position.
   auto effect_transform =
-      color_source_contents_->GetInverseMatrix().Invert().Translate(-position_);
+      color_source_contents_->GetInverseEffectTransform().Invert().Translate(
+          -position_);
   color_source_contents_->SetEffectTransform(effect_transform);
 
   auto new_texture = renderer.MakeSubpass(

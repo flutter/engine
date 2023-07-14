@@ -29,6 +29,7 @@
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -184,28 +185,21 @@ void ContextVK::Setup(Settings settings) {
   application_info.setPEngineName("Impeller");
   application_info.setPApplicationName("Impeller");
 
+  vk::StructureChain<vk::InstanceCreateInfo, vk::ValidationFeaturesEXT>
+      instance_chain;
+
+  if (!caps->AreValidationsEnabled()) {
+    instance_chain.unlink<vk::ValidationFeaturesEXT>();
+  }
+
   std::vector<vk::ValidationFeatureEnableEXT> enabled_validations = {
       vk::ValidationFeatureEnableEXT::eSynchronizationValidation,
   };
 
-  vk::ValidationFeaturesEXT validation;
+  auto validation = instance_chain.get<vk::ValidationFeaturesEXT>();
   validation.setEnabledValidationFeatures(enabled_validations);
 
-  vk::InstanceCreateInfo instance_info;
-  if (caps->AreValidationsEnabled()) {
-    std::stringstream ss;
-    ss << "Enabling validation layers, features: [";
-    for (const auto& validation : enabled_validations) {
-      ss << vk::to_string(validation) << " ";
-    }
-    ss << "]";
-    FML_LOG(ERROR) << ss.str();
-#if !defined(IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS) && FML_OS_ANDROID
-    FML_LOG(ERROR) << "Vulkan validation layers turned on but the gn argument "
-                      "`--enable-vulkan-validation-layers` is missing.";
-#endif
-    instance_info.pNext = &validation;
-  }
+  auto instance_info = instance_chain.get<vk::InstanceCreateInfo>();
   instance_info.setPEnabledLayerNames(enabled_layers_c);
   instance_info.setPEnabledExtensionNames(enabled_extensions_c);
   instance_info.setPApplicationInfo(&application_info);
@@ -380,6 +374,15 @@ void ContextVK::Setup(Settings settings) {
   }
 
   //----------------------------------------------------------------------------
+  /// Create the resource manager.
+  ///
+  auto resource_manager = ResourceManagerVK::Create();
+  if (!resource_manager) {
+    VALIDATION_LOG << "Could not create resource manager.";
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
   QueuesVK queues(device_holder->device.get(),  //
@@ -408,6 +411,7 @@ void ContextVK::Setup(Settings settings) {
   queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
+  resource_manager_ = std::move(resource_manager);
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
 
@@ -476,6 +480,9 @@ std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
   if (surface && pipeline_library_) {
     pipeline_library_->DidAcquireSurfaceFrame();
+  }
+  if (allocator_) {
+    allocator_->DidAcquireSurfaceFrame();
   }
   return surface;
 }
