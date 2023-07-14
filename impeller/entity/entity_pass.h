@@ -143,7 +143,11 @@ class EntityPass {
     const std::shared_ptr<RenderPass> pass;
   };
 
-  bool RenderEntities(const std::vector<RenderableEntity>& entities_to_render);
+  /// The bottom of the rendering routine. The list of entities is a fully
+  /// prepared list of entities and passes to render.
+  bool RenderEntities(
+      ContentContext& renderer,
+      const std::vector<RenderableEntity>& entities_to_render) const;
 
   EntityResult GetEntityForElement(
       const EntityPass::Element& element,

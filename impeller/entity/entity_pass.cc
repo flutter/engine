@@ -245,7 +245,8 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
 }
 
 bool EntityPass::RenderEntities(
-    const std::vector<RenderableEntity>& entities_to_render) {
+    ContentContext& renderer,
+    const std::vector<RenderableEntity>& entities_to_render) const {
   for (const auto& info : entities_to_render) {
     if (auto contents = info.entity.GetContents()) {
       contents->PopulateGlyphAtlas(renderer.GetLazyGlyphAtlas(),
@@ -311,7 +312,7 @@ bool EntityPass::Render(ContentContext& renderer,
       return false;
     }
 
-    if (!RenderEntities(entities_to_render)) {
+    if (!RenderEntities(renderer, entities_to_render)) {
       return false;
     }
 
@@ -426,7 +427,7 @@ bool EntityPass::Render(ContentContext& renderer,
     return false;
   }
 
-  return RenderEntities(entities_to_render);
+  return RenderEntities(renderer, entities_to_render);
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
