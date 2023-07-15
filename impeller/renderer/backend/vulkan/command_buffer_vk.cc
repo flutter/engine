@@ -65,12 +65,15 @@ bool CommandBufferVK::SubmitCommandsAsync(std::shared_ptr<BlitPass> blit_pass) {
   const auto& context_vk = ContextVK::Cast(*context);
   auto pending = std::make_shared<EnqueuedCommandBuffer>();
   context_vk.GetCommandBufferQueue()->Enqueue(pending);
-  auto encoder = std::move(encoder_);
   context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
-      [pending, encoder, blit_pass, weak_context = context_]() {
+      [cmd_buffer = shared_from_this(), pending, blit_pass,
+       weak_context = context_]() {
         auto context = weak_context.lock();
-        if (!context ||
-            !blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+        if (!context || !cmd_buffer) {
+          return;
+        }
+        auto encoder = cmd_buffer->GetEncoder();
+        if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
             !encoder->Finish()) {
           VALIDATION_LOG << "Failed to encode render pass.";
         }
@@ -93,11 +96,19 @@ bool CommandBufferVK::SubmitCommandsAsync(
   const auto& context_vk = ContextVK::Cast(*context);
   auto pending = std::make_shared<EnqueuedCommandBuffer>();
   context_vk.GetCommandBufferQueue()->Enqueue(pending);
-  if (!render_pass->EncodeCommands() || !encoder_->Finish()) {
-    VALIDATION_LOG << "Failed to encode render pass.";
-    return false;
-  }
-  pending->SetEncoder(std::move(encoder_));
+  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+      [cmd_buffer = shared_from_this(), pending, render_pass,
+       weak_context = context_]() {
+        auto context = weak_context.lock();
+        if (!context || !cmd_buffer) {
+          return;
+        }
+        auto encoder = cmd_buffer->GetEncoder();
+        if (!render_pass->EncodeCommands() || !encoder->Finish()) {
+          VALIDATION_LOG << "Failed to encode render pass.";
+        }
+        pending->SetEncoder(std::move(encoder));
+      });
   return true;
 }
 

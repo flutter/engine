@@ -481,6 +481,7 @@ void ContextVK::Shutdown() {
 }
 
 void ContextVK::Flush() const {
+  TRACE_EVENT0("impeller", __FUNCTION__);
   const auto encoders = GetCommandBufferQueue()->Take();
   auto [fence_result, fence] = GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {

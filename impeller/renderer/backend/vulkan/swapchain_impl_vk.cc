@@ -397,7 +397,30 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   const auto& sync = synchronizers_[current_frame_];
 
   // Submit all command buffers.
-  context.Flush();
+  {
+    const auto encoders = context.GetCommandBufferQueue()->Take();
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to create fence for flush.";
+      return false;
+    };
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers;
+    for (const auto& encoder : encoders) {
+      buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+    }
+    submit_info.setCommandBuffers(buffers);
+    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+        vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to submit for flush.";
+      return false;
+    }
+
+    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
+      VALIDATION_LOG << "Failed to add fence waiter.";
+      return false;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
@@ -448,35 +471,48 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  //----------------------------------------------------------------------------
-  /// Present the image.
-  ///
-  uint32_t indices[] = {static_cast<uint32_t>(index)};
+  context.GetConcurrentWorkerTaskRunner()->PostTask(
+      [&,  current_frame = current_frame_, index] {
+        auto context_strong = context_.lock();
+        if (!context_strong) {
+          return false;
+        }
 
-  vk::PresentInfoKHR present_info;
-  present_info.setSwapchains(*swapchain_);
-  present_info.setImageIndices(indices);
-  present_info.setWaitSemaphores(*sync->present_ready);
+        const auto& context = ContextVK::Cast(*context_strong);
+        const auto& sync = synchronizers_[current_frame];
 
-  switch (auto result = present_queue_.presentKHR(present_info)) {
-    case vk::Result::eErrorOutOfDateKHR:
-      // Caller will recreate the impl on acquisition, not submission.
-      [[fallthrough]];
-    case vk::Result::eErrorSurfaceLostKHR:
-      // Vulkan guarantees that the set of queue operations will still complete
-      // successfully.
-      [[fallthrough]];
-    case vk::Result::eSuccess:
-      return true;
-    case vk::Result::eSuboptimalKHR:
-      is_rotated_ = true;
-      return true;
-    default:
-      VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-      return false;
-  }
-  FML_UNREACHABLE();
-  return false;
+        //----------------------------------------------------------------------------
+        /// Present the image.
+        ///
+        uint32_t indices[] = {static_cast<uint32_t>(index)};
+
+        vk::PresentInfoKHR present_info;
+        present_info.setSwapchains(*swapchain_);
+        present_info.setImageIndices(indices);
+        present_info.setWaitSemaphores(*sync->present_ready);
+
+        switch (auto result = present_queue_.presentKHR(present_info)) {
+          case vk::Result::eErrorOutOfDateKHR:
+            // Caller will recreate the impl on acquisition, not submission.
+            [[fallthrough]];
+          case vk::Result::eErrorSurfaceLostKHR:
+            // Vulkan guarantees that the set of queue operations will still
+            // complete successfully.
+            [[fallthrough]];
+          case vk::Result::eSuccess:
+            return true;
+          case vk::Result::eSuboptimalKHR:
+            is_rotated_ = true;
+            return true;
+          default:
+            VALIDATION_LOG << "Could not present queue: "
+                           << vk::to_string(result);
+            return false;
+        }
+        FML_UNREACHABLE();
+        return false;
+      });
+  return true;
 }
 
 }  // namespace impeller
