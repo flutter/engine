@@ -66,7 +66,10 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
-// The view ID of PlatformDispatcher.implicitView.
+// The view ID of PlatformDispatcher.implicitView. This is an
+// implementation detail that may change at any time. Apps
+// should always use PlatformDispatcher.implicitView to determine
+// the current implicit view, if any.
 //
 // Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
 const int _kImplicitViewId = 0;
