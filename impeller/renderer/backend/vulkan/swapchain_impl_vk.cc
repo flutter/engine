@@ -472,7 +472,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   context.GetConcurrentWorkerTaskRunner()->PostTask(
-      [&,  current_frame = current_frame_, index] {
+      [&, current_frame = current_frame_, index] {
         auto context_strong = context_.lock();
         if (!context_strong) {
           return false;
