@@ -90,10 +90,10 @@ DescriptionGLES::DescriptionGLES(const ProcTableGLES& gl)
       extensions_.insert(extension);
     }
   } else {
-    size_t extension_count = 0u;
+    int extension_count = 0;
     gl.GetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
-    for (auto i = 0u; i < extension_count; i++) {
-      extensions_.insert(GetGLStringi(GL_EXTENSIONS, i));
+    for (auto i = 0; i < extension_count; i++) {
+      extensions_.insert(GetGLStringi(gl, GL_EXTENSIONS, i));
     }
   }
 
