@@ -31,6 +31,7 @@ class EmbedderRenderTargetSkia final : public EmbedderRenderTarget {
   // |EmbedderRenderTarget|
   SkISize GetRenderTargetSize() const override;
 
+  // |EmbedderRenderTarget|
   bool MaybeMakeCurrent() const override {
     if (on_make_current_ != nullptr) {
       on_make_current_();

@@ -1289,28 +1289,29 @@ CreateEmbedderRenderTarget(
                 collect_callback.Release());
             break;
           }
+        }
 
-          case kFlutterOpenGLTargetTypeSurface: {
-            auto skia_surface = MakeSkSurfaceFromBackingStore(
-                context, config, &backing_store.open_gl.surface);
+        case kFlutterOpenGLTargetTypeSurface: {
+          auto skia_surface = MakeSkSurfaceFromBackingStore(
+              context, config, &backing_store.open_gl.surface);
 
-            auto make_current_callback =
-                backing_store.open_gl.surface.make_current_callback;
-            auto make_current_context = backing_store.open_gl.surface.user_data;
+          auto make_current_callback =
+              backing_store.open_gl.surface.make_current_callback;
+          auto make_current_context = backing_store.open_gl.surface.user_data;
 
-            auto on_make_current = [=] {
-              make_current_callback(make_current_context);
-            };
+          auto on_make_current = [=] {
+            make_current_callback(make_current_context);
+          };
 
-            render_target = MakeRenderTargetFromSkSurface(
-                backing_store, std::move(skia_surface),
-                collect_callback.Release(), on_make_current);
-            break;
-          }
+          render_target = MakeRenderTargetFromSkSurface(
+              backing_store, std::move(skia_surface),
+              collect_callback.Release(), on_make_current);
+          break;
         }
       }
       break;
     }
+
     case kFlutterBackingStoreTypeSoftware: {
       auto skia_surface = MakeSkSurfaceFromBackingStore(
           context, config, &backing_store.software);
