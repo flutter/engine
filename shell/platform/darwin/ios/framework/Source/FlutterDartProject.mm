@@ -156,11 +156,16 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   settings.may_insecurely_connect_to_all_domains = true;
   settings.domain_network_policy = "";
 
-  // Whether to enable Impeller.
+  // Whether to enable wide gamut colors.
+#if TARGET_OS_SIMULATOR
+  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
+  // the simulator.
+  settings.enable_wide_gamut = false;
+#else
   NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
-  // TODO(gaaclarke): Make this value `on` by default (pending memory audit).
-  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
+  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : YES;
   settings.enable_wide_gamut = enableWideGamut;
+#endif
 
   // TODO(dnfield): We should reverse the order for all these settings so that command line options
   // are preferred to plist settings. https://github.com/flutter/flutter/issues/124049

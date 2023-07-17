@@ -13,7 +13,7 @@ abstract class Display {
 
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
-  Object get viewId;
+  int get viewId;
   double get devicePixelRatio;
   Rect get physicalGeometry;
   Size get physicalSize;
@@ -112,11 +112,6 @@ abstract class SingletonFlutterWindow extends FlutterView {
   VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback) {
     platformDispatcher.onSemanticsEnabledChanged = callback;
-  }
-
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
   }
 
   FrameData get frameData => const FrameData._();

@@ -53,13 +53,12 @@ static std::unique_ptr<fml::Mapping> OpenCacheFile(
 }
 
 PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
-                                 std::weak_ptr<DeviceHolder> device_holder,
-                                 const vk::Device& device,
+                                 std::shared_ptr<DeviceHolder> device_holder,
                                  fml::UniqueFD cache_directory)
     : caps_(std::move(caps)),
       device_holder_(device_holder),
       cache_directory_(std::move(cache_directory)) {
-  if (!caps_ || !device) {
+  if (!caps_ || !device_holder->GetDevice()) {
     return;
   }
 
@@ -69,19 +68,13 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
       OpenCacheFile(cache_directory_, kPipelineCacheFileName, vk_caps);
 
   vk::PipelineCacheCreateInfo cache_info;
-
-  // TODO(csg): VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT is behind
-  // an extension. Check it and set it. If not, the implementation is doing
-  // unnecessary synchronization.
-  // cache_info.flags =
-  // vk::PipelineCacheCreateFlagBits::eExternallySynchronized;
-
   if (existing_cache_data) {
     cache_info.initialDataSize = existing_cache_data->GetSize();
     cache_info.pInitialData = existing_cache_data->GetMapping();
   }
 
-  auto [result, existing_cache] = device.createPipelineCacheUnique(cache_info);
+  auto [result, existing_cache] =
+      device_holder->GetDevice().createPipelineCacheUnique(cache_info);
 
   if (result == vk::Result::eSuccess) {
     cache_ = std::move(existing_cache);
@@ -93,7 +86,8 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
                   << vk::to_string(result) << ". Starting with a fresh cache.";
     cache_info.pInitialData = nullptr;
     cache_info.initialDataSize = 0u;
-    auto [result2, new_cache] = device.createPipelineCacheUnique(cache_info);
+    auto [result2, new_cache] =
+        device_holder->GetDevice().createPipelineCacheUnique(cache_info);
     if (result2 == vk::Result::eSuccess) {
       cache_ = std::move(new_cache);
     } else {
@@ -105,7 +99,14 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
   is_valid_ = !!cache_;
 }
 
-PipelineCacheVK::~PipelineCacheVK() = default;
+PipelineCacheVK::~PipelineCacheVK() {
+  std::shared_ptr<DeviceHolder> device_holder = device_holder_.lock();
+  if (device_holder) {
+    cache_.reset();
+  } else {
+    cache_.release();
+  }
+}
 
 bool PipelineCacheVK::IsValid() const {
   return is_valid_;
@@ -118,11 +119,26 @@ vk::UniquePipeline PipelineCacheVK::CreatePipeline(
     return {};
   }
 
-  Lock lock(cache_mutex_);
   auto [result, pipeline] =
       strong_device->GetDevice().createGraphicsPipelineUnique(*cache_, info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create graphics pipeline: "
+                   << vk::to_string(result);
+  }
+  return std::move(pipeline);
+}
+
+vk::UniquePipeline PipelineCacheVK::CreatePipeline(
+    const vk::ComputePipelineCreateInfo& info) {
+  std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return {};
+  }
+
+  auto [result, pipeline] =
+      strong_device->GetDevice().createComputePipelineUnique(*cache_, info);
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create compute pipeline: "
                    << vk::to_string(result);
   }
   return std::move(pipeline);
@@ -137,7 +153,6 @@ std::shared_ptr<fml::Mapping> PipelineCacheVK::CopyPipelineCacheData() const {
   if (!IsValid()) {
     return nullptr;
   }
-  Lock lock(cache_mutex_);
   auto [result, data] =
       strong_device->GetDevice().getPipelineCacheData(*cache_);
   if (result != vk::Result::eSuccess) {

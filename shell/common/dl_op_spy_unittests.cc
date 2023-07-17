@@ -16,16 +16,16 @@ namespace testing {
 // to DisplayList::affects_transparent_surface() now that DisplayListBuilder
 // implements operation culling.
 // See https://github.com/flutter/flutter/issues/125403
-#define ASSERT_DID_DRAW(spy, dl)                    \
-  do {                                              \
-    ASSERT_TRUE(spy.did_draw());                    \
-    ASSERT_TRUE(dl->affects_transparent_surface()); \
+#define ASSERT_DID_DRAW(spy, dl)                   \
+  do {                                             \
+    ASSERT_TRUE(spy.did_draw());                   \
+    ASSERT_TRUE(dl->modifies_transparent_black()); \
   } while (0)
 
-#define ASSERT_NO_DRAW(spy, dl)                      \
-  do {                                               \
-    ASSERT_FALSE(spy.did_draw());                    \
-    ASSERT_FALSE(dl->affects_transparent_surface()); \
+#define ASSERT_NO_DRAW(spy, dl)                     \
+  do {                                              \
+    ASSERT_FALSE(spy.did_draw());                   \
+    ASSERT_FALSE(dl->modifies_transparent_black()); \
   } while (0)
 
 TEST(DlOpSpy, DidDrawIsFalseByDefault) {

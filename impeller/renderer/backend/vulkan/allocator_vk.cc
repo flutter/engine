@@ -17,11 +17,11 @@ namespace impeller {
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
-                         const vk::Device& logical_device,
+                         const std::shared_ptr<DeviceHolder>& device_holder,
                          const vk::Instance& instance,
                          PFN_vkGetInstanceProcAddr get_instance_proc_address,
                          PFN_vkGetDeviceProcAddr get_device_proc_address)
-    : context_(std::move(context)), device_(logical_device) {
+    : context_(std::move(context)), device_holder_(device_holder) {
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(get_instance_proc_address);
 
   auto instance_handle = vulkan::VulkanHandle<VkInstance>(instance);
@@ -29,7 +29,8 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     return;
   }
 
-  auto device_handle = vulkan::VulkanHandle<VkDevice>(logical_device);
+  auto device_handle =
+      vulkan::VulkanHandle<VkDevice>(device_holder->GetDevice());
   if (!vk_->SetupDeviceProcAddresses(device_handle)) {
     return;
   }
@@ -78,7 +79,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;
   allocator_info.physicalDevice = physical_device;
-  allocator_info.device = logical_device;
+  allocator_info.device = device_holder->GetDevice();
   allocator_info.instance = instance;
   allocator_info.pVulkanFunctions = &proc_table;
 
@@ -167,16 +168,12 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
 }
 
 static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
-    StorageMode mode,
-    bool is_texture) {
+    StorageMode mode) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      if (is_texture) {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      } else {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-      }
+      // See https://github.com/flutter/flutter/issues/128556 . Some devices do
+      // not have support for coherent host memory so we don't request it here.
+      return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     case StorageMode::kDevicePrivate:
       return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     case StorageMode::kDeviceTransient:
@@ -235,7 +232,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode, true);
+    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
     alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode, true);
 
     auto create_info_native =
@@ -333,10 +330,15 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   if (!IsValid()) {
     return nullptr;
   }
-  auto source = std::make_shared<AllocatedTextureSourceVK>(desc,        //
-                                                           allocator_,  //
-                                                           device_      //
-  );
+  auto device_holder = device_holder_.lock();
+  if (!device_holder) {
+    return nullptr;
+  }
+  auto source =
+      std::make_shared<AllocatedTextureSourceVK>(desc,                       //
+                                                 allocator_,                 //
+                                                 device_holder->GetDevice()  //
+      );
   if (!source->IsValid()) {
     return nullptr;
   }
@@ -350,6 +352,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |
                       vk::BufferUsageFlagBits::eUniformBuffer |
+                      vk::BufferUsageFlagBits::eStorageBuffer |
                       vk::BufferUsageFlagBits::eTransferSrc |
                       vk::BufferUsageFlagBits::eTransferDst;
   buffer_info.size = desc.size;
@@ -359,8 +362,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags =
-      ToVKMemoryPropertyFlags(desc.storage_mode, false);
+  allocation_info.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode);
   allocation_info.flags = ToVmaAllocationCreateFlags(desc.storage_mode, false);
 
   VkBuffer buffer = {};

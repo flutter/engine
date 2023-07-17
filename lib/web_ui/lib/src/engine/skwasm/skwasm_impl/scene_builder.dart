@@ -92,7 +92,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.BackdropFilterEngineLayer? oldLayer
   }) => pushLayer<BackdropFilterLayer>(
       BackdropFilterLayer(),
-      BackdropFilterOperation()
+      BackdropFilterOperation(filter, blendMode),
     );
 
   @override
@@ -133,7 +133,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilterEngineLayer? oldLayer
   }) => pushLayer<ColorFilterLayer>(
       ColorFilterLayer(),
-      ColorFilterOperation(),
+      ColorFilterOperation(filter),
     );
 
   @override
@@ -143,7 +143,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilterEngineLayer? oldLayer
   }) => pushLayer<ImageFilterLayer>(
       ImageFilterLayer(),
-      ImageFilterOperation(),
+      ImageFilterOperation(filter, offset),
     );
 
   @override
@@ -187,12 +187,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
 
   @override
   void setCheckerboardOffscreenLayers(bool checkerboard) {
-    // TODO(jacksongardner): implement setCheckerboardOffscreenLayers
   }
 
   @override
   void setCheckerboardRasterCacheImages(bool checkerboard) {
-    // TODO(jacksongardner): implement setCheckerboardRasterCacheImages
   }
 
   @override
@@ -205,12 +203,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     double insetLeft,
     bool focusable
   ) {
-    // TODO(jacksongardner): implement setProperties
   }
 
   @override
   void setRasterizerTracingThreshold(int frameInterval) {
-    // TODO(jacksongardner): implement setRasterizerTracingThreshold
   }
 
   @override

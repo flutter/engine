@@ -263,10 +263,20 @@ class DisplayList : public SkRefCnt {
   }
 
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
-  bool affects_transparent_surface() const {
-    return affects_transparent_surface_;
-  }
   bool isUIThreadSafe() const { return is_ui_thread_safe_; }
+
+  /// @brief     Indicates if there are any rendering operations in this
+  ///            DisplayList that will modify a surface of transparent black
+  ///            pixels.
+  ///
+  /// This condition can be used to determine whether to create a cleared
+  /// surface, render a DisplayList into it, and then composite the
+  /// result into a scene. It is not uncommon for code in the engine to
+  /// come across such degenerate DisplayList objects when slicing up a
+  /// frame between platform views.
+  bool modifies_transparent_black() const {
+    return modifies_transparent_black_;
+  }
 
  private:
   DisplayList(DisplayListStorage&& ptr,
@@ -277,7 +287,7 @@ class DisplayList : public SkRefCnt {
               const SkRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
-              bool affects_transparent_surface,
+              bool modifies_transparent_black,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
@@ -296,7 +306,7 @@ class DisplayList : public SkRefCnt {
 
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
-  const bool affects_transparent_surface_;
+  const bool modifies_transparent_black_;
 
   const sk_sp<const DlRTree> rtree_;
 

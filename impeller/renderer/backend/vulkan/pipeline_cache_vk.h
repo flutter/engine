@@ -20,8 +20,7 @@ class PipelineCacheVK {
   // at the time of executing `PipelineCacheVK` because of how `ContextVK` does
   // initialization.
   explicit PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
-                           std::weak_ptr<DeviceHolder> device_holder,
-                           const vk::Device& device,
+                           std::shared_ptr<DeviceHolder> device_holder,
                            fml::UniqueFD cache_directory);
 
   ~PipelineCacheVK();
@@ -30,14 +29,15 @@ class PipelineCacheVK {
 
   vk::UniquePipeline CreatePipeline(const vk::GraphicsPipelineCreateInfo& info);
 
+  vk::UniquePipeline CreatePipeline(const vk::ComputePipelineCreateInfo& info);
+
   void PersistCacheToDisk() const;
 
  private:
   const std::shared_ptr<const Capabilities> caps_;
   std::weak_ptr<DeviceHolder> device_holder_;
   const fml::UniqueFD cache_directory_;
-  mutable Mutex cache_mutex_;
-  vk::UniquePipelineCache cache_ IPLR_GUARDED_BY(cache_mutex_);
+  vk::UniquePipelineCache cache_;
   bool is_valid_ = false;
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;

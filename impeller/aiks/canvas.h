@@ -16,7 +16,8 @@
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity_pass.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -35,6 +36,14 @@ struct CanvasStackEntry {
   size_t stencil_depth = 0u;
   bool is_subpass = false;
   bool contains_clips = false;
+};
+
+enum class PointStyle {
+  /// @brief Points are drawn as squares.
+  kRound,
+
+  /// @brief Points are drawn as circles.
+  kSquare,
 };
 
 class Canvas {
@@ -99,6 +108,11 @@ class Canvas {
   void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
+
+  void DrawPoints(std::vector<Point>,
+                  Scalar radius,
+                  const Paint& paint,
+                  PointStyle point_style);
 
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,

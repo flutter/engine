@@ -424,21 +424,28 @@ static BOOL IsApproximatelyEqual(float x, float y, float delta) {
   return fabsf(x - y) <= delta;
 }
 
+// This is a helper function for floating cursor selection logic to determine which text
+// position is closer to a point.
 // Checks whether point should be considered closer to selectionRect compared to
 // otherSelectionRect.
 //
-// Uses the leading-center point on selectionRect and otherSelectionRect to compare.
+// If `useTrailingBoundaryOfSelectionRect` is not set, it uses the leading-center point
+// on selectionRect and otherSelectionRect to compare.
 // For left-to-right text, this means the left-center point, and for right-to-left text,
 // this means the right-center point.
 //
 // If useTrailingBoundaryOfSelectionRect is set, the trailing-center point on selectionRect
-// will be used instead of the leading-center point.
+// will be used instead of the leading-center point, while leading-center point is still used
+// for otherSelectionRect.
 //
 // This uses special (empirically determined using a 1st gen iPad pro, 9.7" model running
 // iOS 14.7.1) logic for determining the closer rect, rather than a simple distance calculation.
-// First, the closer vertical distance is determined. Within the closest y distance, if the point is
-// above the bottom of the closest rect, the x distance will be minimized; however, if the point is
-// below the bottom of the rect, the x value will be maximized.
+// - First, the rect with closer y distance wins.
+// - Otherwise (same y distance):
+//   - If the point is above bottom of the rect, the rect boundary with closer x distance wins.
+//   - Otherwise (point is below bottom of the rect), the rect boundary with farthest x wins.
+//     This is because when the point is below the bottom line of text, we want to select the
+//     whole line of text, so we mark the farthest rect as closest.
 static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                  CGRect selectionRect,
                                                  BOOL selectionRectIsRTL,
@@ -446,6 +453,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                  CGRect otherSelectionRect,
                                                  BOOL otherSelectionRectIsRTL,
                                                  CGFloat verticalPrecision) {
+  // The point is inside the selectionRect's corresponding half-rect area.
   if (CGRectContainsPoint(
           CGRectMake(
               selectionRect.origin.x + ((useTrailingBoundaryOfSelectionRect ^ selectionRectIsRTL)
@@ -455,6 +463,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
           point)) {
     return YES;
   }
+  // pointForSelectionRect is either leading-center or trailing-center point of selectionRect.
   CGPoint pointForSelectionRect = CGPointMake(
       selectionRect.origin.x +
           (selectionRectIsRTL ^ useTrailingBoundaryOfSelectionRect ? selectionRect.size.width : 0),
@@ -462,6 +471,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   float yDist = fabs(pointForSelectionRect.y - point.y);
   float xDist = fabs(pointForSelectionRect.x - point.x);
 
+  // pointForOtherSelectionRect is the leading-center point of otherSelectionRect.
   CGPoint pointForOtherSelectionRect = CGPointMake(
       otherSelectionRect.origin.x + (otherSelectionRectIsRTL ? otherSelectionRect.size.width : 0),
       otherSelectionRect.origin.y + otherSelectionRect.size.height * 0.5);
@@ -476,6 +486,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   BOOL isAboveBottomOfLine = point.y <= selectionRect.origin.y + selectionRect.size.height;
   BOOL isCloserHorizontally = xDist < xDistOther;
   BOOL isBelowBottomOfLine = point.y > selectionRect.origin.y + selectionRect.size.height;
+  // Is "farther away", or is closer to the end of the text line.
   BOOL isFarther;
   if (selectionRectIsRTL) {
     isFarther = selectionRect.origin.x < otherSelectionRect.origin.x;
@@ -1647,29 +1658,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return CGRectZero;
 }
 
-- (BOOL)isRTLAtPosition:(NSUInteger)position {
-  // _selectionRects is sorted by position already.
-  // We can use binary search.
-  NSInteger min = 0;
-  NSInteger max = [_selectionRects count];
-  while (min <= max) {
-    const NSUInteger mid = min + (max - min) / 2;
-    FlutterTextSelectionRect* rect = _selectionRects[mid];
-    if (rect.position > position) {
-      max = mid - 1;
-    } else if (rect.position == position) {
-      return rect.isRTL;
-    } else {
-      min = mid + 1;
-    }
-  }
-  return NO;
-}
-
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   NSInteger index = ((FlutterTextPosition*)position).index;
   UITextStorageDirection affinity = ((FlutterTextPosition*)position).affinity;
-  // Get the bounds of the characters before and after the requested caret position.
+  // Get the selectionRect of the characters before and after the requested caret position.
   NSArray<UITextSelectionRect*>* rects = [self
       selectionRectsForRange:[FlutterTextRange
                                  rangeWithNSRange:fml::RangeForCharactersInRange(
@@ -1688,7 +1680,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     CGRect characterAfterCaret = rects[0].rect;
     // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
-    if ([self isRTLAtPosition:index]) {
+    if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[0]).isRTL) {
       return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
@@ -1696,11 +1689,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                         characterAfterCaret.size.height);
     }
   } else if (rects.count == 2 && affinity == UITextStorageDirectionForward) {
+    // There are characters before and after the caret, with forward direction affinity.
     // It's better to use the character after the caret.
     CGRect characterAfterCaret = rects[1].rect;
     // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
-    if ([self isRTLAtPosition:index]) {
+    if ([rects[1] isKindOfClass:[FlutterTextSelectionRect class]] &&
+        ((FlutterTextSelectionRect*)rects[1]).isRTL) {
       return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
@@ -1708,10 +1703,15 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                         characterAfterCaret.size.height);
     }
   }
+
+  // Covers 2 remaining cases:
+  // 1. there are characters before and after the caret, with backward direction affinity.
+  // 2. there is only 1 character before the caret (caret is at the end of text).
+  // For both cases, return a zero-width rectangle along the downstream edge of the character
+  // before the caret position.
   CGRect characterBeforeCaret = rects[0].rect;
-  // Return a zero-width rectangle along the downstream edge of the character before the caret
-  // position.
-  if ([self isRTLAtPosition:index - 1]) {
+  if ([rects[0] isKindOfClass:[FlutterTextSelectionRect class]] &&
+      ((FlutterTextSelectionRect*)rects[0]).isRTL) {
     return CGRectMake(characterBeforeCaret.origin.x, characterBeforeCaret.origin.y, 0,
                       characterBeforeCaret.size.height);
   } else {
@@ -1787,6 +1787,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // Allow further vertical deviation and base more of the decision on horizontal comparison.
   CGFloat verticalPrecision = _isFloatingCursorActive ? 10 : 1;
 
+  // Find the selectionRect with a leading-center point that is closest to a given point.
   BOOL isFirst = YES;
   NSUInteger _closestRectIndex = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
@@ -1807,7 +1808,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       [FlutterTextPosition positionWithIndex:_selectionRects[_closestRectIndex].position
                                     affinity:UITextStorageDirectionForward];
 
-  // Check if the far side of the closest rect is a better fit (tapping end of line)
+  // Check if the far side of the closest rect is a better fit (e.g. tapping end of line)
+  // Cannot simply check the _closestRectIndex result from the previous for loop due to RTL
+  // writing direction and the gaps between selectionRects. So we also need to consider
+  // the adjacent selectionRects to refine _closestRectIndex.
   for (NSUInteger i = MAX(0, _closestRectIndex - 1);
        i < MIN(_closestRectIndex + 2, [_selectionRects count]); i++) {
     NSUInteger position = _selectionRects[i].position + 1;
@@ -1832,6 +1836,34 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return [FlutterTextRange rangeWithNSRange:fml::RangeForCharacterAtIndex(self.text, currentIndex)];
 }
 
+// Overall logic for floating cursor's "move" gesture and "selection" gesture:
+//
+// Floating cursor's "move" gesture takes 1 finger to force press the space bar, and then move the
+// cursor. The process starts with `beginFloatingCursorAtPoint`. When the finger is moved,
+// `updateFloatingCursorAtPoint` will be called. When the finger is released, `endFloatingCursor`
+// will be called. In all cases, we send the point (relative to the initial point registered in
+// beginFloatingCursorAtPoint) to the framework, so that framework can animate the floating cursor.
+//
+// During the move gesture, the framework only animate the cursor visually. It's only
+// after the gesture is complete, will the framework update the selection to the cursor's
+// new position (with zero selection length). This means during the animation, the visual effect
+// of the cursor is temporarily out of sync with the selection state in both framework and engine.
+// But it will be in sync again after the animation is complete.
+//
+// Floating cursor's "selection" gesture also starts with 1 finger to force press the space bar,
+// so exactly the same functions as the "move gesture" discussed above will be called. When the
+// second finger is pressed, `setSelectedText` will be called. This mechanism requires
+// `closestPositionFromPoint` to be implemented, to allow UIKit to translate the finger touch
+// location displacement to the text range to select. When the selection is completed
+// (i.e. when both of the 2 fingers are released), similar to "move" gesture,
+// the `endFloatingCursor` will be called.
+//
+// When the 2nd finger is pressed, it does not trigger another startFloatingCursor call. So
+// floating cursor move/selection logic has to be implemented in iOS embedder rather than
+// just the framework side.
+//
+// Whenever a selection is updated, the engine sends the new selection to the framework. So unlike
+// the move gesture, the selections in the framework and the engine are always kept in sync.
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
   // For "beginFloatingCursorAtPoint" and "updateFloatingCursorAtPoint", "point" is roughly:
   //
@@ -1839,10 +1871,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   //   width >= 0 ? point.x.clamp(boundingBox.left, boundingBox.right) : point.x,
   //   height >= 0 ? point.y.clamp(boundingBox.top, boundingBox.bottom) : point.y,
   // )
-  //   where
-  //     point = keyboardPanGestureRecognizer.translationInView(textInputView) +
-  //     caretRectForPosition boundingBox = self.convertRect(bounds, fromView:textInputView)
-  //     bounds = self._selectionClipRect ?? self.bounds
+  // where
+  //   point = keyboardPanGestureRecognizer.translationInView(textInputView) + caretRectForPosition
+  //   boundingBox = self.convertRect(bounds, fromView:textInputView)
+  //   bounds = self._selectionClipRect ?? self.bounds
   //
   // It seems impossible to use a negative "width" or "height", as the "convertRect"
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,

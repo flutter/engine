@@ -14,7 +14,7 @@
 namespace impeller {
 
 class DeviceBufferVK final : public DeviceBuffer,
-                             public BackendCast<DeviceBufferVK, DeviceBuffer> {
+                             public BackendCast<DeviceBufferVK, Buffer> {
  public:
   DeviceBufferVK(DeviceBufferDescriptor desc,
                  std::weak_ptr<Context> context,
@@ -27,6 +27,11 @@ class DeviceBufferVK final : public DeviceBuffer,
   ~DeviceBufferVK() override;
 
   vk::Buffer GetBuffer() const;
+
+  // If the contents of this buffer have been written to with
+  // `OnGetContents`, then calling flush may be necessary if the memory is
+  // non-coherent.
+  void Flush() override;
 
  private:
   friend class AllocatorVK;

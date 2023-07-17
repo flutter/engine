@@ -13,7 +13,8 @@ namespace testing {
 TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
   auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context, context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
                            context->GetFenceWaiter());
   BlitCopyTextureToTextureCommandVK cmd;
   cmd.source = context->GetResourceAllocator()->CreateTexture({
@@ -31,7 +32,8 @@ TEST(BlitCommandVkTest, BlitCopyTextureToTextureCommandVK) {
 TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
   auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context, context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
                            context->GetFenceWaiter());
   BlitCopyTextureToBufferCommandVK cmd;
   cmd.source = context->GetResourceAllocator()->CreateTexture({
@@ -46,10 +48,32 @@ TEST(BlitCommandVkTest, BlitCopyTextureToBufferCommandVK) {
   EXPECT_TRUE(encoder.IsTracking(cmd.destination));
 }
 
+TEST(BlitCommandVkTest, BlitCopyBufferToTextureCommandVK) {
+  auto context = CreateMockVulkanContext();
+  auto pool = CommandPoolVK::GetThreadLocal(context.get());
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
+                           context->GetFenceWaiter());
+  BlitCopyBufferToTextureCommandVK cmd;
+  cmd.destination = context->GetResourceAllocator()->CreateTexture({
+      .size = ISize(100, 100),
+  });
+  cmd.source = context->GetResourceAllocator()
+                   ->CreateBuffer({
+                       .size = 1,
+                   })
+                   ->AsBufferView();
+  bool result = cmd.Encode(encoder);
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(encoder.IsTracking(cmd.source.buffer));
+  EXPECT_TRUE(encoder.IsTracking(cmd.destination));
+}
+
 TEST(BlitCommandVkTest, BlitGenerateMipmapCommandVK) {
   auto context = CreateMockVulkanContext();
   auto pool = CommandPoolVK::GetThreadLocal(context.get());
-  CommandEncoderVK encoder(context, context->GetGraphicsQueue(), pool,
+  CommandEncoderVK encoder(context->GetDeviceHolder(),
+                           context->GetGraphicsQueue(), pool,
                            context->GetFenceWaiter());
   BlitGenerateMipmapCommandVK cmd;
   cmd.texture = context->GetResourceAllocator()->CreateTexture({

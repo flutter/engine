@@ -263,7 +263,6 @@ bool EntityPass::Render(ContentContext& renderer,
             ->GetCapabilities()
             ->SupportsTextureToTextureBlits()) {
       auto blit_pass = command_buffer->CreateBlitPass();
-
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
@@ -284,6 +283,7 @@ bool EntityPass::Render(ContentContext& renderer,
         contents->SetTexture(
             offscreen_target.GetRenderTarget().GetRenderTargetTexture());
         contents->SetSourceRect(size_rect);
+        contents->SetLabel("Root pass blit");
 
         Entity entity;
         entity.SetContents(contents);
@@ -314,8 +314,9 @@ bool EntityPass::Render(ContentContext& renderer,
 
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
-  if (root_render_target.GetStencilAttachment().has_value()) {
-    auto stencil_texture = root_render_target.GetStencilAttachment()->texture;
+  auto stencil_attachment = root_render_target.GetStencilAttachment();
+  if (stencil_attachment.has_value()) {
+    auto stencil_texture = stencil_attachment->texture;
     if (!stencil_texture) {
       VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
       return false;
@@ -434,10 +435,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       pass_context.EndPass();
     }
 
-    if (stencil_coverage_stack.empty() ||
-        !stencil_coverage_stack.back().coverage.has_value()) {
+    if (stencil_coverage_stack.empty()) {
       // The current clip is empty. This means the pass texture won't be
       // visible, so skip it.
+      return EntityPass::EntityResult::Skip();
+    }
+    auto stencil_coverage_back = stencil_coverage_stack.back().coverage;
+    if (!stencil_coverage_back.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
 
@@ -447,7 +451,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         Rect(global_pass_position, Size(pass_context.GetPassTarget()
                                             .GetRenderTarget()
                                             .GetRenderTargetSize()))
-            .Intersection(*stencil_coverage_stack.back().coverage);
+            .Intersection(stencil_coverage_back.value());
     if (!coverage_limit.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
@@ -474,7 +478,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         renderer,                                  // renderer
         subpass_size,                              // size
         subpass->GetTotalPassReads(renderer) > 0,  // readable
-        clear_color_.Premultiply());               // clear_color
+        Color::BlackTransparent());                // clear_color
 
     if (!subpass_target.IsValid()) {
       VALIDATION_LOG << "Subpass render target is invalid.";
@@ -615,6 +619,12 @@ bool EntityPass::OnRender(
       stencil_coverage.coverage->origin += global_pass_position;
     }
 
+    // The coverage hint tells the rendered Contents which portion of the
+    // rendered output will actually be used, and so we set this to the current
+    // stencil coverage (which is the max clip bounds). The contents may
+    // optionally use this hint to avoid unnecessary rendering work.
+    element_entity.GetContents()->SetCoverageHint(current_stencil_coverage);
+
     switch (stencil_coverage.type) {
       case Contents::StencilCoverage::Type::kNoChange:
         break;
@@ -683,17 +693,6 @@ bool EntityPass::OnRender(
              "a bug in EntityPass. Parent passes are responsible for setting "
              "up backdrop filters for their children.";
       return false;
-    }
-
-    // Tell the backdrop contents which portion of the rendered output will
-    // actually be used. The contents may optionally use this hint to avoid
-    // unnecessary rendering work.
-    if (!stencil_coverage_stack.empty() &&
-        stencil_coverage_stack.back().coverage.has_value()) {
-      auto coverage_hint = Rect(
-          stencil_coverage_stack.back().coverage->origin - global_pass_position,
-          stencil_coverage_stack.back().coverage->size);
-      backdrop_filter_contents->SetCoverageHint(coverage_hint);
     }
 
     Entity backdrop_entity;

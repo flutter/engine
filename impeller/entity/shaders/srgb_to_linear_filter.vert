@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/texture.glsl>
+#include <impeller/conversions.glsl>
 #include <impeller/types.glsl>
 
 uniform FrameInfo {
@@ -11,7 +11,7 @@ uniform FrameInfo {
 }
 frame_info;
 
-in vec2 position;
+in highp vec2 position;
 
 out highp vec2 v_texture_coords;
 

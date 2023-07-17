@@ -39,6 +39,7 @@
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
@@ -51,7 +52,7 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/tiled_texture_fill.vert.h"
+#include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
@@ -142,8 +143,8 @@ using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
-                                             TiledTextureFillFragmentShader>;
+using TiledTexturePipeline =
+    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using GaussianBlurAlphaDecalPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurAlphaDecalFragmentShader>;
@@ -275,6 +276,10 @@ using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
 
+/// Geometry Pipelines
+using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
+using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -291,7 +296,7 @@ struct ContentContextOptions {
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  std::optional<PixelFormat> color_attachment_pixel_format;
+  PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_stencil_attachment = true;
   bool wireframe = false;
 
@@ -660,6 +665,18 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return point_field_compute_pipelines_;
+  }
+
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetUvComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return uv_compute_pipelines_;
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
@@ -782,6 +799,16 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      point_field_compute_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      uv_compute_pipelines_;
+  // The values for the default context options must be cached on
+  // initial creation. In the presence of wide gamut and platform views,
+  // it is possible that secondary surfaces will have a different default
+  // pixel format, which would cause the prototype check in GetPipeline
+  // below to fail.
+  ContentContextOptions default_options_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -799,7 +826,7 @@ class ContentContext {
       return found->second->WaitAndGet();
     }
 
-    auto prototype = container.find({});
+    auto prototype = container.find(default_options_);
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());

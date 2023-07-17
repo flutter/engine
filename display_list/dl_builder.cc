@@ -67,16 +67,24 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+
   size_t bytes = used_;
   int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
-  used_ = allocated_ = render_op_count_ = op_index_ = 0;
-  nested_bytes_ = nested_op_count_ = 0;
-  storage_.realloc(bytes);
   bool compatible = current_layer_->is_group_opacity_compatible();
   bool is_safe = is_ui_thread_safe_;
   bool affects_transparency = current_layer_->affects_transparent_layer();
+
+  used_ = allocated_ = render_op_count_ = op_index_ = 0;
+  nested_bytes_ = nested_op_count_ = 0;
+  is_ui_thread_safe_ = true;
+  storage_.realloc(bytes);
+  layer_stack_.pop_back();
+  layer_stack_.emplace_back();
+  tracker_.reset();
+  current_ = DlPaint();
+
   return sk_sp<DisplayList>(new DisplayList(
       std::move(storage_), bytes, count, nested_bytes, nested_count, bounds(),
       compatible, is_safe, affects_transparency, rtree()));
@@ -132,7 +140,7 @@ void DisplayListBuilder::onSetStrokeJoin(DlStrokeJoin join) {
   current_.setStrokeJoin(join);
   Push<SetStrokeJoinOp>(0, 0, join);
 }
-void DisplayListBuilder::onSetStyle(DlDrawStyle style) {
+void DisplayListBuilder::onSetDrawStyle(DlDrawStyle style) {
   current_.setDrawStyle(style);
   Push<SetStyleOp>(0, 0, style);
 }
@@ -349,7 +357,7 @@ void DisplayListBuilder::SetAttributesFromPaint(
     setBlendMode(paint.getBlendMode());
   }
   if (flags.applies_style()) {
-    setStyle(paint.getDrawStyle());
+    setDrawStyle(paint.getDrawStyle());
   }
   if (flags.is_stroked(paint.getDrawStyle())) {
     setStrokeWidth(paint.getStrokeWidth());
@@ -789,7 +797,8 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   DisplayListAttributeFlags flags = kDrawRectFlags;
   OpResult result = PaintResult(current_, flags);
-  if (result != OpResult::kNoEffect && AccumulateOpBounds(rect, flags)) {
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(rect.makeSorted(), flags)) {
     Push<DrawRectOp>(0, 1, rect);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -802,7 +811,8 @@ void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
   DisplayListAttributeFlags flags = kDrawOvalFlags;
   OpResult result = PaintResult(current_, flags);
-  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(bounds.makeSorted(), flags)) {
     Push<DrawOvalOp>(0, 1, bounds);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1202,7 +1212,8 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
     case BoundsAccumulatorType::kRTree:
       auto rtree = display_list->rtree();
       if (rtree) {
-        std::list<SkRect> rects = rtree->searchAndConsolidateRects(bounds);
+        std::list<SkRect> rects =
+            rtree->searchAndConsolidateRects(bounds, false);
         accumulated = false;
         for (const SkRect& rect : rects) {
           // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
@@ -1239,9 +1250,11 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   nested_op_count_ += display_list->op_count(true) - 1;
   nested_bytes_ += display_list->bytes(true);
   UpdateLayerOpacityCompatibility(display_list->can_apply_group_opacity());
-  UpdateLayerResult(display_list->affects_transparent_surface()
-                        ? OpResult::kDrawsPixels
-                        : OpResult::kClearsPixels);
+  // Nop DisplayLists are eliminated above so we either affect transparent
+  // pixels or we do not. We should not have [kNoEffect].
+  UpdateLayerResult(display_list->modifies_transparent_black()
+                        ? OpResult::kAffectsAll
+                        : OpResult::kPreservesTransparency);
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
@@ -1481,7 +1494,13 @@ DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
       color = paint.getColor();
     }
   } else if (flags.applies_alpha()) {
-    color = kAnyColor.withAlpha(paint.getAlpha());
+    // If the operation applies alpha, but not color, then the only impact
+    // of the alpha is to modulate the output towards transparency.
+    // We can not guarantee an opaque source even if the alpha is opaque
+    // since that would require knowing something about the colors that
+    // the alpha is modulating, but we can guarantee a transparent source
+    // if the alpha is 0.
+    color = (paint.getAlpha() == 0) ? DlColor::kTransparent() : kAnyColor;
   } else {
     color = kAnyColor;
   }
@@ -1518,48 +1537,47 @@ DisplayListBuilder::OpResult DisplayListBuilder::PaintResult(
 
       // Always clears pixels blend mode (singular, there is only one)
       case DlBlendMode::kClear:
-        return OpResult::kClearsPixels;
+        return OpResult::kPreservesTransparency;
 
-      // Always destructive blend modes
-      // These modes ignore source alpha entirely
       case DlBlendMode::kHue:
       case DlBlendMode::kSaturation:
       case DlBlendMode::kColor:
       case DlBlendMode::kLuminosity:
-        return OpResult::kDrawsPixels;
+      case DlBlendMode::kColorBurn:
+        return GetEffectiveColor(paint, flags).isTransparent()
+                   ? OpResult::kNoEffect
+                   : OpResult::kAffectsAll;
 
-      // Always destructive blend modes
-      // The ops will clear the destination if the source is transparent
-      // (Some answers might differ if dest is opaque, but that is unknown)
-      case DlBlendMode::kSrc:
+      // kSrcIn modifies pixels towards transparency
       case DlBlendMode::kSrcIn:
+        return OpResult::kPreservesTransparency;
+
+      // These blend modes preserve destination alpha
+      case DlBlendMode::kSrcATop:
+      case DlBlendMode::kDstOut:
+        return GetEffectiveColor(paint, flags).isTransparent()
+                   ? OpResult::kNoEffect
+                   : OpResult::kPreservesTransparency;
+
+      // Always destructive blend modes, potentially not affecting transparency
+      case DlBlendMode::kSrc:
       case DlBlendMode::kSrcOut:
       case DlBlendMode::kDstATop:
-      case DlBlendMode::kModulate:
         return GetEffectiveColor(paint, flags).isTransparent()
-                   ? OpResult::kClearsPixels
-                   : OpResult::kDrawsPixels;
+                   ? OpResult::kPreservesTransparency
+                   : OpResult::kAffectsAll;
 
       // The kDstIn blend mode modifies the destination unless the
-      // source color is opaque. Additionally, it will deterministically
-      // clear the destination if the source is transparent.
-      case DlBlendMode::kDstIn: {
-        DlColor color = GetEffectiveColor(paint, flags);
-        if (color.isOpaque()) {
-          return OpResult::kNoEffect;
-        } else if (color.isTransparent()) {
-          return OpResult::kClearsPixels;
-        } else {
-          return OpResult::kDrawsPixels;
-        }
-      }
+      // source color is opaque.
+      case DlBlendMode::kDstIn:
+        return GetEffectiveColor(paint, flags).isOpaque()
+                   ? OpResult::kNoEffect
+                   : OpResult::kPreservesTransparency;
 
       // The next group of blend modes modifies the destination unless the
       // source color is transparent.
       case DlBlendMode::kSrcOver:
       case DlBlendMode::kDstOver:
-      case DlBlendMode::kDstOut:
-      case DlBlendMode::kSrcATop:
       case DlBlendMode::kXor:
       case DlBlendMode::kPlus:
       case DlBlendMode::kScreen:
@@ -1574,16 +1592,16 @@ DisplayListBuilder::OpResult DisplayListBuilder::PaintResult(
       case DlBlendMode::kExclusion:
         return GetEffectiveColor(paint, flags).isTransparent()
                    ? OpResult::kNoEffect
-                   : OpResult::kDrawsPixels;
+                   : OpResult::kAffectsAll;
 
-      // Color Burn only leaves the pixel alone when the source is white.
-      case DlBlendMode::kColorBurn:
+      // Modulate only leaves the pixel alone when the source is white.
+      case DlBlendMode::kModulate:
         return GetEffectiveColor(paint, flags) == DlColor::kWhite()
                    ? OpResult::kNoEffect
-                   : OpResult::kDrawsPixels;
+                   : OpResult::kPreservesTransparency;
     }
   }
-  return OpResult::kDrawsPixels;
+  return OpResult::kAffectsAll;
 }
 
 }  // namespace flutter

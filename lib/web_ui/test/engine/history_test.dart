@@ -3,20 +3,18 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_interop'
-    show JSExportedDartFunction, JSExportedDartFunctionToFunction;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/dom.dart'
-    show DomEvent, DomEventListener, createDomPopStateEvent;
-import 'package:ui/src/engine/navigation.dart';
+import 'package:ui/src/engine/dom.dart' show DomEvent, createDomPopStateEvent;
+import 'package:ui/src/engine/navigation/history.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
 import 'package:ui/ui_web/src/ui_web.dart';
 
+import '../common/matchers.dart';
 import '../common/spy.dart';
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
@@ -665,6 +663,23 @@ void testMain() {
       );
     });
 
+    test('removes /#/ from the home page', () {
+      const String internalUrl = '/';
+      final HashUrlStrategy strategy = HashUrlStrategy(location);
+
+      location.pathname = '/';
+      expect(strategy.prepareExternalUrl(internalUrl), '/');
+
+      location.pathname = '/main';
+      expect(strategy.prepareExternalUrl(internalUrl), '/main');
+
+      location.search = '?foo=bar';
+      expect(
+        strategy.prepareExternalUrl(internalUrl),
+        '/main?foo=bar',
+      );
+    });
+
     test('addPopStateListener fn unwraps DomPopStateEvent state', () {
       final HashUrlStrategy strategy = HashUrlStrategy(location);
       const String expected = 'expected value';
@@ -688,6 +703,40 @@ void testMain() {
       // flutter/flutter#125228
       expect(state, isNot(isA<DomEvent>()));
       expect(state, expected);
+    });
+  });
+
+  group('$BrowserPlatformLocation', () {
+    test('getOrCreateDomEventListener caches funcions', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myListener(Object event) {}
+
+      expect(
+        identical(
+          location.getOrCreateDomEventListener(myListener),
+          location.getOrCreateDomEventListener(myListener),
+        ),
+        isTrue,
+      );
+    });
+
+    test('throws if removing an invalid listener', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      void myAddedListener(Object event) {}
+      void myNonAddedListener(Object event) {}
+
+      location.addPopStateListener(myAddedListener);
+      expect(() => location.removePopStateListener(myAddedListener), returnsNormally);
+      // Removing the same listener twice should throw.
+      expect(() => location.removePopStateListener(myAddedListener), throwsAssertionError);
+
+      // A listener that was never added.
+      expect(() => location.removePopStateListener(myNonAddedListener), throwsAssertionError);
+    });
+
+    test('returns a non-empty baseUri', () {
+      const BrowserPlatformLocation location = BrowserPlatformLocation();
+      expect(location.getBaseHref(), isNotNull);
     });
   });
 }
@@ -736,7 +785,7 @@ class TestPlatformLocation implements PlatformLocation {
   @override
   dynamic state;
 
-  List<DomEventListener> popStateListeners = <DomEventListener>[];
+  List<EventListener> popStateListeners = <EventListener>[];
 
   @override
   String pathname = '';
@@ -753,19 +802,18 @@ class TestPlatformLocation implements PlatformLocation {
         if (state != null) 'state': state,
       },
     );
-    for (final DomEventListener listener in popStateListeners) {
-      final Function fn = (listener as JSExportedDartFunction).toDart;
-      fn(event);
+    for (final EventListener listener in popStateListeners) {
+      listener(event);
     }
   }
 
   @override
-  void addPopStateListener(DomEventListener fn) {
+  void addPopStateListener(EventListener fn) {
     popStateListeners.add(fn);
   }
 
   @override
-  void removePopStateListener(DomEventListener fn) {
+  void removePopStateListener(EventListener fn) {
     throw UnimplementedError();
   }
 
@@ -780,7 +828,7 @@ class TestPlatformLocation implements PlatformLocation {
   }
 
   @override
-  void go(double count) {
+  void go(int count) {
     throw UnimplementedError();
   }
 

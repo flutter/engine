@@ -11,11 +11,15 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #include <cstdlib>
 #include <memory>
 #include <utility>
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 namespace testing {
@@ -380,3 +384,5 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

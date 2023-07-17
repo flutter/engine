@@ -197,9 +197,10 @@ class TextHeightRuler {
       ..border = '0'
       ..padding = '0';
 
-    if (assertionsEnabled) {
+    assert(() {
       host.setAttribute('data-ruler', 'line-height');
-    }
+      return true;
+    }());
 
     _dimensions.applyHeightStyle(textHeightStyle);
 
@@ -211,8 +212,6 @@ class TextHeightRuler {
 
     _dimensions.appendToHost(host);
 
-    // [rulerHost] is not migrated yet so add a cast to [html.HtmlElement].
-    // This cast will be removed after the migration is complete.
     rulerHost.addElement(host);
     return host;
   }
