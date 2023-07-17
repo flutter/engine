@@ -25,6 +25,12 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
+// static
+Scalar TextContents::RoundFontScale(Scalar value) {
+  auto res = std::ceil(value * 10.0) / 10.0;
+  return res;
+}
+
 void TextContents::SetTextFrame(const TextFrame& frame) {
   frame_ = frame;
 }
@@ -32,12 +38,10 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     GlyphAtlas::Type type,
     const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
     std::shared_ptr<Context> context) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(atlas_context),
-                                             std::move(context));
+    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(context));
   }
 
   return nullptr;
@@ -78,8 +82,9 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(frame_, scale);
-  scale_ = scale;
+  auto rounded_scale = RoundFontScale(scale);
+  lazy_glyph_atlas->AddTextFrame(frame_, rounded_scale);
+  scale_ = rounded_scale;
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -92,8 +97,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto type = frame_.GetAtlasType();
   auto atlas =
-      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(),
-                   renderer.GetGlyphAtlasContext(type), renderer.GetContext());
+      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
