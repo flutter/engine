@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -386,7 +387,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
+bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK> image,
                               uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
@@ -394,10 +395,10 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
-  const auto& sync = synchronizers_[current_frame_];
 
   // Submit all command buffers.
   {
+    TRACE_EVENT0("flutter", "WaitUntilScheduled");
     const auto encoders = context.GetCommandBufferQueue()->Take();
     auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
     if (fence_result != vk::Result::eSuccess) {
@@ -422,57 +423,8 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  //----------------------------------------------------------------------------
-  /// Transition the image to color-attachment-optimal.
-  ///
-  sync->final_cmd_buffer = context.CreateCommandBuffer();
-  if (!sync->final_cmd_buffer) {
-    return false;
-  }
-
-  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                                 .GetEncoder()
-                                 ->GetCommandBuffer();
-  {
-    BarrierVK barrier;
-    barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
-    barrier.cmd_buffer = vk_final_cmd_buffer;
-    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    barrier.dst_access = {};
-    barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
-
-    if (!image->SetLayout(barrier)) {
-      return false;
-    }
-
-    if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
-      return false;
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  /// Signal that the presentation semaphore is ready.
-  ///
-  {
-    vk::SubmitInfo submit_info;
-    vk::PipelineStageFlags wait_stage =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    submit_info.setWaitDstStageMask(wait_stage);
-    submit_info.setWaitSemaphores(*sync->render_ready);
-    submit_info.setSignalSemaphores(*sync->present_ready);
-    submit_info.setCommandBuffers(vk_final_cmd_buffer);
-    auto result =
-        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not wait on render semaphore: "
-                     << vk::to_string(result);
-      return false;
-    }
-  }
-
   context.GetConcurrentWorkerTaskRunner()->PostTask(
-      [&, current_frame = current_frame_, index] {
+      [&, current_frame = current_frame_, index, image] {
         auto context_strong = context_.lock();
         if (!context_strong) {
           return false;
@@ -480,6 +432,60 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
         const auto& context = ContextVK::Cast(*context_strong);
         const auto& sync = synchronizers_[current_frame];
+
+        //----------------------------------------------------------------------------
+        /// Transition the image to color-attachment-optimal.
+        ///
+        sync->final_cmd_buffer = context.CreateCommandBuffer();
+        if (!sync->final_cmd_buffer) {
+          return false;
+        }
+
+        auto vk_final_cmd_buffer =
+            CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                .GetEncoder()
+                ->GetCommandBuffer();
+        {
+          TRACE_EVENT0("flutter", "FinalTransition");
+          BarrierVK barrier;
+          barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+          barrier.cmd_buffer = vk_final_cmd_buffer;
+          barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+          barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          barrier.dst_access = {};
+          barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+          if (!image->SetLayout(barrier)) {
+            return false;
+          }
+
+          if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+            return false;
+          }
+        }
+
+        //----------------------------------------------------------------------------
+        /// Signal that the presentation semaphore is ready.
+        ///
+        {
+          TRACE_EVENT0("flutter", "SignalSubmit");
+          vk::SubmitInfo submit_info;
+          vk::PipelineStageFlags wait_stage =
+              vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          submit_info.setWaitDstStageMask(wait_stage);
+          submit_info.setWaitSemaphores(*sync->render_ready);
+          submit_info.setSignalSemaphores(*sync->present_ready);
+          submit_info.setCommandBuffers(vk_final_cmd_buffer);
+          auto result =
+              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+          if (result != vk::Result::eSuccess) {
+            VALIDATION_LOG << "Could not wait on render semaphore: "
+                           << vk::to_string(result);
+            return false;
+          }
+        }
+
+        TRACE_EVENT0("flutter", "Present");
 
         //----------------------------------------------------------------------------
         /// Present the image.

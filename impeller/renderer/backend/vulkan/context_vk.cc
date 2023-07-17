@@ -127,8 +127,7 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
-  raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-      std::min(4u, std::thread::hardware_concurrency()));
+  raster_message_loop_ = fml::ConcurrentMessageLoop::Create();
 #ifdef FML_OS_ANDROID
   raster_message_loop_->PostTaskToAllWorkers([]() {
     if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
