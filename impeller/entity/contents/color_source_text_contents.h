@@ -35,7 +35,7 @@ class ColorSourceTextContents final : public Contents {
   // |Contents|
   void PopulateGlyphAtlas(
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) const override;
+      Scalar scale) override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,

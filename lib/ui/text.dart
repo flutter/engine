@@ -3024,7 +3024,7 @@ abstract class ParagraphBuilder {
     return const bool.hasEnvironment('SKPARAGRAPH_REMOVE_ROUNDING_HACK')
         || _roundingHackDisabledInDebugMode;
   }
-  static bool _roundingHackDisabledInDebugMode = true;
+  static bool _roundingHackDisabledInDebugMode = false;
 
   /// Only works in debug mode. Do not call this method as it is for migration
   /// purposes only and will soon be removed.
@@ -3338,7 +3338,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   ).then((_) => _sendFontChangeMessage());
 }
 
-final ByteData _fontChangeMessage = utf8.encoder.convert(
+final ByteData _fontChangeMessage = utf8.encode(
   json.encode(<String, Object?>{'type': 'fontsChange'})
 ).buffer.asByteData();
 

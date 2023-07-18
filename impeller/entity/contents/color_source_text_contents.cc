@@ -36,7 +36,7 @@ void ColorSourceTextContents::SetTextPosition(Point position) {
 
 void ColorSourceTextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) const {
+    Scalar scale) {
   text_contents_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
 }
 

@@ -77,8 +77,9 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) const {
+    Scalar scale) {
   lazy_glyph_atlas->AddTextFrame(frame_, scale);
+  scale_ = scale;
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -90,7 +91,6 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   auto type = frame_.GetAtlasType();
-  auto scale = entity.DeriveTextScale();
   auto atlas =
       ResolveAtlas(type, renderer.GetLazyGlyphAtlas(),
                    renderer.GetGlyphAtlasContext(type), renderer.GetContext());
@@ -180,7 +180,7 @@ bool TextContents::Render(const ContentContext& renderer,
         for (const auto& run : frame_.GetRuns()) {
           const Font& font = run.GetFont();
           for (const auto& glyph_position : run.GetGlyphPositions()) {
-            FontGlyphPair font_glyph_pair{font, glyph_position.glyph, scale};
+            FontGlyphPair font_glyph_pair{font, glyph_position.glyph, scale_};
             auto maybe_atlas_glyph_bounds =
                 atlas->FindFontGlyphBounds(font_glyph_pair);
             if (!maybe_atlas_glyph_bounds.has_value()) {

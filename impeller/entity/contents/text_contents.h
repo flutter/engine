@@ -48,7 +48,7 @@ class TextContents final : public Contents {
   // |Contents|
   void PopulateGlyphAtlas(
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) const override;
+      Scalar scale) override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -57,6 +57,7 @@ class TextContents final : public Contents {
 
  private:
   TextFrame frame_;
+  Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
