@@ -174,14 +174,22 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   self.messageSent = nil;
 }
 
-- (id)testScreen {
-  return UIScreen.mainScreen;
+- (id)setupMockScreen {
+  UIScreen* mockScreen = OCMClassMock([UIScreen class]);
+  // iPhone 14 pixels
+  CGRect screenBounds = CGRectMake(0, 0, 1170, 2532);
+  OCMStub([mockScreen bounds]).andReturn(screenBounds);
+  CGFloat screenScale = 1;
+  OCMStub([mockScreen scale]).andReturn(screenScale);
+
+  return mockScreen;
 }
 
-- (id)setupMockMainScreenAndView:(FlutterViewController*)viewControllerMock
-                       viewFrame:(CGRect)viewFrame
-                  convertedFrame:(CGRect)convertedFrame {
-  OCMStub([viewControllerMock screenIfViewLoaded]).andReturn([self testScreen]);
+- (id)setupMockView:(FlutterViewController*)viewControllerMock
+             screen:(UIScreen*)screen
+          viewFrame:(CGRect)viewFrame
+     convertedFrame:(CGRect)convertedFrame {
+  OCMStub([viewControllerMock screenIfViewLoaded]).andReturn(screen);
   id mockView = OCMClassMock([UIView class]);
   OCMStub([mockView frame]).andReturn(viewFrame);
   OCMStub([mockView convertRect:viewFrame toCoordinateSpace:[OCMArg any]])
@@ -226,9 +234,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGRect viewFrame = screen.bounds;
-  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewFrame
+       convertedFrame:viewFrame];
 
   // Null check.
   [viewControllerMock setupKeyboardSpringAnimationIfNeeded:nil];
@@ -266,9 +277,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGRect viewFrame = screen.bounds;
-  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewFrame
+       convertedFrame:viewFrame];
 
   BOOL isLocal = YES;
   CGFloat screenHeight = screen.bounds.size.height;
@@ -353,9 +367,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGRect viewFrame = screen.bounds;
-  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewFrame
+       convertedFrame:viewFrame];
 
   CGFloat screenWidth = screen.bounds.size.width;
   CGFloat screenHeight = screen.bounds.size.height;
@@ -494,9 +511,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  bundle:nil];
 
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGRect viewFrame = screen.bounds;
-  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewFrame
+       convertedFrame:viewFrame];
 
   CGFloat screenWidth = screen.bounds.size.width;
   CGFloat screenHeight = screen.bounds.size.height;
@@ -620,16 +640,17 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
 
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGFloat screenWidth = screen.bounds.size.width;
   CGFloat screenHeight = screen.bounds.size.height;
   CGRect screenRect = screen.bounds;
   CGRect viewOrigFrame = CGRectMake(0, 0, 320, screenHeight - 40);
   CGRect convertedViewFrame = CGRectMake(20, 20, 320, screenHeight - 40);
   CGRect keyboardFrame = CGRectMake(20, screenHeight - 320, screenWidth, 300);
-  id mockView = [self setupMockMainScreenAndView:viewControllerMock
-                                       viewFrame:viewOrigFrame
-                                  convertedFrame:convertedViewFrame];
+  id mockView = [self setupMockView:viewControllerMock
+                             screen:screen
+                          viewFrame:viewOrigFrame
+                     convertedFrame:convertedViewFrame];
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection userInterfaceIdiom]).andReturn(UIUserInterfaceIdiomPad);
   OCMStub([mockTraitCollection horizontalSizeClass]).andReturn(UIUserInterfaceSizeClassCompact);
@@ -648,7 +669,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   OCMStub([viewControllerMock screenIfViewLoaded]).andReturn(screen);
 
   CGFloat screenWidth = screen.bounds.size.width;
@@ -657,9 +678,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGRect convertedViewFrame = CGRectMake(20, 20, 320, screenHeight - 40);
   CGRect keyboardFrame = CGRectMake(20, screenHeight - 320, screenWidth, 300);
 
-  [self setupMockMainScreenAndView:viewControllerMock
-                         viewFrame:viewOrigFrame
-                    convertedFrame:convertedViewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewOrigFrame
+       convertedFrame:convertedViewFrame];
 
   CGFloat inset = [viewControllerMock calculateKeyboardInset:keyboardFrame
                                                 keyboardMode:FlutterKeyboardModeDocked];
@@ -673,7 +695,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   // keyboard is empty
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   CGFloat screenWidth = screen.bounds.size.width;
   CGFloat screenHeight = screen.bounds.size.height;
   CGRect keyboardFrame = CGRectMake(0, screenHeight - 320, screenWidth, 320);
@@ -688,7 +710,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                     @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
                                   }];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  [self setupMockMainScreenAndView:viewControllerMock viewFrame:viewFrame convertedFrame:viewFrame];
+  [self setupMockView:viewControllerMock
+               screen:screen
+            viewFrame:viewFrame
+       convertedFrame:viewFrame];
   viewControllerMock.targetViewInsetBottom = 0;
   XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
   OCMStub([viewControllerMock updateViewportMetricsIfNeeded]).andDo(^(NSInvocation* invocation) {
@@ -907,7 +932,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   OCMStub([viewControllerMock screenIfViewLoaded]).andReturn(screen);
   mockEngine.viewController = viewController;
 
@@ -929,7 +954,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   OCMStub([viewControllerMock screenIfViewLoaded]).andReturn(screen);
   mockEngine.viewController = viewController;
 
@@ -963,7 +988,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                 nibName:nil
                                                                                  bundle:nil];
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self testScreen];
+  UIScreen* screen = [self setupMockScreen];
   OCMStub([viewControllerMock screenIfViewLoaded]).andReturn(screen);
   mockEngine.viewController = viewController;
 
