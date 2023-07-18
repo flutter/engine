@@ -27,10 +27,6 @@ class EngineGoldenTester {
         throw Exception(
             'Gold only supports integer screen sizes, but found: $viewportSize');
       }
-      if (viewportSize.width < 472) {
-        // TODO: Do we still need this check?
-        throw Exception('We do not support screen width smaller than 472');
-      }
       return true;
     }());
 
