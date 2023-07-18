@@ -642,7 +642,6 @@ TEST_F(ClipRRectLayerTest, AntiAliasWithSaveLayerIgnoresSaveLayerImpeller) {
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
 }
 
-
 }  // namespace testing
 }  // namespace flutter
 
