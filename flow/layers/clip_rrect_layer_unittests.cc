@@ -624,8 +624,6 @@ TEST_F(ClipRRectLayerTest, AntiAliasWithSaveLayerIgnoresSaveLayerImpeller) {
       /* ClipRectLayer::Paint() */ {
         expected_builder.Save();
         expected_builder.ClipRRect(clip_rrect, ClipOp::kIntersect, true);
-        // expected_builder.SaveLayer(&children_bounds,
-        //                            &DlPaint().setAlpha(opacity_alpha));
         /* child layer1 paint */ {
           expected_builder.DrawPath(path1, DlPaint());
         }
