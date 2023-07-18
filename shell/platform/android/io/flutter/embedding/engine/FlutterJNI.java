@@ -1292,16 +1292,16 @@ public class FlutterJNI {
   }
 
   @Nullable
-  public float getScaledFontSize(float fontSize) {
+  public float getScaledFontSize(float fontSize, float textScaleFactor) {
     if (Build.VERSION.SDK_INT < 10000) {
       // Returns unimplemented on anything below Android U.
       return -1f;
     }
     if (synchronousPlatformPlugin == null) {
       Log.e(TAG, "synchronousPlatformPlugin was not set when getScaledFontSize was called.");
-      return -2f;
+      return -3f;
     }
-    return synchronousPlatformPlugin.getScaledFontSize(fontSize);
+    return synchronousPlatformPlugin.getScaledFontSize(fontSize, textScaleFactor);
   }
 
   // ----- Start Deferred Components Support ----

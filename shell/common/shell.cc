@@ -1470,8 +1470,10 @@ void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 }
 
 // |Engine::Delegate|
-double Shell::GetScaledFontSize(double unscaled_font_size) const {
-  return platform_view_->GetScaledFontSize(unscaled_font_size);
+double Shell::GetScaledFontSize(double unscaled_font_size,
+                                double text_scale_factor) const {
+  return platform_view_->GetScaledFontSize(unscaled_font_size,
+                                           text_scale_factor);
 }
 
 void Shell::ReportTimings() {

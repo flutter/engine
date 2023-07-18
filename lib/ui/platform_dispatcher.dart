@@ -141,10 +141,6 @@ class PlatformDispatcher {
   static final PlatformDispatcher _instance = PlatformDispatcher._();
 
   _PlatformConfiguration _configuration = const _PlatformConfiguration();
-  // The expression is evaluated when `platformTextScaler` is accessed for the
-  // first time.
-  late final bool _platformTextScalerImplemented = _getScaledFontSize(14) != -1;
-
   /// Called when the platform configuration changes.
   ///
   /// The engine invokes this callback in the same zone in which the callback
@@ -989,43 +985,38 @@ class PlatformDispatcher {
   /// This option is used by [showTimePicker].
   bool get alwaysUse24HourFormat => _configuration.alwaysUse24HourFormat;
 
-  /// Deprecated. Will be removed in a future version of Flutter.
+  /// The system-reported text scale.
   ///
-  /// Use [platformTextScaler] instead.
-  @Deprecated(
-    'Use platformTextScaler instead. '
-    'This feature was deprecated after 3.11.0-5.0.pre.',
-  )
-  double get textScaleFactor => _configuration.textScaleFactor;
-
-  /// Deprecated. Will be removed in a future version of Flutter.
+  /// This establishes the text scaling factor to use when rendering text,
+  /// according to the user's platform preferences.
   ///
-  /// This field is renamed to [onTextScalerChanged].
-  @Deprecated(
-    'Use onTextScalerChanged instead. '
-    'This feature was deprecated after 3.11.0-5.0.pre.',
-  )
-  VoidCallback? get onTextScaleFactorChanged => _onTextScalerChanged;
-  set onTextScaleFactorChanged(VoidCallback? callback) {
-    onTextScalerChanged = callback;
-  }
-
-  /// A callback that is invoked whenever the user changes their text scaling
-  /// settings.
-  ///
-  /// The framework invokes this callback in the same zone in which the callback
-  /// was set.
+  /// The [onTextScaleFactorChanged] callback is called whenever this value
+  /// changes.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
-  VoidCallback? get onTextScalerChanged => _onTextScalerChanged;
-  VoidCallback? _onTextScalerChanged;
-  Zone _onTextScalerChangedZone = Zone.root;
-  set onTextScalerChanged(VoidCallback? callback) {
-    _onTextScalerChanged = callback;
-    _onTextScalerChangedZone = Zone.current;
+  ///    observe when this value changes.
+  double get textScaleFactor => _configuration.textScaleFactor;
+
+  /// The system-reported text scale.
+  ///
+  /// This establishes the text scaling factor to use when rendering text,
+  /// according to the user's platform preferences.
+  ///
+  /// The [onTextScaleFactorChanged] callback is called whenever this value
+  /// changes.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  VoidCallback? _onTextScaleFactorChanged;
+  Zone _onTextScaleFactorChangedZone = Zone.root;
+  set onTextScaleFactorChanged(VoidCallback? callback) {
+    _onTextScaleFactorChanged = callback;
+    _onTextScaleFactorChangedZone = Zone.current;
   }
 
   /// Whether the spell check service is supported on the current platform.
@@ -1129,7 +1120,7 @@ class PlatformDispatcher {
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
-      _invoke(onTextScaleFactorChanged, _onTextScalerChangedZone);
+      _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
       _invoke(onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
@@ -1323,18 +1314,62 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  TextScaler get platformTextScaler {
-    final double textScaleFactor = _configuration.textScaleFactor;
-    if (textScaleFactor == 1) {
-      return TextScaler.noScaling;
+  double? scaleFontWithPlatform(double unscaledFontSize) {
+    assert(unscaledFontSize >= 0);
+    assert(unscaledFontSize.isFinite);
+
+    if (textScaleFactor == 1.0) {
+      return unscaledFontSize;
     }
-    return _platformTextScalerImplemented ? _SystemTextScaler(textScaleFactor) : TextScaler.linear(textScaleFactor);
+
+    final int unscaledFloor = unscaledFontSize.floor();
+    final int unscaledCeil = unscaledFontSize.ceil();
+    if (unscaledFloor == unscaledCeil) {
+      return _scaleAndMemoize(unscaledFloor);
+    }
+    assert(unscaledCeil - unscaledFloor == 1);
+
+    return switch ((_scaleAndMemoize(unscaledFloor), _scaleAndMemoize(unscaledCeil))) {
+      (null, _) => null,
+      (_, null) => null,
+      (final double lower, final double upper) => lower + (upper - lower) * (unscaledFontSize - unscaledFloor),
+    };
+  }
+
+  // The _cachedFontScale variable is null if GetScaledFontSize is not
+  // implemented on the current platform.
+  Map<int, double>? _cachedFontScale = <int, double>{};
+  double? _scaleAndMemoize(int unscaledFontSize) {
+    final Map<int, double>? cache = _cachedFontScale;
+    if (cache == null) {
+      return null;
+    }
+    final double? cachedValue = cache[unscaledFontSize];
+    if (cachedValue != null) {
+      assert(cachedValue >= 0);
+      return cachedValue;
+    }
+
+    final double unscaledFontSizeInt = unscaledFontSize.toDouble();
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, textScaleFactor);
+    switch (fontSize) {
+      case >= 0:
+        return cache.putIfAbsent(unscaledFontSize, () => fontSize);
+      case -1:
+        assert(cache.isEmpty);
+        return _cachedFontScale = null;
+      case final double errorCode:
+        assert(fontSize >= 0, 'GetScaledFontSize failed with $errorCode');
+        return null;
+    }
   }
 
   // Returns a negative number when there's an error:
   // -1 : GetScaledFontSize is not implemented on the current platform.
-  @Native<Double Function(Double)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
-  external static double _getScaledFontSize(double unscaledFontSize);
+  // -2 : The textScaleFactor argument the caller provided does not match the
+  //      textScaelFactor value of the platform due to a race condition.
+  @Native<Double Function(Double, Double)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
+  external static double _getScaledFontSize(double unscaledFontSize, double textScaleFactor);
 }
 
 /// Configuration of the platform.
@@ -2415,158 +2450,6 @@ enum DartPerformanceMode {
   /// Optimize for low memory, at the expensive of throughput and latency by more
   /// frequently performing work.
   memory,
-}
-
-/// A class that describes how textual contents should be scaled for better
-/// readability.
-///
-/// The [scale] function computes the scaled font size given the original
-/// unscaled font size specified by app developers.
-///
-/// The [==] operator defines the equality of 2 [TextScaler]s, which the
-/// framework uses to determine whether text widgets need rebuild when their
-/// [TextScaler] changes. Consider overridding the [==] operator if applicable
-/// to avoid unnecessary rebuilds.
-abstract class TextScaler {
-  /// Creates a TextScaler.
-  const TextScaler();
-
-  /// Creates a proportional [TextScaler] that scales the incoming font size by
-  /// multiplying it with the given `textScaleFactor`.
-  const factory TextScaler.linear(double textScaleFactor) = _LinearTextScaler;
-
-  /// A [TextScaler] that doesn't scale the ipnut font size.
-  ///
-  /// This is equivalent to `TextScaler.linear(1.0)`, the [TextScaler.scale]
-  /// implementation always returns the input font size as-is.
-  static const TextScaler noScaling = _LinearTextScaler(1.0);
-
-  /// Computes the scaled font size (in logical pixels) with the given unscaled
-  /// `fontSize` (in logical pixels).
-  ///
-  /// The input `fontSize` must be finite and non-negative.
-  ///
-  /// When given the same `fontSize` input, this method returns the same value.
-  /// The output of a larger input `fontSize` is typically larger than that of a
-  /// smaller input, but on unusual occasions they may produce the same output.
-  /// For example, some platforms use single-precision floats to represent font
-  /// sizes, as a result of truncation two different unscaled font sizes can be
-  /// scaled to the same value.
-  double scale(double fontSize);
-
-  /// Returns a new [TextScaler] that restricts the scaled font size to within
-  /// the range `[minScaleFactor * fontSize, maxScaleFactor * fontSize]`.
-  TextScaler clamp(double minScaleFactor, double maxScaleFactor) {
-    assert(maxScaleFactor >= minScaleFactor);
-    assert(maxScaleFactor.isFinite);
-    assert(minScaleFactor.isFinite);
-    assert(minScaleFactor >= 0);
-
-    return minScaleFactor == maxScaleFactor
-         ? TextScaler.linear(minScaleFactor)
-         : _ClampedTextScaler(this, minScaleFactor, maxScaleFactor);
-  }
-}
-
-final class _LinearTextScaler implements TextScaler {
-  const _LinearTextScaler(this.textScaleFactor) : assert(textScaleFactor > 0);
-
-  final double textScaleFactor;
-
-  @override
-  double scale(double fontSize) {
-    assert(fontSize >= 0);
-    assert(fontSize.isFinite);
-    return fontSize * textScaleFactor;
-  }
-
-  @override
-  TextScaler clamp(double minScale, double maxScale) {
-    final double newScaleFactor = clampDouble(textScaleFactor, minScale, maxScale);
-    return newScaleFactor == textScaleFactor ? this : _LinearTextScaler(newScaleFactor);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _LinearTextScaler && other.textScaleFactor == textScaleFactor;
-  }
-
-  @override
-  int get hashCode => textScaleFactor.hashCode;
-}
-
-final class _ClampedTextScaler implements TextScaler {
-  const _ClampedTextScaler(this.scaler, this.minScale, this.maxScale) : assert(maxScale > minScale);
-  final TextScaler scaler;
-  final double minScale;
-  final double maxScale;
-
-  @override
-  double scale(double fontSize) {
-    assert(fontSize >= 0);
-    assert(fontSize.isFinite);
-    return minScale == maxScale
-      ? minScale * fontSize
-      : clampDouble(scaler.scale(fontSize), minScale * fontSize, maxScale * fontSize);
-  }
-
-  @override
-  TextScaler clamp(double minScale, double maxScale) {
-    return minScale == maxScale
-      ? _LinearTextScaler(minScale)
-      : _ClampedTextScaler(scaler, math.max(minScale, this.minScale), math.min(maxScale, this.maxScale));
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _ClampedTextScaler
-        && minScale == other.minScale
-        && maxScale == other.maxScale
-        && (minScale == maxScale || scaler == other.scaler);
-  }
-
-  @override
-  int get hashCode => minScale == maxScale ? minScale.hashCode : Object.hash(scaler, minScale, maxScale);
-}
-
-final class _SystemTextScaler extends TextScaler {
-  const _SystemTextScaler(this.textScaleFactor);
-
-  final double textScaleFactor;
-
-  @override
-  double scale(double fontSize) {
-    assert(fontSize >= 0);
-    assert(fontSize.isFinite);
-    switch (PlatformDispatcher._getScaledFontSize(fontSize)) {
-      case >= 0 && final double x when fontSize >= 0:
-        return x;
-      case == -1 when fontSize >= 0:
-        throw StateError('GetScaledFontSize is not implemented on the platform. This should not be reached.');
-      // Fallback to linear scaling when there's an error. Relevant error messages
-      // should already be printed to stderr.
-      case final double errorCode:
-        assert(false, 'GetScaledFontSize failed with $errorCode');
-        return fontSize * textScaleFactor;
-    }
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _SystemTextScaler && textScaleFactor == other.textScaleFactor;
-  }
-
-  @override
-  int get hashCode => textScaleFactor.hashCode;
 }
 
 /// An event to request a [SemanticsAction] of [type] to be performed on the

@@ -110,28 +110,14 @@ abstract class PlatformDispatcher {
 
   bool get alwaysUse24HourFormat;
 
-  @Deprecated(
-    'Use onTextScalerChanged instead. '
-    'This feature was deprecated after 3.11.0-5.0.pre.',
-  )
   double get textScaleFactor;
 
   bool get nativeSpellCheckServiceDefined => false;
 
   bool get brieflyShowPassword => true;
 
-  /// Deprecated. Will be removed in a future version of Flutter.
-  ///
-  /// This field is renamed to [onTextScalerChanged].
-  @Deprecated(
-    'Use onTextScalerChanged instead. '
-    'This feature was deprecated after 3.11.0-5.0.pre.',
-  )
   VoidCallback? get onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback);
-
-  VoidCallback? get onTextScalerChanged;
-  set onTextScalerChanged(VoidCallback? callback);
 
   Brightness get platformBrightness;
 
@@ -161,7 +147,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onFrameDataChanged => null;
   set onFrameDataChanged(VoidCallback? callback) {}
 
-  TextScaler get platformTextScaler;
+  double? scaleFontWithPlatform(double unscaledFontSize);
 }
 
 enum FramePhase {
@@ -512,89 +498,6 @@ enum DartPerformanceMode {
   memory,
 }
 
-abstract class TextScaler {
-  /// Creates a TextScaler.
-  const TextScaler();
-  const factory TextScaler.linear(double textScaleFactor) = _LinearTextScaler;
-
-  static const TextScaler noScaling = _LinearTextScaler(1.0);
-
-  double scale(double fontSize);
-
-  TextScaler clamp(double minScaleFactor, double maxScaleFactor) {
-    return minScaleFactor == maxScaleFactor
-      ? TextScaler.linear(minScaleFactor)
-      : _ClampedTextScaler(this, minScaleFactor, maxScaleFactor);
-  }
-}
-
-final class _LinearTextScaler implements TextScaler {
-  const _LinearTextScaler(this.textScaleFactor) : assert(textScaleFactor > 0);
-
-  final double textScaleFactor;
-
-  @override
-  double scale(double fontSize) {
-    assert(fontSize >= 0);
-    assert(fontSize.isFinite);
-    return fontSize * textScaleFactor;
-  }
-
-  @override
-  TextScaler clamp(double minScale, double maxScale) {
-    final double newScaleFactor = clampDouble(textScaleFactor, minScale, maxScale);
-    return newScaleFactor == textScaleFactor ? this : _LinearTextScaler(newScaleFactor);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _LinearTextScaler && other.textScaleFactor == textScaleFactor;
-  }
-
-  @override
-  int get hashCode => textScaleFactor.hashCode;
-}
-
-final class _ClampedTextScaler implements TextScaler {
-  const _ClampedTextScaler(this.scaler, this.minScale, this.maxScale) : assert(maxScale > minScale);
-  final TextScaler scaler;
-  final double minScale;
-  final double maxScale;
-
-  @override
-  double scale(double fontSize) {
-    assert(fontSize >= 0);
-    assert(fontSize.isFinite);
-    return minScale == maxScale
-      ? minScale * fontSize
-      : clampDouble(scaler.scale(fontSize), minScale * fontSize, maxScale * fontSize);
-  }
-
-  @override
-  TextScaler clamp(double minScale, double maxScale) {
-    return minScale == maxScale
-      ? _LinearTextScaler(minScale)
-      : _ClampedTextScaler(scaler, math.max(minScale, this.minScale), math.min(maxScale, this.maxScale));
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _ClampedTextScaler
-        && minScale == other.minScale
-        && maxScale == other.maxScale
-        && (minScale == maxScale || scaler == other.scaler);
-  }
-
-  @override
-  int get hashCode => minScale == maxScale ? minScale.hashCode : Object.hash(scaler, minScale, maxScale);
-}
-
 class SemanticsActionEvent {
   const SemanticsActionEvent({
     required this.type,
@@ -624,4 +527,3 @@ class SemanticsActionEvent {
     );
   }
 }
->>>>>>> upstream/master

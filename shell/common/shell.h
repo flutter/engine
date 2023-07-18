@@ -649,7 +649,8 @@ class Shell final : public PlatformView::Delegate,
   fml::TimePoint GetCurrentTimePoint() override;
 
   // |Engine::Delegate|
-  double GetScaledFontSize(double unscaled_font_size) const override;
+  double GetScaledFontSize(double unscaled_font_size,
+                           double text_scale_factor) const override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

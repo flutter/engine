@@ -198,7 +198,9 @@ const Settings& PlatformView::GetSettings() const {
   return delegate_.OnPlatformViewGetSettings();
 }
 
-double PlatformView::GetScaledFontSize(double unscaled_font_size) const {
+double PlatformView::GetScaledFontSize(double unscaled_font_size,
+                                       double text_scale_factor) const {
+  // Unimplemented by default.
   return -1;
 }
 

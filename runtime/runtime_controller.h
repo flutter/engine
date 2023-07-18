@@ -656,7 +656,8 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::vector<std::string>& supported_locale_data) override;
 
   // |PlatformConfigurationClient|
-  double GetScaledFontSize(double unscaled_font_size) const override;
+  double GetScaledFontSize(double unscaled_font_size,
+                           double text_scale_factor) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

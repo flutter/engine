@@ -224,12 +224,19 @@ class PlatformConfigurationClient {
   /// @param[in]  unscaled_font_size  The unscaled font size specified by the
   ///                                 app developer. The value is guaranteed
   ///                                 to be finite and non-negative.
+  /// @param[in]  text_scale_factor   The text scale factor the app is using.
+  ///                                 app developer. The value is guaranteed
+  ///                                 to be finite and non-negative.
   ///
   /// @return     The scaled font size in logical pixels. Returns a negative
-  ///             number when an error is encountered. Specifically, returns -1
-  ///             if this method isn't implemented on the current platform.
+  ///             number when an error is encountered:
+  ///              - Returns -1 if this method isn't implemented on the current
+  ///                platform.
+  ///              - Returns -2 if the given text scale factor does not match
+  ///                the platform's text scale factor value.
   ///
-  virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   double text_scale_factor) const = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();
@@ -561,7 +568,8 @@ class PlatformConfigurationNativeApi {
 
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 
-  static double GetScaledFontSize(double unscaled_font_size);
+  static double GetScaledFontSize(double unscaled_font_size,
+                                  double text_scale_factor);
 
  private:
   static Dart_PerformanceMode current_performance_mode_;

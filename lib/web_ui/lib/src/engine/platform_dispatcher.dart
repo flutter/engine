@@ -998,7 +998,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _fontSizeObserver = null;
   }
 
-  /// Deprecated. Will be removed in a future version of Flutter.
   void _setAppLifecycleState(ui.AppLifecycleState state) {
     sendPlatformMessage(
       'flutter/lifecycle',
@@ -1009,42 +1008,27 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
-  /// This field is renamed to [onTextScalerChanged].
-  @Deprecated(
-    'Use onTextScalerChanged instead. '
-    'This feature was deprecated after 3.11.0-5.0.pre.',
-  )
-  @override
-  ui.VoidCallback? get onTextScaleFactorChanged => _onTextScalerChanged;
-  @override
-  set onTextScaleFactorChanged(ui.VoidCallback? callback) {
-    onTextScalerChanged = callback;
-  }
-
-  /// A callback that is invoked whenever the user changes their text scaling
-  /// settings.
-  ///
-  /// The framework invokes this callback in the same zone in which the callback
-  /// was set.
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
   @override
-  ui.VoidCallback? get onTextScalerChanged => _onTextScalerChanged;
-  ui.VoidCallback? _onTextScalerChanged;
-  Zone _onTextScalerChangedZone = Zone.root;
+  ui.VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  ui.VoidCallback? _onTextScaleFactorChanged;
+  Zone? _onTextScaleFactorChangedZone;
   @override
-  set onTextScalerChanged(ui.VoidCallback? callback) {
-    _onTextScalerChanged = callback;
-    _onTextScalerChangedZone = Zone.current;
+  set onTextScaleFactorChanged(ui.VoidCallback? callback) {
+    _onTextScaleFactorChanged = callback;
+    _onTextScaleFactorChangedZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnTextScaleFactorChanged() {
-    invoke(_onTextScalerChanged, _onTextScalerChangedZone);
+    invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
   }
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
@@ -1302,7 +1286,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.FrameData get frameData => const ui.FrameData.webOnly();
 
   @override
-  ui.TextScaler get platformTextScaler => ui.TextScaler.linear(configuration.textScaleFactor);
+  double? scaleFontWithPlatform(double unscaledFontSize) => -1;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

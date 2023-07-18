@@ -307,7 +307,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///             number when an error is encountered. Specifically, returns
     ///             -1 if this method isn't implemented on the current platform.
     ///
-    virtual double GetScaledFontSize(double unscaled_font_size) const = 0;
+    virtual double GetScaledFontSize(double unscaled_font_size,
+                                     double text_scale_factor) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -949,7 +950,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       const override;
 
   // |RuntimeDelegate|
-  double GetScaledFontSize(double unscaled_font_size) const override;
+  double GetScaledFontSize(double unscaled_font_size,
+                           double text_scale_factor) const override;
 
   void SetNeedsReportTimings(bool value) override;
 

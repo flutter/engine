@@ -840,10 +840,14 @@ class PlatformView {
   ///                                 to be finite and non-negative.
   ///
   /// @return     The scaled font size in logical pixels. Returns a negative
-  ///             number when an error is encountered. Specifically, returns -1
-  ///             if this method isn't implemented on the current platform.
+  ///             number when an error is encountered:
+  ///              - Returns -1 if this method isn't implemented on the current
+  ///                platform.
+  ///              - Returns -2 if the given text scale factor does not match
+  ///                the platform's text scale factor value.
   ///
-  virtual double GetScaledFontSize(double unscaled_font_size) const;
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   double text_scale_factor) const;
 
  protected:
   // This is the only method called on the raster task runner.

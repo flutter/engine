@@ -264,24 +264,24 @@ public class FlutterJNITest {
     final FlutterJNI flutterJNI = new FlutterJNI();
 
     if (Build.VERSION.SDK_INT < 10000) {
-      assertEquals(-1f, flutterJNI.getScaledFontSize(1.0f), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(2.0f), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(4.0f), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(8.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(1.0f, 2.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(2.0f, 2.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(4.0f, 2.0f), 0.0f);
+      assertEquals(-1f, flutterJNI.getScaledFontSize(8.0f, 2.0f), 0.0f);
       return;
     }
 
-    // Returns -2 when the plugin isn't set.
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(14));
+    // Returns -3 when the plugin isn't set.
+    assertEquals(-3.0f, flutterJNI.getScaledFontSize(14.0f, 2.0f));
 
     final SynchronousPlatformPlugin mockPlugin = mock(SynchronousPlatformPlugin.class);
     flutterJNI.setSynchronousPlatformPlugin(mockPlugin);
 
-    when(mockPlugin.getScaledFontSize(any())).thenReturn(42.0f);
+    when(mockPlugin.getScaledFontSize(any(), any())).thenReturn(42.0f);
 
-    assertEquals(42.0f, flutterJNI.getScaledFontSize(1.0f), 0.0f);
-    assertEquals(42.0f, flutterJNI.getScaledFontSize(2.0f), 0.0f);
-    assertEquals(42.0f, flutterJNI.getScaledFontSize(4.0f), 0.0f);
-    assertEquals(42.0f, flutterJNI.getScaledFontSize(8.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(1.0f, 2.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(2.0f, 2.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(4.0f, 2.0f), 0.0f);
+    assertEquals(42.0f, flutterJNI.getScaledFontSize(8.0f, 2.0f), 0.0f);
   }
 }

@@ -109,7 +109,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(double,
               FlutterViewGetScaledFontSize,
-              (double fontSize),
+              (double font_size, double text_scale_factor),
               (const, override));
 };
 
