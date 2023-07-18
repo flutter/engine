@@ -322,8 +322,22 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   if (maybe_pipeline_desc.has_value()) {
     auto clip_pipeline_descriptor = maybe_pipeline_desc.value();
     clip_pipeline_descriptor.SetLabel("Clip Pipeline");
+
     // Disable write to all color attachments.
-    clip_pipeline_descriptor.SetColorAttachmentDescriptors({});
+    if (context_->GetCapabilities()
+            ->SupportsPipelinesWithNoColorAttachments()) {
+      clip_pipeline_descriptor.SetColorAttachmentDescriptors({});
+    } else {
+      auto color_attachments =
+          clip_pipeline_descriptor.GetColorAttachmentDescriptors();
+      for (auto& color_attachment : color_attachments) {
+        color_attachment.second.write_mask =
+            static_cast<uint64_t>(ColorWriteMask::kNone);
+      }
+      clip_pipeline_descriptor.SetColorAttachmentDescriptors(
+          std::move(color_attachments));
+    }
+
     clip_pipelines_[default_options_] =
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor);
   } else {
