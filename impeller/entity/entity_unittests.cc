@@ -2436,8 +2436,8 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
-  ASSERT_EQ(TextContents::RoundFontScale(0.4321111f), 0.5f);
-  ASSERT_EQ(TextContents::RoundFontScale(0.5321111f), 0.6f);
+  ASSERT_EQ(TextContents::RoundFontScale(0.4321111f), 0.4f);
+  ASSERT_EQ(TextContents::RoundFontScale(0.5321111f), 0.5f);
   ASSERT_EQ(TextContents::RoundFontScale(2.1f), 2.1f);
   ASSERT_EQ(TextContents::RoundFontScale(0.0f), 0.0f);
 }

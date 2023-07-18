@@ -27,8 +27,7 @@ TextContents::~TextContents() = default;
 
 // static
 Scalar TextContents::RoundFontScale(Scalar value) {
-  auto res = std::ceil(value * 10.0) / 10.0;
-  return res;
+  return std::round(value * 10.0) / 10.0;
 }
 
 void TextContents::SetTextFrame(const TextFrame& frame) {
