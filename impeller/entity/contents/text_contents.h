@@ -55,6 +55,11 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  /// @brief Round font scales from arbitrary floating point values
+  ///        (2.4223123) to one decimal place (2.4). This ensures that small
+  ///        transform changes do not invalidate glyphs unecessarily.
+  static Scalar RoundFontScale(Scalar value);
+
  private:
   TextFrame frame_;
   Scalar scale_ = 1.0;
