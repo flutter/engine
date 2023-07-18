@@ -1302,28 +1302,25 @@ class PlatformDispatcher {
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
 
-  /// Returns a [TextScaler] that scales font size according to the user's
-  /// platform preference.
+  /// Scales the `unscaledFontSize`, according to the platform preferences.
   ///
   /// Many platforms allow users to scale text globally for better readability.
-  /// Given the font size the app developer specified, this [TextScaler]
-  /// converts it to the preferred font size that accounts for platform-wide
-  /// text scaling.
+  /// Given the font size the app developer specified in logical pixels, this
+  /// method converts it to the preferred font size (also in logical pixels) that
+  /// accounts for platform-wide text scaling.
+  ///
+  /// Returns null if the platform's text scaling is linear. The return value
+  /// is always non-negative and finite if not null.
   ///
   /// The scaled value of the same font size input may change if the user changes
   /// the text scaling preference (in system settings for example). The
   /// [onTextScaleFactorChanged] callback can be used to monitor such changes.
   ///
-  /// Instead of directly using this getter, applications should typically use
-  /// `MediaQuery.scaledFontSizeOf` instead to retrive the scaled font size in a
-  /// widget tree, so text resizes properly when the text scaling preference
+  /// Instead of directly calling this method, applications should typically use
+  /// [MediaQuery.textScalerOf] to retrive the scaled font size in a widget tree,
+  /// so text in the app resizes properly when the text scaling preference
   /// changes.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
-  double? scaleFontWithPlatform(double unscaledFontSize) {
+  double? scaleFontSize(double unscaledFontSize) {
     assert(unscaledFontSize >= 0);
     assert(unscaledFontSize.isFinite);
 
@@ -1367,8 +1364,11 @@ class PlatformDispatcher {
       case -1:
         assert(cache.isEmpty);
         return _cachedFontScale = null;
+      case -2:
+        // TODO: ???
+        return null;
       case final double errorCode:
-        assert(fontSize >= 0, 'GetScaledFontSize failed with $errorCode');
+        assert(false, 'GetScaledFontSize failed with $errorCode');
         return null;
     }
   }

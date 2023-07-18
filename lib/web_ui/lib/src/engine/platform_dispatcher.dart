@@ -1286,7 +1286,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.FrameData get frameData => const ui.FrameData.webOnly();
 
   @override
-  double? scaleFontWithPlatform(double unscaledFontSize) => -1;
+  double? scaleFontSize(double unscaledFontSize) => null;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

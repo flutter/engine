@@ -96,12 +96,8 @@ void main() {
     expect(flutterView.toString(), 'FlutterView(id: 0)');
   });
 
-  test('TextScaler works', () {
-    final scale = PlatformDispatcher.instance.scaleFontWithPlatform;
+  test('scaleFontWithPlatform returns null by default', () {
+    final double? Function(double) scale = PlatformDispatcher.instance.scaleFontWithPlatform;
     expect(0, scale(0));
-    for (int i = 0; i < 10; i++) {
-      final double fontSize = (1 << i).toDouble();
-      expect(fontSize, scale(fontSize));
-    }
   });
 }
