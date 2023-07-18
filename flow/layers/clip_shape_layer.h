@@ -43,7 +43,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
   }
 
   void Preroll(PrerollContext* context) override {
-    bool uses_save_layer = UsesSaveLayer(!context->gr_context);
+    bool uses_save_layer = UsesSaveLayer(context->impeller_enabled);
 
     // We can use the raster_cache for children only when the use_save_layer is
     // true so if use_save_layer is false we pass the layer_raster_item is
@@ -54,7 +54,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(
-            context, UsesSaveLayer(!context->gr_context));
+            context, UsesSaveLayer(context->impeller_enabled));
 
     auto mutator = context->state_stack.save();
     ApplyClip(mutator);
@@ -80,7 +80,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     auto mutator = context.state_stack.save();
     ApplyClip(mutator);
 
-    if (!UsesSaveLayer(!!context.aiks_context)) {
+    if (!UsesSaveLayer(context.impeller_enabled)) {
       PaintChildren(context);
       return;
     }
