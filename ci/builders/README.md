@@ -5,7 +5,7 @@ by defining a combination of *sub-builds*, *archives*, *generators* and *depende
 makes it simple to shard sub-builds by mapping build inputs to workflows, and listing
 the sub-build-generated artifacts explicitly. The Build Definition Language, Engine
 Recipes V2 and the generation of artifacts using GN+Ninja set the groundwork
-for efficient builds with dependency reusability.  
+for efficient builds with dependency reusability.
 
 **Author: Godofredo Contreras (godofredoc)**\
 **Go Link: flutter.dev/go/engine-build-definition-language**\
@@ -56,7 +56,7 @@ in the `config_name` under `properties`:
     properties:
       config_name: mac_android_aot_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14e222b" }
+        { "sdk_version": "14e300c" }
 
 ```
 
@@ -297,7 +297,12 @@ default is empty which means no interpreter will be used to run the script
 and it is assumed the script is already an executable with the right
 permissions to run in the target platform.
 * **name** - the name of the step running the script.
-* **parameters** - flags or parameters passed to the script.
+* **parameters** - flags or parameters passed to the script. Parameters
+accept magic environment variables(placeholders replaced before executing
+the test). Magic environment variables have the following limitations:
+only `${FLUTTER_LOGS_DIR}` is currently supported and it needs to be used
+alone within the parameter string(e.g. `["${FLUTTER_LOGS_DIR}"]` is OK
+but `["path=${FLUTTER_LOGS_DIR}"]` is not).
 * **Script** - the path to the script to execute relative to the checkout
 directory.
 * **contexts** - a list of available contexts to add to the text execution step.
@@ -466,7 +471,7 @@ Engine test example:
             "max_attempts": 1,
             "script": "flutter/ci/lint.sh"
          }
-       ] 
+       ]
     }
   ]
 }

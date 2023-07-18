@@ -18,7 +18,6 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
@@ -53,16 +52,17 @@ void RasterCacheResult::draw(DlCanvas& canvas,
     // On some platforms RTree from overlay layers is used for unobstructed
     // platform views and hit testing. To preserve the RTree raster cache must
     // paint individual rects instead of the whole image.
-    auto rects = rtree_->searchAndConsolidateRects(kGiantRect);
+    auto rects = rtree_->region().getRects(true);
 
     canvas.Translate(bounds.fLeft, bounds.fTop);
 
     SkRect rtree_bounds =
         RasterCacheUtil::GetRoundedOutDeviceBounds(rtree_->bounds(), matrix);
     for (auto rect : rects) {
-      rect = RasterCacheUtil::GetRoundedOutDeviceBounds(rect, matrix);
-      rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
-      canvas.DrawImageRect(image_, rect, rect,
+      SkRect device_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+          SkRect::Make(rect), matrix);
+      device_rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
+      canvas.DrawImageRect(image_, device_rect, device_rect,
                            DlImageSampling::kNearestNeighbor, paint);
     }
   }

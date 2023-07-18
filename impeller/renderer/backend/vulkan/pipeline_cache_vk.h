@@ -31,14 +31,15 @@ class PipelineCacheVK {
 
   vk::UniquePipeline CreatePipeline(const vk::ComputePipelineCreateInfo& info);
 
+  const CapabilitiesVK* GetCapabilities() const;
+
   void PersistCacheToDisk() const;
 
  private:
   const std::shared_ptr<const Capabilities> caps_;
   std::weak_ptr<DeviceHolder> device_holder_;
   const fml::UniqueFD cache_directory_;
-  mutable Mutex cache_mutex_;
-  vk::UniquePipelineCache cache_ IPLR_GUARDED_BY(cache_mutex_);
+  vk::UniquePipelineCache cache_;
   bool is_valid_ = false;
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;

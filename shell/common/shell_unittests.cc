@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <strstream>
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
@@ -59,6 +60,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kImplicitViewId = 0ll;
+
 using ::testing::_;
 using ::testing::Return;
 
@@ -73,8 +76,8 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewSetNextFrameCallback,
                void(const fml::closure& closure));
 
-  MOCK_METHOD1(OnPlatformViewSetViewportMetrics,
-               void(const ViewportMetrics& metrics));
+  MOCK_METHOD2(OnPlatformViewSetViewportMetrics,
+               void(int64_t view_id, const ViewportMetrics& metrics));
 
   MOCK_METHOD1(OnPlatformViewDispatchPlatformMessage,
                void(std::unique_ptr<PlatformMessage> message));
@@ -412,7 +415,6 @@ TEST_F(ShellTest,
                   std::make_unique<VsyncWaiterFallback>(task_runners));
             },
             ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
-            shell.GetConcurrentWorkerTaskRunner(),
             shell.GetIsGpuDisabledSyncSwitch());
       },
       [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
@@ -1637,7 +1639,8 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
 
   RunEngine(shell.get(), std::move(configuration));
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.0, 100, 100, 22, 0});
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {1.0, 100, 100, 22, 0});
   });
 
   // first cache bytes
@@ -1666,7 +1669,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22, 0});
+                 kImplicitViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1675,7 +1678,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 300, 22, 0});
+                 kImplicitViewId, {1.0, 100, 300, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1686,7 +1689,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 400, 100, 22, 0});
+                 kImplicitViewId, {1.0, 400, 100, 22, 0});
            });
   // first cache bytes + second cache bytes + third cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1695,7 +1698,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 800, 100, 22, 0});
+                 kImplicitViewId, {1.0, 800, 100, 22, 0});
            });
   // max bytes threshold
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1708,7 +1711,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22, 0});
+                 kImplicitViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1752,7 +1755,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1772,7 +1776,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 800, 400, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1789,7 +1794,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1816,7 +1822,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -2683,6 +2690,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
+            kImplicitViewId,
             {1.0, static_cast<double>(expected_size.width()),
              static_cast<double>(expected_size.height()), 22, 0});
       });
@@ -2760,6 +2768,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &origin_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
+            kImplicitViewId,
             {1.0, static_cast<double>(origin_size.width()),
              static_cast<double>(origin_size.height()), 22, 0});
       });
@@ -2779,8 +2788,8 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &new_size, &resize_latch]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, static_cast<double>(new_size.width()),
-             static_cast<double>(new_size.height()), 22, 0});
+            kImplicitViewId, {1.0, static_cast<double>(new_size.width()),
+                              static_cast<double>(new_size.height()), 22, 0});
         resize_latch.Signal();
       });
 
@@ -2843,14 +2852,21 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22, 0});
+    // This one is invalid for having 0 pixel ratio.
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {0.0, 400, 200, 22, 0});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22, 0});
+      // This one is invalid for having 0 width.
+      shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                   {0.8, 0.0, 200, 22, 0});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22, 0});
+        // This one is invalid for having 0 height.
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {0.8, 400, 0.0, 22, 0});
         task_runner->PostTask([&]() {
+          // This one makes it through.
           shell->GetPlatformView()->SetViewportMetrics(
-              {0.8, 400, 200.0, 22, 0});
+              kImplicitViewId, {0.8, 400, 200.0, 22, 0});
         });
       });
     });
@@ -2862,12 +2878,59 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22, 0});
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {1.2, 600, 300, 22, 0});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
   ASSERT_EQ(last_width, 600.0);
   ASSERT_EQ(last_height, 300.0);
+
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, IgnoresMetricsUpdateToInvalidView) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  // This callback will be called whenever any view's metrics change.
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    // The correct call will have a DPR of 3.
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_TRUE(last_device_pixel_ratio > 2.5);
+
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportMetrics",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportMetrics");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    // This one is invalid for having an nonexistent view ID.
+    // Also, it has a DPR of 2.0 for detection.
+    shell->GetPlatformView()->SetViewportMetrics(2, {2.0, 400, 200, 22, 0});
+    task_runner->PostTask([&]() {
+      // This one is valid with DPR 3.0.
+      shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                   {3.0, 400, 200, 22, 0});
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 3.0);
+  latch.Reset();
 
   DestroyShell(std::move(shell), task_runners);
 }
@@ -4226,6 +4289,54 @@ TEST_F(ShellTest, NotifyDestroyed) {
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG || OS_FUCHSIA
+  GTEST_SKIP() << "Test is for debug mode only on non-fuchsia targets.";
+#endif
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  auto shell = CreateShell(settings, task_runners);
+
+  {
+    fml::testing::LogCapture log_capture;
+
+    // The next call will result in a thread checker violation.
+    fml::ThreadChecker::DisableNextThreadCheckFailure();
+    SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
+                                         "com.test.plugin", nullptr));
+
+    EXPECT_THAT(
+        log_capture.str(),
+        ::testing::EndsWith(
+            "The 'com.test.plugin' channel sent a message from native to "
+            "Flutter on a non-platform thread. Platform channel messages "
+            "must be sent on the platform thread. Failure to do so may "
+            "result in data loss or crashes, and must be fixed in the "
+            "plugin or application code creating that channel.\nSee "
+            "https://docs.flutter.dev/platform-integration/"
+            "platform-channels#channels-and-platform-threading for more "
+            "information.\n"));
+  }
+
+  {
+    fml::testing::LogCapture log_capture;
+
+    // The next call will result in a thread checker violation.
+    fml::ThreadChecker::DisableNextThreadCheckFailure();
+    SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
+                                         "com.test.plugin", nullptr));
+
+    EXPECT_EQ(log_capture.str(), "");
+  }
 
   DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());

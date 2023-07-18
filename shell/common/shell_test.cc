@@ -20,10 +20,17 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kImplicitViewId = 0;
+
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
                        ThreadHost::Type::UI | ThreadHost::Type::RASTER) {}
+
+void ShellTest::SendPlatformMessage(Shell* shell,
+                                    std::unique_ptr<PlatformMessage> message) {
+  shell->OnPlatformViewDispatchPlatformMessage(std::move(message));
+}
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
@@ -139,7 +146,7 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, engine = shell->weak_engine_, viewport_metrics]() {
         if (engine) {
-          engine->SetViewportMetrics(viewport_metrics);
+          engine->SetViewportMetrics(kImplicitViewId, viewport_metrics);
           const auto frame_begin_time = fml::TimePoint::Now();
           const auto frame_end_time =
               frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
@@ -181,7 +188,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, engine = shell->weak_engine_, viewport_metrics]() {
-        engine->SetViewportMetrics(viewport_metrics);
+        engine->SetViewportMetrics(kImplicitViewId, viewport_metrics);
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);

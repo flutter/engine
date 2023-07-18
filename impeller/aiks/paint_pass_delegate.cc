@@ -4,6 +4,8 @@
 
 #include "impeller/aiks/paint_pass_delegate.h"
 
+#include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
@@ -42,9 +44,11 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
     const Matrix& effect_transform) {
   auto contents = TextureContents::MakeRect(Rect::MakeSize(target->GetSize()));
   contents->SetTexture(target);
+  contents->SetLabel("Subpass");
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
   contents->SetDeferApplyingOpacity(true);
+
   return paint_.WithFiltersForSubpassTarget(std::move(contents),
                                             effect_transform);
 }
@@ -76,7 +80,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   // OpacityPeepholePassDelegate will only get used if the pass's blend mode is
   // SourceOver, so no need to check here.
   if (paint_.color.alpha <= 0.0 || paint_.color.alpha >= 1.0 ||
-      paint_.image_filter.has_value() || paint_.color_filter.has_value()) {
+      paint_.image_filter || paint_.color_filter) {
     return false;
   }
 
@@ -134,10 +138,12 @@ OpacityPeepholePassDelegate::CreateContentsForSubpassTarget(
     std::shared_ptr<Texture> target,
     const Matrix& effect_transform) {
   auto contents = TextureContents::MakeRect(Rect::MakeSize(target->GetSize()));
+  contents->SetLabel("Subpass");
   contents->SetTexture(target);
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
   contents->SetDeferApplyingOpacity(true);
+
   return paint_.WithFiltersForSubpassTarget(std::move(contents),
                                             effect_transform);
 }

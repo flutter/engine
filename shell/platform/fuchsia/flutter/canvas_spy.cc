@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/canvas_spy.h"
+#include "flutter/shell/platform/fuchsia/flutter/canvas_spy.h"
 
 namespace flutter {
 
@@ -266,7 +266,5 @@ void DidDrawCanvas::onDrawEdgeAAImageSet2(const ImageSetEntry set[],
                                           SrcRectConstraint constraint) {
   did_draw_ = true;
 }
-
-void DidDrawCanvas::onFlush() {}
 
 }  // namespace flutter

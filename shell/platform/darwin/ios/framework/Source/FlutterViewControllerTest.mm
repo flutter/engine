@@ -440,6 +440,16 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     XCTAssertTrue(shouldIgnore == YES);
   }
 }
+- (void)testKeyboardAnimationWillNotCrashWhenEngineDestroyed {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController setupKeyboardAnimationVsyncClient:^(fml::TimePoint){
+  }];
+  [engine destroyContext];
+}
 
 - (void)testKeyboardAnimationWillWaitUIThreadVsync {
   // We need to make sure the new viewport metrics get sent after the
@@ -1053,6 +1063,16 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMStub([self.mockEngine binaryMessenger]).andReturn(messenger);
   XCTAssertEqual(vc.binaryMessenger, messenger);
   OCMVerify([self.mockEngine binaryMessenger]);
+}
+
+- (void)testViewControllerIsReleased {
+  __weak FlutterViewController* weakViewController;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+    weakViewController = viewController;
+    [viewController viewDidLoad];
+  }
+  XCTAssertNil(weakViewController);
 }
 
 #pragma mark - Platform Brightness

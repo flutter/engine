@@ -5193,7 +5193,7 @@ abstract class Canvas {
 
   /// Returns the conservative bounds of the combined result of all clip methods
   /// executed within the current save stack of this [Canvas] object, as measured
-  /// in the local coordinate space under which rendering operations are curretnly
+  /// in the local coordinate space under which rendering operations are currently
   /// performed.
   ///
   /// The combined clip results are rounded out to an integer pixel boundary before
@@ -5442,8 +5442,8 @@ abstract class Canvas {
   /// specified in the `vertices` using the `blendMode` parameter. For the
   /// purposes of this blending, the colors from the `paint` parameter are
   /// considered the source, and the colors from the `vertices` are considered
-  /// the destination. [BlendMode.dstOver] ignores the `paint` and uses only the
-  /// colors of the `vertices`; [BlendMode.srcOver] ignores the colors of the
+  /// the destination. [BlendMode.dst] ignores the `paint` and uses only the
+  /// colors of the `vertices`; [BlendMode.src] ignores the colors of the
   /// `vertices` and uses only the colors in the `paint`.
   ///
   /// All parameters must not be null.

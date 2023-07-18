@@ -10,18 +10,14 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/core/SkSurface.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
@@ -271,12 +267,10 @@ class EmbeddedViewParams {
 
   EmbeddedViewParams(SkMatrix matrix,
                      SkSize size_points,
-                     MutatorsStack mutators_stack,
-                     bool display_list_enabled = false)
+                     MutatorsStack mutators_stack)
       : matrix_(matrix),
         size_points_(size_points),
-        mutators_stack_(mutators_stack),
-        display_list_enabled_(display_list_enabled) {
+        mutators_stack_(mutators_stack) {
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(size_points);
     path.addRect(starting_rect);
@@ -306,10 +300,6 @@ class EmbeddedViewParams {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
   }
 
-  // Whether the embedder should construct DisplayList objects to hold the
-  // rendering commands for each between-view slice of the layer tree.
-  bool display_list_enabled() const { return display_list_enabled_; }
-
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
@@ -322,7 +312,6 @@ class EmbeddedViewParams {
   SkSize size_points_;
   MutatorsStack mutators_stack_;
   SkRect final_bounding_rect_;
-  bool display_list_enabled_;
 };
 
 enum class PostPrerollResult {

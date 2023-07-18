@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "rtree.h"
+#include "flutter/shell/platform/fuchsia/flutter/rtree.h"
 
 #include <list>
 
@@ -54,7 +54,7 @@ std::list<SkRect> RTree::searchNonOverlappingDrawnRects(
     rects.push_back(current_record_rect);
   }
 
-  DlRegion region(std::move(rects));
+  DlRegion region(rects);
   auto non_overlapping_rects = region.getRects(true);
   std::list<SkRect> final_results;
   for (const auto& rect : non_overlapping_rects) {
