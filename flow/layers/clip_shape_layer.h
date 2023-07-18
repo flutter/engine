@@ -32,7 +32,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
-    if (UsesSaveLayer(context->impeller_enabled()) && context->has_raster_cache()) {
+    if (UsesSaveLayer(context->impeller_enabled()) &&
+        context->has_raster_cache()) {
       context->WillPaintWithIntegralTransform();
     }
     if (context->PushCullRect(clip_shape_bounds())) {
