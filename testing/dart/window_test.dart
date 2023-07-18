@@ -90,6 +90,12 @@ void main() {
     expect(display.size, implicitView.physicalSize);
   });
 
+  test('FlutterView.toString contains the viewId', () {
+    final FlutterView flutterView = PlatformDispatcher.instance.implicitView!;
+    expect(flutterView.viewId, 0);
+    expect(flutterView.toString(), 'FlutterView(id: 0)');
+  });
+
   test('TextScaler works', () {
     final scale = PlatformDispatcher.instance.scaleFontWithPlatform;
     expect(0, scale(0));

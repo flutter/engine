@@ -21,7 +21,7 @@ void SolidColorContents::SetColor(Color color) {
 }
 
 Color SolidColorContents::GetColor() const {
-  return color_.WithAlpha(color_.alpha * GetOpacity());
+  return color_.WithAlpha(color_.alpha * GetOpacityFactor());
 }
 
 bool SolidColorContents::IsOpaque() const {
@@ -99,6 +99,21 @@ std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
   contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(color);
   return contents;
+}
+
+std::optional<Color> SolidColorContents::AsBackgroundColor(
+    const Entity& entity,
+    ISize target_size) const {
+  Rect target_rect = Rect::MakeSize(target_size);
+  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+             ? GetColor()
+             : std::optional<Color>();
+}
+
+bool SolidColorContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  color_ = color_filter_proc(color_);
+  return true;
 }
 
 }  // namespace impeller

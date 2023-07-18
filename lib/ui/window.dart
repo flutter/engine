@@ -86,7 +86,7 @@ class Display {
 /// that in the [padding], which is always safe to use for such
 /// calculations.
 class FlutterView {
-  FlutterView._(this.viewId, this.platformDispatcher);
+  FlutterView._(this.viewId, this.platformDispatcher, this._viewConfiguration);
 
   /// The opaque ID for this view.
   final int viewId;
@@ -96,10 +96,8 @@ class FlutterView {
   final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  _ViewConfiguration get _viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(viewId));
-    return platformDispatcher._viewConfigurations[viewId]!;
-  }
+  // TODO(goderbauer): remove ignore when https://github.com/dart-lang/linter/issues/4562 is fixed.
+  _ViewConfiguration _viewConfiguration; // ignore: prefer_final_fields
 
   /// The [Display] this view is drawn in.
   Display get display {
@@ -126,7 +124,12 @@ class FlutterView {
   /// The Flutter framework operates in logical pixels, so it is rarely
   /// necessary to directly deal with this property.
   ///
-  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called. When
+  /// using the Flutter framework, using [MediaQuery.of] to obtain the device
+  /// pixel ratio (via [MediaQueryData.devicePixelRatio]), instead of directly
+  /// obtaining the [devicePixelRatio] from a [FlutterView], will automatically
+  /// cause any widgets dependent on this value to rebuild when it changes,
+  /// without having to listen to [PlatformDispatcher.onMetricsChanged].
   ///
   /// See also:
   ///
@@ -158,7 +161,12 @@ class FlutterView {
   /// The dimensions of the rectangle into which the scene rendered in this view
   /// will be drawn on the screen, in physical pixels.
   ///
-  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called. When
+  /// using the Flutter framework, using [MediaQuery.of] to obtain the size (via
+  /// [MediaQueryData.size]), instead of directly obtaining the [physicalSize]
+  /// from a [FlutterView], will automatically cause any widgets dependent on the
+  /// size to rebuild when the size changes, without having to listen to
+  /// [PlatformDispatcher.onMetricsChanged].
   ///
   /// At startup, the size of the view may not be known before Dart code runs.
   /// If this value is observed early in the application lifecycle, it may
@@ -182,7 +190,12 @@ class FlutterView {
   /// which the view can render, but over which the operating system will likely
   /// place system UI, such as the keyboard, that fully obscures any content.
   ///
-  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is called.
+  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is
+  /// called. When using the Flutter framework, using [MediaQuery.of] to obtain
+  /// the insets (via [MediaQueryData.viewInsets]), instead of directly
+  /// obtaining the [viewInsets] from a [FlutterView], will automatically cause
+  /// any widgets dependent on the insets to rebuild when they change, without
+  /// having to listen to [PlatformDispatcher.onMetricsChanged].
   ///
   /// The relationship between this [viewInsets],
   /// [viewPadding], and [padding] are described in
@@ -208,7 +221,12 @@ class FlutterView {
   /// change in response to the soft keyboard being visible or hidden, whereas
   /// [padding] will.
   ///
-  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is called.
+  /// When this property changes, [PlatformDispatcher.onMetricsChanged] is
+  /// called. When using the Flutter framework, using [MediaQuery.of] to obtain
+  /// the padding (via [MediaQueryData.viewPadding]), instead of directly
+  /// obtaining the [viewPadding] from a [FlutterView], will automatically cause
+  /// any widgets dependent on the padding to rebuild when it changes, without
+  /// having to listen to [PlatformDispatcher.onMetricsChanged].
   ///
   /// The relationship between this [viewInsets],
   /// [viewPadding], and [padding] are described in
@@ -254,7 +272,12 @@ class FlutterView {
   /// not drawn (to account for the bottom soft button area), but will be `0.0`
   /// when the soft keyboard is visible.
   ///
-  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
+  /// When this changes, [PlatformDispatcher.onMetricsChanged] is called. When
+  /// using the Flutter framework, using [MediaQuery.of] to obtain the padding
+  /// (via [MediaQueryData.padding]), instead of directly obtaining the
+  /// [padding] from a [FlutterView], will automatically cause any widgets
+  /// dependent on the padding to rebuild when it changes, without having to
+  /// listen to [PlatformDispatcher.onMetricsChanged].
   ///
   /// The relationship between this [viewInsets], [viewPadding], and [padding]
   /// are described in more detail in the documentation for [FlutterView].
@@ -348,6 +371,9 @@ class FlutterView {
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(_NativeSemanticsUpdate update);
+
+  @override
+  String toString() => 'FlutterView(id: $viewId)';
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
@@ -380,14 +406,26 @@ class SingletonFlutterWindow extends FlutterView {
     'Deprecated to prepare for the upcoming multi-window support. '
     'This feature was deprecated after v3.7.0-32.0.pre.'
   )
-  SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
-      : super._();
+  SingletonFlutterWindow._() : super._(
+    _kImplicitViewId,
+    PlatformDispatcher.instance,
+    const _ViewConfiguration(),
+  );
+
+  // Gets its configuration from the FlutterView with the same ID if it exists.
+  @override
+  _ViewConfiguration get _viewConfiguration => platformDispatcher._views[viewId]?._viewConfiguration ?? super._viewConfiguration;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views], or
   /// [systemGestureInsets] values change.
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// When using the Flutter framework, the [MediaQuery] widget exposes much of
+  /// these metrics. Using [MediaQuery.of] to obtain them allows the framework
+  /// to automatically rebuild widgets that depend on them, without having to
+  /// manage the [onMetricsChanged] callback.
   ///
   /// See [PlatformDispatcher.onMetricsChanged] for more information.
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
@@ -400,11 +438,11 @@ class SingletonFlutterWindow extends FlutterView {
   /// {@template dart.ui.window.accessorForwardWarning}
   /// Accessing this value returns the value contained in the
   /// [PlatformDispatcher] singleton, so instead of getting it from here, you
-  /// should consider getting it from `WidgetsBinding.instance.platformDispatcher` instead
-  /// (or, when `WidgetsBinding` isn't available, from
-  /// [PlatformDispatcher.instance]). The reason this value forwards to the
-  /// [PlatformDispatcher] is to provide convenience for applications that only
-  /// use a single main window.
+  /// should consider getting it from
+  /// `WidgetsBinding.instance.platformDispatcher` instead (or, when
+  /// `WidgetsBinding` isn't available, from [PlatformDispatcher.instance]). The
+  /// reason this value forwards to the [PlatformDispatcher] is to provide
+  /// convenience for applications that only use a single main window.
   /// {@endtemplate}
   ///
   /// This establishes the language and formatting conventions that window
@@ -986,7 +1024,7 @@ enum Brightness {
   'Deprecated to prepare for the upcoming multi-window support. '
   'This feature was deprecated after v3.7.0-32.0.pre.'
 )
-final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
+final SingletonFlutterWindow window = SingletonFlutterWindow._();
 
 /// Additional data available on each flutter frame.
 class FrameData {

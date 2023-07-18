@@ -22,6 +22,7 @@
 namespace flutter {
 namespace {
 
+// Keep this in sync with _kImplicitViewId in ../platform_dispatcher.dart.
 constexpr int kImplicitViewId = 0;
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
@@ -306,6 +307,15 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
       tonic::DartInvoke(report_timings_.Get(), {
                                                    data_handle,
                                                }));
+}
+
+Window* PlatformConfiguration::get_window(int window_id) {
+  auto found = windows_.find(window_id);
+  if (found != windows_.end()) {
+    return found->second.get();
+  } else {
+    return nullptr;
+  }
 }
 
 void PlatformConfiguration::CompletePlatformMessageEmptyResponse(

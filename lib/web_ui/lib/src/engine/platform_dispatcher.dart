@@ -472,7 +472,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // In widget tests we want to bypass processing of platform messages.
     bool returnImmediately = false;
     assert(() {
-      if (ui.debugEmulateFlutterTesterEnvironment) {
+      if (ui_web.debugEmulateFlutterTesterEnvironment) {
         returnImmediately = true;
       }
       return true;
@@ -1001,7 +1001,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _setAppLifecycleState(ui.AppLifecycleState state) {
     sendPlatformMessage(
       'flutter/lifecycle',
-      Uint8List.fromList(utf8.encode(state.toString())).buffer.asByteData(),
+      ByteData.sublistView(utf8.encode(state.toString())),
       null,
     );
   }

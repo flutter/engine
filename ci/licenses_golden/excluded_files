@@ -74,7 +74,6 @@
 ../../../flutter/flow/layers/transform_layer_unittests.cc
 ../../../flutter/flow/mutators_stack_unittests.cc
 ../../../flutter/flow/raster_cache_unittests.cc
-../../../flutter/flow/rtree_unittests.cc
 ../../../flutter/flow/skia_gpu_object_unittests.cc
 ../../../flutter/flow/surface_frame_unittests.cc
 ../../../flutter/flow/testing
@@ -121,6 +120,7 @@
 ../../../flutter/impeller/README.md
 ../../../flutter/impeller/aiks/aiks_unittests.cc
 ../../../flutter/impeller/aiks/canvas_unittests.cc
+../../../flutter/impeller/aiks/testing
 ../../../flutter/impeller/archivist/archivist_unittests.cc
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/base_unittests.cc
@@ -211,7 +211,6 @@
 ../../../flutter/runtime/no_dart_plugin_registrant_unittests.cc
 ../../../flutter/runtime/type_conversions_unittests.cc
 ../../../flutter/shell/common/animator_unittests.cc
-../../../flutter/shell/common/canvas_spy_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
 ../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
@@ -230,7 +229,6 @@
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
-../../../flutter/shell/platform/android/android_context_vulkan_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_shell_holder_unittests.cc
 ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
@@ -282,6 +280,7 @@
 ../../../flutter/shell/platform/fuchsia/dart_runner/.gitignore
 ../../../flutter/shell/platform/fuchsia/dart_runner/README.md
 ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/pubspec.yaml
+../../../flutter/shell/platform/fuchsia/dart_runner/fidl/meta.json
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.json
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.yaml
 ../../../flutter/shell/platform/fuchsia/dart_runner/tests
@@ -291,6 +290,7 @@
 ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/build/asset_package.py
 ../../../flutter/shell/platform/fuchsia/flutter/build/gen_debug_wrapper_main.py
+../../../flutter/shell/platform/fuchsia/flutter/canvas_spy_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/component_v2_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/focus_delegate_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
@@ -302,6 +302,7 @@
 ../../../flutter/shell/platform/fuchsia/flutter/platform_view_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/pointer_injector_delegate_unittest.cc
+../../../flutter/shell/platform/fuchsia/flutter/rtree_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_missing_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/tests
@@ -448,14 +449,7 @@
 ../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
-../../../fuchsia/sdk/linux/dart/fidl/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
-../../../fuchsia/sdk/linux/dart/fuchsia_vfs/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
-../../../fuchsia/sdk/linux/dart/zircon/meta.json
 ../../../fuchsia/sdk/linux/data/config/symbol_index/meta.json
 ../../../fuchsia/sdk/linux/docs
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.gesture/meta.json
@@ -498,6 +492,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.element/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
@@ -626,7 +621,22 @@
 ../../../fuchsia/sdk/linux/pkg/async/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_component_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_incoming_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_logging_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_env/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_env_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_shared_lib/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing_cpp/include/lib/driver/runtime/testing
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_symbols/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/include/lib/driver/testing
+../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json
@@ -638,6 +648,8 @@
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_v2/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_wire/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver_transport/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
@@ -653,6 +665,7 @@
 ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 ../../../fuchsia/sdk/linux/pkg/sync/meta.json
+../../../fuchsia/sdk/linux/pkg/sync_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/sys/testing
 ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/include/lib/sys/component/cpp/testing
 ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/meta.json
@@ -1485,6 +1498,7 @@
 ../../../third_party/colorama/src/requirements.txt
 ../../../third_party/colorama/src/screenshots
 ../../../third_party/colorama/src/setup.py
+../../../third_party/dart
 ../../../third_party/dart/.clang-format
 ../../../third_party/dart/.dart_tool
 ../../../third_party/dart/.git
@@ -2612,6 +2626,8 @@
 ../../../third_party/skia/experimental
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gm/BUILD.bazel
+../../../third_party/skia/gm/android_gm_test.bzl
+../../../third_party/skia/gm/surface_manager/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
 ../../../third_party/skia/gn/bazel_build.py

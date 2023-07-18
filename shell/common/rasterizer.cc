@@ -88,7 +88,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
         delegate_.GetParentRasterThreadMerger(), platform_id, gpu_id);
   }
   if (raster_thread_merger_) {
-    raster_thread_merger_->SetMergeUnmergeCallback([=]() {
+    raster_thread_merger_->SetMergeUnmergeCallback([this]() {
       // Clear the GL context after the thread configuration has changed.
       if (surface_) {
         surface_->ClearRenderContext();
@@ -552,7 +552,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
   auto root_surface_canvas =
       embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
-
   auto compositor_frame = compositor_context_->AcquireFrame(
       surface_->GetContext(),         // skia GrContext
       root_surface_canvas,            // root surface canvas
@@ -560,10 +559,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       root_surface_transformation,    // root surface transformation
       true,                           // instrumentation enabled
       frame->framebuffer_info()
-          .supports_readback,                // surface supports pixel reads
-      raster_thread_merger_,                 // thread merger
-      frame->GetDisplayListBuilder().get(),  // display list builder
-      surface_->GetAiksContext().get()       // aiks context
+          .supports_readback,           // surface supports pixel reads
+      raster_thread_merger_,            // thread merger
+      surface_->GetAiksContext().get()  // aiks context
   );
   if (compositor_frame) {
     compositor_context_->raster_cache().BeginFrame();
@@ -667,9 +665,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
-  auto frame = compositor_context.AcquireFrame(
-      nullptr, &canvas, nullptr, root_surface_transformation, false, true,
-      nullptr, nullptr, nullptr);
+  auto frame = compositor_context.AcquireFrame(nullptr, &canvas, nullptr,
+                                               root_surface_transformation,
+                                               false, true, nullptr, nullptr);
   frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
@@ -725,7 +723,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
       false,                        // instrumentation enabled
       true,                         // render buffer readback supported
       nullptr,                      // thread merger
-      nullptr,                      // display list builder
       nullptr                       // aiks context
   );
   canvas->Clear(DlColor::kTransparent());
