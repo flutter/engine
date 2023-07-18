@@ -28,7 +28,7 @@ class SkwasmSurface {
 
   final int threadId;
 
-  int acquireObjectId() => skwasmInstance.skwasmGenerateUniqueId().toDart.toInt();
+  int acquireObjectId() => skwasmInstance.skwasmGenerateUniqueId().toDartDouble.toInt();
 
   void _initialize() {
     _callbackHandle =
