@@ -12,7 +12,9 @@ import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -27,10 +29,10 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
+import io.flutter.embedding.engine.systechannels.SettingsChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
-import io.flutter.plugin.platform.SynchronousPlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
@@ -380,7 +382,6 @@ public class FlutterJNI {
   @Nullable private Long nativeShellHolderId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
-  @Nullable private SynchronousPlatformPlugin synchronousPlatformPlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private PlatformViewsController platformViewsController;
 
@@ -1284,24 +1285,23 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
-  @UiThread
-  public void setSynchronousPlatformPlugin(
-      @Nullable SynchronousPlatformPlugin synchronousPlatformPlugin) {
-    ensureRunningOnMainThread();
-    this.synchronousPlatformPlugin = synchronousPlatformPlugin;
-  }
-
   @Nullable
-  public float getScaledFontSize(float fontSize, float textScaleFactor) {
+  public float getScaledFontSize(float fontSize, int configGeneration) {
     if (Build.VERSION.SDK_INT < 10000) {
       // Returns unimplemented on anything below Android U.
       return -1f;
     }
-    if (synchronousPlatformPlugin == null) {
-      Log.e(TAG, "synchronousPlatformPlugin was not set when getScaledFontSize was called.");
-      return -3f;
+    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configGeneration);
+    if (metrics == null) {
+      Log.e(
+          TAG,
+          "getScaledFontSize called with generation "
+              + String.valueOf(configGeneration)
+              + ", which can't be found.");
+      return -2f;
     }
-    return synchronousPlatformPlugin.getScaledFontSize(fontSize, textScaleFactor);
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
+         / TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.0f, metrics);
   }
 
   // ----- Start Deferred Components Support ----

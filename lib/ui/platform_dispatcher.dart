@@ -149,6 +149,7 @@ class PlatformDispatcher {
   static final PlatformDispatcher _instance = PlatformDispatcher._();
 
   _PlatformConfiguration _configuration = const _PlatformConfiguration();
+
   /// Called when the platform configuration changes.
   ///
   /// The engine invokes this callback in the same zone in which the callback
@@ -1008,7 +1009,7 @@ class PlatformDispatcher {
   ///    observe when this value changes.
   double get textScaleFactor => _configuration.textScaleFactor;
 
-  /// The system-reported text scale.
+  /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
   /// This establishes the text scaling factor to use when rendering text,
   /// according to the user's platform preferences.
@@ -1019,7 +1020,7 @@ class PlatformDispatcher {
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
+  ///    observe when this callback is invoked.
   VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
   VoidCallback? _onTextScaleFactorChanged;
   Zone _onTextScaleFactorChangedZone = Zone.root;
@@ -1108,17 +1109,19 @@ class PlatformDispatcher {
     if (brieflyShowPassword != null) {
       _brieflyShowPassword = brieflyShowPassword;
     }
-    final Brightness platformBrightness =
-    data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
+    final Brightness platformBrightness = switch (data['platformBrightness']) {
+      'dark'              => Brightness.dark,
+      'light'             => Brightness.light,
+      final Object? value => throw StateError('$value is not a valid platformBrightness.'),
+    };
     final String? systemFontFamily = data['systemFontFamily'] as String?;
+    final int? configurationGeneration = data['configurationGeneration'] as int?;
     final _PlatformConfiguration previousConfiguration = _configuration;
     final bool platformBrightnessChanged = previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
-    final bool alwaysUse24HourFormatChanged =
-        previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
-    final bool systemFontFamilyChanged =
-        previousConfiguration.systemFontFamily != systemFontFamily;
-    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged) {
+    final bool alwaysUse24HourFormatChanged = previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
+    final bool systemFontFamilyChanged = previousConfiguration.systemFontFamily != systemFontFamily;
+    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged && configurationGeneration == null) {
       return;
     }
     _configuration = previousConfiguration.copyWith(
@@ -1126,9 +1129,11 @@ class PlatformDispatcher {
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
       systemFontFamily: systemFontFamily,
+      configurationGeneration: configurationGeneration,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
+      _cachedFontScale = null;
       _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
@@ -1347,7 +1352,8 @@ class PlatformDispatcher {
   Map<int, double>? _cachedFontScale = <int, double>{};
   double? _scaleAndMemoize(int unscaledFontSize) {
     final Map<int, double>? cache = _cachedFontScale;
-    if (cache == null) {
+    final int? configurationGeneration = _configuration.configurationGeneration;
+    if (cache == null || configurationGeneration == null) {
       return null;
     }
     final double? cachedValue = cache[unscaledFontSize];
@@ -1357,7 +1363,7 @@ class PlatformDispatcher {
     }
 
     final double unscaledFontSizeInt = unscaledFontSize.toDouble();
-    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, textScaleFactor);
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationGeneration);
     switch (fontSize) {
       case >= 0:
         return cache.putIfAbsent(unscaledFontSize, () => fontSize);
@@ -1376,9 +1382,9 @@ class PlatformDispatcher {
   // Returns a negative number when there's an error:
   // -1 : GetScaledFontSize is not implemented on the current platform.
   // -2 : The textScaleFactor argument the caller provided does not match the
-  //      textScaelFactor value of the platform due to a race condition.
-  @Native<Double Function(Double, Double)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
-  external static double _getScaledFontSize(double unscaledFontSize, double textScaleFactor);
+  //      textScaleFactor value of the platform due to a race condition.
+  @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
+  external static double _getScaledFontSize(double unscaledFontSize, int configurationGeneration);
 }
 
 /// Configuration of the platform.
@@ -1394,6 +1400,7 @@ class _PlatformConfiguration {
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.systemFontFamily,
+    this.configurationGeneration,
   });
 
   _PlatformConfiguration copyWith({
@@ -1405,6 +1412,7 @@ class _PlatformConfiguration {
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
+    int? configurationGeneration,
   }) {
     return _PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -1415,6 +1423,7 @@ class _PlatformConfiguration {
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
+      configurationGeneration: configurationGeneration ?? this.configurationGeneration,
     );
   }
 
@@ -1446,6 +1455,8 @@ class _PlatformConfiguration {
 
   /// The system-reported default font family.
   final String? systemFontFamily;
+
+  final int? configurationGeneration;
 }
 
 /// An immutable view configuration.

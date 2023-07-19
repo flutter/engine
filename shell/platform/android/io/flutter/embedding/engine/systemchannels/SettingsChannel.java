@@ -1,12 +1,16 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
+import android.content.res.Configuration;
+import android.os.Build;
+import android.util.DisplayMetrics;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.LinkedList;
 
 public class SettingsChannel {
   private static final String TAG = "SettingsChannel";
@@ -17,11 +21,24 @@ public class SettingsChannel {
   private static final String BRIEFLY_SHOW_PASSWORD = "brieflyShowPassword";
   private static final String ALWAYS_USE_24_HOUR_FORMAT = "alwaysUse24HourFormat";
   private static final String PLATFORM_BRIGHTNESS = "platformBrightness";
+  private static final String CONFIGURATION_GENERATION = "configurationGeneration";
 
   @NonNull public final BasicMessageChannel<Object> channel;
 
   public SettingsChannel(@NonNull DartExecutor dartExecutor) {
     this.channel = new BasicMessageChannel<>(dartExecutor, CHANNEL_NAME, JSONMessageCodec.INSTANCE);
+  }
+
+  public static DisplayMetrics getPastDisplayMetrics(int configGeneration) {
+    final LinkedList<SentConfiguration> pastConfigurations = SentConfiguration.sentConfigurations;
+    while (pastConfigurations.size() > 0 && pastConfigurations.getFirst().generationNumber != configGeneration) {
+      pastConfigurations.remove();
+    }
+    final SentConfiguration configuration = pastConfigurations.peekFirst();
+    if (configuration == null) {
+      return null;
+    }
+    final DisplayMetrics metrics = configuration.displayMetrics;
   }
 
   @NonNull
@@ -32,9 +49,16 @@ public class SettingsChannel {
   public static class MessageBuilder {
     @NonNull private final BasicMessageChannel<Object> channel;
     @NonNull private Map<String, Object> message = new HashMap<>();
+    @Nullable private DisplayMetrics displayMetrics;
 
     MessageBuilder(@NonNull BasicMessageChannel<Object> channel) {
       this.channel = channel;
+    }
+
+    @NonNull
+    public MessageBuilder setDisplayMetrics(DisplayMetrics displayMetrics) {
+      this.displayMetrics = displayMetrics;
+      return this;
     }
 
     @NonNull
@@ -80,7 +104,26 @@ public class SettingsChannel {
               + "\n"
               + "platformBrightness: "
               + message.get(PLATFORM_BRIGHTNESS));
-      channel.send(message);
+      final DisplayMetrics metrics = this.displayMetrics;
+      if (Build.VERSION.SDK_INT < 10000 || metrics == null) {
+        return channel.send(message);
+      }
+      final SentConfiguration sentConfiguration = SentConfiguration(metrics);
+      SentConfiguration.sentConfigurations.add(sentConfiguration);
+      message.put(CONFIGURATION_GENERATION, sentConfiguration.generationNumber);
+      channel.send(message, new Reply<>() {
+        @Override
+        public void reply(T reply) {
+          final LinkedList<SentConfiguration> pastConfigurations = SentConfiguration.sentConfigurations;
+          // Platform channels guarantees FIFO ordering, sentConfiguration
+          // should be either the first element or the second element in the
+          // linked list. Remove older configurations since Flutter ack'd that
+          // it received a more recent version.
+          while (pastConfigurations.size() > 0 && !pastConfigurations.getFirst().equals(sentConfiguration)) {
+            pastConfigurations.remove();
+          }
+        }
+      });
     }
   }
 
@@ -98,6 +141,18 @@ public class SettingsChannel {
 
     PlatformBrightness(@NonNull String name) {
       this.name = name;
+    }
+  }
+
+  private static class SentConfiguration {
+    private static int nextConfigGeneration = 0;
+    private static final LinkedList<SentConfiguration> sentConfigurations = new LinkedList<>();
+
+    @NonNull private final int generationNumber;
+    @NonNull private final DisplayMetrics displayMetrics;
+    SentConfiguration(DisplayMetrics displayMetrics) {
+      this.generationNumber = nextConfigGeneration++;
+      this.displayMetrics = displayMetrics;
     }
   }
 }
