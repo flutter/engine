@@ -720,7 +720,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidLoad {
   TRACE_EVENT0("flutter", "viewDidLoad");
-  NSLog(@"hello2");
 
   if (_engine && _engineNeedsLaunch) {
     [_engine.get() launchEngine:nil libraryURI:nil entrypointArgs:nil];
