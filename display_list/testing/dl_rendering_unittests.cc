@@ -862,9 +862,9 @@ class TestParameters {
   }
 
  private:
-  const SkRenderer& sk_renderer_;
-  const DlRenderer& dl_renderer_;
-  const DisplayListAttributeFlags& flags_;
+  const SkRenderer sk_renderer_;
+  const DlRenderer dl_renderer_;
+  const DisplayListAttributeFlags flags_;
 
   bool is_draw_text_blob_ = false;
   bool is_draw_display_list_ = false;
