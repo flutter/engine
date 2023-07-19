@@ -270,6 +270,12 @@ class FlutterWindowsEngine {
     return lifecycle_manager_.get();
   }
 
+  // Handle a message from a non-Flutter window in the same application.
+  void ProcessExternalWindowMessage(HWND hwnd,
+                                    UINT message,
+                                    WPARAM wparam,
+                                    LPARAM lparam);
+
  protected:
   // Creates the keyboard key handler.
   //
