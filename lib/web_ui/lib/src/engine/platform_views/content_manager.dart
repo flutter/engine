@@ -10,6 +10,10 @@ import '../embedder.dart';
 import '../util.dart';
 import 'slots.dart';
 
+// Keep these values in sync with the ones used in the framework's `HtmlElementView`.
+const String _kDefaultVisibleViewType = '_default_document_create_element_visible';
+const String _kDefaultInvisibleViewType = '_default_document_create_element_invisible';
+
 /// This class handles the lifecycle of Platform Views in the DOM of a Flutter Web App.
 ///
 /// There are three important parts of Platform Views. This class manages two of
@@ -25,6 +29,19 @@ import 'slots.dart';
 /// This class keeps a registry of `factories`, `contents` so the framework can
 /// CRUD Platform Views as needed, regardless of the rendering backend.
 class PlatformViewManager {
+  PlatformViewManager() {
+    // Register some default factories.
+    registerFactory(
+      _kDefaultVisibleViewType,
+      _defaultFactory,
+    );
+    registerFactory(
+      _kDefaultInvisibleViewType,
+      _defaultFactory,
+      isVisible: false,
+    );
+  }
+
   // The factory functions, indexed by the viewType
   final Map<String, Function> _factories = <String, Function>{};
 
@@ -222,4 +239,19 @@ class PlatformViewManager {
     _viewIdToType.clear();
     return result;
   }
+}
+
+DomElement _defaultFactory(
+  int viewId, {
+  Object? params,
+}) {
+  params!;
+  params as _DefaultFactoryParams;
+  return domDocument.createElement(params.tagName);
+}
+
+typedef _DefaultFactoryParams = Map<Object?, Object?>;
+
+extension on _DefaultFactoryParams {
+  String get tagName => this['tagName']! as String;
 }
