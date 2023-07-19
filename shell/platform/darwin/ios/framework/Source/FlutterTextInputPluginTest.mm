@@ -135,7 +135,8 @@ FLUTTER_ASSERT_ARC
 
 - (void)dispatchAsyncOnMain {
   __block bool done = false;
-  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"Testing on main queue"];
+  XCTestExpectation* expectation =
+      [[XCTestExpectation alloc] initWithDescription:@"Testing on main queue"];
   dispatch_async(dispatch_get_main_queue(), ^{
     done = true;
   });
@@ -143,7 +144,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(done);
     [expectation fulfill];
   });
-  [self waitForExpectations:@[expectation] timeout: 10];
+  [self waitForExpectations:@[ expectation ] timeout:10];
 }
 
 - (NSMutableDictionary*)mutableTemplateCopy {
