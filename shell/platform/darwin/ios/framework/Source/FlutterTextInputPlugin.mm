@@ -1969,16 +1969,19 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   [_pendingDeltas addObject:deltaToFramework];
 
   if (_pendingDeltas.count == 1) {
+    __weak FlutterTextInputView* weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-      if (_pendingDeltas.count > 0) {
+      __strong FlutterTextInputView* strongSelf = weakSelf;
+      NSAssert(strongSelf, @"FlutterTextInputView has been released before deltas are dispatched to framework");
+      if (strongSelf && strongSelf.pendingDeltas.count > 0) {
         NSDictionary* deltas = @{
-          @"deltas" : _pendingDeltas,
+          @"deltas" : strongSelf.pendingDeltas,
         };
 
-        [self.textInputDelegate flutterTextInputView:self
-                                 updateEditingClient:_textInputClient
+        [strongSelf.textInputDelegate flutterTextInputView:strongSelf
+                                 updateEditingClient:strongSelf->_textInputClient
                                            withDelta:deltas];
-        [_pendingDeltas removeAllObjects];
+        [strongSelf.pendingDeltas removeAllObjects];
       }
     });
   }
