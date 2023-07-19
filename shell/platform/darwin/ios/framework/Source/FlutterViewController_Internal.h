@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/window/pointer_data.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
@@ -66,6 +67,8 @@ typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
 - (void)deregisterNotifications;
 - (int32_t)accessibilityFlags;
 - (UIWindowScene*)windowSceneIfViewLoaded API_AVAILABLE(ios(13.0));
+- (void)sendFakeTouchEventWithLocation:(CGPoint)location
+                                change:(flutter::PointerData::Change)change;
 
 @end
 

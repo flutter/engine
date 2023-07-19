@@ -34,6 +34,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
@@ -82,6 +83,17 @@ NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
 NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
+@interface PlatformViewChannelTaskQueue : NSObject <FlutterTaskQueue>
+- (void)dispatch:(dispatch_block_t)block;
+@end
+
+@implementation PlatformViewChannelTaskQueue
+
+- (void)dispatch:(dispatch_block_t)block {
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+}
+@end
+
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 @property(nonatomic, assign) FlutterEngine* flutterEngine;
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;
@@ -100,6 +112,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+@property(nonatomic, retain) PlatformViewChannelTaskQueue* platformViewTaskQueue;
 
 #pragma mark - Embedder API properties
 
@@ -185,6 +198,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _restorationEnabled = restorationEnabled;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
+  _platformViewTaskQueue = [[[PlatformViewChannelTaskQueue alloc] init] retain];
 
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
 
@@ -286,6 +300,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_textureRegistry release];
   _textureRegistry = nil;
   [_isolateId release];
+  [_platformViewTaskQueue release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   if (_flutterViewControllerWillDeallocObserver) {
@@ -598,7 +613,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform_views"
       binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
+                codec:[FlutterStandardMethodCodec sharedInstance]
+            taskQueue:_platformViewTaskQueue]);
 
   _textInputChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/textinput"

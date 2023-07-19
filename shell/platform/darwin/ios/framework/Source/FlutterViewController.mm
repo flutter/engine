@@ -477,17 +477,16 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   return pointer_data;
 }
 
-static void SendFakeTouchEvent(FlutterEngine* engine,
-                               CGPoint location,
-                               flutter::PointerData::Change change) {
+- (void)sendFakeTouchEventWithLocation:(CGPoint)location
+                                change:(flutter::PointerData::Change)change {
   const CGFloat scale = [UIScreen mainScreen].scale;
-  flutter::PointerData pointer_data = [[engine viewController] generatePointerDataForFake];
+  flutter::PointerData pointer_data = [[_engine.get() viewController] generatePointerDataForFake];
   pointer_data.physical_x = location.x * scale;
   pointer_data.physical_y = location.y * scale;
   auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
   pointer_data.change = change;
   packet->SetPointerData(0, pointer_data);
-  [engine dispatchPointerDataPacket:std::move(packet)];
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (BOOL)scrollViewShouldScrollToTop:(UIScrollView*)scrollView {
@@ -495,8 +494,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     return NO;
   }
   CGPoint statusBarPoint = CGPointZero;
-  SendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kDown);
-  SendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kUp);
+  [self sendFakeTouchEventWithLocation:statusBarPoint change:flutter::PointerData::Change::kDown];
+  [self sendFakeTouchEventWithLocation:statusBarPoint change:flutter::PointerData::Change::kUp];
   return NO;
 }
 
