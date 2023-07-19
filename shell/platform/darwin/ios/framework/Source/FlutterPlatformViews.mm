@@ -190,8 +190,6 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
 void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
   __block FlutterError* error = nil;
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-    // stop your HUD here
-    // This is run on the main thread
     NSDictionary<NSString*, id>* args = [call arguments];
 
     int64_t viewId = [args[@"id"] longLongValue];
@@ -202,6 +200,8 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       error = [FlutterError errorWithCode:@"recreating_view"
                                   message:@"trying to create an already created view"
                                   details:[NSString stringWithFormat:@"view id: '%lld'", viewId]];
+      method_channel_mutex_.unlock();
+      return;
     }
 
     NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
