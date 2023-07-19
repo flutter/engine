@@ -133,16 +133,17 @@ FLUTTER_ASSERT_ARC
                              }];
 }
 
-- (void)runDefaultRunLoop {
+- (void)dispatchAsyncOnMain {
   __block bool done = false;
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
+  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"Testing on main queue"];
+  dispatch_async(dispatch_get_main_queue(), ^{
     done = true;
   });
-
-  while (!done) {
-    // Each invocation will handle one source.
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
-  }
+  dispatch_async(dispatch_get_main_queue(), ^{
+    XCTAssertTrue(done);
+    [expectation fulfill];
+  });
+  [self waitForExpectations:@[expectation] timeout: 10];
 }
 
 - (NSMutableDictionary*)mutableTemplateCopy {
@@ -738,7 +739,7 @@ FLUTTER_ASSERT_ARC
       });
   XCTAssertEqual(updateCount, 0);
 
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
 
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
@@ -759,7 +760,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
@@ -778,7 +779,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 3);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
@@ -798,7 +799,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
@@ -817,7 +818,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
@@ -837,7 +838,7 @@ FLUTTER_ASSERT_ARC
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
 
   XCTAssertEqual(updateCount, 6);
   OCMVerifyAll(engine);
@@ -875,7 +876,14 @@ FLUTTER_ASSERT_ARC
   [inputView deleteBackward];
   [inputView insertText:@"—"];
 
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
+  // __block bool done = false;
+  // dispatch_async(dispatch_get_main_queue(), ^{
+  //   done = true;
+  // });
+  // while (!done) {
+
+  // }
   OCMVerifyAll(engine);
 }
 
@@ -895,7 +903,7 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
@@ -910,7 +918,7 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 2);
 }
 
@@ -925,13 +933,13 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 0);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"text." selectedRange:NSMakeRange(0, 1)];
@@ -946,7 +954,7 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 2);
 }
 
@@ -961,13 +969,13 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 0);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"tex" selectedRange:NSMakeRange(0, 1)];
@@ -982,7 +990,7 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 2);
 }
 
@@ -1029,29 +1037,29 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView insertText:@"text to insert"];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
 
   [inputView deleteBackward];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 3);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 6);
 }
 
@@ -1106,44 +1114,44 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"BEFORE"];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 0);
 
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   // Text changes don't trigger an update.
   XCTAssertEqual(updateCount, 1);
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   // Selection changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   // Composing region changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  [self runDefaultRunLoop];
+  [self dispatchAsyncOnMain];
   XCTAssertEqual(updateCount, 1);
 }
 

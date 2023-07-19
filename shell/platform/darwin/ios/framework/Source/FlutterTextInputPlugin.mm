@@ -1969,7 +1969,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   [_pendingDeltas addObject:deltaToFramework];
 
   if (_pendingDeltas.count == 1) {
-    CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopCommonModes, ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
       if (_pendingDeltas.count > 0) {
         NSDictionary* deltas = @{
           @"deltas" : _pendingDeltas,
