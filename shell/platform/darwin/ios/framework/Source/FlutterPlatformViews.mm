@@ -188,68 +188,78 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
 }
 
 void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
-  NSDictionary<NSString*, id>* args = [call arguments];
+  __block FlutterError* error = nil;
+  dispatch_async(dispatch_get_main_queue(), ^(void) {
+    NSDictionary<NSString*, id>* args = [call arguments];
 
-  int64_t viewId = [args[@"id"] longLongValue];
-  NSString* viewTypeString = args[@"viewType"];
-  std::string viewType(viewTypeString.UTF8String);
+    int64_t viewId = [args[@"id"] longLongValue];
+    NSString* viewTypeString = args[@"viewType"];
+    std::string viewType(viewTypeString.UTF8String);
 
-  if (views_.count(viewId) != 0) {
-    result([FlutterError errorWithCode:@"recreating_view"
-                               message:@"trying to create an already created view"
-                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
-  }
-
-  NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
-  if (factory == nil) {
-    result([FlutterError
-        errorWithCode:@"unregistered_view_type"
-              message:[NSString stringWithFormat:@"A UIKitView widget is trying to create a "
-                                                 @"PlatformView with an unregistered type: < %@ >",
-                                                 viewTypeString]
-              details:@"If you are the author of the PlatformView, make sure `registerViewFactory` "
-                      @"is invoked.\n"
-                      @"See: "
-                      @"https://docs.flutter.dev/development/platform-integration/"
-                      @"platform-views#on-the-platform-side-1 for more details.\n"
-                      @"If you are not the author of the PlatformView, make sure to call "
-                      @"`GeneratedPluginRegistrant.register`."]);
-    return;
-  }
-
-  id params = nil;
-  if ([factory respondsToSelector:@selector(createArgsCodec)]) {
-    NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
-    if (codec != nil && args[@"params"] != nil) {
-      FlutterStandardTypedData* paramsData = args[@"params"];
-      params = [codec decode:paramsData.data];
+    if (views_.count(viewId) != 0) {
+      error = [FlutterError errorWithCode:@"recreating_view"
+                                  message:@"trying to create an already created view"
+                                  details:[NSString stringWithFormat:@"view id: '%lld'", viewId]];
+      method_channel_mutex_.unlock();
+      return;
     }
-  }
 
-  NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
-                                                           viewIdentifier:viewId
-                                                                arguments:params];
-  UIView* platform_view = [embedded_view view];
-  // Set a unique view identifier, so the platform view can be identified in unit tests.
-  platform_view.accessibilityIdentifier =
-      [NSString stringWithFormat:@"platform_view[%lld]", viewId];
-  views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
+    NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
+    if (factory == nil) {
+      error = [FlutterError
+          errorWithCode:@"unregistered_view_type"
+                message:[NSString
+                            stringWithFormat:@"A UIKitView widget is trying to create a "
+                                             @"PlatformView with an unregistered type: < %@ >",
+                                             viewTypeString]
+                details:@"If you are the author of the PlatformView, make sure "
+                        @"`registerViewFactory` "
+                        @"is invoked.\n"
+                        @"See: "
+                        @"https://docs.flutter.dev/development/platform-integration/"
+                        @"platform-views#on-the-platform-side-1 for more details.\n"
+                        @"If you are not the author of the PlatformView, make sure to call "
+                        @"`GeneratedPluginRegistrant.register`."];
+      method_channel_mutex_.unlock();
+      return;
+    }
 
-  FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
-                  initWithEmbeddedView:platform_view
-               platformViewsController:GetWeakPtr()
-      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
-      autorelease];
+    id params = nil;
+    if ([factory respondsToSelector:@selector(createArgsCodec)]) {
+      NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
+      if (codec != nil && args[@"params"] != nil) {
+        FlutterStandardTypedData* paramsData = args[@"params"];
+        params = [codec decode:paramsData.data];
+      }
+    }
 
-  touch_interceptors_[viewId] =
-      fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
+    NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
+                                                             viewIdentifier:viewId
+                                                                  arguments:params];
+    UIView* platform_view = [embedded_view view];
+    // Set a unique view identifier, so the platform view can be identified in unit tests.
+    platform_view.accessibilityIdentifier =
+        [NSString stringWithFormat:@"platform_view[%lld]", viewId];
+    views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
-  ChildClippingView* clipping_view =
-      [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
-  [clipping_view addSubview:touch_interceptor];
-  root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
+    FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
+                    initWithEmbeddedView:platform_view
+                 platformViewsController:GetWeakPtr()
+        gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
+        autorelease];
 
-  result(nil);
+    touch_interceptors_[viewId] =
+        fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
+
+    ChildClippingView* clipping_view =
+        [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
+    [clipping_view addSubview:touch_interceptor];
+    root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
+
+    method_channel_mutex_.unlock();
+  });
+  method_channel_mutex_.lock();
+  result(error);
 }
 
 void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
@@ -957,6 +967,9 @@ void FlutterPlatformViewsController::ResetFrameState() {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
   UIView* _embeddedView;
+  FlutterViewController* _flutterViewController;
+  BOOL _platformViewConsumesTouches;
+  flutter::FlutterPlatformViewsController* _platformViewsController;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
@@ -965,25 +978,31 @@ void FlutterPlatformViewsController::ResetFrameState() {
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
+    _platformViewConsumesTouches = YES;
     self.multipleTouchEnabled = YES;
     _embeddedView = embeddedView;
     embeddedView.autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
 
     [self addSubview:embeddedView];
+    _platformViewsController = platformViewsController.get();
+    _flutterViewController =
+        ((FlutterViewController*)_platformViewsController->getFlutterViewController());
 
-    ForwardingGestureRecognizer* forwardingRecognizer = [[[ForwardingGestureRecognizer alloc]
-                 initWithTarget:self
-        platformViewsController:std::move(platformViewsController)] autorelease];
+    // ForwardingGestureRecognizer* forwardingRecognizer = [[[ForwardingGestureRecognizer alloc]
+    //              initWithTarget:self
+    //     platformViewsController:std::move(platformViewsController)] autorelease];
 
-    _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
-              initWithTarget:self
-                      action:nil
-        forwardingRecognizer:forwardingRecognizer]);
+    // _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
+    //           initWithTarget:self
+    //                   action:nil
+    //     forwardingRecognizer:forwardingRecognizer]);
     _blockingPolicy = blockingPolicy;
+    // forwardingRecognizer.enabled = NO;
+    // _delayingRecognizer.get().enabled = NO;
 
-    [self addGestureRecognizer:_delayingRecognizer.get()];
-    [self addGestureRecognizer:forwardingRecognizer];
+    // [self addGestureRecognizer:_delayingRecognizer.get()];
+    // [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
 }
@@ -993,10 +1012,14 @@ void FlutterPlatformViewsController::ResetFrameState() {
 }
 
 - (void)releaseGesture {
+  _platformViewConsumesTouches = YES;
+  _platformViewsController->HitTestMutex().unlock();
   _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
 
 - (void)blockGesture {
+  _platformViewConsumesTouches = NO;
+  _platformViewsController->HitTestMutex().unlock();
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
@@ -1018,6 +1041,39 @@ void FlutterPlatformViewsController::ResetFrameState() {
     default:
       break;
   }
+}
+
+- (UIView*)hitTest:(CGPoint)point withEvent:(UIEvent*)event {
+  if (event.type != UIEventTypeTouches) {
+    UIView* hittest = [super hitTest:point withEvent:event];
+    NSLog(@"not touch type, platform view takes the gesture, hittest: %@", hittest);
+    return hittest;
+  }
+  BOOL hasDownTouch = NO;
+  for (UITouch* touch in event.allTouches) {
+    NSLog(@"phase %@", @(touch.phase));
+    // Gesture arena for PlatformView hit tests only cares about the touch began location.
+    if (touch.phase == UITouchPhaseBegan) {
+      hasDownTouch = YES;
+      break;
+    }
+  }
+  if (event.allTouches.count > 0 && !hasDownTouch) {
+    UIView* hittest = [super hitTest:point withEvent:event];
+    NSLog(@"not a down touch, defaults to default hittest: %@", hittest);
+    return _platformViewConsumesTouches ? hittest : nil;
+  }
+  [_flutterViewController sendFakeTouchEventWithLocation:point
+                                                  change:flutter::PointerData::Change::kDown];
+  [_flutterViewController sendFakeTouchEventWithLocation:point
+                                                  change:flutter::PointerData::Change::kUp];
+  NSLog(@"send fake down touch, lock");
+  _platformViewsController->HitTestMutex().lock();
+  UIView* hittest = [super hitTest:point withEvent:event];
+  if (_platformViewConsumesTouches) {
+    NSLog(@"unlocked platformview consumes gesture, hit test %@", hittest);
+  }
+  return _platformViewConsumesTouches ? hittest : nil;
 }
 
 // We want the intercepting view to consume the touches and not pass the touches up to the parent

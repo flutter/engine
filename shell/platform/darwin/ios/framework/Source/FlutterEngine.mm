@@ -36,6 +36,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
@@ -82,6 +83,32 @@ NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
 NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
+@interface PlatformViewChannelTaskQueue : NSObject <FlutterTaskQueue>
+
+- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)taskRunner;
+- (void)dispatch:(dispatch_block_t)block;
+@end
+
+@implementation PlatformViewChannelTaskQueue {
+  fml::RefPtr<fml::TaskRunner> _taskRunner;
+}
+
+- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)taskRunner {
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  _taskRunner = taskRunner;
+  return self;
+}
+
+- (void)dispatch:(dispatch_block_t)block {
+  fml::TaskRunner::RunNowOrPostTask(_taskRunner,
+                                    [block_copy = Block_copy(block)]() { block_copy(); });
+  // dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+}
+@end
+
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 @property(nonatomic, assign) FlutterEngine* flutterEngine;
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;
@@ -100,6 +127,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+@property(nonatomic, retain) PlatformViewChannelTaskQueue* platformViewTaskQueue;
 
 #pragma mark - Embedder API properties
 
@@ -308,6 +336,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_textureRegistry release];
   _textureRegistry = nil;
   [_isolateId release];
+  [_platformViewTaskQueue release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   if (_flutterViewControllerWillDeallocObserver) {
@@ -617,10 +646,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  _platformViewTaskQueue =
+      [[[PlatformViewChannelTaskQueue alloc] initWithTaskRunner:[self uiTaskRunner]] retain];
   _platformViewsChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform_views"
       binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
+                codec:[FlutterStandardMethodCodec sharedInstance]
+            taskQueue:_platformViewTaskQueue]);
 
   _textInputChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/textinput"
@@ -716,11 +748,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [platformPlugin handleMethodCall:call result:result];
     }];
 
-    fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+    std::weak_ptr<flutter::FlutterPlatformViewsController> weakPlatformViewsController =
+        _platformViewsController;
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          if (weakSelf) {
-            weakSelf.get().platformViewsController->OnMethodCall(call, result);
+          if (!weakPlatformViewsController.expired()) {
+            weakPlatformViewsController.lock()->OnMethodCall(call, result);
           }
         }];
 
