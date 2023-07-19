@@ -166,7 +166,7 @@ FLUTTER_DARWIN_EXPORT
 @end
 
 @interface UIView (FindFirstResponder)
--(id)findFirstResponder;
+- (id)findFirstResponder;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
