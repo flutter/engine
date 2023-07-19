@@ -97,7 +97,6 @@ void main() {
   });
 
   test('scaleFontWithPlatform returns null by default', () {
-    final double? Function(double) scale = PlatformDispatcher.instance.scaleFontWithPlatform;
-    expect(0, scale(0));
+    expect(PlatformDispatcher.instance.scaleFontSize(0), isNull);
   });
 }
