@@ -91,7 +91,7 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   bool RequestDartDeferredLibrary(int loading_unit_id) override;
 
   double FlutterViewGetScaledFontSize(double unscaled_font_size,
-                                      double text_scale_factor) const override;
+                                      int configuration_id) const override;
 
  private:
   // Reference to FlutterJNI object.

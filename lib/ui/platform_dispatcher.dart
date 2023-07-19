@@ -1011,11 +1011,8 @@ class PlatformDispatcher {
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
-  /// This establishes the text scaling factor to use when rendering text,
-  /// according to the user's platform preferences.
-  ///
-  /// The [onTextScaleFactorChanged] callback is called whenever this value
-  /// changes.
+  /// The framework invokes this callback in the same zone in which the callback
+  /// was set.
   ///
   /// See also:
   ///

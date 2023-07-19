@@ -301,13 +301,18 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     /// @param[in]  unscaled_font_size  The unscaled font size specified by the
     ///                                 app developer. The value is guaranteed
     ///                                 to be finite and non-negative.
+    /// @param[in]  configuration_id    The unique id of the configuration to use
+    ///                                 for computing the scaled font size.
     ///
     /// @return     The scaled font size in logical pixels. Returns a negative
-    ///             number when an error is encountered. Specifically, returns
-    ///             -1 if this method isn't implemented on the current platform.
+    ///             number when an error is encountered:
+    ///              - Returns -1 if this method isn't implemented on the current
+    ///                platform.
+    ///              - Returns -2 if the given configuration_id does not match
+    ///                the platform's text scale factor value.
     ///
     virtual double GetScaledFontSize(double unscaled_font_size,
-                                     double text_scale_factor) const = 0;
+                                     int configuration_id) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -950,7 +955,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   double GetScaledFontSize(double unscaled_font_size,
-                           double text_scale_factor) const override;
+                           int configuration_id) const override;
 
   void SetNeedsReportTimings(bool value) override;
 

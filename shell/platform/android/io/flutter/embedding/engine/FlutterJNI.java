@@ -1301,7 +1301,7 @@ public class FlutterJNI {
       return -2f;
     }
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
-         / TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.0f, metrics);
+        / TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.0f, metrics);
   }
 
   // ----- Start Deferred Components Support ----

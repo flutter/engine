@@ -1,17 +1,16 @@
 package io.flutter.embedding.engine.systemchannels;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.content.res.Configuration;
 import android.os.Build;
 import android.util.DisplayMetrics;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class SettingsChannel {
   private static final String TAG = "SettingsChannel";
@@ -32,7 +31,8 @@ public class SettingsChannel {
 
   public static DisplayMetrics getPastDisplayMetrics(int configGeneration) {
     final LinkedList<SentConfiguration> pastConfigurations = SentConfiguration.sentConfigurations;
-    while (pastConfigurations.size() > 0 && pastConfigurations.getFirst().generationNumber != configGeneration) {
+    while (pastConfigurations.size() > 0
+        && pastConfigurations.getFirst().generationNumber != configGeneration) {
       pastConfigurations.remove();
     }
     final SentConfiguration configuration = pastConfigurations.peekFirst();
@@ -113,19 +113,23 @@ public class SettingsChannel {
       final SettingsChannel.SentConfiguration sentConfiguration = new SentConfiguration(metrics);
       SettingsChannel.SentConfiguration.sentConfigurations.add(sentConfiguration);
       message.put(CONFIGURATION_GENERATION, sentConfiguration.generationNumber);
-      channel.send(message, new BasicMessageChannel.Reply() {
-        @Override
-        public void reply(Object reply) {
-          final LinkedList<SettingsChannel.SentConfiguration> pastConfigurations = SettingsChannel.SentConfiguration.sentConfigurations;
-          // Platform channels guarantees FIFO ordering, sentConfiguration
-          // should be either the first element or the second element in the
-          // linked list. Remove older configurations since Flutter ack'd that
-          // it received a more recent version.
-          while (pastConfigurations.size() > 0 && !pastConfigurations.getFirst().equals(sentConfiguration)) {
-            pastConfigurations.remove();
-          }
-        }
-      });
+      channel.send(
+          message,
+          new BasicMessageChannel.Reply() {
+            @Override
+            public void reply(Object reply) {
+              final LinkedList<SettingsChannel.SentConfiguration> pastConfigurations =
+                  SettingsChannel.SentConfiguration.sentConfigurations;
+              // Platform channels guarantees FIFO ordering, sentConfiguration
+              // should be either the first element or the second element in the
+              // linked list. Remove older configurations since Flutter ack'd that
+              // it received a more recent version.
+              while (pastConfigurations.size() > 0
+                  && !pastConfigurations.getFirst().equals(sentConfiguration)) {
+                pastConfigurations.remove();
+              }
+            }
+          });
     }
   }
 
@@ -152,6 +156,7 @@ public class SettingsChannel {
 
     @NonNull private final int generationNumber;
     @NonNull private final DisplayMetrics displayMetrics;
+
     SentConfiguration(DisplayMetrics displayMetrics) {
       this.generationNumber = nextConfigGeneration++;
       this.displayMetrics = displayMetrics;

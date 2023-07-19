@@ -205,7 +205,7 @@ class PlatformViewAndroidJNI {
 
   virtual double FlutterViewGetScaledFontSize(
       double unscaled_font_size,
-      double text_scale_factor) const = 0;
+      int configuration_id) const = 0;
 };
 
 }  // namespace flutter

@@ -541,11 +541,11 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
 
 double PlatformConfigurationNativeApi::GetScaledFontSize(
     double unscaled_font_size,
-    double text_scale_factor) {
+    int configuration_id) {
   UIDartState::ThrowIfUIOperationsProhibited();
   return UIDartState::Current()
       ->platform_configuration()
       ->client()
-      ->GetScaledFontSize(unscaled_font_size, text_scale_factor);
+      ->GetScaledFontSize(unscaled_font_size, configuration_id);
 }
 }  // namespace flutter

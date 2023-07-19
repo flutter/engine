@@ -1472,9 +1472,9 @@ void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 
 // |Engine::Delegate|
 double Shell::GetScaledFontSize(double unscaled_font_size,
-                                double text_scale_factor) const {
+                                int configuration_id) const {
   return platform_view_->GetScaledFontSize(unscaled_font_size,
-                                           text_scale_factor);
+                                           configuration_id);
 }
 
 void Shell::ReportTimings() {

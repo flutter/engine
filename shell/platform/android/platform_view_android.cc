@@ -432,8 +432,8 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
 }
 
 double PlatformViewAndroid::GetScaledFontSize(double unscaled_font_size,
-                                              double text_scale_factor) const {
+                                              int configuration_id) const {
   return jni_facade_->FlutterViewGetScaledFontSize(unscaled_font_size,
-                                                   text_scale_factor);
+                                                   configuration_id);
 }
 }  // namespace flutter

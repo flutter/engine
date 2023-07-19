@@ -200,7 +200,7 @@ const Settings& PlatformView::GetSettings() const {
 }
 
 double PlatformView::GetScaledFontSize(double unscaled_font_size,
-                                       double text_scale_factor) const {
+                                       int configuration_id) const {
   // Unimplemented by default.
   return -1;
 }

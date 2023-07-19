@@ -651,7 +651,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   double GetScaledFontSize(double unscaled_font_size,
-                           double text_scale_factor) const override;
+                           int configuration_id) const override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

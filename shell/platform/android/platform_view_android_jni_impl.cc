@@ -1235,17 +1235,17 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
 
 double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(
     double font_size,
-    double text_scale_factor) const {
+    int configuration_id) const {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
-    return -1;
+    return -3;
   }
 
   const jfloat scaledSize =
       env->CallFloatMethod(java_object.obj(), g_get_scaled_font_size_method,
-                           (jfloat)font_size, (jfloat)text_scale_factor);
+                           (jfloat)font_size, (jint)configuration_id);
   FML_CHECK(fml::jni::CheckException(env));
   return (double)scaledSize;
 }
