@@ -145,6 +145,14 @@ CapabilitiesVK::GetEnabledInstanceExtensions() const {
     }
   }
 
+  // Vulkan 1.1 core extensions for 16 bit buffer access.
+  if (!HasExtension("VK_KHR_get_physical_device_properties2")) {
+    VALIDATION_LOG << "Instance does not support the "
+                      "VK_KHR_get_physical_device_properties2 extension.";
+    return std::nullopt;
+  }
+  required.push_back("VK_KHR_get_physical_device_properties2");
+
   return required;
 }
 
