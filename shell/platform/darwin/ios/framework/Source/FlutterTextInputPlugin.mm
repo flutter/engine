@@ -45,6 +45,8 @@ static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelec
 static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 static NSString* const kUpdateConfigMethod = @"TextInput.updateConfig";
+static NSString* const kOnPointerMoveMethod = @"TextInput.onPointerMove";
+static NSString* const kOnPointerUpMethod = @"TextInput.onPointerUp";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -759,8 +761,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, copy) NSString* autofillId;
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
+@property(nonatomic, assign) BOOL isTemporaryFlutterTextDesync;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+@property(nonatomic, assign) int textInputClient;
 // The composed character that is temporarily removed by the keyboard API.
 // This is cleared at the start of each keyboard interaction. (Enter a character, delete a character
 // etc)
@@ -770,13 +774,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @end
 
 @implementation FlutterTextInputView {
-  int _textInputClient;
+  //int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
   UIInputViewController* _inputViewController;
   CGRect _cachedFirstRect;
   FlutterScribbleInteractionStatus _scribbleInteractionStatus;
   BOOL _hasPlaceholder;
+  BOOL _isTemporaryFlutterTextDesync;
   // Whether to show the system keyboard when this view
   // becomes the first responder. Typically set to false
   // when the app shows its own in-flutter keyboard.
@@ -795,6 +800,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _textInputPlugin = textInputPlugin;
     _textInputClient = 0;
     _selectionAffinity = kTextAffinityUpstream;
+      _isTemporaryFlutterTextDesync = NO;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
@@ -806,6 +812,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
+      
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -1087,8 +1094,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (BOOL)resignFirstResponder {
   BOOL success = [super resignFirstResponder];
   if (success) {
-    [self.textInputDelegate flutterTextInputView:self
-        didResignFirstResponderWithTextInputClient:_textInputClient];
+    if(!_isTemporaryFlutterTextDesync){
+        [self.textInputDelegate flutterTextInputView:self
+            didResignFirstResponderWithTextInputClient:_textInputClient];
+    }
   }
   return success;
 }
@@ -2192,11 +2201,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @property(nonatomic, readonly, weak) id<FlutterViewResponder> viewResponder;
 
-@property(nonatomic, assign) UIView* keyboardView;
-@property(nonatomic, assign) UIView* firstResponder;
+@property(nonatomic, strong) UIView* keyboardViewContainer;
+@property(nonatomic, strong) UIView* firstResponder;
 @property(nonatomic, assign) CGRect keyboardRect;
-@property(nonatomic, assign) bool isKeyboardShowing;
-@property(nonatomic, assign) bool isScreenshotShowing;
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -2211,6 +2218,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _autofillContext = [[NSMutableDictionary alloc] init];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
     _scribbleElements = [[NSMutableDictionary alloc] init];
+      
+      _keyboardViewContainer = [[UIView alloc] init];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleKeyboardWillShow:)
@@ -2229,12 +2238,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   NSDictionary* keyboardInfo = [notification userInfo];
   NSValue* keyboardFrameEnd = [keyboardInfo valueForKey:UIKeyboardFrameEndUserInfoKey];
   _keyboardRect = [keyboardFrameEnd CGRectValue];
-  _isKeyboardShowing = YES;
-  [self hideScreenshot];
 }
 
 - (void)handleKeyboardWillHide:(NSNotification*)notification {
-  _isKeyboardShowing = NO;
 }
 
 - (void)dealloc {
@@ -2298,93 +2304,98 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kUpdateConfigMethod]) {
     [self updateConfig:args];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.onMouseMove"]) {
-    if (_isKeyboardShowing || _isScreenshotShowing) {
-      id arg = args[@"mouseY"];
-      float mouseY = [arg floatValue];
-      [self manipulateScreenshot:mouseY];
-    }
-  } else if ([method isEqualToString:@"TextInput.onMouseUp"]) {
-    if (_isScreenshotShowing) {
-      id arg = args[@"mouseY"];
-      float mouseY = [arg floatValue];
-      [self dismissScreenshot:mouseY];
-    }
+  } else if ([method isEqualToString:kOnPointerMoveMethod]) {
+      id arg = args[@"pointerY"];
+      float pointerY = [arg floatValue];
+      [self handlePointerMove:pointerY];
+  } else if ([method isEqualToString:kOnPointerUpMethod]) {
+      id arg = args[@"pointerY"];
+      float pointerY = [arg floatValue];
+      [self handlePointerUp:pointerY];
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
-- (void)hideScreenshot {
-  if (_isScreenshotShowing) {
-    [_keyboardView removeFromSuperview];
-    _isScreenshotShowing = NO;
+- (void)dismissScreenshot {
+  for (UIView* subView in _keyboardViewContainer.subviews) {
+      [subView removeFromSuperview];
   }
 }
 
-- (void)dismissScreenshot:(float)mouseY{
-    float screenHeight = [UIScreen mainScreen].bounds.size.height;
-    float keyboardHeight = _keyboardRect.size.height;
-    if (_keyboardView && _isScreenshotShowing) {
-      if (screenHeight - keyboardHeight < mouseY) {
-          [UIView animateWithDuration:0.3f animations:^{
-              _keyboardView.frame = CGRectMake(0, screenHeight, [UIScreen mainScreen].bounds.size.width, _keyboardView.frame.size.height);
-          } completion:^(BOOL finished){
-              [self hideScreenshot];
-          }];
-      } else {
-        [self showKeyboard];
-        //[_keyboardView removeFromSuperview];
+- (void)handlePointerUp:(float)pointerY {
+  double screenHeight = [UIScreen mainScreen].bounds.size.height;
+  double keyboardHeight = _keyboardRect.size.height;
+  BOOL pointerBelowMiddleY = (screenHeight - keyboardHeight/2) < pointerY;
+  [UIView animateWithDuration:0.3f
+        animations:^{
+      double keyboardDestination = pointerBelowMiddleY ? screenHeight : screenHeight - keyboardHeight;
+      _keyboardViewContainer.frame =
+              CGRectMake(0, keyboardDestination, [UIScreen mainScreen].bounds.size.width,
+                         _keyboardViewContainer.frame.size.height);
+        }
+        completion:^(BOOL finished) {
+      if(pointerBelowMiddleY){
+          //
+          [self.textInputDelegate flutterTextInputView:self.activeView
+            didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
+      } else{
+          [self showKeyboard];
+          [self dismissScreenshot];
       }
-        
-    }
+      }];
 }
 
-- (void)manipulateScreenshot:(float)mouseY {
+- (void)handlePointerMove:(float)pointerY {
   float screenHeight = [UIScreen mainScreen].bounds.size.height;
   float keyboardHeight = _keyboardRect.size.height;
-  if (screenHeight - keyboardHeight < mouseY && _isKeyboardShowing) {
-      [self hideScreenshot];
-    [self takeScreenshot];
-    [self hideKeyboard];
-  } else if (screenHeight - keyboardHeight < mouseY && _isScreenshotShowing) {
-    CGRect frameRect = _keyboardRect;
-    frameRect.origin.y = mouseY;
-    _keyboardView.frame = frameRect;
-  } else if (_isScreenshotShowing) {
-    [self showKeyboard];
+  if (screenHeight - keyboardHeight < pointerY) {
+      if(_keyboardViewContainer.subviews.count == 0){
+          [self takeScreenshot];
+          [self hideKeyboard:YES];
+      }else{
+          CGRect frameRect = _keyboardRect;
+          frameRect.origin.y = pointerY;
+          _keyboardViewContainer.frame = frameRect;
+      }
+  }else{
+      if(_keyboardViewContainer.subviews.count != 0){
+          [self showKeyboard];
+          [self dismissScreenshot];
+      }
+     
   }
 }
 
 - (void)showKeyboard {
-    [UIView beginAnimations:nil context:nil];
-    [UIView setAnimationDuration:0.0];
-    [UIView setAnimationDelay:0.0];
-    
+//  [UIView beginAnimations:nil context:nil];
+//  [UIView setAnimationDuration:0.0];
+//  [UIView setAnimationDelay:0.0];
   [UIView setAnimationsEnabled:NO];
   [_firstResponder becomeFirstResponder];
   [UIView setAnimationsEnabled:YES];
 }
 
-- (void)hideKeyboard {
+- (void)hideKeyboard:(BOOL)isDesync{
   [UIView setAnimationsEnabled:NO];
-  _firstResponder = [[UIApplication sharedApplication] keyWindow];
-  _firstResponder = [_firstResponder findFirstResponder];
-    //[_firstResponder endEditing:YES];
+  _firstResponder = UIApplication.sharedApplication.keyWindow.firstResponder;
+  _activeView.isTemporaryFlutterTextDesync = isDesync;
   [_firstResponder resignFirstResponder];
+    _activeView.isTemporaryFlutterTextDesync = !isDesync;
   [UIView setAnimationsEnabled:YES];
 }
 
 - (void)takeScreenshot {
-  UIWindow* mainWindow = [UIApplication sharedApplication].delegate.window;
   UIView* keyboardSnap = [[UIScreen mainScreen] snapshotViewAfterScreenUpdates:true];
   keyboardSnap = [keyboardSnap resizableSnapshotViewFromRect:_keyboardRect
-                                          afterScreenUpdates:true
-                                               withCapInsets:UIEdgeInsetsZero];
-  keyboardSnap.frame = _keyboardRect;
-  _keyboardView = keyboardSnap;
-  [mainWindow.rootViewController.view addSubview:keyboardSnap];
-  _isScreenshotShowing = YES;
+                                            afterScreenUpdates:true
+                                                 withCapInsets:UIEdgeInsetsZero];
+    [_keyboardViewContainer addSubview:keyboardSnap];
+    if(_keyboardViewContainer.superview == nil){
+        [UIApplication.sharedApplication.delegate.window.rootViewController.view addSubview: _keyboardViewContainer];
+    }
+    
+    _keyboardViewContainer.frame = _keyboardRect;
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
@@ -2853,12 +2864,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @end
 
 @implementation UIView (FindFirstResponder)
-- (id)findFirstResponder {
+- (id)firstResponder {
   if (self.isFirstResponder) {
     return self;
   }
   for (UIView* subView in self.subviews) {
-    UIView* firstResponder = [subView findFirstResponder];
+    UIView* firstResponder = subView.firstResponder;
     if (firstResponder) {
       return firstResponder;
     }
