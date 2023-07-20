@@ -854,7 +854,7 @@ void testMain() {
       ]);
 
       // Reset configuration
-      debugSetConfiguration(FlutterConfiguration());
+      debugSetConfiguration(null);
     });
 
     test(

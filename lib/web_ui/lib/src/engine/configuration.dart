@@ -61,7 +61,7 @@ FlutterConfiguration? _configuration;
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
 @visibleForTesting
-void debugSetConfiguration(FlutterConfiguration configuration) {
+void debugSetConfiguration(FlutterConfiguration? configuration) {
   _configuration = configuration;
 }
 

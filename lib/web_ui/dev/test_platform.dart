@@ -550,6 +550,8 @@ class BrowserPlatform extends PlatformPlugin {
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
               canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>

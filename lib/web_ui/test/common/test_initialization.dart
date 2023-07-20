@@ -21,13 +21,8 @@ void setUpUnitTests({
       ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
-    // Some of our tests rely on color emoji
-    final engine.FlutterConfiguration config = engine.FlutterConfiguration()
-      ..setUserConfiguration(
-        js_util.jsify(<String, Object?>{
-          'useColorEmoji': true,
-        }) as engine.JsFlutterConfiguration);
-    engine.debugSetConfiguration(config);
+    // Do you need user-supplied engine configuration?
+    // Set it up in test_platform.dart
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     await engine.initializeEngine(assetManager: fakeAssetManager);
