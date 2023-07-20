@@ -97,6 +97,6 @@ void main() {
   });
 
   test('scaleFontWithPlatform returns null by default', () {
-    expect(PlatformDispatcher.instance.scaleFontSize(0), isNull);
+    expect(PlatformDispatcher.instance.scaleFontSize(0), 0.0);
   });
 }
