@@ -21,7 +21,7 @@
 #define IMPELLER_MAYBE_FLAT flat
 #endif
 
-#ifdef IMPELLER_TARGET_OPENGLES
+#if defined(IMPELLER_TARGET_OPENGLES) || defined(IMPELLER_TARGET_MOLTENVK)
 
 // OpenGLES 2 targets GLSL ES 1.0, which doesn't support explicit arithmetic
 // types on individual declarations. So for GLES, we provide macros for 16 bit
