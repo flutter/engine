@@ -43,7 +43,8 @@ VkResult vkEnumerateInstanceExtensionProperties(
     pProperties[0].specVersion = 0;
     strcpy(pProperties[1].extensionName, "VK_MVK_macos_surface");
     pProperties[1].specVersion = 0;
-    strcpy(pProperties[2].extensionName, "VK_KHR_get_physical_device_properties2");
+    strcpy(pProperties[2].extensionName,
+           "VK_KHR_get_physical_device_properties2");
     pProperties[2].specVersion = 0;
   }
   return VK_SUCCESS;
