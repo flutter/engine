@@ -2234,7 +2234,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)handleKeyboardWillHide:(NSNotification*)notification {
-  _isKeyboardShowing = false;
+  _isKeyboardShowing = NO;
 }
 
 - (void)dealloc {
@@ -2308,17 +2308,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     if (_isScreenshotShowing) {
       id arg = args[@"mouseY"];
       float mouseY = [arg floatValue];
-      float screenHeight = [UIScreen mainScreen].bounds.size.height;
-      float keyboardHeight = _keyboardRect.size.height;
-      if (_keyboardView && _isScreenshotShowing) {
-        if (screenHeight - keyboardHeight < mouseY) {
-          [_keyboardView removeFromSuperview];
-          _isScreenshotShowing = NO;
-        } else {
-          [self showKeyboard];
-          _keyboardView.frame = _keyboardRect;
-        }
-      }
+      [self dismissScreenshot:mouseY];
     }
   } else {
     result(FlutterMethodNotImplemented);
@@ -2332,10 +2322,29 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   }
 }
 
+- (void)dismissScreenshot:(float)mouseY{
+    float screenHeight = [UIScreen mainScreen].bounds.size.height;
+    float keyboardHeight = _keyboardRect.size.height;
+    if (_keyboardView && _isScreenshotShowing) {
+      if (screenHeight - keyboardHeight < mouseY) {
+          [UIView animateWithDuration:0.3f animations:^{
+              _keyboardView.frame = CGRectMake(0, screenHeight, [UIScreen mainScreen].bounds.size.width, _keyboardView.frame.size.height);
+          } completion:^(BOOL finished){
+              [self hideScreenshot];
+          }];
+      } else {
+        [self showKeyboard];
+        //[_keyboardView removeFromSuperview];
+      }
+        
+    }
+}
+
 - (void)manipulateScreenshot:(float)mouseY {
   float screenHeight = [UIScreen mainScreen].bounds.size.height;
   float keyboardHeight = _keyboardRect.size.height;
-  if (screenHeight - keyboardHeight < mouseY && not _isScreenshotShowing) {
+  if (screenHeight - keyboardHeight < mouseY && _isKeyboardShowing) {
+      [self hideScreenshot];
     [self takeScreenshot];
     [self hideKeyboard];
   } else if (screenHeight - keyboardHeight < mouseY && _isScreenshotShowing) {
@@ -2348,6 +2357,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)showKeyboard {
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:0.0];
+    [UIView setAnimationDelay:0.0];
+    
   [UIView setAnimationsEnabled:NO];
   [_firstResponder becomeFirstResponder];
   [UIView setAnimationsEnabled:YES];
@@ -2357,7 +2370,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   [UIView setAnimationsEnabled:NO];
   _firstResponder = [[UIApplication sharedApplication] keyWindow];
   _firstResponder = [_firstResponder findFirstResponder];
-  [_firstResponder resignFirstRespoder];
+    //[_firstResponder endEditing:YES];
+  [_firstResponder resignFirstResponder];
   [UIView setAnimationsEnabled:YES];
 }
 
