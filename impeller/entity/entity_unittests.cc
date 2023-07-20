@@ -857,7 +857,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
-      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -884,13 +883,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-      FS::FragInfo frag_info;
-      frag_info.color = color.Premultiply();
-      FS::BindFragInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -2168,14 +2163,14 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto tiled_texture = std::make_shared<TiledTextureContents>();
   tiled_texture->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  tiled_texture->SetOpacity(0.5);
+  tiled_texture->SetOpacityFactor(0.5);
 
   ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
 
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
   // overlap
@@ -2184,7 +2179,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = TextFrameFromTextBlob(blob);
   auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame);
+  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(frame);

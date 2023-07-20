@@ -151,9 +151,9 @@ static const DlBlurImageFilter kTestBlurImageFilter4(5.0,
 static const DlDilateImageFilter kTestDilateImageFilter1(5.0, 5.0);
 static const DlDilateImageFilter kTestDilateImageFilter2(6.0, 5.0);
 static const DlDilateImageFilter kTestDilateImageFilter3(5.0, 6.0);
-static const DlErodeImageFilter kTestErodeImageFilter1(5.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter2(6.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter3(5.0, 6.0);
+static const DlErodeImageFilter kTestErodeImageFilter1(4.0, 4.0);
+static const DlErodeImageFilter kTestErodeImageFilter2(4.0, 3.0);
+static const DlErodeImageFilter kTestErodeImageFilter3(3.0, 4.0);
 static const DlMatrixImageFilter kTestMatrixImageFilter1(
     SkMatrix::RotateDeg(45),
     kNearestSampling);
@@ -244,18 +244,6 @@ struct DisplayListInvocation {
   DlInvoker invoker;
   bool supports_group_opacity_ = false;
 
-  bool sk_version_matches() {
-    return (static_cast<int>(op_count_) == sk_op_count_ &&
-            byte_count_ == sk_byte_count_);
-  }
-
-  // A negative sk_op_count means "do not test this op".
-  // Used mainly for these cases:
-  // - we cannot encode a DrawShadowRec (Skia private header)
-  // - SkCanvas cannot receive a DisplayList
-  // - SkCanvas may or may not inline an SkPicture
-  bool sk_testing_invalid() { return sk_op_count_ < 0; }
-
   bool is_empty() { return byte_count_ == 0; }
 
   bool supports_group_opacity() { return supports_group_opacity_; }
@@ -266,11 +254,6 @@ struct DisplayListInvocation {
   // byte count for the ops with DisplayList overhead, comparable
   // to |DisplayList.byte_count().
   size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
-
-  int sk_op_count() { return sk_op_count_; }
-  // byte count for the ops with DisplayList overhead as translated
-  // through an SkCanvas interface, comparable to |DisplayList.byte_count().
-  size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
 
   void Invoke(DlOpReceiver& builder) { invoker(builder); }
 

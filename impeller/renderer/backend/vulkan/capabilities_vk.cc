@@ -141,8 +141,6 @@ CapabilitiesVK::GetEnabledInstanceExtensions() const {
     if (HasExtension("VK_EXT_validation_features")) {
       // It's valid to not have `VK_EXT_validation_features` available.  That's
       // the case when using AGI as a frame debugger.
-      FML_DLOG(INFO) << "Requested validations but could not find the "
-                        "VK_EXT_validation_features extension.";
       required.push_back("VK_EXT_validation_features");
     }
   }
@@ -433,6 +431,7 @@ bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
   return false;
 }
 
+// |Capabilities|
 bool CapabilitiesVK::SupportsDecalTileMode() const {
   return true;
 }
@@ -440,6 +439,11 @@ bool CapabilitiesVK::SupportsDecalTileMode() const {
 // |Capabilities|
 bool CapabilitiesVK::SupportsMemorylessTextures() const {
   return supports_memoryless_textures_;
+}
+
+// |Capabilities|
+bool CapabilitiesVK::SupportsPipelinesWithNoColorAttachments() const {
+  return true;
 }
 
 // |Capabilities|

@@ -27,9 +27,11 @@ namespace impeller {
 
 bool HasValidationLayers();
 
+class CommandEncoderFactoryVK;
 class CommandEncoderVK;
 class DebugReportVK;
 class FenceWaiterVK;
+class ResourceManagerVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -136,6 +138,8 @@ class ContextVK final : public Context,
 
   std::shared_ptr<FenceWaiterVK> GetFenceWaiter() const;
 
+  std::shared_ptr<ResourceManagerVK> GetResourceManager() const;
+
  private:
   struct DeviceHolderImpl : public DeviceHolder {
     // |DeviceHolder|
@@ -160,6 +164,7 @@ class ContextVK final : public Context,
   std::shared_ptr<SwapchainVK> swapchain_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
+  std::shared_ptr<ResourceManagerVK> resource_manager_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   const uint64_t hash_;
@@ -170,7 +175,8 @@ class ContextVK final : public Context,
 
   void Setup(Settings settings);
 
-  std::unique_ptr<CommandEncoderVK> CreateGraphicsCommandEncoder() const;
+  std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
+      const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };
