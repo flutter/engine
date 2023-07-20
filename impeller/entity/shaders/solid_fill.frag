@@ -6,7 +6,7 @@ precision mediump float;
 
 #include <impeller/types.glsl>
 
-IMPELLER_FLAT in f16vec4 v_color;
+IMPELLER_MAYBE_FLAT in f16vec4 v_color;
 
 out f16vec4 frag_color;
 

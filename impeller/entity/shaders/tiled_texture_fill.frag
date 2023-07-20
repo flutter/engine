@@ -16,7 +16,7 @@ uniform FragInfo {
 frag_info;
 
 in highp vec2 v_texture_coords;
-IMPELLER_FLAT in float16_t v_alpha;
+IMPELLER_MAYBE_FLAT in float16_t v_alpha;
 
 out f16vec4 frag_color;
 

@@ -181,7 +181,7 @@ bool TextContents::Render(const ContentContext& renderer,
             auto maybe_atlas_glyph_bounds =
                 atlas->FindFontGlyphBounds(font_glyph_pair);
             if (!maybe_atlas_glyph_bounds.has_value()) {
-              VALIDATION_LOG << "Could not find glyph position in the atlas.";
+              VALIDATION_LOG << "Could not find glyph position in the atlas with scale: " << scale_;
               continue;
             }
             auto atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();

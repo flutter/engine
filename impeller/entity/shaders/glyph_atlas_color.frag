@@ -10,7 +10,7 @@ uniform f16sampler2D glyph_atlas_sampler;
 
 in highp vec2 v_uv;
 
-IMPELLER_FLAT in f16vec4 v_text_color;
+IMPELLER_MAYBE_FLAT in f16vec4 v_text_color;
 
 out f16vec4 frag_color;
 

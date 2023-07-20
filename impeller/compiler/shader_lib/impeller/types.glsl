@@ -10,9 +10,9 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
 #ifdef IMPELLER_TARGET_OPENGLES
-#define IMPELLER_FLAT
+#define IMPELLER_MAYBE_FLAT
 #else
-#define IMPELLER_FLAT flat
+#define IMPELLER_MAYBE_FLAT flat
 #endif
 
 #ifndef IMPELLER_TARGET_METAL_IOS
