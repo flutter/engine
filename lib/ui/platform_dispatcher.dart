@@ -1304,15 +1304,17 @@ class PlatformDispatcher {
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
 
-  /// Scales the `unscaledFontSize`, according to the platform preferences.
+  /// Scales the `unscaledFontSize`, according to the user's platform
+  /// preferences.
   ///
   /// Many platforms allow users to scale text globally for better readability.
   /// Given the font size the app developer specified in logical pixels, this
   /// method converts it to the preferred font size (also in logical pixels) that
   /// accounts for platform-wide text scaling.
   ///
-  /// Returns null if the platform's text scaling is linear. The return value
-  /// is always non-negative and finite if not null.
+  /// Returns null if the platform only supports linear text scaling, or does
+  /// not support platform-wide text scaling. The return value is always
+  /// non-negative and finite if not null.
   ///
   /// The scaled value of the same font size input may change if the user changes
   /// the text scaling preference (in system settings for example). The
@@ -1344,7 +1346,7 @@ class PlatformDispatcher {
     };
   }
 
-  // The _cachedFontScale variable is null if GetScaledFontSize is not
+  // The _cachedFontScale variable is set to null if GetScaledFontSize is not
   // implemented on the current platform.
   Map<int, double>? _cachedFontScale = <int, double>{};
   double? _scaleAndMemoize(int unscaledFontSize) {
@@ -1368,7 +1370,7 @@ class PlatformDispatcher {
         assert(cache.isEmpty);
         return _cachedFontScale = null;
       case -2:
-        // TODO: ???
+        assert(false, 'Flutter Error: incorrect configuration id.');
         return null;
       case final double errorCode:
         assert(false, 'GetScaledFontSize failed with $errorCode');
@@ -1376,19 +1378,24 @@ class PlatformDispatcher {
     }
   }
 
-  // The `configurationGeneration` parameter specifies which platform
-  // configuration to use for computing the scaled font size. When the user
-  // changes the platform configuration, the configuration data is dispatched
-  // asynchronously to the Flutter UI thread. But since this call is synchronous,
-  // it could be using the newer configuration that has yet been sent to Flutter.
-  // [PlatformDispatcher] tracks the most
+  // Scales the `unscaledFontSize` using the platform's text scaling curve.
   //
-  // a function that takes the unscaled font size and the current
-  // `DisplayMetrics`. The function is called by dart code to
+  // Currently this is only implemented on newer versions of Android (SDK level
+  // 34, using the `TypedValue#applyDimension` API). This function returns -1 on
+  // other platforms.
+  //
+  // The `configurationGeneration` parameter tells the embedder which platform
+  // configuration to use for computing the scaled font size. When the user
+  // changes the platform configuration, the configuration data will first be
+  // made available on the platform thread before being dispatched asynchronously
+  // to the Flutter UI thread. Since this call is synchronous, it could be using
+  // the newer configuration that has yet been sent to Flutter. This call should
+  // use the [PlatformDispatcher]'s latest configuration generation to avoid such
+  // a race.
   //
   // Returns a negative number when there's an error:
   // -1 : GetScaledFontSize is not implemented on the current platform.
-  // -2 : The textScaleFactor argument the caller provided does not match the
+  // -2 : Generation mismatch.
   //      textScaleFactor value of the platform due to a race condition.
   @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
   external static double _getScaledFontSize(double unscaledFontSize, int configurationGeneration);

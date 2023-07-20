@@ -261,7 +261,8 @@ public class FlutterJNITest {
   public void getScaledFontSizeWorks() {
     final FlutterJNI flutterJNI = new FlutterJNI();
 
-    if (Build.VERSION.SDK_INT < 10000) {
+    // Returns -1 below Android U.
+    if (Build.VERSION.SDK_INT < 34) {
       assertEquals(-1f, flutterJNI.getScaledFontSize(1.0f, 0), 0.0f);
       assertEquals(-1f, flutterJNI.getScaledFontSize(2.0f, 0), 0.0f);
       assertEquals(-1f, flutterJNI.getScaledFontSize(4.0f, 0), 0.0f);
@@ -269,11 +270,11 @@ public class FlutterJNITest {
       return;
     }
 
-    // Returns -2 when the plugin isn't set.
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(14.0f, 0));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(1.0f, 0));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(2.0f, 0));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(4.0f, 0));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(8.0f, 0));
+    // Returns -2 when generation id mismatches.
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(14.0f, -100));
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(1.0f, -100));
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(2.0f, -100));
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(4.0f, -100));
+    assertEquals(-2.0f, flutterJNI.getScaledFontSize(8.0f, -100));
   }
 }

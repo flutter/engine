@@ -1287,7 +1287,7 @@ public class FlutterJNI {
   // ----- End Localization Support ----
   @Nullable
   public float getScaledFontSize(float fontSize, int configGeneration) {
-    if (Build.VERSION.SDK_INT < 10000) {
+    if (Build.VERSION.SDK_INT < 34) {
       // Returns unimplemented on anything below Android U.
       return -1f;
     }

@@ -106,7 +106,7 @@ public class SettingsChannel {
               + "platformBrightness: "
               + message.get(PLATFORM_BRIGHTNESS));
       final DisplayMetrics metrics = this.displayMetrics;
-      if (Build.VERSION.SDK_INT < 10000 || metrics == null) {
+      if (Build.VERSION.SDK_INT < 34 || metrics == null) {
         channel.send(message);
         return;
       }
