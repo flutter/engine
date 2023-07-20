@@ -15,9 +15,8 @@ frame_info;
 in vec2 position;
 in vec2 texture_coords;
 
-IMPELLER_FLAT out float16_t v_alpha;
-
 out vec2 v_texture_coords;
+IMPELLER_FLAT out float16_t v_alpha;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
