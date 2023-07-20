@@ -545,7 +545,6 @@ class BrowserPlatform extends PlatformPlugin {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
