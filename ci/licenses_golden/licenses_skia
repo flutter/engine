@@ -1,4 +1,4 @@
-Signature: b462ea80e8db186a7fced6a85552bd2f
+Signature: 271e1618de445abab2721c39fbcbf943
 
 ====================================================================================================
 LIBRARY: etc1
@@ -386,6 +386,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/canvas_flush.md
 FILE: ../../../third_party/skia/relnotes/const_context.md
+FILE: ../../../third_party/skia/relnotes/mesh_ganesh.md
 FILE: ../../../third_party/skia/relnotes/runtimeeffect_const.md
 FILE: ../../../third_party/skia/relnotes/runtimeeffect_image.md
 FILE: ../../../third_party/skia/relnotes/tiledimages.md
@@ -8867,8 +8868,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/BazelGMRunner.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/BazelNoopRunner.cpp + ../../../third_party/skia/LICENSE
@@ -8901,6 +8904,7 @@ ORIGIN: ../../../third_party/skia/include/core/SkTextureCompressionType.h + ../.
 ORIGIN: ../../../third_party/skia/include/core/SkTiledImageUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/SkImageGanesh.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/gpu/ganesh/SkMeshGanesh.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/ganesh/mtl/SkSurfaceMetal.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/graphite/BackendSemaphore.h + ../../../third_party/skia/LICENSE
@@ -8973,6 +8977,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrDeferredDisplayListPriv.h + .
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrDeferredDisplayListRecorder.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrMeshBuffers.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrMeshBuffers.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/GrPromiseImageTexture.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.h + ../../../third_party/skia/LICENSE
@@ -9070,8 +9076,10 @@ ORIGIN: ../../../third_party/skia/src/utils/SkTestCanvas.cpp + ../../../third_pa
 ORIGIN: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp
+FILE: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp
 FILE: ../../../third_party/skia/gm/BazelGMRunner.cpp
 FILE: ../../../third_party/skia/gm/BazelNoopRunner.cpp
@@ -9104,6 +9112,7 @@ FILE: ../../../third_party/skia/include/core/SkTextureCompressionType.h
 FILE: ../../../third_party/skia/include/core/SkTiledImageUtils.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/SkImageGanesh.h
+FILE: ../../../third_party/skia/include/gpu/ganesh/SkMeshGanesh.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h
 FILE: ../../../third_party/skia/include/gpu/ganesh/mtl/SkSurfaceMetal.h
 FILE: ../../../third_party/skia/include/gpu/graphite/BackendSemaphore.h
@@ -9176,6 +9185,8 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/GrDeferredDisplayListPriv.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDeferredDisplayListRecorder.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFragmentProcessors.h
+FILE: ../../../third_party/skia/src/gpu/ganesh/GrMeshBuffers.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/GrMeshBuffers.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrPromiseImageTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrColorTableEffect.h

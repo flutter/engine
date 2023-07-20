@@ -5442,8 +5442,8 @@ abstract class Canvas {
   /// specified in the `vertices` using the `blendMode` parameter. For the
   /// purposes of this blending, the colors from the `paint` parameter are
   /// considered the source, and the colors from the `vertices` are considered
-  /// the destination. [BlendMode.dstOver] ignores the `paint` and uses only the
-  /// colors of the `vertices`; [BlendMode.srcOver] ignores the colors of the
+  /// the destination. [BlendMode.dst] ignores the `paint` and uses only the
+  /// colors of the `vertices`; [BlendMode.src] ignores the colors of the
   /// `vertices` and uses only the colors in the `paint`.
   ///
   /// All parameters must not be null.
@@ -6933,10 +6933,10 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool sync = true;
+  bool isSync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      if (sync) {
+      if (isSync) {
         throw Exception('operation failed');
       } else {
         completer.completeError(Exception('operation failed'));
@@ -6945,7 +6945,7 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  sync = false;
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }
