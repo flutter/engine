@@ -77,6 +77,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
   group('($mode)', () {
     setUp(() {
+      browserSupportsImageDecoder = useBrowserImageDecoder;
       warnings.clear();
     });
 
@@ -85,6 +86,10 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       printWarning = (String warning) {
         warnings.add(warning);
       };
+    });
+
+    tearDown(() {
+      debugResetBrowserSupportsImageDecoder();
     });
 
     tearDownAll(() {
@@ -307,13 +312,20 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
         () async {
-        final ui.Codec codec = await ui.instantiateImageCodec(
-          kAnimatedGif,
-          targetWidth: 2,
-          targetHeight: 3,
-        );
-        final ui.Image image = (await codec.getNextFrame()).image;
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        kAnimatedGif,
+        targetWidth: 2,
+        targetHeight: 3,
+      );
+      final ui.Image image = (await codec.getNextFrame()).image;
 
+      if (browserSupportsImageDecoder) {
+        expect(warnings, isEmpty);
+
+        expect(image.width, 2);
+        expect(image.height, 3);
+      } else {
+        // This limitation is only applicable for wasm codecs.
         expect(
           warnings,
           containsAllInOrder(
@@ -326,9 +338,11 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         // expect the re-size did not happen, kAnimatedGif is [1x1]
         expect(image.width, 1);
         expect(image.height, 1);
-        image.dispose();
-        codec.dispose();
-    }, skip: !canvasKitContainsCodecs);
+      }
+
+      image.dispose();
+      codec.dispose();
+    });
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
         () async {
