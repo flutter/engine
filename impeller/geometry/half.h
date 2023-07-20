@@ -13,7 +13,7 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
 
-#if defined(FML_OS_WIN) || defined(FML_OS_ANDROID)
+#if defined(FML_OS_WIN)
 using InternalHalf = uint16_t;
 #else
 using InternalHalf = _Float16;
@@ -26,38 +26,8 @@ namespace impeller {
 /// See also: https://clang.llvm.org/docs/LanguageExtensions.html
 /// This is not currently supported on Windows on some Android toolchains.
 inline constexpr InternalHalf ScalarToHalf(Scalar f) {
-#if defined(FML_OS_WIN) || defined(FML_OS_ANDROID)
-  uint32_t x = static_cast<uint32_t>(f);
-  uint32_t sign = static_cast<unsigned short>(x >> 31);
-  uint32_t mantissa = 0;
-  uint32_t exp = 0;
-  uint16_t hf = 0;
-
-  mantissa = x & ((1 << 23) - 1);
-  exp = x & (0xFF << 23);
-  if (exp >= 0x47800000) {
-    // check if the original number is a NaN
-    if (mantissa && (exp == (0xFF << 23))) {
-      // single precision NaN
-      mantissa = (1 << 23) - 1;
-    } else {
-      // half-float will be Inf
-      mantissa = 0;
-    }
-    hf = ((static_cast<uint16_t>(sign)) << 15) |
-         static_cast<uint16_t>((0x1F << 10)) |
-         static_cast<uint16_t>(mantissa >> 13);
-  }
-  // check if exponent is <= -15
-  else if (exp <= 0x38000000) {
-    hf = 0;  // too small to be represented
-  } else {
-    hf = ((static_cast<uint16_t>(sign)) << 15) |
-         static_cast<uint16_t>((exp - 0x38000000) >> 13) |
-         static_cast<uint16_t>(mantissa >> 13);
-  }
-
-  return hf;
+#if defined(FML_OS_WIN)
+  return static_cast<InternalHalf>(f);
 #else
   return static_cast<InternalHalf>(f);
 #endif
