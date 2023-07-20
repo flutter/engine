@@ -16,6 +16,12 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
 
 #ifdef IMPELLER_TARGET_OPENGLES
+#define IMPELLER_MAYBE_FLAT
+#else
+#define IMPELLER_MAYBE_FLAT flat
+#endif
+
+#ifdef IMPELLER_TARGET_OPENGLES
 
 // OpenGLES 2 targets GLSL ES 1.0, which doesn't support explicit arithmetic
 // types on individual declarations. So for GLES, we provide macros for 16 bit
