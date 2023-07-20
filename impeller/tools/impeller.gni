@@ -596,6 +596,7 @@ template("_impeller_shaders_vk") {
     shader_target_flag = "--vulkan"
 
     defines = [ "IMPELLER_TARGET_VULKAN" ]
+
     # If we're compiling on a macOS host, then we're targeting MoltenVK which
     # has additional constraints.
     if (is_mac) {
