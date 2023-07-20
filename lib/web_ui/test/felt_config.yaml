@@ -115,11 +115,9 @@ run-configs:
 
   - name: firefox
     browser: firefox
-    canvaskit-variant: full
 
   - name: safari
     browser: safari
-    canvaskit-variant: full
 
 test-suites:
   - name: chrome-dart2js-html-engine
