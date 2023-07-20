@@ -109,7 +109,10 @@ class CkPicture implements ui.Picture {
       width: width.toDouble(),
       height: height.toDouble(),
     );
-    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
+    final Uint8List? pixels = skImage.readPixels(0, 0, imageInfo);
+    if (pixels == null) {
+      throw StateError('Unable to read pixels from SkImage.');
+    }
     final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
