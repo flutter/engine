@@ -57,7 +57,7 @@ public class SettingsChannel {
     }
 
     @NonNull
-    public MessageBuilder setDisplayMetrics(DisplayMetrics displayMetrics) {
+    public MessageBuilder setDisplayMetrics(@NonNull DisplayMetrics displayMetrics) {
       this.displayMetrics = displayMetrics;
       return this;
     }

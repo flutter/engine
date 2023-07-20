@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -29,6 +31,7 @@ import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
@@ -43,11 +46,13 @@ import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
@@ -403,6 +408,21 @@ public class FlutterViewTest {
 
     // Verify results.
     assertFalse(reportedShowPassword.get());
+  }
+
+  @Test
+  @TargetApi(33)
+  @Config(sdk = 33)
+  public void setDisplayMetricsDoesNothingOnAPILevel33() {
+    final DartExecutor executor = mock(DartExecutor.class);
+    executor.onAttachedToJNI();
+    final SettingsChannel settingsChannel = new SettingsChannel(executor);
+
+    final ArgumentCaptor<ByteBuffer> messageCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+
+    settingsChannel.startMessage().setDisplayMetrics(mock(DisplayMetrics.class)).send();
+
+    verify(executor).send(eq("flutter/settings"), messageCaptor.capture(), isNull());
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
