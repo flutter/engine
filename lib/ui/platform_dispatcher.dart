@@ -1376,6 +1376,16 @@ class PlatformDispatcher {
     }
   }
 
+  // The `configurationGeneration` parameter specifies which platform
+  // configuration to use for computing the scaled font size. When the user
+  // changes the platform configuration, the configuration data is dispatched
+  // asynchronously to the Flutter UI thread. But since this call is synchronous,
+  // it could be using the newer configuration that has yet been sent to Flutter.
+  // [PlatformDispatcher] tracks the most
+  //
+  // a function that takes the unscaled font size and the current
+  // `DisplayMetrics`. The function is called by dart code to
+  //
   // Returns a negative number when there's an error:
   // -1 : GetScaledFontSize is not implemented on the current platform.
   // -2 : The textScaleFactor argument the caller provided does not match the
@@ -1453,6 +1463,14 @@ class _PlatformConfiguration {
   /// The system-reported default font family.
   final String? systemFontFamily;
 
+  /// A unique identifier for the platform configuration that this
+  /// [_PlatformConfiguration] represents.
+  ///
+  /// This identifier can be used to to prevent race conditions, when the
+  /// Flutter application synchronously calls a platform function, and the
+  /// platform's configuration has changed on the platform thread but a new
+  /// [_PlatformConfiguration] has not been created for the Flutter application.
+  /// See the [_getScaledFontSize] function for an example.
   final int? configurationGeneration;
 }
 
