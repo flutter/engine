@@ -12,6 +12,8 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import '../lib/src/engine/noto_font.dart' show CodePointRange, packFontRanges;
+
 import 'cipd.dart';
 import 'environment.dart';
 import 'exceptions.dart';
@@ -146,33 +148,21 @@ class RollFallbackFontsCommand extends Command<bool>
       }
       final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
       sb.writeln(" NotoFont('$family', '$urlSuffix',");
-      final List<String> starts = <String>[];
-      final List<String> ends = <String>[];
-      for (final String range in charsetForFamily[family]!.split(' ')) {
+      final List<CodePointRange> ranges = [];
+      final String charset = charsetForFamily[family]!;
+      for (final String range in charset.split(' ')) {
         final List<String> parts = range.split('-');
-        if (parts.length == 1) {
-          starts.add(parts[0]);
-          ends.add(parts[0]);
-        } else {
-          starts.add(parts[0]);
-          ends.add(parts[1]);
-        }
+        final int start = int.parse(parts[0], radix: 16);
+        final int end =
+            (parts.length == 1) ? start : int.parse(parts[1], radix: 16);
+        ranges.add(CodePointRange(start, end));
       }
 
       // Print the unicode ranges in a readable format for easier review. This
       // shouldn't affect code size because comments are removed in release mode.
-      sb.write('   // <int>[');
-      for (final String start in starts) {
-        sb.write('0x$start,');
-      }
-      sb.writeln('],');
-      sb.write('   // <int>[');
-      for (final String end in ends) {
-        sb.write('0x$end,');
-      }
-      sb.writeln(']');
+      sb.writeln('   // $charset');
 
-      sb.writeln("   '${_packFontRanges(starts, ends)}',");
+      sb.writeln("   '${packFontRanges(ranges)}',");
       sb.writeln(' ),');
     }
     sb.writeln('];');
@@ -470,26 +460,6 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Yi',
   'Noto Sans Zanabazar Square',
 ];
-
-String _packFontRanges(List<String> starts, List<String> ends) {
-  assert(starts.length == ends.length);
-
-  final StringBuffer sb = StringBuffer();
-
-  for (int i = 0; i < starts.length; i++) {
-    final int start = int.parse(starts[i], radix: 16);
-    final int end = int.parse(ends[i], radix: 16);
-
-    sb.write(start.toRadixString(36));
-    sb.write('|');
-    if (start != end) {
-      sb.write((end - start).toRadixString(36));
-    }
-    sb.write(';');
-  }
-
-  return sb.toString();
-}
 
 bool _checkForLicenseAttribution(Uint8List fontBytes) {
   final ByteData fontData = fontBytes.buffer.asByteData();
