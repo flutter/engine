@@ -1130,7 +1130,7 @@ class PlatformDispatcher {
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
-      _cachedFontSizes = null;
+      _cachedFontSizes?.clear();
       _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
