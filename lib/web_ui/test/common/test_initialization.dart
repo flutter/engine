@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
-
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
