@@ -55,14 +55,27 @@ FlutterConfiguration get configuration =>
   _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
-/// Sets the given configuration as the current one.
+/// Overrides [configuration] with new values coming from `newConfig`.
+///
+/// If `newConfig` is null, the override is removed.
 ///
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
 @visibleForTesting
-void debugSetConfiguration(FlutterConfiguration? configuration) {
-  _configuration = configuration;
+void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
+  if (newConfig != null) {
+    final JSObject newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _jsConfiguration.jsify(),
+      newConfig.jsify(),
+    );
+    _configuration = FlutterConfiguration()
+        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
+    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+  } else {
+    _configuration = null;
+  }
 }
 
 /// Supplies Web Engine configuration properties.
