@@ -290,7 +290,8 @@ std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(
     return std::nullopt;
   }
 
-  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSet(layout, command_count);
+  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSet(
+      layout, command_count);
 }
 
 void CommandEncoderVK::PushDebugGroup(const char* label) const {
