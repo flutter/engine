@@ -1,4 +1,4 @@
-Signature: 7f27c9a1b8daec36da6c7494a5f4b5fa
+Signature: d7a91f59a900620cd638fc3d5133b5f7
 
 ====================================================================================================
 LIBRARY: etc1
@@ -2352,6 +2352,8 @@ ORIGIN: ../../../third_party/skia/src/core/SkDataTable.cpp + ../../../third_part
 ORIGIN: ../../../third_party/skia/src/core/SkDocument.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawLooper.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFontStream.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkGpuBlurUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMatrixUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMessageBus.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMipmap.cpp + ../../../third_party/skia/LICENSE
@@ -2489,6 +2491,8 @@ FILE: ../../../third_party/skia/src/core/SkDataTable.cpp
 FILE: ../../../third_party/skia/src/core/SkDocument.cpp
 FILE: ../../../third_party/skia/src/core/SkDrawLooper.cpp
 FILE: ../../../third_party/skia/src/core/SkFontStream.h
+FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp
+FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.h
 FILE: ../../../third_party/skia/src/core/SkMatrixUtils.h
 FILE: ../../../third_party/skia/src/core/SkMessageBus.h
 FILE: ../../../third_party/skia/src/core/SkMipmap.cpp
