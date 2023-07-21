@@ -91,7 +91,8 @@ void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set,
                                             Scalar scale) const {
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
-    auto rounded_scale = RoundScaledFontSize(scale, font.GetMetrics().point_size);
+    auto rounded_scale =
+        RoundScaledFontSize(scale, font.GetMetrics().point_size);
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
       set.insert({font, glyph_position.glyph, rounded_scale});
