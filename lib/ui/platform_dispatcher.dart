@@ -1112,13 +1112,13 @@ class PlatformDispatcher {
       final Object? value => throw StateError('$value is not a valid platformBrightness.'),
     };
     final String? systemFontFamily = data['systemFontFamily'] as String?;
-    final int? configurationGeneration = data['configurationGeneration'] as int?;
+    final int? configurationId = data['configurationId'] as int?;
     final _PlatformConfiguration previousConfiguration = _configuration;
     final bool platformBrightnessChanged = previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
     final bool alwaysUse24HourFormatChanged = previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
     final bool systemFontFamilyChanged = previousConfiguration.systemFontFamily != systemFontFamily;
-    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged && configurationGeneration == null) {
+    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged && configurationId == null) {
       return;
     }
     _configuration = previousConfiguration.copyWith(
@@ -1126,11 +1126,11 @@ class PlatformDispatcher {
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
       systemFontFamily: systemFontFamily,
-      configurationGeneration: configurationGeneration,
+      configurationId: configurationId,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
-      _cachedFontScale = null;
+      _cachedFontSizes = null;
       _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
@@ -1346,13 +1346,13 @@ class PlatformDispatcher {
     };
   }
 
-  // The _cachedFontScale variable is set to null if GetScaledFontSize is not
+  // The _cachedFontSizes variable is set to null if GetScaledFontSize is not
   // implemented on the current platform.
-  Map<int, double>? _cachedFontScale = <int, double>{};
+  Map<int, double>? _cachedFontSizes = <int, double>{};
   double? _scaleAndMemoize(int unscaledFontSize) {
-    final Map<int, double>? cache = _cachedFontScale;
-    final int? configurationGeneration = _configuration.configurationGeneration;
-    if (cache == null || configurationGeneration == null) {
+    final Map<int, double>? cache = _cachedFontSizes;
+    final int? configurationGenerationId = _configuration.configurationId;
+    if (cache == null || configurationGenerationId == null) {
       return null;
     }
     final double? cachedValue = cache[unscaledFontSize];
@@ -1362,13 +1362,13 @@ class PlatformDispatcher {
     }
 
     final double unscaledFontSizeInt = unscaledFontSize.toDouble();
-    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationGeneration);
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationGenerationId);
     switch (fontSize) {
       case >= 0:
         return cache.putIfAbsent(unscaledFontSize, () => fontSize);
       case -1:
         assert(cache.isEmpty);
-        return _cachedFontScale = null;
+        return _cachedFontSizes = null;
       case -2:
         assert(false, 'Flutter Error: incorrect configuration id.');
         return null;
@@ -1414,7 +1414,7 @@ class _PlatformConfiguration {
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.systemFontFamily,
-    this.configurationGeneration,
+    this.configurationId,
   });
 
   _PlatformConfiguration copyWith({
@@ -1426,7 +1426,7 @@ class _PlatformConfiguration {
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
-    int? configurationGeneration,
+    int? configurationId,
   }) {
     return _PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -1437,7 +1437,7 @@ class _PlatformConfiguration {
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
-      configurationGeneration: configurationGeneration ?? this.configurationGeneration,
+      configurationId: configurationId ?? this.configurationId,
     );
   }
 
@@ -1478,7 +1478,7 @@ class _PlatformConfiguration {
   /// platform's configuration has changed on the platform thread but a new
   /// [_PlatformConfiguration] has not been created for the Flutter application.
   /// See the [_getScaledFontSize] function for an example.
-  final int? configurationGeneration;
+  final int? configurationId;
 }
 
 /// An immutable view configuration.

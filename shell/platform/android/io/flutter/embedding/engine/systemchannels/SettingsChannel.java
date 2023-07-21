@@ -21,7 +21,7 @@ public class SettingsChannel {
   private static final String BRIEFLY_SHOW_PASSWORD = "brieflyShowPassword";
   private static final String ALWAYS_USE_24_HOUR_FORMAT = "alwaysUse24HourFormat";
   private static final String PLATFORM_BRIGHTNESS = "platformBrightness";
-  private static final String CONFIGURATION_GENERATION = "configurationGeneration";
+  private static final String CONFIGURATION_GENERATION = "configurationId";
 
   @NonNull public final BasicMessageChannel<Object> channel;
 
