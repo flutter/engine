@@ -75,11 +75,11 @@ const _kSizeRadix = 26;
 
 List<CodePointRange> _unpackFontRanges(String packedRange) {
   final List<CodePointRange> ranges = <CodePointRange>[];
-  
+
   int lowestPossibleStart = 0;
   int prefix = 0;
   int size = 1;
-  
+
   for (int i = 0; i < packedRange.length; i++) {
     final code = packedRange.codeUnitAt(i);
     if (_kSkipDigit0 <= code && code < _kSkipDigit0 + _kSkipRadix) {
