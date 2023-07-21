@@ -80,13 +80,16 @@ bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
+  using FS = ClipPipeline::FragmentShader;
 
   VS::FrameInfo info;
 
   Command cmd;
 
+  FS::FragInfo frag_info;
   // The color really doesn't matter.
-  info.color = Color::SkyBlue();
+  frag_info.color = Color::SkyBlue();
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   cmd.stencil_reference = entity.GetStencilDepth();
@@ -179,6 +182,7 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
+  using FS = ClipPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Restore Clip";
@@ -204,8 +208,12 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-  info.color = Color::SkyBlue();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+
+  FS::FragInfo frag_info;
+  // The color really doesn't matter.
+  frag_info.color = Color::SkyBlue();
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   pass.AddCommand(std::move(cmd));
   return true;
