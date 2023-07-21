@@ -1310,11 +1310,8 @@ class PlatformDispatcher {
   /// Many platforms allow users to scale text globally for better readability.
   /// Given the font size the app developer specified in logical pixels, this
   /// method converts it to the preferred font size (also in logical pixels) that
-  /// accounts for platform-wide text scaling.
-  ///
-  /// Returns null if the platform only supports linear text scaling, or does
-  /// not support platform-wide text scaling. The return value is always
-  /// non-negative and finite if not null.
+  /// accounts for platform-wide text scaling. The return value is always
+  /// non-negative.
   ///
   /// The scaled value of the same font size input may change if the user changes
   /// the text scaling preference (in system settings for example). The
@@ -1324,7 +1321,7 @@ class PlatformDispatcher {
   /// [MediaQuery.textScalerOf] to retrive the scaled font size in a widget tree,
   /// so text in the app resizes properly when the text scaling preference
   /// changes.
-  double? scaleFontSize(double unscaledFontSize) {
+  double scaleFontSize(double unscaledFontSize) {
     assert(unscaledFontSize >= 0);
     assert(unscaledFontSize.isFinite);
 
@@ -1335,13 +1332,12 @@ class PlatformDispatcher {
     final int unscaledFloor = unscaledFontSize.floor();
     final int unscaledCeil = unscaledFontSize.ceil();
     if (unscaledFloor == unscaledCeil) {
-      return _scaleAndMemoize(unscaledFloor);
+      return _scaleAndMemoize(unscaledFloor) ?? unscaledFontSize * textScaleFactor;
     }
     assert(unscaledCeil - unscaledFloor == 1);
 
     return switch ((_scaleAndMemoize(unscaledFloor), _scaleAndMemoize(unscaledCeil))) {
-      (null, _) => null,
-      (_, null) => null,
+      (null, _) || (_, null)                   => unscaledFontSize * textScaleFactor,
       (final double lower, final double upper) => lower + (upper - lower) * (unscaledFontSize - unscaledFloor),
     };
   }
@@ -1351,8 +1347,10 @@ class PlatformDispatcher {
   Map<int, double>? _cachedFontSizes = <int, double>{};
   double? _scaleAndMemoize(int unscaledFontSize) {
     final Map<int, double>? cache = _cachedFontSizes;
-    final int? configurationGenerationId = _configuration.configurationId;
-    if (cache == null || configurationGenerationId == null) {
+    final int? configurationId = _configuration.configurationId;
+    // Use linear scaling if we know the platform uses linear scaling, or the
+    // platform hasn't sent us a configuration yet.
+    if (cache == null || configurationId == null) {
       return null;
     }
     final double? cachedValue = cache[unscaledFontSize];
@@ -1362,7 +1360,7 @@ class PlatformDispatcher {
     }
 
     final double unscaledFontSizeInt = unscaledFontSize.toDouble();
-    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationGenerationId);
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationId);
     switch (fontSize) {
       case >= 0:
         return cache.putIfAbsent(unscaledFontSize, () => fontSize);
