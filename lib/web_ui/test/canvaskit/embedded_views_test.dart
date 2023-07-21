@@ -809,6 +809,10 @@ void testMain() {
       final FlutterConfiguration config = FlutterConfiguration()
         ..setUserConfiguration(
           js_util.jsify(<String, Object?>{
+            // Preserve the default configuration coming from
+            // `_testBootstrapHandler` in test_platform.dart
+            'canvasKitBaseUrl': configuration.canvasKitBaseUrl,
+            'canvasKitVariant': configuration.canvasKitVariant,
             'canvasKitMaximumSurfaces': 2,
           }) as JsFlutterConfiguration);
       debugSetConfiguration(config);
