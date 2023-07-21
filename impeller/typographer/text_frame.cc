@@ -79,13 +79,22 @@ bool TextFrame::MaybeHasOverlapping() const {
   return false;
 }
 
+// static
+Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
+  if (point_size <= 25) {
+    return std::round(scale * 10) / 10;
+  }
+  return std::round(point_size * 100) / 100;
+}
+
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set,
                                             Scalar scale) const {
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
+    auto rounded_scale = RoundScaledFontSize(scale, font.GetMetrics().point_size);
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
-      set.insert({font, glyph_position.glyph, scale});
+      set.insert({font, glyph_position.glyph, rounded_scale});
     }
   }
 }

@@ -25,11 +25,6 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-// static
-Scalar TextContents::RoundFontScale(Scalar value) {
-  return std::round(value * 10.0) / 10.0;
-}
-
 void TextContents::SetTextFrame(const TextFrame& frame) {
   frame_ = frame;
 }
@@ -83,9 +78,8 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  auto rounded = RoundFontScale(scale);
-  lazy_glyph_atlas->AddTextFrame(frame_, rounded);
-  scale_ = rounded;
+  lazy_glyph_atlas->AddTextFrame(frame_, scale);
+  scale_ = scale;
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -185,8 +179,10 @@ bool TextContents::Render(const ContentContext& renderer,
         size_t vertex_offset = 0;
         for (const auto& run : frame_.GetRuns()) {
           const Font& font = run.GetFont();
+          auto rounded_scale = TextFrame::RoundScaledFontSize(scale_, font.GetMetrics().point_size);
+
           for (const auto& glyph_position : run.GetGlyphPositions()) {
-            FontGlyphPair font_glyph_pair{font, glyph_position.glyph, scale_};
+            FontGlyphPair font_glyph_pair{font, glyph_position.glyph, rounded_scale};
             auto maybe_atlas_glyph_bounds =
                 atlas->FindFontGlyphBounds(font_glyph_pair);
             if (!maybe_atlas_glyph_bounds.has_value()) {
