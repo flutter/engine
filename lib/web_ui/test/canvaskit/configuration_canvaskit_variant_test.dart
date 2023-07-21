@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -23,5 +25,21 @@ void testMain() {
       anyOf(CanvasKitVariant.chromium, CanvasKitVariant.full),
       reason: 'canvasKitVariant must be set to "chromium" or "full" in canvaskit tests!',
     );
+  });
+
+  test('debugOverrideJsConfiguration can bypass (and restore) variant', () {
+    // Set-up in the test_platform.dart file. See `_testBootstrapHandler`.
+    final CanvasKitVariant originalValue = configuration.canvasKitVariant;
+    expect(configuration.canvasKitVariant, isNot(CanvasKitVariant.auto));
+
+    debugOverrideJsConfiguration(
+      <String, Object?>{
+        'canvasKitVariant': 'auto',
+      }.jsify() as JsFlutterConfiguration?
+    );
+    expect(configuration.canvasKitVariant, CanvasKitVariant.auto);
+
+    debugOverrideJsConfiguration(null);
+    expect(configuration.canvasKitVariant, originalValue);
   });
 }

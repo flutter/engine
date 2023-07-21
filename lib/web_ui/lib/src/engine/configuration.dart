@@ -55,9 +55,20 @@ FlutterConfiguration get configuration =>
   _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
-/// Overrides [configuration] with new values coming from `newConfig`.
+/// Overrides the initial test configuration with new values coming from `newConfig`.
 ///
-/// If `newConfig` is null, the override is removed.
+/// The initial test configuration (AKA `_jsConfiguration`) is set in the
+/// `test_platform.dart` file. See: `window.flutterConfiguration` in `_testBootstrapHandler`.
+///
+/// The result of calling this method each time is:
+///
+///     [configuration] = _jsConfiguration + newConfig
+///
+/// Subsequent calls to this method don't *add* more to an already overridden
+/// configuration; this method always starts from an original `_jsConfiguration`,
+/// and adds `newConfig` to it.
+///
+/// If `newConfig` is null, [configuration] resets to the initial `_jsConfiguration`.
 ///
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking

@@ -19,9 +19,6 @@ void setUpUnitTests({
       ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
-    // Do you need user-supplied engine configuration?
-    // Set it up in test_platform.dart
-
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     await engine.initializeEngine(assetManager: fakeAssetManager);
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
