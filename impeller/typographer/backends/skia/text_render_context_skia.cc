@@ -156,17 +156,14 @@ static void DrawGlyph(SkCanvas* canvas,
                       const FontGlyphPair& font_glyph,
                       const Rect& location,
                       bool has_color) {
-  const auto& metrics = font_glyph.font.GetMetrics();
   const auto position = SkPoint::Make(location.origin.x / font_glyph.scale,
                                       location.origin.y / font_glyph.scale);
   SkGlyphID glyph_id = font_glyph.glyph.index;
 
-  SkFont sk_font(
-      TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-      metrics.point_size, metrics.scaleX, metrics.skewX);
+  SkFont sk_font =
+      TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaFont();
   sk_font.setEdging(SkFont::Edging::kAntiAlias);
   sk_font.setHinting(SkFontHinting::kSlight);
-  sk_font.setEmbolden(metrics.embolden);
 
   auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorBLACK;
 

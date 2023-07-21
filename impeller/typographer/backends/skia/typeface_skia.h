@@ -7,6 +7,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/typographer/typeface.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
@@ -15,7 +16,7 @@ namespace impeller {
 class TypefaceSkia final : public Typeface,
                            public BackendCast<TypefaceSkia, Typeface> {
  public:
-  TypefaceSkia(sk_sp<SkTypeface> typeface);
+  TypefaceSkia(SkFont font);
 
   ~TypefaceSkia() override;
 
@@ -28,10 +29,10 @@ class TypefaceSkia final : public Typeface,
   // |Comparable<Typeface>|
   bool IsEqual(const Typeface& other) const override;
 
-  const sk_sp<SkTypeface>& GetSkiaTypeface() const;
+  const SkFont& GetSkiaFont() const;
 
  private:
-  sk_sp<SkTypeface> typeface_;
+  SkFont font_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TypefaceSkia);
 };

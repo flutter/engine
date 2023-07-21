@@ -4,15 +4,16 @@
 
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 
+#include "flutter/fml/hash_combine.h"
+
 namespace impeller {
 
-TypefaceSkia::TypefaceSkia(sk_sp<SkTypeface> typeface)
-    : typeface_(std::move(typeface)) {}
+TypefaceSkia::TypefaceSkia(SkFont font) : font_(std::move(font)) {}
 
 TypefaceSkia::~TypefaceSkia() = default;
 
 bool TypefaceSkia::IsValid() const {
-  return !!typeface_;
+  return true;
 }
 
 std::size_t TypefaceSkia::GetHash() const {
@@ -20,16 +21,21 @@ std::size_t TypefaceSkia::GetHash() const {
     return 0u;
   }
 
-  return reinterpret_cast<size_t>(typeface_.get());
+  size_t flags = fml::HashCombine(
+      font_.isForceAutoHinting(), font_.isEmbeddedBitmaps(), font_.isSubpixel(),
+      font_.isLinearMetrics(), font_.isEmbolden(), font_.isBaselineSnap());
+
+  return fml::HashCombine(font_.getSize(), font_.getScaleX(), font_.getSkewX(),
+                          flags, font_.getEdging(), font_.getHinting());
 }
 
 bool TypefaceSkia::IsEqual(const Typeface& other) const {
   auto sk_other = reinterpret_cast<const TypefaceSkia*>(&other);
-  return sk_other->typeface_ == typeface_;
+  return sk_other->font_ == font_;
 }
 
-const sk_sp<SkTypeface>& TypefaceSkia::GetSkiaTypeface() const {
-  return typeface_;
+const SkFont& TypefaceSkia::GetSkiaFont() const {
+  return font_;
 }
 
 }  // namespace impeller

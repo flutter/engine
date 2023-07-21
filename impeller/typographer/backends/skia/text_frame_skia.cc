@@ -18,8 +18,8 @@
 namespace impeller {
 
 static Font ToFont(const SkTextBlobRunIterator& run) {
-  auto& font = run.font();
-  auto typeface = std::make_shared<TypefaceSkia>(font.refTypefaceOrDefault());
+  SkFont font = run.font();
+  auto typeface = std::make_shared<TypefaceSkia>(font);
 
   SkFontMetrics sk_metrics;
   font.getMetrics(&sk_metrics);
