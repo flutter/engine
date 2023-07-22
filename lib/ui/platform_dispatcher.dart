@@ -1363,7 +1363,7 @@ class PlatformDispatcher {
     final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationId);
     switch (fontSize) {
       case >= 0:
-        return cache.putIfAbsent(unscaledFontSize, () => fontSize);
+        return cache[unscaledFontSize] = fontSize;
       case -1:
         assert(cache.isEmpty);
         return _cachedFontSizes = null;
@@ -1382,13 +1382,15 @@ class PlatformDispatcher {
   // 34, using the `TypedValue#applyDimension` API). This function returns -1 on
   // other platforms.
   //
-  // The `configurationGeneration` parameter tells the embedder which platform
+  // The `configurationId` parameter tells the embedder which platform
   // configuration to use for computing the scaled font size. When the user
   // changes the platform configuration, the configuration data will first be
   // made available on the platform thread before being dispatched asynchronously
-  // to the Flutter UI thread. Since this call is synchronous, it could be using
+  // to the Flutter UI thread. Since this call is synchronous, without this
+  // identifier, it could call into the embber whose configuration has already
+  // been updated and
   // the newer configuration that has yet been sent to Flutter. This call should
-  // use the [PlatformDispatcher]'s latest configuration generation to avoid such
+  // use the [PlatformDispatcher]'s latest configuration id to avoid such
   // a race.
   //
   // Returns a negative number when there's an error:
@@ -1396,7 +1398,7 @@ class PlatformDispatcher {
   // -2 : Generation mismatch.
   //      textScaleFactor value of the platform due to a race condition.
   @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
-  external static double _getScaledFontSize(double unscaledFontSize, int configurationGeneration);
+  external static double _getScaledFontSize(double unscaledFontSize, int configurationId);
 }
 
 /// Configuration of the platform.
