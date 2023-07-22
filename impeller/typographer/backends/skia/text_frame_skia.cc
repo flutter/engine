@@ -37,8 +37,9 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob,
-                                Scalar font_scale) {
+static constexpr Scalar kScaleSize = 100000.0f;
+
+TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob) {
   if (!blob) {
     return {};
   }
@@ -66,11 +67,12 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob,
         std::vector<SkRect> glyph_bounds;
         glyph_bounds.resize(glyph_count);
         SkFont font = run.font();
+        auto font_size = font.getSize();
         // For some platforms (including Android), `SkFont::getBounds()` snaps
         // the computed bounds to integers. And so we scale up the font size
         // prior to fetching the bounds to ensure that the returned bounds are
         // always precise enough.
-        font.setSize(font.getSize() * font_scale);
+        font.setSize(kScaleSize);
         font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
         for (auto i = 0u; i < glyph_count; i++) {
@@ -83,7 +85,7 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob,
 
           text_run.AddGlyph(
               Glyph{glyphs[i], type,
-                    ToRect(glyph_bounds[i]).Scale(1.0 / font_scale)},
+                    ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
               Point{point->x(), point->y()});
         }
         break;
