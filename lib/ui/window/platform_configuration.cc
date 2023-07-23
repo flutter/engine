@@ -23,7 +23,7 @@ namespace flutter {
 namespace {
 
 // Keep this in sync with _kImplicitViewId in ../platform_dispatcher.dart.
-static constexpr int kImplicitViewId = 0;
+static constexpr int kFlutterImplicitViewId = 0;
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
   return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());

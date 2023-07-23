@@ -257,7 +257,7 @@ class PlatformDispatcher {
   }
 
   FlutterView _createView(int id) {
-    return FlutterView._(id, this);
+    return FlutterView._(id, this, const _ViewConfiguration());
   }
 
   void _addView(int id) {
@@ -268,14 +268,12 @@ class PlatformDispatcher {
   void _doAddView(int id) {
     assert(!_views.containsKey(id), 'View ID $id already exists.');
     _views[id] = _createView(id);
-    _viewConfigurations[id] = const _ViewConfiguration();
   }
 
   void _removeView(int id) {
     assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
     _views.remove(id);
-    _viewConfigurations.remove(id);
   }
 
   // Called from the engine, via hooks.dart.
