@@ -1396,7 +1396,6 @@ class PlatformDispatcher {
   // Returns a negative number when there's an error:
   // -1 : GetScaledFontSize is not implemented on the current platform.
   // -2 : Generation mismatch.
-  //      textScaleFactor value of the platform due to a race condition.
   @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
   external static double _getScaledFontSize(double unscaledFontSize, int configurationId);
 }

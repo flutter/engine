@@ -4,7 +4,6 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
@@ -143,8 +142,8 @@ public class SettingsChannel {
    * <p>Platform configurations needed by the Flutter app (for example, text scale factor) are
    * retrived on the platform thread, serialized and sent to the Flutter application running on the
    * Flutter UI thread. Configurations exposed as functions that take parameters are typically not
-   * serializable. To allow the Flutter app access these configrations, one possible solution is to
-   * create dart bindings that allow the Flutter framework to invoke these functions via JNI
+   * serializable. To allow the Flutter app to access these configurations, one possible solution is
+   * to create dart bindings that allow the Flutter framework to invoke these functions via JNI
    * synchronously. To ensure the serialized configuration and these functions represent the same
    * set of configurations at any given time, a "generation" identifier is used to specify the
    * serialized configuration that the Flutter app most recently received and is currently using.
@@ -156,7 +155,6 @@ public class SettingsChannel {
    * generation identifier, this queue finds the configuration with that identifier and also cleans
    * up configurations that are no longer needed.
    */
-  @RequiresApi(34)
   @VisibleForTesting
   public static class ConfigurationQueue {
     private final ConcurrentLinkedQueue<SentConfiguration> sentQueue =
@@ -219,10 +217,10 @@ public class SettingsChannel {
     public static class SentConfiguration {
       private static int nextConfigGeneration = 0;
 
-      @NonNull private final int generationNumber;
+      @NonNull public final int generationNumber;
       @NonNull private final DisplayMetrics displayMetrics;
 
-      SentConfiguration(DisplayMetrics displayMetrics) {
+      public SentConfiguration(@NonNull DisplayMetrics displayMetrics) {
         this.generationNumber = nextConfigGeneration++;
         this.displayMetrics = displayMetrics;
       }

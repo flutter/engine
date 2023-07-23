@@ -2,6 +2,7 @@ package io.flutter.embedding.android;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -50,6 +51,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -427,6 +429,41 @@ public class FlutterViewTest {
     settingsChannel.startMessage().setDisplayMetrics(mock(DisplayMetrics.class)).send();
 
     verify(executor).send(eq("flutter/settings"), messageCaptor.capture(), isNull());
+  }
+
+  @Test
+  public void configurationQueueWorks() {
+    final SettingsChannel.ConfigurationQueue queue = new SettingsChannel.ConfigurationQueue();
+    assertNull(queue.getConfiguration(3));
+
+    queue.enqueueConfiguration(
+        new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    queue.enqueueConfiguration(
+        new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    assertEquals(0, queue.getConfiguration(0).generationNumber);
+    assertEquals(1, queue.getConfiguration(1).generationNumber);
+    assertNull(queue.getConfiguration(0));
+    assertNull(queue.getConfiguration(1));
+
+    queue.enqueueConfiguration(
+        new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    queue.enqueueConfiguration(
+        new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    assertEquals(3, queue.getConfiguration(3).generationNumber);
+    // Can no longer get 2 since 3 were asked for first.
+    assertNull(queue.getConfiguration(2));
+
+    final BasicMessageChannel.Reply replyFor4 =
+        queue.enqueueConfiguration(
+            new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    final BasicMessageChannel.Reply replyFor5 =
+        queue.enqueueConfiguration(
+            new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
+    replyFor4.reply(new Object());
+    replyFor5.reply(new Object());
+    // Can no longer get 4 since it's dequeued.
+    assertNull(queue.getConfiguration(4));
+    assertEquals(5, queue.getConfiguration(5).generationNumber);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
