@@ -1,4 +1,4 @@
-Signature: 1d4c4f239c4f38d6911dbb6f729f0443
+Signature: a4361ab10db55eb374936b5ce813d714
 
 ====================================================================================================
 LIBRARY: etc1
@@ -384,6 +384,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
+FILE: ../../../third_party/skia/relnotes/asyncyuva420.md
 FILE: ../../../third_party/skia/relnotes/canvas_flush.md
 FILE: ../../../third_party/skia/relnotes/const_context.md
 FILE: ../../../third_party/skia/relnotes/mesh_ganesh.md
@@ -2352,8 +2353,6 @@ ORIGIN: ../../../third_party/skia/src/core/SkDataTable.cpp + ../../../third_part
 ORIGIN: ../../../third_party/skia/src/core/SkDocument.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawLooper.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFontStream.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/core/SkGpuBlurUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMatrixUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMessageBus.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMipmap.cpp + ../../../third_party/skia/LICENSE
@@ -2491,8 +2490,6 @@ FILE: ../../../third_party/skia/src/core/SkDataTable.cpp
 FILE: ../../../third_party/skia/src/core/SkDocument.cpp
 FILE: ../../../third_party/skia/src/core/SkDrawLooper.cpp
 FILE: ../../../third_party/skia/src/core/SkFontStream.h
-FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp
-FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.h
 FILE: ../../../third_party/skia/src/core/SkMatrixUtils.h
 FILE: ../../../third_party/skia/src/core/SkMessageBus.h
 FILE: ../../../third_party/skia/src/core/SkMipmap.cpp
@@ -8758,6 +8755,7 @@ ORIGIN: ../../../third_party/skia/gm/coordclampshader.cpp + ../../../third_party
 ORIGIN: ../../../third_party/skia/gm/fontations.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/imagefiltersunpremul.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/surface_manager/SurfaceManager.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/gm/vias/Draw.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/ports/SkFontMgr_data.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/ports/SkTypeface_fontations.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkGainmapInfo.h + ../../../third_party/skia/LICENSE
@@ -8798,6 +8796,7 @@ FILE: ../../../third_party/skia/gm/coordclampshader.cpp
 FILE: ../../../third_party/skia/gm/fontations.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersunpremul.cpp
 FILE: ../../../third_party/skia/gm/surface_manager/SurfaceManager.h
+FILE: ../../../third_party/skia/gm/vias/Draw.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_data.h
 FILE: ../../../third_party/skia/include/ports/SkTypeface_fontations.h
 FILE: ../../../third_party/skia/include/private/SkGainmapInfo.h
@@ -8868,8 +8867,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/BazelGMRunner.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/BazelNoopRunner.cpp + ../../../third_party/skia/LICENSE
@@ -8879,6 +8880,7 @@ ORIGIN: ../../../third_party/skia/gm/scaledrects.cpp + ../../../third_party/skia
 ORIGIN: ../../../third_party/skia/gm/surface_manager/GaneshGLSurfaceManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/surface_manager/GaneshVulkanSurfaceManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/surface_manager/RasterSurfaceManager.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/gm/vias/SimpleVias.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkCanvasAndroid.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkHeifDecoder.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkImageAndroid.h + ../../../third_party/skia/LICENSE
@@ -9074,8 +9076,10 @@ ORIGIN: ../../../third_party/skia/src/utils/SkTestCanvas.cpp + ../../../third_pa
 ORIGIN: ../../../third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp
+FILE: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp
 FILE: ../../../third_party/skia/gm/BazelGMRunner.cpp
 FILE: ../../../third_party/skia/gm/BazelNoopRunner.cpp
@@ -9085,6 +9089,7 @@ FILE: ../../../third_party/skia/gm/scaledrects.cpp
 FILE: ../../../third_party/skia/gm/surface_manager/GaneshGLSurfaceManager.cpp
 FILE: ../../../third_party/skia/gm/surface_manager/GaneshVulkanSurfaceManager.cpp
 FILE: ../../../third_party/skia/gm/surface_manager/RasterSurfaceManager.cpp
+FILE: ../../../third_party/skia/gm/vias/SimpleVias.cpp
 FILE: ../../../third_party/skia/include/android/SkCanvasAndroid.h
 FILE: ../../../third_party/skia/include/android/SkHeifDecoder.h
 FILE: ../../../third_party/skia/include/android/SkImageAndroid.h

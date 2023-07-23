@@ -342,8 +342,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                       context == null ? originalDisplayDensity : getDisplayDensity();
                   onComplete.run(
                       new PlatformViewsChannel.PlatformViewBufferSize(
-                          toLogicalPixels(vdController.getBufferWidth(), displayDensity),
-                          toLogicalPixels(vdController.getBufferHeight(), displayDensity)));
+                          toLogicalPixels(vdController.getRenderTargetWidth(), displayDensity),
+                          toLogicalPixels(vdController.getRenderTargetHeight(), displayDensity)));
                 });
             return;
           }
@@ -362,9 +362,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
           // the engine
           // is set by the framework, but the texture buffer size is set by the platform down below.
-          if (physicalWidth > viewWrapper.getBufferWidth()
-              || physicalHeight > viewWrapper.getBufferHeight()) {
-            viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+          if (physicalWidth > viewWrapper.getRenderTargetWidth()
+              || physicalHeight > viewWrapper.getRenderTargetHeight()) {
+            viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
           }
 
           final ViewGroup.LayoutParams viewWrapperLayoutParams = viewWrapper.getLayoutParams();
@@ -381,8 +381,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           onComplete.run(
               new PlatformViewsChannel.PlatformViewBufferSize(
-                  toLogicalPixels(viewWrapper.getBufferWidth()),
-                  toLogicalPixels(viewWrapper.getBufferHeight())));
+                  toLogicalPixels(viewWrapper.getRenderTargetWidth()),
+                  toLogicalPixels(viewWrapper.getRenderTargetHeight())));
         }
 
         @Override
@@ -616,7 +616,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       textureId = textureEntry.id();
     }
     viewWrapper.setTouchProcessor(androidTouchProcessor);
-    viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+    viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
 
     final FrameLayout.LayoutParams viewWrapperLayoutParams =
         new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
