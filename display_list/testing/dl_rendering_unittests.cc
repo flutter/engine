@@ -4258,6 +4258,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       result_canvas->drawRect(test_bounds, sk_paint);
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
+        direct_context->flushAndSubmit();
         return direct_context->flushAndSubmit(result_surface->sk_surface(),
                                               true);
       }
@@ -4319,6 +4320,7 @@ class DisplayListNopTest : public DisplayListCanvas {
                                SkSamplingOptions(), &sk_paint);
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
+        direct_context->flushAndSubmit();
         return direct_context->flushAndSubmit(result_surface->sk_surface(),
                                               true);
       }
