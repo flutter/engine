@@ -3618,7 +3618,7 @@ class ColorFilter implements ImageFilter {
 
   @override
   int get hashCode {
-    List<double>? matrix = _matrix;
+    final List<double>? matrix = _matrix;
     return Object.hash(_color, _blendMode, matrix == null ? null : Object.hashAll(matrix), _type);
   }
 
