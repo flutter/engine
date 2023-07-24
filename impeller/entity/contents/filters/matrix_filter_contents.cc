@@ -35,10 +35,10 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
   }
 
   auto& transform = is_subpass_ ? effect_transform : entity.GetTransformation();
-  snapshot->transform = transform *           //
-                        matrix_ *             //
-                        transform.Invert() *  //
-                        snapshot->transform;
+  snapshot->transform = snapshot->transform *  //
+                        transform *            //
+                        matrix_ *              //
+                        transform.Invert();
   snapshot->sampler_descriptor = sampler_descriptor_;
   return Entity::FromSnapshot(snapshot, entity.GetBlendMode(),
                               entity.GetStencilDepth());
