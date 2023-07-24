@@ -4342,6 +4342,19 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+static void parseViewIdsCallback(const Dart_NativeArguments& args,
+                                 bool* hasImplicitView,
+                                 std::vector<int64_t>* viewIds) {
+  Dart_Handle exception = nullptr;
+  viewIds->clear();
+  *hasImplicitView =
+      tonic::DartConverter<bool>::FromArguments(args, 0, exception);
+  ASSERT_EQ(exception, nullptr);
+  *viewIds = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
+      args, 1, exception);
+  ASSERT_EQ(exception, nullptr);
+}
+
 TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
   Settings settings = CreateSettingsForFixture();
   settings.enable_implicit_view = true;
@@ -4357,14 +4370,7 @@ TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
   fml::AutoResetWaitableEvent reportLatch;
   auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
                                 &viewIds](Dart_NativeArguments args) {
-    Dart_Handle exception = nullptr;
-    ASSERT_EQ(viewIds.size(), 0ul);
-    hasImplicitView =
-        tonic::DartConverter<bool>::FromArguments(args, 0, exception);
-    ASSERT_EQ(exception, nullptr);
-    viewIds = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
-        args, 1, exception);
-    ASSERT_EQ(exception, nullptr);
+    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
     reportLatch.Signal();
   };
   AddNativeCallback("NativeReportViewIdsCallback",
@@ -4399,14 +4405,7 @@ TEST_F(ShellTest, ShellWithImplicitViewDisabledStartsWithoutImplicitView) {
   fml::AutoResetWaitableEvent reportLatch;
   auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
                                 &viewIds](Dart_NativeArguments args) {
-    Dart_Handle exception = nullptr;
-    ASSERT_EQ(viewIds.size(), 0ul);
-    hasImplicitView =
-        tonic::DartConverter<bool>::FromArguments(args, 0, exception);
-    ASSERT_EQ(exception, nullptr);
-    viewIds = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
-        args, 1, exception);
-    ASSERT_EQ(exception, nullptr);
+    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
     reportLatch.Signal();
   };
   AddNativeCallback("NativeReportViewIdsCallback",
