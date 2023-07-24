@@ -240,9 +240,11 @@ struct Settings {
   //
   // If implicit view is enabled, in addition to the "regular views" as above,
   // the shell will start up with a special view with a fixed view ID of
-  // kFlutterImplicitViewId. Shell::AddView or RemoveView must not be called
-  // for this view. Even when the window that shows the view is closed, the
-  // framework is unaware and might continue render into or operate this view.
+  // kFlutterImplicitViewId. This view, called the implicit view, is available
+  // throughout the lifetime of the shell. Shell::AddView or RemoveView must not
+  // be called for this view. Even when the window that shows the view is
+  // closed, the framework is unaware and might continue render into or operate
+  // this view.
   //
   // The single-view APIs, which are APIs that do not specify view IDs, operate
   // the implicit view. The multi-view APIs can operate all views, including the
