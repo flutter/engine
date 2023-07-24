@@ -169,6 +169,12 @@ struct Command : public ResourceBinder {
                     const ShaderMetadata& metadata,
                     const BufferView& view) override;
 
+  // |ResourceBinder|
+  bool BindResource(ShaderStage stage,
+                    const ShaderPushConstant& slot,
+                    const ShaderMetadata& metadata,
+                    const BufferView& view) override;
+
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,

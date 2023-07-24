@@ -28,6 +28,13 @@ bool ComputeCommand::BindResource(ShaderStage stage,
   return true;
 }
 
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const ShaderPushConstant& slot,
+                                  const ShaderMetadata& metadata,
+                                  const BufferView& view) {
+  return false;
+}
+
 bool ComputeCommand::BindResource(
     ShaderStage stage,
     const SampledImageSlot& slot,

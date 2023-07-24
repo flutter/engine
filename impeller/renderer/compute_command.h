@@ -63,6 +63,12 @@ struct ComputeCommand : public ResourceBinder {
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    const ShaderPushConstant& slot,
+                    const ShaderMetadata& metadata,
+                    const BufferView& view) override;
+
+  // |ResourceBinder|
+  bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     const std::shared_ptr<const Texture>& texture) override;

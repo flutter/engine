@@ -42,6 +42,13 @@ bool Command::BindResource(ShaderStage stage,
   return DoBindResource(stage, slot, &metadata, view);
 }
 
+bool Command::BindResource(ShaderStage stage,
+                           const ShaderPushConstant& slot,
+                           const ShaderMetadata& metadata,
+                           const BufferView& view) {
+  return false;
+}
+
 bool Command::BindResource(
     ShaderStage stage,
     const ShaderUniformSlot& slot,
