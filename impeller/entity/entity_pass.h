@@ -54,6 +54,10 @@ class EntityPass {
 
   void SetDelegate(std::unique_ptr<EntityPassDelegate> delgate);
 
+  void SetBoundsLimit(std::optional<Rect> bounds_limit);
+
+  std::optional<Rect> GetBoundsLimit() const;
+
   size_t GetSubpassesDepth() const;
 
   std::unique_ptr<EntityPass> Clone() const;
@@ -223,6 +227,7 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
+  std::optional<Rect> bounds_limit_;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

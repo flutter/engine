@@ -280,6 +280,18 @@ void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
 }
 
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
+  auto& cull_rect = xformation_stack_.back().cull_rect;
+  if (clip_op == Entity::ClipOperation::kIntersect &&               //
+      cull_rect.has_value() &&                                      //
+      xformation_stack_.back().xformation.IsTranslationScaleOnly()  //
+  ) {
+    auto transformed_rect =
+        rect.TransformBounds(xformation_stack_.back().xformation);
+    if (transformed_rect.Contains(*cull_rect)) {
+      return;  // This clip will do nothing, so skip it.
+    }
+  }
+
   ClipGeometry(Geometry::MakeRect(rect), clip_op);
   switch (clip_op) {
     case Entity::ClipOperation::kIntersect:
@@ -491,23 +503,14 @@ void Canvas::SaveLayer(const Paint& paint,
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
+  new_layer_pass.SetBoundsLimit(bounds);
 
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {
     new_layer_pass.SetDelegate(
-        std::make_unique<OpacityPeepholePassDelegate>(paint, bounds));
+        std::make_unique<OpacityPeepholePassDelegate>(paint));
   } else {
-    new_layer_pass.SetDelegate(
-        std::make_unique<PaintPassDelegate>(paint, bounds));
-  }
-
-  if (bounds.has_value() && !backdrop_filter) {
-    // Render target switches due to a save layer can be elided. In such cases
-    // where passes are collapsed into their parent, the clipping effect to
-    // the size of the render target that would have been allocated will be
-    // absent. Explicitly add back a clip to reproduce that behavior. Since
-    // clips never require a render target switch, this is a cheap operation.
-    ClipRect(bounds.value());
+    new_layer_pass.SetDelegate(std::make_unique<PaintPassDelegate>(paint));
   }
 }
 

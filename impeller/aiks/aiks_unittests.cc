@@ -1979,7 +1979,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
       ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Blue());
 
   // Paint has color filter, can't elide.
-  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   paint.color_filter = nullptr;
@@ -1991,14 +1991,14 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   };
 
   // Paint has image filter, can't elide.
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   paint.image_filter = nullptr;
   paint.color = Color::Red();
 
   // Paint has no alpha, can't elide;
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   // Positive test.
@@ -2008,7 +2008,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   entity_pass->AddEntity(entity);
   paint.color = Color::Red().WithAlpha(0.5);
 
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 }
 
