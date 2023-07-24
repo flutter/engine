@@ -465,12 +465,12 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    std::shared_ptr<Contents> backdrop_filter_contents = nullptr;
+    std::shared_ptr<Contents> subpass_backdrop_filter_contents = nullptr;
     if (subpass->backdrop_filter_proc_) {
       auto texture = pass_context.GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
-      backdrop_filter_contents =
+      subpass_backdrop_filter_contents =
           proc(FilterInput::Make(std::move(texture)), subpass->xformation_,
                /*is_subpass*/ true);
 
@@ -507,9 +507,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    auto subpass_coverage = (subpass->flood_clip_ || backdrop_filter_contents)
-                                ? coverage_limit
-                                : GetSubpassCoverage(*subpass, coverage_limit);
+    auto subpass_coverage =
+        (subpass->flood_clip_ || subpass_backdrop_filter_contents)
+            ? coverage_limit
+            : GetSubpassCoverage(*subpass, coverage_limit);
     if (!subpass_coverage.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
@@ -532,17 +533,18 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
-    if (!subpass->OnRender(renderer,                  // renderer
-                           root_pass_size,            // root_pass_size
-                           subpass_target,            // pass_target
-                           subpass_coverage->origin,  // global_pass_position
-                           subpass_coverage->origin -
-                               global_pass_position,  // local_pass_position
-                           ++pass_depth,              // pass_depth
-                           stencil_coverage_stack,    // stencil_coverage_stack
-                           subpass->stencil_depth_,   // stencil_depth_floor
-                           backdrop_filter_contents  // backdrop_filter_contents
-                           )) {
+    if (!subpass->OnRender(
+            renderer,                  // renderer
+            root_pass_size,            // root_pass_size
+            subpass_target,            // pass_target
+            subpass_coverage->origin,  // global_pass_position
+            subpass_coverage->origin -
+                global_pass_position,         // local_pass_position
+            ++pass_depth,                     // pass_depth
+            stencil_coverage_stack,           // stencil_coverage_stack
+            subpass->stencil_depth_,          // stencil_depth_floor
+            subpass_backdrop_filter_contents  // backdrop_filter_contents
+            )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
       return EntityPass::EntityResult::Failure();
@@ -604,12 +606,10 @@ bool EntityPass::OnRender(
     return false;
   }
 
-  if (!(GetClearColor(root_pass_size) == Color::BlackTransparent())) {
+  if (!collapsed_parent_pass &&
+      !GetClearColor(root_pass_size).IsTransparent()) {
     // Force the pass context to create at least one new pass if the clear color
-    // is present. The `EndPass` first ensures that the clear color will get
-    // applied even if this EntityPass is getting collapsed into the parent
-    // pass.
-    pass_context.EndPass();
+    // is present.
     pass_context.GetRenderPass(pass_depth);
   }
 
@@ -752,13 +752,15 @@ bool EntityPass::OnRender(
   bool is_collapsing_clear_colors = true;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
-    if (is_collapsing_clear_colors) {
-      auto [entity_color, _] =
-          ElementAsBackgroundColor(element, root_pass_size);
-      if (entity_color.has_value()) {
-        continue;
+    if (!collapsed_parent_pass) {
+      if (is_collapsing_clear_colors) {
+        auto [entity_color, _] =
+            ElementAsBackgroundColor(element, root_pass_size);
+        if (entity_color.has_value()) {
+          continue;
+        }
+        is_collapsing_clear_colors = false;
       }
-      is_collapsing_clear_colors = false;
     }
 
     EntityResult result =

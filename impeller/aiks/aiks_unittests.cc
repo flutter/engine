@@ -2908,15 +2908,22 @@ TEST_P(AiksTest, DrawPictureWithText) {
 
 TEST_P(AiksTest, MatrixBackdropFilter) {
   Canvas canvas;
-  canvas.SaveLayer({}, std::nullopt,
-                   [](const FilterInput::Ref& input,
-                      const Matrix& effect_transform, bool is_subpass) {
-                     return FilterContents::MakeMatrixFilter(
-                         input, Matrix::MakeTranslation(Vector2(100, 100)), {},
-                         Matrix(), true);
-                   });
-  canvas.DrawCircle(Point(100, 100), 100,
-                    {.color = Color::Green(), .blend_mode = BlendMode::kPlus});
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.SaveLayer({}, std::nullopt);
+  {
+    canvas.DrawCircle(
+        Point(200, 200), 100,
+        {.color = Color::Green(), .blend_mode = BlendMode::kPlus});
+    // Should render a second intersecting circle, offset by 100, 100.
+    canvas.SaveLayer({}, std::nullopt,
+                     [](const FilterInput::Ref& input,
+                        const Matrix& effect_transform, bool is_subpass) {
+                       return FilterContents::MakeMatrixFilter(
+                           input, Matrix::MakeTranslation(Vector2(100, 100)),
+                           {}, Matrix(), true);
+                     });
+    canvas.Restore();
+  }
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -2984,6 +2991,27 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveSaveLayer) {
 
   ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "Hello world",
                                  "Roboto-Regular.ttf"));
+}
+
+TEST_P(AiksTest, PipelineBlendSingleParameter) {
+  Canvas canvas;
+
+  // Should render a green square in the middle of a blue circle.
+  canvas.SaveLayer({});
+  {
+    canvas.Translate(Point(100, 100));
+    canvas.DrawCircle(Point(200, 200), 200, {.color = Color::Blue()});
+    canvas.ClipRect(Rect(100, 100, 200, 200));
+    canvas.DrawCircle(
+        Point(200, 200), 200,
+        {.color = Color::Green(),
+         .blend_mode = BlendMode::kSourceOver,
+         .image_filter = [](const FilterInput::Ref& input,
+                            const Matrix& effect_transform, bool is_subpass) {
+           return ColorFilterContents::MakeBlend(BlendMode::kSource, {input});
+         }});
+    canvas.Restore();
+  }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
