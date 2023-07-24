@@ -76,9 +76,6 @@ class TestPassDelegate final : public EntityPassDelegate {
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
 
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override { return coverage_; }
-
   // |EntityPassDelgate|
   bool CanElide() override { return false; }
 
