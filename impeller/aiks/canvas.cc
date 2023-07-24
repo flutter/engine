@@ -280,19 +280,16 @@ void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
 }
 
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
+  auto geometry = Geometry::MakeRect(rect);
   auto& cull_rect = xformation_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&               //
-      cull_rect.has_value() &&                                      //
-      xformation_stack_.back().xformation.IsTranslationScaleOnly()  //
+  if (clip_op == Entity::ClipOperation::kIntersect &&                        //
+      cull_rect.has_value() &&                                               //
+      geometry->CoversArea(xformation_stack_.back().xformation, *cull_rect)  //
   ) {
-    auto transformed_rect =
-        rect.TransformBounds(xformation_stack_.back().xformation);
-    if (transformed_rect.Contains(*cull_rect)) {
-      return;  // This clip will do nothing, so skip it.
-    }
+    return;  // This clip will do nothing, so skip it.
   }
 
-  ClipGeometry(Geometry::MakeRect(rect), clip_op);
+  ClipGeometry(std::move(geometry), clip_op);
   switch (clip_op) {
     case Entity::ClipOperation::kIntersect:
       IntersectCulling(rect);
@@ -310,7 +307,21 @@ void Canvas::ClipRRect(const Rect& rect,
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
                   .TakePath();
-  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
+
+  std::optional<Rect> inner_rect = (corner_radius * 2 < rect.size.width &&
+                                    corner_radius * 2 < rect.size.height)
+                                       ? rect.Expand(-corner_radius)
+                                       : std::make_optional<Rect>();
+  auto geometry = Geometry::MakeFillPath(path, inner_rect);
+  auto& cull_rect = xformation_stack_.back().cull_rect;
+  if (clip_op == Entity::ClipOperation::kIntersect &&                        //
+      cull_rect.has_value() &&                                               //
+      geometry->CoversArea(xformation_stack_.back().xformation, *cull_rect)  //
+  ) {
+    return;  // This clip will do nothing, so skip it.
+  }
+
+  ClipGeometry(std::move(geometry), clip_op);
   switch (clip_op) {
     case Entity::ClipOperation::kIntersect:
       IntersectCulling(rect);
