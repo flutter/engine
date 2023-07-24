@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/windows/flutter_desktop_messenger.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
@@ -42,7 +43,7 @@
 
 namespace flutter {
 
-class FlutterWindowsView;
+static constexpr int64_t kImplicitViewId = 0;
 
 // Update the thread priority for the Windows engine.
 static void WindowsPlatformThreadPrioritySetter(
@@ -112,12 +113,25 @@ class FlutterWindowsEngine {
   // Returns false if stopping the engine fails, or if it was not running.
   virtual bool Stop();
 
-  // Sets the view that is displaying this engine's content.
-  void SetView(FlutterWindowsView* view);
+  // Give the engine a view to render into.
+  void AddView(FlutterWindowsView* view);
 
-  // The view displaying this engine's content, if any. This will be null for
-  // headless engines.
-  FlutterWindowsView* view() { return view_; }
+  // Destroy a view. The engine will no longer render into it.
+  //
+  // It is an error to attempt to destroy the implicit view.
+  void DestroyView(int64_t view_id);
+
+  int64_t AcquireViewId() {
+    // TODO(loicsharma): If the implicit view is disabled, the first
+    // view ID should be 1.
+    int64_t view_id = next_view_id_;
+    next_view_id_++;
+    return view_id;
+  }
+
+  FlutterWindowsView* view(int64_t view_id) {
+    return views_[view_id];
+  }
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
@@ -330,8 +344,8 @@ class FlutterWindowsEngine {
   // AOT data, if any.
   UniqueAotDataPtr aot_data_;
 
-  // The view displaying the content running in this engine, if any.
-  FlutterWindowsView* view_ = nullptr;
+  // The views displaying the content running in this engine.
+  std::unordered_map<int64_t, FlutterWindowsView*> views_;
 
   // Task runner for tasks posted from the engine.
   std::unique_ptr<TaskRunner> task_runner_;
@@ -392,6 +406,8 @@ class FlutterWindowsEngine {
   // An override of the frame interval used by EngineModifier for testing.
   std::optional<std::chrono::nanoseconds> frame_interval_override_ =
       std::nullopt;
+
+  int64_t next_view_id_ = 0;
 
   bool semantics_enabled_ = false;
 

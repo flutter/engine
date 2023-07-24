@@ -100,8 +100,7 @@ void FlutterEngine::SetNextFrameCallback(std::function<void()> callback) {
       this);
 }
 
-FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
-  owns_engine_ = false;
+FlutterDesktopEngineRef FlutterEngine::engine() {
   return engine_;
 }
 

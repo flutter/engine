@@ -12,9 +12,29 @@
 
 namespace flutter {
 
+typedef void (*glGenFramebuffersProc)(GLsizei n, GLuint* framebuffers);
+typedef void (*glDeleteFramebuffersProc)(GLsizei n, const GLuint* framebuffers);
+typedef void (*glBindFramebufferProc)(GLenum target, GLuint framebuffer);
+typedef void (*glFramebufferTexture2DProc)(GLenum target,
+                                           GLenum attachment,
+                                           GLenum textarget,
+                                           GLuint texture,
+                                           GLint level);
+typedef void (*glBlitFramebufferANGLEProc)(GLint srcX0,
+                                           GLint srcY0,
+                                           GLint srcX1,
+                                           GLint srcY1,
+                                           GLint dstX0,
+                                           GLint dstY0,
+                                           GLint dstX1,
+                                           GLint dstY1,
+                                           GLbitfield mask,
+                                           GLenum filter);
+
 typedef void (*glGenTexturesProc)(GLsizei n, GLuint* textures);
 typedef void (*glDeleteTexturesProc)(GLsizei n, const GLuint* textures);
 typedef void (*glBindTextureProc)(GLenum target, GLuint texture);
+typedef void (*glTexParameterfProc)(GLenum target, GLenum pname, GLfloat param);
 typedef void (*glTexParameteriProc)(GLenum target, GLenum pname, GLint param);
 typedef void (*glTexImage2DProc)(GLenum target,
                                  GLint level,
@@ -28,9 +48,16 @@ typedef void (*glTexImage2DProc)(GLenum target,
 
 // A struct containing pointers to resolved gl* functions.
 struct GlProcs {
+  glGenFramebuffersProc glGenFramebuffers;
+  glDeleteFramebuffersProc glDeleteFramebuffers;
+  glBindFramebufferProc glBindFramebuffer;
+  glFramebufferTexture2DProc glFramebufferTexture2D;
+  glBlitFramebufferANGLEProc glBlitFramebufferANGLE;
+
   glGenTexturesProc glGenTextures;
   glDeleteTexturesProc glDeleteTextures;
   glBindTextureProc glBindTexture;
+  glTexParameterfProc glTexParameterf;
   glTexParameteriProc glTexParameteri;
   glTexImage2DProc glTexImage2D;
   bool valid;

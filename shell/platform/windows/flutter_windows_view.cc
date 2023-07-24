@@ -15,8 +15,6 @@
 namespace flutter {
 
 namespace {
-static constexpr int64_t kFlutterDefaultViewId = 0ll;
-
 // The maximum duration to block the platform thread for while waiting
 // for a window resize operation to complete.
 constexpr std::chrono::milliseconds kWindowResizeTimeout{100};
@@ -51,25 +49,14 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
-  // The engine renders into the view's surface. The engine must be
-  // shutdown before the view's resources can be destroyed.
-  if (engine_) {
-    engine_->Stop();
-  }
-
   DestroyRenderSurface();
 }
 
-void FlutterWindowsView::SetEngine(
-    std::unique_ptr<FlutterWindowsEngine> engine) {
-  engine_ = std::move(engine);
+void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
+  FML_DCHECK(engine_ == nullptr);
 
-  engine_->SetView(this);
-
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-
-  SendWindowMetrics(bounds.width, bounds.height,
-                    binding_handler_->GetDpiScale());
+  engine_ = engine;
+  view_id_ = engine_->AcquireViewId();
 }
 
 uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
@@ -83,7 +70,8 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   if (resize_target_width_ == width && resize_target_height_ == height) {
     // Platform thread is blocked for the entire duration until the
     // resize_status_ is set to kDone.
-    engine_->surface_manager()->ResizeSurface(GetRenderTarget(), width, height,
+    engine_->surface_manager()->ResizeSurface(view_id_, GetRenderTarget(),
+                                              width, height,
                                               binding_handler_->NeedsVSync());
     resize_status_ = ResizeState::kFrameGenerated;
   }
@@ -116,7 +104,7 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   }
 
   EGLint surface_width, surface_height;
-  engine_->surface_manager()->GetSurfaceDimensions(&surface_width,
+  engine_->surface_manager()->GetSurfaceDimensions(view_id_, &surface_width,
                                                    &surface_height);
 
   bool surface_will_update =
@@ -270,14 +258,12 @@ void FlutterWindowsView::OnResetImeComposing() {
 void FlutterWindowsView::SendWindowMetrics(size_t width,
                                            size_t height,
                                            double dpiScale) const {
-  // TODO(dkwingsmt)
-  int64_t view_id = kFlutterDefaultViewId;
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
-  engine_->SendWindowMetricsEvent(view_id, event);
+  engine_->SendWindowMetricsEvent(view_id_, event);
 }
 
 void FlutterWindowsView::SendInitialBounds() {
@@ -502,6 +488,7 @@ void FlutterWindowsView::SendPointerEventWithData(
     event.x = event_data.x;
     event.y = event_data.y;
     event.buttons = 0;
+    event.view_id = view_id_;
     SendPointerEventWithData(event, state);
   }
 
@@ -516,9 +503,7 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
-  // TODO(loicsharma): This assumes all pointer events are on the implicit
-  // view and should be updated to support multiple views.
-  event.view_id = 0;
+  event.view_id = view_id_;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
@@ -540,15 +525,7 @@ void FlutterWindowsView::SendPointerEventWithData(
 }
 
 bool FlutterWindowsView::MakeCurrent() {
-  return engine_->surface_manager()->MakeCurrent();
-}
-
-bool FlutterWindowsView::MakeResourceCurrent() {
-  return engine_->surface_manager()->MakeResourceCurrent();
-}
-
-bool FlutterWindowsView::ClearContext() {
-  return engine_->surface_manager()->ClearContext();
+  return engine_->surface_manager()->MakeSurfaceCurrent(view_id_);
 }
 
 bool FlutterWindowsView::SwapBuffers() {
@@ -569,20 +546,20 @@ bool FlutterWindowsView::SwapBuffers() {
       // SwapBuffers waits for vsync and there's no point doing that for
       // invisible windows.
       if (visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+        swap_buffers_result = engine_->surface_manager()->SwapBuffers(view_id_);
       }
       resize_status_ = ResizeState::kDone;
       lock.unlock();
       resize_cv_.notify_all();
       binding_handler_->OnWindowResized();
       if (!visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+        swap_buffers_result = engine_->surface_manager()->SwapBuffers(view_id_);
       }
       return swap_buffers_result;
     }
     case ResizeState::kDone:
     default:
-      return engine_->surface_manager()->SwapBuffers();
+      return engine_->surface_manager()->SwapBuffers(view_id_);
   }
 }
 
@@ -594,20 +571,23 @@ bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
+  FML_DCHECK(has_surface_ == false);
+
   if (engine_ && engine_->surface_manager()) {
     PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
     bool enable_vsync = binding_handler_->NeedsVSync();
-    engine_->surface_manager()->CreateSurface(GetRenderTarget(), bounds.width,
-                                              bounds.height, enable_vsync);
+    engine_->surface_manager()->CreateSurface(
+        view_id_, GetRenderTarget(), bounds.width, bounds.height, enable_vsync);
 
     resize_target_width_ = bounds.width;
     resize_target_height_ = bounds.height;
+    has_surface_ = true;
   }
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {
-  if (engine_ && engine_->surface_manager()) {
-    engine_->surface_manager()->DestroySurface();
+  if (engine_ && has_surface_) {
+    engine_->surface_manager()->DestroySurface(view_id_);
   }
 }
 
@@ -628,7 +608,7 @@ PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
-  return engine_.get();
+  return engine_;
 }
 
 void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
@@ -675,7 +655,8 @@ void FlutterWindowsView::UpdateSemanticsEnabled(bool enabled) {
 
 void FlutterWindowsView::OnDwmCompositionChanged() {
   if (engine_->surface_manager()) {
-    engine_->surface_manager()->SetVSyncEnabled(binding_handler_->NeedsVSync());
+    engine_->surface_manager()->SetVSyncEnabled(view_id_,
+                                                binding_handler_->NeedsVSync());
   }
 }
 

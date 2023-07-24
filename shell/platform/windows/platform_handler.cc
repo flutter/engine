@@ -248,7 +248,8 @@ PlatformHandler::~PlatformHandler() = default;
 void PlatformHandler::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
     std::string_view key) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove single view assumption.
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");
@@ -291,7 +292,8 @@ void PlatformHandler::GetPlainText(
 
 void PlatformHandler::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove single view assumption
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");
@@ -329,7 +331,8 @@ void PlatformHandler::GetHasStrings(
 void PlatformHandler::SetPlainText(
     const std::string& text,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove single view assumption
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");

@@ -28,9 +28,13 @@ class FlutterViewController {
   // either using HWNDs.
   //
   // |dart_project| will be used to configure the engine backing this view.
-  explicit FlutterViewController(int width,
-                                 int height,
-                                 const DartProject& project);
+  FlutterViewController(int width,
+                        int height,
+                        const DartProject& project);
+
+  FlutterViewController(int width,
+                        int height,
+                        std::shared_ptr<FlutterEngine> engine);
 
   virtual ~FlutterViewController();
 
@@ -62,7 +66,7 @@ class FlutterViewController {
   FlutterDesktopViewControllerRef controller_ = nullptr;
 
   // The backing engine
-  std::unique_ptr<FlutterEngine> engine_;
+  std::shared_ptr<FlutterEngine> engine_;
 
   // The owned FlutterView.
   std::unique_ptr<FlutterView> view_;

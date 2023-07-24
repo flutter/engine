@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
+#include <GLES3/gl3.h>
 #include <vector>
 
 #include "flutter/fml/logging.h"
@@ -17,6 +18,10 @@ static void LogEglError(std::string message) {
 }
 
 namespace flutter {
+
+typedef void (*glGetIntegervProc)(GLenum pname, GLint* params);
+typedef GLubyte* (*glGetStringProc)(GLenum name);
+typedef GLubyte* (*glGetStringiProc)(GLenum name, GLuint index);
 
 int AngleSurfaceManager::instance_count_ = 0;
 
@@ -169,6 +174,82 @@ bool AngleSurfaceManager::Initialize() {
     return false;
   }
 
+  if (!MakeRenderContextCurrent()) {
+    LogEglError("Failed to create EGL context current");
+    return false;
+  }
+
+  if (!InitializeGlVersion()) {
+    LogEglError("Failed to determine OpenGL version");
+    return false;
+  }
+
+  if (!InitializeGlExtensions()) {
+    LogEglError("Failed to determine OpenGL extensions");
+    return false;
+  }
+
+  return true;
+}
+
+bool AngleSurfaceManager::InitializeGlVersion() {
+  glGetStringProc gl_get_string =
+      reinterpret_cast<glGetStringProc>(eglGetProcAddress("glGetString"));
+
+  if (!gl_get_string) {
+    return false;
+  }
+
+  int major, minor;
+  auto version = reinterpret_cast<const char*>(gl_get_string(GL_VERSION));
+  int parts = sscanf(version, "OpenGL ES %d.%d", &major, &minor);
+  if (parts != 2) {
+    return false;
+  }
+
+  gl_version_major_ = major;
+  gl_version_minor_ = minor;
+  return true;
+}
+
+bool AngleSurfaceManager::InitializeGlExtensions() {
+  glGetIntegervProc gl_get_integerv =
+      reinterpret_cast<glGetIntegervProc>(eglGetProcAddress("glGetIntegerv"));
+  glGetStringProc gl_get_string =
+      reinterpret_cast<glGetStringProc>(eglGetProcAddress("glGetString"));
+  glGetStringiProc gl_get_stringi =
+      reinterpret_cast<glGetStringiProc>(eglGetProcAddress("glGetStringi"));
+
+  // glGetStringi isn't required and is only available on OpenGL 3.0 or greater.
+  if (!gl_get_integerv || !gl_get_string) {
+    return false;
+  }
+
+  std::istringstream istream;
+  std::string extension;
+
+  if (gl_version_major_ >= 3 && gl_get_stringi) {
+    int extensions_count;
+    gl_get_integerv(GL_NUM_EXTENSIONS, &extensions_count);
+
+    for (int i = 0; i < extensions_count; i++) {
+      auto extension =
+          reinterpret_cast<const char*>(gl_get_stringi(GL_EXTENSIONS, i));
+
+      gl_extensions_.insert(std::string(extension));
+    }
+  } else {
+    istream.str(reinterpret_cast<const char*>(gl_get_string(GL_EXTENSIONS)));
+    while (std::getline(istream, extension, ' ')) {
+      gl_extensions_.insert(extension);
+    }
+  }
+
+  istream.str(::eglQueryString(egl_display_, EGL_EXTENSIONS));
+  while (std::getline(istream, extension, ' ')) {
+    gl_extensions_.insert(extension);
+  }
+
   return true;
 }
 
@@ -207,10 +288,25 @@ void AngleSurfaceManager::CleanUp() {
   }
 }
 
-bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
+bool AngleSurfaceManager::GlVersion(int major, int minor) {
+  if (gl_version_major_ > major) {
+    return true;
+  }
+
+  return gl_version_major_ == major && gl_version_minor_ >= minor;
+}
+
+bool AngleSurfaceManager::HasExtension(std::string extension) {
+  return gl_extensions_.find(extension) != gl_extensions_.end();
+}
+
+bool AngleSurfaceManager::CreateSurface(int64_t surface_id,
+                                        WindowsRenderTarget* render_target,
                                         EGLint width,
                                         EGLint height,
                                         bool vsync_enabled) {
+  FML_DCHECK(!RenderSurfaceExists(surface_id));
+
   if (!render_target || !initialize_succeeded_) {
     return false;
   }
@@ -230,35 +326,37 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
     return false;
   }
 
-  surface_width_ = width;
-  surface_height_ = height;
-  render_surface_ = surface;
+  render_surfaces_.emplace(
+      surface_id, std::make_unique<AngleSurface>(surface, width, height));
 
-  SetVSyncEnabled(vsync_enabled);
+  SetVSyncEnabled(surface_id, vsync_enabled);
   return true;
 }
 
-void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
+void AngleSurfaceManager::ResizeSurface(int64_t surface_id,
+                                        WindowsRenderTarget* render_target,
                                         EGLint width,
                                         EGLint height,
                                         bool vsync_enabled) {
-  EGLint existing_width, existing_height;
-  GetSurfaceDimensions(&existing_width, &existing_height);
-  if (width != existing_width || height != existing_height) {
-    surface_width_ = width;
-    surface_height_ = height;
+  FML_DCHECK(RenderSurfaceExists(surface_id));
 
+  EGLint existing_width, existing_height;
+  GetSurfaceDimensions(surface_id, &existing_width, &existing_height);
+  if (width != existing_width || height != existing_height) {
     ClearContext();
-    DestroySurface();
-    if (!CreateSurface(render_target, width, height, vsync_enabled)) {
+    DestroySurface(surface_id);
+    if (!CreateSurface(surface_id, render_target, width, height,
+                       vsync_enabled)) {
       FML_LOG(ERROR)
           << "AngleSurfaceManager::ResizeSurface failed to create surface";
     }
   }
 }
 
-void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
-  if (render_surface_ == EGL_NO_SURFACE || !initialize_succeeded_) {
+void AngleSurfaceManager::GetSurfaceDimensions(int64_t surface_id,
+                                               EGLint* width,
+                                               EGLint* height) {
+  if (!initialize_succeeded_ || !RenderSurfaceExists(surface_id)) {
     *width = 0;
     *height = 0;
     return;
@@ -267,20 +365,31 @@ void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
   // Can't use eglQuerySurface here; Because we're not using
   // EGL_FIXED_SIZE_ANGLE flag anymore, Angle may resize the surface before
   // Flutter asks it to, which breaks resize redraw synchronization
-  *width = surface_width_;
-  *height = surface_height_;
+  *width = render_surfaces_[surface_id]->width;
+  *height = render_surfaces_[surface_id]->height;
 }
 
-void AngleSurfaceManager::DestroySurface() {
-  if (egl_display_ != EGL_NO_DISPLAY && render_surface_ != EGL_NO_SURFACE) {
-    eglDestroySurface(egl_display_, render_surface_);
+void AngleSurfaceManager::DestroySurface(int64_t surface_id) {
+  if (egl_display_ == EGL_NO_DISPLAY || !RenderSurfaceExists(surface_id)) {
+    return;
   }
-  render_surface_ = EGL_NO_SURFACE;
+
+  eglDestroySurface(egl_display_, render_surfaces_[surface_id]->surface);
+  render_surfaces_.erase(surface_id);
 }
 
-bool AngleSurfaceManager::MakeCurrent() {
-  return (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
+bool AngleSurfaceManager::MakeRenderContextCurrent() {
+  return (eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
                          egl_context_) == EGL_TRUE);
+}
+
+bool AngleSurfaceManager::MakeSurfaceCurrent(int64_t surface_id) {
+  FML_DCHECK(RenderSurfaceExists(surface_id));
+
+  EGLSurface surface = render_surfaces_[surface_id]->surface;
+
+  return (eglMakeCurrent(egl_display_, surface, surface, egl_context_) ==
+          EGL_TRUE);
 }
 
 bool AngleSurfaceManager::ClearContext() {
@@ -293,8 +402,10 @@ bool AngleSurfaceManager::MakeResourceCurrent() {
                          egl_resource_context_) == EGL_TRUE);
 }
 
-EGLBoolean AngleSurfaceManager::SwapBuffers() {
-  return (eglSwapBuffers(egl_display_, render_surface_));
+EGLBoolean AngleSurfaceManager::SwapBuffers(int64_t surface_id) {
+  FML_DCHECK(RenderSurfaceExists(surface_id));
+
+  return (eglSwapBuffers(egl_display_, render_surfaces_[surface_id]->surface));
 }
 
 EGLSurface AngleSurfaceManager::CreateSurfaceFromHandle(
@@ -305,15 +416,22 @@ EGLSurface AngleSurfaceManager::CreateSurfaceFromHandle(
                                           egl_config_, attributes);
 }
 
-void AngleSurfaceManager::SetVSyncEnabled(bool enabled) {
-  if (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
-                     egl_context_) != EGL_TRUE) {
+bool AngleSurfaceManager::RenderSurfaceExists(int64_t surface_id) {
+  return render_surfaces_.find(surface_id) != render_surfaces_.end();
+}
+
+void AngleSurfaceManager::SetVSyncEnabled(int64_t surface_id, bool enabled) {
+  FML_DCHECK(RenderSurfaceExists(surface_id));
+
+  EGLSurface surface = render_surfaces_[surface_id]->surface;
+  if (eglMakeCurrent(egl_display_, surface, surface, egl_context_) !=
+      EGL_TRUE) {
     LogEglError("Unable to make surface current to update the swap interval");
     return;
   }
 
-  // OpenGL swap intervals can be used to prevent screen tearing.
-  // If enabled, the raster thread blocks until the v-blank.
+  // OpenGL swap intervals can be used to prevent screen tearing
+  // by blocking the raster thread blocks until the v-blank.
   // This is unnecessary if DWM composition is enabled.
   // See: https://www.khronos.org/opengl/wiki/Swap_Interval
   // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw

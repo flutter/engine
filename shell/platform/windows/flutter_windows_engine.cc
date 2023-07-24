@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <dwmapi.h>
 
 #include <filesystem>
@@ -31,6 +33,12 @@ namespace flutter {
 
 namespace {
 
+struct _FramebufferBackingStore {
+  uint32_t framebuffer_id;
+  uint32_t texture_id;
+  GlProcs gl_procs;
+};
+
 // Lifted from vsync_waiter_fallback.cc
 static std::chrono::nanoseconds SnapToNextTick(
     std::chrono::nanoseconds value,
@@ -52,35 +60,17 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->MakeCurrent();
+    return host->surface_manager()->MakeRenderContextCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->ClearContext();
+    return host->surface_manager()->ClearContext();
   };
-  config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->SwapBuffers();
-  };
+  config.open_gl.present = [](void* user_data) -> bool { FML_UNREACHABLE(); };
   config.open_gl.fbo_reset_after_present = true;
   config.open_gl.fbo_with_frame_info_callback =
       [](void* user_data, const FlutterFrameInfo* info) -> uint32_t {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (host->view()) {
-      return host->view()->GetFrameBufferId(info->size.width,
-                                            info->size.height);
-    } else {
-      return kWindowFrameBufferID;
-    }
+    FML_UNREACHABLE();
   };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
@@ -88,10 +78,7 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->MakeResourceCurrent();
+    return host->surface_manager()->MakeResourceCurrent();
   };
   config.open_gl.gl_external_texture_frame_callback =
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
@@ -114,16 +101,12 @@ FlutterRendererConfig GetSoftwareRendererConfig() {
   FlutterRendererConfig config = {};
   config.type = kSoftware;
   config.software.struct_size = sizeof(config.software);
-  config.software.surface_present_callback = [](void* user_data,
-                                                const void* allocation,
-                                                size_t row_bytes,
-                                                size_t height) {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->PresentSoftwareBitmap(allocation, row_bytes, height);
-  };
+  config.software.surface_present_callback =
+      [](void* user_data, const void* allocation, size_t row_bytes,
+         size_t height) {
+        FML_UNREACHABLE();
+        return false;
+      };
   return config;
 }
 
@@ -232,6 +215,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
 FlutterWindowsEngine::~FlutterWindowsEngine() {
   messenger_->SetEngine(nullptr);
   Stop();
+  views_.clear();
 }
 
 void FlutterWindowsEngine::SetSwitches(
@@ -368,6 +352,152 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
   args.custom_task_runners = &custom_task_runners;
 
+  FlutterCompositor compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = this;
+  compositor.create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,
+         FlutterBackingStore* backing_store_out, void* user_data) -> bool {
+    // Based off fl_renderer_gl_create_backing_store
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    if (host->surface_manager_) {
+      auto gl = host->gl_procs_;
+      auto width = config->size.width;
+      auto height = config->size.height;
+
+      auto store = std::make_unique<_FramebufferBackingStore>();
+      store->gl_procs = host->gl_procs_;
+
+      gl.glGenTextures(1, &store->texture_id);
+      gl.glGenFramebuffers(1, &store->framebuffer_id);
+
+      gl.glBindFramebuffer(GL_FRAMEBUFFER, store->framebuffer_id);
+
+      gl.glBindTexture(GL_TEXTURE_2D, store->texture_id);
+      gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8_OES, width, height, 0, GL_RGBA,
+                      GL_UNSIGNED_BYTE, NULL);
+      gl.glBindTexture(GL_TEXTURE_2D, 0);
+
+      gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT,
+                                GL_TEXTURE_2D, store->texture_id, 0);
+
+      backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+      backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+      backing_store_out->open_gl.framebuffer.name = store->framebuffer_id;
+      backing_store_out->open_gl.framebuffer.user_data = store.release();
+      backing_store_out->open_gl.framebuffer.destruction_callback =
+          [](void* p) {
+            // Backing store destroyed by collect_backing_store_callback.
+          };
+
+      // Based off Skia's logic:
+      // https://github.com/google/skia/blob/4738ed711e03212aceec3cd502a4adb545f38e63/src/gpu/ganesh/gl/GrGLCaps.cpp#L1963-L2116
+      if (host->surface_manager_->HasExtension(
+              "GL_EXT_texture_format_BGRA8888")) {
+        backing_store_out->open_gl.framebuffer.target = GL_BGRA8_EXT;
+      } else if (host->surface_manager_->HasExtension(
+                     "GL_APPLE_texture_format_BGRA8888") &&
+                 host->surface_manager_->GlVersion(3, 0)) {
+        backing_store_out->open_gl.framebuffer.target = GL_BGRA8_EXT;
+      } else {
+        backing_store_out->open_gl.framebuffer.target = GL_RGBA8_OES;
+      }
+    } else {
+      void* allocation =
+          std::malloc(config->size.width * config->size.height * 4);
+      if (!allocation) {
+        return false;
+      }
+
+      // See: EmbedderTestBackingStoreProducer::CreateSoftware
+      backing_store_out->type = kFlutterBackingStoreTypeSoftware;
+      backing_store_out->software.allocation = allocation;
+      backing_store_out->software.destruction_callback = [](void* p) {
+        std::free(p);
+      };
+      backing_store_out->software.height = config->size.height;
+      backing_store_out->software.row_bytes = config->size.width * 4;
+      backing_store_out->user_data = nullptr;
+    }
+
+    return true;
+  };
+
+  compositor.collect_backing_store_callback =
+      [](const FlutterBackingStore* renderer, void* user_data) -> bool {
+    // Software backing store's destruction callback frees the allocation.
+    if (renderer->type == kFlutterBackingStoreTypeSoftware) {
+      return true;
+    }
+
+    auto store = std::unique_ptr<_FramebufferBackingStore>(
+        static_cast<_FramebufferBackingStore*>(
+            renderer->open_gl.framebuffer.user_data));
+
+    store->gl_procs.glDeleteFramebuffers(1, &store->framebuffer_id);
+    store->gl_procs.glDeleteTextures(1, &store->texture_id);
+    return true;
+  };
+
+  compositor.present_layers_callback = [](const FlutterLayer** layers,
+                                          size_t layers_count, int64_t view_id,
+                                          void* user_data) -> bool {
+    if (layers_count != 1 ||
+        layers[0]->type != kFlutterLayerContentTypeBackingStore) {
+      return false;
+    }
+
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    if (host->views_.find(view_id) == host->views_.end()) {
+      // The implicit view is special: the engine assumes it can always
+      // render to it. The embedder must ignore implicit view renders if
+      // the implicit view has been destroyed.
+      // TODO(loicsharma): Assert that the implicit view is enabled.
+      if (view_id == kImplicitViewId) {
+        return true;
+      }
+
+      return false;
+    }
+
+    if (host->surface_manager_) {
+      assert(layers[0]->backing_store->type == kFlutterBackingStoreTypeOpenGL);
+      assert(layers[0]->backing_store->open_gl.type ==
+             kFlutterOpenGLTargetTypeFramebuffer);
+
+      auto gl = host->gl_procs_;
+      auto width = layers[0]->size.width;
+      auto height = layers[0]->size.height;
+
+      // This resizes the window's surface if necessary.
+      auto windowId = host->view(view_id)->GetFrameBufferId(width, height);
+
+      // See: https://stackoverflow.com/a/31487085
+      // See:
+      // https://chromium.googlesource.com/angle/angle/+/chromium/2176/tests/angle_tests/BlitFramebufferANGLETest.cpp#320
+      host->view(view_id)->MakeCurrent();
+      gl.glBindFramebuffer(GL_READ_FRAMEBUFFER_ANGLE,
+                           layers[0]->backing_store->open_gl.framebuffer.name);
+      gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER_ANGLE, windowId);
+      gl.glBlitFramebufferANGLE(0, 0, width, height, 0, 0, width, height,
+                                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+      return host->view(view_id)->SwapBuffers();
+    } else {
+      const auto& backing_store = layers[0]->backing_store->software;
+      return host->view(view_id)->PresentSoftwareBitmap(
+          backing_store.allocation, backing_store.row_bytes,
+          backing_store.height);
+    }
+  };
+  args.compositor = &compositor;
+
   if (aot_data_) {
     args.aot_data = aot_data_.get();
   }
@@ -418,9 +548,50 @@ bool FlutterWindowsEngine::Stop() {
   return false;
 }
 
-void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
-  view_ = view;
-  InitializeKeyboard();
+void FlutterWindowsEngine::AddView(FlutterWindowsView* view) {
+  FML_DCHECK(views_.find(view->view_id()) == views_.end());
+
+  int64_t view_id = view->view_id();
+  views_[view_id] = view;
+
+  // TODO(loicsharma): HACK. This ensures the keyboard is initialized once.
+  // Once the text input plugin is cleaned up we can  remove this by
+  // initializing the keyboard at engine start up instead of after view
+  // creation.
+  if (view_id == kImplicitViewId) {
+    InitializeKeyboard();
+  }
+
+  // Notify the engine of the new view if one was created.
+  if (view_id != kImplicitViewId) {
+    // TODO(loicsharma): Adding a view requires a running engine. However,
+    // this path will run before the engine is launched if the implicit
+    // view is disabled. One option would be to make this method launch the
+    // engine if necessary.
+    FML_DCHECK(running());
+
+    FlutterAddViewInfo info = {};
+    // TODO(loicsharma): Struct size
+    info.view_id = view_id;
+    embedder_api_.AddView(engine_, &info);
+  }
+}
+
+void FlutterWindowsEngine::DestroyView(int64_t view_id) {
+  FML_DCHECK(running());
+  FML_DCHECK(views_.find(view_id) != views_.end());
+
+  // Remove the view from the engine.
+  FlutterRemoveViewInfo info = {};
+  // TODO(loicsharma): Struct size
+  info.view_id = view_id;
+  embedder_api_.RemoveView(engine_, &info);
+
+  // TODO(loicsharma): Removing the view is an asynchronous operation
+  // as it requires a hop to the raster thread. The embedder API
+  // should accept a callback for when the view was removed from Flutter.
+  // The Windows embedder should not erase its view until then.
+  views_.erase(view_id);
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -590,7 +761,7 @@ void FlutterWindowsEngine::SendSystemLocales() {
 }
 
 void FlutterWindowsEngine::InitializeKeyboard() {
-  if (view_ == nullptr) {
+  if (views_.empty()) {
     FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
   }
 
@@ -627,7 +798,11 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
 
 std::unique_ptr<TextInputPlugin> FlutterWindowsEngine::CreateTextInputPlugin(
     BinaryMessenger* messenger) {
-  return std::make_unique<TextInputPlugin>(messenger, view_);
+  // TODO(loicsharma): HACK. The text input plugin shouldn't accept a view in
+  // its constructor. This results in a dangling pointer if the view is
+  // destroyed.
+  auto view = views_.begin()->second;
+  return std::make_unique<TextInputPlugin>(messenger, view);
 }
 
 bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
@@ -679,13 +854,17 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
-    view_->UpdateSemanticsEnabled(enabled);
+    for (auto iterator = views_.begin(); iterator != views_.end(); ++iterator) {
+      iterator->second->UpdateSemanticsEnabled(enabled);
+    }
   }
 }
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
   // Reset the keyboard's state on hot restart.
-  if (view_) {
+  // TODO(loicsharma): Unconditionally reset the keyboard
+  // once it no longer depends on the implicit view.
+  if (views_.size() > 0) {
     InitializeKeyboard();
   }
 }
@@ -757,7 +936,8 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
       std::string text =
           std::get<std::string>(data_map.at(EncodableValue("message")));
       std::wstring wide_text = fml::Utf8ToWideString(text);
-      view_->AnnounceAlert(wide_text);
+      // TODO(loicsharma): Route this to the correct view.
+      views_[kImplicitViewId]->AnnounceAlert(wide_text);
     }
   }
   SendPlatformMessageResponse(message->response_handle,
@@ -780,11 +960,13 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
 
 std::weak_ptr<AccessibilityBridgeWindows>
 FlutterWindowsEngine::accessibility_bridge() {
-  return view_->accessibility_bridge();
+  return views_[kImplicitViewId]->accessibility_bridge();
 }
 
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
-  view_->OnDwmCompositionChanged();
+  for (auto iterator = views_.begin(); iterator != views_.end(); ++iterator) {
+    iterator->second->OnDwmCompositionChanged();
+  }
 }
 
 void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
