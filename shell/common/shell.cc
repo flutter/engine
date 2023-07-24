@@ -2041,7 +2041,6 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
 
 void Shell::AddView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::AddView");
-  FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   if (view_id == kFlutterImplicitViewId) {
     FML_DLOG(WARNING)
@@ -2071,7 +2070,6 @@ void Shell::AddView(int64_t view_id) {
 
 void Shell::RemoveView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
-  FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   if (view_id == kFlutterImplicitViewId) {
     FML_DLOG(WARNING)

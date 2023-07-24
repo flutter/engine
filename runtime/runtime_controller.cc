@@ -20,8 +20,6 @@
 
 namespace flutter {
 
-constexpr uint64_t kFlutterImplicitViewId = 0ll;
-
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
     : client_(p_client), vm_(nullptr), context_(task_runners) {}

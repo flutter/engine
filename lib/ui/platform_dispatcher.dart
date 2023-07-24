@@ -272,6 +272,7 @@ class PlatformDispatcher {
   void _addView(int id) {
     assert(id != _kImplicitViewId, 'The implicit view #$id can not be added.');
     _doAddView(id);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
   void _doAddView(int id) {
@@ -283,6 +284,7 @@ class PlatformDispatcher {
     assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
     _views.remove(id);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
   // Called from the engine, via hooks.dart.
