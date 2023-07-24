@@ -138,8 +138,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (UIView*)keyboardAnimationView;
 - (SpringAnimation*)keyboardSpringAnimation;
-- (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
-- (void)setupKeyboardAnimationVsyncClient:
+- (void)setUpKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation;
+- (void)setUpKeyboardAnimationVsyncClient:
     (FlutterKeyboardAnimationCallback)keyboardAnimationCallback;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
@@ -224,7 +224,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CAAnimation* keyboardAnimation =
       [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
 
-  OCMVerify([viewControllerMock setupKeyboardSpringAnimationIfNeeded:keyboardAnimation]);
+  OCMVerify([viewControllerMock setUpKeyboardSpringAnimationIfNeeded:keyboardAnimation]);
 }
 
 - (void)testSetupKeyboardSpringAnimationIfNeeded {
@@ -242,7 +242,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
        convertedFrame:viewFrame];
 
   // Null check.
-  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:nil];
+  [viewControllerMock setUpKeyboardSpringAnimationIfNeeded:nil];
   SpringAnimation* keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
   XCTAssertTrue(keyboardSpringAnimation == nil);
 
@@ -252,7 +252,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   nonSpringAnimation.fromValue = [NSNumber numberWithFloat:0.0];
   nonSpringAnimation.toValue = [NSNumber numberWithFloat:1.0];
   nonSpringAnimation.keyPath = @"position";
-  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:nonSpringAnimation];
+  [viewControllerMock setUpKeyboardSpringAnimationIfNeeded:nonSpringAnimation];
   keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
 
   XCTAssertTrue(keyboardSpringAnimation == nil);
@@ -265,7 +265,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   springAnimation.keyPath = @"position";
   springAnimation.fromValue = [NSValue valueWithCGPoint:CGPointMake(0, 0)];
   springAnimation.toValue = [NSValue valueWithCGPoint:CGPointMake(100, 100)];
-  [viewControllerMock setupKeyboardSpringAnimationIfNeeded:springAnimation];
+  [viewControllerMock setUpKeyboardSpringAnimationIfNeeded:springAnimation];
   keyboardSpringAnimation = [viewControllerMock keyboardSpringAnimation];
   XCTAssertTrue(keyboardSpringAnimation != nil);
 }
@@ -470,7 +470,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  [viewController setupKeyboardAnimationVsyncClient:^(fml::TimePoint){
+  [viewController setUpKeyboardAnimationVsyncClient:^(fml::TimePoint){
   }];
   [engine destroyContext];
 }
@@ -498,7 +498,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     [expectation fulfill];
   };
   CFTimeInterval startTime = CACurrentMediaTime();
-  [viewController setupKeyboardAnimationVsyncClient:callback];
+  [viewController setUpKeyboardAnimationVsyncClient:callback];
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
   XCTAssertTrue(fulfillTime - startTime > delayTime);
 }

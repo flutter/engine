@@ -278,7 +278,7 @@ typedef struct MouseState {
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
 
-  [self setupNotificationCenterObservers];
+  [self setUpNotificationCenterObservers];
 }
 
 - (FlutterEngine*)engine {
@@ -289,7 +289,7 @@ typedef struct MouseState {
   return _weakFactory->GetWeakPtr();
 }
 
-- (void)setupNotificationCenterObservers {
+- (void)setUpNotificationCenterObservers {
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center addObserver:self
              selector:@selector(onOrientationPreferencesUpdated:)
@@ -796,7 +796,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
     [self.keyboardManager addSecondaryResponder:textInputPlugin];
   }
   if ([_engine.get() viewController] == self) {
-    [textInputPlugin setupIndirectScribbleInteraction:self];
+    [textInputPlugin setUpIndirectScribbleInteraction:self];
   }
 }
 
@@ -1658,7 +1658,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [flutterViewController updateViewportMetricsIfNeeded];
     }
   };
-  [self setupKeyboardAnimationVsyncClient:keyboardAnimationCallback];
+  [self setUpKeyboardAnimationVsyncClient:keyboardAnimationCallback];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
@@ -1669,7 +1669,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         // Setup keyboard animation interpolation.
         CAAnimation* keyboardAnimation =
             [[self keyboardAnimationView].layer animationForKey:@"position"];
-        [self setupKeyboardSpringAnimationIfNeeded:keyboardAnimation];
+        [self setUpKeyboardSpringAnimationIfNeeded:keyboardAnimation];
       }
       completion:^(BOOL finished) {
         if (_keyboardAnimationVSyncClient == currentVsyncClient) {
@@ -1683,7 +1683,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }];
 }
 
-- (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation {
+- (void)setUpKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation {
   // If keyboard animation is null or not a spring animation, fallback to DisplayLink tracking.
   if (keyboardAnimation == nil || ![keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
     _keyboardSpringAnimation.reset();
@@ -1701,13 +1701,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                 toValue:self.targetViewInsetBottom]);
 }
 
-- (void)setupKeyboardAnimationVsyncClient:
+- (void)setUpKeyboardAnimationVsyncClient:
     (FlutterKeyboardAnimationCallback)keyboardAnimationCallback {
   if (!keyboardAnimationCallback) {
     return;
   }
   NSAssert(_keyboardAnimationVSyncClient == nil,
-           @"_keyboardAnimationVSyncClient must be nil when setup");
+           @"_keyboardAnimationVSyncClient must be nil when setting up.");
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
   fml::scoped_nsprotocol<FlutterKeyboardAnimationCallback> animationCallback(
