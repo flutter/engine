@@ -252,7 +252,8 @@ public class PlatformViewsControllerTest {
     when(platformView.getView()).thenReturn(androidView);
     when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
-    createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
+    createPlatformView(
+        jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
 
     platformViewsController.vdControllers.put(platformViewId, fakeVdController);
 
