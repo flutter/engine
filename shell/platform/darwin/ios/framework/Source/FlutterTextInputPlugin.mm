@@ -2360,7 +2360,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     }
   } else {
     if (_keyboardViewContainer.subviews.count != 0) {
-        _keyboardViewContainer.frame = _keyboardRect;
+      _keyboardViewContainer.frame = _keyboardRect;
     }
   }
 }
