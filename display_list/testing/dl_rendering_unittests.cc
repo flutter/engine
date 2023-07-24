@@ -4259,8 +4259,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
         direct_context->flushAndSubmit();
-        return direct_context->flushAndSubmit(result_surface->sk_surface(),
-                                              true);
+        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
       }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
@@ -4321,8 +4320,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
         direct_context->flushAndSubmit();
-        return direct_context->flushAndSubmit(result_surface->sk_surface(),
-                                              true);
+        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
       }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
