@@ -44,6 +44,12 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
     return RegisterDescriptorSetLayouts(inputs.data(), inputs.size());
   }
 
+  template <size_t Size>
+  void RegisterPushConstantRanges(
+      const std::array<PushConstantRange, Size>& inputs) {
+    return RegisterPushConstantRanges(inputs.data(), inputs.size());
+  }
+
   void SetStageInputs(const ShaderStageIOSlot* const stage_inputs[],
                       size_t count,
                       const ShaderStageBufferLayout* const stage_layout[],
@@ -52,11 +58,19 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
   void RegisterDescriptorSetLayouts(const DescriptorSetLayout desc_set_layout[],
                                     size_t count);
 
+  void RegisterPushConstantRanges(
+      const PushConstantRange push_constant_ranges[],
+      size_t push_constant_count);
+
   const std::vector<ShaderStageIOSlot>& GetStageInputs() const;
 
   const std::vector<ShaderStageBufferLayout>& GetStageLayouts() const;
 
   const std::vector<DescriptorSetLayout>& GetDescriptorSetLayouts() const;
+
+  const std::vector<PushConstantRange>& GetPushConstantRanges() const {
+    return push_constant_ranges_;
+  }
 
   // |Comparable<VertexDescriptor>|
   std::size_t GetHash() const override;
@@ -68,6 +82,7 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
   std::vector<ShaderStageIOSlot> inputs_;
   std::vector<ShaderStageBufferLayout> layouts_;
   std::vector<DescriptorSetLayout> desc_set_layouts_;
+  std::vector<PushConstantRange> push_constant_ranges_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptor);
 };

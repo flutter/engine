@@ -382,6 +382,22 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     desc_bindings.push_back(vk_desc_layout);
   }
 
+  std::vector<vk::PushConstantRange> push_constant_ranges;
+  for (const PushConstantRange& range : desc.GetVertexDescriptor()->GetPushConstantRanges()) {
+    vk::PushConstantRange vk_range;
+    std::optional<vk::ShaderStageFlagBits> stage = ToVKShaderStageFlagBits(range.shader_stage);
+    if (!stage.has_value()) {
+      VALIDATION_LOG << "Unsupported shader type in pipeline: "
+                     << desc.GetLabel();
+      return nullptr;
+    }
+    vk_range.setStageFlags(stage.value());
+    // TODO(aaclarke): Get real values.
+    vk_range.setOffset(0u);
+    vk_range.setSize(0u);
+    push_constant_ranges.emplace_back(std::move(vk_range));
+  }
+
   vk::DescriptorSetLayoutCreateInfo descs_layout_info;
   descs_layout_info.setBindings(desc_bindings);
 
@@ -401,6 +417,11 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   ///
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
   pipeline_layout_info.setSetLayouts(descs_layout.get());
+  if (!push_constant_ranges.empty()) {
+    pipeline_layout_info.setPushConstantRangeCount(push_constant_ranges.size());
+    pipeline_layout_info.setPPushConstantRanges(push_constant_ranges.data());
+  }
+
   auto pipeline_layout = strong_device->GetDevice().createPipelineLayoutUnique(
       pipeline_layout_info);
   if (pipeline_layout.result != vk::Result::eSuccess) {

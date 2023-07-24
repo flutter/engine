@@ -34,6 +34,16 @@ void VertexDescriptor::RegisterDescriptorSetLayouts(
   }
 }
 
+void VertexDescriptor::RegisterPushConstantRanges(
+    const PushConstantRange push_constant_ranges[],
+    size_t push_constant_count) {
+  push_constant_ranges_.reserve(push_constant_ranges_.size() +
+                                push_constant_count);
+  for (size_t i = 0; i < push_constant_count; i++) {
+    push_constant_ranges_.emplace_back(push_constant_ranges[i]);
+  }
+}
+
 // |Comparable<VertexDescriptor>|
 size_t VertexDescriptor::GetHash() const {
   auto seed = fml::HashCombine();
