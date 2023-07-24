@@ -313,6 +313,7 @@ class PlatformDispatcher {
     List<int> displayFeaturesState,
     int displayId,
   ) {
+    assert(_views.containsKey(id), 'View $id does not exist.');
     final _ViewConfiguration viewConfiguration = _ViewConfiguration(
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),

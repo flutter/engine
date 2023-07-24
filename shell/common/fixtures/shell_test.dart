@@ -482,3 +482,14 @@ Future<void> testThatAssetLoadingHappensOnWorkerThread() async {
   } catch (err) { /* Do nothing */ }
   notifyNative();
 }
+
+@pragma('vm:external-name', 'NativeReportViewIdsCallback')
+external void nativeReportViewIdsCallback(bool hasImplicitView, List<int> viewIds);
+
+@pragma('vm:entry-point')
+void testReportViewIds() {
+  final List<int> viewIds = PlatformDispatcher.instance.views
+      .map((FlutterView view) => view.viewId)
+      .toList();
+  nativeReportViewIdsCallback(PlatformDispatcher.instance.implicitView != null, viewIds);
+}
