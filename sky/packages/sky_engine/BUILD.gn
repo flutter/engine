@@ -4,6 +4,8 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/build/dart/rules.gni")
+import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/lib/gpu/dart_gpu.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//flutter/web_sdk/web_sdk.gni")
 import("//third_party/dart/sdk/lib/_http/http_sources.gni")
@@ -188,6 +190,12 @@ web_ui_ui_web_with_output("copy_dart_ui_web") {
   output_dir = "$root_gen_dir/dart-pkg/sky_engine/lib/ui_web/"
 }
 
+copy("copy_dart_gpu") {
+  sources = dart_gpu_files
+
+  outputs = [ "$root_gen_dir/dart-pkg/sky_engine/lib/gpu/{{source_file_part}}" ]
+}
+
 copy("copy_allowed_experiments") {
   sources = [ "//third_party/dart/sdk/lib/_internal/allowed_experiments.json" ]
 
@@ -275,6 +283,10 @@ dart_pkg("sky_engine") {
     ":copy_dart_ui",
     ":copy_dart_ui_web",
   ]
+
+  if (impeller_enable_3d) {
+    deps += [ ":copy_dart_gpu" ]
+  }
 
   if (!is_fuchsia) {
     deps += [ ":copy_sky_engine_authors" ]

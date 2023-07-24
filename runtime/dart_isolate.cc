@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/gpu/dart_gpu.h"
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
@@ -461,6 +462,8 @@ bool DartIsolate::LoadLibraries() {
                          domain_network_policy_);
 
   DartUI::InitForIsolate(GetIsolateGroupData().GetSettings());
+
+  DartGPU::InitForIsolate(GetIsolateGroupData().GetSettings());
 
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
