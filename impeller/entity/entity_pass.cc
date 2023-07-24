@@ -137,11 +137,12 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     return std::nullopt;
   }
 
-  if (!bounds_limit_.has_value()) {
+  if (!subpass.bounds_limit_.has_value()) {
     return entities_coverage;
   }
-  auto bounds_limit = bounds_limit_->TransformBounds(subpass.xformation_);
-  return entities_coverage->Intersection(bounds_limit);
+  auto user_bounds_coverage =
+      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+  return entities_coverage->Intersection(user_bounds_coverage);
 }
 
 EntityPass* EntityPass::GetSuperpass() const {

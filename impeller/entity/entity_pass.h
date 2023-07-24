@@ -54,8 +54,17 @@ class EntityPass {
 
   void SetDelegate(std::unique_ptr<EntityPassDelegate> delgate);
 
+  /// @brief  Set the bounds limit, which is provided by the user when creating
+  ///         a SaveLayer. This is a hint that allows the user to communicate
+  ///         that it's OK to not render content outside of the bounds.
+  ///
+  ///         For consistency with Skia, we effectively treat this like a
+  ///         rectangle clip by forcing the subpass texture size to never exceed
+  ///         it.
   void SetBoundsLimit(std::optional<Rect> bounds_limit);
 
+  /// @brief  Set the bounds limit, which is provided by the user when creating
+  ///         a SaveLayer.
   std::optional<Rect> GetBoundsLimit() const;
 
   size_t GetSubpassesDepth() const;
