@@ -222,6 +222,16 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     } else {
       return std::nullopt;
     }
+    if (auto push_constant_buffers_json =
+            ReflectResources(shader_resources.push_constant_buffers);
+        push_constant_buffers_json.has_value()) {
+      for (auto push_constant_buffer : push_constant_buffers_json.value()) {
+        push_constant_buffer["descriptor_type"] = "DescriptorType::kPushConstantBuffer";
+        buffers.emplace_back(std::move(push_constant_buffer));
+      }
+    } else {
+      return std::nullopt;
+    }
   }
 
   {
@@ -1152,6 +1162,26 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
         .argument_name = "view",
     });
   }
+  for (const auto& push_constant_buffer : resources.push_constant_buffers) {
+    auto& proto = prototypes.emplace_back(BindPrototype{});
+    proto.return_type = "bool";
+    proto.name = ConvertToCamelCase(push_constant_buffer.name);
+    {
+      std::stringstream stream;
+      stream << "Bind push constants for resource named " << push_constant_buffer.name
+             << ".";
+      proto.docstring = stream.str();
+    }
+    proto.args.push_back(BindPrototypeArgument{
+        .type_name = "ResourceBinder&",
+        .argument_name = "command",
+    });
+    proto.args.push_back(BindPrototypeArgument{
+        .type_name = "BufferView",
+        .argument_name = "view",
+    });
+  }
+
   for (const auto& storage_buffer : resources.storage_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";

@@ -144,6 +144,7 @@ enum class DescriptorType {
   kSampledImage,
   kImage,
   kSampler,
+  kPushConstantBuffer,
 };
 
 struct DescriptorSetLayout {
