@@ -1568,8 +1568,8 @@ class TextStyle {
       _foreground,
       shadows == null ? null : Object.hashAll(shadows),
       _decorationThickness,
-      _fontFeatures == null ? null : Object.hashAll(fontFeatures),
-      _fontVariations == null ? null : Object.hashAll(fontVariations),
+      fontFeatures == null ? null : Object.hashAll(fontFeatures),
+      fontVariations == null ? null : Object.hashAll(fontVariations),
     );
   }
 
