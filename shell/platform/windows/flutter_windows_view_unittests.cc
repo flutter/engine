@@ -199,7 +199,7 @@ TEST(FlutterWindowsViewTest, SubmenuNativeState) {
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"expanded=true"), nullptr);
   }
 
-  // Test unchecked too.
+  // Test collapsed too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasExpandedState);
   bridge->AddFlutterSemanticsNodeUpdate(root);
