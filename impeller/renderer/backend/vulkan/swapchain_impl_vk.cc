@@ -384,7 +384,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK> image,
+bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
                               uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
