@@ -298,7 +298,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  /// @brief  Add a non-implicit view.
+  /// @brief  Adds a non-implicit view.
   ///
   ///         This method returns immediately and does not wait for the tasks
   ///         on the rasterizer thread and the UI thread to finish. This is
@@ -311,7 +311,7 @@ class Shell final : public PlatformView::Delegate,
   /// @param view_id
   void AddView(int64_t view_id);
 
-  /// @brief  Remove a non-implicit view.
+  /// @brief  Removes a non-implicit view.
   ///
   ///         This method waits for the tasks on the rasterizer thread and the
   ///         UI thread to finish before returning.

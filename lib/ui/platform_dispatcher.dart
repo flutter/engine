@@ -66,6 +66,12 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
+// The view ID of PlatformDispatcher.implicitView. This is an
+// implementation detail that may change at any time. Apps
+// should always use PlatformDispatcher.implicitView to determine
+// the current implicit view, if any.
+//
+// Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
 const int _kImplicitViewId = 0;
 
 // A message channel to receive KeyData from the platform.
@@ -194,9 +200,6 @@ class PlatformDispatcher {
   /// otherwise.
   FlutterView? view({required int id}) => _views[id];
 
-  // A map of opaque platform view identifiers to view configurations.
-  final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
-
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
   ///
@@ -228,7 +231,12 @@ class PlatformDispatcher {
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   FlutterView? get implicitView {
-    return _views[_kImplicitViewId];
+    final FlutterView? result = _views[_kImplicitViewId];
+    assert((result != null) == _implicitViewEnabled,
+      _implicitViewEnabled ?
+        'The _implicitViewEnabled is true, but the implicit view does not exist.' :
+        'The _implicitViewEnabled is false, but the implicit view exists.');
+    return result;
   }
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
@@ -258,7 +266,7 @@ class PlatformDispatcher {
   }
 
   FlutterView _createView(int id) {
-    return FlutterView._(id, this);
+    return FlutterView._(id, this, const _ViewConfiguration());
   }
 
   void _addView(int id) {
@@ -269,14 +277,12 @@ class PlatformDispatcher {
   void _doAddView(int id) {
     assert(!_views.containsKey(id), 'View ID $id already exists.');
     _views[id] = _createView(id);
-    _viewConfigurations[id] = const _ViewConfiguration();
   }
 
   void _removeView(int id) {
     assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
     _views.remove(id);
-    _viewConfigurations.remove(id);
   }
 
   // Called from the engine, via hooks.dart.
@@ -316,11 +322,8 @@ class PlatformDispatcher {
     List<int> displayFeaturesState,
     int displayId,
   ) {
-    final _ViewConfiguration previousConfiguration =
-        _viewConfigurations[id] ?? const _ViewConfiguration();
-    _views.putIfAbsent(id, () => _createView(id));
-    _viewConfigurations[id] = previousConfiguration.copyWith(
-      view: _views[id],
+    assert(_views.containsKey(id), 'View $id does not exist.');
+    final _ViewConfiguration viewConfiguration = _ViewConfiguration(
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: ViewPadding._(
@@ -347,7 +350,6 @@ class PlatformDispatcher {
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
       ),
-      // -1 is used as a sentinel for an undefined touch slop
       gestureSettings: GestureSettings(
         physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
@@ -359,6 +361,8 @@ class PlatformDispatcher {
       ),
       displayId: displayId,
     );
+
+    _views[id]!._viewConfiguration = viewConfiguration;
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
@@ -1397,10 +1401,8 @@ class _PlatformConfiguration {
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
-    this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
-    this.visible = false,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1409,37 +1411,6 @@ class _ViewConfiguration {
     this.displayFeatures = const <DisplayFeature>[],
     this.displayId = 0,
   });
-
-  /// Copy this configuration with some fields replaced.
-  _ViewConfiguration copyWith({
-    FlutterView? view,
-    double? devicePixelRatio,
-    Rect? geometry,
-    bool? visible,
-    ViewPadding? viewInsets,
-    ViewPadding? viewPadding,
-    ViewPadding? systemGestureInsets,
-    ViewPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
-    int? displayId,
-  }) {
-    return _ViewConfiguration(
-      view: view ?? this.view,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      viewInsets: viewInsets ?? this.viewInsets,
-      viewPadding: viewPadding ?? this.viewPadding,
-      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
-      padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gestureSettings,
-      displayFeatures: displayFeatures ?? this.displayFeatures,
-      displayId: displayId ?? this.displayId,
-    );
-  }
-
-  final FlutterView?  view;
 
   /// The identifier for a display for this view, in
   /// [PlatformDispatcher._displays].
@@ -1451,9 +1422,6 @@ class _ViewConfiguration {
   /// The geometry requested for the view on the screen or within its parent
   /// window, in logical pixels.
   final Rect geometry;
-
-  /// Whether or not the view is currently visible on the screen.
-  final bool visible;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1523,7 +1491,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[geometry: $geometry]';
   }
 }
 

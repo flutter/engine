@@ -8,6 +8,10 @@
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/fml/trace_event.h"
 
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
+
 namespace flutter {
 
 // clang-format off
@@ -372,7 +376,11 @@ void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
 }
 
 void DlSkCanvasAdapter::Flush() {
-  delegate_->flush();
+  auto dContext = GrAsDirectContext(delegate_->recordingContext());
+
+  if (dContext) {
+    dContext->flushAndSubmit();
+  }
 }
 
 }  // namespace flutter

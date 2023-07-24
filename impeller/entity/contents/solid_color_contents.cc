@@ -21,7 +21,7 @@ void SolidColorContents::SetColor(Color color) {
 }
 
 Color SolidColorContents::GetColor() const {
-  return color_.WithAlpha(color_.alpha * GetOpacity());
+  return color_.WithAlpha(color_.alpha * GetOpacityFactor());
 }
 
 bool SolidColorContents::IsOpaque() const {
@@ -54,7 +54,6 @@ bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
   using VS = SolidFillPipeline::VertexShader;
-  using FS = SolidFillPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Solid Fill";
@@ -75,11 +74,8 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
+  frame_info.color = GetColor().Premultiply();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-  FS::FragInfo frag_info;
-  frag_info.color = GetColor().Premultiply();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;
@@ -108,6 +104,12 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
   return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
              ? GetColor()
              : std::optional<Color>();
+}
+
+bool SolidColorContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  color_ = color_filter_proc(color_);
+  return true;
 }
 
 }  // namespace impeller

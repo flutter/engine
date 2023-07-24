@@ -226,28 +226,34 @@ struct Settings {
 
   // Enable the implicit view.
   //
-  // The implicit view is a compatibility mode to help the transition from
-  // single-view APIs to multi-view APIs, which use different models for views.
-  // Although single-view APIs will eventually be replaced by their multi-view
-  // variants, during the deprecation period, the single-view APIs will coexist
-  // with and work with the multi-view APIs as if the other views don't exist.
-  // To achieve this, the platform can enable "implicit view", which is a
-  // special view that keeps all behaviors of "the view" in a legacy
-  // single-view Flutter app, allowing single-view APIs to continue working,
-  // while new-style "regular" views created by new ways must be operated by
-  // multi-view APIs.
+  // The implicit view mode is a compatibility mode to help the transition from
+  // the older single-view APIs to the newer multi-view APIs. The two sets of
+  // APIs use different models for view management. By enabling the implicit
+  // view, single-view APIs can operate a special view as if other views don't
+  // exist.
   //
-  // If implicit view is disabled, then all views should be created by
-  // Shell::AddView before being used, and removed by Shell::RemoveView after
-  // they are gone.
+  // In the regular multi-view model where implicit view is disabled, all views
+  // should be created by Shell::AddView before being used, and removed by
+  // Shell::RemoveView to signify that they are gone. If a view is added or
+  // removed, the framework (PlatformDispatcher) will be notified. New view IDs
+  // are always unique, never reused. Operating a non-existing view is an error.
   //
   // If implicit view is enabled, in addition to the "regular views" as above,
-  // the shell (including the engine and the dart:ui library) will implicitly
-  // create a view upon initialization without `Shell::AddView` (hence the
-  // name). This view will have a view ID of kFlutterImplicitViewId, and
-  // can never be removed, even if the window that shows the view is closed.
-  // The caller should adjust accordingly by providing contents and operations
-  // to the view without calling Shell::AddView or Shell::RemoveView.
+  // the shell will start up with a special view with a fixed view ID of
+  // kFlutterImplicitViewId. This view, called the implicit view, is available
+  // throughout the lifetime of the shell. Shell::AddView or RemoveView must not
+  // be called for this view. Even when the window that shows the view is
+  // closed, the framework is unaware and might continue render into or operate
+  // this view.
+  //
+  // The single-view APIs, which are APIs that do not specify view IDs, operate
+  // the implicit view. The multi-view APIs can operate all views, including the
+  // implicit view with the correct ID (kFlutterImplicitViewId), unless
+  // specified otherwise,
+  //
+  // The enable_implicit_view defaults to true. Multi-view apps will probably
+  // want to disable the implicit view eventually for the simplicity of a
+  // unified model.
   bool enable_implicit_view = true;
 
   // Data set by platform-specific embedders for use in font initialization.

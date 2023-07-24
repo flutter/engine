@@ -447,6 +447,19 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawStrokedText) {
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+  paint.setColor(flutter::DlColor::kRed());
+  builder.DrawTextBlob(
+      SkTextBlob::MakeFromString("stoked about stroked text", CreateTestFont()),
+      250, 250, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, IgnoreMaskFilterWhenSavingLayer) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
@@ -843,18 +856,12 @@ TEST_P(DisplayListTest, CanDrawShadow) {
 }
 
 TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
-  flutter::DisplayListBuilder builder;
-  {
-    builder.Save();
-    builder.Scale(1.618, 1.618);
-    builder.DrawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
-                       SK_ColorTRANSPARENT, 15, false, 1);
-    builder.Restore();
-  }
-  auto dl = builder.Build();
-
   DlDispatcher dispatcher;
-  dispatcher.drawDisplayList(dl, 1);
+  dispatcher.save();
+  dispatcher.scale(1.618, 1.618);
+  dispatcher.drawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+                        SK_ColorTRANSPARENT, 15, false, 1);
+  dispatcher.restore();
   auto picture = dispatcher.EndRecordingAsPicture();
 
   std::shared_ptr<SolidRRectBlurContents> rrect_blur;

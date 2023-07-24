@@ -24,6 +24,8 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
+    "barrier_vk.cc",
+    "barrier_vk.h",
     "blit_command_vk.cc",
     "blit_command_vk.h",
     "blit_pass_vk.cc",
@@ -65,6 +67,8 @@ impeller_component("vulkan") {
     "queue_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
+    "resource_manager_vk.cc",
+    "resource_manager_vk.h",
     "sampler_library_vk.cc",
     "sampler_library_vk.h",
     "sampler_vk.cc",
@@ -90,6 +94,8 @@ impeller_component("vulkan") {
     "vertex_descriptor_vk.cc",
     "vertex_descriptor_vk.h",
     "vk.h",
+    "vma.cc",
+    "vma.h",
   ]
 
   public_deps = [

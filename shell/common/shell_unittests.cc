@@ -4342,6 +4342,88 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+static void parseViewIdsCallback(const Dart_NativeArguments& args,
+                                 bool* hasImplicitView,
+                                 std::vector<int64_t>* viewIds) {
+  Dart_Handle exception = nullptr;
+  viewIds->clear();
+  *hasImplicitView =
+      tonic::DartConverter<bool>::FromArguments(args, 0, exception);
+  ASSERT_EQ(exception, nullptr);
+  *viewIds = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
+      args, 1, exception);
+  ASSERT_EQ(exception, nullptr);
+}
+
+TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_implicit_view = true;
+
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool hasImplicitView;
+  std::vector<int64_t> viewIds;
+  fml::AutoResetWaitableEvent reportLatch;
+  auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
+                                &viewIds](Dart_NativeArguments args) {
+    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
+    reportLatch.Signal();
+  };
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY(nativeViewIdsCallback));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+  reportLatch.Wait();
+
+  ASSERT_TRUE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 1u);
+  ASSERT_EQ(viewIds[0], 0ll);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, ShellWithImplicitViewDisabledStartsWithoutImplicitView) {
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_implicit_view = false;
+
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool hasImplicitView;
+  std::vector<int64_t> viewIds;
+  fml::AutoResetWaitableEvent reportLatch;
+  auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
+                                &viewIds](Dart_NativeArguments args) {
+    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
+    reportLatch.Signal();
+  };
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY(nativeViewIdsCallback));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+  reportLatch.Wait();
+
+  ASSERT_FALSE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 0u);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
 }  // namespace testing
 }  // namespace flutter
 

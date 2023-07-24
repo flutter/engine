@@ -167,7 +167,7 @@ void testSkiaResourceCacheSendsResponse() {
                           }''';
   PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/skia',
-    Uint8List.fromList(utf8.encode(jsonRequest)).buffer.asByteData(),
+    ByteData.sublistView(utf8.encode(jsonRequest)),
     callback,
   );
 }
@@ -294,7 +294,7 @@ void canAccessResourceFromAssetDir() async {
   notifySetAssetBundlePath();
   window.sendPlatformMessage(
     'flutter/assets',
-    Uint8List.fromList(utf8.encode('kernel_blob.bin')).buffer.asByteData(),
+    ByteData.sublistView(utf8.encode('kernel_blob.bin')),
     (ByteData? byteData) {
       notifyCanAccessResource(byteData != null);
     },
@@ -481,4 +481,15 @@ Future<void> testThatAssetLoadingHappensOnWorkerThread() async {
     await ImmutableBuffer.fromAsset('DoesNotExist');
   } catch (err) { /* Do nothing */ }
   notifyNative();
+}
+
+@pragma('vm:external-name', 'NativeReportViewIdsCallback')
+external void nativeReportViewIdsCallback(bool hasImplicitView, List<int> viewIds);
+
+@pragma('vm:entry-point')
+void testReportViewIds() {
+  final List<int> viewIds = PlatformDispatcher.instance.views
+      .map((FlutterView view) => view.viewId)
+      .toList();
+  nativeReportViewIdsCallback(PlatformDispatcher.instance.implicitView != null, viewIds);
 }

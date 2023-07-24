@@ -8,6 +8,7 @@
 #include <utility>
 #include <variant>
 
+#include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
@@ -247,10 +248,23 @@ bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
   auto root_render_target = render_target;
 
-  if (root_render_target.GetColorAttachments().empty()) {
+  if (root_render_target.GetColorAttachments().find(0u) ==
+      root_render_target.GetColorAttachments().end()) {
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
     return false;
   }
+
+  renderer.SetLazyGlyphAtlas(std::make_shared<LazyGlyphAtlas>());
+  fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
+      [&renderer]() { renderer.SetLazyGlyphAtlas(nullptr); });
+
+  IterateAllEntities([lazy_glyph_atlas =
+                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
+    if (auto contents = entity.GetContents()) {
+      contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
+    }
+    return true;
+  });
 
   StencilCoverageStack stencil_coverage_stack = {StencilCoverageLayer{
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
@@ -341,7 +355,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
   // The safety check for fetching this color attachment is at the beginning of
   // this method.
-  auto color0 = root_render_target.GetColorAttachments().find(0)->second;
+  auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
@@ -872,6 +886,28 @@ void EntityPass::IterateAllEntities(
     }
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       subpass->get()->IterateAllEntities(iterator);
+      continue;
+    }
+    FML_UNREACHABLE();
+  }
+}
+
+void EntityPass::IterateAllEntities(
+    const std::function<bool(const Entity&)>& iterator) const {
+  if (!iterator) {
+    return;
+  }
+
+  for (const auto& element : elements_) {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      if (!iterator(*entity)) {
+        return;
+      }
+      continue;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      const EntityPass* entity_pass = subpass->get();
+      entity_pass->IterateAllEntities(iterator);
       continue;
     }
     FML_UNREACHABLE();

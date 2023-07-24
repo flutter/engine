@@ -22,7 +22,9 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkBBHFactory.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -501,6 +503,70 @@ TEST_F(DisplayListTest, BuilderInitialClipBoundsNonZero) {
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 100, 100);
   DisplayListBuilder builder(cull_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
+}
+
+TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
+  SkRect cull_rect = SkRect::MakeLTRB(0.0f, 0.0f, 300.0f, 300.0f);
+  SkRect clip_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  SkRect draw_rect = SkRect::MakeLTRB(50.0f, 140.0f, 101.0f, 160.0f);
+  auto filter = DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+  DlPaint layer_paint = DlPaint().setImageFilter(filter);
+
+  ASSERT_TRUE(clip_rect.intersects(draw_rect));
+  ASSERT_TRUE(cull_rect.contains(clip_rect));
+  ASSERT_TRUE(cull_rect.contains(draw_rect));
+
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    builder.ClipRect(clip_rect, ClipOp::kIntersect, false);
+    builder.SaveLayer(&cull_rect, &layer_paint);
+    {  //
+      builder.DrawRect(draw_rect, DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  ASSERT_EQ(display_list->op_count(), 6u);
+
+  SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
+  ASSERT_TRUE(result_rect.intersect(clip_rect));
+  ASSERT_EQ(result_rect, SkRect::MakeLTRB(100.0f, 110.0f, 131.0f, 190.0f));
+  ASSERT_EQ(display_list->bounds(), result_rect);
+}
+
+TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
+  SkRect cull_rect = SkRect::MakeLTRB(0.0f, 0.0f, 300.0f, 300.0f);
+  SkRect clip_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  SkRect draw_rect = SkRect::MakeLTRB(50.0f, 140.0f, 99.0f, 160.0f);
+  auto filter = DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+  DlPaint layer_paint = DlPaint().setImageFilter(filter);
+
+  ASSERT_FALSE(clip_rect.intersects(draw_rect));
+  ASSERT_TRUE(cull_rect.contains(clip_rect));
+  ASSERT_TRUE(cull_rect.contains(draw_rect));
+
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    builder.ClipRect(clip_rect, ClipOp::kIntersect, false);
+    builder.SaveLayer(&cull_rect, &layer_paint);
+    {  //
+      builder.DrawRect(draw_rect, DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  ASSERT_EQ(display_list->op_count(), 6u);
+
+  SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
+  ASSERT_TRUE(result_rect.intersect(clip_rect));
+  ASSERT_EQ(result_rect, SkRect::MakeLTRB(100.0f, 110.0f, 129.0f, 190.0f));
+  ASSERT_EQ(display_list->bounds(), result_rect);
 }
 
 TEST_F(DisplayListTest, SingleOpSizes) {
@@ -3015,6 +3081,165 @@ TEST_F(DisplayListTest, DrawUnorderedRoundRectPathCCW) {
     canvas.DrawPath(path, paint);
   };
   check_inverted_bounds(renderer, "DrawRoundRectPath Counter-Clockwise");
+}
+
+TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
+  auto run_tests = [](const std::string& name,
+                      void init(DisplayListBuilder & builder, DlPaint & paint),
+                      uint32_t expected_op_count = 0u) {
+    auto run_one_test =
+        [init](const std::string& name,
+               void build(DisplayListBuilder & builder, DlPaint & paint),
+               uint32_t expected_op_count = 0u) {
+          DisplayListBuilder builder;
+          DlPaint paint;
+          init(builder, paint);
+          build(builder, paint);
+          auto list = builder.Build();
+          if (list->op_count() != expected_op_count) {
+            FML_LOG(ERROR) << *list;
+          }
+          ASSERT_EQ(list->op_count(), expected_op_count) << name;
+          ASSERT_TRUE(list->bounds().isEmpty()) << name;
+        };
+    run_one_test(
+        name + " DrawColor",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawColor(paint.getColor(), paint.getBlendMode());
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawPaint",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawPaint(paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " DrawRect",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawRect({10, 10, 20, 20}, paint);
+        },
+        expected_op_count);
+    run_one_test(
+        name + " Other Draw Ops",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.DrawLine({10, 10}, {20, 20}, paint);
+          builder.DrawOval({10, 10, 20, 20}, paint);
+          builder.DrawCircle({50, 50}, 20, paint);
+          builder.DrawRRect(SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5), paint);
+          builder.DrawDRRect(SkRRect::MakeRectXY({5, 5, 100, 100}, 5, 5),
+                             SkRRect::MakeRectXY({10, 10, 20, 20}, 5, 5),
+                             paint);
+          builder.DrawPath(kTestPath1, paint);
+          builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
+          SkPoint pts[] = {{10, 10}, {20, 20}};
+          builder.DrawPoints(PointMode::kLines, 2, pts, paint);
+          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
+                            &paint);
+          builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
+                                SkRect{10.0f, 10.0f, 25.0f, 25.0f},
+                                DlImageSampling::kLinear, &paint);
+          builder.DrawImageNine(TestImage1, {10, 10, 20, 20},
+                                {10, 10, 100, 100}, DlFilterMode::kLinear,
+                                &paint);
+          SkRSXform xforms[] = {{1, 0, 10, 10}, {0, 1, 10, 10}};
+          SkRect rects[] = {{10, 10, 20, 20}, {10, 20, 30, 20}};
+          builder.DrawAtlas(TestImage1, xforms, rects, nullptr, 2,
+                            DlBlendMode::kSrcOver, DlImageSampling::kLinear,
+                            nullptr, &paint);
+          builder.DrawTextBlob(TestBlob1, 10, 10, paint);
+
+          // Dst mode eliminates most rendering ops except for
+          // the following two, so we'll prune those manually...
+          if (paint.getBlendMode() != DlBlendMode::kDst) {
+            builder.DrawDisplayList(TestDisplayList1, paint.getOpacity());
+            builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
+          }
+        },
+        expected_op_count);
+    run_one_test(
+        name + " SaveLayer",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.SaveLayer(nullptr, &paint, nullptr);
+          builder.DrawRect({10, 10, 20, 20}, DlPaint());
+          builder.Restore();
+        },
+        expected_op_count);
+    run_one_test(
+        name + " inside Save",
+        [](DisplayListBuilder& builder, DlPaint& paint) {
+          builder.Save();
+          builder.DrawRect({10, 10, 20, 20}, paint);
+          builder.Restore();
+        },
+        expected_op_count);
+  };
+  run_tests("transparent color",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setColor(DlColor::kTransparent());
+            });
+  run_tests("0 alpha",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              paint.setColor(DlColor::kWhite());
+              paint.setAlpha(0);
+            });
+  run_tests("BlendMode::kDst",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              paint.setBlendMode(DlBlendMode::kDst);
+            });
+  run_tests("Empty rect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRect(SkRect::MakeEmpty(), ClipOp::kIntersect, false);
+            });
+  run_tests("Empty rrect clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipRRect(SkRRect::MakeEmpty(), ClipOp::kIntersect,
+                                false);
+            });
+  run_tests("Empty path clip",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              builder.ClipPath(SkPath(), ClipOp::kIntersect, false);
+            });
+  run_tests("Transparent SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("0 alpha SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              // The transparent test above already tested transparent
+              // black (all 0s), we set White color here so we can test
+              // the case of all 1s with a 0 alpha
+              save_paint.setColor(DlColor::kWhite());
+              save_paint.setAlpha(0);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests("Dst blended SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setBlendMode(DlBlendMode::kDst);
+              builder.SaveLayer(nullptr, &save_paint);
+            });
+  run_tests(
+      "Nop inside SaveLayer",
+      [](DisplayListBuilder& builder, DlPaint& paint) {
+        builder.SaveLayer(nullptr, nullptr);
+        paint.setBlendMode(DlBlendMode::kDst);
+      },
+      2u);
+  run_tests("DrawImage inside Culled SaveLayer",  //
+            [](DisplayListBuilder& builder, DlPaint& paint) {
+              DlPaint save_paint;
+              save_paint.setColor(DlColor::kTransparent());
+              builder.SaveLayer(nullptr, &save_paint);
+              builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear);
+            });
 }
 
 }  // namespace testing
