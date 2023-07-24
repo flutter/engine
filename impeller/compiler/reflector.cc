@@ -222,12 +222,15 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     } else {
       return std::nullopt;
     }
+  }
+
+  {
+    auto& push_constant_buffers = root["push_constant_buffers"] = nlohmann::json::array_t{};
     if (auto push_constant_buffers_json =
             ReflectResources(shader_resources.push_constant_buffers);
         push_constant_buffers_json.has_value()) {
       for (auto push_constant_buffer : push_constant_buffers_json.value()) {
-        push_constant_buffer["descriptor_type"] = "DescriptorType::kPushConstantBuffer";
-        buffers.emplace_back(std::move(push_constant_buffer));
+        push_constant_buffers.emplace_back(std::move(push_constant_buffer));
       }
     } else {
       return std::nullopt;

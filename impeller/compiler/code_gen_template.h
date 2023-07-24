@@ -72,6 +72,19 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 {% endfor %}
 {% endif %}
 
+{% if length(push_constant_buffers) > 0 %}
+
+  // ===========================================================================
+  // Push Constant Buffers =====================================================
+  // ===========================================================================
+{% for buffer in push_constant_buffers %}
+
+  static constexpr auto kResource{{camel_case(buffer.name)}} = ShaderPushConstant(); // {{buffer.name}}
+  static ShaderMetadata kMetadata{{camel_case(buffer.name)}};
+{% endfor %}
+{% endif %}
+
+
   // ===========================================================================
   // Stage Inputs ==============================================================
   // ===========================================================================
@@ -189,6 +202,13 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
     },
 {% endfor %}
   };
+  static constexpr std::array<PushConstantRange,{{length(push_constant_buffers)}}> kPushConstantRanges{  
+{% for push_constant_buffer in push_constant_buffers %}
+    PushConstantRange{
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
+  };
 
 };  // struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader
 
@@ -224,6 +244,24 @@ static_assert(offsetof(Shader::{{def.name}}, {{member.name}}) == {{member.offset
 {% endfor %}
 
 {% for buffer in buffers %}
+ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
+  "{{buffer.name}}",    // name
+  std::vector<ShaderStructMemberMetadata> {
+    {% for member in buffer.type.members %}
+      ShaderStructMemberMetadata {
+        {{ member.base_type }},      // type
+        "{{ member.name }}",         // name
+        {{ member.offset }},         // offset
+        {{ member.size }},           // size
+        {{ member.byte_length }},    // byte_length
+        {{ member.array_elements }}, // array_elements
+      },
+    {% endfor %}
+  } // members
+};
+{% endfor %}
+
+{% for buffer in push_constant_buffers %}
 ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
   "{{buffer.name}}",    // name
   std::vector<ShaderStructMemberMetadata> {

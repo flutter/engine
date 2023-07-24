@@ -78,6 +78,8 @@ struct ShaderMetadata {
   std::vector<ShaderStructMemberMetadata> members;
 };
 
+struct ShaderPushConstant {};
+
 struct ShaderUniformSlot {
   const char* name;
   size_t ext_res_0;
@@ -144,12 +146,15 @@ enum class DescriptorType {
   kSampledImage,
   kImage,
   kSampler,
-  kPushConstantBuffer,
 };
 
 struct DescriptorSetLayout {
   uint32_t binding;
   DescriptorType descriptor_type;
+  ShaderStage shader_stage;
+};
+
+struct PushConstantRange {
   ShaderStage shader_stage;
 };
 
