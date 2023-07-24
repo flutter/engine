@@ -237,6 +237,18 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   }
 
   {
+    auto& push_constants = root["push_constant_buffers"] = nlohmann::json::array_t{};
+    if (auto push_constants_json = ReflectResources(
+            shader_resources.push_constant_buffers,
+            /*compute_offsets=*/execution_model == spv::ExecutionModelVertex);
+        push_constants_json.has_value()) {
+      push_constants = std::move(push_constants_json.value());
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  {
     auto combined_sampled_images =
         ReflectResources(shader_resources.sampled_images);
     auto images = ReflectResources(shader_resources.separate_images);

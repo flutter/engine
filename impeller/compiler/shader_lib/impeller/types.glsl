@@ -27,4 +27,10 @@ precision mediump sampler2D;
 #define BoolV3 vec3
 #define BoolV4 vec4
 
+#ifdef IMPELLER_TARGET_VULKAN
+#define IMPELLER_MAYBE_PUSH_CONSTANT layout(push_constant)
+#else
+#define IMPELLER_MAYBE_PUSH_CONSTANT
+#endif
+
 #endif

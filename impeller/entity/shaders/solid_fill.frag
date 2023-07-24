@@ -6,7 +6,7 @@ precision mediump float;
 
 #include <impeller/types.glsl>
 
-uniform FragInfo {
+IMPELLER_MAYBE_PUSH_CONSTANT uniform FragInfo {
   f16vec4 color;
 }
 frag_info;
