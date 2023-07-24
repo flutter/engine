@@ -10,6 +10,7 @@ import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
 import("//flutter/testing/testing.gni")
 
+# Making changes to test neutral state in google testing.
 declare_args() {
   embedder_enable_software = shell_enable_software
   embedder_enable_vulkan = shell_enable_vulkan
