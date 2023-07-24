@@ -65,7 +65,7 @@ bool OpacityPeepholePassDelegate::CanElide() {
 bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
   // Passes with absorbed clips can not be safely collapsed.
-  if (!entity_pass->GetBoundsLimit().has_value()) {
+  if (entity_pass->GetBoundsLimit().has_value()) {
     return false;
   }
 

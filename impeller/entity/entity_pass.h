@@ -63,7 +63,7 @@ class EntityPass {
   ///         it.
   void SetBoundsLimit(std::optional<Rect> bounds_limit);
 
-  /// @brief  Set the bounds limit, which is provided by the user when creating
+  /// @brief  Get the bounds limit, which is provided by the user when creating
   ///         a SaveLayer.
   std::optional<Rect> GetBoundsLimit() const;
 
