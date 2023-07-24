@@ -173,17 +173,34 @@ public class SettingsChannel {
      * longer needed.
      */
     public SentConfiguration getConfiguration(int configGeneration) {
-      if (currentConfiguration != null
-          && currentConfiguration.generationNumber == configGeneration) {
-        return currentConfiguration;
+      if (currentConfiguration == null) {
+        currentConfiguration = sentQueue.poll();
       }
-      SentConfiguration head = sentQueue.poll();
+
       // Remove the older entries, up to the entry associated with
-      // configGeneration.
-      while (head == null || head.generationNumber != configGeneration) {
-        head = sentQueue.poll();
+      // configGeneration. Here we assume the generationNumber never overflows.
+      while (currentConfiguration != null
+          && currentConfiguration.generationNumber < configGeneration) {
+        currentConfiguration = sentQueue.poll();
       }
-      return currentConfiguration = head;
+
+      if (currentConfiguration == null) {
+        Log.e(
+            TAG,
+            "Cannot find config with generation: "
+                + String.valueOf(configGeneration)
+                + ", after exhausting the queue.");
+        return null;
+      } else if (currentConfiguration.generationNumber != configGeneration) {
+        Log.e(
+            TAG,
+            "Cannot find config with generation: "
+                + String.valueOf(configGeneration)
+                + ", the oldest config is now: "
+                + String.valueOf(currentConfiguration.generationNumber));
+        return null;
+      }
+      return currentConfiguration;
     }
 
     private SentConfiguration previousEnqueuedConfiguration;
@@ -196,6 +213,7 @@ public class SettingsChannel {
      *     configurations in the queue.
      */
     @UiThread
+    @Nullable
     public BasicMessageChannel.Reply enqueueConfiguration(SentConfiguration config) {
       sentQueue.add(config);
       final SentConfiguration configurationToRemove = previousEnqueuedConfiguration;
@@ -210,12 +228,18 @@ public class SettingsChannel {
               // platform messages are also FIFO older messages will be removed
               // before newer ones.
               sentQueue.remove(configurationToRemove);
+              if (!sentQueue.isEmpty()) {
+                Log.e(
+                    TAG,
+                    "The queue becomes empty after removing config generation "
+                        + String.valueOf(configurationToRemove.generationNumber));
+              }
             }
           };
     }
 
     public static class SentConfiguration {
-      private static int nextConfigGeneration = 0;
+      private static int nextConfigGeneration = Integer.MIN_VALUE;
 
       @NonNull public final int generationNumber;
       @NonNull private final DisplayMetrics displayMetrics;

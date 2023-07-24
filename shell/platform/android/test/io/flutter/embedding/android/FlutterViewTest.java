@@ -2,7 +2,6 @@ package io.flutter.embedding.android;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -434,24 +433,23 @@ public class FlutterViewTest {
   @Test
   public void configurationQueueWorks() {
     final SettingsChannel.ConfigurationQueue queue = new SettingsChannel.ConfigurationQueue();
-    assertNull(queue.getConfiguration(3));
+    final int baseId = Integer.MIN_VALUE;
 
     queue.enqueueConfiguration(
         new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
     queue.enqueueConfiguration(
         new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
-    assertEquals(0, queue.getConfiguration(0).generationNumber);
-    assertEquals(1, queue.getConfiguration(1).generationNumber);
-    assertNull(queue.getConfiguration(0));
-    assertNull(queue.getConfiguration(1));
+    assertEquals(baseId + 0, queue.getConfiguration(baseId + 0).generationNumber);
+    assertEquals(baseId + 1, queue.getConfiguration(baseId + 1).generationNumber);
+    assertEquals(baseId + 1, queue.getConfiguration(baseId + 1).generationNumber);
 
     queue.enqueueConfiguration(
         new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
     queue.enqueueConfiguration(
         new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
-    assertEquals(3, queue.getConfiguration(3).generationNumber);
-    // Can no longer get 2 since 3 were asked for first.
-    assertNull(queue.getConfiguration(2));
+    assertEquals(baseId + 3, queue.getConfiguration(baseId + 3).generationNumber);
+    // Can get the same configuration more than once.
+    assertEquals(baseId + 3, queue.getConfiguration(baseId + 3).generationNumber);
 
     final BasicMessageChannel.Reply replyFor4 =
         queue.enqueueConfiguration(
@@ -459,11 +457,10 @@ public class FlutterViewTest {
     final BasicMessageChannel.Reply replyFor5 =
         queue.enqueueConfiguration(
             new SettingsChannel.ConfigurationQueue.SentConfiguration(mock(DisplayMetrics.class)));
-    replyFor4.reply(new Object());
-    replyFor5.reply(new Object());
-    // Can no longer get 4 since it's dequeued.
-    assertNull(queue.getConfiguration(4));
-    assertEquals(5, queue.getConfiguration(5).generationNumber);
+    replyFor4.reply(null);
+    replyFor5.reply(null);
+    assertEquals(baseId + 5, queue.getConfiguration(baseId + 5).generationNumber);
+    assertEquals(baseId + 5, queue.getConfiguration(baseId + 5).generationNumber);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
