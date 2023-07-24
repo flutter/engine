@@ -32,7 +32,6 @@ struct PlatformData {
 
   ~PlatformData();
 
-  ViewportMetrics viewport_metrics;
   std::string language_code;
   std::string country_code;
   std::string script_code;

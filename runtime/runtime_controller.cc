@@ -76,7 +76,6 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_persistent_isolate_data,     //
                                           spawned_context);              //
   result->spawning_isolate_ = root_isolate_;
-  result->platform_data_.viewport_metrics = ViewportMetrics();
   return result;
 }
 
@@ -115,11 +114,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  // TODO(dkwingsmt): Needs a view ID here (or platform_data should probably
-  // have multiple view metrics).
-  return SetViewportMetrics(kFlutterImplicitViewId,
-                            platform_data_.viewport_metrics) &&
-         SetLocales(platform_data_.locale_data) &&
+  return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
              platform_data_.accessibility_feature_flags_) &&
@@ -149,7 +144,6 @@ bool RuntimeController::RemoveView(int64_t view_id) {
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
                                            const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "SetViewportMetrics");
-  platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     Window* window = platform_configuration->get_window(view_id);
