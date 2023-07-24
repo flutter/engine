@@ -61,6 +61,7 @@ struct Bindings {
   std::map<size_t, BufferResource> buffers;
   std::map<size_t, TextureResource> textures;
   std::map<size_t, SamplerResource> samplers;
+  std::optional<BufferView> push_constant_buffer;
 };
 
 //------------------------------------------------------------------------------

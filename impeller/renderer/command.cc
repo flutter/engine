@@ -46,6 +46,25 @@ bool Command::BindResource(ShaderStage stage,
                            const ShaderPushConstant& slot,
                            const ShaderMetadata& metadata,
                            const BufferView& view) {
+  if (!view) {
+    return false;
+  }
+
+  switch (stage) {
+    case ShaderStage::kVertex:
+      vertex_bindings.push_constant_buffer = view;
+      return true;
+    case ShaderStage::kFragment:
+      fragment_bindings.push_constant_buffer = view;
+      return true;
+    case ShaderStage::kCompute:
+      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
+    case ShaderStage::kTessellationControl:
+    case ShaderStage::kTessellationEvaluation:
+    case ShaderStage::kUnknown:
+      return false;
+  }
+
   return false;
 }
 

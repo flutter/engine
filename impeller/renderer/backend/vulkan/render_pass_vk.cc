@@ -414,6 +414,26 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       {vk::DescriptorSet{*vk_desc_set}},  // sets
       nullptr                             // offsets
   );
+
+  if (command.fragment_bindings.push_constant_buffer.has_value()) {
+    encoder.GetCommandBuffer().pushConstants(
+      pipeline.GetPipelineLayout(),
+      vk::ShaderStageFlagBits::eFragment,
+      command.fragment_bindings.push_constant_buffer.value().range.offset,
+      command.fragment_bindings.push_constant_buffer.value().range.length,
+      command.fragment_bindings.push_constant_buffer.value().contents
+    );
+  }
+  if (command.vertex_bindings.push_constant_buffer.has_value()) {
+    encoder.GetCommandBuffer().pushConstants(
+      pipeline.GetPipelineLayout(),
+      vk::ShaderStageFlagBits::eVertex,
+      command.vertex_bindings.push_constant_buffer.value().range.offset,
+      command.vertex_bindings.push_constant_buffer.value().range.length,
+      command.vertex_bindings.push_constant_buffer.value().contents
+    );
+  }
+
   return true;
 }
 
