@@ -2199,6 +2199,9 @@ class EngineSemanticsOwner {
         assert(_semanticsTree.containsKey(update.id));
       }
 
+      // Verify that `update._nodeUpdates` has not changed.
+      assert(identical(update._nodeUpdates, nodeUpdates));
+
       return true;
     }());
   }
