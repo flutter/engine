@@ -1,8 +1,8 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import androidx.annotation.ChecksSdkIntAtLeast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -35,7 +35,7 @@ public class SettingsChannel {
     this.channel = new BasicMessageChannel<>(dartExecutor, CHANNEL_NAME, JSONMessageCodec.INSTANCE);
   }
 
-  @ChecksSdkIntAtLeast(api = 34)
+  @SuppressLint("AnnotateVersionCheck")
   public static boolean hasNonlinearTextScalingSupport() {
     return Build.VERSION.SDK_INT >= 34;
   }
