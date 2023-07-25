@@ -309,7 +309,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(kFlutterImplicitViewId, viewportMetrics);
+  self.platformView->SetViewportMetrics(flutter::kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {

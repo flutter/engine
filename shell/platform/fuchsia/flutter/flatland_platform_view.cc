@@ -109,7 +109,7 @@ void FlatlandPlatformView::OnGetLayout(
       {},                       // p_physical_display_features_state
       0,                        // p_display_id
   };
-  SetViewportMetrics(kFlutterImplicitViewId, metrics);
+  SetViewportMetrics(flutter::kFlutterImplicitViewId, metrics);
 
   parent_viewport_watcher_->GetLayout(
       fit::bind_member(this, &FlatlandPlatformView::OnGetLayout));
