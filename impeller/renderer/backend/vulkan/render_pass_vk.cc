@@ -399,12 +399,6 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return true;
   };
 
-  FML_LOG(ERROR) << "aaclarke:\n" <<
-    "  vertex has push constant: " << command.vertex_bindings.push_constant_buffer.has_value() << "\n" <<
-    "  vertex buffer count: " << command.vertex_bindings.buffers.size() << "\n" <<
-    "  fragment has push constant: " << command.fragment_bindings.push_constant_buffer.has_value() << "\n" <<
-    "  fragment buffer count:" << command.fragment_bindings.buffers.size();
-
   if (!bind_buffers(command.vertex_bindings) ||
       !bind_buffers(command.fragment_bindings) ||
       !bind_images(command.fragment_bindings)) {
