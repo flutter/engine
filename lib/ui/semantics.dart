@@ -537,7 +537,7 @@ class SemanticsFlag {
   ///
   ///   * [SemanticsFlag.isExpanded], which controls whether the node is "expanded" or "collapsed".
   static const SemanticsFlag hasExpandedState = SemanticsFlag._(_kHasExpandedStateIndex, 'hasExpandedState');
-  
+
   /// Whether a semantics node is expanded.
   ///
   /// If true, the semantics node is "expanded". If false, the semantics node is
