@@ -838,17 +838,14 @@ class PlatformView {
   ///             system text scaling on the given unscaled font size.
   ///
   /// @param[in]  unscaled_font_size  The unscaled font size specified by the
-  ///                                 app developer. The value is guaranteed
-  ///                                 to be finite and non-negative.
+  ///                                 app developer. The value is in logical
+  ///                                 pixels, and is guaranteed to be finite and
+  ///                                 non-negative.
   /// @param[in]  configuration_id    The unique id of the configuration to use
   ///                                 for computing the scaled font size.
   ///
-  /// @return     The scaled font size in logical pixels. Returns a negative
-  ///             number when an error is encountered:
-  ///              - Returns -1 if this method isn't implemented on the current
-  ///                platform.
-  ///              - Returns -2 if the given configuration_id does not match
-  ///                the platform's text scale factor value.
+  /// @return     The scaled font size in logical pixels, or -1 if the given
+  ///             configuration_id did not match a valid configuration.
   ///
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const;

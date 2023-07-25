@@ -1286,19 +1286,15 @@ public class FlutterJNI {
 
   // ----- End Localization Support ----
   @Nullable
-  public float getScaledFontSize(float fontSize, int configGeneration) {
-    if (Build.VERSION.SDK_INT < 34) {
-      // Returns unimplemented on anything below Android U.
-      return -1f;
-    }
-    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configGeneration);
+  public float getScaledFontSize(float fontSize, int configurationId) {
+    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configurationId);
     if (metrics == null) {
       Log.e(
           TAG,
-          "getScaledFontSize called with generation "
-              + String.valueOf(configGeneration)
+          "getScaledFontSize called with configurationId "
+              + String.valueOf(configurationId)
               + ", which can't be found.");
-      return -2f;
+      return -1f;
     }
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
         / TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.0f, metrics);

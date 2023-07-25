@@ -11,7 +11,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.os.Build;
 import android.os.LocaleList;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -255,26 +254,5 @@ public class FlutterJNITest {
     flutterJNI.setRefreshRateFPS(120.0f);
     // --- Verify Results ---
     verify(flutterJNI, times(1)).updateRefreshRate();
-  }
-
-  @Test
-  public void getScaledFontSizeWorks() {
-    final FlutterJNI flutterJNI = new FlutterJNI();
-
-    // Returns -1 below Android U.
-    if (Build.VERSION.SDK_INT < 34) {
-      assertEquals(-1f, flutterJNI.getScaledFontSize(1.0f, 0), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(2.0f, 0), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(4.0f, 0), 0.0f);
-      assertEquals(-1f, flutterJNI.getScaledFontSize(8.0f, 0), 0.0f);
-      return;
-    }
-
-    // Returns -2 when generation id mismatches.
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(14.0f, -100));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(1.0f, -100));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(2.0f, -100));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(4.0f, -100));
-    assertEquals(-2.0f, flutterJNI.getScaledFontSize(8.0f, -100));
   }
 }
