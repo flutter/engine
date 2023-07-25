@@ -92,7 +92,7 @@ class ColorSourceContents : public Contents {
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-  
+
   // |Contents|
   bool CanInheritOpacity(const Entity& entity) const override;
 
