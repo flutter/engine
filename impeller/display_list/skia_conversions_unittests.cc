@@ -4,7 +4,6 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/skia_conversions.h"
-#include "impeller/geometry/scalar.h"
 
 namespace impeller {
 namespace testing {
