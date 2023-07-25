@@ -399,10 +399,31 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return true;
   };
 
+  FML_LOG(ERROR) << "aaclarke:\n" <<
+    "  vertex has push constant: " << command.vertex_bindings.push_constant_buffer.has_value() << "\n" <<
+    "  vertex buffer count: " << command.vertex_bindings.buffers.size() << "\n" <<
+    "  fragment has push constant: " << command.fragment_bindings.push_constant_buffer.has_value() << "\n" <<
+    "  fragment buffer count:" << command.fragment_bindings.buffers.size();
+
   if (!bind_buffers(command.vertex_bindings) ||
       !bind_buffers(command.fragment_bindings) ||
       !bind_images(command.fragment_bindings)) {
     return false;
+  }
+
+  if (command.fragment_bindings.push_constant_buffer.has_value()) {
+    encoder.GetCommandBuffer().pushConstants(
+        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eFragment,
+        0u,
+        command.fragment_bindings.push_constant_buffer.value().range.length,
+        command.fragment_bindings.push_constant_buffer.value().contents + command.fragment_bindings.push_constant_buffer.value().range.offset);
+  }
+  if (command.vertex_bindings.push_constant_buffer.has_value()) {
+    encoder.GetCommandBuffer().pushConstants(
+        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex,
+        0u,
+        command.vertex_bindings.push_constant_buffer.value().range.length,
+        command.vertex_bindings.push_constant_buffer.value().contents + command.vertex_bindings.push_constant_buffer.value().range.offset);
   }
 
   context.GetDevice().updateDescriptorSets(writes, {});
@@ -414,21 +435,6 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       {vk::DescriptorSet{*vk_desc_set}},  // sets
       nullptr                             // offsets
   );
-
-  if (command.fragment_bindings.push_constant_buffer.has_value()) {
-    encoder.GetCommandBuffer().pushConstants(
-        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eFragment,
-        command.fragment_bindings.push_constant_buffer.value().range.offset,
-        command.fragment_bindings.push_constant_buffer.value().range.length,
-        command.fragment_bindings.push_constant_buffer.value().contents);
-  }
-  if (command.vertex_bindings.push_constant_buffer.has_value()) {
-    encoder.GetCommandBuffer().pushConstants(
-        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex,
-        command.vertex_bindings.push_constant_buffer.value().range.offset,
-        command.vertex_bindings.push_constant_buffer.value().range.length,
-        command.vertex_bindings.push_constant_buffer.value().contents);
-  }
 
   return true;
 }
