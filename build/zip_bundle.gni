@@ -73,7 +73,7 @@ template("zip_bundle") {
       rebase_path(outputs[0]),
       "-i",
       rebase_path(license_readme),
-      "LICENSE.md",
+      "LICENSE.$target_name.md",
     ]
     foreach(input, invoker.files) {
       args += [
