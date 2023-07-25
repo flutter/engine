@@ -4,11 +4,10 @@
 
 #include "flatland_platform_view.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 
 namespace flutter_runner {
-
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 FlatlandPlatformView::FlatlandPlatformView(
     flutter::PlatformView::Delegate& delegate,
