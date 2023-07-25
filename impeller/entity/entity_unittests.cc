@@ -2427,17 +2427,10 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
-  // Font size < 25
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.4f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.5f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.43f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
-
-  // Font size > 25
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 50), 0.43f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 50), 0.53f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 50), 2.1f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 50), 0.0f);
 }
 
 }  // namespace testing
