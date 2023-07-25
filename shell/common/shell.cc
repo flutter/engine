@@ -775,8 +775,6 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
-
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
@@ -2081,6 +2079,7 @@ void Shell::RemoveView(int64_t view_id) {
     return;
   }
 
+  expected_frame_sizes_.erase(view_id);
   fml::AutoResetWaitableEvent latch;
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              view_id                          //

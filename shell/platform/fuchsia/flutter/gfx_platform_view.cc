@@ -4,11 +4,10 @@
 
 #include "gfx_platform_view.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 
 namespace flutter_runner {
-
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 GfxPlatformView::GfxPlatformView(
     flutter::PlatformView::Delegate& delegate,
@@ -237,7 +236,7 @@ void GfxPlatformView::OnScenicEvent(
         {},    // p_physical_display_features_state
         0,     // pdisplay_id
     };
-    SetViewportMetrics(kFlutterImplicitViewId, metrics);
+    SetViewportMetrics(flutter::kFlutterImplicitViewId, metrics);
   }
 }
 

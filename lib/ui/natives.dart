@@ -113,6 +113,11 @@ _ScheduleImmediateClosure _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 @pragma('vm:entry-point')
 bool _impellerEnabled = false;
 
-// Used internally to indicate whether the embedder enables the implicit view.
+// Used internally to indicate whether the embedder enables the implicit view,
+// and the implicit view's ID if so.
+//
+// The exact value of this variable is an implementation detail that may change
+// at any time. Apps should always use PlatformDispatcher.implicitView to
+// determine the current implicit view, if any.
 @pragma('vm:entry-point')
-bool _implicitViewEnabled = false;
+int? _implicitViewId;

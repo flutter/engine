@@ -4342,6 +4342,8 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+// Parse the arguments of NativeReportViewIdsCallback and
+// store them in hasImplicitView and viewIds.
 static void ParseViewIdsCallback(const Dart_NativeArguments& args,
                                  bool* hasImplicitView,
                                  std::vector<int64_t>* viewIds) {
@@ -4355,6 +4357,7 @@ static void ParseViewIdsCallback(const Dart_NativeArguments& args,
   ASSERT_EQ(exception, nullptr);
 }
 
+// Run the given task in the platform runner, and blocks until its finished.
 static void RunOnPlatformTaskRunner(Shell& shell, const fml::closure& task) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(

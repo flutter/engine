@@ -409,7 +409,7 @@ class SingletonFlutterWindow extends FlutterView {
     'This feature was deprecated after v3.7.0-32.0.pre.'
   )
   SingletonFlutterWindow._() : super._(
-    _kImplicitViewId,
+    _implicitViewId!,
     PlatformDispatcher.instance,
     const _ViewConfiguration(),
   );

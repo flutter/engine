@@ -22,6 +22,8 @@
 
 namespace flutter {
 
+constexpr int64_t kFlutterImplicitViewId = 0;
+
 class FrameTiming {
  public:
   enum Phase {
