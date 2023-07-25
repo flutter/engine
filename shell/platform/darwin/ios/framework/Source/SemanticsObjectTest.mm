@@ -89,6 +89,23 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 }  // namespace
 }  // namespace flutter
 
+@interface FakePlatformView : UIView
+
+@property(nonatomic, strong, readonly) UIView* subview;
+
+@end
+
+@implementation FakePlatformView
+
+- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
+  if (_subview) {
+    _subview = [[UIView alloc] init];
+  }
+  return _subview;
+}
+
+@end
+
 @interface SemanticsObjectTest : XCTestCase
 @end
 
@@ -201,6 +218,59 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
   XCTAssertNil(hitTestResult);
+}
+
+- (void)testAccessibilityHitTestSearchPlatformViewSubtree {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  SemanticsObject* object0 = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* object1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
+  FakePlatformView* platformView =
+      [[FakePlatformView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+  FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer =
+      [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                uid:1
+                                                       platformView:platformView];
+
+  object0.children = @[ object1 ];
+  object0.childrenInHitTestOrder = @[ object1 ];
+  object1.children = @[ platformViewSemanticsContainer, object3 ];
+  object1.childrenInHitTestOrder = @[ platformViewSemanticsContainer, object3 ];
+
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  node0.label = "0";
+  [object0 setSemanticsNode:&node0];
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  node1.label = "1";
+  [object1 setSemanticsNode:&node1];
+
+  flutter::SemanticsNode node2;
+  node2.id = 2;
+  node2.rect = SkRect::MakeXYWH(0, 0, 100, 100);
+  node2.label = "2";
+  [platformViewSemanticsContainer setSemanticsNode:&node2];
+
+  flutter::SemanticsNode node3;
+  node3.id = 3;
+  node3.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  node3.label = "3";
+  [object3 setSemanticsNode:&node3];
+
+  CGPoint point = CGPointMake(10, 10);
+  // id partialMockPlatformView = OCMPartialMock(platformView);
+  // OCMStub([partialMockPlatformView _accessibilityHitTest:point
+  // withEvent:nil]).andReturn(subView);
+  id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
+
+  // Focus to object2 because it's the first object in hit test order
+  XCTAssertEqual(hitTestResult, platformView.subview);
 }
 
 - (void)testAccessibilityScrollToVisible {

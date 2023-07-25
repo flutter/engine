@@ -93,6 +93,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 }  // namespace
 
+@interface NSObject (FlutterSemantics)
+
+- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event;
+
+@end
+
 @interface FlutterSwitchSemanticsObject ()
 @property(nonatomic, readonly) UISwitch* nativeSwitch;
 @end
@@ -547,17 +553,16 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 // Finds the first eligiable semantics object in hit test order.
-- (SemanticsObject*)search:(CGPoint)point {
+- (id)search:(CGPoint)point {
   // Search children in hit test order.
   for (SemanticsObject* child in [self childrenInHitTestOrder]) {
     if ([child containsPoint:point]) {
-      SemanticsObject* childSearchResult = [child search:point];
+      id childSearchResult = [child search:point];
       if (childSearchResult != nil) {
         return childSearchResult;
       }
     }
   }
-
   // Check if the current semantic object should be returned.
   if ([self containsPoint:point] && [self isFocusable]) {
     return self.nativeAccessibility;
@@ -573,7 +578,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // IOS 16. Overrides this method to focus the first eligiable semantics
 // object in hit test order.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  return [self search:point];
+  id hittest = [self search:point];
+  if (![hittest isKindOfClass:[SemanticsObject class]]) {
+    // If hittest result is not a SemanticsObject (e.g. PlatformView),
+    // call the default hittest method to find the hittest result inside the "hittest".
+    return [(NSObject*)hittest _accessibilityHitTest:point withEvent:event];
+  }
+  return hittest;
 }
 
 // iOS calls this method when this item is swipe-to-focusd in VoiceOver.
@@ -877,6 +888,22 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [_platformView release];
   _platformView = nil;
   [super dealloc];
+}
+
+- (id)nativeAccessibility {
+  return _platformView;
+}
+
+- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
+  return [_platformView _accessibilityHitTest:point withEvent:event];
+}
+
+- (BOOL)isFocusable {
+  return YES;
+}
+
+- (BOOL)isAccessibilityElement {
+  return NO;
 }
 
 #pragma mark - UIAccessibilityContainer overrides
