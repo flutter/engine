@@ -132,9 +132,10 @@ class MockAngleSurfaceManager : public AngleSurfaceManager {
 
 }  // namespace
 
-// Ensure that submenu buttons have their expanded/collapsed status set apropriately
+// Ensure that submenu buttons have their expanded/collapsed status set
+// apropriately.
 TEST(FlutterWindowsViewTest, SubmenuNativeState) {
-    std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
   modifier.embedder_api().UpdateSemanticsEnabled =
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine, bool enabled) {
