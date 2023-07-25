@@ -132,6 +132,7 @@
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
+../../../flutter/impeller/entity/geometry/geometry_unittests.cc
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
@@ -621,7 +622,22 @@
 ../../../fuchsia/sdk/linux/pkg/async/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_component_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_incoming_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_logging_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_env/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_env_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_shared_lib/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing_cpp/include/lib/driver/runtime/testing
+../../../fuchsia/sdk/linux/pkg/driver_runtime_testing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_symbols/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/include/lib/driver/testing
+../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json
@@ -633,6 +649,8 @@
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_v2/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_wire/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver_transport/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
@@ -648,6 +666,7 @@
 ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 ../../../fuchsia/sdk/linux/pkg/sync/meta.json
+../../../fuchsia/sdk/linux/pkg/sync_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/sys/testing
 ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/include/lib/sys/component/cpp/testing
 ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/meta.json
@@ -1014,8 +1033,8 @@
 ../../../third_party/angle/src/compiler/generate_parser_tools.py
 ../../../third_party/angle/src/compiler/preprocessor/generate_parser.py
 ../../../third_party/angle/src/compiler/translator/gen_builtin_symbols.py
-../../../third_party/angle/src/compiler/translator/gen_emulated_builtin_function_tables.py
 ../../../third_party/angle/src/compiler/translator/generate_parser.py
+../../../third_party/angle/src/compiler/translator/hlsl/gen_emulated_builtin_function_tables.py
 ../../../third_party/angle/src/compiler/translator/span_unittest.cpp
 ../../../third_party/angle/src/feature_support_util/OWNERS
 ../../../third_party/angle/src/feature_support_util/feature_support_util_unittest.cpp
@@ -1480,6 +1499,7 @@
 ../../../third_party/colorama/src/requirements.txt
 ../../../third_party/colorama/src/screenshots
 ../../../third_party/colorama/src/setup.py
+../../../third_party/dart
 ../../../third_party/dart/.clang-format
 ../../../third_party/dart/.dart_tool
 ../../../third_party/dart/.git
@@ -1658,7 +1678,6 @@
 ../../../third_party/dart/runtime/vm/heap/become_test.cc
 ../../../third_party/dart/runtime/vm/heap/freelist_test.cc
 ../../../third_party/dart/runtime/vm/heap/heap_test.cc
-../../../third_party/dart/runtime/vm/heap/pages_test.cc
 ../../../third_party/dart/runtime/vm/heap/safepoint_test.cc
 ../../../third_party/dart/runtime/vm/heap/weak_table_test.cc
 ../../../third_party/dart/runtime/vm/instructions_arm64_test.cc
@@ -2609,6 +2628,7 @@
 ../../../third_party/skia/gm/BUILD.bazel
 ../../../third_party/skia/gm/android_gm_test.bzl
 ../../../third_party/skia/gm/surface_manager/BUILD.bazel
+../../../third_party/skia/gm/vias/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
 ../../../third_party/skia/gn/bazel_build.py
