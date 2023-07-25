@@ -411,18 +411,53 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterOpenGLFramebuffer;
 
+typedef bool (*FlutterOpenGLSurfaceCallback)(void* /* user data */,
+                                             bool* /* opengl state changed */);
+
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterOpenGLSurface).
   size_t struct_size;
 
   /// User data to be returned on the invocation of the destruction callback.
   void* user_data;
 
   /// Callback invoked (on an engine managed thread) that asks the embedder to
-  /// make the window surface current.
-  VoidCallback make_current_callback;
+  /// make the surface current.
+  ///
+  /// Should return true if the operation succeeded, false if the surface could
+  /// not be made current and rendering should be cancelled.
+  ///
+  /// The second parameter 'opengl state changed' should be set to true if
+  /// any OpenGL API state has changed and flutter should not assume any native
+  /// API state is the same as before this callback was called.
+  ///
+  /// In that case, flutter will invalidate the internal OpenGL API state cache,
+  /// which is a somewhat expensive operation.
+  ///
+  /// @attention required. (non-null)
+  FlutterOpenGLSurfaceCallback make_current_callback;
+
+  /// Callback invoked (on an engine managed thread) when the current surface
+  /// can be cleared.
+  ///
+  /// Should return true if the operation succeeded, false if an error ocurred.
+  /// That error will be logged but otherwise not handled by the engine.
+  ///
+  /// The second parameter 'opengl state changed' is the same as with the
+  /// @ref make_current_callback.
+  ///
+  /// The embedder might clear the surface here after it was previously made
+  /// current. That's not required however, it's also possible to clear it in
+  /// the destruction callback. There's no way to signal opengl state
+  /// changes in the destruction callback though.
+  ///
+  /// @attention required. (non-null)
+  FlutterOpenGLSurfaceCallback clear_current_callback;
 
   /// Callback invoked (on an engine managed thread) that asks the embedder to
-  /// collect the framebuffer.
+  /// collect the surface.
+  ///
+  /// @attention required. (non-null)
   VoidCallback destruction_callback;
 } FlutterOpenGLSurface;
 

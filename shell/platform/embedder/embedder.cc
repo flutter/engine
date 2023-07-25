@@ -1201,16 +1201,19 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
-MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
-                              sk_sp<SkSurface> skia_surface,
-                              fml::closure on_release,
-                              fml::closure on_make_current) {
+MakeRenderTargetFromSkSurface(
+    FlutterBackingStore backing_store,
+    sk_sp<SkSurface> skia_surface,
+    fml::closure on_release,
+    flutter::EmbedderRenderTarget::MakeOrClearCurrentCallback on_make_current,
+    flutter::EmbedderRenderTarget::MakeOrClearCurrentCallback
+        on_clear_current) {
   if (!skia_surface) {
     return nullptr;
   }
   return std::make_unique<flutter::EmbedderRenderTargetSkia>(
       backing_store, std::move(skia_surface), std::move(on_release),
-      std::move(on_make_current));
+      std::move(on_make_current), std::move(on_clear_current));
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -1218,7 +1221,7 @@ MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
                               sk_sp<SkSurface> skia_surface,
                               fml::closure on_release) {
   return MakeRenderTargetFromSkSurface(backing_store, skia_surface, on_release,
-                                       nullptr);
+                                       nullptr, nullptr);
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -1292,21 +1295,37 @@ CreateEmbedderRenderTarget(
         }
 
         case kFlutterOpenGLTargetTypeSurface: {
-          auto skia_surface = MakeSkSurfaceFromBackingStore(
-              context, config, &backing_store.open_gl.surface);
-
-          auto make_current_callback =
-              backing_store.open_gl.surface.make_current_callback;
-          auto make_current_context = backing_store.open_gl.surface.user_data;
-
-          auto on_make_current = [=] {
-            make_current_callback(make_current_context);
+          auto on_make_current =
+              [callback = backing_store.open_gl.surface.make_current_callback,
+               context = backing_store.open_gl.surface.user_data]()
+              -> std::pair<bool, bool> {
+            bool invalidate_api_state = false;
+            bool ok = callback(context, &invalidate_api_state);
+            return {ok, invalidate_api_state};
           };
 
-          render_target = MakeRenderTargetFromSkSurface(
-              backing_store, std::move(skia_surface),
-              collect_callback.Release(), on_make_current);
-          break;
+          auto on_clear_current =
+              [callback = backing_store.open_gl.surface.clear_current_callback,
+               context = backing_store.open_gl.surface.user_data]()
+              -> std::pair<bool, bool> {
+            bool invalidate_api_state = false;
+            bool ok = callback(context, &invalidate_api_state);
+            return {ok, invalidate_api_state};
+          };
+
+          if (enable_impeller) {
+            /// TODO: Implement
+            FML_LOG(ERROR) << "Unimplemented";
+            break;
+          } else {
+            auto skia_surface = MakeSkSurfaceFromBackingStore(
+                context, config, &backing_store.open_gl.surface);
+
+            render_target = MakeRenderTargetFromSkSurface(
+                backing_store, std::move(skia_surface),
+                collect_callback.Release(), on_make_current, on_clear_current);
+            break;
+          }
         }
       }
       break;
