@@ -486,10 +486,38 @@ Future<void> testThatAssetLoadingHappensOnWorkerThread() async {
 @pragma('vm:external-name', 'NativeReportViewIdsCallback')
 external void nativeReportViewIdsCallback(bool hasImplicitView, List<int> viewIds);
 
+List<int> getCurrentViewIds() {
+  return PlatformDispatcher.instance.views
+      .map((FlutterView view) => view.viewId)
+      .toSet()
+      .toList()
+      ..sort();
+}
+
+bool listEquals<T>(List<T> a, List<T> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (int i = 0; i < a.length; i += 1) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// This entrypoint reports whether there's an implicit view and the list of view
+// IDs using nativeReportViewIdsCallback on initialization and every time the
+// list of view IDs changes.
 @pragma('vm:entry-point')
 void testReportViewIds() {
-  final List<int> viewIds = PlatformDispatcher.instance.views
-      .map((FlutterView view) => view.viewId)
-      .toList();
+  List<int> viewIds = getCurrentViewIds();
   nativeReportViewIdsCallback(PlatformDispatcher.instance.implicitView != null, viewIds);
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final List<int> newViewIds = getCurrentViewIds();
+    if (!listEquals(viewIds, newViewIds)) {
+      viewIds = newViewIds;
+      nativeReportViewIdsCallback(PlatformDispatcher.instance.implicitView != null, viewIds);
+    }
+  };
 }
