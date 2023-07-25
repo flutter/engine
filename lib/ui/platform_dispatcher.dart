@@ -233,7 +233,17 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[_kImplicitViewId] : null;
+  FlutterView? get implicitView {
+    if (_views[_kImplicitViewId] == null && _implicitViewEnabled()) {
+      _views[_kImplicitViewId] = FlutterView._(
+        _kImplicitViewId,
+        this,
+        const _ViewConfiguration(),
+      );
+    }
+
+    return _views[_kImplicitViewId];
+  }
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
   external static bool _implicitViewEnabled();
