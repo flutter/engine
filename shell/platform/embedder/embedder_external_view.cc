@@ -8,7 +8,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
 
-#ifdef IMPELLER_SUPPORTS_RENDERING
+#if IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
@@ -89,7 +89,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
 
-#ifdef IMPELLER_SUPPORTS_RENDERING
+#if IMPELLER_SUPPORTS_RENDERING
   auto* impeller_target = render_target.GetImpellerRenderTarget();
   if (impeller_target) {
     auto aiks_context = render_target.GetAiksContext();
