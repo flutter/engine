@@ -25,12 +25,6 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-// static
-Scalar TextContents::RoundFontScale(Scalar value) {
-  auto res = std::ceil(value * 10.0) / 10.0;
-  return res;
-}
-
 void TextContents::SetTextFrame(const TextFrame& frame) {
   frame_ = frame;
 }
@@ -82,9 +76,8 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  auto rounded_scale = RoundFontScale(scale);
-  lazy_glyph_atlas->AddTextFrame(frame_, rounded_scale);
-  scale_ = rounded_scale;
+  lazy_glyph_atlas->AddTextFrame(frame_, scale);
+  scale_ = scale;
 }
 
 bool TextContents::Render(const ContentContext& renderer,
