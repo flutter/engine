@@ -159,13 +159,11 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::AddView(int64_t view_id) {
-  FML_DCHECK(view_id == kFlutterImplicitViewId);
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }
 
 void Rasterizer::RemoveSurface(int64_t view_id) {
-  FML_DCHECK(view_id == kFlutterImplicitViewId);
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }

@@ -4342,7 +4342,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-static void parseViewIdsCallback(const Dart_NativeArguments& args,
+static void ParseViewIdsCallback(const Dart_NativeArguments& args,
                                  bool* hasImplicitView,
                                  std::vector<int64_t>* viewIds) {
   Dart_Handle exception = nullptr;
@@ -4353,6 +4353,16 @@ static void parseViewIdsCallback(const Dart_NativeArguments& args,
   *viewIds = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
       args, 1, exception);
   ASSERT_EQ(exception, nullptr);
+}
+
+static void RunOnPlatformTaskRunner(Shell& shell, const fml::closure& task) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell.GetTaskRunners().GetPlatformTaskRunner(), [&task, &latch]() {
+        task();
+        latch.Signal();
+      });
+  latch.Wait();
 }
 
 TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
@@ -4370,7 +4380,7 @@ TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
   fml::AutoResetWaitableEvent reportLatch;
   auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
                                 &viewIds](Dart_NativeArguments args) {
-    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
+    ParseViewIdsCallback(args, &hasImplicitView, &viewIds);
     reportLatch.Signal();
   };
   AddNativeCallback("NativeReportViewIdsCallback",
@@ -4405,7 +4415,7 @@ TEST_F(ShellTest, ShellWithImplicitViewDisabledStartsWithoutImplicitView) {
   fml::AutoResetWaitableEvent reportLatch;
   auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
                                 &viewIds](Dart_NativeArguments args) {
-    parseViewIdsCallback(args, &hasImplicitView, &viewIds);
+    ParseViewIdsCallback(args, &hasImplicitView, &viewIds);
     reportLatch.Signal();
   };
   AddNativeCallback("NativeReportViewIdsCallback",
@@ -4419,6 +4429,65 @@ TEST_F(ShellTest, ShellWithImplicitViewDisabledStartsWithoutImplicitView) {
 
   ASSERT_FALSE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 0u);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, ShellWithImplicitViewEnabledAddViewRemoveView) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_implicit_view = true;
+
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+          ThreadHost::Type::IO | ThreadHost::Type::UI));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool hasImplicitView;
+  std::vector<int64_t> viewIds;
+  fml::AutoResetWaitableEvent reportLatch;
+  auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
+                                &viewIds](Dart_NativeArguments args) {
+    ParseViewIdsCallback(args, &hasImplicitView, &viewIds);
+    reportLatch.Signal();
+  };
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY(nativeViewIdsCallback));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+
+  reportLatch.Wait();
+  ASSERT_TRUE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 1u);
+  ASSERT_EQ(viewIds[0], 0ll);
+
+  RunOnPlatformTaskRunner(*shell, [&shell] { shell->AddView(2); });
+  reportLatch.Wait();
+  ASSERT_TRUE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 2u);
+  ASSERT_EQ(viewIds[1], 2ll);
+
+  RunOnPlatformTaskRunner(*shell, [&shell] { shell->RemoveView(2); });
+  reportLatch.Wait();
+  ASSERT_TRUE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 1u);
+  ASSERT_EQ(viewIds[0], 0ll);
+
+  RunOnPlatformTaskRunner(*shell, [&shell] { shell->AddView(4); });
+  reportLatch.Wait();
+  ASSERT_TRUE(hasImplicitView);
+  ASSERT_EQ(viewIds.size(), 2u);
+  ASSERT_EQ(viewIds[1], 4ll);
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
