@@ -427,6 +427,7 @@ template("_impeller_shaders_metal") {
     sl_file_extension = "metal"
     use_half_textures = use_half_textures
     shader_target_flag = ""
+    intermediates_subdir = "metal"
     defines = [ "IMPELLER_TARGET_METAL" ]
     if (is_ios) {
       shader_target_flag = "--metal-ios"
@@ -466,7 +467,7 @@ template("_impeller_shaders_metal") {
   group(target_name) {
     public_deps = [
       ":$embed_mtl_lib",
-      ":$reflect_mtl",
+      #":$reflect_mtl",
     ]
   }
 }
@@ -591,7 +592,7 @@ template("_impeller_shaders_vk") {
         metal_version = invoker.metal_version
       }
 
-      intermediates_subdir = "vk"
+      #intermediates_subdir = "vk"
     }
     shader_target_flag = "--vulkan"
 
@@ -640,9 +641,9 @@ template("_impeller_shaders_vk") {
       public_deps += [ ":$analyze_lib" ]
     }
 
-    if (!impeller_enable_metal) {
+    #if (!impeller_enable_metal) {
       public_deps += [ ":$reflect_vk" ]
-    }
+    #}
   }
 }
 
