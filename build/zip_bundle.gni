@@ -55,7 +55,7 @@ template("zip_bundle") {
       "This bundle is part of the the Flutter SDK.",
       "",
       "The source code is hosted at [flutter/engine/$source_path]($git_url/$source_path).",
-      "The for this bundle is hosted at [flutter/engine/sky/packages/sky_engine/LICENSE]($git_url/$license_path).",
+      "The license for this bundle is hosted at [flutter/engine/sky/packages/sky_engine/LICENSE]($git_url/$license_path).",
     ]
   }
 
