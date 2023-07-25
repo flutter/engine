@@ -491,7 +491,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
       canvas->drawPicture(layer->second.picture);
       if (GrDirectContext* direct_context =
               GrAsDirectContext(canvas->recordingContext())) {
-        return direct_context->flushAndSubmit();
+        direct_context->flushAndSubmit();
       }
     }
   }
