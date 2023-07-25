@@ -69,7 +69,11 @@ void PointerDataPacketConverter::ConvertPointerData(
         break;
       }
       case PointerData::Change::kAdd: {
-        FML_DCHECK(states_.find(pointer_data.device) == states_.end());
+        // TODO(loicsharma): The macOS embedder does not share
+        // its mouse state across its view controllers, resulting
+        // in multiple pointer adds for the same pointer.
+        // See: https://github.com/flutter/flutter/issues/125931
+        // FML_DCHECK(states_.find(pointer_data.device) == states_.end());
         EnsurePointerState(pointer_data);
         converted_pointers.push_back(pointer_data);
         break;

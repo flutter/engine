@@ -181,6 +181,10 @@ class PlatformDispatcher {
   /// the application.
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
+  ///
+  /// If implicit view is enabled but the implicit view is currently closed,
+  /// this list will not include the implicit view, but [implicitView] will
+  /// still be a non-null value.
   Iterable<FlutterView> get views => _views.values;
   final Map<int, FlutterView> _views = <int, FlutterView>{};
 
@@ -207,6 +211,11 @@ class PlatformDispatcher {
   /// specific [FlutterView], it will continue to point to the same view until
   /// the application is shut down (although the engine may replace or remove
   /// the underlying backing surface of the view at its discretion).
+  ///
+  /// If the implicit view is currently closed, [views] will not include this
+  /// value, but this property is still non-null, and single-view apps that
+  /// render into this property will still be able to do so, resulting in a
+  /// no-op.
   ///
   /// See also:
   ///
@@ -453,10 +462,11 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
+  //  * pointer_data.h
   //  * pointer_data.cc
   //  * pointer.dart
   //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 35;
+  static const int _kPointerDataFieldCount = 36;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -503,6 +513,7 @@ class PlatformDispatcher {
         panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        viewId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }

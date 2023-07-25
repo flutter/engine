@@ -33,6 +33,14 @@ namespace {
 constexpr int64_t kImplicitViewId = 0;
 constexpr float kDevicePixelRatio = 2.0f;
 
+std::unordered_map<int64_t, std::unique_ptr<LayerTree>> SingleLayerTreeMap(
+    int64_t view_id,
+    std::unique_ptr<LayerTree> layer_tree) {
+  auto result = std::unordered_map<int64_t, std::unique_ptr<LayerTree>>();
+  result[view_id] = std::move(layer_tree);
+  return result;
+}
+
 class MockDelegate : public Rasterizer::Delegate {
  public:
   MOCK_METHOD1(OnFrameRasterized, void(const FrameTiming& frame_timing));
@@ -75,9 +83,10 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                PostPrerollResult(
                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
   MOCK_METHOD1(CompositeEmbeddedView, DlCanvas*(int64_t view_id));
-  MOCK_METHOD3(SubmitFrame,
+  MOCK_METHOD4(SubmitFrame,
                void(GrDirectContext* context,
                     const std::shared_ptr<impeller::AiksContext>& aiks_context,
+                    int64_t view_id,
                     std::unique_ptr<SurfaceFrame> frame));
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,
@@ -196,8 +205,10 @@ TEST(RasterizerTest,
     auto layer_tree =
         std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                     /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -263,8 +274,10 @@ TEST(
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -336,8 +349,9 @@ TEST(
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                                 /*frame_size=*/SkISize());
+  auto layer_trees = SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
+      std::move(layer_trees), CreateFinishedBuildRecorder(), kDevicePixelRatio);
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
@@ -411,8 +425,9 @@ TEST(RasterizerTest,
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                                 /*frame_size=*/SkISize());
+  auto layer_trees = SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
+      std::move(layer_trees), CreateFinishedBuildRecorder(), kDevicePixelRatio);
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
@@ -424,7 +439,8 @@ TEST(RasterizerTest,
 
   // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
-  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
+  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder(),
+                                kDevicePixelRatio);
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
@@ -460,8 +476,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -517,8 +535,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -622,8 +642,10 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -681,8 +703,10 @@ TEST(
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -740,8 +764,10 @@ TEST(
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -798,8 +824,10 @@ TEST(
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -855,8 +883,10 @@ TEST(
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
+        std::move(layer_trees), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -935,8 +965,10 @@ TEST(RasterizerTest,
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
           /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+      auto layer_trees =
+          SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
-          std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
+          std::move(layer_trees), CreateFinishedBuildRecorder(timestamps[i]),
           kDevicePixelRatio);
       PipelineProduceResult result =
           pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -1107,8 +1139,10 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
           /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+      auto layer_trees =
+          SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
-          std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
+          std::move(layer_trees), CreateFinishedBuildRecorder(timestamps[i]),
           kDevicePixelRatio);
       PipelineProduceResult result =
           pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -1188,8 +1222,10 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+    auto layer_trees =
+        SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree));
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(first_timestamp),
+        std::move(layer_trees), CreateFinishedBuildRecorder(first_timestamp),
         kDevicePixelRatio);
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));

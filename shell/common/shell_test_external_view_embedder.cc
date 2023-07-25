@@ -92,6 +92,7 @@ DlCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(
 void ShellTestExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
+    int64_t view_id,
     std::unique_ptr<SurfaceFrame> frame) {
   if (!frame) {
     return;

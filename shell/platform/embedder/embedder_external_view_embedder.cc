@@ -111,6 +111,7 @@ DlCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(
+    int64_t view_id,
     const SkISize& backing_store_size) {
   FlutterBackingStoreConfig config = {};
 
@@ -118,6 +119,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 
   config.size.width = backing_store_size.width();
   config.size.height = backing_store_size.height();
+  config.view_id = view_id;
 
   return config;
 }
@@ -126,6 +128,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
+    int64_t window_view_id,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -165,7 +168,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     const auto render_surface_size = external_view->GetRenderSurfaceSize();
 
     const auto backing_store_config =
-        MakeBackingStoreConfig(render_surface_size);
+        MakeBackingStoreConfig(window_view_id, render_surface_size);
 
     // This is where the embedder will create render targets for us. Control
     // flow to the embedder makes the engine susceptible to having the embedder
@@ -246,7 +249,11 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     // Flush the layer description down to the embedder for presentation.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    presented_layers.InvokePresentCallback(present_callback_);
+    presented_layers.InvokePresentCallback(
+        [&present_callback = present_callback_,
+         window_view_id](const std::vector<const FlutterLayer*>& layers) {
+          return present_callback(layers, window_view_id);
+        });
   }
 
   // See why this is necessary in the comment where this collection in realized.

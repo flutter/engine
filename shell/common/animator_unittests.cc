@@ -23,6 +23,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kImplicitViewId = 0;
+
 class FakeAnimatorDelegate : public Animator::Delegate {
  public:
   MOCK_METHOD2(OnAnimatorBeginFrame,
@@ -158,7 +160,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
         ASSERT_FALSE(delegate.notify_idle_called_);
         auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                       SkISize::Make(600, 800));
-        animator->Render(std::move(layer_tree), 1.0);
+        animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
       // See kNotifyIdleTaskWaitTime in animator.cc.
@@ -241,7 +243,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
     PostTaskSync(task_runners.GetUITaskRunner(), [&] {
       auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                     SkISize::Make(600, 800));
-      animator->Render(std::move(layer_tree), 1.0);
+      animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
     });
   }
 
