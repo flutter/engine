@@ -417,21 +417,17 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 
   if (command.fragment_bindings.push_constant_buffer.has_value()) {
     encoder.GetCommandBuffer().pushConstants(
-      pipeline.GetPipelineLayout(),
-      vk::ShaderStageFlagBits::eFragment,
-      command.fragment_bindings.push_constant_buffer.value().range.offset,
-      command.fragment_bindings.push_constant_buffer.value().range.length,
-      command.fragment_bindings.push_constant_buffer.value().contents
-    );
+        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eFragment,
+        command.fragment_bindings.push_constant_buffer.value().range.offset,
+        command.fragment_bindings.push_constant_buffer.value().range.length,
+        command.fragment_bindings.push_constant_buffer.value().contents);
   }
   if (command.vertex_bindings.push_constant_buffer.has_value()) {
     encoder.GetCommandBuffer().pushConstants(
-      pipeline.GetPipelineLayout(),
-      vk::ShaderStageFlagBits::eVertex,
-      command.vertex_bindings.push_constant_buffer.value().range.offset,
-      command.vertex_bindings.push_constant_buffer.value().range.length,
-      command.vertex_bindings.push_constant_buffer.value().contents
-    );
+        pipeline.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex,
+        command.vertex_bindings.push_constant_buffer.value().range.offset,
+        command.vertex_bindings.push_constant_buffer.value().range.length,
+        command.vertex_bindings.push_constant_buffer.value().contents);
   }
 
   return true;

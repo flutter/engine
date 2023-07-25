@@ -91,8 +91,10 @@ struct PipelineBuilder {
           VertexShader::kDescriptorSetLayouts);
       vertex_descriptor->RegisterDescriptorSetLayouts(
           FragmentShader::kDescriptorSetLayouts);
-      vertex_descriptor->RegisterPushConstantRanges(VertexShader::kPushConstantRanges);
-      vertex_descriptor->RegisterPushConstantRanges(FragmentShader::kPushConstantRanges);
+      vertex_descriptor->RegisterPushConstantRanges(
+          VertexShader::kPushConstantRanges);
+      vertex_descriptor->RegisterPushConstantRanges(
+          FragmentShader::kPushConstantRanges);
       desc.SetVertexDescriptor(std::move(vertex_descriptor));
     }
 

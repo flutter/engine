@@ -383,9 +383,11 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   }
 
   std::vector<vk::PushConstantRange> push_constant_ranges;
-  for (const PushConstantRange& range : desc.GetVertexDescriptor()->GetPushConstantRanges()) {
+  for (const PushConstantRange& range :
+       desc.GetVertexDescriptor()->GetPushConstantRanges()) {
     vk::PushConstantRange vk_range;
-    std::optional<vk::ShaderStageFlagBits> stage = ToVKShaderStageFlagBits(range.shader_stage);
+    std::optional<vk::ShaderStageFlagBits> stage =
+        ToVKShaderStageFlagBits(range.shader_stage);
     if (!stage.has_value()) {
       VALIDATION_LOG << "Unsupported shader type in pipeline: "
                      << desc.GetLabel();

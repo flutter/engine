@@ -202,7 +202,7 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
     },
 {% endfor %}
   };
-  static constexpr std::array<PushConstantRange,{{length(push_constant_buffers)}}> kPushConstantRanges{  
+  static constexpr std::array<PushConstantRange,{{length(push_constant_buffers)}}> kPushConstantRanges{
 {% for push_constant_buffer in push_constant_buffers %}
     PushConstantRange{
       {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}

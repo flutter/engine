@@ -180,14 +180,15 @@ std::shared_ptr<RuntimeStageData> Reflector::GetRuntimeStageData() const {
 }
 
 namespace {
-  size_t CalculatePushConstantBufferSize(const nlohmann::json& push_constant_buffer) {
-    size_t result = 0;
-    for (const auto& member : push_constant_buffer["type"]["members"] ) {
-      result += member["size"].get<int>();
-    }
-    return result;
+size_t CalculatePushConstantBufferSize(
+    const nlohmann::json& push_constant_buffer) {
+  size_t result = 0;
+  for (const auto& member : push_constant_buffer["type"]["members"]) {
+    result += member["size"].get<int>();
   }
+  return result;
 }
+}  // namespace
 
 std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   nlohmann::json root;
@@ -235,12 +236,14 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   }
 
   {
-    auto& push_constant_buffers = root["push_constant_buffers"] = nlohmann::json::array_t{};
+    auto& push_constant_buffers = root["push_constant_buffers"] =
+        nlohmann::json::array_t{};
     if (auto push_constant_buffers_json =
             ReflectResources(shader_resources.push_constant_buffers);
         push_constant_buffers_json.has_value()) {
       for (auto push_constant_buffer : push_constant_buffers_json.value()) {
-        push_constant_buffer["size"] = CalculatePushConstantBufferSize(push_constant_buffer);
+        push_constant_buffer["size"] =
+            CalculatePushConstantBufferSize(push_constant_buffer);
         push_constant_buffers.emplace_back(std::move(push_constant_buffer));
       }
     } else {
@@ -1170,8 +1173,8 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     proto.name = ConvertToCamelCase(push_constant_buffer.name);
     {
       std::stringstream stream;
-      stream << "Bind push constants for resource named " << push_constant_buffer.name
-             << ".";
+      stream << "Bind push constants for resource named "
+             << push_constant_buffer.name << ".";
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
