@@ -81,9 +81,6 @@ bool TextFrame::MaybeHasOverlapping() const {
 
 // static
 Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
-  if (point_size <= 25) {
-    return std::round(scale * 10) / 10;
-  }
   return std::round(scale * 100) / 100;
 }
 
