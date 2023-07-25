@@ -242,12 +242,6 @@ DomElement _defaultFactory(
   Object? params,
 }) {
   params!;
-  params as _DefaultFactoryParams;
-  return domDocument.createElement(params.tagName);
-}
-
-typedef _DefaultFactoryParams = Map<Object?, Object?>;
-
-extension on _DefaultFactoryParams {
-  String get tagName => this['tagName']! as String;
+  params as Map<Object?, Object?>;
+  return domDocument.createElement(params.readString('tagName'));
 }
