@@ -70,14 +70,10 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
-      : coverage_(coverage), collapse_(collapse) {}
+  explicit TestPassDelegate(bool collapse = false) : collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
-
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override { return coverage_; }
 
   // |EntityPassDelgate|
   bool CanElide() override { return false; }
@@ -107,12 +103,12 @@ auto CreatePassWithRectPath(Rect rect,
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(
-      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
+  subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
+TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -857,7 +853,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
-      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -884,13 +879,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-      FS::FragInfo frag_info;
-      frag_info.color = color.Premultiply();
-      FS::BindFragInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       return pass.AddCommand(std::move(cmd));
     };
