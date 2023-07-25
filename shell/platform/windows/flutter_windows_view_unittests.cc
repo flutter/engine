@@ -149,7 +149,7 @@ TEST(FlutterWindowsViewTest, SubmenuNativeState) {
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  auto bridge = view.accessibility_bridge().lock();
   ASSERT_TRUE(bridge);
 
   FlutterSemanticsNode2 root{sizeof(FlutterSemanticsNode2), 0};
@@ -170,7 +170,6 @@ TEST(FlutterWindowsViewTest, SubmenuNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    // EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_TRUE(root_node->GetData().HasState(ax::mojom::State::kExpanded));
 
     // Get the IAccessible for the root node.
@@ -207,7 +206,6 @@ TEST(FlutterWindowsViewTest, SubmenuNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    // EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_TRUE(root_node->GetData().HasState(ax::mojom::State::kCollapsed));
 
     // Get the IAccessible for the root node.
