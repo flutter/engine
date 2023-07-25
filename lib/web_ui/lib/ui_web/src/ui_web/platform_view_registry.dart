@@ -4,6 +4,18 @@
 
 import 'package:ui/src/engine.dart';
 
+/// The view type of the factory that creates visible platform view DOM elements.
+///
+/// There's no need to register this view type with [PlatformViewRegistry]
+/// because it is registered by default.
+const String kDefaultVisibleViewType = '_default_document_create_element_visible';
+
+/// The view type of the factory that creates invisible platform view DOM elements.
+///
+/// There's no need to register this view type with [PlatformViewRegistry]
+/// because it is registered by default.
+const String kDefaultInvisibleViewType = '_default_document_create_element_invisible';
+
 /// A function which takes a unique `id` and some `params` and creates an HTML
 /// element.
 typedef ParameterizedPlatformViewFactory = Object Function(

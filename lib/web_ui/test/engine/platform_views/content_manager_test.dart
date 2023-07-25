@@ -5,9 +5,7 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-
-const String _kDefaultVisibleViewType = '_default_document_create_element_visible';
-const String _kDefaultInvisibleViewType = '_default_document_create_element_invisible';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -208,7 +206,7 @@ void testMain() {
 
     test('default factories', () {
       final DomElement content0 = contentManager.renderContent(
-        _kDefaultVisibleViewType,
+        ui_web.kDefaultVisibleViewType,
         viewId,
         <dynamic, dynamic>{'tagName': 'table'},
       );
@@ -220,7 +218,7 @@ void testMain() {
       expect(contentManager.isInvisible(viewId), isFalse);
 
       final DomElement content1 = contentManager.renderContent(
-        _kDefaultInvisibleViewType,
+        ui_web.kDefaultInvisibleViewType,
         viewId + 1,
         <dynamic, dynamic>{'tagName': 'script'},
       );
@@ -232,7 +230,7 @@ void testMain() {
       expect(contentManager.isInvisible(viewId + 1), isTrue);
 
       final DomElement content2 = contentManager.renderContent(
-        _kDefaultVisibleViewType,
+        ui_web.kDefaultVisibleViewType,
         viewId + 2,
         <dynamic, dynamic>{'tagName': 'p'},
       );
