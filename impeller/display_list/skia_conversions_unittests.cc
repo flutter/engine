@@ -4,6 +4,7 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/skia_conversions.h"
+#include "impeller/geometry/scalar.h"
 
 namespace impeller {
 namespace testing {
@@ -16,10 +17,10 @@ TEST(SkiaConversionsTest, ToColor) {
   const flutter::DlColor color = 0x8040C020;
   auto converted_color = skia_conversions::ToColor(color);
 
-  EXPECT_EQ(converted_color.alpha, 0x80 * (1.0f / 255));
-  EXPECT_EQ(converted_color.red, 0x40 * (1.0f / 255));
-  EXPECT_EQ(converted_color.green, 0xC0 * (1.0f / 255));
-  EXPECT_EQ(converted_color.blue, 0x20 * (1.0f / 255));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_color.alpha, 0x80 * (1.0f / 255)));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_color.red, 0x40 * (1.0f / 255)));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_color.green, 0xC0 * (1.0f / 255)));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_color.blue, 0x20 * (1.0f / 255)));
 }
 
 }  // namespace testing
