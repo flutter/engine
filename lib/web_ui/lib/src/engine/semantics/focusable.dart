@@ -6,6 +6,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
 import '../util.dart';
 import 'semantics.dart';
 
@@ -122,8 +123,8 @@ class AccessibilityFocusManager {
     final _FocusTarget newTarget = (
       semanticsNodeId: semanticsNodeId,
       element: element,
-      domFocusListener: createDomEventListener((_) => _setFocusFromDom(true)),
-      domBlurListener: createDomEventListener((_) => _setFocusFromDom(false)),
+      domFocusListener: createDomEventListener((_) => _onDidReceiveFocusEvent(true)),
+      domBlurListener: createDomEventListener((_) => _onDidReceiveFocusEvent(false)),
     );
     _target = newTarget;
 
@@ -133,9 +134,16 @@ class AccessibilityFocusManager {
   }
 
   /// Stops managing the focus of the current element, if any.
+  ///
+  /// Does not remove the `tabIndex` attribute. This is because a focused
+  /// element cannot be removed immediately, but after the focus is transferred
+  /// elsewhere (see [SemanticsObject.leaveTombstone]).
+  ///
+  /// Does not blur the element because the tombstone must remain focused.
   void stopManaging() {
     final _FocusTarget? target = _target;
     _target = null;
+    _lastSetValue = null;
 
     if (target == null) {
       /// Nothing is being managed. Just return.
@@ -144,14 +152,9 @@ class AccessibilityFocusManager {
 
     target.element.removeEventListener('focus', target.domFocusListener);
     target.element.removeEventListener('blur', target.domBlurListener);
-
-    // Blur the element after removing listeners. If this method is being called
-    // it indicates that the framework already knows that this node should not
-    // have focus, and there's no need to notify it.
-    target.element.blur();
   }
 
-  void _setFocusFromDom(bool acquireFocus) {
+  void _onDidReceiveFocusEvent(bool didReceiveFocus) {
     final _FocusTarget? target = _target;
 
     if (target == null) {
@@ -162,15 +165,48 @@ class AccessibilityFocusManager {
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
       target.semanticsNodeId,
-      acquireFocus
+      didReceiveFocus
         ? ui.SemanticsAction.didGainAccessibilityFocus
         : ui.SemanticsAction.didLoseAccessibilityFocus,
       null,
     );
   }
 
+  bool? _lastSetValue;
+
   /// Requests focus or blur on the DOM element.
   void changeFocus(bool value) {
+    // Only request focus/blur if the framework has not already asked for it. It
+    // is possible that the DOM element no longer has focus but the framework
+    // still thinks that it should have it and requests it again. If the DOM
+    // focus is requested eagerly it could lead to scrolling bugs, such as:
+    //
+    // - The user wishes to scroll down by moving screen reader focus ring to an
+    //   element below the bottom edge of the scroll viewport.
+    // - Screen reader shifts DOM focus to that element.
+    // - The previous element receives `didLoseAccessibilityFocus`.
+    // - The next element recieves `didGainAccessibilityFocus`.
+    // - The widgets corresponding to the aforementioned elements do not support
+    //   `didLoseAccessibilityFocus`/`didGainAccessibilityFocus` and blissfully
+    //   ignore them.
+    // - A semantic update is received that still wants the previous element to
+    //   be focused. But, if domElement.focus() is invoked, the browser will
+    //   scroll back to that element, which is not what the user wanted.
+    //
+    // To counter this issue, if changeFocus(true) is called for the first time,
+    // the DOM focus is shifted to the managed element. If changeFocus(true) is
+    // called again without calling changeFocus(false) prior to it, the DOM
+    // focus is not requested.
+    //
+    // This trick does not work in all situations. When a node is removed and
+    // later readded as a result of lazy-rendering, it would cause the focus
+    // manager to request focus again. More details in this issue (the web is
+    // not the only one affected): https://github.com/flutter/flutter/issues/130844
+    if (value == _lastSetValue) {
+      return;
+    }
+    _lastSetValue = value;
+
     final _FocusTarget? target = _target;
 
     if (target == null) {
@@ -183,6 +219,18 @@ class AccessibilityFocusManager {
         return true;
       }());
       return;
+    }
+
+    // If attempting to shift focus to this DOM node but the node is already
+    // focused, do nothing. Calling `DomElement.focus()` causes the browser to
+    // scroll to the element if the element is outside the scroll viewport, and
+    // scrolling back to the element would cause the framework to fail to scroll
+    // where the user wants.
+    if (value) {
+      final DomElement? activeElement = getActiveElementInNearestShadowScope(target.element);
+      if (target.element == activeElement) {
+        return;
+      }
     }
 
     // Delay the focus request until the final DOM structure is established

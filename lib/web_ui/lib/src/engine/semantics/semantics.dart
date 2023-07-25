@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -16,6 +17,7 @@ import '../configuration.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'checkable.dart';
@@ -521,7 +523,13 @@ abstract class PrimaryRoleManager {
   /// gesture mode changes.
   @mustCallSuper
   void dispose() {
-    semanticsObject.element.removeAttribute('role');
+    final List<RoleManager>? secondaryRoles = _secondaryRoleManagers;
+    if (secondaryRoles == null) {
+      return;
+    }
+    for (final RoleManager secondaryRole in secondaryRoles) {
+      secondaryRole.dispose();
+    }
     _isDisposed = true;
   }
 }
@@ -603,13 +611,14 @@ abstract class RoleManager {
   bool get isDisposed => _isDisposed;
   bool _isDisposed = false;
 
-  /// Called when [semanticsObject] is removed, or when it changes its role such
-  /// that this role is no longer relevant.
+  /// Called by [PrimaryRoleManager.dispose] when the semantic object is
+  /// tombstoned (see [SemanticsObject.leaveTombstone]).
   ///
-  /// This method is expected to remove role-specific functionality from the
-  /// DOM. In particular, this method is the appropriate place to call
-  /// [EngineSemanticsOwner.removeGestureModeListener] if this role reponds to
-  /// gesture mode changes.
+  /// This method should leave the ARIA attributes of the DOM element intact to
+  /// avoid confusing the screen reader, because the tombstone remains live in
+  /// the DOM. However, this method should detach any DOM event listeners from
+  /// the element. This element should be inert w.r.t. any actual user
+  /// interactions.
   @mustCallSuper
   void dispose() {
     _isDisposed = true;
@@ -623,7 +632,7 @@ abstract class RoleManager {
 /// information to the browser.
 class SemanticsObject {
   /// Creates a semantics tree node with the given [id] and [owner].
-  SemanticsObject(this.id, this.owner) {
+  SemanticsObject(this.id, this.owner) : element = owner.createElementFor(id) {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style.position = 'absolute';
@@ -975,7 +984,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The DOM element used to convey semantics information to the browser.
-  final DomElement element = domDocument.createElement('flt-semantics');
+  final DomElement element;
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
@@ -1508,8 +1517,8 @@ class SemanticsObject {
         return;
       } else {
         // Role changed. This should be avoided as much as possible, but the
-        // web engine will attempt a best with the switch by cleaning old ARIA
-        // role data and start anew.
+        // web engine will attempt a best effort with the switch by cleaning old
+        // ARIA role data and start anew.
         currentPrimaryRole.dispose();
         currentPrimaryRole = null;
         primaryRole = null;
@@ -1676,6 +1685,42 @@ class SemanticsObject {
     }());
     return result;
   }
+
+  /// Leaves an empty "tombstone" detached from any role managers until such
+  /// time as the focus moves to another DOM element.
+  ///
+  /// A tombstone is used when removing a currently focused element from the DOM
+  /// would otherwise cause some screen readers, such as TalkBack, to move focus
+  /// to the <body> tag, which is not what the user wants.
+  void leaveTombstone() {
+    primaryRole?.dispose();
+
+    final int id = this.id;
+    element.clearChildren();
+    element.setAttribute('aria-hidden', true);
+    element.setAttribute('flt-tombstone', '');
+    element.style.transform = 'translate(-1px, -1px)';
+    element.style.top = '';
+    element.style.left = '';
+    element.style.width = '0px';
+    element.style.height = '0px';
+
+    final DomEventListener blurListener = createDomEventListener((_) {
+      owner._tombstones.remove(id);
+
+      // Remove the DOM element in a timer to avoid this issue:
+      // https://stackoverflow.com/questions/21926083/failed-to-execute-removechild-on-node
+      Timer.run(() {
+        element.remove();
+      });
+    });
+    element.addEventListener('blur', blurListener);
+
+    owner._tombstones[id] = (
+      element: element,
+      blurListener: blurListener,
+    );
+  }
 }
 
 /// Controls how pointer events and browser-detected gestures are treated by
@@ -1731,12 +1776,41 @@ enum SemanticsUpdatePhase {
   postUpdate,
 }
 
+/// Information about an element that was removed from the semantics tree but
+/// left in the DOM because it has the current input focus. Removing currently
+/// focused element from the DOM causes Android + TalkBack to focus on the
+/// <body> tag, which is an annoying user experience. See this issue:
+///
+///   https://github.com/flutter/flutter/issues/130950
+typedef Tombstone = ({ DomElement element, DomEventListener blurListener});
+
 /// The top-level service that manages everything semantics-related.
 class EngineSemanticsOwner {
   EngineSemanticsOwner._() {
     registerHotRestartListener(() {
       _rootSemanticsElement?.remove();
     });
+  }
+
+  final Map<int, Tombstone> _tombstones = <int, Tombstone>{};
+
+  DomElement createElementFor(int nodeId) {
+    final Tombstone? tombstone = _tombstones.remove(nodeId);
+    if (tombstone != null) {
+      // The semantics node has returned, so the tombstone is no longer
+      // necessary. As I (yjbanov) was testing this (July 19, 2023), I did not
+      // find a reason to reuse the tombstone element, but that may have been
+      // because of this framework issue:
+      //
+      // https://github.com/flutter/flutter/issues/130844
+      //
+      // When/if that issue is fixed we may need to reevaluate what should
+      // happen to tombstone elements.
+      final DomElement element = tombstone.element;
+      element.removeEventListener('blur', tombstone.blurListener);
+      element.remove();
+    }
+    return domDocument.createElement('flt-semantics');
   }
 
   /// The singleton instance that manages semantics.
@@ -1813,7 +1887,16 @@ class EngineSemanticsOwner {
   /// Reconciles [_attachments] and [_detachments], and after that calls all
   /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
   /// method.
+  ///
+  /// Removes detached [element] from the DOM except, possibly, the one that's
+  /// currently focused. Does not remove the focused element immediately, but
+  /// leaves an empty "tombstone" until such time as the focus moves to another
+  /// DOM element. This is because removing a currently focused element from the
+  /// DOM will cause some screen readers, such as TalkBack, to move focus to the
+  /// <body> tag, which is not what the user wants.
   void _finalizeTree() {
+    final DomElement? focusedElement = getActiveElementInNearestShadowScope(flutterViewEmbedder.semanticsHostElement!);
+
     for (final SemanticsObject detachmentRoot in _detachments) {
       // A detached node may or may not have some of its descendants reattached
       // elsewhere. Walk the descendant tree and find all descendants that were
@@ -1833,7 +1916,16 @@ class EngineSemanticsOwner {
       for (final SemanticsObject removal in removals) {
         _semanticsTree.remove(removal.id);
         removal._parent = null;
-        removal.element.remove();
+
+        // This is the trick used to prevent the screen reader from focusing on
+        // the <body> tag
+        if (removal.element != focusedElement) {
+          // Element is not focused: safe to remove from DOM.
+          removal.element.remove();
+        } else {
+          // Element is focused: not safe to remove from DOM. Leave a tombstone.
+          removal.leaveTombstone();
+        }
       }
     }
     _detachments = <SemanticsObject>[];

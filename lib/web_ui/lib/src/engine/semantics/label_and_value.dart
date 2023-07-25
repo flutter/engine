@@ -40,7 +40,7 @@ class LabelAndValue extends RoleManager {
     final bool shouldDisplayValue = hasValue && !semanticsObject.isIncrementable;
 
     if (!hasLabel && !shouldDisplayValue && !hasTooltip) {
-      _cleanUpDom();
+      semanticsObject.element.removeAttribute('aria-label');
       return;
     }
 
@@ -64,15 +64,5 @@ class LabelAndValue extends RoleManager {
 
     semanticsObject.element
         .setAttribute('aria-label', combinedValue.toString());
-  }
-
-  void _cleanUpDom() {
-    semanticsObject.element.removeAttribute('aria-label');
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _cleanUpDom();
   }
 }

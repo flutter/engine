@@ -1060,3 +1060,25 @@ class OffScreenCanvas {
       !isSafari
       && js_util.hasProperty(domWindow, 'OffscreenCanvas');
 }
+
+/// Determines the shadow scope of the `scopeSibling` then finds the currently
+/// focused (a.k.a. active) element inside it.
+///
+/// The shadow scope is either the subtree under the nearest ancestor shadow
+/// root of the `scopeSibling` element, or the entire document of the page.
+///
+/// If no element is currently active on the page, returns null.
+///
+/// If an element is currently active on the page but that element is in a
+/// different shadow scope, returns null.
+///
+/// If `scopeSibling` is detached from the document, returns null.
+DomElement? getActiveElementInNearestShadowScope(DomNode scopeSibling) {
+  final DomNode root = scopeSibling.getRootNode();
+  if (root is DomDocument) {
+    return root.activeElement;
+  } else if (root is DomShadowRoot) {
+    return root.activeElement;
+  }
+  return null;
+}

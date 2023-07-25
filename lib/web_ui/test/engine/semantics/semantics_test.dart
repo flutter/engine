@@ -1235,6 +1235,97 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
+
+  // Regression test for https://github.com/flutter/flutter/issues/130950
+  test('leaves a tombstone if a focused child is removed', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    // Create a scrollable parent with 3 children; the last child is focused.
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        transform: Matrix4.identity().toFloat64(),
+        rect: const ui.Rect.fromLTRB(0, 0, 50, 100),
+        hasScrollDown: true,
+        hasScrollUp: true,
+        children: List<SemanticsNodeUpdate>.generate(3, (int i) {
+          final int id = i + 1;
+          return tester.updateNode(
+            id: id,
+            isFocusable: id == 3,
+            isFocused: id == 3,
+            transform: Matrix4.translationValues(0, 50.0 * id, 0).toFloat64(),
+            rect: const ui.Rect.fromLTRB(0, 0, 50, 50),
+          );
+        }),
+      );
+      tester.apply();
+
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle; touch-action: none; overflow-y: scroll">
+  <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
+  <sem-c>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    final DomElement tombstone = domDocument.querySelector('#flt-semantic-node-3')!;
+    expect(tombstone.hasAttribute('aria-hidden'), false);
+
+    // Remove the focused element. Verify a tombstone is left in the DOM.
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        transform: Matrix4.identity().toFloat64(),
+        rect: const ui.Rect.fromLTRB(0, 0, 50, 100),
+        hasScrollDown: true,
+        hasScrollUp: true,
+        children: List<SemanticsNodeUpdate>.generate(2, (int i) {
+          final int id = i + 1;
+          return tester.updateNode(
+            id: id,
+            transform: Matrix4.translationValues(0, 50.0 * id, 0).toFloat64(),
+            rect: const ui.Rect.fromLTRB(0, 0, 50, 50),
+          );
+        }),
+      );
+      tester.apply();
+
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle; touch-action: none; overflow-y: scroll">
+  <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+    <sem aria-hidden="true" style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+    expect(tombstone.hasAttribute('aria-hidden'), true);
+    expect(tombstone.isConnected, true);
+
+    // Blur the tombstone. Observe the element removed from the DOM.
+    tombstone.blur();
+    await Future<void>.delayed(Duration.zero);
+    expect(tombstone.isConnected, false);
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle; touch-action: none; overflow-y: scroll">
+  <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    semantics().semanticsEnabled = false;
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testHorizontalScrolling() {
@@ -2775,14 +2866,22 @@ void _testFocusable() {
     manager.stopManaging();
     pumpSemantics(); // triggers post-update callbacks
     expect(
-      reason: 'Even though the element was blurred after stopManaging there '
-              'should be no notification to the framework because the framework '
-              'should already know. Otherwise, it would not have asked to stop '
-              'managing the node.',
+      reason: 'There should be no notification sent to the framework because '
+              'the framework should already know. Otherwise, it would not have '
+              'asked to stop managing the node.',
       capturedActions,
       isEmpty,
     );
-    expect(domDocument.activeElement, isNot(element));
+    // Blurring the element would cause https://github.com/flutter/flutter/issues/130950
+    expect(
+      reason: 'stopManaging does not blur the element to prevent '
+              'Android + TalkBack from focusing on <body>',
+      domDocument.activeElement,
+      element,
+    );
+
+    // Simulate browser blurring the element.
+    element.blur();
 
     // Attempt to request focus when not managing an element.
     manager.changeFocus(true);
@@ -2793,7 +2892,12 @@ void _testFocusable() {
       capturedActions,
       isEmpty,
     );
-    expect(domDocument.activeElement, isNot(element));
+    expect(
+      reason: 'Attempting to request focus on a node that is not managed should '
+              'not result in the element getting focus.',
+      domDocument.activeElement,
+      isNot(element),
+    );
 
     semantics().semanticsEnabled = false;
   });

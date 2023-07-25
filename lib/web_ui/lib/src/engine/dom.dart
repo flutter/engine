@@ -515,6 +515,10 @@ extension DomNodeExtension on DomNode {
       removeChild(firstChild!);
     }
   }
+
+  @JS('getRootNode')
+  external DomNode _getRootNode();
+  DomNode getRootNode() => _getRootNode();
 }
 
 @JS()
