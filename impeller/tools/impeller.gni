@@ -591,7 +591,6 @@ template("_impeller_shaders_vk") {
       if (defined(invoker.metal_version)) {
         metal_version = invoker.metal_version
       }
-
       #intermediates_subdir = "vk"
     }
     shader_target_flag = "--vulkan"
@@ -642,7 +641,8 @@ template("_impeller_shaders_vk") {
     }
 
     #if (!impeller_enable_metal) {
-      public_deps += [ ":$reflect_vk" ]
+    public_deps += [ ":$reflect_vk" ]
+
     #}
   }
 }
