@@ -381,6 +381,7 @@ targets:
       config_name: mac_unopt
       add_recipes_cq: "true"
 
+<<<<<<< HEAD
   - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
     properties:
@@ -388,6 +389,8 @@ targets:
       add_recipes_cq: "true"
     timeout: 60
 
+=======
+>>>>>>> 05da557158c5e2c294f21ab1ef2e1a9d6dabf46b
   - name: Mac Unopt
     recipe: engine/engine_unopt
     properties:
@@ -511,12 +514,15 @@ targets:
       release_build: "true"
       config_name: windows_arm_host_engine
 
+<<<<<<< HEAD
   - name: Windows windows_unopt
     recipe: engine_v2/builder
     timeout: 60
     properties:
       config_name: windows_unopt
 
+=======
+>>>>>>> 05da557158c5e2c294f21ab1ef2e1a9d6dabf46b
   - name: Windows Unopt
     recipe: engine/engine_unopt
     properties:
