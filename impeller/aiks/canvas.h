@@ -68,8 +68,7 @@ class Canvas {
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const std::optional<Paint::ImageFilterProc>& backdrop_filter =
-                     std::nullopt);
+                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -138,7 +137,7 @@ class Canvas {
       Scalar corner_radius,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawPicture(Picture picture);
+  void DrawPicture(const Picture& picture);
 
   void DrawTextFrame(const TextFrame& text_frame,
                      Point position,
@@ -163,7 +162,6 @@ class Canvas {
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
-  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
   std::optional<Rect> initial_cull_rect_;
 
   void Initialize(std::optional<Rect> cull_rect);
@@ -182,8 +180,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            std::optional<EntityPass::BackdropFilterProc> backdrop_filter =
-                std::nullopt);
+            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
 
   void RestoreClip();
 

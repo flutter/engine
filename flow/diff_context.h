@@ -12,6 +12,7 @@
 #include "display_list/utils/dl_matrix_clip_tracker.h"
 #include "flutter/flow/paint_region.h"
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
 
@@ -45,7 +46,8 @@ class DiffContext {
   explicit DiffContext(SkISize frame_size,
                        PaintRegionMap& this_frame_paint_region_map,
                        const PaintRegionMap& last_frame_paint_region_map,
-                       bool has_raster_cache);
+                       bool has_raster_cache,
+                       bool impeller_enabled);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -70,6 +72,7 @@ class DiffContext {
 
   // Pushes additional transform for current subtree
   void PushTransform(const SkMatrix& transform);
+  void PushTransform(const SkM44& transform);
 
   // Pushes cull rect for current subtree
   bool PushCullRect(const SkRect& clip);
@@ -159,6 +162,8 @@ class DiffContext {
   // cached.
   bool has_raster_cache() const { return has_raster_cache_; }
 
+  bool impeller_enabled() const { return impeller_enabled_; }
+
   class Statistics {
    public:
     // Picture replaced by different picture
@@ -243,6 +248,7 @@ class DiffContext {
   PaintRegionMap& this_frame_paint_region_map_;
   const PaintRegionMap& last_frame_paint_region_map_;
   bool has_raster_cache_;
+  bool impeller_enabled_;
 
   void AddDamage(const SkRect& rect);
 

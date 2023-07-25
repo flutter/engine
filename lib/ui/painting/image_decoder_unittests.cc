@@ -113,6 +113,8 @@ class TestImpellerContext : public impeller::Context {
  public:
   TestImpellerContext() = default;
 
+  BackendType GetBackendType() const override { return BackendType::kMetal; }
+
   std::string DescribeGpuModel() const override { return "TestGpu"; }
 
   bool IsValid() const override { return true; }
@@ -141,6 +143,8 @@ class TestImpellerContext : public impeller::Context {
     command_buffer_count_ += 1;
     return nullptr;
   }
+
+  void Shutdown() override {}
 
   mutable size_t command_buffer_count_ = 0;
 
@@ -404,12 +408,12 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
                           callback);
   };
 
-  auto setup_io_manager_and_decode = [&]() {
+  auto set_up_io_manager_and_decode = [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
     runners.GetUITaskRunner()->PostTask(decode_image);
   };
 
-  runners.GetIOTaskRunner()->PostTask(setup_io_manager_and_decode);
+  runners.GetIOTaskRunner()->PostTask(set_up_io_manager_and_decode);
   latch.Wait();
 }
 
@@ -453,8 +457,9 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   ASSERT_EQ(result.second, "");
 
-  result = ImageDecoderImpeller::UploadTextureToShared(
-      no_gpu_access_context, bitmap, gpu_disabled_switch, true);
+  result = ImageDecoderImpeller::UploadTextureToStorage(
+      no_gpu_access_context, bitmap, gpu_disabled_switch,
+      impeller::StorageMode::kHostVisible, true);
   ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   ASSERT_EQ(result.second, "");
 }
@@ -703,12 +708,12 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
                           callback);
   };
 
-  auto setup_io_manager_and_decode = [&]() {
+  auto set_up_io_manager_and_decode = [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
     runners.GetUITaskRunner()->PostTask(decode_image);
   };
 
-  runners.GetIOTaskRunner()->PostTask(setup_io_manager_and_decode);
+  runners.GetIOTaskRunner()->PostTask(set_up_io_manager_and_decode);
 
   latch.Wait();
 
@@ -763,13 +768,13 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
                           callback);
   };
 
-  auto setup_io_manager_and_decode = [&]() {
+  auto set_up_io_manager_and_decode = [&]() {
     io_manager =
         std::make_unique<TestIOManager>(runners.GetIOTaskRunner(), false);
     runners.GetUITaskRunner()->PostTask(decode_image);
   };
 
-  runners.GetIOTaskRunner()->PostTask(setup_io_manager_and_decode);
+  runners.GetIOTaskRunner()->PostTask(set_up_io_manager_and_decode);
 
   latch.Wait();
 }

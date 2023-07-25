@@ -74,9 +74,9 @@ std::shared_ptr<Contents> Paint::WithImageFilter(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform,
     bool is_subpass) const {
-  if (image_filter.has_value()) {
-    const ImageFilterProc& filter = image_filter.value();
-    input = filter(FilterInput::Make(input), effect_transform, is_subpass);
+  if (image_filter) {
+    input =
+        image_filter(FilterInput::Make(input), effect_transform, is_subpass);
   }
   return input;
 }
@@ -89,15 +89,20 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
   if (color_source.GetType() == ColorSource::Type::kImage) {
     return input;
   }
-  if (color_filter.has_value()) {
-    const ColorFilterProc& filter = color_filter.value();
-    auto color_filter_contents = filter(FilterInput::Make(input));
-    if (color_filter_contents) {
-      color_filter_contents->SetAbsorbOpacity(absorb_opacity);
-    }
-    input = color_filter_contents;
+
+  if (!color_filter) {
+    return input;
   }
-  return input;
+
+  // Attempt to apply the color filter on the CPU first.
+  // Note: This is not just an optimization; some color sources rely on
+  //       CPU-applied color filters to behave properly.
+  if (input->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
+    return input;
+  }
+
+  return color_filter->WrapWithGPUColorFilter(FilterInput::Make(input),
+                                              absorb_opacity);
 }
 
 /// A color matrix which inverts colors.
@@ -166,7 +171,7 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
 }
 
 bool Paint::HasColorFilter() const {
-  return color_filter.has_value();
+  return !!color_filter;
 }
 
 }  // namespace impeller

@@ -118,7 +118,7 @@ class MockFlutterWindowsEngine : public FlutterWindowsEngine {
 
 class MockAngleSurfaceManager : public AngleSurfaceManager {
  public:
-  MockAngleSurfaceManager() {}
+  MockAngleSurfaceManager() : AngleSurfaceManager(false) {}
 
   MOCK_METHOD5(CreateSurface,
                bool(int64_t, WindowsRenderTarget*, EGLint, EGLint, bool));

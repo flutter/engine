@@ -44,6 +44,9 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
+  group('Role managers', () {
+    _testRoleManagerLifecycle();
+  });
   group('container', () {
     _testContainer();
   });
@@ -88,6 +91,60 @@ void runSemanticsTests() {
   });
   group('focusable', () {
     _testFocusable();
+  });
+}
+
+void _testRoleManagerLifecycle() {
+  test('Secondary role managers are added upon node initialization', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    // Check that roles are initialized immediately
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+
+      expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+
+      final SemanticsObject node = semantics().debugSemanticsTree![0]!;
+      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(
+        node.primaryRole?.debugSecondaryRoles,
+        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+      );
+      expect(tester.getSemanticsObject(0).element.tabIndex, -1);
+    }
+
+    // Check that roles apply their functionality upon update.
+    {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        label: 'a label',
+        isFocusable: true,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+
+      expectSemanticsTree('<sem aria-label="a label" role="button" style="$rootSemanticStyle"></sem>');
+
+      final SemanticsObject node = semantics().debugSemanticsTree![0]!;
+      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(
+        node.primaryRole?.debugSecondaryRoles,
+        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+      );
+      expect(tester.getSemanticsObject(0).element.tabIndex, 0);
+    }
+
+    semantics().semanticsEnabled = false;
   });
 }
 
@@ -486,8 +543,8 @@ void _testEngineSemanticsOwner() {
     );
 
     // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager = MockRoleManager(Role.labelAndValue, semanticsObject);
-    semanticsObject.debugRoleManagers[Role.labelAndValue] = mockRoleManager;
+    final MockRoleManager mockRoleManager = MockRoleManager(PrimaryRole.generic, semanticsObject);
+    semanticsObject.primaryRole = mockRoleManager;
 
     pumpSemantics(label: 'World');
 
@@ -508,8 +565,8 @@ typedef MockRoleManagerLogEntry = ({
   SemanticsUpdatePhase phase,
 });
 
-class MockRoleManager extends RoleManager {
-  MockRoleManager(super.role, super.semanticsObject);
+class MockRoleManager extends PrimaryRoleManager {
+  MockRoleManager(super.role, super.semanticsObject) : super.blank();
 
   final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
 
@@ -522,6 +579,7 @@ class MockRoleManager extends RoleManager {
 
   @override
   void update() {
+    super.update();
     _log('update');
   }
 }
@@ -1334,11 +1392,11 @@ void _testIncrementables() {
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.incrementable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
-      node.debugRoleManagerFor(Role.focusable),
-      isNull,
+      node.primaryRole!.debugSecondaryRoles,
+      isNot(contains(Role.focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1504,11 +1562,11 @@ void _testTextField() {
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.textField), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
       reason: 'Text fields use custom focus management',
-      node.debugRoleManagerFor(Role.focusable),
-      isNull,
+      node.primaryRole!.debugSecondaryRoles,
+      isNot(contains(Role.focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1516,7 +1574,7 @@ void _testTextField() {
 
   // TODO(yjbanov): this test will need to be adjusted for Safari when we add
   //                Safari testing.
-  test('sends a tap action when text field is activated', () async {
+  test('sends a focus action when text field is activated', () async {
     final SemanticsActionLogger logger = SemanticsActionLogger();
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -1525,7 +1583,7 @@ void _testTextField() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      actions: 0 | ui.SemanticsAction.tap.index,
+      actions: 0 | ui.SemanticsAction.didGainAccessibilityFocus.index,
       flags: 0 | ui.SemanticsFlag.isTextField.index,
       value: 'hello',
       transform: Matrix4.identity().toFloat64(),
@@ -1543,7 +1601,7 @@ void _testTextField() {
 
     expect(appHostNode.ownerDocument?.activeElement, textField);
     expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first, ui.SemanticsAction.tap);
+    expect(await logger.actionLog.first, ui.SemanticsAction.didGainAccessibilityFocus);
 
     semantics().semanticsEnabled = false;
   }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
@@ -1561,6 +1619,7 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
+      label: 'test label',
       flags: 0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
@@ -1573,12 +1632,16 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem aria-label="test label" role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.checkable), isNotNull);
-    expect(node.debugRoleManagerFor(Role.focusable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.checkable);
+    expect(
+      reason: 'Checkables use generic secondary roles',
+      node.primaryRole!.debugSecondaryRoles,
+      containsAll(<Role>[Role.focusable, Role.tappable]),
+    );
 
     semantics().semanticsEnabled = false;
   });
@@ -1859,8 +1922,11 @@ void _testTappable() {
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
-    expect(node.debugRoleManagerFor(Role.tappable), isNotNull);
-    expect(node.debugRoleManagerFor(Role.focusable), isNotNull);
+    expect(node.primaryRole?.role, PrimaryRole.button);
+    expect(
+      node.primaryRole?.debugSecondaryRoles,
+      containsAll(<Role>[Role.focusable, Role.tappable]),
+    );
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
     semantics().semanticsEnabled = false;
@@ -2446,8 +2512,8 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -2491,8 +2557,8 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -2540,12 +2606,16 @@ void _testDialog() {
     pumpSemantics(label: 'Dialog label');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
     expect(
-      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
-      isA<RouteName>(),
+      semantics().debugSemanticsTree![2]!.primaryRole?.role,
+      PrimaryRole.generic,
+    );
+    expect(
+      semantics().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
+      contains(Role.routeName),
     );
 
     pumpSemantics(label: 'Updated dialog label');
@@ -2574,12 +2644,12 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isA<Dialog>(),
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.dialog,
     );
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.routeName),
-      isNull,
+      semantics().debugSemanticsTree![0]!.primaryRole?.secondaryRoleManagers,
+      isNot(contains(Role.routeName)),
     );
 
     semantics().semanticsEnabled = false;
@@ -2622,12 +2692,12 @@ void _testDialog() {
     ''');
 
     expect(
-      semantics().debugSemanticsTree![0]!.debugRoleManagerFor(Role.dialog),
-      isNull,
+      semantics().debugSemanticsTree![0]!.primaryRole?.role,
+      PrimaryRole.generic,
     );
     expect(
-      semantics().debugSemanticsTree![2]!.debugRoleManagerFor(Role.routeName),
-      isA<RouteName>(),
+      semantics().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
+      contains(Role.routeName),
     );
 
     semantics().semanticsEnabled = false;
@@ -2668,28 +2738,62 @@ void _testFocusable() {
     expect(element.tabIndex, -1);
     domDocument.body!.append(element);
 
+    // Start managing element
     manager.manage(1, element);
     expect(element.tabIndex, 0);
     expect(capturedActions, isEmpty);
+    expect(domDocument.activeElement, isNot(element));
 
+    // Request focus
     manager.changeFocus(true);
     pumpSemantics(); // triggers post-update callbacks
+    expect(domDocument.activeElement, element);
     expect(capturedActions, <CapturedAction>[
       (1, ui.SemanticsAction.didGainAccessibilityFocus, null),
     ]);
     capturedActions.clear();
 
+    // Give up focus
     manager.changeFocus(false);
     pumpSemantics(); // triggers post-update callbacks
     expect(capturedActions, <CapturedAction>[
       (1, ui.SemanticsAction.didLoseAccessibilityFocus, null),
     ]);
     capturedActions.clear();
+    expect(domDocument.activeElement, isNot(element));
 
-    manager.stopManaging();
+    // Request focus again
     manager.changeFocus(true);
     pumpSemantics(); // triggers post-update callbacks
-    expect(capturedActions, isEmpty);
+    expect(domDocument.activeElement, element);
+    expect(capturedActions, <CapturedAction>[
+      (1, ui.SemanticsAction.didGainAccessibilityFocus, null),
+    ]);
+    capturedActions.clear();
+
+    // Stop managing
+    manager.stopManaging();
+    pumpSemantics(); // triggers post-update callbacks
+    expect(
+      reason: 'Even though the element was blurred after stopManaging there '
+              'should be no notification to the framework because the framework '
+              'should already know. Otherwise, it would not have asked to stop '
+              'managing the node.',
+      capturedActions,
+      isEmpty,
+    );
+    expect(domDocument.activeElement, isNot(element));
+
+    // Attempt to request focus when not managing an element.
+    manager.changeFocus(true);
+    pumpSemantics(); // triggers post-update callbacks
+    expect(
+      reason: 'Attempting to request focus on a node that is not managed should '
+              'not result in any notifications to the framework.',
+      capturedActions,
+      isEmpty,
+    );
+    expect(domDocument.activeElement, isNot(element));
 
     semantics().semanticsEnabled = false;
   });
@@ -2726,7 +2830,14 @@ void _testFocusable() {
 
     final SemanticsObject node = semantics().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
-    expect(node.debugRoleManagerFor(Role.focusable), isA<Focusable>());
+    expect(
+      node.primaryRole?.role,
+      PrimaryRole.generic,
+    );
+    expect(
+      node.primaryRole?.debugSecondaryRoles,
+      contains(Role.focusable),
+    );
 
     final DomElement element = node.element;
     expect(domDocument.activeElement, isNot(element));

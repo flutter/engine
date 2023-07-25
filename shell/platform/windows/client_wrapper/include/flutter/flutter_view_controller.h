@@ -28,9 +28,7 @@ class FlutterViewController {
   // either using HWNDs.
   //
   // |dart_project| will be used to configure the engine backing this view.
-  FlutterViewController(int width,
-                        int height,
-                        const DartProject& project);
+  FlutterViewController(int width, int height, const DartProject& project);
 
   FlutterViewController(int width,
                         int height,

@@ -54,39 +54,6 @@ static void InvokeNextFrameCallback(
                      tonic::ToDart(decode_error)});
 }
 
-// Copied the source bitmap to the destination. If this cannot occur due to
-// running out of memory or the image info not being compatible, returns false.
-static bool CopyToBitmap(SkBitmap* dst,
-                         SkColorType dstColorType,
-                         const SkBitmap& src) {
-  SkPixmap srcPM;
-  if (!src.peekPixels(&srcPM)) {
-    return false;
-  }
-
-  SkBitmap tmpDst;
-  SkImageInfo dstInfo = srcPM.info().makeColorType(dstColorType);
-  if (!tmpDst.setInfo(dstInfo)) {
-    return false;
-  }
-
-  if (!tmpDst.tryAllocPixels()) {
-    return false;
-  }
-
-  SkPixmap dstPM;
-  if (!tmpDst.peekPixels(&dstPM)) {
-    return false;
-  }
-
-  if (!srcPM.readPixels(dstPM)) {
-    return false;
-  }
-
-  dst->swap(tmpDst);
-  return true;
-}
-
 std::pair<sk_sp<DlImage>, std::string>
 MultiFrameCodec::State::GetNextFrameImage(
     fml::WeakPtr<GrDirectContext> resourceContext,
@@ -113,13 +80,12 @@ MultiFrameCodec::State::GetNextFrameImage(
 
   const int requiredFrameIndex =
       frameInfo.required_frame.value_or(SkCodec::kNoFrame);
-  std::optional<unsigned int> prior_frame_index = std::nullopt;
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
     // We are here when the frame said |disposal_method| is
     // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
     // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
-    if (lastRequiredFrame_ == nullptr) {
+    if (!lastRequiredFrame_.has_value()) {
       FML_DLOG(INFO)
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
@@ -127,10 +93,9 @@ MultiFrameCodec::State::GetNextFrameImage(
     } else {
       // Copy the previous frame's output buffer into the current frame as the
       // starting point.
-      if (lastRequiredFrame_->getPixels() &&
-          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                       *lastRequiredFrame_)) {
-        prior_frame_index = requiredFrameIndex;
+      bitmap.writePixels(lastRequiredFrame_->pixmap());
+      if (restoreBGColorRect_.has_value()) {
+        bitmap.erase(SK_ColorTRANSPARENT, restoreBGColorRect_.value());
       }
     }
   }
@@ -151,7 +116,7 @@ MultiFrameCodec::State::GetNextFrameImage(
   const bool restore_previous_frame =
       frameInfo.disposal_method ==
       SkCodecAnimation::DisposalMethod::kRestorePrevious;
-  const bool previous_frame_available = !!lastRequiredFrame_;
+  const bool previous_frame_available = lastRequiredFrame_.has_value();
 
   // Store the current frame in `lastRequiredFrame_` if the frame's disposal
   // method indicates we should do so.
@@ -167,17 +132,25 @@ MultiFrameCodec::State::GetNextFrameImage(
       (previous_frame_available && !restore_previous_frame)) {
     // Replace the stored frame. The `lastRequiredFrame_` will get used as the
     // starting backdrop for the next frame.
-    lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
+    lastRequiredFrame_ = bitmap;
     lastRequiredFrameIndex_ = nextFrameIndex_;
+  }
+
+  if (frameInfo.disposal_method ==
+      SkCodecAnimation::DisposalMethod::kRestoreBGColor) {
+    restoreBGColorRect_ = frameInfo.disposal_rect;
+  } else {
+    restoreBGColorRect_.reset();
   }
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
     // This is safe regardless of whether the GPU is available or not because
     // without mipmap creation there is no command buffer encoding done.
-    return ImageDecoderImpeller::UploadTextureToShared(
+    return ImageDecoderImpeller::UploadTextureToStorage(
         impeller_context, std::make_shared<SkBitmap>(bitmap),
         std::make_shared<fml::SyncSwitch>(),
+        impeller::StorageMode::kHostVisible,
         /*create_mips=*/false);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
