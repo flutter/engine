@@ -74,7 +74,9 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     const auto& kind = std::get<std::string>(kind_iter->second);
-    FlutterWindowsView* view = engine_->view();
+
+    // TODO(loicsharma): Remove single view assumption.
+    FlutterWindowsView* view = engine_->view(kImplicitViewId);
     if (view == nullptr) {
       result->Error(kCursorError,
                     "Cursor is not available in Windows headless mode");
@@ -164,7 +166,9 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     HCURSOR cursor = custom_cursors_[name];
-    FlutterWindowsView* view = engine_->view();
+
+    // TODO(loicsharma): Remove single view assumption.
+    FlutterWindowsView* view = engine_->view(kImplicitViewId);
     if (view == nullptr) {
       result->Error(kCursorError,
                     "Cursor is not available in Windows headless mode");

@@ -46,7 +46,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
-  void SetEngine(std::unique_ptr<FlutterWindowsEngine> engine);
+  void SetEngine(FlutterWindowsEngine* engine);
+
+  int64_t view_id() { return view_id_; }
 
   // Creates rendering surface for Flutter engine to draw into.
   // Should be called before calling FlutterEngineRun using this view.
@@ -69,9 +71,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.
-  bool ClearContext();
   bool MakeCurrent();
-  bool MakeResourceCurrent();
   bool SwapBuffers();
 
   // Callback for presenting a software bitmap.
@@ -355,19 +355,24 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void SendPointerEventWithData(const FlutterPointerEvent& event_data,
                                 PointerState* state);
 
+  int64_t view_id_;
+
   // Currently configured WindowsRenderTarget for this view used by
   // surface_manager for creation of render surfaces and bound to the physical
   // os window.
   std::unique_ptr<WindowsRenderTarget> render_target_;
 
   // The engine associated with this view.
-  std::unique_ptr<FlutterWindowsEngine> engine_;
+  FlutterWindowsEngine* engine_ = nullptr;
 
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<WindowBindingHandler> binding_handler_;
+
+  // TODO(loicsharma): Remove this.
+  bool has_surface_ = false;
 
   // Resize events are synchronized using this mutex and the corresponding
   // condition variable.

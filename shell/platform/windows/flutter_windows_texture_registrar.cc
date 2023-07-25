@@ -127,19 +127,35 @@ bool FlutterWindowsTextureRegistrar::PopulateTexture(
 }
 
 void FlutterWindowsTextureRegistrar::ResolveGlFunctions(GlProcs& procs) {
+  procs.glGenFramebuffers = reinterpret_cast<glGenFramebuffersProc>(
+      eglGetProcAddress("glGenFramebuffers"));
+  procs.glDeleteFramebuffers = reinterpret_cast<glDeleteFramebuffersProc>(
+      eglGetProcAddress("glDeleteFramebuffers"));
+  procs.glBindFramebuffer = reinterpret_cast<glBindFramebufferProc>(
+      eglGetProcAddress("glBindFramebuffer"));
+  procs.glFramebufferTexture2D = reinterpret_cast<glFramebufferTexture2DProc>(
+      eglGetProcAddress("glFramebufferTexture2D"));
+  procs.glBlitFramebufferANGLE = reinterpret_cast<glBlitFramebufferANGLEProc>(
+      eglGetProcAddress("glBlitFramebufferANGLE"));
+
   procs.glGenTextures =
       reinterpret_cast<glGenTexturesProc>(eglGetProcAddress("glGenTextures"));
   procs.glDeleteTextures = reinterpret_cast<glDeleteTexturesProc>(
       eglGetProcAddress("glDeleteTextures"));
   procs.glBindTexture =
       reinterpret_cast<glBindTextureProc>(eglGetProcAddress("glBindTexture"));
+  procs.glTexParameterf = reinterpret_cast<glTexParameterfProc>(
+      eglGetProcAddress("glTexParameterf"));
   procs.glTexParameteri = reinterpret_cast<glTexParameteriProc>(
       eglGetProcAddress("glTexParameteri"));
   procs.glTexImage2D =
       reinterpret_cast<glTexImage2DProc>(eglGetProcAddress("glTexImage2D"));
 
-  procs.valid = procs.glGenTextures && procs.glDeleteTextures &&
-                procs.glBindTexture && procs.glTexParameteri &&
+  procs.valid = procs.glGenFramebuffers && procs.glDeleteFramebuffers &&
+                procs.glBindFramebuffer && procs.glFramebufferTexture2D &&
+                procs.glBlitFramebufferANGLE && procs.glGenTextures &&
+                procs.glDeleteTextures && procs.glBindTexture &&
+                procs.glTexParameterf && procs.glTexParameteri &&
                 procs.glTexImage2D;
 }
 

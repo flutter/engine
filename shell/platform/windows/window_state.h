@@ -22,6 +22,14 @@ struct FlutterWindowsView;
 // Wrapper to distinguish the view controller ref from the view ref given out
 // in the C API.
 struct FlutterDesktopViewControllerState {
+  // The engine owned by this view controller, if any.
+  // This is only used if the view controller was created
+  // using |FlutterDesktopViewControllerCreate| as that takes
+  // ownership of the engine. View controllers created using
+  // |FlutterDesktopEngineCreateViewController| do not take
+  // ownership of the engine and do not set this.
+  std::unique_ptr<flutter::FlutterWindowsEngine> engine;
+
   // The view that backs this state object.
   std::unique_ptr<flutter::FlutterWindowsView> view;
 };

@@ -85,14 +85,10 @@ class FlutterEngine : public PluginRegistry {
   void SetNextFrameCallback(std::function<void()> callback);
 
  private:
-  // For access to RelinquishEngine.
+  // For access to engine.
   friend class FlutterViewController;
 
-  // Gives up ownership of |engine_|, but keeps a weak reference to it.
-  //
-  // This is intended to be used by FlutterViewController, since the underlying
-  // C API for view controllers takes over engine ownership.
-  FlutterDesktopEngineRef RelinquishEngine();
+  FlutterDesktopEngineRef engine();
 
   // Handle for interacting with the C API's engine reference.
   FlutterDesktopEngineRef engine_ = nullptr;

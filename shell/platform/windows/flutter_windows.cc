@@ -61,22 +61,30 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+static FlutterDesktopViewControllerRef CreateViewController(
+    FlutterDesktopEngineRef engine_handle,
     int width,
     int height,
-    FlutterDesktopEngineRef engine) {
+    bool owns_engine) {
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
       std::make_unique<flutter::FlutterWindow>(width, height);
 
+  auto engine = EngineFromHandle(engine_handle);
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view =
       std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
-  // Take ownership of the engine, starting it if necessary.
-  state->view->SetEngine(
-      std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
+  state->view->SetEngine(engine);
   state->view->CreateRenderSurface();
-  if (!state->view->GetEngine()->running()) {
-    if (!state->view->GetEngine()->Run()) {
+  engine->AddView(state->view.get());
+
+  // Take ownership of the engine if necessary.
+  if (owns_engine) {
+    state->engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine);
+  }
+
+  // Launch the engine if necessary.
+  if (!engine->running()) {
+    if (!engine->Run()) {
       return nullptr;
     }
   }
@@ -87,8 +95,33 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
   return state.release();
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+    int width,
+    int height,
+    FlutterDesktopEngineRef engine) {
+  return CreateViewController(engine, width, height, /*owns_engine=*/true);
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
+    FlutterDesktopEngineRef engine,
+    const FlutterDesktopViewControllerProperties* properties) {
+  return CreateViewController(engine, properties->width, properties->height,
+                              /*owns_engine=*/false);
+}
+
 void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller) {
+  auto engine = controller->view->GetEngine();
+  if (engine) {
+    auto view_id = controller->view->view_id();
+
+    // The implicit view is special: it must continue to exist
+    // as long as the engine is running.
+    if (view_id != flutter::kImplicitViewId) {
+      engine->DestroyView(view_id);
+    }
+  }
+
   delete controller;
 }
 
@@ -209,7 +242,8 @@ IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
-  return HandleForView(registrar->engine->view());
+  // TODO(loicsharma): Remove single view assumption.
+  return HandleForView(registrar->engine->view(flutter::kImplicitViewId));
 }
 
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
