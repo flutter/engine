@@ -305,10 +305,13 @@ class Shell final : public PlatformView::Delegate,
   ///         because the rasterizer thread can be blocked by the platform
   ///         thread to render platform views.
   ///
-  ///         The implicit view is added internally on Shell initialization
-  ///         depending on `Settings.enable_implicit_view`. Trying to add
+  ///         The implicit view should never be added with this function.
+  ///         Instead, it is added internally on Shell initialization depending
+  ///         on `Settings.enable_implicit_view`. Trying to add
   ///         `kFlutterImplicitViewId` is a no-op with warning.
-  /// @param view_id
+  ///
+  /// @param[in]  view_id     The view ID of the new view.
+  ///
   void AddView(int64_t view_id);
 
   /// @brief  Removes a non-implicit view.
@@ -318,6 +321,9 @@ class Shell final : public PlatformView::Delegate,
   ///
   ///         The implicit view should never be removed. Trying to remove
   ///         `kFlutterImplicitViewId` is a no-op with warning.
+  ///
+  /// @param[in]  view_id     The view ID of the view to be removed.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
