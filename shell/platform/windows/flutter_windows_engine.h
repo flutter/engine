@@ -124,9 +124,7 @@ class FlutterWindowsEngine {
     return view_id;
   }
 
-  FlutterWindowsView* view(int64_t view_id) {
-    return views_[view_id];
-  }
+  FlutterWindowsView* view(int64_t view_id) { return views_[view_id]; }
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
