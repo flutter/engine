@@ -36,8 +36,6 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-static constexpr int64_t kFlutterImplicitViewId = 0;
-
 Rasterizer::Rasterizer(Delegate& delegate,
                        MakeGpuImageBehavior gpu_image_behavior)
     : delegate_(delegate),

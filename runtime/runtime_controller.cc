@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -19,8 +20,6 @@
 #include "third_party/tonic/dart_message_handler.h"
 
 namespace flutter {
-
-constexpr uint64_t kFlutterImplicitViewId = 0ll;
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)

@@ -66,14 +66,6 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
-// The view ID of PlatformDispatcher.implicitView. This is an
-// implementation detail that may change at any time. Apps
-// should always use PlatformDispatcher.implicitView to determine
-// the current implicit view, if any.
-//
-// Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
-const int _kImplicitViewId = 0;
-
 // A message channel to receive KeyData from the platform.
 //
 // See embedder.cc::kFlutterKeyDataChannel for more information.
@@ -124,8 +116,8 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
-    if (_implicitViewEnabled) {
-      _doAddView(_kImplicitViewId);
+    if (_implicitViewId != null) {
+      _doAddView(_implicitViewId!);
     }
   }
 
@@ -222,11 +214,11 @@ class PlatformDispatcher {
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   FlutterView? get implicitView {
-    final FlutterView? result = _views[_kImplicitViewId];
-    assert((result != null) == _implicitViewEnabled,
-      _implicitViewEnabled ?
-        'The _implicitViewEnabled is true, but the implicit view does not exist.' :
-        'The _implicitViewEnabled is false, but the implicit view exists.');
+    final FlutterView? result = _views[_implicitViewId];
+    assert((result != null) == (_implicitViewId != null),
+      (_implicitViewId != null) ?
+        'The implicit view ID is $_implicitViewId, but the implicit view does not exist.' :
+        'The implicit view ID is null, but the implicit view exists.');
     return result;
   }
 
@@ -261,7 +253,7 @@ class PlatformDispatcher {
   }
 
   void _addView(int id) {
-    assert(id != _kImplicitViewId, 'The implicit view #$id can not be added.');
+    assert(id != _implicitViewId, 'The implicit view #$id can not be added.');
     _doAddView(id);
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
@@ -272,7 +264,7 @@ class PlatformDispatcher {
   }
 
   void _removeView(int id) {
-    assert(id != _kImplicitViewId, 'The implicit view #$id can not be removed.');
+    assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
     _views.remove(id);
     _invoke(onMetricsChanged, _onMetricsChangedZone);
