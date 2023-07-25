@@ -92,11 +92,7 @@ class ColorSourceContents : public Contents {
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
-
+  
   // |Contents|
   bool CanInheritOpacity(const Entity& entity) const override;
 
