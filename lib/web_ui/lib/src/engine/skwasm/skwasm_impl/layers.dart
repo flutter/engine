@@ -8,6 +8,8 @@ import 'package:ui/src/engine/scene_painting.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
+class RootLayer with PictureLayer {}
+
 class BackdropFilterLayer
   with PictureLayer
   implements ui.BackdropFilterEngineLayer {}
@@ -19,6 +21,9 @@ class BackdropFilterOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => contentRect;
+
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
@@ -42,6 +47,9 @@ class ClipPathOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(path.getBounds());
+
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
@@ -74,6 +82,9 @@ class ClipRectOperation implements LayerOperation {
   ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(rect);
 
   @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
+
+  @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.save();
     canvas.clipRect(rect, doAntiAlias: clip != ui.Clip.hardEdge);
@@ -102,6 +113,9 @@ class ClipRRectOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(rrect.outerRect);
+
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
@@ -133,6 +147,9 @@ class ColorFilterOperation implements LayerOperation {
   ui.Rect cullRect(ui.Rect contentRect) => contentRect;
 
   @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
+
+  @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.saveLayer(contentRect, ui.Paint()..colorFilter = filter);
   }
@@ -154,6 +171,9 @@ class ImageFilterOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => contentRect;
+
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
@@ -188,6 +208,9 @@ class OffsetOperation implements LayerOperation {
   ui.Rect cullRect(ui.Rect contentRect) => contentRect.shift(ui.Offset(dx, dy));
 
   @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect.shift(ui.Offset(-dx, -dy));
+
+  @override
   void pre(SceneCanvas canvas, ui.Rect cullRect) {
     canvas.save();
     canvas.translate(dx, dy);
@@ -210,6 +233,9 @@ class OpacityOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => contentRect.shift(offset);
+
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
 
   @override
   void pre(SceneCanvas canvas, ui.Rect cullRect) {
@@ -240,9 +266,16 @@ class TransformOperation implements LayerOperation {
 
   final Float64List transform;
 
+  Matrix4 getMatrix() => Matrix4.fromFloat32List(toMatrix32(transform));
+
   @override
-  ui.Rect cullRect(ui.Rect contentRect) =>
-    Matrix4.fromFloat32List(toMatrix32(transform)).transformRect(contentRect);
+  ui.Rect cullRect(ui.Rect contentRect) => getMatrix().transformRect(contentRect);
+  
+  @override
+  ui.Rect inverseMapRect(ui.Rect rect) {
+    final Matrix4 matrix = getMatrix()..invert();
+    return matrix.transformRect(rect);
+  }
 
   @override
   void pre(SceneCanvas canvas, ui.Rect cullRect) {
@@ -270,6 +303,9 @@ class ShaderMaskOperation implements LayerOperation {
   ui.Rect cullRect(ui.Rect contentRect) => contentRect;
 
   @override
+  ui.Rect inverseMapRect(ui.Rect rect) => rect;
+
+  @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.saveLayer(
       contentRect,
@@ -292,13 +328,51 @@ class ShaderMaskOperation implements LayerOperation {
   }
 }
 
+class PlatformView {
+  PlatformView(this.viewId, this.rect);
+
+  int viewId;
+
+  // The bounds of this platform view, in the layer's local coordinate space.
+  ui.Rect rect;
+}
+
+abstract class LayerSlice {
+  void dispose();
+}
+
+class PlatformViewSlice implements LayerSlice {
+  PlatformViewSlice(this.views, this.occlusionRect);
+
+  List<PlatformView> views;
+
+  // A conservative estimate of what area platform views in this slice may cover.
+  // This is expressed in the coordinate space of the parent.
+  ui.Rect? occlusionRect;
+
+  @override
+  void dispose() {}
+
+  // TODO: Probably add some styling stuff in here
+}
+
+class PictureSlice implements LayerSlice {
+  PictureSlice(this.picture);
+
+  ui.Picture picture;
+
+  @override
+  void dispose() => picture.dispose();
+}
 
 mixin PictureLayer implements ui.EngineLayer {
-  ui.Picture? picture;
+  List<LayerSlice> slices = <LayerSlice>[];
 
   @override
   void dispose() {
-    picture?.dispose();
+    for (final LayerSlice slice in slices) {
+      slice.dispose();
+    }
   }
 }
 
@@ -306,6 +380,10 @@ abstract class LayerOperation {
   const LayerOperation();
 
   ui.Rect cullRect(ui.Rect contentRect);
+
+  // Takes a rectangle in the layer's coordinate space and maps it to the parent
+  // coordinate space.
+  ui.Rect inverseMapRect(ui.Rect rect);
   void pre(SceneCanvas canvas, ui.Rect contentRect);
   void post(SceneCanvas canvas, ui.Rect contentRect);
 }
@@ -319,7 +397,7 @@ class PictureDrawCommand {
 
 class LayerBuilder {
   factory LayerBuilder.rootLayer() {
-    return LayerBuilder._(null, null, null);
+    return LayerBuilder._(null, RootLayer(), null);
   }
 
   factory LayerBuilder.childLayer({
@@ -333,36 +411,52 @@ class LayerBuilder {
   LayerBuilder._(
     this.parent,
     this.layer,
-    this.operation
-  );
+    this.operation);
 
   final LayerBuilder? parent;
-  final PictureLayer? layer;
+  final PictureLayer layer;
   final LayerOperation? operation;
-  final List<PictureDrawCommand> drawCommands = <PictureDrawCommand>[];
-  ui.Rect? contentRect;
+  final List<PictureDrawCommand> pendingPictures = <PictureDrawCommand>[];
+  final List<PlatformView> pendingPlatformViews = <PlatformView>[];
+  ui.Rect? picturesRect;
+  ui.Rect? platformViewRect;
 
-  ui.Picture build() {
-    final ui.Rect drawnRect = contentRect ?? ui.Rect.zero;
-    final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
+  void flushSlices() {
+    if (pendingPictures.isNotEmpty) {
+      final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
+      final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
 
-    operation?.pre(canvas, rect);
-    for (final PictureDrawCommand command in drawCommands) {
-      if (command.offset != ui.Offset.zero) {
-        canvas.save();
-        canvas.translate(command.offset.dx, command.offset.dy);
-        canvas.drawPicture(command.picture);
-        canvas.restore();
-      } else {
-        canvas.drawPicture(command.picture);
+      operation?.pre(canvas, rect);
+      for (final PictureDrawCommand command in pendingPictures) {
+        if (command.offset != ui.Offset.zero) {
+          canvas.save();
+          canvas.translate(command.offset.dx, command.offset.dy);
+          canvas.drawPicture(command.picture);
+          canvas.restore();
+        } else {
+          canvas.drawPicture(command.picture);
+        }
       }
+      operation?.post(canvas, rect);
+      final ui.Picture picture = recorder.endRecording();
+      layer.slices.add(PictureSlice(picture));
     }
-    operation?.post(canvas, rect);
-    final ui.Picture picture = recorder.endRecording();
-    layer?.picture = picture;
-    return picture;
+
+    if (pendingPlatformViews.isNotEmpty) {
+      ui.Rect? occlusionRect = platformViewRect;
+      if (occlusionRect != null && operation != null) {
+        occlusionRect = operation!.inverseMapRect(occlusionRect);
+      }
+      layer.slices.add(PlatformViewSlice(pendingPlatformViews, occlusionRect));
+      // TODO: attach styling information
+    }
+
+    pendingPictures.clear();
+    pendingPlatformViews.clear();
+    picturesRect = null;
+    platformViewRect = null;
   }
 
   void addPicture(
@@ -371,9 +465,43 @@ class LayerBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false
   }) {
-    drawCommands.add(PictureDrawCommand(offset, picture));
     final ui.Rect cullRect = (picture as ScenePicture).cullRect;
     final ui.Rect shiftedRect = cullRect.shift(offset);
-    contentRect = contentRect?.expandToInclude(shiftedRect) ?? shiftedRect;
+    if (platformViewRect?.overlaps(shiftedRect) ?? false) {
+      flushSlices();
+    }
+    pendingPictures.add(PictureDrawCommand(offset, picture));
+    picturesRect = picturesRect?.expandToInclude(shiftedRect) ?? shiftedRect;
+  }
+
+  void addPlatformView(
+    int viewId, {
+    ui.Offset offset = ui.Offset.zero,
+    double width = 0.0,
+    double height = 0.0
+  }) {
+    final ui.Rect bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+    platformViewRect = platformViewRect?.expandToInclude(bounds) ?? bounds;
+    pendingPlatformViews.add(PlatformView(viewId, bounds));
+  }
+
+  void mergeLayer(PictureLayer layer) {
+    for (final LayerSlice slice in layer.slices) {
+      switch (slice) {
+        case PictureSlice():
+          addPicture(ui.Offset.zero, slice.picture);
+        case PlatformViewSlice():
+          final ui.Rect? occlusionRect = slice.occlusionRect;
+          if (occlusionRect != null) {
+            platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
+          }
+          slice.views.addAll(pendingPlatformViews);
+      }
+    }
+  }
+
+  PictureLayer build() {
+    flushSlices();
+    return layer;
   }
 }

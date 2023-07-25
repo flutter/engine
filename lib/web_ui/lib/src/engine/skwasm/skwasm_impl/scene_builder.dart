@@ -8,25 +8,32 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmScene implements ui.Scene {
-  SkwasmScene(this.picture);
+  SkwasmScene(this.rootLayer);
 
-  final ui.Picture picture;
+  final RootLayer rootLayer;
 
   @override
   void dispose() {
-    picture.dispose();
+    rootLayer.dispose();
   }
 
   @override
-  Future<ui.Image> toImage(int width, int height) {
-    return picture.toImage(width, height);
+  Future<ui.Image> toImage(int width, int height) async {
+    return toImageSync(width, height);
   }
 
   @override
   ui.Image toImageSync(int width, int height) {
-    return picture.toImageSync(width, height);
-  }
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Rect canvasRect = ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
+    final ui.Canvas canvas = ui.Canvas(recorder, canvasRect);
 
+    // Only rasterizes the picture slices.
+    for (final PictureSlice slice in rootLayer.slices.whereType<PictureSlice>()) {
+      canvas.drawPicture(slice.picture);  
+    }
+    return recorder.endRecording().toImageSync(width, height);
+  }
 }
 
 class SkwasmSceneBuilder implements ui.SceneBuilder {
@@ -61,16 +68,17 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0
   }) {
-    throw UnimplementedError('Platform view not yet implemented with skwasm renderer.');
+    currentBuilder.addPlatformView(
+      viewId, 
+      offset: offset,
+      width: width,
+      height: height
+    );
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    final ui.Picture? picture = (retainedLayer as PictureLayer).picture;
-    if (picture == null) {
-      throw StateError('Adding incomplete retained layer.');
-    }
-    currentBuilder.addPicture(ui.Offset.zero, picture);
+    currentBuilder.mergeLayer(retainedLayer as PictureLayer);
   }
 
   @override
@@ -214,19 +222,19 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     while (currentBuilder.parent != null) {
       pop();
     }
-    final ui.Picture finalPicture = currentBuilder.build();
-    return SkwasmScene(finalPicture);
+    final PictureLayer rootLayer = currentBuilder.build();
+    return SkwasmScene(rootLayer as RootLayer);
   }
 
   @override
   void pop() {
-    final ui.Picture picture = currentBuilder.build();
+    final PictureLayer layer = currentBuilder.build();
     final LayerBuilder? parentBuilder = currentBuilder.parent;
     if (parentBuilder == null) {
       throw StateError('Popped too many times.');
     }
     currentBuilder = parentBuilder;
-    currentBuilder.addPicture(ui.Offset.zero, picture);
+    currentBuilder.mergeLayer(layer);
   }
 
   T pushLayer<T extends PictureLayer>(T layer, LayerOperation operation) {
