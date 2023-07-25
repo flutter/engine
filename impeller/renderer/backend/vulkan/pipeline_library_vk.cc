@@ -392,9 +392,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
       return nullptr;
     }
     vk_range.setStageFlags(stage.value());
-    // TODO(aaclarke): Get real values.
     vk_range.setOffset(0u);
-    vk_range.setSize(0u);
+    vk_range.setSize(range.bytes);
     push_constant_ranges.emplace_back(std::move(vk_range));
   }
 

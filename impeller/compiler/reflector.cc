@@ -179,6 +179,16 @@ std::shared_ptr<RuntimeStageData> Reflector::GetRuntimeStageData() const {
   return runtime_stage_data_;
 }
 
+namespace {
+  size_t CalculatePushConstantBufferSize(const nlohmann::json& push_constant_buffer) {
+    size_t result = 0;
+    for (const auto& member : push_constant_buffer["type"]["members"] ) {
+      result += member["size"].get<int>();
+    }
+    return result;
+  }
+}
+
 std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   nlohmann::json root;
 
@@ -230,6 +240,7 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
             ReflectResources(shader_resources.push_constant_buffers);
         push_constant_buffers_json.has_value()) {
       for (auto push_constant_buffer : push_constant_buffers_json.value()) {
+        push_constant_buffer["size"] = CalculatePushConstantBufferSize(push_constant_buffer);
         push_constant_buffers.emplace_back(std::move(push_constant_buffer));
       }
     } else {
@@ -244,18 +255,6 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
             /*compute_offsets=*/execution_model == spv::ExecutionModelVertex);
         stage_inputs_json.has_value()) {
       stage_inputs = std::move(stage_inputs_json.value());
-    } else {
-      return std::nullopt;
-    }
-  }
-
-  {
-    auto& push_constants = root["push_constant_buffers"] = nlohmann::json::array_t{};
-    if (auto push_constants_json = ReflectResources(
-            shader_resources.push_constant_buffers,
-            /*compute_offsets=*/execution_model == spv::ExecutionModelVertex);
-        push_constants_json.has_value()) {
-      push_constants = std::move(push_constants_json.value());
     } else {
       return std::nullopt;
     }

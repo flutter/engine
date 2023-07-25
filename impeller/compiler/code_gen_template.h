@@ -206,6 +206,7 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
 {% for push_constant_buffer in push_constant_buffers %}
     PushConstantRange{
       {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
+      {{push_constant_buffer.size}}
     },
 {% endfor %}
   };

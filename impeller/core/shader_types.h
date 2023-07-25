@@ -156,6 +156,7 @@ struct DescriptorSetLayout {
 
 struct PushConstantRange {
   ShaderStage shader_stage;
+  size_t bytes;
 };
 
 template <size_t Size>
