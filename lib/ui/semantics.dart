@@ -544,7 +544,7 @@ class SemanticsFlag {
   /// "collapsed".
   ///
   /// For example, if a submenu button shows its children, [isExpanded] is true.
-  /// 
+  ///
   /// See also:
   ///
   ///   * [SemanticsFlag.hasExpandedState], which enables an expanded/collapsed state.
