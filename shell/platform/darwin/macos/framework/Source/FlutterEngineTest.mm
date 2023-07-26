@@ -695,7 +695,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewId, 1ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -703,7 +703,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ll);
+    EXPECT_EQ(viewController2.viewId, 2ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
