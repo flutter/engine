@@ -65,7 +65,6 @@ import java.util.List;
  *
  * <ul>
  *   <li>Displays an Android launch screen.
- *   <li>Displays a Flutter splash screen.
  *   <li>Configures the status bar appearance.
  *   <li>Chooses the Dart execution app bundle path, entrypoint and entrypoint arguments.
  *   <li>Chooses Flutter's initial route.
@@ -163,7 +162,7 @@ import java.util.List;
  * FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an {@code
  * Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a {@code Fragment}.
  *
- * <p><strong>Launch Screen and Splash Screen</strong>
+ * <p><strong>Launch Screen</strong>
  *
  * <p>{@code FlutterActivity} supports the display of an Android "launch screen", which is displayed
  * while the Android application loads. It is only applicable if {@code FlutterActivity} is the
