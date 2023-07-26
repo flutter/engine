@@ -206,7 +206,7 @@ void testMain() {
 
     test('default factories', () {
       final DomElement content0 = contentManager.renderContent(
-        ui_web.kDefaultVisibleViewType,
+        ui_web.PlatformViewRegistry.defaultVisibleViewType,
         viewId,
         <dynamic, dynamic>{'tagName': 'table'},
       );
@@ -218,7 +218,7 @@ void testMain() {
       expect(contentManager.isInvisible(viewId), isFalse);
 
       final DomElement content1 = contentManager.renderContent(
-        ui_web.kDefaultInvisibleViewType,
+        ui_web.PlatformViewRegistry.defaultInvisibleViewType,
         viewId + 1,
         <dynamic, dynamic>{'tagName': 'script'},
       );
@@ -230,7 +230,7 @@ void testMain() {
       expect(contentManager.isInvisible(viewId + 1), isTrue);
 
       final DomElement content2 = contentManager.renderContent(
-        ui_web.kDefaultVisibleViewType,
+        ui_web.PlatformViewRegistry.defaultVisibleViewType,
         viewId + 2,
         <dynamic, dynamic>{'tagName': 'p'},
       );

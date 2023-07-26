@@ -28,11 +28,11 @@ class PlatformViewManager {
   PlatformViewManager() {
     // Register some default factories.
     registerFactory(
-      ui_web.kDefaultVisibleViewType,
+      ui_web.PlatformViewRegistry.defaultVisibleViewType,
       _defaultFactory,
     );
     registerFactory(
-      ui_web.kDefaultInvisibleViewType,
+      ui_web.PlatformViewRegistry.defaultInvisibleViewType,
       _defaultFactory,
       isVisible: false,
     );
