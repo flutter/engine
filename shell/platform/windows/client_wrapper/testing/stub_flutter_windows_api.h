@@ -91,7 +91,12 @@ class StubFlutterWindowsApi {
       FlutterDesktopWindowProcCallback delegate) {}
 
   // Claled for FlutterDesktopEngineProcessExternalWindowMessage.
-  virtual void EngineProcessExternalWindowMessage(FlutterDesktopEngineRef engine, HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {}
+  virtual void EngineProcessExternalWindowMessage(
+      FlutterDesktopEngineRef engine,
+      HWND hwnd,
+      UINT message,
+      WPARAM wparam,
+      LPARAM lparam) {}
 };
 
 // A test helper that owns a stub implementation, making it the test stub for

@@ -104,11 +104,8 @@ void FlutterEngine::ProcessExternalWindowMessage(HWND hwnd,
                                                  UINT message,
                                                  WPARAM wparam,
                                                  LPARAM lparam) {
-  FlutterDesktopEngineProcessExternalWindowMessage(engine_,
-                                                   hwnd,
-                                                   message,
-                                                   wparam,
-                                                   lparam);
+  FlutterDesktopEngineProcessExternalWindowMessage(engine_, hwnd, message,
+                                                   wparam, lparam);
 }
 
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {

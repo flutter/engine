@@ -163,13 +163,14 @@ IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
 }
 
 void FlutterDesktopEngineProcessExternalWindowMessage(
-  FlutterDesktopEngineRef engine,
-  HWND hwnd,
-  UINT message,
-  WPARAM wparam,
-  LPARAM lparam) {
+    FlutterDesktopEngineRef engine,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
   if (s_stub_implementation) {
-    s_stub_implementation->EngineProcessExternalWindowMessage(engine, hwnd, message, wparam, lparam);
+    s_stub_implementation->EngineProcessExternalWindowMessage(
+        engine, hwnd, message, wparam, lparam);
   }
 }
 

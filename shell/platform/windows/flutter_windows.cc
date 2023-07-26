@@ -213,7 +213,8 @@ void FlutterDesktopEngineProcessExternalWindowMessage(
     UINT message,
     WPARAM wparam,
     LPARAM lparam) {
-  EngineFromHandle(engine)->ProcessExternalWindowMessage(hwnd, message, wparam, lparam);
+  EngineFromHandle(engine)->ProcessExternalWindowMessage(hwnd, message, wparam,
+                                                         lparam);
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

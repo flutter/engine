@@ -330,7 +330,9 @@ TEST(FlutterWindowTest, AlertNode) {
 
 TEST(FlutterWindowTest, LifecycleFocusMessages) {
   MockFlutterWindow win32window;
-  ON_CALL(win32window, GetPlatformWindow).WillByDefault([](){ return reinterpret_cast<HWND>(1); });
+  ON_CALL(win32window, GetPlatformWindow).WillByDefault([]() {
+    return reinterpret_cast<HWND>(1);
+  });
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
 
@@ -355,7 +357,9 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
 
 TEST(FlutterWindowTest, CachedLifecycleMessage) {
   MockFlutterWindow win32window;
-  ON_CALL(win32window, GetPlatformWindow).WillByDefault([](){ return reinterpret_cast<HWND>(1); });
+  ON_CALL(win32window, GetPlatformWindow).WillByDefault([]() {
+    return reinterpret_cast<HWND>(1);
+  });
 
   // Restore
   win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
@@ -366,14 +370,14 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   MockWindowBindingHandlerDelegate delegate;
   bool focused = false;
   bool restored = false;
-  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&](HWND hwnd, WindowStateEvent event) {
-    if (event == WindowStateEvent::kFocus) {
-      focused = true;
-    }
-    else if (event == WindowStateEvent::kShow) {
-      restored = true;
-    }
-  });
+  ON_CALL(delegate, OnWindowStateEvent)
+      .WillByDefault([&](HWND hwnd, WindowStateEvent event) {
+        if (event == WindowStateEvent::kFocus) {
+          focused = true;
+        } else if (event == WindowStateEvent::kShow) {
+          restored = true;
+        }
+      });
 
   win32window.SetView(&delegate);
   EXPECT_TRUE(focused);
