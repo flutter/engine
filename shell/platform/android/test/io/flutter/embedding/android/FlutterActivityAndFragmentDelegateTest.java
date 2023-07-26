@@ -1226,23 +1226,6 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
-    // ---- Test setup ----
-    // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
-
-    // We're testing lifecycle behaviors, which require/expect that certain methods have already
-    // been executed by the time they run. Therefore, we run those expected methods first.
-    delegate.onAttach(ctx);
-
-    // --- Execute the behavior under test ---
-    boolean shouldDelayFirstAndroidViewDraw = true;
-    delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
-
-    assertNull(delegate.activePreDrawListener);
-  }
-
-  @Test
   public void usesFlutterEngineGroup() {
     FlutterEngineGroup mockEngineGroup = mock(FlutterEngineGroup.class);
     when(mockEngineGroup.createAndRunEngine(any(FlutterEngineGroup.Options.class)))
