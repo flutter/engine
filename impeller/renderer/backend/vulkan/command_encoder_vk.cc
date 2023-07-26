@@ -161,6 +161,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   // Make sure to call callback with `false` if anything returns early.
   bool fail_callback = !!callback;
   if (!IsValid()) {
+    VALIDATION_LOG << "Cannot submit invalid CommandEncoderVK.";
     if (fail_callback) {
       callback(false);
     }
@@ -179,22 +180,28 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
   auto command_buffer = GetCommandBuffer();
 
-  if (command_buffer.end() != vk::Result::eSuccess) {
+  auto status = command_buffer.end();
+  if (status != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(status);
     return false;
   }
   std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
+    VALIDATION_LOG << "Device lost.";
     return false;
   }
   auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to create fence: " << vk::to_string(fence_result);
     return false;
   }
 
   vk::SubmitInfo submit_info;
   std::vector<vk::CommandBuffer> buffers = {command_buffer};
   submit_info.setCommandBuffers(buffers);
-  if (queue_->Submit(submit_info, *fence) != vk::Result::eSuccess) {
+  status = queue_->Submit(submit_info, *fence);
+  if (status != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
     return false;
   }
 
@@ -277,12 +284,14 @@ bool CommandEncoderVK::IsTracking(
 }
 
 std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(
-    const vk::DescriptorSetLayout& layout) {
+    const vk::DescriptorSetLayout& layout,
+    size_t command_count) {
   if (!IsValid()) {
     return std::nullopt;
   }
 
-  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSet(layout);
+  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSet(
+      layout, command_count);
 }
 
 void CommandEncoderVK::PushDebugGroup(const char* label) const {

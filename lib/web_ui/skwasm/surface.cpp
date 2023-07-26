@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 using namespace Skwasm;
 
@@ -143,7 +144,7 @@ void Surface::_renderPicture(const SkPicture* picture, uint32_t callbackId) {
   auto canvas = _surface->getCanvas();
   canvas->drawColor(SK_ColorTRANSPARENT, SkBlendMode::kSrc);
   canvas->drawPicture(sk_ref_sp<SkPicture>(picture), &matrix, nullptr);
-  _surface->flush();
+  _grContext->flush(_surface);
   skwasm_captureImageBitmap(this, _glContext, callbackId, pictureRect.width(),
                             pictureRect.height());
 }
