@@ -675,8 +675,31 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the running Flutter application that a new view is
+  ///             available.
+  ///
+  ///             If the application is not running, this call is a noop.
+  ///
+  ///             The implicit view should not be added with this method. The
+  ///             framework has its own way to create the implicit view on
+  ///             initialization.
+  ///
+  /// @param[in]  view_id  The ID of the new view.
+  ///
   void AddView(int64_t view_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the running Flutter application that a view is no
+  ///             longer available.
+  ///
+  ///             If the application is not running, this call is a noop.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------

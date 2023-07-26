@@ -161,7 +161,7 @@ void Rasterizer::AddView(int64_t view_id) {
   // multi-view.
 }
 
-void Rasterizer::RemoveSurface(int64_t view_id) {
+void Rasterizer::RemoveView(int64_t view_id) {
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }

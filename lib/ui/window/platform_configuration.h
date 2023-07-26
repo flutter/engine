@@ -268,8 +268,25 @@ class PlatformConfiguration final {
   ///
   void DidCreateIsolate();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the framework that a new view is available.
+  ///
+  ///             The implicit view should not be added with this method. The
+  ///             framework has its own way to create the implicit view on
+  ///             initialization.
+  ///
+  /// @param[in]  view_id  The ID of the new view.
+  ///
   void AddView(int64_t view_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the framework that a view is no longer available.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -472,7 +489,7 @@ class PlatformConfiguration final {
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
 
-  void AddWindowRecord(int64_t view_id);
+  void InsertNewView(int64_t view_id);
 };
 
 //----------------------------------------------------------------------------

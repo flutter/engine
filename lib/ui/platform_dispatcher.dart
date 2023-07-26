@@ -117,7 +117,7 @@ class PlatformDispatcher {
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
     if (_implicitViewId != null) {
-      _doAddView(_implicitViewId!);
+      _insertNewView(_implicitViewId!);
     }
   }
 
@@ -248,19 +248,15 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
-  FlutterView _createView(int id) {
-    return FlutterView._(id, this, const _ViewConfiguration());
+  void _insertNewView(int id) {
+    assert(!_views.containsKey(id), 'View ID $id already exists.');
+    _views[id] = FlutterView._(id, this, const _ViewConfiguration());
   }
 
   void _addView(int id) {
     assert(id != _implicitViewId, 'The implicit view #$id can not be added.');
-    _doAddView(id);
+    _insertNewView(id);
     _invoke(onMetricsChanged, _onMetricsChangedZone);
-  }
-
-  void _doAddView(int id) {
-    assert(!_views.containsKey(id), 'View ID $id already exists.');
-    _views[id] = _createView(id);
   }
 
   void _removeView(int id) {

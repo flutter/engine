@@ -2042,10 +2042,9 @@ void Shell::AddView(int64_t view_id) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   if (view_id == kFlutterImplicitViewId) {
-    FML_DLOG(WARNING)
-        << "Unexpected request to add the implicit view #"
-        << kFlutterImplicitViewId
-        << ". This view should never be added. This call is no-op.";
+    FML_DLOG(ERROR) << "Unexpected request to add the implicit view #"
+                    << kFlutterImplicitViewId
+                    << ". This view should never be added. This call is no-op.";
     return;
   }
 
@@ -2072,7 +2071,7 @@ void Shell::RemoveView(int64_t view_id) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   if (view_id == kFlutterImplicitViewId) {
-    FML_DLOG(WARNING)
+    FML_DLOG(ERROR)
         << "Unexpected request to remove the implicit view #"
         << kFlutterImplicitViewId
         << ". This view should never be removed. This call is no-op.";
@@ -2095,7 +2094,7 @@ void Shell::RemoveView(int64_t view_id) {
        view_id                                  //
   ]() {
         if (rasterizer) {
-          rasterizer->RemoveSurface(view_id);
+          rasterizer->RemoveView(view_id);
         }
         latch.Signal();
       });

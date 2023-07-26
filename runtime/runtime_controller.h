@@ -163,8 +163,29 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   std::unique_ptr<RuntimeController> Clone() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the running isolate that a new view is available.
+  ///
+  ///             If the isolate has not been started, this call is a noop.
+  ///
+  ///             The implicit view should not be added with this method. The
+  ///             running isolate has its own way to create the implicit view on
+  ///             initialization.
+  ///
+  /// @param[in]  view_id  The ID of the new view.
+  ///
   bool AddView(int64_t view_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the running isolate that a view is no longer available.
+  ///
+  ///             If the isolate has not been started, this call is a noop.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
