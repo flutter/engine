@@ -18,8 +18,6 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -1229,9 +1227,6 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @Test
   public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
-    when(mockHost.provideSplashScreen())
-        .thenReturn(new DrawableSplashScreen(new ColorDrawable(Color.GRAY)));
-
     // ---- Test setup ----
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
