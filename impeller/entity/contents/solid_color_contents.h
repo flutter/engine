@@ -41,13 +41,16 @@ class SolidColorContents final : public ColorSourceContents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                         ISize target_size) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
  private:
   Color color_;

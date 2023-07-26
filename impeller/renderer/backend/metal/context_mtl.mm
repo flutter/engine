@@ -64,6 +64,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
+      .SetSupportsMemorylessTextures(true)
       .Build();
 }
 
@@ -77,7 +78,7 @@ ContextMTL::ContextMTL(
       is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)) {
   // Validate device.
   if (!device_) {
-    VALIDATION_LOG << "Could not setup valid Metal device.";
+    VALIDATION_LOG << "Could not set up valid Metal device.";
     return;
   }
 
@@ -133,7 +134,7 @@ ContextMTL::ContextMTL(
     resource_allocator_ = std::shared_ptr<AllocatorMTL>(
         new AllocatorMTL(device_, "Impeller Permanents Allocator"));
     if (!resource_allocator_) {
-      VALIDATION_LOG << "Could not setup the resource allocator.";
+      VALIDATION_LOG << "Could not set up the resource allocator.";
       return;
     }
   }
@@ -217,7 +218,7 @@ static id<MTLDevice> CreateMetalDevice() {
 static id<MTLCommandQueue> CreateMetalCommandQueue(id<MTLDevice> device) {
   auto command_queue = device.newCommandQueue;
   if (!command_queue) {
-    VALIDATION_LOG << "Could not setup the command queue.";
+    VALIDATION_LOG << "Could not set up the command queue.";
     return nullptr;
   }
   command_queue.label = @"Impeller Command Queue";
@@ -283,6 +284,10 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 }
 
 ContextMTL::~ContextMTL() = default;
+
+Context::BackendType ContextMTL::GetBackendType() const {
+  return Context::BackendType::kMetal;
+}
 
 // |Context|
 std::string ContextMTL::DescribeGpuModel() const {

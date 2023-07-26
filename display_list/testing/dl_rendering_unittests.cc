@@ -499,7 +499,6 @@ class RenderEnvironment {
     renderer.Render(canvas, info);
     canvas->restoreToCount(restore_count);
 
-    canvas->flush();
     if (GrDirectContext* dContext =
             GrAsDirectContext(surface->recordingContext())) {
       dContext->flushAndSubmit(surface, /*syncCpu=*/true);
@@ -870,9 +869,9 @@ class TestParameters {
   }
 
  private:
-  const SkRenderer& sk_renderer_;
-  const DlRenderer& dl_renderer_;
-  const DisplayListAttributeFlags& flags_;
+  const SkRenderer sk_renderer_;
+  const DlRenderer dl_renderer_;
+  const DisplayListAttributeFlags flags_;
 
   bool is_draw_text_blob_ = false;
   bool is_draw_display_list_ = false;
@@ -2047,7 +2046,8 @@ class CanvasCompareTester {
         if (!dl_bounds.contains(sk_bounds)) {
           FML_LOG(ERROR) << "DisplayList bounds are too small!";
         }
-        if (!sk_bounds.roundOut().contains(dl_bounds.roundOut())) {
+        if (!dl_bounds.isEmpty() &&
+            !sk_bounds.roundOut().contains(dl_bounds.roundOut())) {
           FML_LOG(ERROR) << "###### DisplayList bounds larger than reference!";
         }
       }
@@ -2097,9 +2097,9 @@ class CanvasCompareTester {
     }
 
     {
-      // This sequence renders the SkCanvas calls to an SkPictureRecorder and
-      // renders the DisplayList calls to a DisplayListBuilder and then
-      // renders both back under a transform (scale(2x)) to see if their
+      // This sequence uses an SkPicture generated previously from the SkCanvas
+      // calls and a DisplayList generated previously from the DlCanvas calls
+      // and renders both back under a transform (scale(2x)) to see if their
       // rendering is affected differently by a change of matrix between
       // recording time and rendering time.
       const int test_width_2 = kTestWidth * 2;
@@ -3468,6 +3468,51 @@ TEST_F(DisplayListCanvas, DrawShadowDpr) {
       CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3));
 }
 
+TEST_F(DisplayListCanvas, SaveLayerClippedContentStillFilters) {
+  // draw rect is just outside of render bounds on the right
+  const SkRect draw_rect = SkRect::MakeLTRB(  //
+      kRenderRight + 1,                       //
+      kRenderTop,                             //
+      kTestBounds.fRight,                     //
+      kRenderBottom                           //
+  );
+  TestParameters test_params(
+      [=](SkCanvas* canvas, const SkPaint& paint) {
+        auto layer_filter =
+            SkImageFilters::Blur(10.0f, 10.0f, SkTileMode::kDecal, nullptr);
+        SkPaint layer_paint;
+        layer_paint.setImageFilter(layer_filter);
+        canvas->save();
+        canvas->clipRect(kRenderBounds, SkClipOp::kIntersect, false);
+        canvas->saveLayer(&kTestBounds, &layer_paint);
+        canvas->drawRect(draw_rect, paint);
+        canvas->restore();
+        canvas->restore();
+      },
+      [=](DlCanvas* canvas, const DlPaint& paint) {
+        auto layer_filter =
+            DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+        DlPaint layer_paint;
+        layer_paint.setImageFilter(layer_filter);
+        canvas->Save();
+        canvas->ClipRect(kRenderBounds, ClipOp::kIntersect, false);
+        canvas->SaveLayer(&kTestBounds, &layer_paint);
+        canvas->DrawRect(draw_rect, paint);
+        canvas->Restore();
+        canvas->Restore();
+      },
+      kSaveLayerWithPaintFlags);
+  CaseParameters case_params("Filtered SaveLayer with clipped content");
+  BoundsTolerance tolerance = BoundsTolerance().addAbsolutePadding(6.0f, 6.0f);
+
+  for (auto& provider : CanvasCompareTester::kTestProviders) {
+    RenderEnvironment env = RenderEnvironment::MakeN32(provider.get());
+    env.init_ref(test_params.sk_renderer(), test_params.dl_renderer());
+    CanvasCompareTester::quickCompareToReference(env, "default");
+    CanvasCompareTester::RenderWith(test_params, env, tolerance, case_params);
+  }
+}
+
 TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
   float commutable_color_matrix[]{
       // clang-format off
@@ -4096,8 +4141,6 @@ class DisplayListNopTest : public DisplayListCanvas {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(w, h));
     SkCanvas* canvas = surface->getCanvas();
     renderer(canvas);
-    canvas->flush();
-    surface->flushAndSubmit(true);
     return std::make_unique<RenderResult>(surface, snapshot);
   }
 
@@ -4213,8 +4256,11 @@ class DisplayListNopTest : public DisplayListCanvas {
       result_canvas->clear(SK_ColorTRANSPARENT);
       result_canvas->drawImage(test_image.get(), 0, 0);
       result_canvas->drawRect(test_bounds, sk_paint);
-      result_canvas->flush();
-      result_surface->sk_surface()->flushAndSubmit(true);
+      if (GrDirectContext* direct_context = GrAsDirectContext(
+              result_surface->sk_surface()->recordingContext())) {
+        direct_context->flushAndSubmit();
+        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
+      }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
 
@@ -4271,8 +4317,11 @@ class DisplayListNopTest : public DisplayListCanvas {
       result_canvas->drawImage(test_image_dst_data->image(), 0, 0);
       result_canvas->drawImage(test_image_src_data->image(), 0, 0,
                                SkSamplingOptions(), &sk_paint);
-      result_canvas->flush();
-      result_surface->sk_surface()->flushAndSubmit(true);
+      if (GrDirectContext* direct_context = GrAsDirectContext(
+              result_surface->sk_surface()->recordingContext())) {
+        direct_context->flushAndSubmit();
+        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
+      }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
 

@@ -117,6 +117,8 @@ using namespace flutter;
     result(@([self isLiveTextInputAvailable]));
   } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
     [self handleSearchWebWithSelection:args];
+  } else if ([method isEqualToString:@"LookUp.invoke"]) {
+    [self showLookUpViewController:args];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
@@ -320,6 +322,16 @@ using namespace flutter;
 
 - (BOOL)isLiveTextInputAvailable {
   return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+}
+
+- (void)showLookUpViewController:(NSString*)term {
+  UIViewController* engineViewController = [_engine.get() viewController];
+  FML_DCHECK(![engineViewController presentingViewController]);
+  UIReferenceLibraryViewController* referenceLibraryViewController =
+      [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
+  [engineViewController presentViewController:referenceLibraryViewController
+                                     animated:YES
+                                   completion:nil];
 }
 
 - (UITextField*)textField {

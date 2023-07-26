@@ -95,7 +95,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * An internal method that adds the view controller with the given ID.
  *
  * This method assigns the controller with the ID, puts the controller into the
- * map, and does assertions related to the default view ID.
+ * map, and does assertions related to the implicit view ID.
  */
 - (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId;
 
@@ -178,9 +178,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
     // allow tests to override it so that an actual exit doesn't occur.
     [[NSApplication sharedApplication] terminate:sender];
   };
-  FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
-  appDelegate.terminationHandler = self;
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate respondsToSelector:@selector(setTerminationHandler:)]) {
+    FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
+    flutterAppDelegate.terminationHandler = self;
+  }
   return self;
 }
 
@@ -296,7 +298,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 }
 
 - (NSView*)view {
-  return [self viewForId:kFlutterDefaultViewId];
+  return [self viewForId:kFlutterImplicitViewId];
 }
 
 - (NSView*)viewForId:(FlutterViewId)viewId {
@@ -420,11 +422,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _semanticsEnabled = NO;
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
-  _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
-                                                                     terminator:nil];
-  // kFlutterDefaultViewId is reserved for the default view.
-  // All IDs above it are for regular views.
-  _nextViewId = kFlutterDefaultViewId + 1;
+  // kFlutterImplicitViewId is reserved for the implicit view.
+  _nextViewId = kFlutterImplicitViewId + 1;
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
@@ -443,9 +442,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
-  FlutterAppDelegate* appDelegate =
-      reinterpret_cast<FlutterAppDelegate*>([[NSApplication sharedApplication] delegate]);
-  [appDelegate addApplicationLifecycleDelegate:self];
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  const SEL selector = @selector(addApplicationLifecycleDelegate:);
+  if ([appDelegate respondsToSelector:selector]) {
+    _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
+                                                                       terminator:nil];
+    FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
+    [flutterAppDelegate addApplicationLifecycleDelegate:self];
+  } else {
+    _terminationHandler = nil;
+  }
 
   return self;
 }
@@ -506,10 +512,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                                    void* user_data) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a
+    // only operates on the implicit view. To support multi-view, we need a
     // way to pass in the ID (probably through FlutterSemanticsUpdate).
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [[engine viewControllerForId:kFlutterDefaultViewId] updateSemantics:update];
+    [[engine viewControllerForId:kFlutterImplicitViewId] updateSemantics:update];
   };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
@@ -645,7 +651,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)setViewController:(FlutterViewController*)controller {
   FlutterViewController* currentController =
-      [_viewControllers objectForKey:@(kFlutterDefaultViewId)];
+      [_viewControllers objectForKey:@(kFlutterImplicitViewId)];
   if (currentController == controller) {
     // From nil to nil, or from non-nil to the same controller.
     return;
@@ -658,26 +664,26 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              @"If you wanted to create an FlutterViewController and set it to an existing engine, "
              @"you should use FlutterViewController#init(engine:, nibName, bundle:) instead.",
              controller.engine);
-    [self registerViewController:controller forId:kFlutterDefaultViewId];
+    [self registerViewController:controller forId:kFlutterImplicitViewId];
   } else if (currentController != nil && controller == nil) {
-    NSAssert(currentController.viewId == kFlutterDefaultViewId,
+    NSAssert(currentController.viewId == kFlutterImplicitViewId,
              @"The default controller has an unexpected ID %llu", currentController.viewId);
     // From non-nil to nil.
-    [self deregisterViewControllerForId:kFlutterDefaultViewId];
+    [self deregisterViewControllerForId:kFlutterImplicitViewId];
     [self shutDownIfNeeded];
   } else {
     // From non-nil to a different non-nil view controller.
     NSAssert(NO,
              @"Failed to set view controller to the engine: "
-             @"The engine already has a default view controller %@. "
-             @"If you wanted to make the default view render in a different window, "
+             @"The engine already has an implicit view controller %@. "
+             @"If you wanted to make the implicit view render in a different window, "
              @"you should attach the current view controller to the window instead.",
-             [_viewControllers objectForKey:@(kFlutterDefaultViewId)]);
+             [_viewControllers objectForKey:@(kFlutterImplicitViewId)]);
   }
 }
 
 - (FlutterViewController*)viewController {
-  return [self viewControllerForId:kFlutterDefaultViewId];
+  return [self viewControllerForId:kFlutterImplicitViewId];
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
@@ -705,9 +711,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            void* user_data               //
                                         ) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a new
+    // only operates on the implicit view. To support multi-view, we need a new
     // callback that also receives a view ID.
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterDefaultViewId,
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
                                                                              layers, layers_count);
   };
 
@@ -725,7 +731,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 #pragma mark - Framework-internal methods
 
 - (void)addViewController:(FlutterViewController*)controller {
-  [self registerViewController:controller forId:kFlutterDefaultViewId];
+  [self registerViewController:controller forId:kFlutterImplicitViewId];
 }
 
 - (void)removeViewController:(nonnull FlutterViewController*)viewController {
@@ -812,7 +818,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
-  if (viewController.viewId != kFlutterDefaultViewId) {
+  if (viewController.viewId != kFlutterImplicitViewId) {
     // TODO(dkwingsmt): The embedder API only supports single-view for now. As
     // embedder APIs are converted to multi-view, this method should support any
     // views.
@@ -1078,7 +1084,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)announceAccessibilityMessage:(NSString*)message
                         withPriority:(NSAccessibilityPriorityLevel)priority {
   NSAccessibilityPostNotificationWithUserInfo(
-      [self viewControllerForId:kFlutterDefaultViewId].flutterView,
+      [self viewControllerForId:kFlutterImplicitViewId].flutterView,
       NSAccessibilityAnnouncementRequestedNotification,
       @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
 }
@@ -1097,9 +1103,20 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
-    [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+    if ([self terminationHandler] == nil) {
+      // If the termination handler isn't set, then either we haven't
+      // initialized it yet, or (more likely) the NSApp delegate isn't a
+      // FlutterAppDelegate, so it can't cancel requests to exit. So, in that
+      // case, just terminate when requested.
+      [NSApp terminate:self];
+      result(nil);
+    } else {
+      [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+    }
   } else if ([call.method isEqualToString:@"System.initializationComplete"]) {
-    [self terminationHandler].acceptingRequests = YES;
+    if ([self terminationHandler] != nil) {
+      [self terminationHandler].acceptingRequests = YES;
+    }
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
