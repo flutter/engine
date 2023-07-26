@@ -26,7 +26,7 @@
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
-constexpr int64_t kDefaultViewId = 0ll;
+constexpr int64_t kImplicitViewId = 0ll;
 
 @interface FlutterEngine (Test)
 /**
@@ -46,6 +46,16 @@ constexpr int64_t kDefaultViewId = 0ll;
   return viewId == 42 ? [[NSView alloc] init] : nil;
 }
 
+@end
+
+@interface PlainAppDelegate : NSObject <NSApplicationDelegate>
+@end
+
+@implementation PlainAppDelegate
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication* _Nonnull)sender {
+  // Always cancel, so that the test doesn't exit.
+  return NSTerminateCancel;
+}
 @end
 
 namespace flutter::testing {
@@ -355,7 +365,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterSemanticsNode2* nodes[] = {&root, &child1};
   update.nodes = nodes;
   update.custom_action_count = 0;
-  // This call updates semantics for the default view, which does not exist,
+  // This call updates semantics for the implicit view, which does not exist,
   // and therefore this call is invalid. But the engine should not crash.
   update_semantics_callback(&update, (__bridge void*)engine);
 
@@ -633,7 +643,7 @@ TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown
   [threadSynchronizer shutdown];
 
   std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommitForView:kDefaultViewId
+    [threadSynchronizer performCommitForView:kImplicitViewId
                                         size:CGSizeMake(100, 100)
                                       notify:^{
                                       }];
@@ -685,7 +695,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewId, 1ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -693,7 +703,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ll);
+    EXPECT_EQ(viewController2.viewId, 2ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -781,6 +791,22 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "");
   EXPECT_TRUE(triedToTerminate);
+}
+
+TEST_F(FlutterEngineTest, IgnoresTerminationRequestIfNotFlutterAppDelegate) {
+  id<NSApplicationDelegate> previousDelegate = [[NSApplication sharedApplication] delegate];
+  id<NSApplicationDelegate> plainDelegate = [[PlainAppDelegate alloc] init];
+  [NSApplication sharedApplication].delegate = plainDelegate;
+
+  // Creating the engine shouldn't fail here, even though the delegate isn't a
+  // FlutterAppDelegate.
+  CreateMockFlutterEngine(nil);
+
+  // Asking to terminate the app should cancel.
+  EXPECT_EQ([[[NSApplication sharedApplication] delegate] applicationShouldTerminate:NSApp],
+            NSTerminateCancel);
+
+  [NSApplication sharedApplication].delegate = previousDelegate;
 }
 
 TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {

@@ -41,9 +41,6 @@ extension ObjectToJSAnyExtension on Object {
     if (isWasm) {
       return toJSAnyDeep;
     } else {
-      // TODO(joshualitt): remove this cast when we reify JS types on JS
-      // backends.
-      // ignore: unnecessary_cast
       return this as JSAny;
     }
   }
@@ -63,6 +60,18 @@ extension JSAnyToObjectExtension on JSAny {
   Object get toObjectDeep => js_util.dartify(this)!;
 }
 
+@JS('Object')
+external DomObjectConstructor get objectConstructor;
+
+
+@JS()
+@staticInterop
+class DomObjectConstructor {}
+
+extension DomObjectConstructorExtension on DomObjectConstructor {
+  external JSAny assign(JSAny target, JSAny? source1, [JSAny? source2]);
+}
+
 @JS()
 @staticInterop
 class DomWindow extends DomEventTarget {}
@@ -72,18 +81,18 @@ extension DomWindowExtension on DomWindow {
 
   @JS('devicePixelRatio')
   external JSNumber get _devicePixelRatio;
-  double get devicePixelRatio => _devicePixelRatio.toDart;
+  double get devicePixelRatio => _devicePixelRatio.toDartDouble;
 
   external DomDocument get document;
   external DomHistory get history;
 
   @JS('innerHeight')
   external JSNumber? get _innerHeight;
-  double? get innerHeight => _innerHeight?.toDart;
+  double? get innerHeight => _innerHeight?.toDartDouble;
 
   @JS('innerWidth')
   external JSNumber? get _innerWidth;
-  double? get innerWidth => _innerWidth?.toDart;
+  double? get innerWidth => _innerWidth?.toDartDouble;
 
   external DomLocation get location;
   external DomNavigator get navigator;
@@ -135,7 +144,7 @@ extension DomWindowExtension on DomWindow {
   @JS('requestAnimationFrame')
   external JSNumber _requestAnimationFrame(JSFunction callback);
   double requestAnimationFrame(DomRequestAnimationFrameCallback callback) =>
-      _requestAnimationFrame(callback.toJS).toDart;
+      _requestAnimationFrame(callback.toJS).toDartDouble;
 
   @JS('postMessage')
   external JSVoid _postMessage1(JSAny message, JSString targetOrigin);
@@ -199,7 +208,7 @@ extension DomNavigatorExtension on DomNavigator {
 
   @JS('maxTouchPoints')
   external JSNumber? get _maxTouchPoints;
-  double? get maxTouchPoints => _maxTouchPoints?.toDart;
+  double? get maxTouchPoints => _maxTouchPoints?.toDartDouble;
 
   @JS('vendor')
   external JSString get _vendor;
@@ -381,7 +390,7 @@ extension DomEventExtension on DomEvent {
 
   @JS('timeStamp')
   external JSNumber? get _timeStamp;
-  double? get timeStamp => _timeStamp?.toDart;
+  double? get timeStamp => _timeStamp?.toDartDouble;
 
   @JS('type')
   external JSString get _type;
@@ -428,11 +437,11 @@ class DomProgressEvent extends DomEvent {
 extension DomProgressEventExtension on DomProgressEvent {
   @JS('loaded')
   external JSNumber? get _loaded;
-  double? get loaded => _loaded?.toDart;
+  double? get loaded => _loaded?.toDartDouble;
 
   @JS('total')
   external JSNumber? get _total;
-  double? get total => _total?.toDart;
+  double? get total => _total?.toDartDouble;
 }
 
 @JS()
@@ -524,11 +533,11 @@ extension DomElementExtension on DomElement {
 
   @JS('clientHeight')
   external JSNumber get _clientHeight;
-  double get clientHeight => _clientHeight.toDart;
+  double get clientHeight => _clientHeight.toDartDouble;
 
   @JS('clientWidth')
   external JSNumber get _clientWidth;
-  double get clientWidth => _clientWidth.toDart;
+  double get clientWidth => _clientWidth.toDartDouble;
 
   @JS('id')
   external JSString get _id;
@@ -593,13 +602,13 @@ extension DomElementExtension on DomElement {
 
   @JS('tabIndex')
   external JSNumber? get _tabIndex;
-  double? get tabIndex => _tabIndex?.toDart;
+  double? get tabIndex => _tabIndex?.toDartDouble;
 
   external JSVoid focus();
 
   @JS('scrollTop')
   external JSNumber get _scrollTop;
-  double get scrollTop => _scrollTop.toDart;
+  double get scrollTop => _scrollTop.toDartDouble;
 
   @JS('scrollTop')
   external set _scrollTop(JSNumber value);
@@ -607,7 +616,7 @@ extension DomElementExtension on DomElement {
 
   @JS('scrollLeft')
   external JSNumber get _scrollLeft;
-  double get scrollLeft => _scrollLeft.toDart;
+  double get scrollLeft => _scrollLeft.toDartDouble;
 
   @JS('scrollLeft')
   external set _scrollLeft(JSNumber value);
@@ -824,15 +833,15 @@ class DomHTMLElement extends DomElement {}
 extension DomHTMLElementExtension on DomHTMLElement {
   @JS('offsetWidth')
   external JSNumber get _offsetWidth;
-  double get offsetWidth => _offsetWidth.toDart;
+  double get offsetWidth => _offsetWidth.toDartDouble;
 
   @JS('offsetLeft')
   external JSNumber get _offsetLeft;
-  double get offsetLeft => _offsetLeft.toDart;
+  double get offsetLeft => _offsetLeft.toDartDouble;
 
   @JS('offsetTop')
   external JSNumber get _offsetTop;
-  double get offsetTop => _offsetTop.toDart;
+  double get offsetTop => _offsetTop.toDartDouble;
 
   external DomHTMLElement? get offsetParent;
 }
@@ -897,11 +906,11 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
 
   @JS('naturalWidth')
   external JSNumber get _naturalWidth;
-  double get naturalWidth => _naturalWidth.toDart;
+  double get naturalWidth => _naturalWidth.toDartDouble;
 
   @JS('naturalHeight')
   external JSNumber get _naturalHeight;
-  double get naturalHeight => _naturalHeight.toDart;
+  double get naturalHeight => _naturalHeight.toDartDouble;
 
   @JS('width')
   external set _width(JSNumber? value);
@@ -925,10 +934,20 @@ extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
   external set _src(JSAny value);
   set src(Object /* String|TrustedScriptURL */ value) =>
       _src = value.toJSAnyShallow;
+
+  @JS('nonce')
+  external set _nonce(JSString? value);
+  set nonce(String? value) => _nonce = value?.toJS;
 }
 
-DomHTMLScriptElement createDomHTMLScriptElement() =>
-    domDocument.createElement('script') as DomHTMLScriptElement;
+DomHTMLScriptElement createDomHTMLScriptElement(String? nonce) {
+  final DomHTMLScriptElement script =
+      domDocument.createElement('script') as DomHTMLScriptElement;
+  if (nonce != null) {
+    script.nonce = nonce;
+  }
+  return script;
+}
 
 @JS()
 @staticInterop
@@ -967,11 +986,25 @@ extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
   external set _type(JSString? value);
   set type(String? value) => _type = value?.toJS;
 
+  @JS('nonce')
+  external set _nonce(JSString? value);
+  set nonce(String? value) => _nonce = value?.toJS;
+
+  @JS('nonce')
+  external JSString? get _nonce;
+  String? get nonce => _nonce?.toDart;
+
   external DomStyleSheet? get sheet;
 }
 
-DomHTMLStyleElement createDomHTMLStyleElement() =>
-    domDocument.createElement('style') as DomHTMLStyleElement;
+DomHTMLStyleElement createDomHTMLStyleElement(String? nonce) {
+  final DomHTMLStyleElement style =
+      domDocument.createElement('style') as DomHTMLStyleElement;
+  if (nonce != null) {
+    style.nonce = nonce;
+  }
+  return style;
+}
 
 @JS()
 @staticInterop
@@ -991,7 +1024,7 @@ extension DomPerformanceExtension on DomPerformance {
 
   @JS('now')
   external JSNumber _now();
-  double now() => _now().toDart;
+  double now() => _now().toDartDouble;
 }
 
 @JS()
@@ -1030,7 +1063,7 @@ DomCanvasElement createDomCanvasElement({int? width, int? height}) {
 extension DomCanvasElementExtension on DomCanvasElement {
   @JS('width')
   external JSNumber? get _width;
-  double? get width => _width?.toDart;
+  double? get width => _width?.toDartDouble;
 
   @JS('width')
   external set _width(JSNumber? value);
@@ -1038,7 +1071,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
   @JS('height')
   external JSNumber? get _height;
-  double? get height => _height?.toDart;
+  double? get height => _height?.toDartDouble;
 
   @JS('height')
   external set _height(JSNumber? value);
@@ -1082,15 +1115,15 @@ class WebGLContext {}
 extension WebGLContextExtension on WebGLContext {
   @JS('getParameter')
   external JSNumber _getParameter(JSNumber value);
-  int getParameter(int value) => _getParameter(value.toJS).toDart.toInt();
+  int getParameter(int value) => _getParameter(value.toJS).toDartDouble.toInt();
 
   @JS('SAMPLES')
   external JSNumber get _samples;
-  int get samples => _samples.toDart.toInt();
+  int get samples => _samples.toDartDouble.toInt();
 
   @JS('STENCIL_BITS')
   external JSNumber get _stencilBits;
-  int get stencilBits => _stencilBits.toDart.toInt();
+  int get stencilBits => _stencilBits.toDartDouble.toInt();
 }
 
 @JS()
@@ -1750,7 +1783,7 @@ class DomResponse {}
 extension DomResponseExtension on DomResponse {
   @JS('status')
   external JSNumber get _status;
-  int get status => _status.toDart.toInt();
+  int get status => _status.toDartInt;
 
   external DomHeaders get headers;
 
@@ -1828,7 +1861,7 @@ class DomTextMetrics {}
 extension DomTextMetricsExtension on DomTextMetrics {
   @JS('width')
   external JSNumber? get _width;
-  double? get width => _width?.toDart;
+  double? get width => _width?.toDartDouble;
 }
 
 @JS()
@@ -1850,35 +1883,35 @@ class DomRectReadOnly {}
 extension DomRectReadOnlyExtension on DomRectReadOnly {
   @JS('x')
   external JSNumber get _x;
-  double get x => _x.toDart;
+  double get x => _x.toDartDouble;
 
   @JS('y')
   external JSNumber get _y;
-  double get y => _y.toDart;
+  double get y => _y.toDartDouble;
 
   @JS('width')
   external JSNumber get _width;
-  double get width => _width.toDart;
+  double get width => _width.toDartDouble;
 
   @JS('height')
   external JSNumber get _height;
-  double get height => _height.toDart;
+  double get height => _height.toDartDouble;
 
   @JS('top')
   external JSNumber get _top;
-  double get top => _top.toDart;
+  double get top => _top.toDartDouble;
 
   @JS('right')
   external JSNumber get _right;
-  double get right => _right.toDart;
+  double get right => _right.toDartDouble;
 
   @JS('bottom')
   external JSNumber get _bottom;
-  double get bottom => _bottom.toDart;
+  double get bottom => _bottom.toDartDouble;
 
   @JS('left')
   external JSNumber get _left;
-  double get left => _left.toDart;
+  double get left => _left.toDartDouble;
 }
 
 DomRect createDomRectFromPoints(DomPoint a, DomPoint b) {
@@ -1956,11 +1989,11 @@ class DomVisualViewport extends DomEventTarget {}
 extension DomVisualViewportExtension on DomVisualViewport {
   @JS('height')
   external JSNumber? get _height;
-  double? get height => _height?.toDart;
+  double? get height => _height?.toDartDouble;
 
   @JS('width')
   external JSNumber? get _width;
-  double? get width => _width?.toDart;
+  double? get width => _width?.toDartDouble;
 }
 
 @JS()
@@ -1987,11 +2020,11 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
-  double? get selectionStart => _selectionStart?.toDart;
+  double? get selectionStart => _selectionStart?.toDartDouble;
 
   @JS('selectionEnd')
   external JSNumber? get _selectionEnd;
-  double? get selectionEnd => _selectionEnd?.toDart;
+  double? get selectionEnd => _selectionEnd?.toDartDouble;
 
   @JS('selectionStart')
   external set _selectionStart(JSNumber? value);
@@ -2072,11 +2105,11 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
 
   @JS('keyCode')
   external JSNumber get _keyCode;
-  double get keyCode => _keyCode.toDart;
+  double get keyCode => _keyCode.toDartDouble;
 
   @JS('location')
   external JSNumber get _location;
-  double get location => _location.toDart;
+  double get location => _location.toDartDouble;
 
   @JS('metaKey')
   external JSBoolean get _metaKey;
@@ -2326,38 +2359,38 @@ class DomMouseEvent extends DomUIEvent {
 extension DomMouseEventExtension on DomMouseEvent {
   @JS('clientX')
   external JSNumber get _clientX;
-  double get clientX => _clientX.toDart;
+  double get clientX => _clientX.toDartDouble;
 
   @JS('clientY')
   external JSNumber get _clientY;
-  double get clientY => _clientY.toDart;
+  double get clientY => _clientY.toDartDouble;
 
   @JS('offsetX')
   external JSNumber get _offsetX;
-  double get offsetX => _offsetX.toDart;
+  double get offsetX => _offsetX.toDartDouble;
 
   @JS('offsetY')
   external JSNumber get _offsetY;
-  double get offsetY => _offsetY.toDart;
+  double get offsetY => _offsetY.toDartDouble;
 
   @JS('pageX')
   external JSNumber get _pageX;
-  double get pageX => _pageX.toDart;
+  double get pageX => _pageX.toDartDouble;
 
   @JS('pageY')
   external JSNumber get _pageY;
-  double get pageY => _pageY.toDart;
+  double get pageY => _pageY.toDartDouble;
 
   DomPoint get client => DomPoint(clientX, clientY);
   DomPoint get offset => DomPoint(offsetX, offsetY);
 
   @JS('button')
   external JSNumber get _button;
-  double get button => _button.toDart;
+  double get button => _button.toDartDouble;
 
   @JS('buttons')
   external JSNumber? get _buttons;
-  double? get buttons => _buttons?.toDart;
+  double? get buttons => _buttons?.toDartDouble;
 
   @JS('ctrlKey')
   external JSBoolean get _ctrlKey;
@@ -2386,7 +2419,7 @@ class DomPointerEvent extends DomMouseEvent {
 extension DomPointerEventExtension on DomPointerEvent {
   @JS('pointerId')
   external JSNumber? get _pointerId;
-  double? get pointerId => _pointerId?.toDart;
+  double? get pointerId => _pointerId?.toDartDouble;
 
   @JS('pointerType')
   external JSString? get _pointerType;
@@ -2394,15 +2427,15 @@ extension DomPointerEventExtension on DomPointerEvent {
 
   @JS('pressure')
   external JSNumber? get _pressure;
-  double? get pressure => _pressure?.toDart;
+  double? get pressure => _pressure?.toDartDouble;
 
   @JS('tiltX')
   external JSNumber? get _tiltX;
-  double? get tiltX => _tiltX?.toDart;
+  double? get tiltX => _tiltX?.toDartDouble;
 
   @JS('tiltY')
   external JSNumber? get _tiltY;
-  double? get tiltY => _tiltY?.toDart;
+  double? get tiltY => _tiltY?.toDartDouble;
 
   @JS('getCoalescedEvents')
   external JSArray _getCoalescedEvents();
@@ -2429,23 +2462,23 @@ class DomWheelEvent extends DomMouseEvent {
 extension DomWheelEventExtension on DomWheelEvent {
   @JS('deltaX')
   external JSNumber get _deltaX;
-  double get deltaX => _deltaX.toDart;
+  double get deltaX => _deltaX.toDartDouble;
 
   @JS('deltaY')
   external JSNumber get _deltaY;
-  double get deltaY => _deltaY.toDart;
+  double get deltaY => _deltaY.toDartDouble;
 
   @JS('wheelDeltaX')
   external JSNumber? get _wheelDeltaX;
-  double? get wheelDeltaX => _wheelDeltaX?.toDart;
+  double? get wheelDeltaX => _wheelDeltaX?.toDartDouble;
 
   @JS('wheelDeltaY')
   external JSNumber? get _wheelDeltaY;
-  double? get wheelDeltaY => _wheelDeltaY?.toDart;
+  double? get wheelDeltaY => _wheelDeltaY?.toDartDouble;
 
   @JS('deltaMode')
   external JSNumber get _deltaMode;
-  double get deltaMode => _deltaMode.toDart;
+  double get deltaMode => _deltaMode.toDartDouble;
 }
 
 DomWheelEvent createDomWheelEvent(String type, [Map<dynamic, dynamic>? init]) {
@@ -2496,15 +2529,15 @@ class DomTouch {
 extension DomTouchExtension on DomTouch {
   @JS('identifier')
   external JSNumber? get _identifier;
-  double? get identifier => _identifier?.toDart;
+  double? get identifier => _identifier?.toDartDouble;
 
   @JS('clientX')
   external JSNumber get _clientX;
-  double get clientX => _clientX.toDart;
+  double get clientX => _clientX.toDartDouble;
 
   @JS('clientY')
   external JSNumber get _clientY;
-  double get clientY => _clientY.toDart;
+  double get clientY => _clientY.toDartDouble;
 
   DomPoint get client => DomPoint(clientX, clientY);
 }
@@ -2594,11 +2627,11 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
-  double? get selectionStart => _selectionStart?.toDart;
+  double? get selectionStart => _selectionStart?.toDartDouble;
 
   @JS('selectionEnd')
   external JSNumber? get _selectionEnd;
-  double? get selectionEnd => _selectionEnd?.toDart;
+  double? get selectionEnd => _selectionEnd?.toDartDouble;
 
   @JS('selectionStart')
   external set _selectionStart(JSNumber? value);
@@ -2696,11 +2729,11 @@ class DomOffscreenCanvas extends DomEventTarget {
 extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
   @JS('height')
   external JSNumber? get _height;
-  double? get height => _height?.toDart;
+  double? get height => _height?.toDartDouble;
 
   @JS('width')
   external JSNumber? get _width;
-  double? get width => _width?.toDart;
+  double? get width => _width?.toDartDouble;
 
   @JS('height')
   external set _height(JSNumber? value);
@@ -2809,9 +2842,9 @@ extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
   external JSNumber _insertRule2(JSString rule, JSNumber index);
   double insertRule(String rule, [int? index]) {
     if (index == null) {
-      return _insertRule1(rule.toJS).toDart;
+      return _insertRule1(rule.toJS).toDartDouble;
     } else {
-      return _insertRule2(rule.toJS, index.toJS).toDart;
+      return _insertRule2(rule.toJS, index.toJS).toDartDouble;
     }
   }
 }
@@ -3163,7 +3196,7 @@ class _DomList {}
 extension DomListExtension on _DomList {
   @JS('length')
   external JSNumber get _length;
-  double get length => _length.toDart;
+  double get length => _length.toDartDouble;
 
   @JS('item')
   external DomNode _item(JSNumber index);
@@ -3215,7 +3248,7 @@ class _DomTouchList {}
 extension DomTouchListExtension on _DomTouchList {
   @JS('length')
   external JSNumber get _length;
-  double get length => _length.toDart;
+  double get length => _length.toDartDouble;
 
   @JS('item')
   external DomNode _item(JSNumber index);
@@ -3358,7 +3391,7 @@ class DomSegment {}
 extension DomSegmentExtension on DomSegment {
   @JS('index')
   external JSNumber get _index;
-  int get index => _index.toDart.toInt();
+  int get index => _index.toDartDouble.toInt();
 
   @JS('isWordLike')
   external JSBoolean get _isWordLike;
@@ -3396,15 +3429,15 @@ extension DomV8BreakIteratorExtension on DomV8BreakIterator {
 
   @JS('first')
   external JSNumber _first();
-  double first() => _first().toDart;
+  double first() => _first().toDartDouble;
 
   @JS('next')
   external JSNumber _next();
-  double next() => _next().toDart;
+  double next() => _next().toDartDouble;
 
   @JS('current')
   external JSNumber _current();
-  double current() => _current().toDart;
+  double current() => _current().toDartDouble;
 
   @JS('breakType')
   external JSString _breakType();

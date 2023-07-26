@@ -28,6 +28,9 @@ class ContextGLES final : public Context,
   // |Context|
   ~ContextGLES() override;
 
+  // |Context|
+  BackendType GetBackendType() const override;
+
   const ReactorGLES::Ref& GetReactor() const;
 
   std::optional<ReactorGLES::WorkerID> AddReactorWorker(
@@ -71,6 +74,9 @@ class ContextGLES final : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  void Shutdown() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };

@@ -49,6 +49,13 @@ class SolidColorContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                         ISize target_size) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
  private:
   Color color_;
 

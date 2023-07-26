@@ -22,7 +22,8 @@
 namespace flutter {
 namespace {
 
-constexpr int64_t kFlutterDefaultViewId = 0ll;
+// Keep this in sync with _kImplicitViewId in ../platform_dispatcher.dart.
+constexpr int kImplicitViewId = 0;
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
   return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
@@ -36,7 +37,7 @@ PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
     : client_(client) {
   if (client_->ImplicitViewEnabled()) {
-    AddView(kFlutterDefaultViewId);
+    AddView(kImplicitViewId);
   }
 }
 
@@ -358,6 +359,15 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
       tonic::DartInvoke(report_timings_.Get(), {
                                                    data_handle,
                                                }));
+}
+
+Window* PlatformConfiguration::get_window(int window_id) {
+  auto found = windows_.find(window_id);
+  if (found != windows_.end()) {
+    return found->second.get();
+  } else {
+    return nullptr;
+  }
 }
 
 void PlatformConfiguration::CompletePlatformMessageEmptyResponse(

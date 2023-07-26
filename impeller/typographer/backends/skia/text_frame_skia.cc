@@ -17,7 +17,7 @@
 
 namespace impeller {
 
-static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
+static Font ToFont(const SkTextBlobRunIterator& run) {
   auto& font = run.font();
   auto typeface = std::make_shared<TypefaceSkia>(font.refTypefaceOrDefault());
 
@@ -25,7 +25,6 @@ static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
   font.getMetrics(&sk_metrics);
 
   Font::Metrics metrics;
-  metrics.scale = scale;
   metrics.point_size = font.getSize();
   metrics.embolden = font.isEmbolden();
   metrics.skewX = font.getSkewX();
@@ -38,7 +37,9 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
+static constexpr Scalar kScaleSize = 100000.0f;
+
+TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob) {
   if (!blob) {
     return {};
   }
@@ -46,7 +47,7 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
   TextFrame frame;
 
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    TextRun text_run(ToFont(run, scale));
+    TextRun text_run(ToFont(run));
 
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
     // https://github.com/flutter/flutter/issues/112005
@@ -65,7 +66,14 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
       case SkTextBlobRunIterator::kFull_Positioning: {
         std::vector<SkRect> glyph_bounds;
         glyph_bounds.resize(glyph_count);
-        run.font().getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
+        SkFont font = run.font();
+        auto font_size = font.getSize();
+        // For some platforms (including Android), `SkFont::getBounds()` snaps
+        // the computed bounds to integers. And so we scale up the font size
+        // prior to fetching the bounds to ensure that the returned bounds are
+        // always precise enough.
+        font.setSize(kScaleSize);
+        font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
         for (auto i = 0u; i < glyph_count; i++) {
           // kFull_Positioning has two scalars per glyph.
@@ -75,8 +83,10 @@ TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
                                  ? Glyph::Type::kBitmap
                                  : Glyph::Type::kPath;
 
-          text_run.AddGlyph(Glyph{glyphs[i], type, ToRect(glyph_bounds[i])},
-                            Point{point->x(), point->y()});
+          text_run.AddGlyph(
+              Glyph{glyphs[i], type,
+                    ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
+              Point{point->x(), point->y()});
         }
         break;
       }

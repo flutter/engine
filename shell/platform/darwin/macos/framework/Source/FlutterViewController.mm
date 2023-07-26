@@ -518,7 +518,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 }
 
 - (FlutterViewId)viewId {
-  NSAssert([self attached], @"This view controller is not attched.");
+  NSAssert([self attached], @"This view controller is not attached.");
   return _viewId;
 }
 

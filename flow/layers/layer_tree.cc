@@ -8,15 +8,12 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layer_snapshot_store.h"
-#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
-#include "include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 namespace flutter {
 
@@ -63,8 +60,8 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
+      .impeller_enabled              = !frame.gr_context(),
       .raster_cached_entries         = &raster_cache_items_,
-      .display_list_enabled          = frame.display_list_builder() != nullptr,
       // clang-format on
   };
 
@@ -143,6 +140,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .raster_cache                  = cache,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
+      .impeller_enabled              = !!frame.aiks_context(),
       .aiks_context                  = frame.aiks_context(),
       // clang-format on
   };

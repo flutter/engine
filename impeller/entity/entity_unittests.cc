@@ -70,14 +70,10 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
-      : coverage_(coverage), collapse_(collapse) {}
+  explicit TestPassDelegate(bool collapse = false) : collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
-
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override { return coverage_; }
 
   // |EntityPassDelgate|
   bool CanElide() override { return false; }
@@ -107,12 +103,12 @@ auto CreatePassWithRectPath(Rect rect,
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(
-      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
+  subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
+TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -857,7 +853,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
-      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -884,13 +879,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-      FS::FragInfo frag_info;
-      frag_info.color = color.Premultiply();
-      FS::BindFragInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -1069,7 +1060,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetRect(input_rect);
+      texture->SetDestinationRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1192,7 +1183,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetRect(input_rect);
+    texture->SetDestinationRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -2168,14 +2159,14 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto tiled_texture = std::make_shared<TiledTextureContents>();
   tiled_texture->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  tiled_texture->SetOpacity(0.5);
+  tiled_texture->SetOpacityFactor(0.5);
 
   ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
 
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
   // overlap
@@ -2184,7 +2175,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = TextFrameFromTextBlob(blob);
   auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame);
+  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(frame);
@@ -2413,6 +2404,33 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Caps at 140.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+}
+
+TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto src_contents = std::make_shared<SolidColorContents>();
+  src_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-300, -500, 30000, 50000)));
+  src_contents->SetColor(Color::Red());
+
+  auto dst_contents = std::make_shared<SolidColorContents>();
+  dst_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(300, 500, 20000, 30000)));
+  dst_contents->SetColor(Color::Blue());
+
+  auto contents = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
+                               FilterInput::Make(src_contents, false)});
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.43f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
 }
 
 }  // namespace testing

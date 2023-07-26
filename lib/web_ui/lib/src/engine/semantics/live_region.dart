@@ -16,12 +16,16 @@ import 'semantics.dart';
 /// no content will be read.
 class LiveRegion extends RoleManager {
   LiveRegion(SemanticsObject semanticsObject)
-      : super(Role.labelAndValue, semanticsObject);
+      : super(Role.liveRegion, semanticsObject);
 
   String? _lastAnnouncement;
 
   @override
   void update() {
+    if (!semanticsObject.isLiveRegion) {
+      return;
+    }
+
     // Avoid announcing the same message over and over.
     if (_lastAnnouncement != semanticsObject.label) {
       _lastAnnouncement = semanticsObject.label;

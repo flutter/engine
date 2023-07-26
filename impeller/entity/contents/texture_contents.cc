@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "texture_contents.h"
+#include "impeller/entity/contents/texture_contents.h"
 
 #include <memory>
 #include <optional>
@@ -26,7 +26,7 @@ TextureContents::~TextureContents() = default;
 
 std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   auto contents = std::make_shared<TextureContents>();
-  contents->rect_ = destination;
+  contents->destination_rect_ = destination;
   return contents;
 }
 
@@ -34,8 +34,8 @@ void TextureContents::SetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-void TextureContents::SetRect(Rect rect) {
-  rect_ = rect;
+void TextureContents::SetDestinationRect(Rect rect) {
+  destination_rect_ = rect;
 }
 
 void TextureContents::SetTexture(std::shared_ptr<Texture> texture) {
@@ -70,7 +70,7 @@ std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
   if (GetOpacity() == 0) {
     return std::nullopt;
   }
-  return rect_.TransformBounds(entity.GetTransformation());
+  return destination_rect_.TransformBounds(entity.GetTransformation());
 };
 
 std::optional<Snapshot> TextureContents::RenderToSnapshot(
@@ -82,7 +82,7 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
     const std::string& label) const {
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
-  auto bounds = rect_;
+  auto bounds = destination_rect_;
   auto opacity = GetOpacity();
   if (source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
       (opacity >= 1 - kEhCloseEnough || defer_applying_opacity_)) {
@@ -104,37 +104,30 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
       label);                                            // label
 }
 
-static TextureFillVertexShader::PerVertexData ComputeVertexData(
-    const Point& vtx,
-    const Rect& coverage_rect,
-    const ISize& texture_size,
-    const Rect& source_rect) {
-  TextureFillVertexShader::PerVertexData data;
-  data.position = vtx;
-  auto coverage_coords = (vtx - coverage_rect.origin) / coverage_rect.size;
-  data.texture_coords =
-      (source_rect.origin + source_rect.size * coverage_coords) / texture_size;
-  return data;
-}
-
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
 
-  const auto coverage_rect = rect_;
-
-  if (coverage_rect.size.IsEmpty() || source_rect_.IsEmpty() ||
+  if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
-    return true;
+    return true;  // Nothing to render.
   }
+
+  // Expand the source rect by half a texel, which aligns sampled texels to the
+  // pixel grid if the source rect is the same size as the destination rect.
+  auto texture_coords =
+      Rect::MakeSize(texture_->GetSize()).Project(source_rect_.Expand(0.5));
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  for (const auto vtx : rect_.GetPoints()) {
-    vertex_builder.AppendVertex(ComputeVertexData(
-        vtx, coverage_rect, texture_->GetSize(), source_rect_));
-  }
+
+  vertex_builder.AddVertices({
+      {destination_rect_.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect_.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect_.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect_.GetRightBottom(), texture_coords.GetRightBottom()},
+  });
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -142,9 +135,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-
-  FS::FragInfo frag_info;
-  frag_info.alpha = GetOpacity();
+  frame_info.alpha = GetOpacity();
 
   Command cmd;
   cmd.label = "Texture Fill";
@@ -162,7 +153,6 @@ bool TextureContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              sampler_descriptor_));

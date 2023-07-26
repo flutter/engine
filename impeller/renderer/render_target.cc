@@ -217,6 +217,11 @@ RenderTarget RenderTarget::CreateOffscreen(
     return {};
   }
 
+// Dont force additional PSO variants on Vulkan.
+#ifdef FML_OS_ANDROID
+  FML_DCHECK(stencil_attachment_config.has_value());
+#endif  // FML_OS_ANDROID
+
   RenderTarget target;
   PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
   TextureDescriptor color_tex0;
@@ -227,7 +232,7 @@ RenderTarget RenderTarget::CreateOffscreen(
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
 
   ColorAttachment color0;
-  color0.clear_color = Color::BlackTransparent();
+  color0.clear_color = color_attachment_config.clear_color;
   color0.load_action = color_attachment_config.load_action;
   color0.store_action = color_attachment_config.store_action;
   color0.texture = context.GetResourceAllocator()->CreateTexture(color_tex0);
@@ -257,6 +262,11 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   if (size.IsEmpty()) {
     return {};
   }
+
+// Dont force additional PSO variants on Vulkan.
+#ifdef FML_OS_ANDROID
+  FML_DCHECK(stencil_attachment_config.has_value());
+#endif  // FML_OS_ANDROID
 
   RenderTarget target;
   PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
@@ -303,7 +313,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Color attachment.
 
   ColorAttachment color0;
-  color0.clear_color = Color::BlackTransparent();
+  color0.clear_color = color_attachment_config.clear_color;
   color0.load_action = color_attachment_config.load_action;
   color0.store_action = color_attachment_config.store_action;
   color0.texture = color0_msaa_tex;
