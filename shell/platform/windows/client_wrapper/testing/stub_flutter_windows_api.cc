@@ -167,7 +167,11 @@ void FlutterDesktopEngineProcessExternalWindowMessage(
   HWND hwnd,
   UINT message,
   WPARAM wparam,
-  LPARAM lparam) {}
+  LPARAM lparam) {
+  if (s_stub_implementation) {
+    s_stub_implementation->EngineProcessExternalWindowMessage(engine, hwnd, message, wparam, lparam);
+  }
+}
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
