@@ -608,7 +608,7 @@ def to_gn_args(args):
 
   if args.use_glfw_swiftshader:
     if get_host_os() == 'mac':
-      gn_args['glfw_vulkan_library'] = r'\"libvulkan.dylib\"'
+      gn_args['glfw_vulkan_library'] = r"\"libvulkan.dylib\""
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
