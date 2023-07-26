@@ -13,7 +13,7 @@
         "uri": "../../lib/ui/ui.dart"
       },
       "gpu": {
-        "uri": "../../lib/gpu/gpu.dart"
+        "uri": "../../lib/gpu/gpu_empty_stub.dart"
       }
     }
   }

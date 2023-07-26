@@ -29,6 +29,10 @@ source_set("gpu") {
     "dart_gpu.h",
   ]
 
+  if (impeller_enable_3d) {
+    defines = [ "IMPELLER_ENABLE_3D" ]
+  }
+
   public_configs = [ "//flutter:config" ]
 
   public_deps = [

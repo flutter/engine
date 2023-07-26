@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(bdero): INCOMPLETE TEST STUB! Do not merge!
-
 #include "flutter/lib/gpu/dart_gpu.h"
 
 #include <mutex>
@@ -47,13 +45,18 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 }
 
 void InitDispatcherMap() {
+#ifdef IMPELLER_ENABLE_3D
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+#endif
 }
 
 }  // anonymous namespace
 
 void DartGPU::InitForIsolate(const Settings& settings) {
+  return;  // TODO(bdero): Remove this once `dart:gpu` is added to the library
+           //              list upstream.
+
   if (!settings.enable_impeller) {
     return;
   }

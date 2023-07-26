@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(bdero): INCOMPLETE TEST STUB! Do not merge!
-
 #ifndef FLUTTER_LIB_GPU_DART_GPU_H_
 #define FLUTTER_LIB_GPU_DART_GPU_H_
 
