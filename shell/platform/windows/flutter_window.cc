@@ -346,14 +346,13 @@ void FlutterWindow::OnWindowStateEvent(WindowStateEvent event) {
       focused_ = false;
       break;
     case WindowStateEvent::kFocus:
-      restored_ = true;
-      focused_ = false;
+      focused_ = true;
       break;
     case WindowStateEvent::kUnfocus:
       focused_ = false;
       break;
   }
-  HWND hwnd = GetWindowHandle();
+  HWND hwnd = GetPlatformWindow();
   if (hwnd && binding_handler_delegate_) {
     binding_handler_delegate_->OnWindowStateEvent(hwnd, event);
   }
