@@ -162,6 +162,13 @@ IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
   return nullptr;
 }
 
+void FlutterDesktopEngineProcessExternalWindowMessage(
+  FlutterDesktopEngineRef engine,
+  HWND hwnd,
+  UINT message,
+  WPARAM wparam,
+  LPARAM lparam) {}
+
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
   // The stub ignores this, so just return an arbitrary non-zero value.

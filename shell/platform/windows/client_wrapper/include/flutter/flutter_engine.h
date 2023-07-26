@@ -84,6 +84,16 @@ class FlutterEngine : public PluginRegistry {
   // once on the platform thread.
   void SetNextFrameCallback(std::function<void()> callback);
 
+  // Called to pass an external window message to the engine for lifecycle
+  // state updates. This does not consume the window message. Non-Flutter windows
+  // must call this method in their WndProc in order to be included in the logic
+  // for application lifecycle state updates.
+  void ProcessExternalWindowMessage(
+      HWND hwnd,
+      UINT message,
+      WPARAM wparam,
+      LPARAM lparam);
+
  private:
   // For access to RelinquishEngine.
   friend class FlutterViewController;
