@@ -10,7 +10,6 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
-#include "impeller/core/allocator.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
@@ -74,18 +73,6 @@ class GlyphAtlas {
   ///
   const std::shared_ptr<Texture>& GetTexture() const;
 
-  const std::shared_ptr<Texture>& CreateAndCycleTexture(
-      std::shared_ptr<Allocator> allocator) {
-    index_ = (index_ + 1) % 3u;
-    if (!!texture_[index_]) {
-      return texture_[index_];
-    }
-    // 0 Should always be defined.
-    auto desc = texture_[0u]->GetTextureDescriptor();
-    texture_[index_] = allocator->CreateTexture(desc);
-    return texture_[index_];
-  }
-
   //----------------------------------------------------------------------------
   /// @brief      Record the location of a specific font-glyph pair within the
   ///             atlas.
@@ -126,11 +113,8 @@ class GlyphAtlas {
   std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
  private:
-  static constexpr size_t kCycleCount = 3u;
-
   const Type type_;
-  size_t index_ = 0u;
-  std::shared_ptr<Texture> texture_[kCycleCount];
+  std::shared_ptr<Texture> texture_;
 
   std::unordered_map<FontGlyphPair,
                      Rect,
