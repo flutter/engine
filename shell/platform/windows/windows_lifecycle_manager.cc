@@ -87,6 +87,8 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
     case WM_SHOWWINDOW:
       if (!wpar) {
         OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
+      } else {
+        OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
       }
       break;
 
@@ -254,14 +256,24 @@ void WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
                      : flutter::WindowStateEvent::kHide;
       break;
     case WM_SIZE:
-      event = wparam == SIZE_MINIMIZED ? flutter::WindowStateEvent::kHide
-                                       : flutter::WindowStateEvent::kShow;
+      switch (wparam) {
+        case SIZE_MINIMIZED:
+          event = flutter::WindowStateEvent::kHide;
+          break;
+        case SIZE_RESTORED:
+        case SIZE_MAXIMIZED:
+          event = flutter::WindowStateEvent::kShow;
+          break;
+      }
       break;
     case WM_SETFOCUS:
       event = flutter::WindowStateEvent::kFocus;
       break;
     case WM_KILLFOCUS:
       event = flutter::WindowStateEvent::kUnfocus;
+      break;
+    case WM_DESTROY:
+      event = flutter::WindowStateEvent::kHide;
       break;
   }
 
