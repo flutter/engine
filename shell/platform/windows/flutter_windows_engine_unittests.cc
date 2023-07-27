@@ -943,5 +943,26 @@ TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
             AppLifecycleState::kInactive);
 }
 
+TEST_F(FlutterWindowsEngineTest, ExternalWindowMessage) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  // Sets lifecycle state to resumed.
+  engine->Run();
+
+  // Ensure HWND(1) is in the set of visible windows before hiding it.
+  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW, TRUE, NULL);
+  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW, FALSE, NULL);
+
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kHidden);
+}
+
 }  // namespace testing
 }  // namespace flutter
