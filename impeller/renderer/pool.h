@@ -14,11 +14,10 @@ class Pool {
   std::shared_ptr<T> Grab() {
     if (pool_.empty()) {
       return T::Create();
-    } else {
-      std::shared_ptr<T> result = pool_.back();
-      pool_.pop_back();
-      return result;
     }
+    std::shared_ptr<T> result = pool_.back();
+    pool_.pop_back();
+    return result;
   }
 
   void Recycle(std::shared_ptr<T> object) {
