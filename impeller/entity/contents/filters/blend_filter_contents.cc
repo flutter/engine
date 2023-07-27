@@ -443,7 +443,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     auto color = foreground_color.Premultiply();
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {origin, dst_uvs[0]},
+        {origin, dst_uvs[0], color},
         {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
         {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
          color},
