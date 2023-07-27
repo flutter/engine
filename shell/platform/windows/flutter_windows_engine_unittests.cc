@@ -958,10 +958,13 @@ TEST_F(FlutterWindowsEngineTest, ExternalWindowMessage) {
   engine->Run();
 
   // Ensure HWND(1) is in the set of visible windows before hiding it.
-  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW, TRUE, NULL);
-  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW, FALSE, NULL);
+  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW,
+                                       TRUE, NULL);
+  engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW,
+                                       FALSE, NULL);
 
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kHidden);
+  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+            AppLifecycleState::kHidden);
 }
 
 }  // namespace testing

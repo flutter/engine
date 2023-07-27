@@ -71,8 +71,16 @@ class WindowsLifecycleManager {
   AppLifecycleState GetLifecycleState() { return state_; }
 
   // Called by the engine when a non-Flutter window receives an event that may
-  // alter the lifecycle state.
-  void ExternalWindowMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+  // alter the lifecycle state. The logic for external windows must differ from
+  // that used for FlutterWindow instances, because:
+  // - FlutterWindow does not receive WM_SHOW messages,
+  // - When FlutterWindow receives WM_SIZE messages, wparam stores no meaningful
+  //   information, whereas it usually indicates the action which changed the
+  //   window size.
+  void ExternalWindowMessage(HWND hwnd,
+                             UINT message,
+                             WPARAM wparam,
+                             LPARAM lparam);
 
  protected:
   // Check the number of top-level windows associated with this process, and

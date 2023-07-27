@@ -251,11 +251,11 @@ void WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
   switch (message) {
     case WM_SHOWWINDOW:
       event = wparam ? flutter::WindowStateEvent::kShow
-                      : flutter::WindowStateEvent::kHide;
+                     : flutter::WindowStateEvent::kHide;
       break;
     case WM_SIZE:
       event = wparam == SIZE_MINIMIZED ? flutter::WindowStateEvent::kHide
-                                        : flutter::WindowStateEvent::kShow;
+                                       : flutter::WindowStateEvent::kShow;
       break;
     case WM_SETFOCUS:
       event = flutter::WindowStateEvent::kFocus;

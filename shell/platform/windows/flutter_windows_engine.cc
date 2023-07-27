@@ -810,7 +810,8 @@ void FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
       case WM_SIZE:
       case WM_SETFOCUS:
       case WM_KILLFOCUS:
-        lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam, lparam);
+        lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                  lparam);
         break;
     }
   }
