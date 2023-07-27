@@ -217,7 +217,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
   constexpr Scalar height[6] = {0, 0, 1, 0, 1, 1};
 
   if (blend_mode_ <= BlendMode::kModulate) {
-    // Simple blend.
+    // Simple Porter-Duff blends can be accomplished without a subpass.
     using VS = PorterDuffBlendPipeline::VertexShader;
     using FS = PorterDuffBlendPipeline::FragmentShader;
 

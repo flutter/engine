@@ -478,8 +478,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     frag_info.input_alpha =
         absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
-    // TODO(jonahwilliams): This filter may not be absorbing opacity correctly,
-    // double check against Skia.
     frag_info.output_alpha = 1.0;
 
     auto blend_coefficients =
