@@ -337,7 +337,7 @@ class PlatformView {
   ui.Rect rect;
 }
 
-abstract class LayerSlice {
+sealed class LayerSlice {
   void dispose();
 }
 
@@ -359,7 +359,7 @@ class PlatformViewSlice implements LayerSlice {
 class PictureSlice implements LayerSlice {
   PictureSlice(this.picture);
 
-  ui.Picture picture;
+  ScenePicture picture;
 
   @override
   void dispose() => picture.dispose();
