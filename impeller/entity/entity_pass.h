@@ -54,6 +54,19 @@ class EntityPass {
 
   void SetDelegate(std::unique_ptr<EntityPassDelegate> delgate);
 
+  /// @brief  Set the bounds limit, which is provided by the user when creating
+  ///         a SaveLayer. This is a hint that allows the user to communicate
+  ///         that it's OK to not render content outside of the bounds.
+  ///
+  ///         For consistency with Skia, we effectively treat this like a
+  ///         rectangle clip by forcing the subpass texture size to never exceed
+  ///         it.
+  void SetBoundsLimit(std::optional<Rect> bounds_limit);
+
+  /// @brief  Get the bounds limit, which is provided by the user when creating
+  ///         a SaveLayer.
+  std::optional<Rect> GetBoundsLimit() const;
+
   size_t GetSubpassesDepth() const;
 
   std::unique_ptr<EntityPass> Clone() const;
@@ -78,6 +91,12 @@ class EntityPass {
   /// @brief  Iterate all entities in this pass, recursively including entities
   ///         of child passes. The iteration order is depth-first.
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
+
+  /// @brief  Iterate all entities in this pass, recursively including entities
+  ///         of child passes. The iteration order is depth-first and does not
+  ///         allow modification of the entities.
+  void IterateAllEntities(
+      const std::function<bool(const Entity&)>& iterator) const;
 
   /// @brief  Iterate entities in this pass up until the first subpass is found.
   ///         This is useful for limiting look-ahead optimizations.
@@ -217,6 +236,7 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
+  std::optional<Rect> bounds_limit_;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

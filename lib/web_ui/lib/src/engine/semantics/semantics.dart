@@ -449,39 +449,29 @@ abstract class PrimaryRoleManager {
   @visibleForTesting
   List<Role> get debugSecondaryRoles => _secondaryRoleManagers?.map((RoleManager manager) => manager.role).toList() ?? const <Role>[];
 
-  /// Adds generic focus management features, if applicable.
+  /// Adds generic focus management features.
   void addFocusManagement() {
-    if (semanticsObject.isFocusable) {
-      addSecondaryRole(Focusable(semanticsObject));
-    }
+    addSecondaryRole(Focusable(semanticsObject));
   }
 
-  /// Adds generic live region features, if applicable.
+  /// Adds generic live region features.
   void addLiveRegion() {
-    if (semanticsObject.isLiveRegion) {
-      addSecondaryRole(LiveRegion(semanticsObject));
-    }
+    addSecondaryRole(LiveRegion(semanticsObject));
   }
 
-  /// Adds generic route name features, if applicable.
+  /// Adds generic route name features.
   void addRouteName() {
-    if (semanticsObject.namesRoute) {
-      addSecondaryRole(RouteName(semanticsObject));
-    }
+    addSecondaryRole(RouteName(semanticsObject));
   }
 
-  /// Adds generic label features, if applicable.
+  /// Adds generic label features.
   void addLabelAndValue() {
-    if (semanticsObject.hasLabel || semanticsObject.hasValue || semanticsObject.hasTooltip) {
-      addSecondaryRole(LabelAndValue(semanticsObject));
-    }
+    addSecondaryRole(LabelAndValue(semanticsObject));
   }
 
   /// Adds generic functionality for handling taps and clicks.
   void addTappable() {
-    if (semanticsObject.isTappable) {
-      addSecondaryRole(Tappable(semanticsObject));
-    }
+    addSecondaryRole(Tappable(semanticsObject));
   }
 
   /// Adds a secondary role to this primary role manager.
@@ -531,7 +521,7 @@ abstract class PrimaryRoleManager {
   /// gesture mode changes.
   @mustCallSuper
   void dispose() {
-    semanticsObject.clearAriaRole();
+    semanticsObject.element.removeAttribute('role');
     _isDisposed = true;
   }
 }
@@ -1464,11 +1454,6 @@ class SemanticsObject {
     element.setAttribute('role', ariaRoleName);
   }
 
-  /// Removes the `role` HTML attribue, if any.
-  void clearAriaRole() {
-    element.removeAttribute('role');
-  }
-
   /// The primary role of this node.
   ///
   /// The primary role is assigned by [updateSelf] based on the combination of
@@ -2137,14 +2122,15 @@ class EngineSemanticsOwner {
     // First, update each object's information about itself. This information is
     // later used to fix the parent-child and sibling relationships between
     // objects.
-    for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
+    final List<SemanticsNodeUpdate> nodeUpdates = update._nodeUpdates!;
+    for (final SemanticsNodeUpdate nodeUpdate in nodeUpdates) {
       final SemanticsObject object = getOrCreateObject(nodeUpdate.id);
       object.updateSelf(nodeUpdate);
     }
 
     // Second, fix the tree structure. This is moved out into its own loop,
     // because each object's own information must be updated first.
-    for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
+    for (final SemanticsNodeUpdate nodeUpdate in nodeUpdates) {
       final SemanticsObject object = _semanticsTree[nodeUpdate.id]!;
       object.updateChildren();
       object._dirtyFields = 0;
@@ -2208,10 +2194,13 @@ class EngineSemanticsOwner {
       });
 
       // Validate that all updates were applied
-      for (final SemanticsNodeUpdate update in update._nodeUpdates!) {
+      for (final SemanticsNodeUpdate update in nodeUpdates) {
         // Node was added to the tree.
         assert(_semanticsTree.containsKey(update.id));
       }
+
+      // Verify that `update._nodeUpdates` has not changed.
+      assert(identical(update._nodeUpdates, nodeUpdates));
 
       return true;
     }());

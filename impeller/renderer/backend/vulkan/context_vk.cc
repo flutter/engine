@@ -120,6 +120,10 @@ ContextVK::~ContextVK() {
   CommandPoolVK::ClearAllPools(this);
 }
 
+Context::BackendType ContextVK::GetBackendType() const {
+  return Context::BackendType::kVulkan;
+}
+
 void ContextVK::Setup(Settings settings) {
   TRACE_EVENT0("impeller", "ContextVK::Setup");
 
@@ -226,7 +230,7 @@ void ContextVK::Setup(Settings settings) {
       std::make_unique<DebugReportVK>(*caps, device_holder->instance.get());
 
   if (!debug_report->IsValid()) {
-    VALIDATION_LOG << "Could not setup debug report.";
+    VALIDATION_LOG << "Could not set up debug report.";
     return;
   }
 
@@ -417,7 +421,7 @@ void ContextVK::Setup(Settings settings) {
 
   //----------------------------------------------------------------------------
   /// Label all the relevant objects. This happens after setup so that the debug
-  /// messengers have had a chance to be setup.
+  /// messengers have had a chance to be set up.
   ///
   SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }

@@ -8,6 +8,7 @@
 #include <utility>
 #include <variant>
 
+#include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
@@ -59,6 +60,14 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
     return;
   }
   delegate_ = std::move(delegate);
+}
+
+void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit) {
+  bounds_limit_ = bounds_limit;
+}
+
+std::optional<Rect> EntityPass::GetBoundsLimit() const {
+  return bounds_limit_;
 }
 
 void EntityPass::AddEntity(Entity entity) {
@@ -128,20 +137,12 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     return std::nullopt;
   }
 
-  // The delegates don't have an opinion on what the entity coverage has to be.
-  // Just use that as-is.
-  auto delegate_coverage = subpass.delegate_->GetCoverageRect();
-  if (!delegate_coverage.has_value()) {
+  if (!subpass.bounds_limit_.has_value()) {
     return entities_coverage;
   }
-  // The delegate coverage hint is in given in local space, so apply the subpass
-  // transformation.
-  delegate_coverage = delegate_coverage->TransformBounds(subpass.xformation_);
-
-  // If the delegate tells us the coverage is smaller than it needs to be, then
-  // great. OTOH, if the delegate is being wasteful, limit coverage to what is
-  // actually needed.
-  return entities_coverage->Intersection(delegate_coverage.value());
+  auto user_bounds_coverage =
+      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+  return entities_coverage->Intersection(user_bounds_coverage);
 }
 
 EntityPass* EntityPass::GetSuperpass() const {
@@ -247,10 +248,23 @@ bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
   auto root_render_target = render_target;
 
-  if (root_render_target.GetColorAttachments().empty()) {
+  if (root_render_target.GetColorAttachments().find(0u) ==
+      root_render_target.GetColorAttachments().end()) {
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
     return false;
   }
+
+  renderer.SetLazyGlyphAtlas(std::make_shared<LazyGlyphAtlas>());
+  fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
+      [&renderer]() { renderer.SetLazyGlyphAtlas(nullptr); });
+
+  IterateAllEntities([lazy_glyph_atlas =
+                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
+    if (auto contents = entity.GetContents()) {
+      contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
+    }
+    return true;
+  });
 
   StencilCoverageStack stencil_coverage_stack = {StencilCoverageLayer{
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
@@ -335,7 +349,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
   // The safety check for fetching this color attachment is at the beginning of
   // this method.
-  auto color0 = root_render_target.GetColorAttachments().find(0)->second;
+  auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
@@ -445,14 +459,14 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    std::shared_ptr<Contents> backdrop_filter_contents = nullptr;
+    std::shared_ptr<Contents> subpass_backdrop_filter_contents = nullptr;
     if (subpass->backdrop_filter_proc_) {
       auto texture = pass_context.GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
-      backdrop_filter_contents =
-          proc(FilterInput::Make(std::move(texture)), subpass->xformation_,
-               /*is_subpass*/ true);
+      subpass_backdrop_filter_contents = proc(
+          FilterInput::Make(std::move(texture)), subpass->xformation_.Basis(),
+          /*is_subpass*/ true);
 
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
@@ -487,9 +501,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    auto subpass_coverage = (subpass->flood_clip_ || backdrop_filter_contents)
-                                ? coverage_limit
-                                : GetSubpassCoverage(*subpass, coverage_limit);
+    auto subpass_coverage =
+        (subpass->flood_clip_ || subpass_backdrop_filter_contents)
+            ? coverage_limit
+            : GetSubpassCoverage(*subpass, coverage_limit);
     if (!subpass_coverage.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
@@ -512,17 +527,18 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
-    if (!subpass->OnRender(renderer,                  // renderer
-                           root_pass_size,            // root_pass_size
-                           subpass_target,            // pass_target
-                           subpass_coverage->origin,  // global_pass_position
-                           subpass_coverage->origin -
-                               global_pass_position,  // local_pass_position
-                           ++pass_depth,              // pass_depth
-                           stencil_coverage_stack,    // stencil_coverage_stack
-                           subpass->stencil_depth_,   // stencil_depth_floor
-                           backdrop_filter_contents  // backdrop_filter_contents
-                           )) {
+    if (!subpass->OnRender(
+            renderer,                  // renderer
+            root_pass_size,            // root_pass_size
+            subpass_target,            // pass_target
+            subpass_coverage->origin,  // global_pass_position
+            subpass_coverage->origin -
+                global_pass_position,         // local_pass_position
+            ++pass_depth,                     // pass_depth
+            stencil_coverage_stack,           // stencil_coverage_stack
+            subpass->stencil_depth_,          // stencil_depth_floor
+            subpass_backdrop_filter_contents  // backdrop_filter_contents
+            )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
       return EntityPass::EntityResult::Failure();
@@ -584,12 +600,10 @@ bool EntityPass::OnRender(
     return false;
   }
 
-  if (!(GetClearColor(root_pass_size) == Color::BlackTransparent())) {
+  if (!collapsed_parent_pass &&
+      !GetClearColor(root_pass_size).IsTransparent()) {
     // Force the pass context to create at least one new pass if the clear color
-    // is present. The `EndPass` first ensures that the clear color will get
-    // applied even if this EntityPass is getting collapsed into the parent
-    // pass.
-    pass_context.EndPass();
+    // is present.
     pass_context.GetRenderPass(pass_depth);
   }
 
@@ -732,13 +746,15 @@ bool EntityPass::OnRender(
   bool is_collapsing_clear_colors = true;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
-    if (is_collapsing_clear_colors) {
-      auto [entity_color, _] =
-          ElementAsBackgroundColor(element, root_pass_size);
-      if (entity_color.has_value()) {
-        continue;
+    if (!collapsed_parent_pass) {
+      if (is_collapsing_clear_colors) {
+        auto [entity_color, _] =
+            ElementAsBackgroundColor(element, root_pass_size);
+        if (entity_color.has_value()) {
+          continue;
+        }
+        is_collapsing_clear_colors = false;
       }
-      is_collapsing_clear_colors = false;
     }
 
     EntityResult result =
@@ -866,6 +882,28 @@ void EntityPass::IterateAllEntities(
     }
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       subpass->get()->IterateAllEntities(iterator);
+      continue;
+    }
+    FML_UNREACHABLE();
+  }
+}
+
+void EntityPass::IterateAllEntities(
+    const std::function<bool(const Entity&)>& iterator) const {
+  if (!iterator) {
+    return;
+  }
+
+  for (const auto& element : elements_) {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      if (!iterator(*entity)) {
+        return;
+      }
+      continue;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      const EntityPass* entity_pass = subpass->get();
+      entity_pass->IterateAllEntities(iterator);
       continue;
     }
     FML_UNREACHABLE();

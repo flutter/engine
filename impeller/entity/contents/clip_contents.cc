@@ -80,18 +80,13 @@ bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   VS::FrameInfo info;
 
   Command cmd;
 
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
   cmd.stencil_reference = entity.GetStencilDepth();
   options.stencil_compare = CompareFunction::kEqual;
   options.stencil_operation = StencilOperation::kIncrementClamp;
@@ -182,11 +177,11 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Restore Clip";
-  auto options = OptionsFromPassAndEntity(pass, entity);
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
   options.stencil_compare = CompareFunction::kLess;
   options.stencil_operation = StencilOperation::kSetToReferenceValue;
   options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -209,11 +204,6 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
-
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   pass.AddCommand(std::move(cmd));
   return true;
