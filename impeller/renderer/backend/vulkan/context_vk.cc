@@ -149,7 +149,8 @@ void ContextVK::Setup(Settings settings) {
   // 2. We are in a combination of debug mode, and running on Android.
   // (It's possible 2 is overly conservative and we can simplify this)
   auto enable_validation = settings.enable_validation;
-#if defined(FML_DEBUG) && !defined(NDEBUG)
+
+#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
   enable_validation = true;
 #endif
 
@@ -286,8 +287,8 @@ void ContextVK::Setup(Settings settings) {
   auto enabled_device_extensions =
       caps->GetEnabledDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
-    // This shouldn't happen since we already did device selection. But doesn't
-    // hurt to check again.
+    // This shouldn't happen since we already did device selection. But
+    // doesn't hurt to check again.
     return;
   }
 
@@ -429,8 +430,8 @@ void ContextVK::Setup(Settings settings) {
   is_valid_ = true;
 
   //----------------------------------------------------------------------------
-  /// Label all the relevant objects. This happens after setup so that the debug
-  /// messengers have had a chance to be set up.
+  /// Label all the relevant objects. This happens after setup so that the
+  /// debug messengers have had a chance to be set up.
   ///
   SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }
