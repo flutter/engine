@@ -9,6 +9,7 @@
 #include <optional>
 #include <unordered_map>
 
+#include "impeller/core/allocator.h"
 #include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
@@ -19,6 +20,8 @@
 class SkBitmap;
 
 namespace impeller {
+
+static constexpr size_t kTextureCount = 6u;
 
 //------------------------------------------------------------------------------
 /// @brief      A texture containing the bitmap representation of glyphs in
@@ -112,9 +115,22 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
+  const std::shared_ptr<Texture>& CreateAndCycleTexture(
+      std::shared_ptr<Allocator> allocator) {
+    index_ = (index_ + 1) % kTextureCount;
+    if (!!texture_[index_]) {
+      return texture_[index_];
+    }
+    // 0 Should always be defined.
+    auto desc = texture_[0u]->GetTextureDescriptor();
+    texture_[index_] = allocator->CreateTexture(desc);
+    return texture_[index_];
+  }
+
  private:
   const Type type_;
-  std::shared_ptr<Texture> texture_;
+  std::shared_ptr<Texture> texture_[kTextureCount];
+  size_t index_ = 0u;
 
   std::unordered_map<FontGlyphPair,
                      Rect,

@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "fml/synchronization/semaphore.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -22,9 +23,12 @@ struct FrameSynchronizer {
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   std::shared_ptr<CommandBuffer> final_cmd_buffer;
+  std::shared_ptr<fml::Semaphore> present_completed_;
   bool is_valid = false;
 
-  explicit FrameSynchronizer(const vk::Device& device) {
+  explicit FrameSynchronizer(const vk::Device& device,
+                             const ContextVK& context_vk)
+      : present_completed_(std::make_shared<fml::Semaphore>(1u)) {
     auto acquire_res = device.createFenceUnique(
         vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
     auto render_res = device.createSemaphoreUnique({});
@@ -35,6 +39,8 @@ struct FrameSynchronizer {
       VALIDATION_LOG << "Could not create synchronizer.";
       return;
     }
+    context_vk.SetDebugName(acquire_res.value.get(),
+                            "Frame Synchronizer Fence");
     acquire = std::move(acquire_res.value);
     render_ready = std::move(render_res.value);
     present_ready = std::move(present_res.value);
@@ -44,10 +50,12 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    if (auto result = device.waitForFences(
-            *acquire,                             // fence
-            true,                                 // wait all
-            std::numeric_limits<uint64_t>::max()  // timeout (ns)
+    if (!present_completed_->Wait()) {
+      return false;
+    }
+    if (auto result = device.waitForFences(*acquire,  // fence
+                                           true,      // wait all
+                                           100000000  // timeout (ns) 100 ms
         );
         result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Fence wait failed: " << vk::to_string(result);
@@ -262,7 +270,8 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
 
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers;
   for (size_t i = 0u; i < kMaxFramesInFlight; i++) {
-    auto sync = std::make_unique<FrameSynchronizer>(vk_context.GetDevice());
+    auto sync =
+        std::make_unique<FrameSynchronizer>(vk_context.GetDevice(), vk_context);
     if (!sync->is_valid) {
       VALIDATION_LOG << "Could not create frame synchronizers.";
       return;
@@ -490,6 +499,8 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     present_info.setSwapchains(*swapchain_);
     present_info.setImageIndices(indices);
     present_info.setWaitSemaphores(*sync->present_ready);
+
+    sync->present_completed_->Signal();
 
     switch (auto result = present_queue_.presentKHR(present_info)) {
       case vk::Result::eErrorOutOfDateKHR:

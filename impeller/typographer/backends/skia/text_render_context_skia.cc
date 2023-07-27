@@ -369,7 +369,9 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
     // ---------------------------------------------------------------------------
     // Step 5a: Update the existing texture with the updated bitmap.
     // ---------------------------------------------------------------------------
-    if (!UpdateGlyphTextureAtlas(bitmap, last_atlas->GetTexture())) {
+    auto new_texture =
+        last_atlas->CreateAndCycleTexture(GetContext()->GetResourceAllocator());
+    if (!UpdateGlyphTextureAtlas(bitmap, new_texture)) {
       return nullptr;
     }
     return last_atlas;
