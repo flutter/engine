@@ -242,4 +242,32 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
   }
 }
 
+void WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
+                                                    UINT message,
+                                                    WPARAM wparam,
+                                                    LPARAM lparam) {
+  std::optional<flutter::WindowStateEvent> event = std::nullopt;
+
+  switch (message) {
+    case WM_SHOWWINDOW:
+      event = wparam ? flutter::WindowStateEvent::kShow
+                      : flutter::WindowStateEvent::kHide;
+      break;
+    case WM_SIZE:
+      event = wparam == SIZE_MINIMIZED ? flutter::WindowStateEvent::kHide
+                                        : flutter::WindowStateEvent::kShow;
+      break;
+    case WM_SETFOCUS:
+      event = flutter::WindowStateEvent::kFocus;
+      break;
+    case WM_KILLFOCUS:
+      event = flutter::WindowStateEvent::kUnfocus;
+      break;
+  }
+
+  if (event.has_value()) {
+    OnWindowStateEvent(hwnd, *event);
+  }
+}
+
 }  // namespace flutter

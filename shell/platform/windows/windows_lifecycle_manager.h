@@ -70,6 +70,10 @@ class WindowsLifecycleManager {
 
   AppLifecycleState GetLifecycleState() { return state_; }
 
+  // Called by the engine when a non-Flutter window receives an event that may
+  // alter the lifecycle state.
+  void ExternalWindowMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+
  protected:
   // Check the number of top-level windows associated with this process, and
   // return true only if there are 1 or fewer.
