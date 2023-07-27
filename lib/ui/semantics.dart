@@ -531,7 +531,7 @@ class SemanticsFlag {
 
   /// The semantics node has the quality of either being "expanded" or "collapsed".
   ///
-  /// For example, a submenu button widget has expanded state.
+  /// For example, a [SubmenuButton] widget has expanded state.
   ///
   /// See also:
   ///
@@ -543,7 +543,7 @@ class SemanticsFlag {
   /// If true, the semantics node is "expanded". If false, the semantics node is
   /// "collapsed".
   ///
-  /// For example, if a submenu button shows its children, [isExpanded] is true.
+  /// For example, if a [SubmenuButton] shows its children, [isExpanded] is true.
   ///
   /// See also:
   ///
