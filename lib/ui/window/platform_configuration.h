@@ -271,9 +271,8 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Notify the framework that a new view is available.
   ///
-  ///             The implicit view should not be added with this method. The
-  ///             framework has its own way to create the implicit view on
-  ///             initialization.
+  ///             The implicit view might be called with this method, which
+  ///             will be a no-op.
   ///
   /// @param[in]  view_id  The ID of the new view.
   ///

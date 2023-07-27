@@ -254,8 +254,10 @@ class PlatformDispatcher {
   }
 
   void _addView(int id) {
-    assert(id != _implicitViewId, 'The implicit view #$id can not be added.');
-    _insertNewView(id);
+    // The implicit view is added at construction.
+    if (id != _implicitViewId) {
+      _insertNewView(id);
+    }
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 

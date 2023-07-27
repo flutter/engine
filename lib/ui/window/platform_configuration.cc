@@ -79,25 +79,12 @@ void PlatformConfiguration::DidCreateIsolate() {
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
 
   library_.Set(tonic::DartState::Current(), library);
-  if (client_->ImplicitViewEnabled()) {
-    // Add PlatformConfiguration's window now, but don't add dart:ui's View
-    // here. The dart:ui needs another way to add the implicit view
-    // synchronously so that the view is available before the main function.
-    // See _implicitViewId in natives.dart.
-    InsertNewView(kFlutterImplicitViewId);
-  }
-}
-
-void PlatformConfiguration::InsertNewView(int64_t view_id) {
-  FML_DCHECK(library_.value());
-  windows_.emplace(
-      view_id, std::make_unique<Window>(library_, view_id,
-                                        ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
 }
 
 void PlatformConfiguration::AddView(int64_t view_id) {
-  FML_DCHECK(view_id != kFlutterImplicitViewId);
-  InsertNewView(view_id);
+  windows_.emplace(
+      view_id, std::make_unique<Window>(library_, view_id,
+                                        ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
   std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
   if (!dart_state) {
     return;

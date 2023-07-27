@@ -825,12 +825,14 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         waiting_for_first_frame.store(true);
       });
 
-  auto ui_task = [engine = engine_->GetWeakPtr()] {
+  auto ui_task = [engine = engine_->GetWeakPtr(),                        //
+                  enable_implicit_view = settings_.enable_implicit_view  //
+  ] {
     if (engine) {
-      // Don't call engine->AddView(implicitView) here, because the runtime has
-      // not been initialized anyway. The runtime has its own way to initialize
-      // the implitic view.
       engine->ScheduleFrame();
+      if (enable_implicit_view) {
+        engine->AddView(kFlutterImplicitViewId);
+      }
     }
   };
 
