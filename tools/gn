@@ -592,9 +592,6 @@ def to_gn_args(args):
 
   if args.enable_impeller_vulkan:
     gn_args['impeller_enable_vulkan'] = True
-    # As of 2023-07-26, --unopt adds "glGetError" calls for the OpenGL backend,
-    # so if --unopt is specified, we also automatically enable Vulkan validation
-    # layers (https://github.com/KhronosGroup/Vulkan-ValidationLayers).
     if args.unoptimized:
       gn_args['enable_vulkan_validation_layers'] = True
 
