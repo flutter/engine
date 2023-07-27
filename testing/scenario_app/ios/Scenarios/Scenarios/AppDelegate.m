@@ -21,7 +21,7 @@
 
 @implementation AppDelegate
 
-static NSDictionary<NSString*, NSString*>* launchArgsMap = @{
+static NSDictionary<NSString*, NSString*>* const launchArgsMap = @{
   // The golden test args should match `GoldenTestManager`.
   @"--locale-initialization" : @"locale_initialization",
   @"--platform-view" : @"platform_view",
