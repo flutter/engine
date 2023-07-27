@@ -51,16 +51,6 @@ enum class AccessibilityFeatureFlag : int32_t {
 class PlatformConfigurationClient {
  public:
   //--------------------------------------------------------------------------
-  /// @brief      Whether the platform provides an implicit view. If true,
-  ///             the Framework may assume that it can always render into
-  ///             the view with ID 0.
-  ///
-  ///             This value must not change for the lifetime of the
-  ///             application.
-  ///
-  virtual bool ImplicitViewEnabled() = 0;
-
-  //--------------------------------------------------------------------------
   /// @brief      The route or path that the embedder requested when the
   ///             application was launched.
   ///
@@ -486,8 +476,6 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
-
-  void InsertNewView(int64_t view_id);
 };
 
 //----------------------------------------------------------------------------

@@ -171,7 +171,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  bool AddView(int64_t view_id, ViewportMetrics view_metrics);
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the isolate that a view is no longer available.
@@ -640,9 +640,6 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
-
-  // |PlatformConfigurationClient|
-  bool ImplicitViewEnabled() override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

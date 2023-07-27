@@ -128,7 +128,7 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id, ViewportMetrics view_metrics) {
+bool RuntimeController::AddView(int64_t view_id, const ViewportMetrics& view_metrics) {
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->AddView(view_id, view_metrics);
@@ -330,11 +330,6 @@ PlatformConfiguration*
 RuntimeController::GetPlatformConfigurationIfAvailable() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->platform_configuration() : nullptr;
-}
-
-// |PlatformConfigurationClient|
-bool RuntimeController::ImplicitViewEnabled() {
-  return client_.ImplicitViewEnabled();
 }
 
 // |PlatformConfigurationClient|
