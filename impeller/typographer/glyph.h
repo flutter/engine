@@ -39,6 +39,8 @@ struct Glyph {
       : index(p_index), type(p_type), bounds(p_bounds) {}
 };
 
+// Many Glyph instances are instantiated, so care should be taken when
+// increasing the size.
 static_assert(sizeof(Glyph) == 20);
 
 }  // namespace impeller
