@@ -115,10 +115,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
-    if (!AddView(view_id)) {
-      return false;
-    }
-    if (!SetViewportMetrics(view_id, viewport_metrics)) {
+    if (!AddView(view_id, viewport_metrics)) {
       return false;
     }
   }
@@ -131,10 +128,11 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id) {
-  platform_data_.viewport_metrics_for_views[view_id] = ViewportMetrics();
+bool RuntimeController::AddView(int64_t view_id, ViewportMetrics view_metrics) {
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id);
+    platform_configuration->AddView(view_id, view_metrics);
+
     return true;
   }
 

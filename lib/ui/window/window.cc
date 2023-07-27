@@ -22,6 +22,39 @@ Window::Window(tonic::DartPersistentValue& library,
 
 Window::~Window() {}
 
+void Window::AddView() {
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(tonic::DartInvokeField(
+      library_.value(), "_addView",
+      {
+          tonic::ToDart(window_id_),
+          tonic::ToDart(viewport_metrics_.device_pixel_ratio),
+          tonic::ToDart(viewport_metrics_.physical_width),
+          tonic::ToDart(viewport_metrics_.physical_height),
+          tonic::ToDart(viewport_metrics_.physical_padding_top),
+          tonic::ToDart(viewport_metrics_.physical_padding_right),
+          tonic::ToDart(viewport_metrics_.physical_padding_bottom),
+          tonic::ToDart(viewport_metrics_.physical_padding_left),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_top),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_right),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_bottom),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_left),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_top),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_right),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_bottom),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_left),
+          tonic::ToDart(viewport_metrics_.physical_touch_slop),
+          tonic::ToDart(viewport_metrics_.physical_display_features_bounds),
+          tonic::ToDart(viewport_metrics_.physical_display_features_type),
+          tonic::ToDart(viewport_metrics_.physical_display_features_state),
+          tonic::ToDart(viewport_metrics_.display_id),
+      }));
+}
+
 void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
   viewport_metrics_ = metrics;
 
@@ -34,26 +67,26 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
       library_.value(), "_updateWindowMetrics",
       {
           tonic::ToDart(window_id_),
-          tonic::ToDart(metrics.device_pixel_ratio),
-          tonic::ToDart(metrics.physical_width),
-          tonic::ToDart(metrics.physical_height),
-          tonic::ToDart(metrics.physical_padding_top),
-          tonic::ToDart(metrics.physical_padding_right),
-          tonic::ToDart(metrics.physical_padding_bottom),
-          tonic::ToDart(metrics.physical_padding_left),
-          tonic::ToDart(metrics.physical_view_inset_top),
-          tonic::ToDart(metrics.physical_view_inset_right),
-          tonic::ToDart(metrics.physical_view_inset_bottom),
-          tonic::ToDart(metrics.physical_view_inset_left),
-          tonic::ToDart(metrics.physical_system_gesture_inset_top),
-          tonic::ToDart(metrics.physical_system_gesture_inset_right),
-          tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
-          tonic::ToDart(metrics.physical_system_gesture_inset_left),
-          tonic::ToDart(metrics.physical_touch_slop),
-          tonic::ToDart(metrics.physical_display_features_bounds),
-          tonic::ToDart(metrics.physical_display_features_type),
-          tonic::ToDart(metrics.physical_display_features_state),
-          tonic::ToDart(metrics.display_id),
+          tonic::ToDart(viewport_metrics_.device_pixel_ratio),
+          tonic::ToDart(viewport_metrics_.physical_width),
+          tonic::ToDart(viewport_metrics_.physical_height),
+          tonic::ToDart(viewport_metrics_.physical_padding_top),
+          tonic::ToDart(viewport_metrics_.physical_padding_right),
+          tonic::ToDart(viewport_metrics_.physical_padding_bottom),
+          tonic::ToDart(viewport_metrics_.physical_padding_left),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_top),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_right),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_bottom),
+          tonic::ToDart(viewport_metrics_.physical_view_inset_left),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_top),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_right),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_bottom),
+          tonic::ToDart(viewport_metrics_.physical_system_gesture_inset_left),
+          tonic::ToDart(viewport_metrics_.physical_touch_slop),
+          tonic::ToDart(viewport_metrics_.physical_display_features_bounds),
+          tonic::ToDart(viewport_metrics_.physical_display_features_type),
+          tonic::ToDart(viewport_metrics_.physical_display_features_state),
+          tonic::ToDart(viewport_metrics_.display_id),
       }));
 }
 

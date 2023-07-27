@@ -41,8 +41,6 @@ void PlatformConfiguration::DidCreateIsolate() {
 
   on_error_.Set(tonic::DartState::Current(),
                 Dart_GetField(library, tonic::ToDart("_onError")));
-  add_view_.Set(tonic::DartState::Current(),
-                Dart_GetField(library, tonic::ToDart("_addView")));
   remove_view_.Set(tonic::DartState::Current(),
                    Dart_GetField(library, tonic::ToDart("_removeView")));
   update_displays_.Set(
@@ -81,19 +79,13 @@ void PlatformConfiguration::DidCreateIsolate() {
   library_.Set(tonic::DartState::Current(), library);
 }
 
-void PlatformConfiguration::AddView(int64_t view_id) {
-  windows_.emplace(
-      view_id, std::make_unique<Window>(library_, view_id,
-                                        ViewportMetrics{1.0, 0.0, 0.0, -1, 0}));
-  std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
-  if (!dart_state) {
-    return;
-  }
-  tonic::DartState::Scope scope(dart_state);
-  tonic::CheckAndHandleError(
-      tonic::DartInvoke(add_view_.Get(), {
-                                             tonic::ToDart(view_id),
-                                         }));
+void PlatformConfiguration::AddView(int64_t view_id,
+                                    const ViewportMetrics& view_metrics) {
+  auto [window_iterator, insertion_happened] = windows_.emplace(
+      view_id, std::make_unique<Window>(library_, view_id, view_metrics));
+  FML_DCHECK(insertion_happened);
+  // Make the new window send an AddView message to Dart.
+  window_iterator->second->AddView();
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {

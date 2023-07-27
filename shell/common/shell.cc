@@ -831,7 +831,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     if (engine) {
       engine->ScheduleFrame();
       if (enable_implicit_view) {
-        engine->AddView(kFlutterImplicitViewId);
+        engine->AddView(kFlutterImplicitViewId, ViewportMetrics{});
       }
     }
   };
@@ -2039,7 +2039,7 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddView(int64_t view_id) {
+void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -2051,10 +2051,11 @@ void Shell::AddView(int64_t view_id) {
   }
 
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
+                                             viewport_metrics,                //
                                              view_id                          //
   ] {
     if (engine) {
-      engine->AddView(view_id);
+      engine->AddView(view_id, viewport_metrics);
     }
   });
 

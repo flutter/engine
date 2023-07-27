@@ -310,9 +310,10 @@ class Shell final : public PlatformView::Delegate,
   ///         on `Settings.enable_implicit_view`. Trying to add
   ///         `kFlutterImplicitViewId` is a no-op with warning.
   ///
-  /// @param[in]  view_id     The view ID of the new view.
+  /// @param[in]  view_id           The view ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id);
+  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
 
   /// @brief  Removes a non-implicit view.
   ///

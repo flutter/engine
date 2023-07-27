@@ -4474,7 +4474,8 @@ TEST_F(ShellTest, ShellWithImplicitViewEnabledAddViewRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  RunOnPlatformTaskRunner(*shell, [&shell] { shell->AddView(2); });
+  RunOnPlatformTaskRunner(*shell,
+                          [&shell] { shell->AddView(2, ViewportMetrics{}); });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
@@ -4486,7 +4487,8 @@ TEST_F(ShellTest, ShellWithImplicitViewEnabledAddViewRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  RunOnPlatformTaskRunner(*shell, [&shell] { shell->AddView(4); });
+  RunOnPlatformTaskRunner(*shell,
+                          [&shell] { shell->AddView(4, ViewportMetrics{}); });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);

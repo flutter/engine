@@ -271,12 +271,12 @@ class PlatformConfiguration final {
   //----------------------------------------------------------------------------
   /// @brief      Notify the framework that a new view is available.
   ///
-  ///             The implicit view might be called with this method, which
-  ///             will be a no-op.
+  ///             The implicit view should also be added with this method.
   ///
-  /// @param[in]  view_id  The ID of the new view.
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id);
+  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the framework that a view is no longer available.
@@ -463,7 +463,6 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
-  tonic::DartPersistentValue add_view_;
   tonic::DartPersistentValue remove_view_;
   tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
