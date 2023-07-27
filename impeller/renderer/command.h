@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 
+#include "flutter/fml/lightweight_string.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
@@ -119,7 +120,7 @@ struct Command : public ResourceBinder {
   //----------------------------------------------------------------------------
   /// The debugging label to use for the command.
   ///
-  std::string label;
+  fml::LightweightString label;
   //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
   /// is part of pipeline setup and can be read from the pipelines descriptor.
@@ -204,5 +205,13 @@ struct Command : public ResourceBinder {
                       T metadata,
                       const BufferView& view);
 };
+
+// Many Commands are allocated per frame so care should be taken when increasing
+// their size.
+#if defined(__SIZEOF_POINTER__)
+#if __SIZEOF_POINTER__ == 8
+static_assert(sizeof(Command) == 432);
+#endif
+#endif
 
 }  // namespace impeller

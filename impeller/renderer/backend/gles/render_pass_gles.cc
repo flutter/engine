@@ -247,7 +247,7 @@ struct RenderPassData {
     fml::ScopedCleanupClosure pop_cmd_debug_marker(
         [&gl]() { gl.PopDebugGroup(); });
     if (!command.label.empty()) {
-      gl.PushDebugGroup(command.label);
+      gl.PushDebugGroup(command.label.c_str());
     } else {
       pop_cmd_debug_marker.Release();
     }
