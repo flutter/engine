@@ -134,6 +134,16 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
+#pragma mark - UISceneDelegate Methods
+
+- (void)scene:(UIScene*)scene
+    willConnectToSession:(UISceneSession*)session
+                 options:(UISceneConnectionOptions*)connectionOptions API_AVAILABLE(ios(13.0)) {
+  if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+    [_lifeCycleDelegate scene:scene willConnectToSession:session options:connectionOptions];
+  }
+}
+
 - (BOOL)openURL:(NSURL*)url {
   NSNumber* isDeepLinkingEnabled =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];

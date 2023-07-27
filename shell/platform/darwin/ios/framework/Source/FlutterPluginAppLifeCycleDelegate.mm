@@ -434,4 +434,18 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
   }
   return NO;
 }
+
+- (void)scene:(UIScene*)scene
+    willConnectToSession:(UISceneSession*)session
+                 options:(UISceneConnectionOptions*)connectionOptions API_AVAILABLE(ios(13.0)) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
+    if (!delegate) {
+      continue;
+    }
+    if ([delegate respondsToSelector:_cmd]) {
+      [delegate scene:scene willConnectToSession:session options:connectionOptions];
+    }
+  }
+}
+
 @end

@@ -141,6 +141,15 @@ FLUTTER_DARWIN_EXPORT
 - (BOOL)application:(UIApplication*)application
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray*))restorationHandler;
+
+/**
+ * Calls all plugins registered for `UISceneDelegate` callbacks in order of registration until
+ * some plugin handles the request.
+ */
+- (void)scene:(UIScene*)scene
+    willConnectToSession:(UISceneSession*)session
+                 options:(UISceneConnectionOptions*)connectionOptions API_AVAILABLE(ios(13.0));
+
 @end
 
 NS_ASSUME_NONNULL_END
