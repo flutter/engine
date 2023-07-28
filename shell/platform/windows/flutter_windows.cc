@@ -212,9 +212,10 @@ bool FlutterDesktopEngineProcessExternalWindowMessage(
     HWND hwnd,
     UINT message,
     WPARAM wparam,
-    LPARAM lparam) {
-  return EngineFromHandle(engine)->ProcessExternalWindowMessage(hwnd, message,
-                                                                wparam, lparam);
+    LPARAM lparam,
+    LRESULT* result) {
+  return EngineFromHandle(engine)->ProcessExternalWindowMessage(
+      hwnd, message, wparam, lparam, result);
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

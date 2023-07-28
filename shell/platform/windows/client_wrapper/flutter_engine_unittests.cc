@@ -61,7 +61,8 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
                                           HWND hwnd,
                                           UINT message,
                                           WPARAM wparam,
-                                          LPARAM lparam) {
+                                          LPARAM lparam,
+                                          LRESULT* result) override {
     last_message_ = message;
     return false;
   }
@@ -221,7 +222,8 @@ TEST(FlutterEngineTest, ProcessExternalWindowMessage) {
 
   FlutterEngine engine(DartProject(L"fake/project/path"));
 
-  engine.ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), 1234, 0, 0);
+  engine.ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), 1234, 0, 0,
+                                      nullptr);
 
   EXPECT_EQ(test_api->last_message(), 1234);
 }

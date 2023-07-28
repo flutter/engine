@@ -803,7 +803,8 @@ void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
 bool FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
                                                         UINT message,
                                                         WPARAM wparam,
-                                                        LPARAM lparam) {
+                                                        LPARAM lparam,
+                                                        LRESULT* result) {
   if (lifecycle_manager_) {
     switch (message) {
       case WM_SHOWWINDOW:
@@ -811,7 +812,7 @@ bool FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
       case WM_SETFOCUS:
       case WM_KILLFOCUS:
         return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
-                                                         lparam);
+                                                         lparam, result);
     }
   }
   return false;

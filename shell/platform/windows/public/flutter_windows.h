@@ -222,7 +222,8 @@ FLUTTER_EXPORT bool FlutterDesktopEngineProcessExternalWindowMessage(
     HWND hwnd,
     UINT message,
     WPARAM wparam,
-    LPARAM lparam);
+    LPARAM lparam,
+    LRESULT* result);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h

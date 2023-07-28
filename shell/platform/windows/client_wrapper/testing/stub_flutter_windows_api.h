@@ -96,7 +96,8 @@ class StubFlutterWindowsApi {
       HWND hwnd,
       UINT message,
       WPARAM wparam,
-      LPARAM lparam) {
+      LPARAM lparam,
+      LRESULT* result) {
     return false;
   }
 };

@@ -276,7 +276,8 @@ class FlutterWindowsEngine {
   bool ProcessExternalWindowMessage(HWND hwnd,
                                     UINT message,
                                     WPARAM wparam,
-                                    LPARAM lparam);
+                                    LPARAM lparam,
+                                    LRESULT* result);
 
  protected:
   // Creates the keyboard key handler.

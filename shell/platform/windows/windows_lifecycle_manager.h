@@ -82,7 +82,8 @@ class WindowsLifecycleManager {
   bool ExternalWindowMessage(HWND hwnd,
                              UINT message,
                              WPARAM wparam,
-                             LPARAM lparam);
+                             LPARAM lparam,
+                             LRESULT* result);
 
  protected:
   // Check the number of top-level windows associated with this process, and

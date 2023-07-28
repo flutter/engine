@@ -92,7 +92,8 @@ class FlutterEngine : public PluginRegistry {
   bool ProcessExternalWindowMessage(HWND hwnd,
                                     UINT message,
                                     WPARAM wparam,
-                                    LPARAM lparam);
+                                    LPARAM lparam,
+                                    LRESULT* result);
 
  private:
   // For access to RelinquishEngine.

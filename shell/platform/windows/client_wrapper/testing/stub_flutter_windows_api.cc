@@ -167,10 +167,11 @@ bool FlutterDesktopEngineProcessExternalWindowMessage(
     HWND hwnd,
     UINT message,
     WPARAM wparam,
-    LPARAM lparam) {
+    LPARAM lparam,
+    LRESULT* result) {
   if (s_stub_implementation) {
     return s_stub_implementation->EngineProcessExternalWindowMessage(
-        engine, hwnd, message, wparam, lparam);
+        engine, hwnd, message, wparam, lparam, result);
   }
   return false;
 }

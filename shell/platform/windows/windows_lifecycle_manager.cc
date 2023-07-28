@@ -247,9 +247,12 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
 bool WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
                                                     UINT message,
                                                     WPARAM wparam,
-                                                    LPARAM lparam) {
+                                                    LPARAM lparam,
+                                                    LRESULT* result) {
   std::optional<flutter::WindowStateEvent> event = std::nullopt;
 
+  // TODO (schectman): Handle WM_CLOSE messages.
+  // https://github.com/flutter/flutter/issues/131497
   switch (message) {
     case WM_SHOWWINDOW:
       event = wparam ? flutter::WindowStateEvent::kShow
