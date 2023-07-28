@@ -349,7 +349,10 @@ class ClickDebouncer {
     // It's only interesting to debounce clicks when both `pointerdown` and
     // `pointerup` land on the same element.
     if (event.type == 'pointerup') {
-      final bool targetChanged = event.target != state.target;
+      // TODO(yjbanov): this is a bit mouthful, but see https://github.com/dart-lang/sdk/issues/53070
+      final DomEventTarget? eventTarget = event.target;
+      final DomElement stateTarget = state.target;
+      final bool targetChanged = eventTarget != stateTarget;
       if (targetChanged) {
         _flush();
       }
