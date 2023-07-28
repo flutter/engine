@@ -168,7 +168,7 @@ class Context {
   Context();
 
  private:
-  mutable Pool<HostBuffer> host_buffer_pool_;
+  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Context);
 };

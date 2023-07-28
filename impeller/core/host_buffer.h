@@ -111,7 +111,14 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///
   BufferView Emplace(size_t length, size_t align, const EmplaceProc& cb);
 
+  //----------------------------------------------------------------------------
+  /// @brief Resets the contents of the HostBuffer to nothing so it can be
+  ///        reused.
   void Reset();
+
+  //----------------------------------------------------------------------------
+  /// @brief Returns the size of the HostBuffer in memory in bytes.
+  size_t GetSize() const;
 
  private:
   mutable std::shared_ptr<DeviceBuffer> device_buffer_;

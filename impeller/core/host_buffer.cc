@@ -94,4 +94,8 @@ void HostBuffer::Reset() {
   FML_CHECK(did_truncate);
 }
 
+size_t HostBuffer::GetSize() const {
+  return GetReservedLength();
+}
+
 }  // namespace impeller
