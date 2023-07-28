@@ -23,7 +23,7 @@ class Pool {
     }
     std::shared_ptr<T> result = std::move(pool_.back());
     pool_.pop_back();
-    size_ += result->GetSize();
+    size_ -= result->GetSize();
     return result;
   }
 
