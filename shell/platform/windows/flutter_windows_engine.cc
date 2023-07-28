@@ -806,14 +806,8 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
     WPARAM wparam,
     LPARAM lparam) {
   if (lifecycle_manager_) {
-    switch (message) {
-      case WM_SHOWWINDOW:
-      case WM_SIZE:
-      case WM_SETFOCUS:
-      case WM_KILLFOCUS:
-        return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
-                                                         lparam);
-    }
+    return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                      lparam);
   }
   return std::nullopt;
 }

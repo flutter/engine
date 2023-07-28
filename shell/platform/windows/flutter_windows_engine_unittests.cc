@@ -995,6 +995,7 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   // Hide Flutter window, but not top level window.
   view.OnWindowStateEvent(inner, WindowStateEvent::kHide);
 
+  // The top-level window is still visible, so we ought not enter hidden state.
   EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(), AppLifecycleState::kInactive);
 }
 

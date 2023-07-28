@@ -266,10 +266,6 @@ class FlutterWindowsEngine {
   // lifecycle state.
   void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);
 
-  WindowsLifecycleManager* lifecycle_manager() {
-    return lifecycle_manager_.get();
-  }
-
   // Handle a message from a non-Flutter window in the same application.
   // Returns a result when the message is consumed and should not be processed
   // further.
@@ -277,6 +273,10 @@ class FlutterWindowsEngine {
                                                       UINT message,
                                                       WPARAM wparam,
                                                       LPARAM lparam);
+
+  WindowsLifecycleManager* lifecycle_manager() {
+    return lifecycle_manager_.get();
+  }
 
  protected:
   // Creates the keyboard key handler.
