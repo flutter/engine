@@ -156,7 +156,7 @@ List<CodePointRange> _unpackFontRanges(String packedRange) {
 /// | aA       | 1    | 2    |
 /// | bB       | 2    | 3    |
 /// | 1a1A     | 26   | 27   |
-/// | 38a38M   | 1000 | 1001 |
+/// | 38m38M   | 1000 | 1001 |
 ///
 String packFontRanges(List<CodePointRange> ranges) {
   final StringBuffer sb = StringBuffer();
