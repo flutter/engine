@@ -28,11 +28,12 @@ enum class WindowStateEvent {
   kUnfocus,
 };
 
-/// A manager for lifecycle events of the top-level window.
+/// A manager for lifecycle events of the top-level windows.
 ///
-/// Currently handles the following events:
-/// 1. WM_CLOSE
-/// 2. WM_DWMCOMPOSITIONCHANGED
+/// WndProc is called for window messages of the top-level Flutter window.
+/// ExternalWindowMessage is called for non-flutter top-level window messages.
+/// OnWindowStateEvent is called when the visibility or focus state of a window
+///   is changed, including the FlutterView window.
 class WindowsLifecycleManager {
  public:
   WindowsLifecycleManager(FlutterWindowsEngine* engine);

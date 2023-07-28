@@ -266,7 +266,7 @@ class FlutterWindowsEngine {
   // lifecycle state.
   void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);
 
-  WindowsLifecycleManager* GetLifecycleManager() {
+  WindowsLifecycleManager* lifecycle_manager() {
     return lifecycle_manager_.get();
   }
 

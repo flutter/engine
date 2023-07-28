@@ -930,17 +930,17 @@ TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
       (HWND)1, WM_SIZE, SIZE_RESTORED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
             AppLifecycleState::kResumed);
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
       (HWND)1, WM_SIZE, SIZE_MINIMIZED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
             AppLifecycleState::kHidden);
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
       (HWND)1, WM_SIZE, SIZE_RESTORED, 0);
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
             AppLifecycleState::kInactive);
 }
 
@@ -964,7 +964,7 @@ TEST_F(FlutterWindowsEngineTest, ExternalWindowMessage) {
   engine->ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), WM_SHOWWINDOW,
                                        FALSE, NULL);
 
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(),
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
             AppLifecycleState::kHidden);
 }
 
@@ -990,12 +990,12 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   view.OnWindowStateEvent(inner, WindowStateEvent::kShow);
   view.OnWindowStateEvent(inner, WindowStateEvent::kFocus);
 
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kResumed);
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(), AppLifecycleState::kResumed);
 
   // Hide Flutter window, but not top level window.
   view.OnWindowStateEvent(inner, WindowStateEvent::kHide);
 
-  EXPECT_EQ(engine->GetLifecycleManager()->GetLifecycleState(), AppLifecycleState::kInactive);
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(), AppLifecycleState::kInactive);
 }
 
 }  // namespace testing
