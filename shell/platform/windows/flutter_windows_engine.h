@@ -271,7 +271,9 @@ class FlutterWindowsEngine {
   }
 
   // Handle a message from a non-Flutter window in the same application.
-  void ProcessExternalWindowMessage(HWND hwnd,
+  // Returns true when the message is consumed and should not be processed
+  // further.
+  bool ProcessExternalWindowMessage(HWND hwnd,
                                     UINT message,
                                     WPARAM wparam,
                                     LPARAM lparam);

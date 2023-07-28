@@ -57,12 +57,13 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
   void EngineReloadSystemFonts() override { reload_fonts_called_ = true; }
 
   // |flutter::testing::StubFlutterWindowsApi|
-  void EngineProcessExternalWindowMessage(FlutterDesktopEngineRef engine,
+  bool EngineProcessExternalWindowMessage(FlutterDesktopEngineRef engine,
                                           HWND hwnd,
                                           UINT message,
                                           WPARAM wparam,
                                           LPARAM lparam) {
     last_message_ = message;
+    return false;
   }
 
   bool create_called() { return create_called_; }

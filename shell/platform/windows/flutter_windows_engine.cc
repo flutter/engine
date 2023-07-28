@@ -800,7 +800,7 @@ void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
   lifecycle_manager_->OnWindowStateEvent(hwnd, event);
 }
 
-void FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
+bool FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
                                                         UINT message,
                                                         WPARAM wparam,
                                                         LPARAM lparam) {
@@ -810,11 +810,11 @@ void FlutterWindowsEngine::ProcessExternalWindowMessage(HWND hwnd,
       case WM_SIZE:
       case WM_SETFOCUS:
       case WM_KILLFOCUS:
-        lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
-                                                  lparam);
-        break;
+        return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                         lparam);
     }
   }
+  return false;
 }
 
 }  // namespace flutter

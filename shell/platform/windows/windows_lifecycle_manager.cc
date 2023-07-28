@@ -244,7 +244,7 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
   }
 }
 
-void WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
+bool WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
                                                     UINT message,
                                                     WPARAM wparam,
                                                     LPARAM lparam) {
@@ -280,6 +280,8 @@ void WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
   if (event.has_value()) {
     OnWindowStateEvent(hwnd, *event);
   }
+
+  return false;
 }
 
 }  // namespace flutter

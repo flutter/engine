@@ -215,8 +215,9 @@ FLUTTER_EXPORT IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(
 // Called to pass an external window message to the engine for lifecycle
 // state updates. This does not consume the window message. Non-Flutter windows
 // must call this method in their WndProc in order to be included in the logic
-// for application lifecycle state updates.
-FLUTTER_EXPORT void FlutterDesktopEngineProcessExternalWindowMessage(
+// for application lifecycle state updates. Returns true when the message is
+// consumed.
+FLUTTER_EXPORT bool FlutterDesktopEngineProcessExternalWindowMessage(
     FlutterDesktopEngineRef engine,
     HWND hwnd,
     UINT message,

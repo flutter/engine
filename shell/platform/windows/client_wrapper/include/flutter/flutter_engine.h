@@ -87,8 +87,9 @@ class FlutterEngine : public PluginRegistry {
   // Called to pass an external window message to the engine for lifecycle
   // state updates. This does not consume the window message. Non-Flutter
   // windows must call this method in their WndProc in order to be included in
-  // the logic for application lifecycle state updates.
-  void ProcessExternalWindowMessage(HWND hwnd,
+  // the logic for application lifecycle state updates. Returns true when the
+  // message has been consumed.
+  bool ProcessExternalWindowMessage(HWND hwnd,
                                     UINT message,
                                     WPARAM wparam,
                                     LPARAM lparam);

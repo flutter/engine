@@ -162,16 +162,17 @@ IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
   return nullptr;
 }
 
-void FlutterDesktopEngineProcessExternalWindowMessage(
+bool FlutterDesktopEngineProcessExternalWindowMessage(
     FlutterDesktopEngineRef engine,
     HWND hwnd,
     UINT message,
     WPARAM wparam,
     LPARAM lparam) {
   if (s_stub_implementation) {
-    s_stub_implementation->EngineProcessExternalWindowMessage(
+    return s_stub_implementation->EngineProcessExternalWindowMessage(
         engine, hwnd, message, wparam, lparam);
   }
+  return false;
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
