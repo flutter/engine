@@ -21,7 +21,7 @@ class Pool {
     if (pool_.empty()) {
       return T::Create();
     }
-    std::shared_ptr<T> result = pool_.back();
+    std::shared_ptr<T> result = std::move(pool_.back());
     pool_.pop_back();
     size_ += result->GetSize();
     return result;
