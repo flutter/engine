@@ -1,4 +1,4 @@
-Signature: 64c35ee79f78b8bddec264eea9e052c2
+Signature: eca8a55f4f8e1225df85bb269749e68c
 
 ====================================================================================================
 LIBRARY: dart
@@ -4327,7 +4327,6 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart +
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/isolate_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_helper.dart + ../../../third_party/dart/LICENSE
@@ -4408,7 +4407,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/isolate_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_helper.dart
@@ -4482,26 +4480,38 @@ ORIGIN: ../../../third_party/dart/runtime/vm/unwinding_records.cc + ../../../thi
 ORIGIN: ../../../third_party/dart/runtime/vm/unwinding_records.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/vm/unwinding_records_win.cc + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_allow_interop_patch.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/debugger.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/records.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_allow_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/records.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_unsafe_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_types.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/boxed_double.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/boxed_int.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/closure.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch_patch.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double_helper.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int_helper.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_array.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_unsafe_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_typed_array.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_types.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_helper.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/record_patch.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_create.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/simd.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_helper.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/async/future_extensions.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/js_interop/js_interop.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/js_interop_unsafe/js_interop_unsafe.dart + ../../../third_party/dart/LICENSE
@@ -4520,26 +4530,38 @@ FILE: ../../../third_party/dart/runtime/vm/unwinding_records.cc
 FILE: ../../../third_party/dart/runtime/vm/unwinding_records.h
 FILE: ../../../third_party/dart/runtime/vm/unwinding_records_win.cc
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_allow_interop_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/debugger.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/records.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_allow_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/records.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_unsafe_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_types.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/boxed_double.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/boxed_int.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/closure.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double_helper.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int_helper.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_unsafe_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_typed_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_types.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/record_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_create.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/simd.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_helper.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/async/future_extensions.dart
 FILE: ../../../third_party/dart/sdk/lib/js_interop/js_interop.dart
 FILE: ../../../third_party/dart/sdk/lib/js_interop_unsafe/js_interop_unsafe.dart

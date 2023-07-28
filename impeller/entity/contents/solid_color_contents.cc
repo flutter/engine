@@ -41,20 +41,10 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   return geometry->GetCoverage(entity.GetTransformation());
 };
 
-bool SolidColorContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
-    return false;
-  }
-  return Contents::ShouldRender(entity, stencil_coverage);
-}
-
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
   using VS = SolidFillPipeline::VertexShader;
-  using FS = SolidFillPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Solid Fill";
@@ -75,11 +65,8 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
+  frame_info.color = GetColor().Premultiply();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-  FS::FragInfo frag_info;
-  frag_info.color = GetColor().Premultiply();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;

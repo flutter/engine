@@ -32,12 +32,10 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     GlyphAtlas::Type type,
     const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
     std::shared_ptr<Context> context) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(atlas_context),
-                                             std::move(context));
+    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(context));
   }
 
   return nullptr;
@@ -92,8 +90,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto type = frame_.GetAtlasType();
   auto atlas =
-      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(),
-                   renderer.GetGlyphAtlasContext(type), renderer.GetContext());
+      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -125,6 +122,7 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.is_translation_scale =
       entity.GetTransformation().IsTranslationScaleOnly();
   frame_info.entity_transform = entity.GetTransformation();
+  frame_info.text_color = ToVector(color.Premultiply());
 
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
@@ -142,10 +140,6 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
   sampler_desc.mip_filter = MipFilter::kNearest;
-
-  FS::FragInfo frag_info;
-  frag_info.text_color = ToVector(color.Premultiply());
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   FS::BindGlyphAtlasSampler(
       cmd,                  // command
@@ -179,8 +173,12 @@ bool TextContents::Render(const ContentContext& renderer,
         size_t vertex_offset = 0;
         for (const auto& run : frame_.GetRuns()) {
           const Font& font = run.GetFont();
+          auto rounded_scale = TextFrame::RoundScaledFontSize(
+              scale_, font.GetMetrics().point_size);
+
           for (const auto& glyph_position : run.GetGlyphPositions()) {
-            FontGlyphPair font_glyph_pair{font, glyph_position.glyph, scale_};
+            FontGlyphPair font_glyph_pair{font, glyph_position.glyph,
+                                          rounded_scale};
             auto maybe_atlas_glyph_bounds =
                 atlas->FindFontGlyphBounds(font_glyph_pair);
             if (!maybe_atlas_glyph_bounds.has_value()) {

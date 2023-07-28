@@ -27,6 +27,8 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/clip.frag.h"
+#include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
@@ -179,8 +181,7 @@ using PorterDuffBlendPipeline =
     RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
-using ClipPipeline =
-    RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
@@ -679,9 +680,6 @@ class ContentContext {
 
   std::shared_ptr<Context> GetContext() const;
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
-      GlyphAtlas::Type type) const;
-
   const Capabilities& GetDeviceCapabilities() const;
 
   void SetWireframe(bool wireframe);
@@ -695,11 +693,6 @@ class ContentContext {
                                        ISize texture_size,
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
-
-  void SetLazyGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas) {
-    lazy_glyph_atlas_ = lazy_glyph_atlas;
-  }
 
   std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
@@ -860,8 +853,6 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> alpha_glyph_atlas_context_;
-  std::shared_ptr<GlyphAtlasContext> color_glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 
