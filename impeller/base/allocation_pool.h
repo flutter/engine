@@ -9,10 +9,8 @@
 
 namespace impeller {
 
-/// @brief A thread-safe pool with a limited byte size.
-/// @tparam T The type that the pool will contain.
 template <typename T>
-class Pool {
+class AllocationPool {
  public:
   Pool(uint32_t limit_bytes) : limit_bytes_(limit_bytes), size_(0) {}
 
@@ -20,16 +18,17 @@ class Pool {
     std::scoped_lock lock(mutex_);
     if (pool_.empty()) {
       return T::Create();
+    } else {
+      std::shared_ptr<T> result = pool_.back();
+      pool_.pop_back();
+      size_ += result->GetReservedLength();
+      return result;
     }
-    std::shared_ptr<T> result = std::move(pool_.back());
-    pool_.pop_back();
-    size_ -= result->GetSize();
-    return result;
   }
 
   void Recycle(std::shared_ptr<T> object) {
     std::scoped_lock lock(mutex_);
-    size_t object_size = object->GetSize();
+    size_t object_size = object->GetReservedLength();
     if (size_ + object_size <= limit_bytes_ &&
         object_size < (limit_bytes_ / 2)) {
       object->Reset();
@@ -38,17 +37,12 @@ class Pool {
     }
   }
 
-  uint32_t GetSize() const {
-    std::scoped_lock lock(mutex_);
-    return size_;
-  }
-
  private:
   std::vector<std::shared_ptr<T>> pool_;
   const uint32_t limit_bytes_;
   uint32_t size_;
   // Note: This would perform better as a lockless ring buffer.
-  mutable std::mutex mutex_;
+  std::mutex mutex_;
 };
 
 }  // namespace impeller
