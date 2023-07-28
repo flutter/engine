@@ -28,6 +28,7 @@ TEST_F(PlatformConfigurationTest, Initialization) {
                                          Dart_NativeArguments args) {
     PlatformConfiguration* configuration =
         UIDartState::Current()->platform_configuration();
+    configuration->AddView(0, ViewportMetrics{});
     ASSERT_NE(configuration->get_window(0), nullptr);
     ASSERT_EQ(
         configuration->get_window(0)->viewport_metrics().device_pixel_ratio,
@@ -72,6 +73,7 @@ TEST_F(PlatformConfigurationTest, WindowMetricsUpdate) {
                                          Dart_NativeArguments args) {
     PlatformConfiguration* configuration =
         UIDartState::Current()->platform_configuration();
+    configuration->AddView(0, ViewportMetrics{});
 
     ASSERT_NE(configuration->get_window(0), nullptr);
     configuration->get_window(0)->UpdateWindowMetrics(
