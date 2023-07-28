@@ -32,14 +32,11 @@ class Button extends PrimaryRoleManager {
 class Tappable extends RoleManager {
   Tappable(SemanticsObject semanticsObject) : super(Role.tappable, semanticsObject) {
     _clickListener = createDomEventListener((DomEvent click) {
-      final bool shouldDeduplicateClickEvent = PointerBinding.instance!.clickDebouncer.onClick(click);
-
-      if (!_isListening || shouldDeduplicateClickEvent) {
-        return;
-      }
-
-      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-          semanticsObject.id, ui.SemanticsAction.tap, null);
+      PointerBinding.instance!.clickDebouncer.onClick(
+        click,
+        semanticsObject.id,
+        _isListening,
+      );
     });
     semanticsObject.element.addEventListener('click', _clickListener);
   }

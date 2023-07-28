@@ -111,6 +111,7 @@ class PointerBinding {
   void dispose() {
     _adapter.clearListeners();
     _pointerDataConverter.clearPointerState();
+    clickDebouncer.reset();
   }
 
   final DomElement flutterViewElement;
@@ -173,9 +174,11 @@ class PointerBinding {
   }
 }
 
+@visibleForTesting
 typedef QueuedEvent = ({ DomEvent event, Duration timeStamp, List<ui.PointerData> data });
 
-typedef _DebounceState = ({
+@visibleForTesting
+typedef DebounceState = ({
   DomElement target,
   Timer timer,
   List<QueuedEvent> queue,
@@ -207,10 +210,39 @@ typedef _DebounceState = ({
 ///
 /// This mechanism is in place to deal with https://github.com/flutter/flutter/issues/130162.
 class ClickDebouncer {
-  _DebounceState? _state;
+  DebounceState? _state;
 
+  @visibleForTesting
+  DebounceState? get debugState => _state;
+
+  // The timestamp of the last "pointerup" DOM event that was flushed.
+  //
+  // Not to be confused with the time when it was flushed. The two may be far
+  // apart because the flushing can happen after a delay due to timer, or events
+  // that happen after the said "pointerup".
+  Duration? _lastFlushedPointerUpTimeStamp;
+
+  /// Returns true if the debouncer has a non-empty queue of pointer events that
+  /// were withheld from the framework.
+  ///
+  /// This value is normally false, and it flips to true when the first
+  /// pointerdown is observed that lands on a tappable semantics node, denoted
+  /// by the presence of the `flt-tappable` attribute.
   bool get isDebouncing => _state != null;
 
+  /// Processes a pointer event.
+  ///
+  /// If semantics are off, simply forwards the event to the framework.
+  ///
+  /// If currently debouncing events (see [isDebouncing]), adds the event to
+  /// the debounce queue, unless the target of the event is different from the
+  /// target that initiated the debouncing process, in which case stops
+  /// debouncing and flushes pointer events to the framework.
+  ///
+  /// If the event is a `pointerdown` and the target is `flt-tappable`, begins
+  /// debouncing events.
+  ///
+  /// In all other situations forwards the event to the framework.
   void onPointerData(DomEvent event, List<ui.PointerData> data) {
     if (!EnginePlatformDispatcher.instance.semanticsEnabled) {
       _sendToFramework(event, data);
@@ -226,21 +258,41 @@ class ClickDebouncer {
     }
   }
 
-  /// Notifies the debouncer about a browser-recognized click event.
+  /// Notifies the debouncer of the browser-detected "click" DOM event.
   ///
-  /// Returns true if the click event should be deduplicated. Returns false if
-  /// the click event should not be deduplicated.
-  bool onClick(DomEvent click) {
+  /// Forwards the event to the framework, unless it is deduplicated because
+  /// the corresponding pointer down/up events were recently flushed to the
+  /// framework already.
+  void onClick(DomEvent click, int semanticsNodeId, bool isListening) {
     assert(click.type == 'click');
 
     if (!isDebouncing) {
-      return _shouldDeduplicateClickEvent(click);
+      // There's no pending queue of pointer events that are being debounced. It
+      // is a standalone click event. Unless pointer down/up were flushed
+      // recently and if the node is currently listening to event, forward to
+      // the framework.
+      if (isListening && _shouldSendClickEventToFramework(click)) {
+        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+            semanticsNodeId, ui.SemanticsAction.tap, null);
+      }
+      return;
     }
 
-    final _DebounceState state = _state!;
-    _state = null;
-    state.timer.cancel();
-    return false;
+    if (isListening) {
+      // There's a pending queue of pointer events. Prefer sendind the tap action
+      // instead of pointer events, because the pointer events may not land on the
+      // combined semantic node and miss the click/tap.
+      final DebounceState state = _state!;
+      _state = null;
+      state.timer.cancel();
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+          semanticsNodeId, ui.SemanticsAction.tap, null);
+    } else {
+      // The semantic node is not listening to taps. Flush the pointer events
+      // for the framework to figure out what to do with them. It's possible
+      // the framework is interested in gestures other than taps.
+      _flush();
+    }
   }
 
   void _startDebouncing(DomEvent event, List<ui.PointerData> data) {
@@ -287,7 +339,7 @@ class ClickDebouncer {
       'Cannot debounce event. Debouncing state not established by _startDebouncing.'
     );
 
-    final _DebounceState state = _state!;
+    final DebounceState state = _state!;
     state.queue.add((
       event: event,
       timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
@@ -311,28 +363,26 @@ class ClickDebouncer {
     _flush();
   }
 
-  Duration? _lastFlushedPointerUpTimeStamp;
-
   // If the click event happens soon after the last `pointerup` event that was
   // already flushed to the framework, the click event is dropped to avoid
   // double click.
-  bool _shouldDeduplicateClickEvent(DomEvent click) {
+  bool _shouldSendClickEventToFramework(DomEvent click) {
     final Duration? lastFlushedPointerUpTimeStamp = _lastFlushedPointerUpTimeStamp;
 
     if (lastFlushedPointerUpTimeStamp == null) {
       // We haven't seen a pointerup. It's standalone click event. Let it through.
-      return false;
+      return true;
     }
 
     final Duration clickTimeStamp = _BaseAdapter._eventTimeStampToDuration(click.timeStamp!);
     final Duration delta = clickTimeStamp - lastFlushedPointerUpTimeStamp;
-    return delta < const Duration(milliseconds: 50);
+    return delta >= const Duration(milliseconds: 50);
   }
 
   void _flush() {
     assert(_state != null);
 
-    final _DebounceState state = _state!;
+    final DebounceState state = _state!;
     state.timer.cancel();
 
     final List<ui.PointerData> aggregateData = <ui.PointerData>[];
@@ -355,6 +405,22 @@ class ClickDebouncer {
       }
     }
     EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(packet);
+  }
+
+  /// Cancels any pending debounce process and forgets anything that happened so
+  /// far.
+  ///
+  /// This object can be used as if it was just initialized.
+  void reset() {
+    final DebounceState? state = _state;
+    _state = null;
+    _lastFlushedPointerUpTimeStamp = null;
+
+    if (state == null) {
+      return;
+    }
+
+    state.timer.cancel();
   }
 }
 
