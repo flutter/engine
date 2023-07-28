@@ -976,7 +976,7 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  ON_CALL(view, GetPlatformWindow).WillByDefault([=](){ return inner; });
+  ON_CALL(view, GetPlatformWindow).WillByDefault([=]() { return inner; });
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
 
@@ -986,17 +986,20 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   engine->Run();
 
   // Show both top-level and Flutter window.
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(outer, WM_SHOWWINDOW, TRUE, NULL);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(
+      outer, WM_SHOWWINDOW, TRUE, NULL);
   view.OnWindowStateEvent(inner, WindowStateEvent::kShow);
   view.OnWindowStateEvent(inner, WindowStateEvent::kFocus);
 
-  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(), AppLifecycleState::kResumed);
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
+            AppLifecycleState::kResumed);
 
   // Hide Flutter window, but not top level window.
   view.OnWindowStateEvent(inner, WindowStateEvent::kHide);
 
   // The top-level window is still visible, so we ought not enter hidden state.
-  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(), AppLifecycleState::kInactive);
+  EXPECT_EQ(engine->lifecycle_manager()->GetLifecycleState(),
+            AppLifecycleState::kInactive);
 }
 
 }  // namespace testing

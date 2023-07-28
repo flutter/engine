@@ -63,7 +63,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
                                           WPARAM wparam,
                                           LPARAM lparam,
                                           LRESULT* result) override {
-    last_message_ = message;
+    last_external_message_ = message;
     return false;
   }
 
@@ -85,7 +85,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
     next_frame_callback_ = nullptr;
   }
 
-  UINT last_message() { return last_message_; }
+  UINT last_external_message() { return last_external_message_; }
 
  private:
   bool create_called_ = false;
@@ -95,7 +95,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
   std::vector<std::string> dart_entrypoint_arguments_;
   VoidCallback next_frame_callback_ = nullptr;
   void* next_frame_user_data_ = nullptr;
-  UINT last_message_ = 0;
+  UINT last_external_message_ = 0;
 };
 
 }  // namespace
@@ -224,7 +224,7 @@ TEST(FlutterEngineTest, ProcessExternalWindowMessage) {
 
   engine.ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), 1234, 0, 0);
 
-  EXPECT_EQ(test_api->last_message(), 1234);
+  EXPECT_EQ(test_api->last_external_message(), 1234);
 }
 
 }  // namespace flutter

@@ -807,7 +807,7 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
     LPARAM lparam) {
   if (lifecycle_manager_) {
     return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
-                                                      lparam);
+                                                     lparam);
   }
   return std::nullopt;
 }
