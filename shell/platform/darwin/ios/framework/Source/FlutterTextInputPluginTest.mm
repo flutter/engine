@@ -2315,4 +2315,38 @@ FLUTTER_ASSERT_ARC
   XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
 }
 
+-(void)testInteractiveKeyboardDidResignFirstResponderDelegateisCalledAfterDismissedKeyboard{
+  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"didResignFirstResponder is called after screenshot keyboard dismissed."];
+   OCMStub([engine flutterTextInputView:[OCMArg any] didResignFirstResponderWithTextInputClient:0])
+      .andDo(^(NSInvocation* invocation) {
+        [expectation fulfill];
+      });
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* initialMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:initialMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  FlutterMethodCall* subsequentMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:subsequentMoveCall
+                             result:^(id _Nullable result){
+                             }];
+
+  FlutterMethodCall* pointerUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerUpForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:pointerUpCall
+                             result:^(id _Nullable result){
+                             }];
+
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
+}
+
 @end

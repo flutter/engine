@@ -45,8 +45,8 @@ static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelec
 static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 static NSString* const kUpdateConfigMethod = @"TextInput.updateConfig";
-static NSString* const kOnPointerMoveMethod = @"TextInput.onPointerMove";
-static NSString* const kOnPointerUpMethod = @"TextInput.onPointerUp";
+static NSString* const kOnPointerMoveMethod = @"TextInput.onPointerMoveForInteractiveKeyboard";
+static NSString* const kOnPointerUpMethod = @"TextInput.onPointerUpForInteractiveKeyboard";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
