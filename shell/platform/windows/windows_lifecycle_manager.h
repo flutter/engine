@@ -77,13 +77,12 @@ class WindowsLifecycleManager {
   // - When FlutterWindow receives WM_SIZE messages, wparam stores no meaningful
   //   information, whereas it usually indicates the action which changed the
   //   window size.
-  // When this returns true, the message has been consumed and should not be
-  // processed further. Currently, it will always return false.
-  bool ExternalWindowMessage(HWND hwnd,
-                             UINT message,
-                             WPARAM wparam,
-                             LPARAM lparam,
-                             LRESULT* result);
+  // When this returns a result, the message has been consumed and should not be
+  // processed further. Currently, it will always return nullopt.
+  std::optional<LRESULT> ExternalWindowMessage(HWND hwnd,
+                                               UINT message,
+                                               WPARAM wparam,
+                                               LPARAM lparam);
 
  protected:
   // Check the number of top-level windows associated with this process, and

@@ -271,13 +271,12 @@ class FlutterWindowsEngine {
   }
 
   // Handle a message from a non-Flutter window in the same application.
-  // Returns true when the message is consumed and should not be processed
+  // Returns a result when the message is consumed and should not be processed
   // further.
-  bool ProcessExternalWindowMessage(HWND hwnd,
-                                    UINT message,
-                                    WPARAM wparam,
-                                    LPARAM lparam,
-                                    LRESULT* result);
+  std::optional<LRESULT> ProcessExternalWindowMessage(HWND hwnd,
+                                                      UINT message,
+                                                      WPARAM wparam,
+                                                      LPARAM lparam);
 
  protected:
   // Creates the keyboard key handler.

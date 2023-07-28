@@ -214,8 +214,13 @@ bool FlutterDesktopEngineProcessExternalWindowMessage(
     WPARAM wparam,
     LPARAM lparam,
     LRESULT* result) {
-  return EngineFromHandle(engine)->ProcessExternalWindowMessage(
-      hwnd, message, wparam, lparam, result);
+  std::optional<LRESULT> lresult =
+      EngineFromHandle(engine)->ProcessExternalWindowMessage(hwnd, message,
+                                                             wparam, lparam);
+  if (result && lresult.has_value()) {
+    *result = lresult.value();
+  }
+  return lresult.has_value();
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

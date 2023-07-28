@@ -244,11 +244,11 @@ void WindowsLifecycleManager::OnWindowStateEvent(HWND hwnd,
   }
 }
 
-bool WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
-                                                    UINT message,
-                                                    WPARAM wparam,
-                                                    LPARAM lparam,
-                                                    LRESULT* result) {
+std::optional<LRESULT> WindowsLifecycleManager::ExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
   std::optional<flutter::WindowStateEvent> event = std::nullopt;
 
   // TODO (schectman): Handle WM_CLOSE messages.
@@ -284,7 +284,7 @@ bool WindowsLifecycleManager::ExternalWindowMessage(HWND hwnd,
     OnWindowStateEvent(hwnd, *event);
   }
 
-  return false;
+  return std::nullopt;
 }
 
 }  // namespace flutter

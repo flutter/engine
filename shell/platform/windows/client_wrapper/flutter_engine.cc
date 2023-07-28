@@ -100,13 +100,17 @@ void FlutterEngine::SetNextFrameCallback(std::function<void()> callback) {
       this);
 }
 
-bool FlutterEngine::ProcessExternalWindowMessage(HWND hwnd,
-                                                 UINT message,
-                                                 WPARAM wparam,
-                                                 LPARAM lparam,
-                                                 LRESULT* result) {
-  return FlutterDesktopEngineProcessExternalWindowMessage(
-      engine_, hwnd, message, wparam, lparam, result);
+std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  LRESULT result;
+  if (FlutterDesktopEngineProcessExternalWindowMessage(
+          engine_, hwnd, message, wparam, lparam, &result)) {
+    return result;
+  }
+  return std::nullopt;
 }
 
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {

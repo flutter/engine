@@ -222,8 +222,7 @@ TEST(FlutterEngineTest, ProcessExternalWindowMessage) {
 
   FlutterEngine engine(DartProject(L"fake/project/path"));
 
-  engine.ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), 1234, 0, 0,
-                                      nullptr);
+  engine.ProcessExternalWindowMessage(reinterpret_cast<HWND>(1), 1234, 0, 0);
 
   EXPECT_EQ(test_api->last_message(), 1234);
 }

@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WRAPPER_TESTING_STUB_FLUTTER_WINDOWS_API_H_
 
 #include <memory>
+#include <optional>
 
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
