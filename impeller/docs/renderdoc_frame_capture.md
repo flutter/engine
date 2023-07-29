@@ -1,6 +1,6 @@
 # Frame Capture with RenderDoc
 
-[RenderDoc](https://renderdoc.org/) is a graphics debugger that can be used to capture frames. With Impeller starting to support OpenGL-ES and Vulkan backends, RenderDoc can provide insights into the application's frames.
+[RenderDoc](https://renderdoc.org/) is a graphics debugger that can be used to capture frames. With Impeller starting to support OpenGL ES and Vulkan backends, RenderDoc can provide insights into the application's frames.
 
 1. First step is to set up RenderDoc. Follow the instructions [here](https://renderdoc.org/docs/getting_started/quick_start.html). For the purposes of this guide it is assumed that you are able to get RenderDoc running.
 2. The next step would be to run the application you wish the capture the frames of. Typically these would be one of the playground tests. To build these, do:
