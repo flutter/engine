@@ -8,8 +8,8 @@
 ```bash
 # In your $ENGINE_SRC folder, do:
 
-./flutter/tools/gn --unopt --no-lto --enable-impeller-vulkan
-autoninja -C out/host_debug_unopt/
+./flutter/tools/gn --unopt --enable-impeller-vulkan
+ninja -C out/host_debug_unopt/
 ```
 
 3. Start RenderDoc, and click the "Launch Application" button.
