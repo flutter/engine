@@ -16,6 +16,8 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
+const NSString* searchURLPrefix = @"x-web-search://?";
+
 
 }  // namespace
 
@@ -115,8 +117,8 @@ using namespace flutter;
     result([self clipboardHasStrings]);
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
-  } else if ([method isEqualToString:@"SearchWeb.initiate"]) {
-    [self handleSearchWebWithSelection:args];
+  } else if ([method isEqualToString:@"SearchWeb.invoke"]) {
+    result(@([self searchWeb:args]));
   } else if ([method isEqualToString:@"LookUp.invoke"]) {
     [self showLookUpViewController:args];
     result(nil);
@@ -125,16 +127,19 @@ using namespace flutter;
   }
 }
 
-- (void)handleSearchWebWithSelection:(NSString*)selection {
-  NSString* searchURLPrefix = @"x-web-search://?";
-  NSString* escapedText = [selection
+- (BOOL)searchWeb:(NSString*)searchTerm {
+  NSString* escapedText = [searchTerm
       stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
                                                              URLHostAllowedCharacterSet]];
   NSString* searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
 
+  __block BOOL result;
   [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
                                      options:@{}
-                           completionHandler:nil];
+                           completionHandler:^(BOOL success) {
+                             result = success;
+                           }];
+  return result;
 }
 
 - (void)playSystemSound:(NSString*)soundType {
