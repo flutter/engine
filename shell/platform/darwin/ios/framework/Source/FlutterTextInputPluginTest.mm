@@ -60,6 +60,9 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, readonly) UIView* keyboardViewContainer;
+@property(nonatomic, readonly) UIView* firstResponder;
+@property(nonatomic, readonly) CGRect keyboardRect;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
@@ -2347,6 +2350,141 @@ FLUTTER_ASSERT_ARC
                              }];
 
   [self waitForExpectations:@[ expectation ] timeout:1.0];
+}
+
+-(void)testInteractiveKeyboardScreenshotDismissedAfterPointerLiftedAboveMiddleYOfKeyboard{
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* initialMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:initialMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  FlutterMethodCall* subsequentMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:subsequentMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  
+  FlutterMethodCall* subsequentMoveBackUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(0)}];
+  [textInputPlugin handleMethodCall:subsequentMoveBackUpCall
+                             result:^(id _Nullable result){
+                             }];
+
+  FlutterMethodCall* pointerUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerUpForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(0)}];
+  [textInputPlugin handleMethodCall:pointerUpCall
+                             result:^(id _Nullable result){   
+                             }];
+NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(id item, 
+                                                               NSDictionary *bindings) {
+
+   return textInputPlugin.keyboardViewContainer.subviews.count == 0;
+}];
+XCTNSPredicateExpectation* expectation = [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:nil];
+  // XCTAssertFalse(textInputPlugin.firstResponder.isFirstResponder);
+  // XCTAssert(textInputPlugin.keyboardViewContainer.subviews.count == 0);
+[self waitForExpectations:@[ expectation ] timeout:1.0];
+}
+
+-(void)testInteractiveKeyboardKeyboardReappearsAfterPointerLiftedAboveKeyboard{
+XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"Keyboard becomes first responder."];
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* initialMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:initialMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  FlutterMethodCall* subsequentMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:subsequentMoveCall
+                             result:^(id _Nullable result){
+                             }];
+
+  FlutterMethodCall* pointerUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerUpForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(0)}];
+  [textInputPlugin handleMethodCall:pointerUpCall
+                             result:^(id _Nullable result){
+                              XCTAssert(textInputPlugin.firstResponder.isFirstResponder);
+                              [expectation fulfill];
+                             }];
+
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
+}
+
+-(void)testInteractiveKeyboardKeyboardAnimatesToOriginalPositionalOnPointerUp{
+  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"Keyboard animates to proper position."];
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* initialMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:initialMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  FlutterMethodCall* subsequentMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:subsequentMoveCall
+                             result:^(id _Nullable result){
+                             }];
+
+  FlutterMethodCall* pointerUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerUpForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(0)}];
+  [textInputPlugin handleMethodCall:pointerUpCall
+                             result:^(id _Nullable result){
+                              XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, keyboardFrame.origin.y);
+                              [expectation fulfill];
+                             }];
+}
+
+-(void)testInteractiveKeyboardKeyboardAnimatesToDismissalPositionalOnPointerUp{
+  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"Keyboard animates to proper position."];
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* initialMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:initialMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  FlutterMethodCall* subsequentMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:subsequentMoveCall
+                             result:^(id _Nullable result){
+                             }];
+
+  FlutterMethodCall* pointerUpCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerUpForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(1000)}];
+  [textInputPlugin handleMethodCall:pointerUpCall
+                             result:^(id _Nullable result){
+                              XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, [UIScreen mainScreen].bounds.size.height);
+                              [expectation fulfill];
+                             }];
 }
 
 @end

@@ -2224,10 +2224,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                              selector:@selector(handleKeyboardWillShow:)
                                                  name:UIKeyboardWillShowNotification
                                                object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleKeyboardWillHide:)
-                                                 name:UIKeyboardWillHideNotification
-                                               object:nil];
   }
 
   return self;
@@ -2237,9 +2233,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   NSDictionary* keyboardInfo = [notification userInfo];
   NSValue* keyboardFrameEnd = [keyboardInfo valueForKey:UIKeyboardFrameEndUserInfoKey];
   _keyboardRect = [keyboardFrameEnd CGRectValue];
-}
-
-- (void)handleKeyboardWillHide:(NSNotification*)notification {
 }
 
 - (void)dealloc {
@@ -2336,7 +2329,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       }
       completion:^(BOOL finished) {
         if (pointerBelowMiddleY) {
-          //
           [self.textInputDelegate flutterTextInputView:self.activeView
               didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
         } else {
