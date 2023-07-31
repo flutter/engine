@@ -826,6 +826,9 @@ bool FlutterWindowsEngine::SendAppLifecycleStateUpdate(
 
 void FlutterWindowsEngine::SetAppLifecycleStateEnabled(bool enabled) {
   app_lifecycle_enabled_ = enabled;
+  if (enabled) {
+    SendAppLifecycleStateUpdate(lifecycle_manager_->GetLifecycleState());
+  }
 }
 
 }  // namespace flutter
