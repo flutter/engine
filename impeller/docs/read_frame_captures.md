@@ -349,7 +349,7 @@ This is instead of the "No Source" errors as shown in the dialog above.
 
 The team has been unable to to find documentation for this type of error. But
 through trial-and-error, we have determined that the way to fix this is to set
-the  deployment target of the application to the current OS version during the
+the deployment target of the application to the current OS version during the
 instrumentation run (either on macOS or iOS). To information about this line of
 troubleshooting can be found [here](https://github.com/flutter/engine/pull/39532).
 
