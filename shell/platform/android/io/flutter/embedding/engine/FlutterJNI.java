@@ -227,7 +227,7 @@ public class FlutterJNI {
         total.append(line).append('\n');
       }
       shorebirdYaml = total.toString();
-      Log.w(TAG, "shorebird.yaml: " + shorebirdYaml);
+      Log.d(TAG, "shorebird.yaml: " + shorebirdYaml);
     } catch (IOException e) {
       Log.e(TAG, "Failed to load shorebird.yaml", e);
       Log.e(TAG, "Did you remember to include shorebird.yaml in your pubspec.yaml's assets?");
