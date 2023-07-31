@@ -18,7 +18,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
 const NSString* searchURLPrefix = @"x-web-search://?";
 
-
 }  // namespace
 
 namespace flutter {
