@@ -612,14 +612,11 @@ bool EntityPass::OnRender(
     pass_context.GetRenderPass(pass_depth);
   }
 
-  bool is_collapsing_clear_colors = !collapsed_parent_pass;
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
                          &renderer, &stencil_coverage_stack,
-                         &global_pass_position,
-                         &is_collapsing_clear_colors](Entity& element_entity) {
+                         &global_pass_position](Entity& element_entity) {
     auto result = pass_context.GetRenderPass(pass_depth);
 
-    is_collapsing_clear_colors = false;
     if (!result.pass) {
       // Failure to produce a render pass should be explained by specific errors
       // in `InlinePassContext::GetRenderPass()`, so avoid log spam and don't
@@ -751,6 +748,10 @@ bool EntityPass::OnRender(
     render_element(backdrop_entity);
   }
 
+  bool is_collapsing_clear_colors = !collapsed_parent_pass &&
+                                    // Backdrop filters act as a entity before
+                                    // everything and disrupt the optimization.
+                                    !backdrop_filter_proc_;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
     if (is_collapsing_clear_colors) {
@@ -759,6 +760,7 @@ bool EntityPass::OnRender(
       if (entity_color.has_value()) {
         continue;
       }
+      is_collapsing_clear_colors = false;
     }
 
     EntityResult result =
