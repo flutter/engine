@@ -1004,9 +1004,8 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
 
 TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
   FlutterWindowsEngineBuilder builder{GetContext()};
-  builder.SetDartEntrypoint("exitTestCancel");
+  builder.SetDartEntrypoint("enableLifecycleTest");
   bool finished = false;
-  bool did_call = false;
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
@@ -1017,41 +1016,39 @@ TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
-  ON_CALL(*handler, Quit)
-      .WillByDefault([&finished](std::optional<HWND> hwnd,
-                                 std::optional<WPARAM> wparam,
-                                 std::optional<LPARAM> lparam,
-                                 UINT exit_code) { finished = true; });
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
-  EXPECT_CALL(*handler, Quit).Times(0);
+  ON_CALL(*handler, SetLifecycleState).WillByDefault([handler_ptr=handler.get()](AppLifecycleState state) {
+    handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
+  });
   modifier.SetLifecycleManager(std::move(handler));
-  engine->OnApplicationLifecycleEnabled();
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  // Mark the test only as completed on receiving an inactive state message.
   binary_messenger->SetMessageHandler(
-      "flutter/platform", [&did_call](const uint8_t* message,
+      "flutter/unittest", [&finished](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {
         std::string contents(message, message + message_size);
-        EXPECT_NE(contents.find("\"method\":\"System.exitApplication\""),
-                  std::string::npos);
-        EXPECT_NE(contents.find("\"type\":\"required\""), std::string::npos);
-        EXPECT_NE(contents.find("\"exitCode\":0"), std::string::npos);
-        did_call = true;
+        EXPECT_NE(contents.find("AppLifecycleState.inactive"), std::string::npos);
+        finished = true;
         char response[] = "";
         reply(reinterpret_cast<uint8_t*>(response), 0);
       });
 
   engine->Run();
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
-                                                               0);
+  // Test that setting the state before enabling lifecycle does nothing.
+  HWND hwnd = reinterpret_cast<HWND>(1);
+  view.OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
+  view.OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
+  EXPECT_FALSE(finished);
 
-  while (!did_call) {
+  // Test that we can set the state afterwards.
+  engine->SetAppLifecycleStateEnabled(true);
+  view.OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
+
+  while (!finished) {
     engine->task_runner()->ProcessTasks();
   }
-
-  EXPECT_FALSE(finished);
 }
 
 }  // namespace testing
