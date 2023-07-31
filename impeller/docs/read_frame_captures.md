@@ -340,7 +340,7 @@ bottom. In the file chooser dialog box that appears next, select all the
 You will only have to do this once per engine variant. The search paths will
 remain the same as you rebuild the engine and the `.metallibsym` files contain
 the UUID of the shader library. So Xcode won't attempt to resolve shaders
-sources in an outdate `.metallibsym` file.
+sources in an outdated `.metallibsym` file.
 
 You may however also run into Xcode complaining about "Invalid UUID" errors.
 This is instead of the "No Source" errors as shown in the dialog above.
