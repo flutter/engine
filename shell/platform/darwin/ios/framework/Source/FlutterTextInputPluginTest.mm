@@ -314,6 +314,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testAutocorrectionPromptRectAppears {
+  // Auto-correction prompt is disabled in iOS 17.
+  if (@available(iOS 17.0, *)) {
+    return;
+  }
+
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
 
@@ -353,6 +358,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
+  // Auto-correction prompt is disabled in iOS 17.
+  if (@available(iOS 17.0, *)) {
+    return;
+  }
+
   if (@available(iOS 14.0, *)) {
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
