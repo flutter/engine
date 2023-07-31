@@ -812,4 +812,16 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
+bool FlutterWindowsEngine::SendAppLifecycleStateUpdate(AppLifecycleState state) {
+  if (!app_lifecycle_enabled_) {
+    return false;
+  }
+  const char* state_name = AppLifecycleStateToString(state);
+  return SendPlatformMessage("flutter/lifecycle", reinterpret_cast<const uint8_t*>(state_name), strlen(state_name), nullptr, nullptr);
+}
+
+void FlutterWindowsEngine::SetAppLifecycleStateEnabled(bool enabled) {
+  app_lifecycle_enabled_ = enabled;
+}
+
 }  // namespace flutter

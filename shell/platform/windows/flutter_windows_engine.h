@@ -274,6 +274,10 @@ class FlutterWindowsEngine {
                                                       WPARAM wparam,
                                                       LPARAM lparam);
 
+  bool SendAppLifecycleStateUpdate(AppLifecycleState state);
+
+  void SetAppLifecycleStateEnabled(bool enabled);
+
   WindowsLifecycleManager* lifecycle_manager() {
     return lifecycle_manager_.get();
   }
@@ -399,6 +403,8 @@ class FlutterWindowsEngine {
   bool semantics_enabled_ = false;
 
   bool high_contrast_enabled_ = false;
+
+  bool app_lifecycle_enabled_ = false;
 
   bool enable_impeller_ = false;
 

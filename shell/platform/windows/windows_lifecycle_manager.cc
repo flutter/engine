@@ -189,10 +189,7 @@ void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
   }
   state_ = state;
   if (engine_) {
-    const char* state_name = AppLifecycleStateToString(state);
-    engine_->SendPlatformMessage("flutter/lifecycle",
-                                 reinterpret_cast<const uint8_t*>(state_name),
-                                 strlen(state_name), nullptr, nullptr);
+    engine_->SendAppLifecycleStateUpdate(state_);
   }
 }
 
