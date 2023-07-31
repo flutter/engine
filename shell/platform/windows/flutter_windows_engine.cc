@@ -158,8 +158,7 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
-      aot_data_(nullptr, nullptr),
-      lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
+      aot_data_(nullptr, nullptr) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -230,6 +229,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
       std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
+  lifecycle_manager_ = std::make_unique<WindowsLifecycleManager>(messenger_wrapper_.get(), this);
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {

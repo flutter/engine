@@ -14,6 +14,9 @@
 #include <set>
 
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
+#include "rapidjson/document.h"
 
 namespace flutter {
 
@@ -36,7 +39,7 @@ enum class WindowStateEvent {
 ///   is changed, including the FlutterView window.
 class WindowsLifecycleManager {
  public:
-  WindowsLifecycleManager(FlutterWindowsEngine* engine);
+  WindowsLifecycleManager(BinaryMessenger *messenger, FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
   // Called when the engine is notified it should quit, e.g. by an application
@@ -109,6 +112,8 @@ class WindowsLifecycleManager {
   std::mutex state_update_lock_;
 
   flutter::AppLifecycleState state_;
+
+  std::unique_ptr<MethodChannel<rapidjson::Document>> channel_;
 };
 
 }  // namespace flutter

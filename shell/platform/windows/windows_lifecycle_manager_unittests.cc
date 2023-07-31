@@ -13,7 +13,7 @@ namespace testing {
 class WindowsLifecycleManagerTest : public WindowsTest {};
 
 TEST_F(WindowsLifecycleManagerTest, StateTransitions) {
-  WindowsLifecycleManager manager(nullptr);
+  WindowsLifecycleManager manager(nullptr, nullptr);
   HWND win1 = reinterpret_cast<HWND>(1);
   HWND win2 = reinterpret_cast<HWND>(2);
 

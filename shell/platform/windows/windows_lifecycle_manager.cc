@@ -13,8 +13,33 @@
 
 namespace flutter {
 
-WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
-    : engine_(engine), process_close_(false) {}
+constexpr char kChannelName[] = "flutter/lifecycle";
+constexpr char kEnableMethod[] = "setLifecycleStateEnabled";
+constexpr char kEnableKey[] = "lifecycleStateEnabled";
+constexpr char kLifecycleError[] = "Lifecycle State Error";
+constexpr char kInvalidArgumentMessage[] = "Invalid argument";
+
+WindowsLifecycleManager::WindowsLifecycleManager(BinaryMessenger *messenger, FlutterWindowsEngine* engine)
+    : engine_(engine), process_close_(false) {
+  if (messenger) {
+    channel_ = std::make_unique<MethodChannel<rapidjson::Document>>(messenger, kChannelName, &JsonMethodCodec::GetInstance());
+    channel_->SetMethodCallHandler([this](const MethodCall<rapidjson::Document>& call, std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+      const std::string& method = call.method_name();
+      if (method.compare(kEnableMethod) == 0) {
+        const rapidjson::Value& arguments = call.arguments()[0];
+        rapidjson::Value::ConstMemberIterator itr = arguments.FindMember(kEnableKey);
+        if (itr == arguments.MemberEnd() || !itr->value.IsBool()) {
+          result->Error(kLifecycleError, kInvalidArgumentMessage);
+          return;
+        }
+        engine_->SetAppLifecycleStateEnabled(itr->value.GetBool());
+        result->Success();
+        return;
+      }
+      result->NotImplemented();
+    });
+  }
+}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
