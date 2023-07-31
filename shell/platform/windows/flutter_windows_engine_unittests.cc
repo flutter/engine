@@ -1016,9 +1016,10 @@ TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
-  ON_CALL(*handler, SetLifecycleState).WillByDefault([handler_ptr=handler.get()](AppLifecycleState state) {
-    handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
-  });
+  ON_CALL(*handler, SetLifecycleState)
+      .WillByDefault([handler_ptr = handler.get()](AppLifecycleState state) {
+        handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
+      });
   modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
@@ -1028,7 +1029,8 @@ TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
       "flutter/unittest", [&finished](const uint8_t* message,
                                       size_t message_size, BinaryReply reply) {
         std::string contents(message, message + message_size);
-        EXPECT_NE(contents.find("AppLifecycleState.inactive"), std::string::npos);
+        EXPECT_NE(contents.find("AppLifecycleState.inactive"),
+                  std::string::npos);
         finished = true;
         char response[] = "";
         reply(reinterpret_cast<uint8_t*>(response), 0);

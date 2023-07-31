@@ -39,7 +39,8 @@ enum class WindowStateEvent {
 ///   is changed, including the FlutterView window.
 class WindowsLifecycleManager {
  public:
-  WindowsLifecycleManager(BinaryMessenger *messenger, FlutterWindowsEngine* engine);
+  WindowsLifecycleManager(BinaryMessenger* messenger,
+                          FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
   // Called when the engine is notified it should quit, e.g. by an application

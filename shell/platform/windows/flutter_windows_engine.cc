@@ -229,7 +229,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
       std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
-  lifecycle_manager_ = std::make_unique<WindowsLifecycleManager>(messenger_wrapper_.get(), this);
+  lifecycle_manager_ =
+      std::make_unique<WindowsLifecycleManager>(messenger_wrapper_.get(), this);
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -812,12 +813,15 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
-bool FlutterWindowsEngine::SendAppLifecycleStateUpdate(AppLifecycleState state) {
+bool FlutterWindowsEngine::SendAppLifecycleStateUpdate(
+    AppLifecycleState state) {
   if (!app_lifecycle_enabled_) {
     return false;
   }
   const char* state_name = AppLifecycleStateToString(state);
-  return SendPlatformMessage("flutter/lifecycle", reinterpret_cast<const uint8_t*>(state_name), strlen(state_name), nullptr, nullptr);
+  return SendPlatformMessage("flutter/lifecycle",
+                             reinterpret_cast<const uint8_t*>(state_name),
+                             strlen(state_name), nullptr, nullptr);
 }
 
 void FlutterWindowsEngine::SetAppLifecycleStateEnabled(bool enabled) {
