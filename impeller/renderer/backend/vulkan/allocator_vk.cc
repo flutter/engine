@@ -73,8 +73,7 @@ static PoolVMA CreateBufferPool(VmaAllocator allocator) {
 
   VmaPoolCreateInfo pool_create_info = {};
   pool_create_info.memoryTypeIndex = memTypeIndex;
-  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT |
-                           VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
 
   VmaPool pool = {};
   result = vk::Result{::vmaCreatePool(allocator, &pool_create_info, &pool)};
