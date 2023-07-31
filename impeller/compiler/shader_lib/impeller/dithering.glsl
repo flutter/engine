@@ -25,8 +25,7 @@ const float kDitherRate = 1.0 / 64.0;
 /// - https://shader-tutorial.dev/advanced/color-banding-dithering/
 vec4 IPOrderedDither8x8(vec4 color, vec2 dest) {
   // Get the x and y coordinates of the pixel in the 8x8 grid.
-  uint iota[] = uint[](0, 1, 2, 3, 4, 5, 6, 7);
-  uint x = iota[uint(dest.x) & 7];
+  uint x = uint(dest.x) % 8;
   uint y = uint(dest.y);
   y ^= x;
 
