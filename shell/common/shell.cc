@@ -713,6 +713,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
+  if (settings_.enable_implicit_view) {
+    engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
+  }
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
@@ -807,32 +810,23 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   fml::AutoResetWaitableEvent latch;
   auto raster_task = fml::MakeCopyable(
-      [&waiting_for_first_frame = waiting_for_first_frame_,   //
-       rasterizer = rasterizer_->GetWeakPtr(),                //
-       surface = std::move(surface),                          //
-       enable_implicit_view = settings_.enable_implicit_view  //
+      [&waiting_for_first_frame = waiting_for_first_frame_,  //
+       rasterizer = rasterizer_->GetWeakPtr(),               //
+       surface = std::move(surface)                          //
   ]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(surface));
-          if (enable_implicit_view) {
-            rasterizer->AddView(kFlutterImplicitViewId);
-          }
         }
 
         waiting_for_first_frame.store(true);
       });
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),                        //
-                  enable_implicit_view = settings_.enable_implicit_view  //
-  ] {
+  auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
       engine->ScheduleFrame();
-      if (enable_implicit_view) {
-        engine->AddView(kFlutterImplicitViewId, ViewportMetrics{});
-      }
     }
   };
 
@@ -2058,15 +2052,6 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
       engine->AddView(view_id, viewport_metrics);
     }
   });
-
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),  //
-       view_id                                  //
-  ]() {
-        if (rasterizer) {
-          rasterizer->AddView(view_id);
-        }
-      });
 }
 
 void Shell::RemoveView(int64_t view_id) {
@@ -2097,7 +2082,7 @@ void Shell::RemoveView(int64_t view_id) {
        view_id                                  //
   ]() {
         if (rasterizer) {
-          rasterizer->RemoveView(view_id);
+          rasterizer->CollectView(view_id);
         }
         latch.Signal();
       });

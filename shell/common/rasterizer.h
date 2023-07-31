@@ -205,22 +205,16 @@ class Rasterizer final : public SnapshotDelegate,
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Create the resources for displaying a view.
-  ///
-  ///             This method should be called a view is added, implicit or not.
-  ///
-  /// @param[in]  view_id  The ID of the new view.
-  ///
-  void AddView(int64_t view_id);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Destroy the resources for displaying a view.
+  /// @brief      Deallocate the resources for displaying a view.
   ///
   ///             This method should be called a view is removed.
   ///
+  ///             Resources for a view is allocated the first time the
+  ///             rasterizer encouters this view ID.
+  ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  void CollectView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Sometimes, it may be necessary to render the same frame again

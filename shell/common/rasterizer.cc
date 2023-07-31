@@ -156,12 +156,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::AddView(int64_t view_id) {
-  // TODO(dkwingsmt): Support proper view management after Rasterizer supports
-  // multi-view.
-}
-
-void Rasterizer::RemoveView(int64_t view_id) {
+void Rasterizer::CollectView(int64_t view_id) {
   // TODO(dkwingsmt): Support proper view management after Rasterizer supports
   // multi-view.
 }
