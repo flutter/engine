@@ -86,7 +86,7 @@ class ReadResult extends _Result {
   /// Returns the bytes as a Uint8List. If status != OK this will throw
   /// an exception.
   Uint8List bytesAsUint8List() {
-    final lbytes = _bytes!;
+    final lbytes = bytes;
     return lbytes.buffer.asUint8List(lbytes.offsetInBytes, _numBytes!);
   }
 
@@ -130,7 +130,7 @@ class ReadEtcResult extends _Result {
   /// Returns the bytes as a Uint8List. If status != OK this will throw
   /// an exception.
   Uint8List bytesAsUint8List() {
-    final lbytes = _bytes!;
+    final lbytes = bytes;
     return lbytes.buffer.asUint8List(lbytes.offsetInBytes, _numBytes!);
   }
 
