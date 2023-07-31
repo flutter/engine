@@ -30,6 +30,8 @@
   // Currently visible layers.
   NSMutableArray<CALayer*>* _layers;
 
+  // Whether to highlight borders of overlay surfaces. Determined by
+  // FLTEnableSurfaceDebugInfo value in main bundle Info.plist.
   NSNumber* _enableSurfaceDebugInfo;
   CATextLayer* _infoLayer;
 }
@@ -54,32 +56,35 @@ static NSColor* GetBorderColorForLayer(int layer) {
   return colors[layer % colors.count];
 }
 
+/// Creates sublayers for given layer, each one displaying a portion of the
+/// of the surface determined by a rectangle in the provided paint region.
 static void UpdateContentSubLayers(CALayer* layer,
                                    IOSurfaceRef surface,
                                    CGFloat scale,
                                    CGSize surfaceSize,
                                    NSColor* borderColor,
-                                   const std::vector<FlutterRect>& covered_area) {
-  while (layer.sublayers.count > covered_area.size()) {
+                                   const std::vector<FlutterRect>& paintRegion) {
+  while (layer.sublayers.count > paintRegion.size()) {
     [layer.sublayers.lastObject removeFromSuperlayer];
   }
 
-  while (layer.sublayers.count < covered_area.size()) {
+  while (layer.sublayers.count < paintRegion.size()) {
     CALayer* newLayer = [CALayer layer];
     [layer addSublayer:newLayer];
   }
 
-  for (size_t i = 0; i < covered_area.size(); i++) {
+  for (size_t i = 0; i < paintRegion.size(); i++) {
     CALayer* subLayer = [layer.sublayers objectAtIndex:i];
-    const auto& rect = covered_area[i];
+    const auto& rect = paintRegion[i];
     subLayer.frame = CGRectMake(rect.left / scale, rect.top / scale,
                                 (rect.right - rect.left) / scale, (rect.bottom - rect.top) / scale);
 
-    double w = surfaceSize.width;
-    double h = surfaceSize.height;
+    double width = surfaceSize.width;
+    double height = surfaceSize.height;
 
-    subLayer.contentsRect = CGRectMake(rect.left / w, rect.top / h, (rect.right - rect.left) / w,
-                                       (rect.bottom - rect.top) / h);
+    subLayer.contentsRect =
+        CGRectMake(rect.left / width, rect.top / height, (rect.right - rect.left) / width,
+                   (rect.bottom - rect.top) / height);
 
     if (borderColor != nil) {
       // Visualize sublayer

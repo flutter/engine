@@ -1663,6 +1663,7 @@ typedef enum {
   kFlutterLayerContentTypePlatformView,
 } FlutterLayerContentType;
 
+/// A region represented by a collection of non-overlapping rectangles.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterRegion).
   size_t struct_size;
@@ -1672,6 +1673,8 @@ typedef struct {
   FlutterRect* rects;
 } FlutterRegion;
 
+/// Contains additional information about the backing store provided
+/// during presentation to the embedder.
 typedef struct {
   size_t struct_size;
 

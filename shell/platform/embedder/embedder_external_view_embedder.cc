@@ -243,6 +243,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
             external_view->GetEngineRenderedContentsRegion(SkRect::MakeIWH(
                 pending_frame_size_.width(), pending_frame_size_.height()));
         std::vector<SkIRect> rects;
+        rects.reserve(rect_list.size());
         for (const auto& rect : rect_list) {
           rects.push_back(rect.roundOut());
         }
