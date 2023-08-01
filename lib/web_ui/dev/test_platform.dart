@@ -547,7 +547,6 @@ class BrowserPlatform extends PlatformPlugin {
           <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
-            window._flutter_canvaskit_variant_for_test_only = "$canvasKitVariant";
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
               // Some of our tests rely on color emoji

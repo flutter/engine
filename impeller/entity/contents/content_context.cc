@@ -29,104 +29,102 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
 
   desc.SetSampleCount(sample_count);
 
-  auto* color0_ref = desc.GetColorAttachmentDescriptor(0u);
-  if (color0_ref) {
-    ColorAttachmentDescriptor color0 = *color0_ref;
-    color0.format = color_attachment_pixel_format;
-    color0.alpha_blend_op = BlendOperation::kAdd;
-    color0.color_blend_op = BlendOperation::kAdd;
+  ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
+  color0.format = color_attachment_pixel_format;
+  color0.alpha_blend_op = BlendOperation::kAdd;
+  color0.color_blend_op = BlendOperation::kAdd;
 
-    switch (pipeline_blend) {
-      case BlendMode::kClear:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case BlendMode::kSource:
-        color0.blending_enabled = false;
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case BlendMode::kDestination:
-        color0.dst_alpha_blend_factor = BlendFactor::kOne;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case BlendMode::kSourceOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case BlendMode::kDestinationOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kOne;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case BlendMode::kSourceIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case BlendMode::kDestinationIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case BlendMode::kSourceOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case BlendMode::kDestinationOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case BlendMode::kSourceATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case BlendMode::kDestinationATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case BlendMode::kXor:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case BlendMode::kPlus:
-        color0.dst_alpha_blend_factor = BlendFactor::kOne;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case BlendMode::kModulate:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceColor;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      default:
-        FML_UNREACHABLE();
-    }
-    desc.SetColorAttachmentDescriptor(0u, color0);
+  switch (pipeline_blend) {
+    case BlendMode::kClear:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case BlendMode::kSource:
+      color0.blending_enabled = false;
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case BlendMode::kDestination:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case BlendMode::kSourceOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case BlendMode::kDestinationOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case BlendMode::kSourceIn:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
+      break;
+    case BlendMode::kDestinationIn:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case BlendMode::kSourceOut:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case BlendMode::kDestinationOut:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case BlendMode::kSourceATop:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
+      break;
+    case BlendMode::kDestinationATop:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case BlendMode::kXor:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case BlendMode::kPlus:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case BlendMode::kModulate:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceColor;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    default:
+      FML_UNREACHABLE();
   }
+  desc.SetColorAttachmentDescriptor(0u, color0);
+
   if (!has_stencil_attachment) {
     desc.ClearStencilAttachments();
   }

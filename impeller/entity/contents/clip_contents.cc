@@ -203,7 +203,6 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-  info.color = Color::SkyBlue();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
   pass.AddCommand(std::move(cmd));
