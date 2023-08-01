@@ -100,9 +100,8 @@ extension CanvasKitExtension on CanvasKit {
     Float32List? textureCoordinates,
     Uint32List? colors,
     Uint16List? indices,
-  ) =>
-      _MakeVertices(mode, positions.toJS, textureCoordinates?.toJS,
-          colors?.toJS, indices?.toJS);
+  ) => _MakeVertices(mode, positions.toJS, textureCoordinates?.toJS,
+      colors?.toJS, indices?.toJS);
 
   external SkParagraphBuilderNamespace get ParagraphBuilder;
   external SkParagraphStyle ParagraphStyle(
@@ -118,8 +117,7 @@ extension CanvasKitExtension on CanvasKit {
   SkSurface MakeSurface(
     double width,
     double height,
-  ) =>
-      _MakeSurface(width.toJS, height.toJS);
+  ) => _MakeSurface(width.toJS, height.toJS);
 
   @JS('getDataBytes')
   external JSUint8Array _getDataBytes(
@@ -127,8 +125,7 @@ extension CanvasKitExtension on CanvasKit {
   );
   Uint8List getDataBytes(
     SkData skData,
-  ) =>
-      _getDataBytes(skData).toDart;
+  ) => _getDataBytes(skData).toDart;
 
   // Text decoration enum is embedded in the CanvasKit object itself.
   @JS('NoDecoration')
@@ -161,12 +158,13 @@ extension CanvasKitExtension on CanvasKit {
   external JSNumber _GetWebGLContext(
       DomCanvasElement canvas, SkWebGLContextOptions options);
   double GetWebGLContext(
-          DomCanvasElement canvas, SkWebGLContextOptions options) =>
-      _GetWebGLContext(canvas, options).toDartDouble;
+      DomCanvasElement canvas, SkWebGLContextOptions options) =>
+        _GetWebGLContext(canvas, options).toDartDouble;
 
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
-  SkGrContext MakeGrContext(double glContext) => _MakeGrContext(glContext.toJS);
+  SkGrContext MakeGrContext(double glContext) =>
+      _MakeGrContext(glContext.toJS);
 
   @JS('MakeOnScreenGLSurface')
   external SkSurface? _MakeOnScreenGLSurface(
@@ -184,9 +182,8 @@ extension CanvasKitExtension on CanvasKit {
     ColorSpace colorSpace,
     int sampleCount,
     int stencil,
-  ) =>
-      _MakeOnScreenGLSurface(grContext, width.toJS, height.toJS, colorSpace,
-          sampleCount.toJS, stencil.toJS);
+  ) => _MakeOnScreenGLSurface(grContext, width.toJS, height.toJS, colorSpace,
+                              sampleCount.toJS, stencil.toJS);
 
   @JS('MakeRenderTarget')
   external SkSurface? _MakeRenderTarget(
@@ -198,8 +195,7 @@ extension CanvasKitExtension on CanvasKit {
     SkGrContext grContext,
     int width,
     int height,
-  ) =>
-      _MakeRenderTarget(grContext, width.toJS, height.toJS);
+  ) => _MakeRenderTarget(grContext, width.toJS, height.toJS);
 
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
 
@@ -220,8 +216,7 @@ extension CanvasKitExtension on CanvasKit {
     SkImageInfo info,
     Uint8List pixels,
     double bytesPerRow,
-  ) =>
-      _MakeImage(info, pixels.toJS, bytesPerRow.toJS);
+  ) => _MakeImage(info, pixels.toJS, bytesPerRow.toJS);
 
   @JS('MakeLazyImageFromTextureSource')
   external SkImage? _MakeLazyImageFromTextureSource(
@@ -231,16 +226,15 @@ extension CanvasKitExtension on CanvasKit {
   SkImage? MakeLazyImageFromTextureSource(
     Object src,
     SkPartialImageInfo info,
-  ) =>
-      _MakeLazyImageFromTextureSource(src.toJSAnyShallow, info);
+  ) => _MakeLazyImageFromTextureSource(src.toJSAnyShallow, info);
 }
 
 @JS('window.CanvasKitInit')
 external JSAny _CanvasKitInit(CanvasKitInitOptions options);
 
 Future<CanvasKit> CanvasKitInit(CanvasKitInitOptions options) {
-  return js_util
-      .promiseToFuture<CanvasKit>(_CanvasKitInit(options).toObjectShallow);
+  return js_util.promiseToFuture<CanvasKit>(
+          _CanvasKitInit(options).toObjectShallow);
 }
 
 typedef LocateFileCallback = String Function(String file, String unusedBase);
@@ -272,9 +266,9 @@ class SkWebGLContextOptions {
     required double antialias,
     // WebGL version: 1 or 2.
     required double majorVersion,
-  }) =>
-      SkWebGLContextOptions._(
-          antialias: antialias.toJS, majorVersion: majorVersion.toJS);
+  }) => SkWebGLContextOptions._(
+    antialias: antialias.toJS, majorVersion: majorVersion.toJS
+  );
   external factory SkWebGLContextOptions._({
     required JSNumber antialias,
     // WebGL version: 1 or 2.
@@ -1139,8 +1133,7 @@ extension SkImageExtension on SkImage {
     double B,
     double C,
     Float32List? matrix, // 3x3 matrix
-  ) =>
-      _makeShaderCubic(tileModeX, tileModeY, B.toJS, C.toJS, matrix?.toJS);
+  ) => _makeShaderCubic(tileModeX, tileModeY, B.toJS, C.toJS, matrix?.toJS);
 
   @JS('makeShaderOptions')
   external SkShader _makeShaderOptions(
@@ -1156,9 +1149,8 @@ extension SkImageExtension on SkImage {
     SkFilterMode filterMode,
     SkMipmapMode mipmapMode,
     Float32List? matrix, // 3x3 matrix
-  ) =>
-      _makeShaderOptions(
-          tileModeX, tileModeY, filterMode, mipmapMode, matrix?.toJS);
+  ) => _makeShaderOptions(tileModeX, tileModeY, filterMode, mipmapMode,
+                          matrix?.toJS);
 
   @JS('readPixels')
   external JSUint8Array _readPixels(
@@ -1200,9 +1192,8 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix,
-  ) =>
-      _MakeLinearGradient(from.toJS, to.toJS, colors.toJS, colorStops.toJS,
-          tileMode, matrix?.toJS);
+  ) => _MakeLinearGradient(from.toJS, to.toJS, colors.toJS, colorStops.toJS,
+                           tileMode, matrix?.toJS);
 
   @JS('MakeRadialGradient')
   external SkShader _MakeRadialGradient(
@@ -1222,9 +1213,9 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
     double flags,
-  ) =>
-      _MakeRadialGradient(center.toJS, radius.toJS, colors.toJS,
-          colorStops.toJS, tileMode, matrix?.toJS, flags.toJS);
+  ) => _MakeRadialGradient(center.toJS, radius.toJS, colors.toJS,
+                           colorStops.toJS, tileMode, matrix?.toJS,
+                           flags.toJS);
 
   @JS('MakeTwoPointConicalGradient')
   external SkShader _MakeTwoPointConicalGradient(
@@ -1248,17 +1239,9 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
     double flags,
-  ) =>
-      _MakeTwoPointConicalGradient(
-          focal.toJS,
-          focalRadius.toJS,
-          center.toJS,
-          radius.toJS,
-          colors.toJS,
-          colorStops.toJS,
-          tileMode,
-          matrix?.toJS,
-          flags.toJS);
+  ) => _MakeTwoPointConicalGradient(focal.toJS, focalRadius.toJS, center.toJS,
+                                    radius.toJS, colors.toJS, colorStops.toJS,
+                                    tileMode, matrix?.toJS, flags.toJS);
 
   @JS('MakeSweepGradient')
   external SkShader _MakeSweepGradient(
@@ -1282,9 +1265,9 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     double flags,
     double startAngle,
     double endAngle,
-  ) =>
-      _MakeSweepGradient(cx.toJS, cy.toJS, colors.toJS, colorStops.toJS,
-          tileMode, matrix?.toJS, flags.toJS, startAngle.toJS, endAngle.toJS);
+  ) => _MakeSweepGradient(cx.toJS, cy.toJS, colors.toJS, colorStops.toJS,
+                          tileMode, matrix?.toJS, flags.toJS, startAngle.toJS,
+                          endAngle.toJS);
 }
 
 @JS()
@@ -1308,7 +1291,7 @@ extension SkMaskFilterNamespaceExtension on SkMaskFilterNamespace {
   external SkMaskFilter? _MakeBlur(
       SkBlurStyle blurStyle, JSNumber sigma, JSBoolean respectCTM);
   SkMaskFilter? MakeBlur(
-          SkBlurStyle blurStyle, double sigma, bool respectCTM) =>
+      SkBlurStyle blurStyle, double sigma, bool respectCTM) =>
       _MakeBlur(blurStyle, sigma.toJS, respectCTM.toJS);
 }
 
@@ -1424,8 +1407,7 @@ extension SkColorFilterNamespaceExtension on SkColorFilterNamespace {
   );
   SkColorFilter MakeMatrix(
     Float32List matrix, // 20-element matrix
-  ) =>
-      _MakeMatrix(matrix.toJS);
+  ) => _MakeMatrix(matrix.toJS);
 
   external SkColorFilter MakeLinearToSRGBGamma();
   external SkColorFilter MakeSRGBToLinearGamma();
@@ -1458,8 +1440,7 @@ extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
     double sigmaY,
     SkTileMode tileMode,
     void input, // we don't use this yet
-  ) =>
-      _MakeBlur(sigmaX.toJS, sigmaY.toJS, tileMode, input);
+  ) => _MakeBlur(sigmaX.toJS, sigmaY.toJS, tileMode, input);
 
   @JS('MakeMatrixTransform')
   external SkImageFilter _MakeMatrixTransform(
@@ -1471,8 +1452,7 @@ extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
     Float32List matrix, // 3x3 matrix
     CkFilterOptions filterOptions,
     void input, // we don't use this yet
-  ) =>
-      _MakeMatrixTransform(matrix.toJS, filterOptions, input);
+  ) => _MakeMatrixTransform(matrix.toJS, filterOptions, input);
 
   external SkImageFilter MakeColorFilter(
     SkColorFilter colorFilter,
@@ -1492,6 +1472,7 @@ class SkImageFilter {}
 
 extension SkImageFilterExtension on SkImageFilter {
   external JSVoid delete();
+
 
   @JS('getOutputBounds')
   external JSFloat32Array _getOutputBounds(JSFloat32Array bounds);
@@ -1761,8 +1742,7 @@ extension SkPathExtension on SkPath {
     Float32List oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
-  ) =>
-      _addArc(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS);
+  ) => _addArc(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS);
 
   @JS('addOval')
   external JSVoid _addOval(
@@ -1774,8 +1754,7 @@ extension SkPathExtension on SkPath {
     Float32List oval,
     bool counterClockWise,
     double startIndex,
-  ) =>
-      _addOval(oval.toJS, counterClockWise.toJS, startIndex.toJS);
+  ) => _addOval(oval.toJS, counterClockWise.toJS, startIndex.toJS);
 
   @JS('addPath')
   external JSVoid _addPath(
@@ -1803,19 +1782,9 @@ extension SkPathExtension on SkPath {
     double pers1,
     double pers2,
     bool extendPath,
-  ) =>
-      _addPath(
-          other,
-          scaleX.toJS,
-          skewX.toJS,
-          transX.toJS,
-          skewY.toJS,
-          scaleY.toJS,
-          transY.toJS,
-          pers0.toJS,
-          pers1.toJS,
-          pers2.toJS,
-          extendPath.toJS);
+  ) => _addPath(other, scaleX.toJS, skewX.toJS, transX.toJS, skewY.toJS,
+                scaleY.toJS, transY.toJS, pers0.toJS, pers1.toJS, pers2.toJS,
+                extendPath.toJS);
 
   @JS('addPoly')
   external JSVoid _addPoly(
@@ -1825,8 +1794,7 @@ extension SkPathExtension on SkPath {
   void addPoly(
     Float32List points,
     bool close,
-  ) =>
-      _addPoly(points.toJS, close.toJS);
+  ) => _addPoly(points.toJS, close.toJS);
 
   @JS('addRRect')
   external JSVoid _addRRect(
@@ -1836,8 +1804,7 @@ extension SkPathExtension on SkPath {
   void addRRect(
     Float32List rrect,
     bool counterClockWise,
-  ) =>
-      _addRRect(rrect.toJS, counterClockWise.toJS);
+  ) => _addRRect(rrect.toJS, counterClockWise.toJS);
 
   @JS('addRect')
   external JSVoid _addRect(
@@ -1845,8 +1812,7 @@ extension SkPathExtension on SkPath {
   );
   void addRect(
     Float32List rect,
-  ) =>
-      _addRect(rect.toJS);
+  ) => _addRect(rect.toJS);
 
   @JS('arcToOval')
   external JSVoid _arcToOval(
@@ -1860,9 +1826,8 @@ extension SkPathExtension on SkPath {
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
-  ) =>
-      _arcToOval(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS,
-          forceMoveTo.toJS);
+  ) => _arcToOval(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS,
+                  forceMoveTo.toJS);
 
   @JS('arcToRotated')
   external JSVoid _arcToRotated(
@@ -1882,9 +1847,9 @@ extension SkPathExtension on SkPath {
     bool counterClockWise,
     double x,
     double y,
-  ) =>
-      _arcToRotated(radiusX.toJS, radiusY.toJS, rotation.toJS, useSmallArc.toJS,
-          counterClockWise.toJS, x.toJS, y.toJS);
+  ) => _arcToRotated(radiusX.toJS, radiusY.toJS, rotation.toJS,
+                     useSmallArc.toJS, counterClockWise.toJS,
+                     x.toJS, y.toJS);
 
   external JSVoid close();
 
@@ -1902,8 +1867,7 @@ extension SkPathExtension on SkPath {
     double x2,
     double y2,
     double w,
-  ) =>
-      _conicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, w.toJS);
+  ) => _conicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, w.toJS);
 
   @JS('contains')
   external JSBoolean _contains(
@@ -1913,8 +1877,7 @@ extension SkPathExtension on SkPath {
   bool contains(
     double x,
     double y,
-  ) =>
-      _contains(x.toJS, y.toJS).toDart;
+  ) => _contains(x.toJS, y.toJS).toDart;
 
   @JS('cubicTo')
   external JSVoid _cubicTo(
@@ -1932,8 +1895,7 @@ extension SkPathExtension on SkPath {
     double y2,
     double x3,
     double y3,
-  ) =>
-      _cubicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, x3.toJS, y3.toJS);
+  ) => _cubicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, x3.toJS, y3.toJS);
 
   @JS('getBounds')
   external JSFloat32Array _getBounds();
@@ -1959,8 +1921,7 @@ extension SkPathExtension on SkPath {
     double y1,
     double x2,
     double y2,
-  ) =>
-      _quadTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS);
+  ) => _quadTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS);
 
   @JS('rArcTo')
   external JSVoid _rArcTo(
@@ -1980,9 +1941,8 @@ extension SkPathExtension on SkPath {
     bool counterClockWise,
     double deltaX,
     double deltaY,
-  ) =>
-      _rArcTo(x.toJS, y.toJS, rotation.toJS, useSmallArc.toJS,
-          counterClockWise.toJS, deltaX.toJS, deltaY.toJS);
+  ) => _rArcTo(x.toJS, y.toJS, rotation.toJS, useSmallArc.toJS,
+               counterClockWise.toJS, deltaX.toJS, deltaY.toJS);
 
   @JS('rConicTo')
   external JSVoid _rConicTo(
@@ -1998,8 +1958,7 @@ extension SkPathExtension on SkPath {
     double x2,
     double y2,
     double w,
-  ) =>
-      _rConicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, w.toJS);
+  ) => _rConicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, w.toJS);
 
   @JS('rCubicTo')
   external JSVoid _rCubicTo(
@@ -2017,8 +1976,7 @@ extension SkPathExtension on SkPath {
     double y2,
     double x3,
     double y3,
-  ) =>
-      _rCubicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, x3.toJS, y3.toJS);
+  ) => _rCubicTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS, x3.toJS, y3.toJS);
 
   @JS('rLineTo')
   external JSVoid _rLineTo(JSNumber x, JSNumber y);
@@ -2040,8 +1998,7 @@ extension SkPathExtension on SkPath {
     double y1,
     double x2,
     double y2,
-  ) =>
-      _rQuadTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS);
+  ) => _rQuadTo(x1.toJS, y1.toJS, x2.toJS, y2.toJS);
 
   external JSVoid reset();
 
@@ -2077,9 +2034,9 @@ extension SkPathExtension on SkPath {
     double pers0,
     double pers1,
     double pers2,
-  ) =>
-      _transform(scaleX.toJS, skewX.toJS, transX.toJS, skewY.toJS, scaleY.toJS,
-          transY.toJS, pers0.toJS, pers1.toJS, pers2.toJS);
+  ) => _transform(scaleX.toJS, skewX.toJS, transX.toJS,
+                  skewY.toJS, scaleY.toJS, transY.toJS,
+                  pers0.toJS, pers1.toJS, pers2.toJS);
 
   /// Serializes the path into a list of commands.
   ///
@@ -2096,10 +2053,14 @@ extension SkPathExtension on SkPath {
 @staticInterop
 class SkContourMeasureIter {
   factory SkContourMeasureIter(
-          SkPath path, bool forceClosed, double resScale) =>
-      SkContourMeasureIter._(path, forceClosed.toJS, resScale.toJS);
+      SkPath path,
+      bool forceClosed,
+      double resScale) => SkContourMeasureIter._(path, forceClosed.toJS,
+      resScale.toJS);
   external factory SkContourMeasureIter._(
-      SkPath path, JSBoolean forceClosed, JSNumber resScale);
+      SkPath path,
+      JSBoolean forceClosed,
+      JSNumber resScale);
 }
 
 extension SkContourMeasureIterExtension on SkContourMeasureIter {
@@ -2120,7 +2081,8 @@ extension SkContourMeasureExtension on SkContourMeasure {
 
   @JS('getPosTan')
   external JSFloat32Array _getPosTan(JSNumber distance);
-  Float32List getPosTan(double distance) => _getPosTan(distance.toJS).toDart;
+  Float32List getPosTan(double distance) =>
+      _getPosTan(distance.toJS).toDart;
 
   @JS('isClosed')
   external JSBoolean _isClosed();
@@ -2273,8 +2235,7 @@ extension SkCanvasExtension on SkCanvas {
     SkPath path,
     SkClipOp clipOp,
     bool doAntiAlias,
-  ) =>
-      _clipPath(path, clipOp, doAntiAlias.toJS);
+  ) => _clipPath(path, clipOp, doAntiAlias.toJS);
 
   @JS('clipRRect')
   external JSVoid _clipRRect(
@@ -2286,8 +2247,7 @@ extension SkCanvasExtension on SkCanvas {
     Float32List rrect,
     SkClipOp clipOp,
     bool doAntiAlias,
-  ) =>
-      _clipRRect(rrect.toJS, clipOp, doAntiAlias.toJS);
+  ) => _clipRRect(rrect.toJS, clipOp, doAntiAlias.toJS);
 
   @JS('clipRect')
   external JSVoid _clipRect(
@@ -2299,8 +2259,7 @@ extension SkCanvasExtension on SkCanvas {
     Float32List rect,
     SkClipOp clipOp,
     bool doAntiAlias,
-  ) =>
-      _clipRect(rect.toJS, clipOp, doAntiAlias.toJS);
+  ) => _clipRect(rect.toJS, clipOp, doAntiAlias.toJS);
 
   @JS('getDeviceClipBounds')
   external JSInt32Array _getDeviceClipBounds();
@@ -2320,9 +2279,8 @@ extension SkCanvasExtension on SkCanvas {
     double sweepAngleDegrees,
     bool useCenter,
     SkPaint paint,
-  ) =>
-      _drawArc(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS,
-          useCenter.toJS, paint);
+  ) => _drawArc(oval.toJS, startAngleDegrees.toJS, sweepAngleDegrees.toJS,
+                useCenter.toJS, paint);
 
   @JS('drawAtlas')
   external JSVoid _drawAtlas(
@@ -2340,9 +2298,8 @@ extension SkCanvasExtension on SkCanvas {
     SkPaint paint,
     SkBlendMode blendMode,
     Uint32List? colors,
-  ) =>
-      _drawAtlas(image, rects.toJS, rstTransforms.toJS, paint, blendMode,
-          colors?.toJS);
+  ) => _drawAtlas(image, rects.toJS, rstTransforms.toJS, paint,
+                  blendMode, colors?.toJS);
 
   @JS('drawCircle')
   external JSVoid _drawCircle(
@@ -2356,8 +2313,7 @@ extension SkCanvasExtension on SkCanvas {
     double y,
     double radius,
     SkPaint paint,
-  ) =>
-      _drawCircle(x.toJS, y.toJS, radius.toJS, paint);
+  ) => _drawCircle(x.toJS, y.toJS, radius.toJS, paint);
 
   @JS('drawColorInt')
   external JSVoid _drawColorInt(
@@ -2367,8 +2323,7 @@ extension SkCanvasExtension on SkCanvas {
   void drawColorInt(
     double color,
     SkBlendMode blendMode,
-  ) =>
-      _drawColorInt(color.toJS, blendMode);
+  ) => _drawColorInt(color.toJS, blendMode);
 
   @JS('drawDRRect')
   external JSVoid _drawDRRect(
@@ -2380,8 +2335,7 @@ extension SkCanvasExtension on SkCanvas {
     Float32List outer,
     Float32List inner,
     SkPaint paint,
-  ) =>
-      _drawDRRect(outer.toJS, inner.toJS, paint);
+  ) => _drawDRRect(outer.toJS, inner.toJS, paint);
 
   @JS('drawImageCubic')
   external JSVoid _drawImageCubic(
@@ -2399,8 +2353,7 @@ extension SkCanvasExtension on SkCanvas {
     double B,
     double C,
     SkPaint paint,
-  ) =>
-      _drawImageCubic(image, x.toJS, y.toJS, B.toJS, C.toJS, paint);
+  ) => _drawImageCubic(image, x.toJS, y.toJS, B.toJS, C.toJS, paint);
 
   @JS('drawImageOptions')
   external JSVoid _drawImageOptions(
@@ -2418,8 +2371,7 @@ extension SkCanvasExtension on SkCanvas {
     SkFilterMode filterMode,
     SkMipmapMode mipmapMode,
     SkPaint paint,
-  ) =>
-      _drawImageOptions(image, x.toJS, y.toJS, filterMode, mipmapMode, paint);
+  ) => _drawImageOptions(image, x.toJS, y.toJS, filterMode, mipmapMode, paint);
 
   @JS('drawImageRectCubic')
   external JSVoid _drawImageRectCubic(
@@ -2437,8 +2389,7 @@ extension SkCanvasExtension on SkCanvas {
     double B,
     double C,
     SkPaint paint,
-  ) =>
-      _drawImageRectCubic(image, src.toJS, dst.toJS, B.toJS, C.toJS, paint);
+  ) => _drawImageRectCubic(image, src.toJS, dst.toJS, B.toJS, C.toJS, paint);
 
   @JS('drawImageRectOptions')
   external JSVoid _drawImageRectOptions(
@@ -2456,9 +2407,8 @@ extension SkCanvasExtension on SkCanvas {
     SkFilterMode filterMode,
     SkMipmapMode mipmapMode,
     SkPaint paint,
-  ) =>
-      _drawImageRectOptions(
-          image, src.toJS, dst.toJS, filterMode, mipmapMode, paint);
+  ) => _drawImageRectOptions(image, src.toJS, dst.toJS, filterMode, mipmapMode,
+                             paint);
 
   @JS('drawImageNine')
   external JSVoid _drawImageNine(
@@ -2474,8 +2424,7 @@ extension SkCanvasExtension on SkCanvas {
     Float32List dst,
     SkFilterMode filterMode,
     SkPaint paint,
-  ) =>
-      _drawImageNine(image, center.toJS, dst.toJS, filterMode, paint);
+  ) => _drawImageNine(image, center.toJS, dst.toJS, filterMode, paint);
 
   @JS('drawLine')
   external JSVoid _drawLine(
@@ -2491,8 +2440,7 @@ extension SkCanvasExtension on SkCanvas {
     double x2,
     double y2,
     SkPaint paint,
-  ) =>
-      _drawLine(x1.toJS, y1.toJS, x2.toJS, y2.toJS, paint);
+  ) => _drawLine(x1.toJS, y1.toJS, x2.toJS, y2.toJS, paint);
 
   @JS('drawOval')
   external JSVoid _drawOval(
@@ -2502,8 +2450,7 @@ extension SkCanvasExtension on SkCanvas {
   void drawOval(
     Float32List rect,
     SkPaint paint,
-  ) =>
-      _drawOval(rect.toJS, paint);
+  ) => _drawOval(rect.toJS, paint);
 
   external JSVoid drawPaint(
     SkPaint paint,
@@ -2523,8 +2470,7 @@ extension SkCanvasExtension on SkCanvas {
     SkPointMode pointMode,
     Float32List points,
     SkPaint paint,
-  ) =>
-      _drawPoints(pointMode, points.toJS, paint);
+  ) => _drawPoints(pointMode, points.toJS, paint);
 
   @JS('drawRRect')
   external JSVoid _drawRRect(
@@ -2534,8 +2480,7 @@ extension SkCanvasExtension on SkCanvas {
   void drawRRect(
     Float32List rrect,
     SkPaint paint,
-  ) =>
-      _drawRRect(rrect.toJS, paint);
+  ) => _drawRRect(rrect.toJS, paint);
 
   @JS('drawRect')
   external JSVoid _drawRect(
@@ -2545,8 +2490,7 @@ extension SkCanvasExtension on SkCanvas {
   void drawRect(
     Float32List rect,
     SkPaint paint,
-  ) =>
-      _drawRect(rect.toJS, paint);
+  ) => _drawRect(rect.toJS, paint);
 
   @JS('drawShadow')
   external JSVoid _drawShadow(
@@ -2566,9 +2510,8 @@ extension SkCanvasExtension on SkCanvas {
     Float32List ambientColor,
     Float32List spotColor,
     double flags,
-  ) =>
-      _drawShadow(path, zPlaneParams.toJS, lightPos.toJS, lightRadius.toJS,
-          ambientColor.toJS, spotColor.toJS, flags.toJS);
+  ) => _drawShadow(path, zPlaneParams.toJS, lightPos.toJS, lightRadius.toJS,
+                   ambientColor.toJS, spotColor.toJS, flags.toJS);
 
   external JSVoid drawVertices(
     SkVertices vertices,
@@ -2596,8 +2539,7 @@ extension SkCanvasExtension on SkCanvas {
     Float32List? bounds,
     SkImageFilter? backdrop,
     int? flags,
-  ) =>
-      _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS);
+  ) => _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS);
 
   external JSVoid restore();
 
@@ -2615,8 +2557,7 @@ extension SkCanvasExtension on SkCanvas {
     double angleDegrees,
     double px,
     double py,
-  ) =>
-      _rotate(angleDegrees.toJS, px.toJS, py.toJS);
+  ) => _rotate(angleDegrees.toJS, px.toJS, py.toJS);
 
   @JS('scale')
   external JSVoid _scale(JSNumber x, JSNumber y);
@@ -2636,8 +2577,8 @@ extension SkCanvasExtension on SkCanvas {
 
   @JS('getLocalToDevice')
   external JSAny _getLocalToDevice();
-  List<dynamic> getLocalToDevice() =>
-      _getLocalToDevice().toObjectShallow as List<dynamic>;
+  List<dynamic> getLocalToDevice() => _getLocalToDevice().toObjectShallow as
+      List<dynamic>;
 
   external JSVoid drawPicture(SkPicture picture);
 
@@ -2651,8 +2592,7 @@ extension SkCanvasExtension on SkCanvas {
     SkParagraph paragraph,
     double x,
     double y,
-  ) =>
-      _drawParagraph(paragraph, x.toJS, y.toJS);
+  ) => _drawParagraph(paragraph, x.toJS, y.toJS);
 }
 
 @JS()
@@ -2687,11 +2627,7 @@ extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
     if (!js_util.hasProperty(this, 'RequiresClientICU')) {
       return false;
     }
-    return js_util.callMethod(
-      this,
-      'RequiresClientICU',
-      const <Object>[],
-    ) as bool;
+    return js_util.callMethod(this, 'RequiresClientICU', const <Object>[],) as bool;
   }
 }
 
@@ -2724,9 +2660,8 @@ extension SkParagraphBuilderExtension on SkParagraphBuilder {
     SkPlaceholderAlignment alignment,
     SkTextBaseline baseline,
     double offset,
-  ) =>
-      _addPlaceholder(
-          width.toJS, height.toJS, alignment, baseline, offset.toJS);
+  ) => _addPlaceholder(width.toJS, height.toJS, alignment,
+                       baseline, offset.toJS);
 
   @JS('getText')
   external JSString _getTextUtf8();
@@ -2922,7 +2857,8 @@ class SkTextStyleProperties {
 extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   @JS('backgroundColor')
   external set _backgroundColor(JSFloat32Array? value);
-  set backgroundColor(Float32List? value) => _backgroundColor = value?.toJS;
+  set backgroundColor(Float32List? value) =>
+      _backgroundColor = value?.toJS;
 
   @JS('color')
   external set _color(JSFloat32Array? value);
@@ -2938,7 +2874,8 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
 
   @JS('decorationThickness')
   external set _decorationThickness(JSNumber? value);
-  set decorationThickness(double? value) => _decorationThickness = value?.toJS;
+  set decorationThickness(double? value) =>
+      _decorationThickness = value?.toJS;
 
   @JS('decorationColor')
   external set _decorationColor(JSFloat32Array? value);
@@ -2973,8 +2910,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
 
   @JS('fontFamilies')
   external set _fontFamilies(JSAny? value);
-  set fontFamilies(List<String>? value) =>
-      _fontFamilies = value?.toJSAnyShallow;
+  set fontFamilies(List<String>? value) => _fontFamilies = value?.toJSAnyShallow;
 
   external set fontStyle(SkFontStyle? value);
 
@@ -3129,7 +3065,8 @@ extension SkFontExtension on SkFont {
   @JS('getGlyphBounds')
   external JSVoid _getGlyphBounds(
       JSAny glyphs, SkPaint? paint, JSUint8Array? output);
-  void getGlyphBounds(List<int> glyphs, SkPaint? paint, Uint8List? output) =>
+  void getGlyphBounds(
+      List<int> glyphs, SkPaint? paint, Uint8List? output) =>
       _getGlyphBounds(glyphs.toJSAnyShallow, paint, output?.toJS);
 }
 
@@ -3153,7 +3090,8 @@ extension SkFontMgrExtension on SkFontMgr {
 
 @JS('window.flutterCanvasKit.TypefaceFontProvider')
 @staticInterop
-class TypefaceFontProvider extends SkFontMgr {}
+class TypefaceFontProvider extends SkFontMgr {
+}
 
 extension TypefaceFontProviderExtension on TypefaceFontProvider {
   @JS('registerFont')
@@ -3300,10 +3238,8 @@ extension SkParagraphExtension on SkParagraph {
     double end,
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
-  ) =>
-      _getRectsForRange(start.toJS, end.toJS, heightStyle, widthStyle)
-          .toDart
-          .cast<SkRectWithDirection>();
+  ) => _getRectsForRange(start.toJS, end.toJS, heightStyle,
+                         widthStyle).toDart.cast<SkRectWithDirection>();
 
   @JS('getRectsForPlaceholders')
   external JSArray _getRectsForPlaceholders();
@@ -3318,8 +3254,7 @@ extension SkParagraphExtension on SkParagraph {
   SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,
-  ) =>
-      _getGlyphPositionAtCoordinate(x.toJS, y.toJS);
+  ) => _getGlyphPositionAtCoordinate(x.toJS, y.toJS);
 
   @JS('getWordBoundary')
   external SkTextRange _getWordBoundary(JSNumber position);
@@ -3375,8 +3310,7 @@ class SkTonalColors {
   factory SkTonalColors({
     required Float32List ambient,
     required Float32List spot,
-  }) =>
-      SkTonalColors._(ambient: ambient.toJS, spot: spot.toJS);
+  }) => SkTonalColors._(ambient: ambient.toJS, spot: spot.toJS);
   external factory SkTonalColors._({
     required JSFloat32Array ambient,
     required JSFloat32Array spot,
@@ -3408,14 +3342,13 @@ extension SkFontMgrNamespaceExtension on SkFontMgrNamespace {
 @staticInterop
 class TypefaceFontProviderNamespace {}
 
-extension TypefaceFontProviderNamespaceExtension
-    on TypefaceFontProviderNamespace {
+extension TypefaceFontProviderNamespaceExtension on TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
 }
 
 @JS()
 @staticInterop
-class FontCollectionNamespace {}
+class FontCollectionNamespace{}
 
 extension FontCollectionNamespaceExtension on FontCollectionNamespace {
   external SkFontCollection Make();
@@ -3499,13 +3432,11 @@ class SkImageInfo {
     required SkColorType colorType,
     required SkAlphaType alphaType,
     required ColorSpace colorSpace,
-  }) =>
-      SkImageInfo._(
-          width: width.toJS,
-          height: height.toJS,
-          colorType: colorType,
-          alphaType: alphaType,
-          colorSpace: colorSpace);
+  }) => SkImageInfo._(width: width.toJS,
+                      height: height.toJS,
+                      colorType: colorType,
+                      alphaType: alphaType,
+                      colorSpace: colorSpace);
   external factory SkImageInfo._({
     required JSNumber width,
     required JSNumber height,
@@ -3560,13 +3491,11 @@ class SkPartialImageInfo {
     required SkColorType colorType,
     required SkAlphaType alphaType,
     required ColorSpace colorSpace,
-  }) =>
-      SkPartialImageInfo._(
-          width: width.toJS,
-          height: height.toJS,
-          colorType: colorType,
-          alphaType: alphaType,
-          colorSpace: colorSpace);
+  }) => SkPartialImageInfo._(width: width.toJS,
+                             height: height.toJS,
+                             colorType: colorType,
+                             alphaType: alphaType,
+                             colorSpace: colorSpace);
   external factory SkPartialImageInfo._({
     required JSNumber width,
     required JSNumber height,
@@ -3609,8 +3538,9 @@ extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
   @JS('makeShaderWithChildren')
   external SkShader? _makeShaderWithChildren(JSAny uniforms, JSAny children);
   SkShader? makeShaderWithChildren(
-          List<Object> uniforms, List<Object?> children) =>
-      _makeShaderWithChildren(uniforms.toJSAnyShallow, children.toJSAnyShallow);
+      List<Object> uniforms, List<Object?> children) =>
+          _makeShaderWithChildren(uniforms.toJSAnyShallow,
+              children.toJSAnyShallow);
 }
 
 const String _kFullCanvasKitJsFileName = 'canvaskit.js';
@@ -3632,13 +3562,11 @@ List<String> getCanvasKitJsFileNames(CanvasKitVariant variant) {
       return <String>[_kChromiumCanvasKitJsFileName];
   }
 }
-
 Iterable<String> get _canvasKitJsUrls {
   return getCanvasKitJsFileNames(configuration.canvasKitVariant).map(
     (String filename) => '$_canvasKitBaseUrl$filename',
   );
 }
-
 @visibleForTesting
 String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
@@ -3654,8 +3582,7 @@ Future<CanvasKit> downloadCanvasKit() async {
     locateFile: createLocateFileCallback(canvasKitWasmModuleUrl),
   ));
 
-  if (canvasKit.ParagraphBuilder.RequiresClientICU() &&
-      !browserSupportsCanvaskitChromium) {
+  if (canvasKit.ParagraphBuilder.RequiresClientICU() && !browserSupportsCanvaskitChromium) {
     throw Exception(
       'The CanvasKit variant you are using only works on Chromium browsers. '
       'Please use a different CanvasKit variant, or use a Chromium browser.',
@@ -3700,7 +3627,6 @@ Future<bool> _downloadCanvasKitJs(String url) {
     canvasKitScript.remove();
     canvasKitLoadCompleter.complete(true);
   }
-
   void errorEventHandler(DomEvent errorEvent) {
     canvasKitScript.remove();
     canvasKitLoadCompleter.complete(false);
