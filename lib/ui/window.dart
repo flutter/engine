@@ -407,7 +407,8 @@ class SingletonFlutterWindow extends FlutterView {
   )
   SingletonFlutterWindow._() : super._(
     // TODO(dkwingsmt): This crashes if the implicit view is disabled. We need
-    // to resolve this by the end of phase 2 of the multi-window project.
+    // to resolve this by the time embedders are allowed to disable the implicit
+    // view.
     // https://github.com/flutter/flutter/issues/131651
     _implicitViewId!,
     PlatformDispatcher.instance,
