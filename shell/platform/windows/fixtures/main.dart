@@ -128,6 +128,22 @@ void exitTestCancel() async {
 }
 
 @pragma('vm:entry-point')
+void enableLifecycleTest() async {
+  final Completer<ByteData?> finished = Completer<ByteData?>();
+  ui.channelBuffers.setListener('flutter/lifecycle', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    if (data != null) {
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/unittest',
+        data,
+        (ByteData? reply) {
+          finished.complete();
+        });
+    }
+  });
+  await finished.future;
+}
+
+@pragma('vm:entry-point')
 void customEntrypoint() {}
 
 @pragma('vm:entry-point')

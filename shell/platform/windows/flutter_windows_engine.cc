@@ -793,7 +793,7 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
 }
 
 void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingClose();
+  lifecycle_manager_->BeginProcessingLifecycle();
 }
 
 void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
