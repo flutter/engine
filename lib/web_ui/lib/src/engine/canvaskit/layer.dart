@@ -409,7 +409,8 @@ class ImageFilterEngineLayer extends ContainerLayer
     paintBounds = transform.transformRect(childPaintBounds);
     (_filter as CkManagedSkImageFilterConvertible)
         .imageFilter((SkImageFilter filter) {
-      paintBounds = fromSkRect(filter.getOutputBounds(toSkRect(paintBounds)));
+      paintBounds =
+          rectFromSkIRect(filter.getOutputBounds(toSkRect(paintBounds)));
     });
     prerollContext.mutatorsStack.pop();
   }

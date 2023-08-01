@@ -1475,8 +1475,8 @@ extension SkImageFilterExtension on SkImageFilter {
 
 
   @JS('getOutputBounds')
-  external JSFloat32Array _getOutputBounds(JSFloat32Array bounds);
-  Float32List getOutputBounds(Float32List bounds) =>
+  external JSInt32Array _getOutputBounds(JSFloat32Array bounds);
+  Int32List getOutputBounds(Float32List bounds) =>
       _getOutputBounds(bounds.toJS).toDart;
 }
 
