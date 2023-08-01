@@ -30,6 +30,7 @@
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -144,8 +145,18 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  auto caps = std::shared_ptr<CapabilitiesVK>(
-      new CapabilitiesVK(settings.enable_validation));
+  // Enable Vulkan validation if either:
+  // 1. The user has explicitly enabled it.
+  // 2. We are in a combination of debug mode, and running on Android.
+  // (It's possible 2 is overly conservative and we can simplify this)
+  auto enable_validation = settings.enable_validation;
+
+#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
+  enable_validation = true;
+#endif
+
+  auto caps =
+      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -277,8 +288,8 @@ void ContextVK::Setup(Settings settings) {
   auto enabled_device_extensions =
       caps->GetEnabledDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
-    // This shouldn't happen since we already did device selection. But doesn't
-    // hurt to check again.
+    // This shouldn't happen since we already did device selection. But
+    // doesn't hurt to check again.
     return;
   }
 
@@ -420,8 +431,8 @@ void ContextVK::Setup(Settings settings) {
   is_valid_ = true;
 
   //----------------------------------------------------------------------------
-  /// Label all the relevant objects. This happens after setup so that the debug
-  /// messengers have had a chance to be set up.
+  /// Label all the relevant objects. This happens after setup so that the
+  /// debug messengers have had a chance to be set up.
   ///
   SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }
@@ -479,49 +490,8 @@ void ContextVK::Shutdown() {
   raster_message_loop_->Terminate();
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
-  if (surface && pipeline_library_) {
-    pipeline_library_->DidAcquireSurfaceFrame();
-  }
-  if (allocator_) {
-    allocator_->DidAcquireSurfaceFrame();
-  }
-  return surface;
-}
-
-#ifdef FML_OS_ANDROID
-
-vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
-    ANativeWindow* window) const {
-  if (!device_holder_->instance) {
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
-  auto surface_res =
-      device_holder_->instance->createAndroidSurfaceKHRUnique(create_info);
-
-  if (surface_res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create Android surface, error: "
-                   << vk::to_string(surface_res.result);
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  return std::move(surface_res.value);
-}
-
-#endif  // FML_OS_ANDROID
-
-bool ContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
-  auto swapchain = SwapchainVK::Create(shared_from_this(), std::move(surface));
-  if (!swapchain) {
-    VALIDATION_LOG << "Could not create swapchain.";
-    return false;
-  }
-  swapchain_ = std::move(swapchain);
-  return true;
+std::shared_ptr<SurfaceContextVK> ContextVK::CreateSurfaceContext() {
+  return std::make_shared<SurfaceContextVK>(shared_from_this());
 }
 
 const std::shared_ptr<const Capabilities>& ContextVK::GetCapabilities() const {
