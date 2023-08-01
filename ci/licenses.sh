@@ -65,7 +65,7 @@ dart --version
 # Runs the tests for the license script.
 function run_tests() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  find -name "*_test.dart" | xargs -n 1 dart --enable-asserts
+  find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
 )
 
 # Collects the license information from the repo.
@@ -91,7 +91,7 @@ function verify_licenses() (
   cd "$SRC_DIR"
 
   # These files trip up the script on Mac OS X.
-  find . -name ".DS_Store" -exec rm {} \;
+  find . -name ".DS_Store" -exec rm -f {} \;
 
   collect_licenses
 
