@@ -209,8 +209,9 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   ///             This method should be called a view is removed.
   ///
-  ///             Resources for a view is allocated the first time the
-  ///             rasterizer encouters this view ID.
+  ///             The rasterizer don't need views to be registered. Last-frame
+  ///             states for views are recorded when layer trees are rasterized
+  ///             to the view and used during `Rasterizer::DrawLastLayerTree`.
   ///
   /// @param[in]  view_id  The ID of the view.
   ///

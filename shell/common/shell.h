@@ -298,12 +298,13 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  /// @brief  Adds a non-implicit view.
+  /// @brief  Allocates resources for a new non-implicit view.
   ///
-  ///         This method returns immediately and does not wait for the tasks
-  ///         on the UI thread to finish. This is because operations are either
-  ///         initiated from the UI thread (such as rendering), or are sent as a
-  ///         posted task that is queued.
+  ///         This method returns immediately and does not wait for the tasks on
+  ///         the UI thread to finish. This is safe because operations are
+  ///         either initiated from the UI thread (such as rendering), or are
+  ///         sent as posted tasks that are queued. In either case, it's ok for
+  ///         the engine to have views that the Dart VM doesn't.
   ///
   ///         The implicit view should never be added with this function.
   ///         Instead, it is added internally on Shell initialization depending
@@ -315,10 +316,10 @@ class Shell final : public PlatformView::Delegate,
   ///
   void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
 
-  /// @brief  Removes a non-implicit view.
+  /// @brief  Deallocates resources for a non-implicit view.
   ///
-  ///         This method waits for the tasks on the rasterizer thread and the
-  ///         UI thread to finish before returning.
+  ///         This method waits for the tasks on the UI thread to finish before
+  ///         returning.
   ///
   ///         The implicit view should never be removed. Trying to remove
   ///         `kFlutterImplicitViewId` is a no-op with warning.
