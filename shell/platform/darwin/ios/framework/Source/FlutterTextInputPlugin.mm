@@ -1633,8 +1633,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
       _scribbleFocusStatus == FlutterScribbleFocusStatusUnfocused) {
     if (@available(iOS 17.0, *)) {
-      // Disable auto-correction highlight feature for iOS 17.
-      // In iOS 17, whenever a character is inserted or deleted, the system will always query
+      // Disable auto-correction highlight feature for iOS 17+.
+      // In iOS 17+, whenever a character is inserted or deleted, the system will always query
       // the rect for every single character of the current word.
       // GitHub Issue: https://github.com/flutter/flutter/issues/128406
     } else {
