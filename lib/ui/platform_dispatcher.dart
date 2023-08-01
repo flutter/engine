@@ -66,14 +66,6 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
-// The view ID of PlatformDispatcher.implicitView. This is an
-// implementation detail that may change at any time. Apps
-// should always use PlatformDispatcher.implicitView to determine
-// the current implicit view, if any.
-//
-// Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
-const int _kImplicitViewId = 0;
-
 // A message channel to receive KeyData from the platform.
 //
 // See embedder.cc::kFlutterKeyDataChannel for more information.
@@ -124,6 +116,9 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+    if (_implicitViewId != null) {
+      _views[_implicitViewId!] = FlutterView._(_implicitViewId!, this, const _ViewConfiguration());
+    }
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -218,10 +213,14 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[_kImplicitViewId] : null;
-
-  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
-  external static bool _implicitViewEnabled();
+  FlutterView? get implicitView {
+    final FlutterView? result = _views[_implicitViewId];
+    assert((result != null) == (_implicitViewId != null),
+      (_implicitViewId != null) ?
+        'The implicit view ID is $_implicitViewId, but the implicit view does not exist.' :
+        'The implicit view ID is null, but the implicit view exists.');
+    return result;
+  }
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -249,6 +248,34 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
+  // Called from the engine, via hooks.dart
+  //
+  // Adds a new view with the specific view configuration. If the target view is
+  // the implicit view, then it's equivalent to _updateWindowMetrics.
+  // Otherwise, the target view must not exist.
+  void _addView(int id, _ViewConfiguration viewConfiguration) {
+    // The implicit view is added at construction.
+    if (id != _implicitViewId) {
+      assert(!_views.containsKey(id), 'View ID $id already exists.');
+      _views[id] = FlutterView._(id, this, viewConfiguration);
+      _invoke(onMetricsChanged, _onMetricsChangedZone);
+    } else {
+      _updateWindowMetrics(id, viewConfiguration);
+    }
+  }
+
+  // Called from the engine, via hooks.dart
+  //
+  // Removes the specific view.
+  //
+  // The target view must not be the implicit view, and must exist.
+  void _removeView(int id) {
+    assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
+    assert(_views.containsKey(id), 'View ID $id does not exist.');
+    _views.remove(id);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
   // Called from the engine, via hooks.dart.
   //
   // Updates the available displays.
@@ -263,107 +290,12 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
-  void _updateWindowMetrics(
-    int id,
-    double devicePixelRatio,
-    double width,
-    double height,
-    double viewPaddingTop,
-    double viewPaddingRight,
-    double viewPaddingBottom,
-    double viewPaddingLeft,
-    double viewInsetTop,
-    double viewInsetRight,
-    double viewInsetBottom,
-    double viewInsetLeft,
-    double systemGestureInsetTop,
-    double systemGestureInsetRight,
-    double systemGestureInsetBottom,
-    double systemGestureInsetLeft,
-    double physicalTouchSlop,
-    List<double> displayFeaturesBounds,
-    List<int> displayFeaturesType,
-    List<int> displayFeaturesState,
-    int displayId,
-  ) {
-    final _ViewConfiguration viewConfiguration = _ViewConfiguration(
-      devicePixelRatio: devicePixelRatio,
-      geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: ViewPadding._(
-        top: viewPaddingTop,
-        right: viewPaddingRight,
-        bottom: viewPaddingBottom,
-        left: viewPaddingLeft,
-      ),
-      viewInsets: ViewPadding._(
-        top: viewInsetTop,
-        right: viewInsetRight,
-        bottom: viewInsetBottom,
-        left: viewInsetLeft,
-      ),
-      padding: ViewPadding._(
-        top: math.max(0.0, viewPaddingTop - viewInsetTop),
-        right: math.max(0.0, viewPaddingRight - viewInsetRight),
-        bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-        left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
-      ),
-      systemGestureInsets: ViewPadding._(
-        top: math.max(0.0, systemGestureInsetTop),
-        right: math.max(0.0, systemGestureInsetRight),
-        bottom: math.max(0.0, systemGestureInsetBottom),
-        left: math.max(0.0, systemGestureInsetLeft),
-      ),
-      gestureSettings: GestureSettings(
-        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
-      ),
-      displayFeatures: _decodeDisplayFeatures(
-        bounds: displayFeaturesBounds,
-        type: displayFeaturesType,
-        state: displayFeaturesState,
-        devicePixelRatio: devicePixelRatio,
-      ),
-      displayId: displayId,
-    );
-
-    final FlutterView? view = _views[id];
-    if (id == _kImplicitViewId && view == null) {
-      // TODO(goderbauer): Remove the implicit creation of the implicit view
-      //   when we have an addView API and the implicit view is added via that.
-      _views[id] = FlutterView._(id, this, viewConfiguration);
-    } else {
-      assert(view != null);
-      view!._viewConfiguration = viewConfiguration;
-    }
-
+  void _updateWindowMetrics(int id, _ViewConfiguration viewConfiguration) {
+    assert(_views.containsKey(id), 'View $id does not exist.');
+    _views[id]!._viewConfiguration = viewConfiguration;
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  List<DisplayFeature> _decodeDisplayFeatures({
-    required List<double> bounds,
-    required List<int> type,
-    required List<int> state,
-    required double devicePixelRatio,
-  }) {
-    assert(bounds.length / 4 == type.length, 'Bounds are rectangles, requiring 4 measurements each');
-    assert(type.length == state.length);
-    final List<DisplayFeature> result = <DisplayFeature>[];
-    for(int i = 0; i < type.length; i++) {
-      final int rectOffset = i * 4;
-      result.add(DisplayFeature(
-        bounds: Rect.fromLTRB(
-          bounds[rectOffset] / devicePixelRatio,
-          bounds[rectOffset + 1] / devicePixelRatio,
-          bounds[rectOffset + 2] / devicePixelRatio,
-          bounds[rectOffset + 3] / devicePixelRatio,
-        ),
-        type: DisplayFeatureType.values[type[i]],
-        state: state[i] < DisplayFeatureState.values.length
-            ? DisplayFeatureState.values[state[i]]
-            : DisplayFeatureState.unknown,
-      ));
-    }
-    return result;
-  }
 
   /// A callback invoked when any view begins a frame.
   ///

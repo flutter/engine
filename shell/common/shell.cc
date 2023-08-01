@@ -713,6 +713,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
+  if (settings_.enable_implicit_view) {
+    engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
+  }
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
@@ -806,10 +809,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   fml::AutoResetWaitableEvent latch;
-  auto raster_task =
-      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
-                         rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface)]() mutable {
+  auto raster_task = fml::MakeCopyable(
+      [&waiting_for_first_frame = waiting_for_first_frame_,  //
+       rasterizer = rasterizer_->GetWeakPtr(),               //
+       surface = std::move(surface)                          //
+  ]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
@@ -986,8 +990,11 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
       });
 
   {
+    // TODO(dkwingsmt): Use the correct view ID when this method supports
+    // multi-view.
+    int64_t view_id = kFlutterImplicitViewId;
     std::scoped_lock<std::mutex> lock(resize_mutex_);
-    expected_frame_size_ =
+    expected_frame_sizes_[view_id] =
         SkISize::Make(metrics.physical_width, metrics.physical_height);
     device_pixel_ratio_ = metrics.device_pixel_ratio;
   }
@@ -1211,10 +1218,11 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
-  auto discard_callback = [this](flutter::LayerTree& tree) {
+  auto discard_callback = [this](int64_t view_id, flutter::LayerTree& tree) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
-    return !expected_frame_size_.isEmpty() &&
-           tree.frame_size() != expected_frame_size_;
+    auto expected_frame_size = ExpectedFrameSize(view_id);
+    return !expected_frame_size.isEmpty() &&
+           tree.frame_size() != expected_frame_size;
   };
 
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
@@ -1967,7 +1975,9 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     response->AddMember("snapshots", snapshots, allocator);
 
-    const auto& frame_size = expected_frame_size_;
+    // TODO(dkwingsmt): Not sure what these fields are supposed to be after
+    // multi-view. For now it sends the implicit view's dimension as before.
+    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 
@@ -2021,6 +2031,66 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   response->AddMember("type", "Success", allocator);
 
   return true;
+}
+
+void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
+  TRACE_EVENT0("flutter", "Shell::AddView");
+  FML_DCHECK(is_set_up_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  if (view_id == kFlutterImplicitViewId) {
+    FML_DLOG(ERROR) << "Unexpected request to add the implicit view #"
+                    << kFlutterImplicitViewId
+                    << ". This view should never be added. This call is no-op.";
+    return;
+  }
+
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
+                                             viewport_metrics,                //
+                                             view_id                          //
+  ] {
+    if (engine) {
+      engine->AddView(view_id, viewport_metrics);
+    }
+  });
+}
+
+void Shell::RemoveView(int64_t view_id) {
+  TRACE_EVENT0("flutter", "Shell::RemoveView");
+  FML_DCHECK(is_set_up_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  if (view_id == kFlutterImplicitViewId) {
+    FML_DLOG(ERROR)
+        << "Unexpected request to remove the implicit view #"
+        << kFlutterImplicitViewId
+        << ". This view should never be removed. This call is no-op.";
+    return;
+  }
+
+  expected_frame_sizes_.erase(view_id);
+  fml::AutoResetWaitableEvent latch;
+  task_runners_.GetUITaskRunner()->PostTask(
+      [&latch,                                  //
+           & task_runners = task_runners_,      //
+       engine = engine_->GetWeakPtr(),          //
+       rasterizer = rasterizer_->GetWeakPtr(),  //
+       view_id                                  //
+  ] {
+        if (engine) {
+          engine->RemoveView(view_id);
+        }
+        // Don't wait for the raster task here, which only cleans up memory and
+        // does not affect functionality. Make sure it is done after Dart
+        // removes the view to avoid receiving another rasterization request
+        // that adds back the view record.
+        task_runners.GetRasterTaskRunner()->PostTask([rasterizer, view_id]() {
+          if (rasterizer) {
+            rasterizer->CollectView(view_id);
+          }
+        });
+        latch.Signal();
+      });
+
+  latch.Wait();
 }
 
 Rasterizer::Screenshot Shell::Screenshot(
@@ -2161,6 +2231,14 @@ Shell::GetConcurrentWorkerTaskRunner() const {
     return nullptr;
   }
   return vm_->GetConcurrentWorkerTaskRunner();
+}
+
+SkISize Shell::ExpectedFrameSize(int64_t view_id) {
+  auto found = expected_frame_sizes_.find(view_id);
+  if (found == expected_frame_sizes_.end()) {
+    return SkISize::MakeEmpty();
+  }
+  return found->second;
 }
 
 }  // namespace flutter

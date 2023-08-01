@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -19,8 +20,6 @@
 #include "third_party/tonic/dart_message_handler.h"
 
 namespace flutter {
-
-constexpr uint64_t kFlutterImplicitViewId = 0ll;
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
@@ -76,7 +75,6 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_persistent_isolate_data,     //
                                           spawned_context);              //
   result->spawning_isolate_ = root_isolate_;
-  result->platform_data_.viewport_metrics = ViewportMetrics();
   return result;
 }
 
@@ -115,11 +113,13 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  // TODO(dkwingsmt): Needs a view ID here (or platform_data should probably
-  // have multiple view metrics).
-  return SetViewportMetrics(kFlutterImplicitViewId,
-                            platform_data_.viewport_metrics) &&
-         SetLocales(platform_data_.locale_data) &&
+  for (auto const& [view_id, viewport_metrics] :
+       platform_data_.viewport_metrics_for_views) {
+    if (!AddView(view_id, viewport_metrics)) {
+      return false;
+    }
+  }
+  return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
              platform_data_.accessibility_feature_flags_) &&
@@ -128,11 +128,33 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
+bool RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics) {
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->AddView(view_id, view_metrics);
+
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::RemoveView(int64_t view_id) {
+  platform_data_.viewport_metrics_for_views.erase(view_id);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
                                            const ViewportMetrics& metrics) {
   TRACE_EVENT0("flutter", "SetViewportMetrics");
-  platform_data_.viewport_metrics = metrics;
 
+  platform_data_.viewport_metrics_for_views[view_id] = metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     Window* window = platform_configuration->get_window(view_id);
     if (window) {
@@ -309,11 +331,6 @@ PlatformConfiguration*
 RuntimeController::GetPlatformConfigurationIfAvailable() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->platform_configuration() : nullptr;
-}
-
-// |PlatformConfigurationClient|
-bool RuntimeController::ImplicitViewEnabled() {
-  return client_.ImplicitViewEnabled();
 }
 
 // |PlatformConfigurationClient|

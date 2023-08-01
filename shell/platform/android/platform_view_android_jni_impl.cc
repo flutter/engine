@@ -37,8 +37,6 @@
 
 namespace flutter {
 
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
-
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
     nullptr;
 
