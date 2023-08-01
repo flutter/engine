@@ -117,7 +117,8 @@ using namespace flutter;
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
   } else if ([method isEqualToString:@"SearchWeb.invoke"]) {
-    result(@([self searchWeb:args]));
+    [self searchWeb:args];
+    result(nil);
   } else if ([method isEqualToString:@"LookUp.invoke"]) {
     [self showLookUpViewController:args];
     result(nil);
@@ -126,19 +127,15 @@ using namespace flutter;
   }
 }
 
-- (BOOL)searchWeb:(NSString*)searchTerm {
+- (void)searchWeb:(NSString*)searchTerm {
   NSString* escapedText = [searchTerm
       stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
                                                              URLHostAllowedCharacterSet]];
   NSString* searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
 
-  __block BOOL result;
   [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
                                      options:@{}
-                           completionHandler:^(BOOL success) {
-                             result = success;
-                           }];
-  return result;
+                           completionHandler:nil];
 }
 
 - (void)playSystemSound:(NSString*)soundType {

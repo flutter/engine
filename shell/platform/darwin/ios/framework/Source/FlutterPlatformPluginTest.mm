@@ -17,7 +17,7 @@
 
 @interface FlutterPlatformPlugin ()
 - (BOOL)isLiveTextInputAvailable;
-- (BOOL)searchWeb:(NSString*)searchTerm;
+- (void)searchWeb:(NSString*)searchTerm;
 - (void)showLookUpViewController:(NSString*)term;
 @end
 
@@ -46,7 +46,6 @@
 
   FlutterResult result = ^(id result) {
     OCMVerify([mockPlugin searchWeb:@"Test"]);
-    XCTAssertTrue(result);
     [invokeExpectation fulfill];
   };
 
