@@ -1903,9 +1903,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                     object:nil
                                   userInfo:nil];
   id mockVC = OCMPartialMock(flutterViewController);
+  id mockEngine = OCMPartialMock(engine);
+  OCMStub([mockVC engine]).andReturn(mockEngine);
   [[NSNotificationCenter defaultCenter] postNotification:sceneNotification];
   [[NSNotificationCenter defaultCenter] postNotification:applicationNotification];
-  id mockEngine = OCMPartialMock(engine);
 #if APPLICATION_EXTENSION_API_ONLY
   OCMVerify([mockVC sceneWillDisconnect:[OCMArg any]]);
   OCMReject([mockVC applicationWillTerminate:[OCMArg any]]);
@@ -1941,8 +1942,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMReject([mockVC sceneDidEnterBackground:[OCMArg any]]);
   OCMVerify([mockVC applicationDidEnterBackground:[OCMArg any]]);
 #endif
-  XCTAssertFalse(flutterViewController.isKeyboardInOrTransitioningFromBackground);
-  OCMVerify([mockVC surfaceUpdated:YES]);
+  XCTAssertTrue(flutterViewController.isKeyboardInOrTransitioningFromBackground);
+  OCMVerify([mockVC surfaceUpdated:NO]);
   OCMVerify([mockVC goToApplicationLifecycle:@"AppLifecycleState.paused"]);
   [flutterViewController deregisterNotifications];
 }
