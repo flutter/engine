@@ -4,6 +4,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# Do not exit when a non-zero return value is encountered to output all errors.
+# See: https://github.com/flutter/flutter/issues/131680
+# set -e
 shopt -s nullglob
 
 # Needed because if it is set, cd may print the path it changed to.
