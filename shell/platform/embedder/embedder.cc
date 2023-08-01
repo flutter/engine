@@ -2305,7 +2305,8 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
   flutter::EmbedderEngine* embedder_engine =
       reinterpret_cast<flutter::EmbedderEngine*>(engine);
   // TODO(dkwingsmt): Pass in correct viewport metrics
-  embedder_engine->GetShell().AddView(config->view_id, flutter::ViewportMetrics{});
+  embedder_engine->GetShell().AddView(config->view_id,
+                                      flutter::ViewportMetrics{});
 
   return kSuccess;
 }

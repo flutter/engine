@@ -367,9 +367,10 @@ bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
 }
 
 Rasterizer::ViewRecord& Rasterizer::InitViewRecordIfNecessary(int64_t view_id) {
-  auto found_iterator = view_records_
-      .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
-      .first;
+  auto found_iterator =
+      view_records_
+          .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
+          .first;
   return found_iterator->second;
 }
 
