@@ -157,6 +157,7 @@
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
+../../../flutter/impeller/renderer/pool_unittests.cc
 ../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/renderer/testing
@@ -2856,6 +2857,7 @@
 ../../../third_party/skia/third_party/freetype2
 ../../../third_party/skia/third_party/harfbuzz/README
 ../../../third_party/skia/third_party/icu
+../../../third_party/skia/third_party/libgrapheme/generate_headers.py
 ../../../third_party/skia/third_party/libjpeg-turbo
 ../../../third_party/skia/third_party/libpng
 ../../../third_party/skia/third_party/lua
