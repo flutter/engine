@@ -108,7 +108,7 @@ class PlatformViewManager {
   /// The resulting DOM for the `contents` of a Platform View looks like this:
   ///
   /// ```html
-  /// <flt-platform-view id="flt-platform-view-VIEW_ID" slot="...">
+  /// <flt-platform-view id="flt-pv-VIEW_ID" slot="...">
   ///   <arbitrary-html-elements />
   /// </flt-platform-view-slot>
   /// ```
