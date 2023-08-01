@@ -364,10 +364,12 @@ void EmbedderConfigBuilder::SetCompositor(bool avoid_backing_store_cache) {
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
+    // TODO(dkwingsmt): Receive a proper view ID with a new API.
+    int64_t view_id = kFlutterImplicitViewId;
     return reinterpret_cast<EmbedderTestCompositor*>(user_data)->Present(
+        view_id,      //
         layers,       //
         layers_count  //
-
     );
   };
   compositor_.avoid_backing_store_cache = avoid_backing_store_cache;

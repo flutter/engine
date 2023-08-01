@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -230,23 +231,25 @@ class Rasterizer final : public SnapshotDelegate,
   /// @return     A pointer to the last layer or `nullptr` if this rasterizer
   ///             has never rendered a frame.
   ///
-  flutter::LayerTree* GetLastLayerTree();
+  bool HasLastLayerTree() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Draws a last layer tree to the render surface. This may seem
-  ///             entirely redundant at first glance. After all, on surface loss
-  ///             and re-acquisition, the framework generates a new layer tree.
-  ///             Otherwise, why render the same contents to the screen again?
-  ///             This is used as an optimization in cases where there are
-  ///             external textures (video or camera streams for example) in
+  /// @brief      Draws to all render surfaces their last layer trees. This may
+  ///             seem entirely redundant at first glance. After all, on surface
+  ///             loss and re-acquisition, the framework generates a new layer
+  ///             tree. Otherwise, why render the same contents to the screen
+  ///             again? This is used as an optimization in cases where there
+  ///             are external textures (video or camera streams for example) in
   ///             referenced in the layer tree. These textures may be updated at
   ///             a cadence different from that of the Flutter application.
   ///             Flutter can re-render the layer tree with just the updated
   ///             textures instead of waiting for the framework to do the work
   ///             to generate the layer tree describing the same contents.
   ///
-  void DrawLastLayerTree(
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
+  /// @return     The number of surfaces that are drawn this way.
+  int DrawLastLayerTree(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+      bool enable_leaf_layer_tracing = false);
 
   // |SnapshotDelegate|
   GrDirectContext* GetGrContext() override;
@@ -514,6 +517,40 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
+  // The result of `DoDraw`.
+  //
+  // Normally `DoDraw` returns simply a raster status. However, sometimes we
+  // need to attempt to rasterize the layer tree again. This happens when
+  // layer_tree has not successfully rasterized due to changes in the thread
+  // configuration, in which case the resubmitted task will be inserted to the
+  // front of the pipeline.
+  struct DoDrawResult {
+    RasterStatus raster_status = RasterStatus::kFailed;
+    // int64_t view_id;
+    std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
+  };
+
+  struct ViewRecord {
+    ViewRecord(int64_t view_id) : view_id(view_id) {}
+
+    int64_t view_id;
+
+    // This is the information for the last successfully drawing.
+    //
+    // Sometimes, it may be necessary to render the same frame again without
+    // having to wait for the framework to build a whole new layer tree
+    // describing the same contents. One such case is when external textures
+    // (video or camera streams for example) are updated in an otherwise static
+    // layer tree. To support this use case, the rasterizer holds onto the last
+    // rendered layer tree.
+    std::shared_ptr<flutter::LayerTree> last_tree;
+    float last_pixel_ratio;
+  };
+
+  ViewRecord& InitViewRecordIfNecessary(int64_t view_id);
+
+  ViewRecord* GetFirstViewRecord();
+
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
@@ -568,18 +605,24 @@ class Rasterizer final : public SnapshotDelegate,
       GrDirectContext* surface_context,
       bool compressed);
 
-  RasterStatus DoDraw(
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::unique_ptr<flutter::LayerTree> layer_tree,
-      float device_pixel_ratio);
+  DoDrawResult DoDraw(int64_t view_id,
+                      FrameTimingsRecorder& frame_timings_recorder,
+                      std::unique_ptr<flutter::LayerTree> layer_tree,
+                      float device_pixel_ratio);
 
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                             flutter::LayerTree& layer_tree,
-                             float device_pixel_ratio);
+                             flutter::LayerTree* layer_tree,
+                             float device_pixel_ratio,
+                             ViewRecord* view_record);
 
   RasterStatus DrawToSurfaceUnsafe(FrameTimingsRecorder& frame_timings_recorder,
-                                   flutter::LayerTree& layer_tree,
-                                   float device_pixel_ratio);
+                                   flutter::LayerTree* layer_tree,
+                                   float device_pixel_ratio,
+                                   ViewRecord* view_record);
+
+  Screenshot ScreenshotLayerTree(ScreenshotType type,
+                                 bool base64_encode,
+                                 ViewRecord& view_record);
 
   void FireNextFrameCallbackIfPresent();
 
@@ -592,17 +635,9 @@ class Rasterizer final : public SnapshotDelegate,
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
   std::unique_ptr<Surface> surface_;
+  std::unordered_map<int64_t, ViewRecord> view_records_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
-  float last_device_pixel_ratio_;
-  // Set when we need attempt to rasterize the layer tree again. This layer_tree
-  // has not successfully rasterized. This can happen due to the change in the
-  // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
-  std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder_;
-  float resubmitted_pixel_ratio_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;

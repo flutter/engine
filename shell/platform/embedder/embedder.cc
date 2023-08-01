@@ -1297,8 +1297,9 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
           };
 
   flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback,
-       user_data = compositor->user_data](const auto& layers) {
+      [c_present_callback, user_data = compositor->user_data](
+          const auto& layers, int64_t view_id) {
+        // TODO(dkwingsmt): Pass view ID correctly.
         TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
         return c_present_callback(
             const_cast<const FlutterLayer**>(layers.data()), layers.size(),
