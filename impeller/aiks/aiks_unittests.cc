@@ -2155,8 +2155,8 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
   canvas.DrawPaint(
       {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
   canvas.SaveLayer({}, {},
-                   [](FilterInput::Ref input, const Matrix& effect_transform,
-                      bool is_subpass) {
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
                      return FilterContents::MakeGaussianBlur(input, Sigma(20.0),
                                                              Sigma(20.0));
                    });
