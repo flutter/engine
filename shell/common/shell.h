@@ -301,9 +301,9 @@ class Shell final : public PlatformView::Delegate,
   /// @brief  Adds a non-implicit view.
   ///
   ///         This method returns immediately and does not wait for the tasks
-  ///         on the rasterizer thread and the UI thread to finish. This is
-  ///         because the rasterizer thread can be blocked by the platform
-  ///         thread to render platform views.
+  ///         on the UI thread to finish. This is because operations are either
+  ///         initiated from the UI thread (such as rendering), or are sent as a
+  ///         posted task that is queued.
   ///
   ///         The implicit view should never be added with this function.
   ///         Instead, it is added internally on Shell initialization depending

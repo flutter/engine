@@ -2068,24 +2068,28 @@ void Shell::RemoveView(int64_t view_id) {
 
   expected_frame_sizes_.erase(view_id);
   fml::AutoResetWaitableEvent latch;
-  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
-                                             view_id                          //
-  ] {
-    if (engine) {
-      engine->RemoveView(view_id);
-    }
-  });
-
-  task_runners_.GetRasterTaskRunner()->PostTask(
+  task_runners_.GetUITaskRunner()->PostTask(
       [&latch,                                  //
+           & task_runners = task_runners_,      //
+       engine = engine_->GetWeakPtr(),          //
        rasterizer = rasterizer_->GetWeakPtr(),  //
        view_id                                  //
-  ]() {
-        if (rasterizer) {
-          rasterizer->CollectView(view_id);
+  ] {
+        if (engine) {
+          engine->RemoveView(view_id);
         }
+        // Don't wait for the raster task here, which only cleans up memory and
+        // does not affect functionality. Make sure it is done after Dart
+        // removes the view to avoid receiving another rasterization request
+        // that adds back the view record.
+        task_runners.GetRasterTaskRunner()->PostTask([rasterizer, view_id]() {
+          if (rasterizer) {
+            rasterizer->CollectView(view_id);
+          }
+        });
         latch.Signal();
       });
+
   latch.Wait();
 }
 
