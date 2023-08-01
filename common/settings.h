@@ -22,6 +22,9 @@
 
 namespace flutter {
 
+// The ID for the implicit view if the implicit view is enabled.
+//
+// See Settings::enable_implicit_view for introduction.
 constexpr int64_t kFlutterImplicitViewId = 0;
 
 class FrameTiming {
