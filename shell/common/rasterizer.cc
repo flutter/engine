@@ -155,18 +155,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::AddView(int64_t view_id) {
-  bool insertion_happened =
-      view_records_
-          .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
-          .second;
-  if (!insertion_happened) {
-    FML_DLOG(INFO) << "Rasterizer::AddView called with an existing view ID "
-                   << view_id << ".";
-  }
-}
-
-void Rasterizer::RemoveSurface(int64_t view_id) {
+void Rasterizer::CollectView(int64_t view_id) {
   view_records_.erase(view_id);
 }
 
@@ -377,6 +366,21 @@ bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
          raster_status == RasterStatus::kSkipAndRetry;
 }
 
+Rasterizer::ViewRecord& Rasterizer::InitViewRecordIfNecessary(int64_t view_id) {
+  auto found_iterator = view_records_
+      .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
+      .first;
+  return found_iterator->second;
+}
+
+Rasterizer::ViewRecord* Rasterizer::GetFirstViewRecord() {
+  auto found_iterator = view_records_.find(kFlutterImplicitViewId);
+  if (found_iterator != view_records_.end()) {
+    return &found_iterator->second;
+  }
+  return nullptr;
+}
+
 namespace {
 std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
     const sk_sp<DisplayList>& display_list,
@@ -500,9 +504,9 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
-  ViewRecord* view_record = GetViewRecord(view_id);
+  ViewRecord& view_record = InitViewRecordIfNecessary(view_id);
 
-  if (!layer_tree || !view_record) {
+  if (!layer_tree) {
     return DoDrawResult{
         .raster_status = RasterStatus::kFailed,
     };
@@ -513,10 +517,10 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   RasterStatus raster_status =
       DrawToSurface(frame_timings_recorder, layer_tree.get(),
-                    device_pixel_ratio, view_record);
+                    device_pixel_ratio, &view_record);
   if (raster_status == RasterStatus::kSuccess) {
-    view_record->last_tree = std::move(layer_tree);
-    view_record->last_pixel_ratio = device_pixel_ratio;
+    view_record.last_tree = std::move(layer_tree);
+    view_record.last_pixel_ratio = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
     std::unordered_map<int64_t, std::unique_ptr<LayerTree>> layer_trees;
     layer_trees[view_id] = std::move(layer_tree);
@@ -538,7 +542,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
     auto screenshot =
-        ScreenshotLayerTree(ScreenshotType::SkiaPicture, false, *view_record);
+        ScreenshotLayerTree(ScreenshotType::SkiaPicture, false, view_record);
     persistent_cache->DumpSkp(*screenshot.data);
   }
 

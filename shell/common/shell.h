@@ -301,18 +301,19 @@ class Shell final : public PlatformView::Delegate,
   /// @brief  Adds a non-implicit view.
   ///
   ///         This method returns immediately and does not wait for the tasks
-  ///         on the rasterizer thread and the UI thread to finish. This is
-  ///         because the rasterizer thread can be blocked by the platform
-  ///         thread to render platform views.
+  ///         on the UI thread to finish. This is because operations are either
+  ///         initiated from the UI thread (such as rendering), or are sent as a
+  ///         posted task that is queued.
   ///
   ///         The implicit view should never be added with this function.
   ///         Instead, it is added internally on Shell initialization depending
   ///         on `Settings.enable_implicit_view`. Trying to add
   ///         `kFlutterImplicitViewId` is a no-op with warning.
   ///
-  /// @param[in]  view_id     The view ID of the new view.
+  /// @param[in]  view_id           The view ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id);
+  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
 
   /// @brief  Removes a non-implicit view.
   ///

@@ -206,12 +206,16 @@ class Rasterizer final : public SnapshotDelegate,
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Add a view, implicit or not.
-  void AddView(int64_t view_id);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Remove a view, implicit or not.
-  void RemoveSurface(int64_t view_id);
+  /// @brief      Deallocate the resources for displaying a view.
+  ///
+  ///             This method should be called a view is removed.
+  ///
+  ///             Resources for a view is allocated the first time the
+  ///             rasterizer encouters this view ID.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  void CollectView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Sometimes, it may be necessary to render the same frame again
@@ -542,18 +546,9 @@ class Rasterizer final : public SnapshotDelegate,
     float last_pixel_ratio;
   };
 
-  ViewRecord* GetViewRecord(int64_t view_id) {
-    auto found_surface = view_records_.find(view_id);
-    if (found_surface == view_records_.end()) {
-      return nullptr;
-    }
-    return &found_surface->second;
-  }
+  ViewRecord& InitViewRecordIfNecessary(int64_t view_id);
 
-  ViewRecord* GetFirstViewRecord() {
-    // TODO(dkwingsmt)
-    return GetViewRecord(0ll);
-  }
+  ViewRecord* GetFirstViewRecord();
 
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(

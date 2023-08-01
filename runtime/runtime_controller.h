@@ -163,8 +163,24 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   std::unique_ptr<RuntimeController> Clone() const;
 
-  bool AddView(int64_t view_id);
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the isolate that a new view is available.
+  ///
+  ///             The implicit view should also be added with this method.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the isolate that a view is no longer available.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -624,9 +640,6 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
-
-  // |PlatformConfigurationClient|
-  bool ImplicitViewEnabled() override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

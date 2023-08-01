@@ -117,7 +117,7 @@ class PlatformDispatcher {
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
     if (_implicitViewId != null) {
-      _doAddView(_implicitViewId!);
+      _views[_implicitViewId!] = FlutterView._(_implicitViewId!, this, const _ViewConfiguration());
     }
   }
 
@@ -257,21 +257,27 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
-  FlutterView _createView(int id) {
-    return FlutterView._(id, this, const _ViewConfiguration());
+  // Called from the engine, via hooks.dart
+  //
+  // Adds a new view with the specific view configuration. If the target view is
+  // the implicit view, then it's equivalent to _updateWindowMetrics.
+  // Otherwise, the target view must not exist.
+  void _addView(int id, _ViewConfiguration viewConfiguration) {
+    // The implicit view is added at construction.
+    if (id != _implicitViewId) {
+      assert(!_views.containsKey(id), 'View ID $id already exists.');
+      _views[id] = FlutterView._(id, this, viewConfiguration);
+      _invoke(onMetricsChanged, _onMetricsChangedZone);
+    } else {
+      _updateWindowMetrics(id, viewConfiguration);
+    }
   }
 
-  void _addView(int id) {
-    assert(id != _implicitViewId, 'The implicit view #$id can not be added.');
-    _doAddView(id);
-    _invoke(onMetricsChanged, _onMetricsChangedZone);
-  }
-
-  void _doAddView(int id) {
-    assert(!_views.containsKey(id), 'View ID $id already exists.');
-    _views[id] = _createView(id);
-  }
-
+  // Called from the engine, via hooks.dart
+  //
+  // Removes the specific view.
+  //
+  // The target view must not be the implicit view, and must exist.
   void _removeView(int id) {
     assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
     assert(_views.containsKey(id), 'View ID $id does not exist.');
@@ -293,99 +299,12 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
-  void _updateWindowMetrics(
-    int id,
-    double devicePixelRatio,
-    double width,
-    double height,
-    double viewPaddingTop,
-    double viewPaddingRight,
-    double viewPaddingBottom,
-    double viewPaddingLeft,
-    double viewInsetTop,
-    double viewInsetRight,
-    double viewInsetBottom,
-    double viewInsetLeft,
-    double systemGestureInsetTop,
-    double systemGestureInsetRight,
-    double systemGestureInsetBottom,
-    double systemGestureInsetLeft,
-    double physicalTouchSlop,
-    List<double> displayFeaturesBounds,
-    List<int> displayFeaturesType,
-    List<int> displayFeaturesState,
-    int displayId,
-  ) {
+  void _updateWindowMetrics(int id, _ViewConfiguration viewConfiguration) {
     assert(_views.containsKey(id), 'View $id does not exist.');
-    final _ViewConfiguration viewConfiguration = _ViewConfiguration(
-      devicePixelRatio: devicePixelRatio,
-      geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: ViewPadding._(
-        top: viewPaddingTop,
-        right: viewPaddingRight,
-        bottom: viewPaddingBottom,
-        left: viewPaddingLeft,
-      ),
-      viewInsets: ViewPadding._(
-        top: viewInsetTop,
-        right: viewInsetRight,
-        bottom: viewInsetBottom,
-        left: viewInsetLeft,
-      ),
-      padding: ViewPadding._(
-        top: math.max(0.0, viewPaddingTop - viewInsetTop),
-        right: math.max(0.0, viewPaddingRight - viewInsetRight),
-        bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-        left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
-      ),
-      systemGestureInsets: ViewPadding._(
-        top: math.max(0.0, systemGestureInsetTop),
-        right: math.max(0.0, systemGestureInsetRight),
-        bottom: math.max(0.0, systemGestureInsetBottom),
-        left: math.max(0.0, systemGestureInsetLeft),
-      ),
-      gestureSettings: GestureSettings(
-        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
-      ),
-      displayFeatures: _decodeDisplayFeatures(
-        bounds: displayFeaturesBounds,
-        type: displayFeaturesType,
-        state: displayFeaturesState,
-        devicePixelRatio: devicePixelRatio,
-      ),
-      displayId: displayId,
-    );
-
     _views[id]!._viewConfiguration = viewConfiguration;
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  List<DisplayFeature> _decodeDisplayFeatures({
-    required List<double> bounds,
-    required List<int> type,
-    required List<int> state,
-    required double devicePixelRatio,
-  }) {
-    assert(bounds.length / 4 == type.length, 'Bounds are rectangles, requiring 4 measurements each');
-    assert(type.length == state.length);
-    final List<DisplayFeature> result = <DisplayFeature>[];
-    for(int i = 0; i < type.length; i++) {
-      final int rectOffset = i * 4;
-      result.add(DisplayFeature(
-        bounds: Rect.fromLTRB(
-          bounds[rectOffset] / devicePixelRatio,
-          bounds[rectOffset + 1] / devicePixelRatio,
-          bounds[rectOffset + 2] / devicePixelRatio,
-          bounds[rectOffset + 3] / devicePixelRatio,
-        ),
-        type: DisplayFeatureType.values[type[i]],
-        state: state[i] < DisplayFeatureState.values.length
-            ? DisplayFeatureState.values[state[i]]
-            : DisplayFeatureState.unknown,
-      ));
-    }
-    return result;
-  }
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -2339,8 +2258,9 @@ class Locale {
     if (scriptCode != null && scriptCode!.isNotEmpty) {
       out.write('$separator$scriptCode');
     }
-    if (_countryCode != null && _countryCode!.isNotEmpty) {
-      out.write('$separator$countryCode');
+    final String? countryCode = _countryCode;
+    if (countryCode != null && countryCode.isNotEmpty) {
+      out.write('$separator${this.countryCode}');
     }
     return out.toString();
   }

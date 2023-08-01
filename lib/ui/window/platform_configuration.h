@@ -51,16 +51,6 @@ enum class AccessibilityFeatureFlag : int32_t {
 class PlatformConfigurationClient {
  public:
   //--------------------------------------------------------------------------
-  /// @brief      Whether the platform provides an implicit view. If true,
-  ///             the Framework may assume that it can always render into
-  ///             the view with ID 0.
-  ///
-  ///             This value must not change for the lifetime of the
-  ///             application.
-  ///
-  virtual bool ImplicitViewEnabled() = 0;
-
-  //--------------------------------------------------------------------------
   /// @brief      The route or path that the embedder requested when the
   ///             application was launched.
   ///
@@ -268,8 +258,24 @@ class PlatformConfiguration final {
   ///
   void DidCreateIsolate();
 
-  void AddView(int64_t view_id);
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the framework that a new view is available.
+  ///
+  ///             The implicit view should also be added with this method.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the framework that a view is no longer available.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -447,7 +453,6 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
-  tonic::DartPersistentValue add_view_;
   tonic::DartPersistentValue remove_view_;
   tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
@@ -471,8 +476,6 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
-
-  void AddWindowRecord(int64_t view_id);
 };
 
 //----------------------------------------------------------------------------

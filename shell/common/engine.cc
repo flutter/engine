@@ -292,8 +292,8 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
 }
 
-void Engine::AddView(int64_t view_id) {
-  runtime_controller_->AddView(view_id);
+void Engine::AddView(int64_t view_id, const ViewportMetrics& view_metrics) {
+  runtime_controller_->AddView(view_id, view_metrics);
 }
 
 void Engine::RemoveView(int64_t view_id) {
@@ -444,14 +444,6 @@ void Engine::SetSemanticsEnabled(bool enabled) {
 
 void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
-}
-
-bool Engine::ImplicitViewEnabled() {
-  // TODO(loicsharma): This value should be provided by the embedder
-  // when it launches the engine. For now, assume the embedder always creates a
-  // view.
-  // See: https://github.com/flutter/flutter/issues/120306
-  return true;
 }
 
 std::string Engine::DefaultRouteName() {

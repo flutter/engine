@@ -675,8 +675,25 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
-  void AddView(int64_t view_id);
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Flutter application that a new view is available.
+  ///
+  ///             The implicit view should also be added with this method.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Flutter application that a view is no
+  ///             longer available.
+  ///
+  ///             The implicit view should not be removed with this method,
+  ///             since it should never be removed.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -902,9 +919,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
-  // |RuntimeDelegate|
-  bool ImplicitViewEnabled() override;
-
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 

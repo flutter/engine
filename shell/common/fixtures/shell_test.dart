@@ -487,11 +487,13 @@ Future<void> testThatAssetLoadingHappensOnWorkerThread() async {
 external void nativeReportViewIdsCallback(bool hasImplicitView, List<int> viewIds);
 
 List<int> getCurrentViewIds() {
-  return PlatformDispatcher.instance.views
+  final List<int> result = PlatformDispatcher.instance.views
       .map((FlutterView view) => view.viewId)
-      .toSet()
       .toList()
       ..sort();
+  assert(result.toSet().length == result.length,
+      'Unexpected duplicate view ID found: $result');
+  return result;
 }
 
 bool listEquals<T>(List<T> a, List<T> b) {

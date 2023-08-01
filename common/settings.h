@@ -234,14 +234,14 @@ struct Settings {
   // view, single-view APIs can operate a special view as if other views don't
   // exist.
   //
-  // In the regular multi-view model where implicit view is disabled, all views
-  // should be created by Shell::AddView before being used, and removed by
+  // In the regular multi-view model where the implicit view is disabled, all
+  // views should be created by Shell::AddView before being used, and removed by
   // Shell::RemoveView to signify that they are gone. If a view is added or
   // removed, the framework (PlatformDispatcher) will be notified. New view IDs
   // are always unique, never reused. Operating a non-existing view is an error.
   //
-  // If implicit view is enabled, in addition to the "regular views" as above,
-  // the shell will start up with a special view with a fixed view ID of
+  // If the implicit view is enabled, in addition to the "regular views" as
+  // above, the shell will start up with a special view with a fixed view ID of
   // kFlutterImplicitViewId. This view, called the implicit view, is available
   // throughout the lifetime of the shell. Shell::AddView or RemoveView must not
   // be called for this view. Even when the window that shows the view is
@@ -253,9 +253,7 @@ struct Settings {
   // implicit view with the correct ID (kFlutterImplicitViewId), unless
   // specified otherwise,
   //
-  // The enable_implicit_view defaults to true. Multi-view apps will probably
-  // want to disable the implicit view eventually for the simplicity of a
-  // unified model.
+  // The enable_implicit_view defaults to true.
   bool enable_implicit_view = true;
 
   // Data set by platform-specific embedders for use in font initialization.
