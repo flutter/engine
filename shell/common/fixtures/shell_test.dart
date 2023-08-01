@@ -523,3 +523,28 @@ void testReportViewIds() {
     }
   };
 }
+
+// Returns a list of [view_id 1, view_width 1, view_id 2, view_width 2, ...]
+// for all views.
+List<int> getCurrentViewWidths() {
+  final List<int> result = <int>[];
+  for (final FlutterView view in PlatformDispatcher.instance.views) {
+    result.add(view.viewId);
+    result.add(view.physicalGeometry.width.round());
+  }
+  return result;
+}
+
+@pragma('vm:external-name', 'NativeReportViewWidthsCallback')
+external void nativeReportViewWidthsCallback(List<int> viewWidthPacket);
+
+// This entrypoint reports whether there's an implicit view and the list of view
+// IDs using nativeReportViewIdsCallback on initialization and every
+// onMetricsChanged.
+@pragma('vm:entry-point')
+void testReportViewWidths() {
+  nativeReportViewWidthsCallback(getCurrentViewWidths());
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    nativeReportViewWidthsCallback(getCurrentViewWidths());
+  };
+}
