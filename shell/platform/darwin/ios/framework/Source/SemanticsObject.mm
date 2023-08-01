@@ -878,12 +878,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [super dealloc];
 }
 
-// - (id)nativeAccessibility {
-//   return _platformView;
-// }
-
-- (BOOL)isAccessibilityElement {
-  return NO;
+- (id)nativeAccessibility {
+  return _platformView;
 }
 
 #pragma mark - UIAccessibilityContainer overrides
