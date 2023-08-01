@@ -157,8 +157,9 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::CollectView(int64_t view_id) {
-  // TODO(dkwingsmt): Support proper view management after Rasterizer supports
-  // multi-view.
+  if (view_id == kFlutterImplicitViewId) {
+    last_layer_tree_.reset();
+  }
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
