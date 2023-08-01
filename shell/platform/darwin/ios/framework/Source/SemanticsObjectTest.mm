@@ -89,23 +89,6 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 }  // namespace
 }  // namespace flutter
 
-@interface FakePlatformView : UIView
-
-@property(nonatomic, strong, readonly) UIView* subview;
-
-@end
-
-@implementation FakePlatformView
-
-- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  if (_subview) {
-    _subview = [[UIView alloc] init];
-  }
-  return _subview;
-}
-
-@end
-
 @interface SemanticsObjectTest : XCTestCase
 @end
 
@@ -220,15 +203,14 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   XCTAssertNil(hitTestResult);
 }
 
-- (void)testAccessibilityHitTestSearchPlatformViewSubtree {
+- (void)testAccessibilityHitTestSearchCanReturnPlatformView {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
   SemanticsObject* object0 = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
   SemanticsObject* object1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
   SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
-  FakePlatformView* platformView =
-      [[FakePlatformView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+  UIView* platformView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
   FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer =
       [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
                                                                 uid:1
@@ -264,13 +246,9 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   [object3 setSemanticsNode:&node3];
 
   CGPoint point = CGPointMake(10, 10);
-  // id partialMockPlatformView = OCMPartialMock(platformView);
-  // OCMStub([partialMockPlatformView _accessibilityHitTest:point
-  // withEvent:nil]).andReturn(subView);
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
-  // Focus to object2 because it's the first object in hit test order
-  XCTAssertEqual(hitTestResult, platformView.subview);
+  XCTAssertEqual(hitTestResult, platformView);
 }
 
 - (void)testAccessibilityScrollToVisible {

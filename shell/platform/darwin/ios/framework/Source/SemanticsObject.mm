@@ -93,12 +93,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 }  // namespace
 
-@interface NSObject (FlutterSemantics)
-
-- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event;
-
-@end
-
 @interface FlutterSwitchSemanticsObject ()
 @property(nonatomic, readonly) UISwitch* nativeSwitch;
 @end
@@ -578,13 +572,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // IOS 16. Overrides this method to focus the first eligiable semantics
 // object in hit test order.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  id hittest = [self search:point];
-  if (![hittest isKindOfClass:[SemanticsObject class]]) {
-    // If hittest result is not a SemanticsObject (e.g. PlatformView),
-    // call the default hittest method to find the hittest result inside the "hittest".
-    return [(NSObject*)hittest _accessibilityHitTest:point withEvent:event];
-  }
-  return hittest;
+  return [self search:point];
 }
 
 // iOS calls this method when this item is swipe-to-focusd in VoiceOver.
@@ -890,17 +878,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [super dealloc];
 }
 
-- (id)nativeAccessibility {
-  return _platformView;
-}
-
-- (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  return [_platformView _accessibilityHitTest:point withEvent:event];
-}
-
-- (BOOL)isFocusable {
-  return YES;
-}
+// - (id)nativeAccessibility {
+//   return _platformView;
+// }
 
 - (BOOL)isAccessibilityElement {
   return NO;
