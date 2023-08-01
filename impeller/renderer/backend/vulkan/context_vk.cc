@@ -120,6 +120,10 @@ ContextVK::~ContextVK() {
   CommandPoolVK::ClearAllPools(this);
 }
 
+Context::BackendType ContextVK::GetBackendType() const {
+  return Context::BackendType::kVulkan;
+}
+
 void ContextVK::Setup(Settings settings) {
   TRACE_EVENT0("impeller", "ContextVK::Setup");
 
@@ -140,8 +144,18 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  auto caps = std::shared_ptr<CapabilitiesVK>(
-      new CapabilitiesVK(settings.enable_validation));
+  // Enable Vulkan validation if either:
+  // 1. The user has explicitly enabled it.
+  // 2. We are in a combination of debug mode, and running on Android.
+  // (It's possible 2 is overly conservative and we can simplify this)
+  auto enable_validation = settings.enable_validation;
+
+#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
+  enable_validation = true;
+#endif
+
+  auto caps =
+      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -227,7 +241,7 @@ void ContextVK::Setup(Settings settings) {
       std::make_unique<DebugReportVK>(*caps, device_holder->instance.get());
 
   if (!debug_report->IsValid()) {
-    VALIDATION_LOG << "Could not setup debug report.";
+    VALIDATION_LOG << "Could not set up debug report.";
     return;
   }
 
@@ -273,8 +287,8 @@ void ContextVK::Setup(Settings settings) {
   auto enabled_device_extensions =
       caps->GetEnabledDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
-    // This shouldn't happen since we already did device selection. But doesn't
-    // hurt to check again.
+    // This shouldn't happen since we already did device selection. But
+    // doesn't hurt to check again.
     return;
   }
 
@@ -416,8 +430,8 @@ void ContextVK::Setup(Settings settings) {
   is_valid_ = true;
 
   //----------------------------------------------------------------------------
-  /// Label all the relevant objects. This happens after setup so that the debug
-  /// messengers have had a chance to be setup.
+  /// Label all the relevant objects. This happens after setup so that the
+  /// debug messengers have had a chance to be set up.
   ///
   SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }

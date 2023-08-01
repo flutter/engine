@@ -152,19 +152,18 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
     return nullptr;
   }
   // Apply default ContentContextOptions to the descriptor.
-  const auto default_color_fmt =
+  const auto default_color_format =
       context.GetCapabilities()->GetDefaultColorFormat();
   ContentContextOptions{.sample_count = SampleCount::kCount4,
-                        .color_attachment_pixel_format = default_color_fmt}
+                        .color_attachment_pixel_format = default_color_format}
       .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
+      lazy_glyph_atlas_(std::make_shared<LazyGlyphAtlas>()),
       tessellator_(std::make_shared<Tessellator>()),
-      alpha_glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
-      color_glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
       scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
@@ -317,32 +316,29 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
   }
 
-  auto maybe_pipeline_desc =
-      solid_fill_pipelines_[default_options_]->GetDescriptor();
-  if (maybe_pipeline_desc.has_value()) {
-    auto clip_pipeline_descriptor = maybe_pipeline_desc.value();
-    clip_pipeline_descriptor.SetLabel("Clip Pipeline");
+  /// Setup default clip pipeline.
 
-    // Disable write to all color attachments.
-    if (context_->GetCapabilities()
-            ->SupportsPipelinesWithNoColorAttachments()) {
-      clip_pipeline_descriptor.SetColorAttachmentDescriptors({});
-    } else {
-      auto color_attachments =
-          clip_pipeline_descriptor.GetColorAttachmentDescriptors();
-      for (auto& color_attachment : color_attachments) {
-        color_attachment.second.write_mask =
-            static_cast<uint64_t>(ColorWriteMask::kNone);
-      }
-      clip_pipeline_descriptor.SetColorAttachmentDescriptors(
-          std::move(color_attachments));
-    }
-
-    clip_pipelines_[default_options_] =
-        std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor);
-  } else {
+  auto clip_pipeline_descriptor =
+      ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
+  if (!clip_pipeline_descriptor.has_value()) {
     return;
   }
+  ContentContextOptions{
+      .sample_count = SampleCount::kCount4,
+      .color_attachment_pixel_format =
+          context_->GetCapabilities()->GetDefaultColorFormat()}
+      .ApplyToPipelineDescriptor(*clip_pipeline_descriptor);
+  // Disable write to all color attachments.
+  auto clip_color_attachments =
+      clip_pipeline_descriptor->GetColorAttachmentDescriptors();
+  for (auto& color_attachment : clip_color_attachments) {
+    color_attachment.second.write_mask =
+        static_cast<uint64_t>(ColorWriteMask::kNone);
+  }
+  clip_pipeline_descriptor->SetColorAttachmentDescriptors(
+      std::move(clip_color_attachments));
+  clip_pipelines_[default_options_] =
+      std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor);
 
   is_valid_ = true;
 }
@@ -414,12 +410,6 @@ std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
-}
-
-std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext(
-    GlyphAtlas::Type type) const {
-  return type == GlyphAtlas::Type::kAlphaBitmap ? alpha_glyph_atlas_context_
-                                                : color_glyph_atlas_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

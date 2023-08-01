@@ -122,13 +122,11 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   lazy_atlas.AddTextFrame(frame, 1.0f);
 
   // Creates different atlases for color and alpha bitmap.
-  auto color_context = std::make_shared<GlyphAtlasContext>();
-  auto bitmap_context = std::make_shared<GlyphAtlasContext>();
   auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kColorBitmap, color_context, GetContext());
+      GlyphAtlas::Type::kColorBitmap, GetContext());
 
   auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kAlphaBitmap, bitmap_context, GetContext());
+      GlyphAtlas::Type::kAlphaBitmap, GetContext());
 
   ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
@@ -311,9 +309,7 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
 
   auto frame_2 =
       TextFrameFromTextBlob(SkTextBlob::MakeFromString("123456789", sk_font));
-  // Characters probably have overlap due to low fidelity text metrics, but this
-  // could be fixed.
-  ASSERT_TRUE(frame_2.MaybeHasOverlapping());
+  ASSERT_FALSE(frame_2.MaybeHasOverlapping());
 }
 
 TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {

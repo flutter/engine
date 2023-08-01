@@ -129,9 +129,11 @@
 ../../../flutter/impeller/compiler/compiler_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/display_list/dl_unittests.cc
+../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
+../../../flutter/impeller/entity/geometry/geometry_unittests.cc
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
@@ -349,6 +351,7 @@
 ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
 ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 ../../../flutter/shell/platform/windows/window_unittests.cc
+../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
@@ -443,10 +446,13 @@
 ../../../fuchsia/sdk/linux/.build-id
 ../../../fuchsia/sdk/linux/.versions
 ../../../fuchsia/sdk/linux/AUTHORS
+../../../fuchsia/sdk/linux/NOTICE.fuchsia
 ../../../fuchsia/sdk/linux/PATENTS
 ../../../fuchsia/sdk/linux/README.md
 ../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/arch/riscv64/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/arch/riscv64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
@@ -657,6 +663,7 @@
 ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/magma_client/meta.json
+../../../fuchsia/sdk/linux/pkg/magma_common/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp_no_converters/meta.json
 ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
@@ -2627,6 +2634,7 @@
 ../../../third_party/skia/gm/BUILD.bazel
 ../../../third_party/skia/gm/android_gm_test.bzl
 ../../../third_party/skia/gm/surface_manager/BUILD.bazel
+../../../third_party/skia/gm/vias/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
 ../../../third_party/skia/gn/bazel_build.py
