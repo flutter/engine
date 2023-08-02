@@ -7,7 +7,14 @@
 #include <memory>
 
 #include "flutter/flow/layers/layer.h"
-#include "impeller/aiks/picture.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/picture.h"  // nogncheck
+#else                               // IMPELLER_SUPPORTS_RENDERING
+namespace impeller {
+struct Picture;
+}  // namespace impeller
+#endif                              // !IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 

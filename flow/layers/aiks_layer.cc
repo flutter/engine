@@ -20,6 +20,7 @@ AiksLayer::AiksLayer(const SkPoint& offset,
                      bool is_complex,
                      bool will_change)
     : offset_(offset), picture_(picture) {
+#if IMPELLER_SUPPORTS_RENDERING
   if (picture_) {
     auto bounds = picture_->pass->GetElementsCoverage(std::nullopt)
                       .value_or(impeller::Rect());
@@ -27,6 +28,7 @@ AiksLayer::AiksLayer(const SkPoint& offset,
                                bounds.origin.y + offset.y(), bounds.size.width,
                                bounds.size.height);
   }
+#endif
 }
 
 void AiksLayer::Diff(DiffContext* context, const Layer* old_layer) {

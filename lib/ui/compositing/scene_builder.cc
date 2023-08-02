@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
+#include "flutter/flow/layers/aiks_layer.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
@@ -28,8 +29,6 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
-
-#include "flutter/flow/layers/aiks_layer.h"
 
 namespace flutter {
 

@@ -344,6 +344,7 @@ class EmbedderViewSlice {
   virtual bool renders_anything() = 0;
 };
 
+#if IMPELLER_SUPPORTS_RENDERING
 class ImpellerEmbedderViewSlice : public EmbedderViewSlice {
  public:
   explicit ImpellerEmbedderViewSlice(SkRect view_bounds);
@@ -361,6 +362,7 @@ class ImpellerEmbedderViewSlice : public EmbedderViewSlice {
   std::unique_ptr<impeller::DlAiksCanvas> canvas_;
   std::shared_ptr<const impeller::Picture> picture_;
 };
+#endif
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
  public:

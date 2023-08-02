@@ -37,13 +37,17 @@ EmbedderExternalView::EmbedderExternalView(
       surface_transformation_(surface_transformation),
       view_identifier_(view_identifier),
       embedded_view_params_(std::move(params)) {
+#if IMPELLER_SUPPORTS_RENDERING
   if (enable_impeller) {
     slice_ =
         std::make_unique<ImpellerEmbedderViewSlice>(SkRect::Make(frame_size));
   } else {
+#endif  // IMPELLER_SUPPORTS_RENDERING
     slice_ = std::make_unique<DisplayListEmbedderViewSlice>(
         SkRect::Make(frame_size));
+#if IMPELLER_SUPPORTS_RENDERING
   }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
 EmbedderExternalView::~EmbedderExternalView() = default;

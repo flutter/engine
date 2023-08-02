@@ -211,11 +211,6 @@ class DlCanvas {
   virtual void DrawImpellerPicture(
       const std::shared_ptr<const impeller::Picture>& picture,
       SkScalar opacity = SK_Scalar1) = 0;
-  //      {
-  //   FML_LOG(ERROR) << "Attempted to draw an Impeller picture into a "
-  //                     "non-Impeller enabled canvas.";
-  //   FML_DCHECK(false);
-  // }
   virtual void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                             SkScalar x,
                             SkScalar y,

@@ -3437,6 +3437,8 @@ FILE: ../../../flutter/display_list/dl_op_receiver.cc
 FILE: ../../../flutter/display_list/dl_op_receiver.h
 FILE: ../../../flutter/display_list/dl_op_records.cc
 FILE: ../../../flutter/display_list/dl_op_records.h
+FILE: ../../../flutter/display_list/dl_op_spy.cc
+FILE: ../../../flutter/display_list/dl_op_spy.h
 FILE: ../../../flutter/display_list/dl_paint.cc
 FILE: ../../../flutter/display_list/dl_paint.h
 FILE: ../../../flutter/display_list/dl_sampling_options.h
@@ -4920,8 +4922,6 @@ FILE: ../../../flutter/shell/common/display.cc
 FILE: ../../../flutter/shell/common/display.h
 FILE: ../../../flutter/shell/common/display_manager.cc
 FILE: ../../../flutter/shell/common/display_manager.h
-FILE: ../../../flutter/shell/common/dl_op_spy.cc
-FILE: ../../../flutter/shell/common/dl_op_spy.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/pipeline.cc

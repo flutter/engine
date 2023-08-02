@@ -12,8 +12,15 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "impeller/aiks/picture.h"  // nogncheck
 #include "third_party/skia/include/core/SkPicture.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/picture.h"  // nogncheck
+#else                               // IMPELLER_SUPPORTS_RENDERING
+namespace impeller {
+struct Picture;
+}  // namespace impeller
+#endif                              // !IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 class Canvas;

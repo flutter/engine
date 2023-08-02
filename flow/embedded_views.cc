@@ -7,6 +7,7 @@
 
 namespace flutter {
 
+#if IMPELLER_SUPPORTS_RENDERING
 ImpellerEmbedderViewSlice::ImpellerEmbedderViewSlice(SkRect view_bounds) {
   canvas_ = std::make_unique<impeller::DlAiksCanvas>(
       /*bounds=*/view_bounds);
@@ -39,6 +40,7 @@ bool ImpellerEmbedderViewSlice::recording_ended() {
 bool ImpellerEmbedderViewSlice::renders_anything() {
   return !picture_->rtree->bounds().isEmpty();
 }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
   builder_ = std::make_unique<DisplayListBuilder>(

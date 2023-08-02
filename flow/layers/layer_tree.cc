@@ -158,6 +158,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 std::shared_ptr<const impeller::Picture> LayerTree::FlattenToImpellerPicture(
     const SkRect& bounds,
     const std::shared_ptr<TextureRegistry>& texture_registry) {
+#if IMPELLER_SUPPORTS_RENDERING
   TRACE_EVENT0("flutter", "LayerTree::FlattenToImpellerPicture");
 
   impeller::DlAiksCanvas canvas(bounds);
@@ -212,6 +213,9 @@ std::shared_ptr<const impeller::Picture> LayerTree::FlattenToImpellerPicture(
 
   return std::make_shared<const impeller::Picture>(
       canvas.EndRecordingAsPicture());
+#else   // IMPELLER_SUPPORTS_RENDERING
+  return nullptr;
+#endif  // !IMPELLER_SUPPORTS_RENDERING
 }
 
 sk_sp<DisplayList> LayerTree::Flatten(
