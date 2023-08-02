@@ -3088,7 +3088,7 @@ void testMain() {
     },
   );
 
-  group('$ClickDebouncer', () {
+  group('ClickDebouncer', () {
     _testClickDebouncer();
   });
 }
@@ -3159,7 +3159,7 @@ void _testClickDebouncer() {
     expect(binding.clickDebouncer.isDebouncing, false);
 
     // This test DOM element is missing the `flt-tappable` attribute on purpose
-    // so that the debouncer does not debounce events and simply let's
+    // so that the debouncer does not debounce events and simply lets
     // everything through.
     final DomElement testElement = createDomElement('flt-semantics');
     flutterViewEmbedder.semanticsHostElement!.appendChild(testElement);

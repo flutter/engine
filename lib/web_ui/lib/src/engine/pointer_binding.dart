@@ -279,7 +279,7 @@ class ClickDebouncer {
     }
 
     if (isListening) {
-      // There's a pending queue of pointer events. Prefer sendind the tap action
+      // There's a pending queue of pointer events. Prefer sending the tap action
       // instead of pointer events, because the pointer events may not land on the
       // combined semantic node and miss the click/tap.
       final DebounceState state = _state!;
@@ -415,15 +415,9 @@ class ClickDebouncer {
   ///
   /// This object can be used as if it was just initialized.
   void reset() {
-    final DebounceState? state = _state;
+    _state?.timer.cancel();
     _state = null;
     _lastFlushedPointerUpTimeStamp = null;
-
-    if (state == null) {
-      return;
-    }
-
-    state.timer.cancel();
   }
 }
 

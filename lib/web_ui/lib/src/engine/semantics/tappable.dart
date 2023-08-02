@@ -54,6 +54,10 @@ class Tappable extends RoleManager {
   }
 
   void _updateAttribute() {
+    // The `flt-tappable` attribute marks the element for the ClickDebouncer to
+    // to know that it should debounce click events on this element. The
+    // contract is that the element that has this attribute is also the element
+    // that receives pointer and "click" events.
     if (_isListening) {
       semanticsObject.element.setAttribute('flt-tappable', '');
     } else {
