@@ -103,36 +103,6 @@ void Animator::BeginFrame(
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 
-  // Notify the rasterizer that views were rendered.
-  if (has_rendered_) {
-    frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
-
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_trees), std::move(frame_timings_recorder_),
-        device_pixel_ratio_);
-
-    // Reset the layer trees container as it was moved.
-    layer_trees = std::unordered_map<int64_t, std::unique_ptr<LayerTree>>();
-
-    // Commit the pending continuation.
-    PipelineProduceResult result =
-        producer_continuation_.Complete(std::move(layer_tree_item));
-
-    if (!result.success) {
-      FML_DLOG(INFO) << "No pending continuation to commit";
-      return;
-    }
-
-    if (!result.is_first_item) {
-      // It has been successfully pushed to the pipeline but not as the first
-      // item. Eventually the 'Rasterizer' will consume it, so we don't need to
-      // notify the delegate.
-      return;
-    }
-
-    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
-  }
-
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
     // This is a heuristic that is meant to avoid giving false positives to the
@@ -158,11 +128,8 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(int64_t view_id,
-                      std::unique_ptr<flutter::LayerTree> layer_tree,
-                      float device_pixel_ratio) {
+void Animator::Render(std::vector<LayerTreeTask> tasks) {
   has_rendered_ = true;
-  last_layer_tree_size_ = layer_tree->frame_size();
 
   if (!frame_timings_recorder_) {
     // Framework can directly call render with a built scene.
@@ -170,24 +137,34 @@ void Animator::Render(int64_t view_id,
     const fml::TimePoint placeholder_time = fml::TimePoint::Now();
     frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
     frame_timings_recorder_->RecordBuildStart(placeholder_time);
-    frame_timings_recorder_->RecordBuildEnd(placeholder_time);
-
-    // TODO: Notify the rasterizer that a view was rendered by completing
-    // the producer continuation and calling OnAnimatorDraw.
-    FML_LOG(WARNING) << "Framework rendered directly with scene!!!";
   }
 
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render");
+  frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
 
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  // TODO: The framework can call render directly even if we didn't begin
-  // a frame. In this scenario, we should notify the rasterizer of pending work.
-  layer_trees[view_id] = std::move(layer_tree);
-  // TODO(dkwingsmt): Probably different DPR for different layer trees
-  device_pixel_ratio_ = device_pixel_ratio;
+  auto layer_tree_item = std::make_unique<FrameItem>(
+      std::move(tasks), std::move(frame_timings_recorder_));
+  // Commit the pending continuation.
+  PipelineProduceResult result =
+      producer_continuation_.Complete(std::move(layer_tree_item));
+
+  if (!result.success) {
+    FML_DLOG(INFO) << "No pending continuation to commit";
+    return;
+  }
+
+  if (!result.is_first_item) {
+    // It has been successfully pushed to the pipeline but not as the first
+    // item. Eventually the 'Rasterizer' will consume it, so we don't need to
+    // notify the delegate.
+    return;
+  }
+
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {

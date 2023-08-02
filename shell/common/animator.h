@@ -54,9 +54,7 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
-  void Render(int64_t view_id,
-              std::unique_ptr<flutter::LayerTree> layer_tree,
-              float device_pixel_ratio);
+  void Render(std::vector<LayerTreeTask> tasks);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
@@ -110,7 +108,6 @@ class Animator final {
   LayerTreePipeline::ProducerContinuation producer_continuation_;
   bool regenerate_layer_tree_ = false;
   bool frame_scheduled_ = false;
-  SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;
 

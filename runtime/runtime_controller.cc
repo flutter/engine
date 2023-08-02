@@ -344,17 +344,34 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(int64_t view_id, Scene* scene) {
-  auto window =
-      UIDartState::Current()->platform_configuration()->get_window(view_id);
-  if (window == nullptr) {
-    return;
+void RuntimeController::Render(std::vector<int64_t>& view_ids,
+                               std::vector<Scene*>& scenes) {
+  FML_DCHECK(view_ids.size() == scenes.size());
+  std::vector<LayerTreeTask> tasks;
+  tasks.reserve(view_ids.size());
+  for (size_t task_index = 0; task_index < view_ids.size(); task_index += 1) {
+    int64_t view_id = view_ids[task_index];
+    auto window =
+        UIDartState::Current()->platform_configuration()->get_window(view_id);
+    if (window == nullptr) {
+      continue;
+    }
+    const auto& viewport_metrics = window->viewport_metrics();
+    // Ensure frame dimensions are sane.
+    if (viewport_metrics.physical_width <= 0 ||
+        viewport_metrics.physical_height <= 0 ||
+        viewport_metrics.device_pixel_ratio <= 0) {
+      continue;
+    }
+    auto layer_tree = scenes[task_index]->takeLayerTree(
+        viewport_metrics.physical_width, viewport_metrics.physical_height);
+    if (layer_tree == nullptr) {
+      continue;
+    }
+    tasks.emplace_back(view_id, std::move(layer_tree),
+                       viewport_metrics.device_pixel_ratio);
   }
-  const auto& viewport_metrics = window->viewport_metrics();
-  client_.Render(view_id,
-                 scene->takeLayerTree(viewport_metrics.physical_width,
-                                      viewport_metrics.physical_height),
-                 viewport_metrics.device_pixel_ratio);
+  client_.Render(std::move(tasks));
 }
 
 // |PlatformConfigurationClient|

@@ -276,6 +276,19 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
+  void render(Map<FlutterView, Scene> tasks) {
+    final List<int> ids = <int>[];
+    final List<_NativeScene> scenes = <_NativeScene>[];
+    tasks.forEach((FlutterView view, Scene scene) {
+      ids.add(view.viewId);
+      scenes.add(scene as _NativeScene);
+    });
+    _renderViews(ids, scenes);
+  }
+
+  @Native<Void Function(Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::RenderViews')
+  external static void _renderViews(List<int> viewIds, List<_NativeScene> scenes);
+
   // Called from the engine, via hooks.dart.
   //
   // Updates the available displays.
