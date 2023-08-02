@@ -316,6 +316,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_unopt
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux Web Framework tests
     recipe: engine/web_engine_framework
