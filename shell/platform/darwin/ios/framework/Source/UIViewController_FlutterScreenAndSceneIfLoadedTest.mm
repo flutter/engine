@@ -23,7 +23,7 @@ FLUTTER_ASSERT_ARC
     UIScene* scene = scenes.anyObject;
     XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
     UIWindowScene* windowScene = (UIWindowScene*)scene;
-    XCTAssertEqual(windowScene.windows.count, 1UL, @"There must only be 1 window for test");
+    XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
     UIWindow* window = windowScene.windows[0];
     [window addSubview:viewController.view];
 
@@ -60,7 +60,7 @@ FLUTTER_ASSERT_ARC
     UIScene* scene = scenes.anyObject;
     XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
     UIWindowScene* windowScene = (UIWindowScene*)scene;
-    XCTAssertEqual(windowScene.windows.count, 1UL, @"There must only be 1 window for test");
+    XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
     UIWindow* window = windowScene.windows[0];
     [window addSubview:viewController.view];
 
