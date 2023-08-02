@@ -460,7 +460,7 @@ static bool EncodeCommand(const Context& context,
   } else {
     pop_marker.Release();
   }
-#endif // IMPELLER_DEBUG
+#endif  // IMPELLER_DEBUG
 
   const auto& cmd_buffer = encoder.GetCommandBuffer();
 

@@ -56,7 +56,7 @@ struct ComputeCommand : public ResourceBinder {
   /// The debugging label to use for the command.
   ///
   std::string label;
-#endif // IMPELLER_DEBUG
+#endif  // IMPELLER_DEBUG
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,

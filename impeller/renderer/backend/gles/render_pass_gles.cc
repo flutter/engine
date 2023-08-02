@@ -252,7 +252,7 @@ struct RenderPassData {
     } else {
       pop_cmd_debug_marker.Release();
     }
-#endif // IMPELLER_DEBUG
+#endif  // IMPELLER_DEBUG
 
     const auto& pipeline = PipelineGLES::Cast(*command.pipeline);
 
