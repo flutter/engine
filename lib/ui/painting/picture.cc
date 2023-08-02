@@ -41,7 +41,7 @@ Picture::~Picture() = default;
 Dart_Handle Picture::toImage(uint32_t width,
                              uint32_t height,
                              Dart_Handle raw_image_callback) {
-  if (impeller_picture() || display_list()) {
+  if (!impeller_picture() && !display_list()) {
     return tonic::ToDart("Picture is null");
   }
   return RasterizeToImage(width, height, raw_image_callback);
