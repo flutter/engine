@@ -320,6 +320,15 @@ constexpr char kTextPlainFormat[] = "text/plain";
   }];
 }
 
+- (void)addApplicationDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    id<FlutterAppLifecycleProvider> lifeCycleProvider =
+        (id<FlutterAppLifecycleProvider>)appDelegate;
+    [lifeCycleProvider addApplicationLifecycleDelegate:delegate];
+  }
+}
+
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId {
   [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
@@ -448,12 +457,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
   id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
-  const SEL selector = @selector(addApplicationLifecycleDelegate:);
-  if ([appDelegate respondsToSelector:selector]) {
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
     _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
                                                                        terminator:nil];
-    FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
-    [flutterAppDelegate addApplicationLifecycleDelegate:self];
+    id<FlutterAppLifecycleProvider> lifecycleProvider =
+        (id<FlutterAppLifecycleProvider>)appDelegate;
+    [lifecycleProvider addApplicationLifecycleDelegate:self];
   } else {
     _terminationHandler = nil;
   }
