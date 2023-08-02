@@ -111,7 +111,6 @@ class SurfaceFrame {
   bool submitted_ = false;
 
   DlSkCanvasAdapter adapter_;
-  sk_sp<DisplayListBuilder> dl_builder_;
   sk_sp<SkSurface> surface_;
   std::shared_ptr<impeller::DlAiksCanvas> aiks_canvas_;
   DlCanvas* canvas_ = nullptr;
