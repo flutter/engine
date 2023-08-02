@@ -5,6 +5,6 @@
   kDartVmSnapshotInstructions;
   kDartIsolateSnapshotData;
   kDartIsolateSnapshotInstructions;
-  FlutterGpu*;
-  kFlutterGpu*;
+  InternalFlutterGpu*;
+  kInternalFlutterGpu*;
 };

@@ -36,20 +36,21 @@ extern "C" {
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
-extern uint32_t FlutterGpuTestProc();
+extern uint32_t InternalFlutterGpuTestProc();
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
-extern Dart_Handle FlutterGpuTestProcWithCallback(Dart_Handle callback);
+extern Dart_Handle InternalFlutterGpuTestProcWithCallback(Dart_Handle callback);
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
-extern void FlutterGpuTestClass_Create(Dart_Handle wrapper);
+extern void InternalFlutterGpuTestClass_Create(Dart_Handle wrapper);
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
-extern void FlutterGpuTestClass_Method(flutter::FlutterGpuTestClass* self,
-                                       int something);
+extern void InternalFlutterGpuTestClass_Method(
+    flutter::FlutterGpuTestClass* self,
+    int something);
 
 }  // extern "C"
 

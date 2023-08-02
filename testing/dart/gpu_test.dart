@@ -4,8 +4,6 @@
 
 // ignore_for_file: avoid_relative_lib_imports
 
-import 'dart:ui';
-
 import 'package:litetest/litetest.dart';
 import '../../lib/gpu/gpu.dart' as gpu;
 
