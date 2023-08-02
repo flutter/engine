@@ -540,7 +540,6 @@ class BrowserPlatform extends PlatformPlugin {
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
-
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
@@ -550,6 +549,8 @@ class BrowserPlatform extends PlatformPlugin {
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
               canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>

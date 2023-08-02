@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "common/graphics/texture.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
@@ -16,6 +17,7 @@
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
 #endif
@@ -63,7 +65,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     uint8_t msaa_samples,
     bool enable_impeller,
     const std::optional<std::string>& impeller_backend,
@@ -90,10 +91,10 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
             std::make_unique<impeller::egl::Display>());
       case AndroidRenderingAPI::kVulkan:
         return std::make_unique<AndroidContextVulkanImpeller>(
-            enable_vulkan_validation, worker_task_runner);
+            enable_vulkan_validation);
       case AndroidRenderingAPI::kAutoselect: {
         auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
-            enable_vulkan_validation, worker_task_runner);
+            enable_vulkan_validation);
         if (!vulkan_backend->IsValid()) {
           return std::make_unique<AndroidContextGLImpeller>(
               std::make_unique<impeller::egl::Display>());
@@ -115,7 +116,6 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool use_software_rendering,
     uint8_t msaa_samples)
@@ -126,7 +126,6 @@ PlatformViewAndroid::PlatformViewAndroid(
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
-              worker_task_runner,
               msaa_samples,
               delegate.OnPlatformViewGetSettings().enable_impeller,
               delegate.OnPlatformViewGetSettings().impeller_backend,
@@ -302,6 +301,18 @@ void PlatformViewAndroid::RegisterExternalTexture(
   if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
     RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
         texture_id, surface_texture, jni_facade_));
+  } else {
+    FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
+  }
+}
+
+void PlatformViewAndroid::RegisterImageTexture(
+    int64_t texture_id,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry) {
+  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
+    RegisterTexture(std::make_shared<HardwareBufferExternalTextureGL>(
+        std::static_pointer_cast<AndroidContextGLSkia>(android_context_),
+        texture_id, image_texture_entry, jni_facade_));
   } else {
     FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
   }

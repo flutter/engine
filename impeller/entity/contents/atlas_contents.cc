@@ -338,16 +338,13 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
   frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
-
-  FS::FragInfo frag_info;
-  frag_info.alpha = alpha_;
+  frame_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   cmd.pipeline = renderer.GetTexturePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              parent_.GetSamplerDescriptor()));
@@ -389,11 +386,10 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   std::vector<Rect> texture_coords;
   std::vector<Matrix> transforms;
   std::vector<Color> colors;
-  if (subatlas_.has_value()) {
-    auto subatlas = subatlas_.value();
-    texture_coords = subatlas->sub_texture_coords;
-    colors = subatlas->sub_colors;
-    transforms = subatlas->sub_transforms;
+  if (subatlas_) {
+    texture_coords = subatlas_->sub_texture_coords;
+    colors = subatlas_->sub_colors;
+    transforms = subatlas_->sub_transforms;
   } else {
     texture_coords = parent_.GetTextureCoordinates();
     transforms = parent_.GetTransforms();

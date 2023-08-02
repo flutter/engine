@@ -7,12 +7,13 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 final bool _ckRequiresClientICU = canvasKit.ParagraphBuilder.RequiresClientICU();
 
 final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
 String? _effectiveFontFamily(String? fontFamily) {
-  return ui.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
+  return ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
     ? _testFonts.first
     : fontFamily;
 }
@@ -32,6 +33,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
+    bool applyRoundingHack = true,
   })  : skParagraphStyle = toSkParagraphStyle(
           textAlign,
           textDirection,
@@ -45,6 +47,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           strutStyle,
           ellipsis,
           locale,
+          applyRoundingHack,
         ),
         _fontFamily = _effectiveFontFamily(fontFamily),
         _fontSize = fontSize,
@@ -144,6 +147,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
+    bool applyRoundingHack,
   ) {
     final SkParagraphStyleProperties properties = SkParagraphStyleProperties();
 
@@ -180,6 +184,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     properties.replaceTabCharacters = true;
     properties.textStyle = toSkTextStyleProperties(
         fontFamily, fontSize, height, fontWeight, fontStyle);
+    properties.applyRoundingHack = applyRoundingHack;
 
     return canvasKit.ParagraphStyle(properties);
   }
@@ -231,7 +236,7 @@ class CkTextStyle implements ui.TextStyle {
       fontStyle,
       textBaseline,
       _effectiveFontFamily(fontFamily),
-      ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
+      ui_web.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
       fontSize,
       letterSpacing,
       wordSpacing,
@@ -481,7 +486,7 @@ class CkStrutStyle implements ui.StrutStyle {
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight,
   })  : _fontFamily = _effectiveFontFamily(fontFamily),
-        _fontFamilyFallback = ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
+        _fontFamilyFallback = ui_web.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
         _leadingDistribution = leadingDistribution,

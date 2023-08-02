@@ -232,20 +232,29 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             Log.e(TAG, "Disposing unknown platform view with id: " + viewId);
             return;
           }
+          if (platformView.getView() != null) {
+            final View embeddedView = platformView.getView();
+            final ViewGroup pvParent = (ViewGroup) embeddedView.getParent();
+            if (pvParent != null) {
+              // Eagerly remove the embedded view from the PlatformViewWrapper.
+              // Without this call, we see some crashes because removing the view
+              // is used as a signal to stop processing.
+              pvParent.removeView(embeddedView);
+            }
+          }
           platformViews.remove(viewId);
-
           try {
             platformView.dispose();
           } catch (RuntimeException exception) {
             Log.e(TAG, "Disposing platform view threw an exception", exception);
           }
-
           if (usesVirtualDisplay(viewId)) {
             final VirtualDisplayController vdController = vdControllers.get(viewId);
             final View embeddedView = vdController.getView();
             if (embeddedView != null) {
               contextToEmbeddedView.remove(embeddedView.getContext());
             }
+            vdController.dispose();
             vdControllers.remove(viewId);
             return;
           }
@@ -333,8 +342,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                       context == null ? originalDisplayDensity : getDisplayDensity();
                   onComplete.run(
                       new PlatformViewsChannel.PlatformViewBufferSize(
-                          toLogicalPixels(vdController.getBufferWidth(), displayDensity),
-                          toLogicalPixels(vdController.getBufferHeight(), displayDensity)));
+                          toLogicalPixels(vdController.getRenderTargetWidth(), displayDensity),
+                          toLogicalPixels(vdController.getRenderTargetHeight(), displayDensity)));
                 });
             return;
           }
@@ -353,9 +362,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
           // the engine
           // is set by the framework, but the texture buffer size is set by the platform down below.
-          if (physicalWidth > viewWrapper.getBufferWidth()
-              || physicalHeight > viewWrapper.getBufferHeight()) {
-            viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+          if (physicalWidth > viewWrapper.getRenderTargetWidth()
+              || physicalHeight > viewWrapper.getRenderTargetHeight()) {
+            viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
           }
 
           final ViewGroup.LayoutParams viewWrapperLayoutParams = viewWrapper.getLayoutParams();
@@ -372,8 +381,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           onComplete.run(
               new PlatformViewsChannel.PlatformViewBufferSize(
-                  toLogicalPixels(viewWrapper.getBufferWidth()),
-                  toLogicalPixels(viewWrapper.getBufferHeight())));
+                  toLogicalPixels(viewWrapper.getRenderTargetWidth()),
+                  toLogicalPixels(viewWrapper.getRenderTargetHeight())));
         }
 
         @Override
@@ -541,7 +550,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     Log.i(TAG, "Hosting view in a virtual display for platform view: " + request.viewId);
 
-    final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
     final int physicalWidth = toPhysicalPixels(request.logicalWidth);
     final int physicalHeight = toPhysicalPixels(request.logicalHeight);
     final VirtualDisplayController vdController =
@@ -549,7 +558,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             context,
             accessibilityEventsDelegate,
             platformView,
-            textureEntry,
+            renderTarget,
             physicalWidth,
             physicalHeight,
             request.viewId,
@@ -575,13 +584,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     final View embeddedView = platformView.getView();
     contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
 
-    return textureEntry.id();
+    return renderTarget.getId();
   }
 
   // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
   // texture ID.
   @TargetApi(23)
-  private long configureForTextureLayerComposition(
+  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+  public long configureForTextureLayerComposition(
       @NonNull PlatformView platformView,
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
     // This mode attaches the view to the Android view hierarchy and record its drawing
@@ -600,13 +610,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       viewWrapper = new PlatformViewWrapper(context);
       textureId = -1;
     } else {
-      final TextureRegistry.SurfaceTextureEntry textureEntry =
-          textureRegistry.createSurfaceTexture();
-      viewWrapper = new PlatformViewWrapper(context, textureEntry);
-      textureId = textureEntry.id();
+      final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
+      viewWrapper = new PlatformViewWrapper(context, renderTarget);
+      textureId = renderTarget.getId();
     }
     viewWrapper.setTouchProcessor(androidTouchProcessor);
-    viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+    viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
 
     final FrameLayout.LayoutParams viewWrapperLayoutParams =
         new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
@@ -956,6 +965,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     textInputPlugin.unlockPlatformViewInputConnection();
     controller.onInputConnectionUnlocked();
+  }
+
+  private static PlatformViewRenderTarget makePlatformViewRenderTarget(
+      TextureRegistry textureRegistry) {
+    // TODO(johnmccutchan): Enable ImageReaderPlatformViewRenderTarget for public use.
+    if (false) {
+      final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
+      return new ImageReaderPlatformViewRenderTarget(textureEntry);
+    }
+    final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
   private static boolean validateDirection(int direction) {

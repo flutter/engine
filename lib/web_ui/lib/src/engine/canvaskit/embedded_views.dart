@@ -15,6 +15,7 @@ import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
+import 'picture.dart';
 import 'picture_recorder.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
@@ -90,7 +91,6 @@ class HtmlViewEmbedder {
     if (needNewOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
       _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
     }
 

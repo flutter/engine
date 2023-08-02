@@ -9,6 +9,8 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
 
 namespace flutter_runner {
 namespace {
@@ -235,8 +237,26 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         const ViewMutators view_mutators =
             ParseMutatorStack(view_params.mutatorsStack());
         const SkSize view_size = view_params.sizePoints();
-        FML_CHECK(view_mutators.total_transform ==
-                  view_params.transformMatrix());
+
+        // Verify that we're unpacking the mutators' transform matrix correctly.
+        // Use built-in get method for SkMatrix to get values, see:
+        // https://source.corp.google.com/piper///depot/google3/third_party/skia/HEAD/include/core/SkMatrix.h;l=391
+        for (int index = 0; index < 9; index++) {
+          const SkScalar mutators_transform_value =
+              view_mutators.total_transform.get(index);
+          const SkScalar params_transform_value =
+              view_params.transformMatrix().get(index);
+          if (!SkScalarNearlyEqual(mutators_transform_value,
+                                   params_transform_value, 0.0005f)) {
+            FML_LOG(ERROR)
+                << "Assertion failed: view_mutators.total_transform[" << index
+                << "] (" << mutators_transform_value
+                << ") != view_params.transformMatrix()[" << index << "] ("
+                << params_transform_value
+                << "). This likely means there is a bug with the "
+                << "logic for parsing embedded views' transform matrices.";
+          }
+        }
 
         if (viewport.pending_create_viewport_callback) {
           if (view_size.fWidth && view_size.fHeight) {
@@ -469,7 +489,10 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
       canvas->setMatrix(SkMatrix::I());
       canvas->clear(SK_ColorTRANSPARENT);
       canvas->drawPicture(layer->second.picture);
-      canvas->flush();
+      if (GrDirectContext* direct_context =
+              GrAsDirectContext(canvas->recordingContext())) {
+        direct_context->flushAndSubmit();
+      }
     }
   }
 

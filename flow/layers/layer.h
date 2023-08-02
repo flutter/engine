@@ -71,6 +71,8 @@ struct PrerollContext {
   // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
 
+  bool impeller_enabled = false;
+
   // The list of flags that describe which rendering state attributes
   // (such as opacity, ColorFilter, ImageFilter) a given layer can
   // render itself without requiring the parent to perform a protective
@@ -82,12 +84,6 @@ struct PrerollContext {
   int renderable_state_flags = 0;
 
   std::vector<RasterCacheItem*>* raster_cached_entries;
-
-  // This flag will be set to true iff the frame will be constructing
-  // a DisplayList for the layer tree. This flag is mostly of note to
-  // the embedders that must decide between creating SkPicture or
-  // DisplayList objects for the inter-view slices of the layer tree.
-  bool display_list_enabled = false;
 };
 
 struct PaintContext {
@@ -123,6 +119,7 @@ struct PaintContext {
   // only when leaf layer tracing is enabled.
   LayerSnapshotStore* layer_snapshot_store = nullptr;
   bool enable_leaf_layer_tracing = false;
+  bool impeller_enabled = false;
   impeller::AiksContext* aiks_context;
 };
 

@@ -39,6 +39,8 @@
 
 namespace flutter {
 
+static constexpr int64_t kImplicitViewId = 0ll;
+
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override { return nullptr; }
@@ -353,7 +355,7 @@ int RunTester(const flutter::Settings& settings,
   metrics.physical_width = physical_width;
   metrics.physical_height = physical_height;
   metrics.display_id = 0;
-  shell->GetPlatformView()->SetViewportMetrics(metrics);
+  shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId, metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
@@ -396,6 +398,8 @@ int main(int argc, char* argv[]) {
     FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
+
+  settings.leak_vm = false;
 
   if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";

@@ -41,10 +41,10 @@ void testMain() {
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
-      final DomElement contents = flutterViewEmbedder.glassPaneElement
-          .querySelector('#view-0')!;
-      final DomElement slot = flutterViewEmbedder.sceneElement!
-          .querySelector('slot')!;
+      final DomElement contents =
+          flutterViewEmbedder.glassPaneElement.querySelector('#view-0')!;
+      final DomElement slot =
+          flutterViewEmbedder.sceneElement!.querySelector('slot')!;
       final DomElement contentsHost = contents.parent!;
       final DomElement slotHost = slot.parent!;
 
@@ -617,8 +617,7 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement
-            .querySelector('flt-platform-view'),
+        flutterViewEmbedder.glassPaneElement.querySelector('flt-platform-view'),
         isNotNull,
       );
 
@@ -633,13 +632,14 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement
-            .querySelector('flt-platform-view'),
+        flutterViewEmbedder.glassPaneElement.querySelector('flt-platform-view'),
         isNull,
       );
     });
 
-    test('does not crash when resizing the window after textures have been registered', () async {
+    test(
+        'does not crash when resizing the window after textures have been registered',
+        () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -682,7 +682,7 @@ void testMain() {
 
       window.webOnlyDebugPhysicalSizeOverride = null;
       window.debugForceResize();
-    // ImageDecoder is not supported in Safari or Firefox.
+      // ImageDecoder is not supported in Safari or Firefox.
     }, skip: isSafari || isFirefox);
 
     test('removed the DOM node of an unrendered platform view', () async {
@@ -704,8 +704,7 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement
-            .querySelector('flt-platform-view'),
+        flutterViewEmbedder.glassPaneElement.querySelector('flt-platform-view'),
         isNotNull,
       );
 
@@ -762,8 +761,8 @@ void testMain() {
         rasterizer.draw(sb.build().layerTree);
       }
 
-      final DomNode skPathDefs = flutterViewEmbedder.sceneElement!
-          .querySelector('#sk_path_defs')!;
+      final DomNode skPathDefs =
+          flutterViewEmbedder.sceneElement!.querySelector('#sk_path_defs')!;
 
       expect(skPathDefs.childNodes, hasLength(0));
 
@@ -860,7 +859,9 @@ void testMain() {
         _overlay,
         _platformView,
         _overlay,
-      ], reason: 'Overlays created after each group containing a visible view.');
+      ],
+          reason:
+              'Overlays created after each group containing a visible view.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -962,7 +963,9 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-      ], reason: 'Many invisible views can be rendered on top of the base overlay.');
+      ],
+          reason:
+              'Many invisible views can be rendered on top of the base overlay.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1011,19 +1014,22 @@ enum _EmbeddedViewMarker {
 _EmbeddedViewMarker get _overlay => _EmbeddedViewMarker.overlay;
 _EmbeddedViewMarker get _platformView => _EmbeddedViewMarker.platformView;
 
-const Map<String, _EmbeddedViewMarker> _tagToViewMarker = <String, _EmbeddedViewMarker>{
+const Map<String, _EmbeddedViewMarker> _tagToViewMarker =
+    <String, _EmbeddedViewMarker>{
   'flt-canvas-container': _EmbeddedViewMarker.overlay,
   'flt-platform-view-slot': _EmbeddedViewMarker.platformView,
 };
 
-void _expectSceneMatches(List<_EmbeddedViewMarker> expectedMarkers, {
+void _expectSceneMatches(
+  List<_EmbeddedViewMarker> expectedMarkers, {
   String? reason,
 }) {
   // Convert the scene elements to its corresponding array of _EmbeddedViewMarker
   final List<_EmbeddedViewMarker> sceneElements = flutterViewEmbedder
       .sceneElement!.children
       .where((DomElement element) => element.tagName != 'svg')
-      .map((DomElement element) => _tagToViewMarker[element.tagName.toLowerCase()]!)
+      .map((DomElement element) =>
+          _tagToViewMarker[element.tagName.toLowerCase()]!)
       .toList();
 
   expect(sceneElements, expectedMarkers, reason: reason);

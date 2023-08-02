@@ -76,6 +76,7 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             .SetSupportsReadFromResolve(false)
             .SetSupportsReadFromOnscreenTexture(false)
             .SetSupportsDecalTileMode(false)
+            .SetSupportsMemorylessTextures(false)
             .Build();
   }
 
@@ -83,6 +84,10 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
 }
 
 ContextGLES::~ContextGLES() = default;
+
+Context::BackendType ContextGLES::GetBackendType() const {
+  return Context::BackendType::kOpenGLES;
+}
 
 const ReactorGLES::Ref& ContextGLES::GetReactor() const {
   return reactor_;
@@ -106,6 +111,8 @@ bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
 bool ContextGLES::IsValid() const {
   return is_valid_;
 }
+
+void ContextGLES::Shutdown() {}
 
 // |Context|
 std::string ContextGLES::DescribeGpuModel() const {
