@@ -186,7 +186,12 @@ void DlDispatcher::setAntiAlias(bool aa) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setDither(bool dither) {}
+void DlDispatcher::setDither(bool dither) {
+  // TODO(https://github.com/flutter/flutter/issues/131450): Implement dither.
+  //
+  // This is intentionally left blank because we don't want to ship enabling
+  // dithering from the framework yet (it's only used in Impeller-only tests).
+}
 
 static Paint::Style ToStyle(flutter::DlDrawStyle style) {
   switch (style) {
@@ -1074,7 +1079,9 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  if (display_list->has_rtree()) {
+  // TODO(131445): Remove this restriction if we can correctly cull with
+  // perspective transforms.
+  if (display_list->has_rtree() && !initial_matrix_.HasPerspective()) {
     // The canvas remembers the screen-space culling bounds clipped by
     // the surface and the history of clip calls. DisplayList can cull
     // the ops based on a rectangle expressed in its "destination bounds"
