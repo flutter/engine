@@ -31,8 +31,11 @@ base class FlutterGpuTestClass extends NativeFieldWrapperClass1 {
   external void _constructor();
 
   /// This is a method that will supply a pointer to the C data counterpart when
-  /// calling the function
+  /// calling the gunction
   @Native<Void Function(Pointer<Void>, Int)>(
       symbol: 'FlutterGpuTestClass_Method')
   external void coolMethod(int something);
+
+  @Native<Void Function(Pointer<Void>)>(symbol: 'FlutterGpuTestClass_Dispose')
+  external void dispose();
 }

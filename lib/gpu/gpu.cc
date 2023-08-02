@@ -15,14 +15,20 @@
 
 namespace flutter {
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 IMPLEMENT_WRAPPERTYPEINFO(gpu, FlutterGpuTestClass);
+
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
+FlutterGpuTestClass::~FlutterGpuTestClass() = default;
 
 }  // namespace flutter
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 uint32_t FlutterGpuTestProc() {
   return 1;
 }
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 Dart_Handle FlutterGpuTestProcWithCallback(Dart_Handle callback) {
   flutter::UIDartState::ThrowIfUIOperationsProhibited();
   if (!Dart_IsClosure(callback)) {
@@ -34,13 +40,21 @@ Dart_Handle FlutterGpuTestProcWithCallback(Dart_Handle callback) {
   return Dart_Null();
 }
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 void FlutterGpuTestClass_Create(Dart_Handle wrapper) {
   auto res = fml::MakeRefCounted<flutter::FlutterGpuTestClass>();
   res->AssociateWithDartWrapper(wrapper);
   FML_LOG(ERROR) << "FlutterGpuTestClass Wrapped.";
 }
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 void FlutterGpuTestClass_Method(flutter::FlutterGpuTestClass* self,
                                 int something) {
   FML_LOG(ERROR) << "Something: " << something;
+}
+
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
+void FlutterGpuTestClass_Dispose(flutter::FlutterGpuTestClass* self,
+                                 int something) {
+  self->ClearDartWrapper();
 }

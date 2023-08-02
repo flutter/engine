@@ -20,26 +20,33 @@
 
 namespace flutter {
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 class FlutterGpuTestClass
     : public RefCountedDartWrappable<FlutterGpuTestClass> {
   DEFINE_WRAPPERTYPEINFO();
+  FML_FRIEND_MAKE_REF_COUNTED(FlutterGpuTestClass);
 
  public:
+  ~FlutterGpuTestClass() override;
 };
 
 }  // namespace flutter
 
 extern "C" {
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
 extern uint32_t FlutterGpuTestProc();
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
 extern Dart_Handle FlutterGpuTestProcWithCallback(Dart_Handle callback);
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
 extern void FlutterGpuTestClass_Create(Dart_Handle wrapper);
 
+// TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 FLUTTER_EXPORT
 extern void FlutterGpuTestClass_Method(flutter::FlutterGpuTestClass* self,
                                        int something);
