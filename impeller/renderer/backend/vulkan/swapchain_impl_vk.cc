@@ -404,92 +404,88 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
-  context.GetConcurrentWorkerTaskRunner()->PostTask([&, index, image,
-                                                     current_frame =
-                                                         current_frame_] {
+  const auto& sync = synchronizers_[current_frame_];
+
+  {
+    TRACE_EVENT0("flutter", "WaitUntilScheduled");
+    const auto encoders = context.GetCommandBufferQueue()->Take();
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to create fence for flush.";
+      return false;
+    };
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers;
+    for (const auto& encoder : encoders) {
+      buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
+    }
+    submit_info.setCommandBuffers(buffers);
+    if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
+        vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to submit for flush.";
+      return false;
+    }
+
+    if (!context.GetFenceWaiter()->AddFence(std::move(fence), [encoders] {})) {
+      VALIDATION_LOG << "Failed to add fence waiter.";
+      return false;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  /// Transition the image to color-attachment-optimal.
+  ///
+  sync->final_cmd_buffer = context.CreateCommandBuffer();
+  if (!sync->final_cmd_buffer) {
+    return false;
+  }
+
+  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                                 .GetEncoder()
+                                 ->GetCommandBuffer();
+  {
+    BarrierVK barrier;
+    barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+    barrier.cmd_buffer = vk_final_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    barrier.dst_access = {};
+    barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+    if (!image->SetLayout(barrier)) {
+      return false;
+    }
+
+    if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+      return false;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  /// Signal that the presentation semaphore is ready.
+  ///
+  {
+    vk::SubmitInfo submit_info;
+    vk::PipelineStageFlags wait_stage =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    submit_info.setWaitDstStageMask(wait_stage);
+    submit_info.setWaitSemaphores(*sync->render_ready);
+    submit_info.setSignalSemaphores(*sync->present_ready);
+    submit_info.setCommandBuffers(vk_final_cmd_buffer);
+    auto result =
+        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+    if (result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not wait on render semaphore: "
+                     << vk::to_string(result);
+      return false;
+    }
+  }
+
+  context.GetConcurrentWorkerTaskRunner()->PostTask([&, index, image] {
     auto context_strong = context_.lock();
     if (!context_strong) {
       return;
     }
-    const auto& context = ContextVK::Cast(*context_strong);
-    const auto& sync = synchronizers_[current_frame];
-
-    {
-      TRACE_EVENT0("flutter", "WaitUntilScheduled");
-      const auto encoders = context.GetCommandBufferQueue()->Take();
-      auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
-      if (fence_result != vk::Result::eSuccess) {
-        VALIDATION_LOG << "Failed to create fence for flush.";
-        return;
-      };
-      vk::SubmitInfo submit_info;
-      std::vector<vk::CommandBuffer> buffers;
-      for (const auto& encoder : encoders) {
-        buffers.push_back(encoder->WaitAndGet()->GetCommandBuffer());
-      }
-      submit_info.setCommandBuffers(buffers);
-      if (context.GetGraphicsQueue()->Submit(submit_info, *fence) !=
-          vk::Result::eSuccess) {
-        VALIDATION_LOG << "Failed to submit for flush.";
-        return;
-      }
-
-      if (!context.GetFenceWaiter()->AddFence(std::move(fence),
-                                              [encoders] {})) {
-        VALIDATION_LOG << "Failed to add fence waiter.";
-        return;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    /// Transition the image to color-attachment-optimal.
-    ///
-    sync->final_cmd_buffer = context.CreateCommandBuffer();
-    if (!sync->final_cmd_buffer) {
-      return;
-    }
-
-    auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                                   .GetEncoder()
-                                   ->GetCommandBuffer();
-    {
-      BarrierVK barrier;
-      barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
-      barrier.cmd_buffer = vk_final_cmd_buffer;
-      barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-      barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-      barrier.dst_access = {};
-      barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
-
-      if (!image->SetLayout(barrier)) {
-        return;
-      }
-
-      if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
-        return;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    /// Signal that the presentation semaphore is ready.
-    ///
-    {
-      vk::SubmitInfo submit_info;
-      vk::PipelineStageFlags wait_stage =
-          vk::PipelineStageFlagBits::eColorAttachmentOutput;
-      submit_info.setWaitDstStageMask(wait_stage);
-      submit_info.setWaitSemaphores(*sync->render_ready);
-      submit_info.setSignalSemaphores(*sync->present_ready);
-      submit_info.setCommandBuffers(vk_final_cmd_buffer);
-      auto result =
-          context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-      if (result != vk::Result::eSuccess) {
-        VALIDATION_LOG << "Could not wait on render semaphore: "
-                       << vk::to_string(result);
-        return;
-      }
-    }
-
     //----------------------------------------------------------------------------
     /// Present the image.
     ///
