@@ -718,7 +718,10 @@ bool EntityPass::OnRender(
     render_element(backdrop_entity);
   }
 
-  bool is_collapsing_clear_colors = true;
+  bool is_collapsing_clear_colors = !collapsed_parent_pass &&
+                                    // Backdrop filters act as a entity before
+                                    // everything and disrupt the optimization.
+                                    !backdrop_filter_proc_;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
     if (is_collapsing_clear_colors) {
