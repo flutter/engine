@@ -5,7 +5,6 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/surface.h"
