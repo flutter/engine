@@ -93,7 +93,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "RadialGradientSSBOFill";
+  DEBUG_COMMAND_INFO(cmd, "RadialGradientSSBOFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -154,7 +154,7 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "RadialGradientFill";
+  DEBUG_COMMAND_INFO(cmd, "RadialGradientFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
