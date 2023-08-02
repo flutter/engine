@@ -72,6 +72,11 @@ void ConfigureShorebird(std::string cache_path,
     // shorebird_init copies from app_parameters and shorebirdYaml.
     shorebird_init(&app_parameters, shorebird_yaml.c_str());
   }
+  auto update_behavior = shorebird_update_behavior();
+  if (update_behavior == UpdateBehavior::WaitOnLaunch) {
+    FML_LOG(INFO) << "Shorebird updater set to wait-on-launch, forcing update";
+    shorebird_update();
+  }
 
   char* c_active_path = shorebird_next_boot_patch_path();
   if (c_active_path != NULL) {
@@ -96,8 +101,12 @@ void ConfigureShorebird(std::string cache_path,
     FML_LOG(INFO) << "Shorebird updater: no active patch.";
   }
 
-  FML_LOG(INFO) << "Starting Shorebird update";
-  shorebird_start_update_thread();
+  if (update_behavior == UpdateBehavior::BackgroundOnLaunch) {
+    FML_LOG(INFO) << "Starting Shorebird update";
+    shorebird_start_update_thread();
+  } else if (update_behavior == UpdateBehavior::Manual) {
+    FML_LOG(INFO) << "Shorebird updater set to manual, not doing anything.";
+  }
 }
 
 }  // namespace flutter
