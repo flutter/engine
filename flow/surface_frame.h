@@ -13,6 +13,7 @@
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
+#include "impeller/display_list/dl_aiks_canvas.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -97,7 +98,7 @@ class SurfaceFrame {
   }
   const SubmitInfo& submit_info() const { return submit_info_; }
 
-  sk_sp<DisplayList> BuildDisplayList();
+  std::shared_ptr<const impeller::Picture> GetImpellerPicture();
 
  private:
   bool submitted_ = false;
@@ -105,6 +106,7 @@ class SurfaceFrame {
   DlSkCanvasAdapter adapter_;
   sk_sp<DisplayListBuilder> dl_builder_;
   sk_sp<SkSurface> surface_;
+  std::shared_ptr<impeller::DlAiksCanvas> aiks_canvas_;
   DlCanvas* canvas_ = nullptr;
   FramebufferInfo framebuffer_info_;
   SubmitInfo submit_info_;

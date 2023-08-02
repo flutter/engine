@@ -29,6 +29,8 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
+#include "flutter/flow/layers/aiks_layer.h"
+
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
@@ -225,6 +227,15 @@ void SceneBuilder::addPicture(double dx,
     auto layer = std::make_unique<flutter::DisplayListLayer>(
         SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)), picture->display_list(),
         !!(hints & 1), !!(hints & 2));
+    AddLayer(std::move(layer));
+    return;
+  }
+
+  auto impeller_picture = picture->impeller_picture();
+  if (impeller_picture) {
+    auto layer = std::make_unique<flutter::AiksLayer>(
+        SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)),
+        std::move(impeller_picture), !!(hints & 1), !!(hints & 2));
     AddLayer(std::move(layer));
   }
 }

@@ -100,27 +100,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
           return false;
         }
 
-        auto display_list = surface_frame.BuildDisplayList();
-        if (!display_list) {
-          FML_LOG(ERROR) << "Could not build display list for surface frame.";
-          return false;
-        }
-
-        auto cull_rect =
-            surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
-        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
-        display_list->Dispatch(
-            impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
+        auto picture = surface_frame.GetImpellerPicture();
 
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(*picture, render_target);
                 }));
       });
 

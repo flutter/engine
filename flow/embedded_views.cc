@@ -6,6 +6,35 @@
 
 namespace flutter {
 
+ImpellerEmbedderViewSlice::ImpellerEmbedderViewSlice(SkRect view_bounds) {
+  canvas_ = std::make_unique<impeller::DlAiksCanvas>(
+      /*bounds=*/view_bounds);
+}
+
+DlCanvas* ImpellerEmbedderViewSlice::canvas() {
+  return canvas_ ? canvas_.get() : nullptr;
+}
+
+void ImpellerEmbedderViewSlice::end_recording() {
+  picture_ =
+      std::make_shared<impeller::Picture>(canvas_->EndRecordingAsPicture());
+  canvas_.reset();
+}
+
+std::list<SkRect> ImpellerEmbedderViewSlice::searchNonOverlappingDrawnRects(
+    const SkRect& query) const {
+  FML_DCHECK(picture_);
+  return picture_->rtree->searchAndConsolidateRects(query);
+}
+
+void ImpellerEmbedderViewSlice::render_into(DlCanvas* canvas) {
+  canvas->DrawImpellerPicture(picture_);
+}
+
+bool ImpellerEmbedderViewSlice::recording_ended() {
+  return canvas_ == nullptr;
+}
+
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
