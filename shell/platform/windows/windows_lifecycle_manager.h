@@ -54,7 +54,7 @@ class WindowsLifecycleManager {
 
   // Signal to start consuming WM_CLOSE messages and sending lifecycle state
   // update messages.
-  void BeginProcessingLifecycle();
+  virtual void BeginProcessingLifecycle();
 
   // Update the app lifecycle state in response to a change in window state.
   // When the app lifecycle state actually changes, this sends a platform

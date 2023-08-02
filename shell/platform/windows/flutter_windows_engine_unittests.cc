@@ -670,6 +670,15 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
   MOCK_METHOD4(DispatchMessage, void(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(IsLastWindowOfProcess, bool(void));
   MOCK_METHOD1(SetLifecycleState, void(AppLifecycleState));
+
+  void BeginProcessingLifecycle() override {
+    WindowsLifecycleManager::BeginProcessingLifecycle();
+    if (begin_processing_callback) {
+      begin_processing_callback();
+    }
+  }
+
+  std::function<void()> begin_processing_callback = nullptr;
 };
 
 TEST_F(FlutterWindowsEngineTest, TestExit) {
@@ -1049,6 +1058,55 @@ TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
   view.OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
 
   while (!finished) {
+    engine->task_runner()->ProcessTasks();
+  }
+}
+
+TEST_F(FlutterWindowsEngineTest, LifecycleStateToFrom) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("enableLifecycleToFrom");
+  bool enabled_lifecycle = false;
+  bool dart_responded = false;
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  ON_CALL(*handler, SetLifecycleState)
+      .WillByDefault([handler_ptr = handler.get()](AppLifecycleState state) {
+        handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
+      });
+  handler->begin_processing_callback = [&]() { enabled_lifecycle = true; };
+  modifier.SetLifecycleManager(std::move(handler));
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  binary_messenger->SetMessageHandler(
+      "flutter/unittest",
+      [&](const uint8_t* message, size_t message_size, BinaryReply reply) {
+        std::string contents(message, message + message_size);
+        EXPECT_NE(contents.find("AppLifecycleState."), std::string::npos);
+        dart_responded = true;
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
+
+  engine->Run();
+
+  while (!enabled_lifecycle) {
+    engine->task_runner()->ProcessTasks();
+  }
+
+  HWND hwnd = reinterpret_cast<HWND>(1);
+  view.OnWindowStateEvent(hwnd, WindowStateEvent::kShow);
+  view.OnWindowStateEvent(hwnd, WindowStateEvent::kHide);
+
+  while (!dart_responded) {
     engine->task_runner()->ProcessTasks();
   }
 }
