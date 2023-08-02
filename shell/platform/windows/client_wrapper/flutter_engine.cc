@@ -100,25 +100,7 @@ void FlutterEngine::SetNextFrameCallback(std::function<void()> callback) {
       this);
 }
 
-<<<<<<< HEAD
 FlutterDesktopEngineRef FlutterEngine::engine() {
-=======
-std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
-    HWND hwnd,
-    UINT message,
-    WPARAM wparam,
-    LPARAM lparam) {
-  LRESULT result;
-  if (FlutterDesktopEngineProcessExternalWindowMessage(
-          engine_, hwnd, message, wparam, lparam, &result)) {
-    return result;
-  }
-  return std::nullopt;
-}
-
-FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
-  owns_engine_ = false;
->>>>>>> mv-window-metrics
   return engine_;
 }
 
