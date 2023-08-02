@@ -16,9 +16,6 @@
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "third_party/tonic/converter/dart_converter.h"
-#include "third_party/tonic/dart_args.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
@@ -61,19 +58,19 @@ static sk_sp<DlImage> CreateDeferredImage(
     uint32_t width,
     uint32_t height,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
     if (display_list) {
       return DlDeferredImageGPUImpeller::Make(
           std::move(display_list), SkISize::Make(width, height),
-          std::move(snapshot_delegate), std::move(raster_task_runner));
+          std::move(snapshot_delegate), raster_task_runner);
     }
     FML_DCHECK(impeller_picture);
     return DlDeferredImageGPUImpeller::Make(
         impeller_picture, SkISize::Make(width, height),
-        std::move(snapshot_delegate), std::move(raster_task_runner));
+        std::move(snapshot_delegate), raster_task_runner);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
@@ -98,8 +95,8 @@ void Picture::RasterizeToImageSync(uint32_t width,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(), display_list(), impeller_picture(),
-      width, height, std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue));
+      width, height, std::move(snapshot_delegate), raster_task_runner,
+      std::move(unref_queue));
 
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
