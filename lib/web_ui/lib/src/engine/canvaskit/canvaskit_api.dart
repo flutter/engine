@@ -165,8 +165,8 @@ extension CanvasKitExtension on CanvasKit {
   external JSNumber _GetOffscreenWebGLContext(
       DomOffscreenCanvas canvas, SkWebGLContextOptions options);
   double GetOffscreenWebGLContext(
-      DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
-        _GetOffscreenWebGLContext(canvas, options).toDart;
+          DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
+      _GetOffscreenWebGLContext(canvas, options).toDartDouble;
 
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
