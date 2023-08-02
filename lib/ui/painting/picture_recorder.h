@@ -9,7 +9,7 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "impeller/display_list/dl_aiks_canvas.h"
+#include "impeller/display_list/dl_aiks_canvas.h"  // nogncheck
 
 namespace flutter {
 class Canvas;

@@ -13,7 +13,7 @@
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
-#include "impeller/display_list/dl_aiks_canvas.h"
+#include "impeller/display_list/dl_aiks_canvas.h"  // nogncheck
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
