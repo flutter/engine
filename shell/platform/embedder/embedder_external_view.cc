@@ -5,13 +5,7 @@
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
 
 #include "flow/embedded_views.h"
-#include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/dl_op_spy.h"
-
-#ifdef IMPELLER_SUPPORTS_RENDERING
-#include "impeller/display_list/dl_dispatcher.h"  // nogncheck
-#endif                                            // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -80,11 +74,8 @@ bool EmbedderExternalView::HasEngineRenderedContents() {
     return has_engine_rendered_contents_.value();
   }
   TryEndRecording();
-  return true;
-  // DlOpSpy dl_op_spy;
-  // slice_->dispatch(dl_op_spy);
-  // has_engine_rendered_contents_ = dl_op_spy.did_draw() &&
-  // !slice_->is_empty(); return has_engine_rendered_contents_.value();
+  has_engine_rendered_contents_ = slice_->renders_anything();
+  return has_engine_rendered_contents_.value();
 }
 
 EmbedderExternalView::ViewIdentifier EmbedderExternalView::GetViewIdentifier()

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/display_list/dl_op_spy.h"
 
 namespace flutter {
 
@@ -35,6 +36,10 @@ bool ImpellerEmbedderViewSlice::recording_ended() {
   return canvas_ == nullptr;
 }
 
+bool ImpellerEmbedderViewSlice::renders_anything() {
+  return !picture_->rtree->bounds().isEmpty();
+}
+
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
@@ -59,16 +64,18 @@ void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {
   canvas->DrawDisplayList(display_list_);
 }
 
-void DisplayListEmbedderViewSlice::dispatch(DlOpReceiver& receiver) {
-  display_list_->Dispatch(receiver);
-}
-
 bool DisplayListEmbedderViewSlice::is_empty() {
   return display_list_->bounds().isEmpty();
 }
 
 bool DisplayListEmbedderViewSlice::recording_ended() {
   return builder_ == nullptr;
+}
+
+bool DisplayListEmbedderViewSlice::renders_anything() {
+  DlOpSpy dl_op_spy;
+  display_list_->Dispatch(dl_op_spy);
+  return dl_op_spy.did_draw() && !is_empty();
 }
 
 void ExternalViewEmbedder::SubmitFrame(

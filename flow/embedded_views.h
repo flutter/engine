@@ -341,6 +341,7 @@ class EmbedderViewSlice {
       const SkRect& query) const = 0;
   virtual void render_into(DlCanvas* canvas) = 0;
   virtual bool recording_ended() = 0;
+  virtual bool renders_anything() = 0;
 };
 
 class ImpellerEmbedderViewSlice : public EmbedderViewSlice {
@@ -354,6 +355,7 @@ class ImpellerEmbedderViewSlice : public EmbedderViewSlice {
       const SkRect& query) const override;
   void render_into(DlCanvas* canvas) override;
   bool recording_ended() override;
+  bool renders_anything() override;
 
  private:
   std::unique_ptr<impeller::DlAiksCanvas> canvas_;
@@ -370,9 +372,9 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const override;
   void render_into(DlCanvas* canvas) override;
-  void dispatch(DlOpReceiver& receiver);
   bool is_empty();
   bool recording_ended() override;
+  bool renders_anything() override;
 
  private:
   std::unique_ptr<DisplayListBuilder> builder_;

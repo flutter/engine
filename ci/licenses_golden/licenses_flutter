@@ -731,6 +731,8 @@ ORIGIN: ../../../flutter/display_list/dl_op_receiver.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/display_list/dl_op_receiver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_spy.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_spy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_paint.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_paint.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_sampling_options.h + ../../../flutter/LICENSE
@@ -2205,8 +2207,6 @@ ORIGIN: ../../../flutter/shell/common/display.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display_manager.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display_manager.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/dl_op_spy.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/dl_op_spy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/engine.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/engine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/pipeline.cc + ../../../flutter/LICENSE
