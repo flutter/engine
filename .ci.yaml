@@ -270,6 +270,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_host_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_host_desktop_engine
     bringup: true
