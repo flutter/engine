@@ -577,7 +577,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     ViewRecord* view_record) {
   FML_DCHECK(surface_);
 
-  const int64_t view_id = view_record->view_id;
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
