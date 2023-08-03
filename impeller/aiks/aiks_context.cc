@@ -5,6 +5,7 @@
 #include "impeller/aiks/aiks_context.h"
 
 #include "impeller/aiks/picture.h"
+#include "impeller/entity/contents/tessellation_cache.h"
 
 namespace impeller {
 
@@ -42,7 +43,11 @@ bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
   }
 
   if (picture.pass) {
-    return picture.pass->Render(*content_context_, render_target);
+    auto res = picture.pass->Render(*content_context_, render_target);
+    // FIXME(knopp): This should be called for the last surface of the frame,
+    // but there's currently no way to do this.
+    content_context_->GetTessellationCache().FinishFrame();
+    return res;
   }
 
   return true;

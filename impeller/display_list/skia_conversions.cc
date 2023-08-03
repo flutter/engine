@@ -121,7 +121,9 @@ Path ToPath(const SkPath& path) {
   }
   builder.SetConvexity(path.isConvex() ? Convexity::kConvex
                                        : Convexity::kUnknown);
-  return builder.TakePath(fill_type);
+  auto result = builder.TakePath(fill_type);
+  result.SetOriginalGenerationId(path.getGenerationID());
+  return result;
 }
 
 Path ToPath(const SkRRect& rrect) {

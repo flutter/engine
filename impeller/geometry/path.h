@@ -81,6 +81,9 @@ class Path {
     std::vector<Point> points;
     std::vector<PolylineContour> contours;
 
+    /// Generation ID of the path that this polyline was generated from.
+    std::optional<uint32_t> original_generation_id;
+
     /// Convenience method to compute the start (inclusive) and end (exclusive)
     /// point of the given contour index.
     ///
@@ -154,6 +157,14 @@ class Path {
 
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
+  /// If this path was created from a Skia path, this will return the
+  /// generationId() of the Skia path at the moment of path creation.
+  std::optional<uint32_t> GetOriginalGenerationId() const {
+    return original_generation_id_;
+  }
+
+  void SetOriginalGenerationId(uint32_t id) { original_generation_id_ = id; }
+
  private:
   friend class PathBuilder;
 
@@ -176,6 +187,7 @@ class Path {
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
+  std::optional<uint32_t> original_generation_id_ = std::nullopt;
 };
 
 }  // namespace impeller

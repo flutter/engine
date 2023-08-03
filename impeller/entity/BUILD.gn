@@ -197,6 +197,8 @@ impeller_component("entity") {
     "contents/gradient_generator.h",
     "contents/linear_gradient_contents.cc",
     "contents/linear_gradient_contents.h",
+    "contents/tessellation_cache.cc",
+    "contents/tessellation_cache.h",
     "contents/radial_gradient_contents.cc",
     "contents/radial_gradient_contents.h",
     "contents/runtime_effect_contents.cc",
@@ -259,6 +261,10 @@ impeller_component("entity") {
     "../renderer",
     "../scene",
     "../typographer",
+  ]
+
+  cflags = [
+    "-g",
   ]
 
   deps = [ "//flutter/fml" ]

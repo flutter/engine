@@ -329,6 +329,7 @@ struct ContentContextOptions {
 };
 
 class Tessellator;
+class TessellationCache;
 
 class ContentContext {
  public:
@@ -341,6 +342,10 @@ class ContentContext {
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
 
   std::shared_ptr<Tessellator> GetTessellator() const;
+
+  TessellationCache& GetTessellationCache() const {
+    return *tessellation_cache_;
+  }
 
 #ifdef IMPELLER_DEBUG
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
@@ -853,6 +858,7 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
+  std::unique_ptr<TessellationCache> tessellation_cache_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 

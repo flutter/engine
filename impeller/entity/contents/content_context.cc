@@ -9,6 +9,7 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/tessellation_cache.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -162,6 +163,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       lazy_glyph_atlas_(std::make_shared<LazyGlyphAtlas>()),
       tessellator_(std::make_shared<Tessellator>()),
+      tessellation_cache_(std::make_unique<TessellationCache>()),
       scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
