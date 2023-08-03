@@ -4342,7 +4342,8 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, DiesIfSoftwareRenderingAndImpellerAreEnabled) {
+TEST_F(ShellTest, DiesIfSoftwareRenderingAndImpellerAreEnabledDeathTest) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   Settings settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   settings.enable_software_rendering = true;
