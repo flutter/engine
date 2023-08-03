@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -2324,23 +2325,25 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)handlePointerMove:(CGFloat)pointerY {
-  double screenHeight = [UIScreen mainScreen].bounds.size.height;
+  //View must be loaded at this point.
+  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+  double screenHeight = screen.bounds.size.height;
   double keyboardHeight = _keyboardRect.size.height;
-  // Determines if pointer goes overtop of the keyboard.
-  if (screenHeight - keyboardHeight <= pointerY) {
-    // If no screenshot has been taken.
-    if (_keyboardView.superview != nil) {
-      [self takeScreenshot];
-      [self hideKeyboardWithoutAnimation];
+    if (screenHeight - keyboardHeight <= pointerY) {
+    // If the pointer is within the bounds of the keyboard.
+      if (_keyboardView.superview == nil) {
+      // If no screenshot has been taken.
+        [self takeKeyboardScreenshotAndDisplay];
+        [self hideKeyboardWithoutAnimation];
+      } else {
+        [self setKeyboardContainerHeight:pointerY];
+      }
     } else {
-      [self setKeyboardContainerHeight:pointerY];
+      if (_keyboardView.superview != nil) {
+        //Keeps keyboard at proper height.
+        _keyboardViewContainer.frame = _keyboardRect;
+      }
     }
-  } else {
-    // If pointer is not overtop of the original keyboard keep screenshot in place.
-    if (_keyboardView.superview != nil) {
-      _keyboardViewContainer.frame = _keyboardRect;
-    }
-  }
 }
 
 - (void)setKeyboardContainerHeight:(CGFloat)pointerY {
@@ -2351,13 +2354,15 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (void)hideKeyboardWithoutAnimation {
   [UIView setAnimationsEnabled:NO];
-  _firstResponder = UIApplication.sharedApplication.keyWindow.flt_firstResponder;
+  _firstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
   [_firstResponder resignFirstResponder];
   [UIView setAnimationsEnabled:YES];
 }
 
-- (void)takeScreenshot {
-  UIView* keyboardSnap = [[UIScreen mainScreen] snapshotViewAfterScreenUpdates:YES];
+- (void)takeKeyboardScreenshotAndDisplay {
+   //View must be loaded at this point
+  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+  UIView* keyboardSnap = [screen snapshotViewAfterScreenUpdates:YES];
   keyboardSnap = [keyboardSnap resizableSnapshotViewFromRect:_keyboardRect
                                           afterScreenUpdates:YES
                                                withCapInsets:UIEdgeInsetsZero];
@@ -2367,6 +2372,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     [UIApplication.sharedApplication.delegate.window.rootViewController.view
         addSubview:_keyboardViewContainer];
   }
+  _keyboardViewContainer.layer.zPosition = NSIntegerMax;
   _keyboardViewContainer.frame = _keyboardRect;
 }
 
@@ -2839,12 +2845,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
  * Recursively searches the UIView's subviews to locate the First Responder
  */
 @implementation UIView (FindFirstResponder)
-- (id)flt_firstResponder {
+- (id)flutterFirstResponder {
   if (self.isFirstResponder) {
     return self;
   }
   for (UIView* subView in self.subviews) {
-    UIView* firstResponder = subView.flt_firstResponder;
+    UIView* firstResponder = subView.flutterFirstResponder;
     if (firstResponder) {
       return firstResponder;
     }

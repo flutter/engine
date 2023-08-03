@@ -167,7 +167,7 @@ FLUTTER_DARWIN_EXPORT
 @end
 
 @interface UIView (FindFirstResponder)
-- (id)flt_firstResponder;
+  @property (nonatomic, readonly) id flutterFirstResponder;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
