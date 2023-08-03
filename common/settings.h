@@ -254,7 +254,7 @@ struct Settings {
   // The single-view APIs, which are APIs that do not specify view IDs, operate
   // the implicit view. The multi-view APIs can operate all views, including the
   // implicit view with the correct ID (kFlutterImplicitViewId), unless
-  // specified otherwise,
+  // specified otherwise.
   //
   // The enable_implicit_view defaults to true.
   bool enable_implicit_view = true;

@@ -275,6 +275,9 @@ class PlatformConfiguration final {
   ///
   ///             Removing a view that has not been added triggers assertion.
   ///
+  ///             The implicit view (kFlutterImplicitViewId) should never be
+  ///             removed. Doing so triggers assertion.
+  ///
   /// @param[in]  view_id  The ID of the view.
   ///
   void RemoveView(int64_t view_id);

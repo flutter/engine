@@ -157,6 +157,8 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::CollectView(int64_t view_id) {
+  // TODO(dkwingsmt): When Rasterizer supports multi-view, this method should
+  // correctly clear the view corresponding to the ID.
   if (view_id == kFlutterImplicitViewId) {
     last_layer_tree_.reset();
   }

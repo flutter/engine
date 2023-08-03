@@ -990,9 +990,6 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
       });
 
   {
-    // TODO(dkwingsmt): Use the correct view ID when this method supports
-    // multi-view.
-    int64_t view_id = kFlutterImplicitViewId;
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     expected_frame_sizes_[view_id] =
         SkISize::Make(metrics.physical_width, metrics.physical_height);
@@ -2037,12 +2034,10 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  if (view_id == kFlutterImplicitViewId) {
-    FML_DLOG(ERROR) << "Unexpected request to add the implicit view #"
-                    << kFlutterImplicitViewId
-                    << ". This view should never be added. This call is no-op.";
-    return;
-  }
+  FML_DCHECK(view_id != kFlutterImplicitViewId)
+      << "Unexpected request to add the implicit view #"
+      << kFlutterImplicitViewId
+      << ". This view should never be added. This call is no-op.";
 
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              viewport_metrics,                //
@@ -2058,13 +2053,10 @@ void Shell::RemoveView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  if (view_id == kFlutterImplicitViewId) {
-    FML_DLOG(ERROR)
-        << "Unexpected request to remove the implicit view #"
-        << kFlutterImplicitViewId
-        << ". This view should never be removed. This call is no-op.";
-    return;
-  }
+  FML_DCHECK(view_id != kFlutterImplicitViewId)
+      << "Unexpected request to remove the implicit view #"
+      << kFlutterImplicitViewId
+      << ". This view should never be removed. This call is no-op.";
 
   expected_frame_sizes_.erase(view_id);
   fml::AutoResetWaitableEvent latch;

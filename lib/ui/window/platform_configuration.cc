@@ -89,8 +89,10 @@ void PlatformConfiguration::AddView(int64_t view_id,
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {
-  FML_DCHECK(view_id != kFlutterImplicitViewId);
-  windows_.erase(view_id);
+  FML_DCHECK(view_id != kFlutterImplicitViewId)
+      << "The implicit view #" << view_id << " should never be removed.";
+  size_t erased_elements = windows_.erase(view_id);
+  FML_DCHECK(erased_elements != 0) << "View #" << view_id << " doesn't exist.";
   std::shared_ptr<tonic::DartState> dart_state =
       remove_view_.dart_state().lock();
   if (!dart_state) {

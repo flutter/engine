@@ -207,7 +207,7 @@ class Rasterizer final : public SnapshotDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Deallocate the resources for displaying a view.
   ///
-  ///             This method should be called a view is removed.
+  ///             This method should be called when a view is removed.
   ///
   ///             The rasterizer don't need views to be registered. Last-frame
   ///             states for views are recorded when layer trees are rasterized

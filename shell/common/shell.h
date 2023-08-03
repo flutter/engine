@@ -309,7 +309,7 @@ class Shell final : public PlatformView::Delegate,
   ///         The implicit view should never be added with this function.
   ///         Instead, it is added internally on Shell initialization depending
   ///         on `Settings.enable_implicit_view`. Trying to add
-  ///         `kFlutterImplicitViewId` is a no-op with warning.
+  ///         `kFlutterImplicitViewId` triggers an assertion.
   ///
   /// @param[in]  view_id           The view ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
@@ -322,7 +322,7 @@ class Shell final : public PlatformView::Delegate,
   ///         returning.
   ///
   ///         The implicit view should never be removed. Trying to remove
-  ///         `kFlutterImplicitViewId` is a no-op with warning.
+  ///         `kFlutterImplicitViewId` triggers an assertion.
   ///
   /// @param[in]  view_id     The view ID of the view to be removed.
   ///
