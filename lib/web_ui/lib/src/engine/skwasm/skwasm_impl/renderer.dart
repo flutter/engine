@@ -13,8 +13,8 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
-  late DomCanvasElement sceneElement;
   late SkwasmSurface surface;
+  late SkwasmSceneView sceneView;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -347,12 +347,8 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FutureOr<void> initialize() {
-    // TODO(jacksongardner): This is very basic and doesn't work for element
-    // embedding or with platform views. We need to update this at some point
-    // to deal with those cases.
-    sceneElement = createDomCanvasElement();
-    sceneElement.id = 'flt-scene';
     surface = SkwasmSurface();
+    sceneView = SkwasmSceneView(surface);
   }
 
   @override
@@ -403,31 +399,14 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<void> renderScene(ui.Scene scene) async {
-    final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    final DomImageBitmap bitmap = await surface.renderPicture(picture);
-
-    final DomCSSStyleDeclaration style = sceneElement.style;
-    final ui.Rect pictureRect = picture.cullRect;
-    final double logicalWidth = pictureRect.width / window.devicePixelRatio;
-    final double logicalHeight = pictureRect.height / window.devicePixelRatio;
-    style.width = '${logicalWidth}px';
-    style.height = '${logicalHeight}px';
-    style.position = 'absolute';
-    style.left = '${pictureRect.left}px';
-    style.top = '${pictureRect.top}px';
-    sceneElement.width = pictureRect.width;
-    sceneElement.height = pictureRect.height;
-    final DomCanvasRenderingContextBitmapRenderer context = sceneElement.contextBitmapRenderer;
-    context.transferFromImageBitmap(bitmap);
-  }
+  Future<void> renderScene(ui.Scene scene) => sceneView.renderScene(scene as SkwasmScene);
 
   @override
   String get rendererTag => 'skwasm';
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    embedder.addSceneToSceneHost(sceneElement);
+    embedder.addSceneToSceneHost(sceneView.sceneElement);
   }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};

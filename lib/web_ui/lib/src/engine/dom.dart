@@ -530,6 +530,8 @@ extension DomElementExtension on DomElement {
 
   external DomElement? get firstElementChild;
 
+  external DomElement? get nextElementSibling;
+
   @JS('clientHeight')
   external JSNumber get _clientHeight;
   double get clientHeight => _clientHeight.toDartDouble;

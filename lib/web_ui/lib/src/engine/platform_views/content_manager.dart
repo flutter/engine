@@ -133,7 +133,7 @@ class PlatformViewManager {
 
     return _contents.putIfAbsent(viewId, () {
       final DomElement wrapper = domDocument
-          .createElement('flt-platform-view') 
+          .createElement('flt-platform-view')
             ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;

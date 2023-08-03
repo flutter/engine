@@ -30,7 +30,7 @@ class SkwasmScene implements ui.Scene {
 
     // Only rasterizes the picture slices.
     for (final PictureSlice slice in rootLayer.slices.whereType<PictureSlice>()) {
-      canvas.drawPicture(slice.picture);  
+      canvas.drawPicture(slice.picture);
     }
     return recorder.endRecording().toImageSync(width, height);
   }
@@ -69,7 +69,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     double height = 0.0
   }) {
     currentBuilder.addPlatformView(
-      viewId, 
+      viewId,
       offset: offset,
       width: width,
       height: height

@@ -270,7 +270,7 @@ class TransformOperation implements LayerOperation {
 
   @override
   ui.Rect cullRect(ui.Rect contentRect) => getMatrix().transformRect(contentRect);
-  
+
   @override
   ui.Rect inverseMapRect(ui.Rect rect) {
     final Matrix4 matrix = getMatrix()..invert();
@@ -441,7 +441,7 @@ class LayerBuilder {
       }
       operation?.post(canvas, rect);
       final ui.Picture picture = recorder.endRecording();
-      layer.slices.add(PictureSlice(picture));
+      layer.slices.add(PictureSlice(picture as ScenePicture));
     }
 
     if (pendingPlatformViews.isNotEmpty) {

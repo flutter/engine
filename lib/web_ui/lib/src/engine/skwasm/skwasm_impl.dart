@@ -45,6 +45,7 @@ export 'skwasm_impl/raw/text/raw_strut_style.dart';
 export 'skwasm_impl/raw/text/raw_text_style.dart';
 export 'skwasm_impl/renderer.dart';
 export 'skwasm_impl/scene_builder.dart';
+export 'skwasm_impl/scene_view.dart';
 export 'skwasm_impl/shaders.dart';
 export 'skwasm_impl/surface.dart';
 export 'skwasm_impl/vertices.dart';

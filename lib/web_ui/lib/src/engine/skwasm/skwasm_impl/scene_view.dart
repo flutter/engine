@@ -2,16 +2,88 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html';
-
-import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/ui.dart' as ui;
 
 const String kCanvasContainerTag = 'flt-canvas-container';
 const String kPlatformViewContainerTag = 'flt-platform-view';
 
-class SliceContainer {
+sealed class SliceContainer {
+  DomElement get container;
+
+  void updateContents();
+}
+
+final class PictureSliceContainer extends SliceContainer {
+  factory PictureSliceContainer(ui.Rect bounds) {
+    final DomElement container = domDocument.createElement(kCanvasContainerTag);
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: bounds.width.toInt(),
+      height: bounds.height.toInt()
+    );
+    container.appendChild(canvas);
+    return PictureSliceContainer._(bounds, container, canvas);
+  }
+
+  PictureSliceContainer._(this._bounds, this.container, this.canvas);
+
+  ui.Rect _bounds;
+  bool _dirty = true;
+
+  ui.Rect get bounds => _bounds;
+  set bounds(ui.Rect bounds) {
+    if (_bounds != bounds) {
+      _bounds = bounds;
+      _dirty = true;
+    }
+  }
+
+  @override
+  void updateContents() {
+    if (_dirty) {
+      _dirty = false;
+      final DomCSSStyleDeclaration style = canvas.style;
+      final double logicalWidth = bounds.width / window.devicePixelRatio;
+      final double logicalHeight = bounds.height / window.devicePixelRatio;
+      style.width = '${logicalWidth}px';
+      style.height = '${logicalHeight}px';
+      style.position = 'absolute';
+      style.left = '${bounds.left}px';
+      style.top = '${bounds.top}px';
+      canvas.width = bounds.width;
+      canvas.height = bounds.height;
+    }
+  }
+
+  void renderBitmap(DomImageBitmap bitmap) {
+    final DomCanvasRenderingContextBitmapRenderer ctx = canvas.contextBitmapRenderer;
+    ctx.transferFromImageBitmap(bitmap);
+  }
+
+  @override
+  final DomElement container;
+  final DomCanvasElement canvas;
+}
+
+final class PlatformViewSliceContainer extends SliceContainer {
+  PlatformViewSliceContainer(this._views);
+
+  List<PlatformView> _views;
+
+  @override
+  final DomElement container = domDocument.createElement(kPlatformViewContainerTag);
+
+  set views(List<PlatformView> views) {
+    if (_views != views) {
+      _views = views;
+    }
+  }
+
+  @override
+  void updateContents() {
+    // TODO: Actually add the views needed
+  }
 }
 
 class SkwasmSceneView {
@@ -24,6 +96,8 @@ class SkwasmSceneView {
 
   final SkwasmSurface surface;
   final DomElement sceneElement;
+
+  List<SliceContainer> containers = <SliceContainer>[];
 
   int queuedRenders = 0;
   static const int kMaxQueuedRenders = 3;
@@ -42,49 +116,71 @@ class SkwasmSceneView {
         }
     );
     final List<DomImageBitmap?> renderedBitmaps = await Future.wait(renderFutures);
-
-    // TODO: optimize this.
-    DomElement? lastAdded;
+    final List<SliceContainer?> reusableContainers = List<SliceContainer?>.from(containers);
+    final List<SliceContainer> newContainers = <SliceContainer>[];
     for (int i = 0; i < slices.length; i++) {
-      final DomNode? nextNode = lastAdded == null 
-        ? sceneElement.firstChild
-        : lastAdded.nextSibling;
       final LayerSlice slice = slices[i];
       switch (slice) {
         case PictureSlice():
-          final DomNode? candidate = findBestExistingPictureNode(slice);
-          if (candidate != null) {
-            if (nextNode != candidate) {
-              sceneElement.removeChild(candidate);
-              if (lastAdded == null) {
-                sceneElement.prepend(candidate);
-              } else {
-                lastAdded.after()
-              }
-              sceneElement.prepend(
+          PictureSliceContainer? container;
+          for (int j = 0; j < reusableContainers.length; j++) {
+            final SliceContainer? candidate = reusableContainers[j];
+            if (candidate is PictureSliceContainer) {
+              container = candidate;
+              reusableContainers[j] = null;
+              break;
             }
           }
-        case PlatformViewSlice():
-          final 
-      }
-      final DomNode? candidate = lastAdded?.nextSibling ?? sceneElement.firstChild;
 
+          if (container != null) {
+            container.bounds = slice.picture.cullRect;
+          } else {
+            container = PictureSliceContainer(slice.picture.cullRect);
+          }
+          container.updateContents();
+          container.renderBitmap(renderedBitmaps[i]!);
+          newContainers.add(container);
+
+        case PlatformViewSlice():
+          PlatformViewSliceContainer? container;
+          for (int j = 0; j < reusableContainers.length; j++) {
+            final SliceContainer? candidate = reusableContainers[j];
+            if (candidate is PlatformViewSliceContainer) {
+              container = candidate;
+              reusableContainers[j] = null;
+              break;
+            }
+          }
+          if (container != null) {
+            container.views = slice.views;
+          } else {
+            container = PlatformViewSliceContainer(slice.views);
+          }
+          container.updateContents();
+          newContainers.add(container);
+      }
+    }
+
+    containers = newContainers;
+
+    DomElement? currentElement = sceneElement.firstElementChild;
+    for (final SliceContainer container in containers) {
+      if (currentElement == null) {
+        sceneElement.appendChild(container.container);
+      } else if (currentElement == container.container) {
+        currentElement = currentElement.nextElementSibling;
+      } else {
+        sceneElement.insertBefore(container.container, currentElement);
+      }
+    }
+
+    // Remove any other
+    while (currentElement != null) {
+      final DomElement? sibling = currentElement.nextElementSibling;
+      sceneElement.removeChild(currentElement);
+      currentElement = sibling;
     }
 
     queuedRenders -= 1;
-  }
-
-  DomElement? findBestExistingPictureNode(PictureSlice slice) {
-    final ui.Rect bounds = slice.picture.cullRect;
-    for (DomElement? current = sceneElement.firstElementChild; current != null; current = current.nextSibling) {
-      if (current.tagName != kCanvasContainerTag) {
-        continue;
-      }
-      final DomCanvasElement canvas = current.firstChild! as DomCanvasElement;
-      if (canvas.width == bounds.width && canvas.height == bounds.height) {
-        return current;
-      }
-    }
-    return null;
   }
 }
