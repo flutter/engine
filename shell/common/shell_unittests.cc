@@ -4343,6 +4343,9 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
 }
 
 TEST_F(ShellTest, DiesIfSoftwareRenderingAndImpellerAreEnabledDeathTest) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Fuchsia";
+#endif  // OS_FUCHSIA
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   Settings settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
