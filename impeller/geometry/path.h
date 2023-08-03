@@ -39,6 +39,29 @@ enum class Convexity {
   kConvex,
 };
 
+/// Unique identifier for a path.
+class PathIdentifier {
+ public:
+  template <typename T>
+  PathIdentifier(uint32_t tag, const T& value)
+      : tag_(tag), data_(reinterpret_cast<const char*>(&value), sizeof(T)) {
+    hash_ = tag + 31 * std::hash<std::string>{}(data_);
+  }
+
+  bool operator==(const PathIdentifier& other) const {
+    return tag_ == other.tag_ && hash_ == other.hash_ && data_ == other.data_;
+  }
+
+  struct Hash {
+    size_t operator()(const PathIdentifier& id) const { return id.hash_; }
+  };
+
+ private:
+  uint32_t tag_;
+  std::string data_;  // std::string used because of SSO.
+  size_t hash_;
+};
+
 //------------------------------------------------------------------------------
 /// @brief      Paths are lightweight objects that describe a collection of
 ///             linear, quadratic, or cubic segments. These segments may be
@@ -82,7 +105,7 @@ class Path {
     std::vector<PolylineContour> contours;
 
     /// Generation ID of the path that this polyline was generated from.
-    std::optional<uint32_t> original_generation_id;
+    std::optional<PathIdentifier> original_path_identifier;
 
     /// Convenience method to compute the start (inclusive) and end (exclusive)
     /// point of the given contour index.
@@ -157,13 +180,14 @@ class Path {
 
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
-  /// If this path was created from a Skia path, this will return the
-  /// generationId() of the Skia path at the moment of path creation.
-  std::optional<uint32_t> GetOriginalGenerationId() const {
-    return original_generation_id_;
+  /// The creator of path might have assigned it a unique identifier that can
+  /// be used to match identical paths across frames. This may come from
+  /// SkPath::getGenerationID().
+  std::optional<PathIdentifier> GetPathIdentifier() const {
+    return path_identifier_;
   }
 
-  void SetOriginalGenerationId(uint32_t id) { original_generation_id_ = id; }
+  void SetPathIdentifier(PathIdentifier id) { path_identifier_ = id; }
 
  private:
   friend class PathBuilder;
@@ -187,7 +211,7 @@ class Path {
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
-  std::optional<uint32_t> original_generation_id_ = std::nullopt;
+  std::optional<PathIdentifier> path_identifier_ = std::nullopt;
 };
 
 }  // namespace impeller

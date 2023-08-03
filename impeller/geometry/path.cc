@@ -366,7 +366,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     }
     end_contour();
   }
-  polyline.original_generation_id = GetOriginalGenerationId();
+  polyline.original_path_identifier = GetPathIdentifier();
   return polyline;
 }
 

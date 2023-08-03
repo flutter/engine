@@ -889,10 +889,7 @@ void DlDispatcher::drawRRect(const SkRRect& rrect) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
-  PathBuilder builder;
-  builder.AddPath(skia_conversions::ToPath(outer));
-  builder.AddPath(skia_conversions::ToPath(inner));
-  canvas_.DrawPath(builder.TakePath(FillType::kOdd), paint_);
+  canvas_.DrawPath(skia_conversions::ToPath(outer, inner), paint_);
 }
 
 // |flutter::DlOpReceiver|

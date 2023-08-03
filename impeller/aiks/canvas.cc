@@ -22,6 +22,11 @@
 
 namespace impeller {
 
+namespace {
+const uint32_t kTagDlRRect = 'dlrr';
+const uint32_t kTagDlCircle = 'dlci';
+}  // namespace
+
 Canvas::Canvas() {
   Initialize(std::nullopt);
 }
@@ -242,6 +247,11 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
                   .TakePath();
+  struct {
+    Rect rect;
+    Scalar corner_radius;
+  } identifier = {.rect = rect, .corner_radius = corner_radius};
+  path.SetPathIdentifier(PathIdentifier(kTagDlRRect, identifier));
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
     entity.SetTransformation(GetCurrentTransformation());
@@ -266,6 +276,11 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
                          .AddCircle(center, radius)
                          .SetConvexity(Convexity::kConvex)
                          .TakePath();
+  struct {
+    Point center;
+    Scalar radius;
+  } identifier = {.center = center, .radius = radius};
+  circle_path.SetPathIdentifier(PathIdentifier(kTagDlCircle, identifier));
   DrawPath(circle_path, paint);
 }
 

@@ -9,6 +9,12 @@
 namespace impeller {
 namespace skia_conversions {
 
+namespace {
+const uint32_t kTagSkiaPath = 'skpa';
+const uint32_t kTagSkiaRRect = 'skrr';
+const uint32_t kTagSkiaDRRect = 'skdr';
+}  // namespace
+
 Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
@@ -122,15 +128,46 @@ Path ToPath(const SkPath& path) {
   builder.SetConvexity(path.isConvex() ? Convexity::kConvex
                                        : Convexity::kUnknown);
   auto result = builder.TakePath(fill_type);
-  result.SetOriginalGenerationId(path.getGenerationID());
+  struct {
+    uint32_t generation_id;
+    FillType fill_type;
+  } identifier = {
+      .generation_id = path.getGenerationID(),
+      .fill_type = fill_type,
+  };
+  result.SetPathIdentifier(PathIdentifier(kTagSkiaPath, identifier));
   return result;
 }
 
 Path ToPath(const SkRRect& rrect) {
-  return PathBuilder{}
-      .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
-      .SetConvexity(Convexity::kConvex)
-      .TakePath();
+  auto path =
+      PathBuilder{}
+          .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+          .SetConvexity(Convexity::kConvex)
+          .TakePath();
+  struct {
+    SkRRect rrect;
+  } identifier = {
+      .rrect = rrect,
+  };
+  path.SetPathIdentifier(PathIdentifier(kTagSkiaRRect, identifier));
+  return path;
+}
+
+Path ToPath(const SkRRect& outer, const SkRRect& inner) {
+  PathBuilder builder;
+  builder.AddPath(ToPath(outer));
+  builder.AddPath(ToPath(inner));
+  auto path = builder.TakePath(FillType::kOdd);
+  struct {
+    SkRRect outer;
+    SkRRect inner;
+  } identifier = {
+      .outer = outer,
+      .inner = inner,
+  };
+  path.SetPathIdentifier(PathIdentifier(kTagSkiaDRRect, identifier));
+  return path;
 }
 
 Point ToPoint(const SkPoint& point) {

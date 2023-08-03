@@ -42,6 +42,8 @@ Path ToPath(const SkPath& path);
 
 Path ToPath(const SkRRect& rrect);
 
+Path ToPath(const SkRRect& outer, const SkRRect& inner);
+
 Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob);
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);

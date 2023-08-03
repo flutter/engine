@@ -32,33 +32,35 @@ class TessellationCache {
 
  private:
   struct PolylineKey {
-    std::uint32_t generation_id;
+    PathIdentifier path_identifier;
     Scalar scale;
 
     bool operator==(const PolylineKey& other) const {
-      return generation_id == other.generation_id && scale == other.scale;
+      return path_identifier == other.path_identifier && scale == other.scale;
     }
   };
 
   struct PolylineKeyHash {
     size_t operator()(const PolylineKey& key) const {
-      return key.generation_id + 31 * std::hash<Scalar>()(key.scale);
+      return PathIdentifier::Hash()(key.path_identifier) +
+             31 * std::hash<Scalar>()(key.scale);
     }
   };
 
   struct TessellatorKey {
-    std::uint32_t generation_id;
+    PathIdentifier path_identifier;
     FillType fill_type;
 
     bool operator==(const TessellatorKey& other) const {
-      return generation_id == other.generation_id &&
+      return path_identifier == other.path_identifier &&
              fill_type == other.fill_type;
     }
   };
 
   struct TessellatorKeyHash {
     size_t operator()(const TessellatorKey& key) const {
-      return key.generation_id + 31 * std::hash<FillType>()(key.fill_type);
+      return PathIdentifier::Hash()(key.path_identifier) +
+             31 * std::hash<FillType>()(key.fill_type);
     }
   };
 

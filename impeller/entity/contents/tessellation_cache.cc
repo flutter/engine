@@ -12,12 +12,12 @@ Path::Polyline TessellationCache::GetOrCreatePolyline(
     const impeller::Path& path,
     Scalar scale) {
 #if IMPELLER_ENABLE_TESSELLATION_CACHE == 1
-  auto generation_id = path.GetOriginalGenerationId();
-  if (!generation_id) {
-    // This path did not originate from Skia path.
+  auto path_identifier = path.GetPathIdentifier();
+  if (!path_identifier) {
+    // We can't match path without a valid identifier.
     return path.CreatePolyline(scale);
   }
-  PolylineKey key{*generation_id, scale};
+  PolylineKey key{*path_identifier, scale};
   auto result = polyline_cache_.Get(key);
   if (result) {
     return *result;
@@ -36,12 +36,12 @@ Tessellator::Result TessellationCache::Tessellate(
     const Path::Polyline& polyline,
     const Tessellator::BuilderCallback& callback) {
 #if IMPELLER_ENABLE_TESSELLATION_CACHE == 1
-  auto generation_id = polyline.original_generation_id;
-  if (!generation_id) {
+  auto path_identifier = polyline.original_path_identifier;
+  if (!path_identifier) {
     return tesselator.Tessellate(fill_type, polyline, callback);
   }
 
-  TessellatorKey key{*generation_id, fill_type};
+  TessellatorKey key{*path_identifier, fill_type};
   auto result = tessellator_cache_.Get(key);
   if (result) {
     if (callback(result->vertices.data(), result->vertices.size(),
