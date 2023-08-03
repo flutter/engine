@@ -44,13 +44,13 @@ Dart_Handle InternalFlutterGpuTestProcWithCallback(Dart_Handle callback) {
 void InternalFlutterGpuTestClass_Create(Dart_Handle wrapper) {
   auto res = fml::MakeRefCounted<flutter::FlutterGpuTestClass>();
   res->AssociateWithDartWrapper(wrapper);
-  FML_LOG(ERROR) << "FlutterGpuTestClass Wrapped.";
+  FML_LOG(INFO) << "FlutterGpuTestClass Wrapped.";
 }
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
 void InternalFlutterGpuTestClass_Method(flutter::FlutterGpuTestClass* self,
                                         int something) {
-  FML_LOG(ERROR) << "Something: " << something;
+  FML_LOG(INFO) << "Something: " << something;
 }
 
 // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
