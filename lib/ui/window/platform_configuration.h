@@ -67,9 +67,10 @@ class PlatformConfigurationClient {
 
   //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
-  ///             provided Scene.
+  ///             provided Scenes.
   ///
-  virtual void Render(int64_t view_id, Scene* scene) = 0;
+  virtual void Render(std::vector<int64_t>& view_ids,
+                      std::vector<Scene*>& scenes) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Receives an updated semantics tree from the Framework.
@@ -509,7 +510,7 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static void Render(int64_t view_id, Scene* scene);
+  static void RenderViews(Dart_Handle view_ids, Dart_Handle scenes);
 
   static void UpdateSemantics(SemanticsUpdate* update);
 

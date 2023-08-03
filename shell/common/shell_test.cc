@@ -217,8 +217,10 @@ void ShellTest::PumpOneFrame(Shell* shell,
         if (builder) {
           builder(root_layer);
         }
-        runtime_delegate->Render(kImplicitViewId, std::move(layer_tree),
-                                 device_pixel_ratio);
+        std::vector<LayerTreeTask> tasks;
+        tasks.emplace_back(kImplicitViewId, std::move(layer_tree),
+                           device_pixel_ratio);
+        runtime_delegate->Render(std::move(tasks));
         latch.Signal();
       });
   latch.Wait();
