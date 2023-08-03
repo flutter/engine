@@ -1214,6 +1214,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   if (!g_hardware_buffer_class->is_null()) {
     g_hardware_buffer_close_method =
         env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
+    if (g_hardware_buffer_close_method == nullptr) {
+      FML_LOG(WARNING)
+          << "Could not locate close on android.hardware.HardwareBuffer";
+      // Continue on as this class may not exist at API <= 26.
+      fml::jni::ClearException(env);
+    }
   } else {
     FML_LOG(WARNING)
         << "Could not locate android.hardware.HardwareBuffer class";
