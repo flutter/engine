@@ -30,6 +30,10 @@ NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
 // `+[NSBundle bundleWithIdentifier:]`.
 NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID);
 
+NSBundle* FLTGetApplicationBundle();
+
+NSURL* FLTAssetsFromBundle(NSBundle* bundle);
+
 NS_ASSUME_NONNULL_END
 
 #endif  // SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_

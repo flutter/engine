@@ -26,11 +26,38 @@ NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
   return nil;
 }
 
-NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID) {
-  NSBundle* bundle = FLTFrameworkBundleInternal(bundleID, NSBundle.mainBundle.privateFrameworksURL);
-  if (bundle != nil) {
-    return bundle;
+NSBundle* FLTGetApplicationBundle() {
+  NSBundle* mainBundle = [NSBundle mainBundle];
+  // App extension bundle is in Runner.app/PlugIns/Extension.appex.
+  if ([mainBundle.bundleURL.pathExtension isEqualToString:@"appex"]) {
+    // Up two levels.
+    return [NSBundle bundleWithURL:mainBundle.bundleURL.URLByDeletingLastPathComponent
+                                       .URLByDeletingLastPathComponent];
   }
-  // Fallback to slow implementation.
-  return [NSBundle bundleWithIdentifier:bundleID];
+  return mainBundle;
+}
+
+NSBundle* FLTFrameworkBundleWithIdentifier(NSString* flutterBundleID) {
+  NSBundle* appBundle = FLTGetApplicationBundle();
+  NSBundle* bundle = FLTFrameworkBundleInternal(flutterBundleID, appBundle.privateFrameworksURL);
+  if (bundle == nil) {
+    // Fallback to slow implementation.
+    bundle = [NSBundle bundleWithIdentifier:flutterBundleID];
+  }
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
+  }
+  return bundle;
+}
+
+NSURL* FLTAssetsFromBundle(NSBundle* bundle) {
+  NSString* assetsPathFromInfoPlist = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
+  NSString* flutterAssetsName =
+      assetsPathFromInfoPlist != nil ? assetsPathFromInfoPlist : @"flutter_assets";
+  NSURL* assets = [bundle URLForResource:flutterAssetsName withExtension:nil];
+
+  if ([assets checkResourceIsReachableAndReturnError:NULL]) {
+    return assets;
+  }
+  return nil;
 }
