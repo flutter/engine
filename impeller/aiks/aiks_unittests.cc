@@ -450,6 +450,35 @@ TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
 }  // namespace
 
 namespace {
+void CanRenderRadialGradientWithDithering(AiksTest* aiks_test,
+                                          bool use_dithering) {
+  Canvas canvas;
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // #FFF -> #000
+  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
+                               Color{0.0, 0.0, 0.0, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {600, 600}, 600, std::move(colors), std::move(stops),
+      Entity::TileMode::kClamp, {});
+  paint.dither = use_dithering;
+  canvas.DrawRect({0, 0, 1200, 1200}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderRadialGradientWithDitheringDisabled) {
+  CanRenderRadialGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderRadialGradientWithDitheringEnabled) {
+  CanRenderRadialGradientWithDithering(this, true);
+}
+
+namespace {
 void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
                                                  Entity::TileMode tile_mode) {
   Canvas canvas;

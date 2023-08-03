@@ -119,6 +119,7 @@ ColorSource ColorSource::MakeRadialGradient(Point center,
     contents->SetStops(stops);
     contents->SetCenterAndRadius(center, radius);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     auto radius_pt = Point(radius, radius);
