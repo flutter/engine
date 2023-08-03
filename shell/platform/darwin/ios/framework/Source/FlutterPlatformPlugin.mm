@@ -16,6 +16,7 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
+const NSString* searchURLPrefix = @"x-web-search://?";
 
 }  // namespace
 
@@ -115,12 +116,26 @@ using namespace flutter;
     result([self clipboardHasStrings]);
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
+  } else if ([method isEqualToString:@"SearchWeb.invoke"]) {
+    [self searchWeb:args];
+    result(nil);
   } else if ([method isEqualToString:@"LookUp.invoke"]) {
     [self showLookUpViewController:args];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+- (void)searchWeb:(NSString*)searchTerm {
+  NSString* escapedText = [searchTerm
+      stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
+                                                             URLHostAllowedCharacterSet]];
+  NSString* searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
+
+  [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
+                                     options:@{}
+                           completionHandler:nil];
 }
 
 - (void)playSystemSound:(NSString*)soundType {
@@ -269,13 +284,23 @@ using namespace flutter;
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
 
-  UIViewController* engineViewController = [_engine.get() viewController];
+  FlutterViewController* engineViewController = [_engine.get() viewController];
   UINavigationController* navigationController = [engineViewController navigationController];
   if (navigationController) {
     [navigationController popViewControllerAnimated:isAnimated];
   } else {
-    UIViewController* rootViewController =
-        [UIApplication sharedApplication].keyWindow.rootViewController;
+    UIViewController* rootViewController = nil;
+#if APPLICATION_EXTENSION_API_ONLY
+    if (@available(iOS 15.0, *)) {
+      rootViewController =
+          [engineViewController windowSceneIfViewLoaded].keyWindow.rootViewController;
+    } else {
+      FML_LOG(WARNING)
+          << "rootViewController is not available in application extension prior to iOS 15.0.";
+    }
+#else
+    rootViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+#endif
     if (engineViewController != rootViewController) {
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
     }

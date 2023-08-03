@@ -157,6 +157,7 @@
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
+../../../flutter/impeller/renderer/pool_unittests.cc
 ../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/renderer/testing
@@ -351,7 +352,6 @@
 ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
 ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 ../../../flutter/shell/platform/windows/window_unittests.cc
-../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
@@ -1986,24 +1986,6 @@
 ../../../third_party/freetype2/src/winfonts/rules.mk
 ../../../third_party/freetype2/tests
 ../../../third_party/freetype2/vms_make.com
-../../../third_party/fuchsia-vulkan/.cmake-format.py
-../../../third_party/fuchsia-vulkan/.git
-../../../third_party/fuchsia-vulkan/.gitattributes
-../../../third_party/fuchsia-vulkan/.gitignore
-../../../third_party/fuchsia-vulkan/BUILD.md
-../../../third_party/fuchsia-vulkan/CMakeLists.txt
-../../../third_party/fuchsia-vulkan/CODE_OF_CONDUCT.md
-../../../third_party/fuchsia-vulkan/OWNERS
-../../../third_party/fuchsia-vulkan/README.fuchsia
-../../../third_party/fuchsia-vulkan/README.md
-../../../third_party/fuchsia-vulkan/cmake
-../../../third_party/fuchsia-vulkan/registry/cgenerator.py
-../../../third_party/fuchsia-vulkan/registry/conventions.py
-../../../third_party/fuchsia-vulkan/registry/generator.py
-../../../third_party/fuchsia-vulkan/registry/genvk.py
-../../../third_party/fuchsia-vulkan/registry/reg.py
-../../../third_party/fuchsia-vulkan/registry/spec_tools/util.py
-../../../third_party/fuchsia-vulkan/registry/vkconventions.py
 ../../../third_party/glfw/.appveyor.yml
 ../../../third_party/glfw/.git
 ../../../third_party/glfw/.gitattributes
@@ -2681,6 +2663,7 @@
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
@@ -2874,6 +2857,7 @@
 ../../../third_party/skia/third_party/freetype2
 ../../../third_party/skia/third_party/harfbuzz/README
 ../../../third_party/skia/third_party/icu
+../../../third_party/skia/third_party/libgrapheme/generate_headers.py
 ../../../third_party/skia/third_party/libjpeg-turbo
 ../../../third_party/skia/third_party/libpng
 ../../../third_party/skia/third_party/lua
