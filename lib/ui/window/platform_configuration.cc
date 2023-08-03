@@ -93,6 +93,7 @@ void PlatformConfiguration::RemoveView(int64_t view_id) {
       << "The implicit view #" << view_id << " should never be removed.";
   size_t erased_elements = windows_.erase(view_id);
   FML_DCHECK(erased_elements != 0) << "View #" << view_id << " doesn't exist.";
+  (void)erased_elements;
   std::shared_ptr<tonic::DartState> dart_state =
       remove_view_.dart_state().lock();
   if (!dart_state) {

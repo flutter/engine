@@ -1941,6 +1941,9 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
+  // TODO(dkwingsmt): This method only handles view #0, including the snapshot
+  // and the frame size. We need to adapt this method to multi-view.
+  // https://github.com/flutter/flutter/issues/131892
   if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
@@ -1972,8 +1975,6 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     response->AddMember("snapshots", snapshots, allocator);
 
-    // TODO(dkwingsmt): Not sure what these fields are supposed to be after
-    // multi-view. For now it sends the implicit view's dimension as before.
     const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
