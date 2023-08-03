@@ -2,7 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+assert(is_mac || is_ios)
+
 import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
 import("framework_shared.gni")
 
 source_set("common") {
@@ -55,4 +58,27 @@ source_set("framework_shared") {
   ]
 
   deps = [ "//flutter/fml" ]
+}
+
+test_fixtures("flutter_channels_fixtures") {
+  fixtures = []
+}
+
+# Unit tests for channels.
+executable("flutter_channels_unittests") {
+  testonly = true
+
+  sources = [
+    "framework/Source/flutter_codecs_unittest.mm",
+    "framework/Source/flutter_standard_codec_unittest.mm",
+  ]
+
+  deps = [
+    ":flutter_channels_fixtures",
+    ":framework_shared",
+    "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",
+  ]
+
+  public_configs = [ "//flutter:config" ]
 }
