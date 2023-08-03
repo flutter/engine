@@ -9,7 +9,7 @@ import '../../lib/gpu/gpu.dart' as gpu;
 
 void main() {
   // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
-  test('no crash', () async {
+  test('smoketest', () async {
     final int result = gpu.testProc();
     expect(result, 1);
 
@@ -20,5 +20,17 @@ void main() {
 
     final gpu.FlutterGpuTestClass a = gpu.FlutterGpuTestClass();
     a.coolMethod(9847);
+  });
+
+  test('getGpuContext throws exception for incompatible embedders', () async {
+    try {
+      gpu.getGpuContext();
+      fail('Exception not thrown');
+    } catch (e) {
+      expect(
+          e.toString(),
+          contains(
+              'The GpuContext API requires the Impeller rendering backend to be enabled.'));
+    }
   });
 }

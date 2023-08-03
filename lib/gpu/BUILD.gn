@@ -31,8 +31,12 @@ source_set("gpu") {
   }
 
   sources = [
-    "gpu.cc",
-    "gpu.h",
+    "context.cc",
+    "context.h",
+    "export.cc",
+    "export.h",
+    "smoketest.cc",
+    "smoketest.h",
   ]
   deps = [
     "//flutter/impeller",

@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library gpu;
+#include "flutter/lib/gpu/export.h"
 
-import 'dart:ffi';
-import 'dart:nativewrappers';
-import 'dart:ui' as ui;
+namespace flutter {
 
-part 'smoketest.dart';
-part 'context.dart';
+//
+
+}  // namespace flutter
