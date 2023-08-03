@@ -387,10 +387,11 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
 TEST(FlutterWindowTest, PosthumousWindowMessage) {
   MockWindowBindingHandlerDelegate delegate;
   bool expect_messages = true;
-  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&](HWND hwnd, WindowStateEvent event) {
-    FML_LOG(ERROR) << "Got event " << static_cast<int>(event);
-    EXPECT_TRUE(expect_messages);
-  });
+  ON_CALL(delegate, OnWindowStateEvent)
+      .WillByDefault([&](HWND hwnd, WindowStateEvent event) {
+        FML_LOG(ERROR) << "Got event " << static_cast<int>(event);
+        EXPECT_TRUE(expect_messages);
+      });
 
   {
     MockFlutterWindow win32window;
