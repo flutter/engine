@@ -65,7 +65,7 @@ test_fixtures("flutter_channels_fixtures") {
 }
 
 # Unit tests for channels.
-executable("flutter_channels_unittests") {
+executable("framework_shared_unittests") {
   testonly = true
 
   sources = [
