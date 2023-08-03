@@ -2519,7 +2519,7 @@ FLUTTER_ASSERT_ARC
   }
 }
 
-- (void)testInteractiveKeyboardScreenshotWillBeMovedUpAfterUserScroll {
+- (void)testInteractiveKeyboardScreenshotWillBeMovedToOrginalPositionAfterUserScroll {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [UIApplication.sharedApplication.keyWindow addSubview:inputView];
 
