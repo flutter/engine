@@ -2512,7 +2512,7 @@ FLUTTER_ASSERT_ARC
                              }];
   XCTAssert(textInputPlugin.keyboardView.superview != nil);
 
-  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, (CGFloat)@(600));
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, (CGFloat) @(600));
 
   for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
     [subView removeFromSuperview];
@@ -2548,7 +2548,7 @@ FLUTTER_ASSERT_ARC
                              result:^(id _Nullable result){
                              }];
   XCTAssert(textInputPlugin.keyboardView.superview != nil);
-  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, (CGFloat)@(600));
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, (CGFloat) @(600));
 
   FlutterMethodCall* onPointerMoveCallBackUp =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"

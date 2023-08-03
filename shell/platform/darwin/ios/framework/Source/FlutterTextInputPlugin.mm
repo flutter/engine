@@ -2325,25 +2325,25 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)handlePointerMove:(CGFloat)pointerY {
-  //View must be loaded at this point.
+  // View must be loaded at this point.
   UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
   double screenHeight = screen.bounds.size.height;
   double keyboardHeight = _keyboardRect.size.height;
-    if (screenHeight - keyboardHeight <= pointerY) {
+  if (screenHeight - keyboardHeight <= pointerY) {
     // If the pointer is within the bounds of the keyboard.
-      if (_keyboardView.superview == nil) {
+    if (_keyboardView.superview == nil) {
       // If no screenshot has been taken.
-        [self takeKeyboardScreenshotAndDisplay];
-        [self hideKeyboardWithoutAnimation];
-      } else {
-        [self setKeyboardContainerHeight:pointerY];
-      }
+      [self takeKeyboardScreenshotAndDisplay];
+      [self hideKeyboardWithoutAnimation];
     } else {
-      if (_keyboardView.superview != nil) {
-        //Keeps keyboard at proper height.
-        _keyboardViewContainer.frame = _keyboardRect;
-      }
+      [self setKeyboardContainerHeight:pointerY];
     }
+  } else {
+    if (_keyboardView.superview != nil) {
+      // Keeps keyboard at proper height.
+      _keyboardViewContainer.frame = _keyboardRect;
+    }
+  }
 }
 
 - (void)setKeyboardContainerHeight:(CGFloat)pointerY {
@@ -2360,7 +2360,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)takeKeyboardScreenshotAndDisplay {
-   //View must be loaded at this point
+  // View must be loaded at this point
   UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
   UIView* keyboardSnap = [screen snapshotViewAfterScreenUpdates:YES];
   keyboardSnap = [keyboardSnap resizableSnapshotViewFromRect:_keyboardRect
