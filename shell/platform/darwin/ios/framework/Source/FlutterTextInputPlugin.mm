@@ -2221,7 +2221,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 @property(nonatomic, strong) UIView* keyboardViewContainer;
 @property(nonatomic, strong) UIView* keyboardView;
-@property(nonatomic, strong) UIView* firstResponder;
+@property(nonatomic, strong) UIView* cachedFirstResponder;
 @property(nonatomic, assign) CGRect keyboardRect;
 @end
 
@@ -2354,8 +2354,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (void)hideKeyboardWithoutAnimation {
   [UIView setAnimationsEnabled:NO];
-  _firstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
-  [_firstResponder resignFirstResponder];
+  _cachedFirstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  [_cachedFirstResponder resignFirstResponder];
   [UIView setAnimationsEnabled:YES];
 }
 
