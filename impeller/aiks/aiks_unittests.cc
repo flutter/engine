@@ -479,6 +479,37 @@ TEST_P(AiksTest, CanRenderRadialGradientWithDitheringEnabled) {
 }
 
 namespace {
+void CanRenderSweepGradientWithDithering(AiksTest* aiks_test,
+                                         bool use_dithering) {
+  Canvas canvas;
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // #FFF -> #000
+  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
+                               Color{0.0, 0.0, 0.0, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeSweepGradient(
+      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
+      std::move(stops), Entity::TileMode::kMirror, {});
+  paint.dither = use_dithering;
+
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderSweepGradientWithDitheringDisabled) {
+  CanRenderSweepGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderSweepGradientWithDitheringEnabled) {
+  CanRenderSweepGradientWithDithering(this, true);
+}
+
+namespace {
 void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
                                                  Entity::TileMode tile_mode) {
   Canvas canvas;

@@ -151,6 +151,7 @@ ColorSource ColorSource::MakeSweepGradient(Point center,
     contents->SetColors(colors);
     contents->SetStops(stops);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     return contents;
