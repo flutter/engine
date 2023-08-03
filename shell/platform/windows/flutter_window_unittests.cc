@@ -384,5 +384,26 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   EXPECT_TRUE(restored);
 }
 
+TEST(FlutterWindowTest, PosthumousWindowMessage) {
+  MockWindowBindingHandlerDelegate delegate;
+  bool expect_messages = true;
+  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&](HWND hwnd, WindowStateEvent event) {
+    FML_LOG(ERROR) << "Got event " << static_cast<int>(event);
+    EXPECT_TRUE(expect_messages);
+  });
+
+  {
+    MockFlutterWindow win32window;
+    ON_CALL(win32window, GetPlatformWindow).WillByDefault([&]() {
+      return win32window.FlutterWindow::GetPlatformWindow();
+    });
+    win32window.SetView(&delegate);
+    win32window.InitializeChild("Title", 1, 1);
+    HWND hwnd = win32window.GetPlatformWindow();
+    SendMessage(hwnd, WM_SIZE, 0, MAKEWORD(1, 1));
+    SendMessage(hwnd, WM_SETFOCUS, 0, 0);
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter

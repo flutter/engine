@@ -76,6 +76,7 @@ FlutterWindow::FlutterWindow(int width, int height)
 
 FlutterWindow::~FlutterWindow() {
   OnWindowStateEvent(WindowStateEvent::kHide);
+  vtable_is_alive = false;
 }
 
 void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {

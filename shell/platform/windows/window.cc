@@ -353,8 +353,10 @@ Window::HandleMessage(UINT const message,
       current_height_ = height;
       HandleResize(width, height);
 
-      OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide
-                                                   : WindowStateEvent::kShow);
+      if (vtable_is_alive) {
+        OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide
+                                                     : WindowStateEvent::kShow);
+      }
       break;
     case WM_PAINT:
       OnPaint();
@@ -433,11 +435,15 @@ Window::HandleMessage(UINT const message,
       break;
     }
     case WM_SETFOCUS:
-      OnWindowStateEvent(WindowStateEvent::kFocus);
+      if (vtable_is_alive) {
+        OnWindowStateEvent(WindowStateEvent::kFocus);
+      }
       ::CreateCaret(window_handle_, nullptr, 1, 1);
       break;
     case WM_KILLFOCUS:
-      OnWindowStateEvent(WindowStateEvent::kUnfocus);
+      if (vtable_is_alive) {
+        OnWindowStateEvent(WindowStateEvent::kUnfocus);
+      }
       ::DestroyCaret();
       break;
     case WM_LBUTTONDOWN:

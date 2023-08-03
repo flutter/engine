@@ -253,6 +253,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Accessibility node that represents an alert.
   std::unique_ptr<ui::AXPlatformNodeWin> alert_node_;
 
+  // Guard against posthumous vtable access;
+  bool vtable_is_alive = true;
+
  private:
   // Release OS resources associated with window.
   void Destroy();
