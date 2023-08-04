@@ -21,9 +21,7 @@ namespace flutter {
 class AiksLayer : public Layer {
  public:
   AiksLayer(const SkPoint& offset,
-            const std::shared_ptr<const impeller::Picture>& picture,
-            bool is_complex,
-            bool will_change);
+            const std::shared_ptr<const impeller::Picture>& picture);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 

@@ -234,7 +234,7 @@ void SceneBuilder::addPicture(double dx,
   if (impeller_picture) {
     auto layer = std::make_unique<flutter::AiksLayer>(
         SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)),
-        std::move(impeller_picture), !!(hints & 1), !!(hints & 2));
+        std::move(impeller_picture));
     AddLayer(std::move(layer));
   }
 }
