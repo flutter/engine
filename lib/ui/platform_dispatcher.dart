@@ -262,9 +262,10 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   //
-  // Adds a new view with the specific view configuration. If the target view is
-  // the implicit view, then it's equivalent to _updateWindowMetrics.
-  // Otherwise, the target view must not exist.
+  // Adds a new view with the specific view configuration.
+  //
+  // The implicit view must be added before [implicitView] is first called,
+  // which is typically the main function.
   void _addView(int id, _ViewConfiguration viewConfiguration) {
     assert(!_views.containsKey(id), 'View ID $id already exists.');
     _views[id] = FlutterView._(id, this, viewConfiguration);
@@ -275,7 +276,8 @@ class PlatformDispatcher {
   //
   // Removes the specific view.
   //
-  // The target view must not be the implicit view, and must exist.
+  // The target view must must exist. The implicit view must not be removed,
+  // or an assertion will be triggered.
   void _removeView(int id) {
     assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
     if (id == _implicitViewId) {
