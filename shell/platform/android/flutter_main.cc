@@ -87,7 +87,7 @@ void FlutterMain::Init(JNIEnv* env,
                        jstring engineCachesPath,
                        jstring shorebirdYaml,
                        jstring version,
-                       jlong versionCode,
+                       jstring versionCode,
                        jlong initTimeMillis) {
   std::vector<std::string> args;
   args.push_back("flutter");
@@ -129,9 +129,10 @@ void FlutterMain::Init(JNIEnv* env,
 #if FLUTTER_RELEASE
   std::string shorebird_yaml = fml::jni::JavaStringToString(env, shorebirdYaml);
   std::string version_string = fml::jni::JavaStringToString(env, version);
-  long version_code = versionCode;
+  std::string version_code_string =
+      fml::jni::JavaStringToString(env, versionCode);
   ConfigureShorebird(android_cache_path, settings, shorebird_yaml,
-                     version_string, version_code);
+                     version_string, version_code_string);
 #endif
 
   flutter::DartCallbackCache::LoadCacheFromDisk();
@@ -221,7 +222,7 @@ bool FlutterMain::Register(JNIEnv* env) {
           .name = "nativeInit",
           .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
                        "lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/"
-                       "lang/String;Ljava/lang/String;JJ)V",
+                       "lang/String;Ljava/lang/String;Ljava/lang/String;J)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {

@@ -177,7 +177,7 @@ public class FlutterJNI {
       @NonNull String engineCachesPath,
       @Nullable String shorebirdYaml,
       @Nullable String version,
-      long versionCode,
+      @Nullable String versionCode,
       long initTimeMillis);
 
   /**
@@ -204,15 +204,15 @@ public class FlutterJNI {
     }
 
     String version = null;
-    long versionCode = 0;
+    String versionCode = null;
     try {
       PackageInfo packageInfo =
           context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       version = packageInfo.versionName;
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        versionCode = packageInfo.getLongVersionCode();
+        versionCode = String.valueOf(packageInfo.getLongVersionCode());
       } else {
-        versionCode = packageInfo.versionCode;
+        versionCode = String.valueOf(packageInfo.versionCode);
       }
     } catch (PackageManager.NameNotFoundException e) {
       Log.e(TAG, "Failed to read app version.  Shorebird updater can't run.", e);

@@ -9,7 +9,7 @@ void ConfigureShorebird(std::string cache_path,
                         flutter::Settings& settings,
                         const std::string& shorebird_yaml,
                         const std::string& version,
-                        int64_t version_code);
+                        const std::string& version_code);
 
 }  // namespace flutter
 

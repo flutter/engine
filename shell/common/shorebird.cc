@@ -43,7 +43,7 @@ void ConfigureShorebird(std::string cache_path,
                         flutter::Settings& settings,
                         const std::string& shorebird_yaml,
                         const std::string& version,
-                        int64_t version_code) {
+                        const std::string& version_code) {
   auto cache_dir =
       fml::paths::JoinPaths({std::move(cache_path), "shorebird_updater"});
 
@@ -55,7 +55,7 @@ void ConfigureShorebird(std::string cache_path,
     AppParameters app_parameters;
     // Combine version and version_code into a single string.
     // We could also pass these separately through to the updater if needed.
-    auto release_version = version + "+" + std::to_string(version_code);
+    auto release_version = version + "+" + version_code;
     app_parameters.release_version = release_version.c_str();
     app_parameters.cache_dir = cache_dir.c_str();
 

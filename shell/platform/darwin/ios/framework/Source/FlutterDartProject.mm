@@ -172,15 +172,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
                                     relativeToURL:[NSURL fileURLWithPath:assetsPath]];
   NSString* appVersion = [mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
   NSString* appBuildNumber = [mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"];
-  // HACK: Pull out the first component of the bundle version as an int:
-  // 1.2.3 -> 1
-  int version_code = [appBuildNumber intValue];
   NSString* shorebirdYamlContents = [NSString stringWithContentsOfURL:shorebirdYamlPath
                                                              encoding:NSUTF8StringEncoding
                                                                 error:nil];
   if (shorebirdYamlContents != nil) {
     flutter::ConfigureShorebird(cache_path, settings, shorebirdYamlContents.UTF8String,
-                                appVersion.UTF8String, version_code);
+                                appVersion.UTF8String, appBuildNumber.UTF8String);
   } else {
     NSLog(@"Failed to find shorebird.yaml, not starting updater.");
   }
