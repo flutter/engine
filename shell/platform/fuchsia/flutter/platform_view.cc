@@ -56,7 +56,6 @@ static constexpr char kFuchsiaInputTestChannel[] = "fuchsia/input_test";
 static constexpr char kFuchsiaChildViewChannel[] = "fuchsia/child_view";
 
 PlatformView::PlatformView(
-    bool is_flatland,
     flutter::PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     fuchsia::ui::views::ViewRef view_ref,
@@ -159,8 +158,7 @@ PlatformView::PlatformView(
 
   // Configure the pointer injector delegate.
   pointer_injector_delegate_ = std::make_unique<PointerInjectorDelegate>(
-      std::move(pointerinjector_registry), std::move(view_ref_clone),
-      is_flatland);
+      std::move(pointerinjector_registry), std::move(view_ref_clone));
 
   // This is only used by the integration tests.
   if (dart_application_svc) {
@@ -876,10 +874,9 @@ bool PlatformView::HandleFuchsiaChildViewChannelPlatformMessage(
   FML_DCHECK(message->channel() == kFuchsiaChildViewChannel);
 
   if (message->data().GetSize() != 1 ||
-      (message->data().GetMapping()[0] != '0' &&
-       message->data().GetMapping()[0] != '1')) {
+      (message->data().GetMapping()[0] != '1')) {
     FML_LOG(ERROR) << kFuchsiaChildViewChannel
-                   << " data must be '0' (for gfx) or '1' (for flatland).";
+                   << " data must be singularly '1' (for flatland).";
     return false;
   }
 
@@ -908,52 +905,21 @@ bool PlatformView::HandleFuchsiaChildViewChannelPlatformMessage(
 
   zx::handle view_id;
 
-  if (flatland) {
-    zx::channel view_tokens[2];
-    fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
-    fuchsia::ui::views::ViewCreationToken view_creation_token;
-    status = zx::channel::create(0, &viewport_creation_token.value,
-                                 &view_creation_token.value);
-    if (status != ZX_OK) {
-      FML_LOG(ERROR) << "Creating view tokens: "
-                     << zx_status_get_string(status);
-      return false;
-    }
-
-    fuchsia::ui::app::CreateView2Args create_view_args;
-    create_view_args.set_view_creation_token(std::move(view_creation_token));
-    view_provider->CreateView2(std::move(create_view_args));
-
-    view_id = std::move(viewport_creation_token.value);
-  } else {
-    zx::eventpair view_tokens[2];
-    status = zx::eventpair::create(0, &view_tokens[0], &view_tokens[1]);
-    if (status != ZX_OK) {
-      FML_LOG(ERROR) << "Creating view tokens: "
-                     << zx_status_get_string(status);
-      return false;
-    }
-    fuchsia::ui::views::ViewHolderToken view_holder_token;
-    view_holder_token.value = std::move(view_tokens[0]);
-
-    zx::eventpair view_refs[2];
-    status = zx::eventpair::create(0, &view_refs[0], &view_refs[1]);
-    if (status != ZX_OK) {
-      FML_LOG(ERROR) << "Creating view refs: " << zx_status_get_string(status);
-      return false;
-    }
-    fuchsia::ui::views::ViewRefControl view_ref_control;
-    view_refs[0].duplicate(ZX_DEFAULT_EVENTPAIR_RIGHTS & ~ZX_RIGHT_DUPLICATE,
-                           &view_ref_control.reference);
-    fuchsia::ui::views::ViewRef view_ref;
-    view_refs[1].duplicate(ZX_RIGHTS_BASIC, &view_ref.reference);
-
-    view_provider->CreateViewWithViewRef(std::move(view_tokens[1]),
-                                         std::move(view_ref_control),
-                                         std::move(view_ref));
-
-    view_id = std::move(view_holder_token.value);
+  zx::channel view_tokens[2];
+  fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
+  fuchsia::ui::views::ViewCreationToken view_creation_token;
+  status = zx::channel::create(0, &viewport_creation_token.value,
+                               &view_creation_token.value);
+  if (status != ZX_OK) {
+    FML_LOG(ERROR) << "Creating view tokens: " << zx_status_get_string(status);
+    return false;
   }
+
+  fuchsia::ui::app::CreateView2Args create_view_args;
+  create_view_args.set_view_creation_token(std::move(view_creation_token));
+  view_provider->CreateView2(std::move(create_view_args));
+
+  view_id = std::move(viewport_creation_token.value);
 
   if (view_id) {
     message->response()->Complete(

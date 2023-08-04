@@ -36,8 +36,7 @@ FlatlandPlatformView::FlatlandPlatformView(
     AwaitVsyncForSecondaryCallbackCallback
         await_vsync_for_secondary_callback_callback,
     std::shared_ptr<sys::ServiceDirectory> dart_application_svc)
-    : PlatformView(true /* is_flatland */,
-                   delegate,
+    : PlatformView(delegate,
                    std::move(task_runners),
                    std::move(view_ref),
                    std::move(external_view_embedder),

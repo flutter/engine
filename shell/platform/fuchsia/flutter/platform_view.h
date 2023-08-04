@@ -9,7 +9,6 @@
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/input3/cpp/fidl.h>
 #include <fuchsia/ui/pointer/cpp/fidl.h>
-#include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <fuchsia/ui/test/input/cpp/fidl.h>
 #include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
@@ -65,7 +64,6 @@ using OnShaderWarmup = std::function<void(const std::vector<std::string>&,
 class PlatformView : public flutter::PlatformView {
  public:
   PlatformView(
-      bool is_flatland,
       flutter::PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       fuchsia::ui::views::ViewRef view_ref,
