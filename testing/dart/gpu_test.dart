@@ -25,7 +25,7 @@ void main() {
   test('gpu.context throws exception for incompatible embedders', () async {
     try {
       // ignore: unnecessary_statements
-      gpu.context; // Force the
+      gpu.gpuContext; // Force the
       fail('Exception not thrown');
     } catch (e) {
       expect(
