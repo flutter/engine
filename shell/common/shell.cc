@@ -2082,10 +2082,7 @@ void Shell::RemoveView(int64_t view_id) {
             rasterizer->CollectView(view_id);
           }
         });
-        latch.Signal();
       });
-
-  latch.Wait();
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

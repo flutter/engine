@@ -300,7 +300,7 @@ class Shell final : public PlatformView::Delegate,
 
   /// @brief  Allocates resources for a new non-implicit view.
   ///
-  ///         This method returns immediately and does not wait for the tasks on
+  ///         This method returns immediately and does not wait for the task on
   ///         the UI thread to finish. This is safe because operations are
   ///         either initiated from the UI thread (such as rendering), or are
   ///         sent as posted tasks that are queued. In either case, it's ok for
@@ -318,8 +318,10 @@ class Shell final : public PlatformView::Delegate,
 
   /// @brief  Deallocates resources for a non-implicit view.
   ///
-  ///         This method waits for the tasks on the UI thread to finish before
-  ///         returning.
+  ///         This method returns immediately and does not wait for the task on
+  ///         the UI thread to finish. This means that the Dart VM might still
+  ///         send messages regarding this view ID for a short while, even
+  ///         though this view ID is already invalid.
   ///
   ///         The implicit view should never be removed. Trying to remove
   ///         `kFlutterImplicitViewId` triggers an assertion.
