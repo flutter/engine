@@ -2452,24 +2452,24 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testInteractiveKeyboardAfterUserScrollToTopOfKeyboardWillTakeScreenshot {
-    NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
-    XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
-    UIScene* scene = scenes.anyObject;
-    XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
-    UIWindowScene* windowScene = (UIWindowScene*)scene;
-    XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
-    UIWindow* window = windowScene.windows[0];
-    [window addSubview:viewController.view];
+  NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
 
-    [viewController loadView];
-  
+  [viewController loadView];
+
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [UIApplication.sharedApplication.keyWindow addSubview:inputView];
 
   [inputView setTextInputClient:123];
   [inputView reloadInputViews];
   [inputView becomeFirstResponder];
-    
+
   if (textInputPlugin.keyboardView.superview != nil) {
     for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
       [subView removeFromSuperview];
@@ -2495,16 +2495,16 @@ FLUTTER_ASSERT_ARC
 
 - (void)testInteractiveKeyboardScreenshotWillBeMovedDownAfterUserScroll {
   NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
-    XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
-    UIScene* scene = scenes.anyObject;
-    XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
-    UIWindowScene* windowScene = (UIWindowScene*)scene;
-    XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
-    UIWindow* window = windowScene.windows[0];
-    [window addSubview:viewController.view];
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
 
-    [viewController loadView];
-  
+  [viewController loadView];
+
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [UIApplication.sharedApplication.keyWindow addSubview:inputView];
 
@@ -2544,16 +2544,16 @@ FLUTTER_ASSERT_ARC
 
 - (void)testInteractiveKeyboardScreenshotWillBeMovedToOrginalPositionAfterUserScroll {
   NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
-    XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
-    UIScene* scene = scenes.anyObject;
-    XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
-    UIWindowScene* windowScene = (UIWindowScene*)scene;
-    XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
-    UIWindow* window = windowScene.windows[0];
-    [window addSubview:viewController.view];
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
 
-    [viewController loadView];
-  
+  [viewController loadView];
+
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [UIApplication.sharedApplication.keyWindow addSubview:inputView];
 
