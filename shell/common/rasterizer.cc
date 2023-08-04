@@ -208,15 +208,21 @@ RasterStatus Rasterizer::Draw(
 
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
-      [&](std::unique_ptr<LayerTreeItem> item) {
-        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-        // multi-view.
-        int64_t view_id = kFlutterImplicitViewId;
-        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+      [&](std::unique_ptr<FrameItem> item) {
+        // TODO(dkwingsmt): The rasterizer only supports rendering a single view
+        // and that view must be the implicit view. Properly support multi-view
+        // in the future.
+        FML_DCHECK(item->tasks.size() <= 1u);
+        if (item->tasks.empty()) {
+          return;
+        }
+        auto& task = item->tasks.front();
+        FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+        std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
-        float device_pixel_ratio = item->device_pixel_ratio;
-        if (discard_callback(view_id, *layer_tree.get())) {
+        float device_pixel_ratio = task.device_pixel_ratio;
+        if (discard_callback(task.view_id, *layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status = DoDraw(std::move(frame_timings_recorder),
