@@ -15,8 +15,12 @@ class NotoFont {
 
   static int _index = 0;
 
-  // Variables for the font matching algorithm.
+  /// During fallback font selection this is the number of missing code points
+  /// that are covered by (i.e. in) this font.
   int coverCount = 0;
+
+  /// During fallback font selection this is a list of [NotoFontSet]s that
+  /// contribute to this font's cover count.
   final List<NotoFontSet> coverSets = [];
   
   // A sorted list of Unicode ranges.
@@ -52,8 +56,10 @@ class NotoFontSet {
       : fonts = List<NotoFont>.unmodifiable(fonts);
   final List<NotoFont> fonts;
 
-  bool get isEmpty => fonts.isEmpty;
+  //bool get isEmpty => fonts.isEmpty;
 
+  /// During fallback font selection this is the number of missing code points
+  /// that are covered by (i.e. in) the intersection of all [fonts].
   int coverCount = 0;
 }
 

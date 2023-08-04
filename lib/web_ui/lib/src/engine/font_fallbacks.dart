@@ -310,10 +310,18 @@ class FontFallbackManager {
 
   // New implementation.
   
+  /// Finds the minimum set of fonts which covers all of the [codePoints].
+  ///
+  /// Since set cover is NP-complete, we approximate using a greedy algorithm
+  /// which finds the font which covers the most code points. If multiple CJK
+  /// fonts match the same number of code points, we choose one based on the
+  /// user's locale.
+  ///
+  /// If a code point is not covered by any font, it is added to
+  /// [codePointsWithNoKnownFont] so it can be omitted next time to avoid
+  /// searching for fonts unnecessarily.
   void findFontsForMissingCodePoints2(List<int> codePoints) {
-    Set<NotoFont> fonts = <NotoFont>{};
-    //final Set<int> coveredCodePoints = <int>{};
-    final Set<int> missingCodePoints = <int>{};
+    final List<int> missingCodePoints = [];
 
     final List<NotoFontSet> candidateSets = [];
     final List<NotoFont> candidateFonts = [];
@@ -346,15 +354,15 @@ class FontFallbackManager {
     while (candidateFonts.isNotEmpty) {
       NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
-      for (final NotoFontSet fontSet in selectedFont.coverSets) {
+      for (final NotoFontSet fontSet in [...selectedFont.coverSets]) {
         for (final NotoFont font in fontSet.fonts) {
           font.coverCount -= fontSet.coverCount;
-          if (!identical(selectedFont, font)) font.coverSets.remove(fontSet);
+          font.coverSets.remove(fontSet);
         }
-        // TODO(1): retain a list of fonts that need their fontsets cleaning.
+        fontSet.coverCount = 0;
       }
-      assert(selectedFont.coverCount == 0);
-      selectedFont.coverSets.clear();
+      selectedFont.coverCount == 0 || (throw 'bad count');
+      selectedFont.coverSets.isEmpty || (throw 'bad coverSets');
       candidateFonts.removeWhere((font) => font.coverCount == 0);
     }
 
@@ -362,7 +370,7 @@ class FontFallbackManager {
 
     // We looked through the Noto font tree and didn't find any font families
     // covering some code points.
-    if (missingCodePoints.isNotEmpty) {// || unmatchedCodePoints.isNotEmpty) {
+    if (missingCodePoints.isNotEmpty) {
       if (!downloadQueue.isPending) {
         printWarning('Could not find a set of Noto fonts to display all missing '
             'characters. Please add a font asset for the missing characters.'
@@ -372,17 +380,6 @@ class FontFallbackManager {
     }
   }
 
-  /// Finds the minimum set of fonts which covers all of the [codePoints].
-  ///
-  /// Removes all code points covered by [fonts] from [codePoints]. The code
-  /// points remaining in the [codePoints] set after calling this function do not
-  /// have a font that covers them and can be omitted next time to avoid
-  /// searching for fonts unnecessarily.
-  ///
-  /// Since set cover is NP-complete, we approximate using a greedy algorithm
-  /// which finds the font which covers the most code points. If multiple CJK
-  /// fonts match the same number of code points, we choose one based on the user's
-  /// locale.
   NotoFont _selectFont(List<NotoFont> fonts) {
     int maxCodePointsCovered = -1;
     final List<NotoFont> bestFonts = <NotoFont>[];
