@@ -64,6 +64,10 @@ class Tessellator {
                                  const BuilderCallback& callback) const;
 
  private:
+  Tessellator::Result DoTessellate(FillType fill_type,
+                                   const Path::Polyline& polyline,
+                                   const BuilderCallback& callback) const;
+
   CTessellator c_tessellator_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Tessellator);

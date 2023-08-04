@@ -13,13 +13,14 @@ PathBuilder::PathBuilder() = default;
 PathBuilder::~PathBuilder() = default;
 
 Path PathBuilder::CopyPath(FillType fill) const {
-  auto path = prototype_;
+  auto path = prototype_.Clone();
   path.SetFillType(fill);
   return path;
 }
 
 Path PathBuilder::TakePath(FillType fill) {
   auto path = prototype_;
+  prototype_ = Path();
   path.SetFillType(fill);
   path.SetConvexity(convexity_);
   return path;

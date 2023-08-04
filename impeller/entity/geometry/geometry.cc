@@ -17,25 +17,27 @@ namespace impeller {
 
 /// Given a convex polyline, create a triangle fan structure.
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline) {
+    const Path::Polyline& polyline) {
   std::vector<Point> output;
   std::vector<uint16_t> indices;
 
-  for (auto j = 0u; j < polyline.contours.size(); j++) {
+  const auto& points = polyline.points();
+
+  for (auto j = 0u; j < polyline.contours().size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = polyline.points[start];
+    auto center = points[start];
 
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
-    if (polyline.points[end - 1] == polyline.points[start]) {
+    if (points[end - 1] == points[start]) {
       end--;
     }
     output.emplace_back(center);
-    output.emplace_back(polyline.points[start + 1]);
+    output.emplace_back(points[start + 1]);
 
     for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = polyline.points[i];
+      const auto& point_b = points[i];
       output.emplace_back(point_b);
 
       indices.emplace_back(0);

@@ -30,7 +30,7 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
   size_t single_point_count = 0u;
   while (state.KeepRunning()) {
     auto polyline = path.CreatePolyline(1.0f);
-    single_point_count = polyline.points.size();
+    single_point_count = polyline.points().size();
     point_count += single_point_count;
     if (tessellate) {
       tess.Tessellate(

@@ -20,7 +20,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         [](const float* vertices, size_t vertices_size, const uint16_t* indices,
            size_t indices_size) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 0u);
+    ASSERT_EQ(polyline.points().size(), 0u);
     ASSERT_EQ(result, Tessellator::Result::kInputError);
   }
 
@@ -33,7 +33,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         FillType::kPositive, polyline,
         [](const float* vertices, size_t vertices_size, const uint16_t* indices,
            size_t indices_size) { return true; });
-    ASSERT_EQ(polyline.points.size(), 1u);
+    ASSERT_EQ(polyline.points().size(), 1u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
@@ -47,7 +47,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         [](const float* vertices, size_t vertices_size, const uint16_t* indices,
            size_t indices_size) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 2u);
+    ASSERT_EQ(polyline.points().size(), 2u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
@@ -65,7 +65,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         [](const float* vertices, size_t vertices_size, const uint16_t* indices,
            size_t indices_size) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 2000u);
+    ASSERT_EQ(polyline.points().size(), 2000u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
@@ -79,7 +79,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         [](const float* vertices, size_t vertices_size, const uint16_t* indices,
            size_t indices_size) { return false; });
 
-    ASSERT_EQ(polyline.points.size(), 2u);
+    ASSERT_EQ(polyline.points().size(), 2u);
     ASSERT_EQ(result, Tessellator::Result::kInputError);
   }
 }

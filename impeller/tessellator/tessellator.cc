@@ -56,11 +56,39 @@ Tessellator::Result Tessellator::Tessellate(
     FillType fill_type,
     const Path::Polyline& polyline,
     const BuilderCallback& callback) const {
+  auto& cache = polyline.state_->tesselator_cache_;
+  auto it = cache.find(fill_type);
+  if (it != cache.end()) {
+    auto result =
+        callback(it->second.vertices.data(), it->second.vertices.size(),
+                 it->second.indices.data(), it->second.indices.size());
+    if (result) {
+      return Result::kSuccess;
+    } else {
+      return Result::kInputError;
+    }
+  } else {
+    return DoTessellate(
+        fill_type, polyline,
+        [&](const float* vertices, size_t vertices_size,
+            const uint16_t* indices, size_t indices_size) {
+          Path::Polyline::State::TesselatorData data;
+          data.vertices.assign(vertices, vertices + vertices_size);
+          data.indices.assign(indices, indices + indices_size);
+          cache[fill_type] = std::move(data);
+          return callback(vertices, vertices_size, indices, indices_size);
+        });
+  }
+}
+
+Tessellator::Result Tessellator::DoTessellate(
+    FillType fill_type,
+    const Path::Polyline& polyline,
+    const BuilderCallback& callback) const {
   if (!callback) {
     return Result::kInputError;
   }
-
-  if (polyline.points.empty()) {
+  if (polyline.points().empty()) {
     return Result::kInputError;
   }
 
@@ -76,7 +104,7 @@ Tessellator::Result Tessellator::Tessellate(
   /// Feed contour information to the tessellator.
   ///
   static_assert(sizeof(Point) == 2 * sizeof(float));
-  for (size_t contour_i = 0; contour_i < polyline.contours.size();
+  for (size_t contour_i = 0; contour_i < polyline.contours().size();
        contour_i++) {
     size_t start_point_index, end_point_index;
     std::tie(start_point_index, end_point_index) =
@@ -84,9 +112,9 @@ Tessellator::Result Tessellator::Tessellate(
 
     ::tessAddContour(tessellator,  // the C tessellator
                      kVertexSize,  //
-                     polyline.points.data() + start_point_index,  //
-                     sizeof(Point),                               //
-                     end_point_index - start_point_index          //
+                     polyline.points().data() + start_point_index,  //
+                     sizeof(Point),                                 //
+                     end_point_index - start_point_index            //
     );
   }
 

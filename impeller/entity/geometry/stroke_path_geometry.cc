@@ -237,29 +237,29 @@ StrokePathGeometry::CreateSolidStrokeVertices(
   auto polyline = path.CreatePolyline(scale);
 
   VS::PerVertexData vtx;
+  const auto& contours = polyline.contours();
+  const auto& points = polyline.points();
 
   // Offset state.
   Point offset;
   Point previous_offset;  // Used for computing joins.
 
-  auto compute_offset = [&polyline, &offset, &previous_offset,
+  auto compute_offset = [&points, &offset, &previous_offset,
                          &stroke_width](size_t point_i) {
     previous_offset = offset;
-    Point direction =
-        (polyline.points[point_i] - polyline.points[point_i - 1]).Normalize();
+    Point direction = (points[point_i] - points[point_i - 1]).Normalize();
     offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5;
   };
 
-  for (size_t contour_i = 0; contour_i < polyline.contours.size();
-       contour_i++) {
-    auto contour = polyline.contours[contour_i];
+  for (size_t contour_i = 0; contour_i < contours.size(); contour_i++) {
+    auto contour = contours[contour_i];
     size_t contour_start_point_i, contour_end_point_i;
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
 
     switch (contour_end_point_i - contour_start_point_i) {
       case 1: {
-        Point p = polyline.points[contour_start_point_i];
+        Point p = points[contour_start_point_i];
         cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale, false);
         cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale, false);
         continue;
@@ -282,14 +282,14 @@ StrokePathGeometry::CreateSolidStrokeVertices(
       // vertices at the start of the new contour (thus connecting the two
       // contours with two zero volume triangles, which will be discarded by
       // the rasterizer).
-      vtx.position = polyline.points[contour_start_point_i - 1];
+      vtx.position = points[contour_start_point_i - 1];
       // Append two vertices when "picking up" the pen so that the triangle
       // drawn when moving to the beginning of the new contour will have zero
       // volume.
       vtx_builder.AppendVertex(vtx);
       vtx_builder.AppendVertex(vtx);
 
-      vtx.position = polyline.points[contour_start_point_i];
+      vtx.position = points[contour_start_point_i];
       // Append two vertices at the beginning of the new contour, which
       // appends  two triangles of zero area.
       vtx_builder.AppendVertex(vtx);
@@ -297,45 +297,45 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     }
 
     // Generate start cap.
-    if (!polyline.contours[contour_i].is_closed) {
+    if (!contours[contour_i].is_closed) {
       auto cap_offset =
           Vector2(-contour.start_direction.y, contour.start_direction.x) *
           stroke_width * 0.5;  // Counterclockwise normal
-      cap_proc(vtx_builder, polyline.points[contour_start_point_i], cap_offset,
-               scale, true);
+      cap_proc(vtx_builder, points[contour_start_point_i], cap_offset, scale,
+               true);
     }
 
     // Generate contour geometry.
     for (size_t point_i = contour_start_point_i + 1;
          point_i < contour_end_point_i; point_i++) {
       // Generate line rect.
-      vtx.position = polyline.points[point_i - 1] + offset;
+      vtx.position = points[point_i - 1] + offset;
       vtx_builder.AppendVertex(vtx);
-      vtx.position = polyline.points[point_i - 1] - offset;
+      vtx.position = points[point_i - 1] - offset;
       vtx_builder.AppendVertex(vtx);
-      vtx.position = polyline.points[point_i] + offset;
+      vtx.position = points[point_i] + offset;
       vtx_builder.AppendVertex(vtx);
-      vtx.position = polyline.points[point_i] - offset;
+      vtx.position = points[point_i] - offset;
       vtx_builder.AppendVertex(vtx);
 
       if (point_i < contour_end_point_i - 1) {
         compute_offset(point_i + 1);
 
         // Generate join from the current line to the next line.
-        join_proc(vtx_builder, polyline.points[point_i], previous_offset,
-                  offset, scaled_miter_limit, scale);
+        join_proc(vtx_builder, points[point_i], previous_offset, offset,
+                  scaled_miter_limit, scale);
       }
     }
 
     // Generate end cap or join.
-    if (!polyline.contours[contour_i].is_closed) {
+    if (!contours[contour_i].is_closed) {
       auto cap_offset =
           Vector2(-contour.end_direction.y, contour.end_direction.x) *
           stroke_width * 0.5;  // Clockwise normal
-      cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1],
-               cap_offset, scale, false);
+      cap_proc(vtx_builder, points[contour_end_point_i - 1], cap_offset, scale,
+               false);
     } else {
-      join_proc(vtx_builder, polyline.points[contour_start_point_i], offset,
+      join_proc(vtx_builder, points[contour_start_point_i], offset,
                 contour_first_offset, scaled_miter_limit, scale);
     }
   }

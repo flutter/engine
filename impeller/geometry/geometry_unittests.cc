@@ -600,8 +600,8 @@ TEST(GeometryTest, EmptyPath) {
   ASSERT_POINT_NEAR(c.destination, Point());
 
   Path::Polyline polyline = path.CreatePolyline(1.0f);
-  ASSERT_TRUE(polyline.points.empty());
-  ASSERT_TRUE(polyline.contours.empty());
+  ASSERT_TRUE(polyline.points().empty());
+  ASSERT_TRUE(polyline.contours().empty());
 }
 
 TEST(GeometryTest, SimplePath) {
@@ -2016,13 +2016,13 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
 
   auto polyline = path.CreatePolyline(1.0f);
 
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.points.size(), 5u);
-  ASSERT_EQ(polyline.points[0].x, 10);
-  ASSERT_EQ(polyline.points[1].x, 20);
-  ASSERT_EQ(polyline.points[2].x, 30);
-  ASSERT_EQ(polyline.points[3].x, 40);
-  ASSERT_EQ(polyline.points[4].x, 50);
+  ASSERT_EQ(polyline.contours().size(), 2u);
+  ASSERT_EQ(polyline.points().size(), 5u);
+  ASSERT_EQ(polyline.points()[0].x, 10);
+  ASSERT_EQ(polyline.points()[1].x, 20);
+  ASSERT_EQ(polyline.points()[2].x, 30);
+  ASSERT_EQ(polyline.points()[3].x, 40);
+  ASSERT_EQ(polyline.points()[4].x, 50);
 }
 
 TEST(GeometryTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
@@ -2101,12 +2101,12 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .Close()
                                 .TakePath()
                                 .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.points.size(), 6u);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].is_closed, false);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.contours[1].is_closed, true);
-  ASSERT_EQ(polyline.contours[1].start_index, 2u);
+  ASSERT_EQ(polyline.points().size(), 6u);
+  ASSERT_EQ(polyline.contours().size(), 2u);
+  ASSERT_EQ(polyline.contours()[0].is_closed, false);
+  ASSERT_EQ(polyline.contours()[0].start_index, 0u);
+  ASSERT_EQ(polyline.contours()[1].is_closed, true);
+  ASSERT_EQ(polyline.contours()[1].start_index, 2u);
 }
 
 TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
@@ -2132,15 +2132,15 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
                                 .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.contours.size(), 1u);
-  ASSERT_TRUE(polyline.contours[0].is_closed);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.points.size(), 5u);
-  ASSERT_EQ(polyline.points[0], Point(50, 60));
-  ASSERT_EQ(polyline.points[1], Point(70, 60));
-  ASSERT_EQ(polyline.points[2], Point(70, 80));
-  ASSERT_EQ(polyline.points[3], Point(50, 80));
-  ASSERT_EQ(polyline.points[4], Point(50, 60));
+  ASSERT_EQ(polyline.contours().size(), 1u);
+  ASSERT_TRUE(polyline.contours()[0].is_closed);
+  ASSERT_EQ(polyline.contours()[0].start_index, 0u);
+  ASSERT_EQ(polyline.points().size(), 5u);
+  ASSERT_EQ(polyline.points()[0], Point(50, 60));
+  ASSERT_EQ(polyline.points()[1], Point(70, 60));
+  ASSERT_EQ(polyline.points()[2], Point(70, 80));
+  ASSERT_EQ(polyline.points()[3], Point(50, 80));
+  ASSERT_EQ(polyline.points()[4], Point(50, 60));
 }
 
 TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
@@ -2157,19 +2157,19 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
           .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_TRUE(polyline.contours[0].is_closed);
-  ASSERT_EQ(polyline.contours[1].start_index, 4u);
-  ASSERT_FALSE(polyline.contours[1].is_closed);
-  ASSERT_EQ(polyline.points.size(), 7u);
-  ASSERT_EQ(polyline.points[0], Point(50, 50));
-  ASSERT_EQ(polyline.points[1], Point(100, 50));
-  ASSERT_EQ(polyline.points[2], Point(100, 100));
-  ASSERT_EQ(polyline.points[3], Point(50, 50));
-  ASSERT_EQ(polyline.points[4], Point(50, 50));
-  ASSERT_EQ(polyline.points[5], Point(0, 50));
-  ASSERT_EQ(polyline.points[6], Point(0, 100));
+  ASSERT_EQ(polyline.contours().size(), 2u);
+  ASSERT_EQ(polyline.contours()[0].start_index, 0u);
+  ASSERT_TRUE(polyline.contours()[0].is_closed);
+  ASSERT_EQ(polyline.contours()[1].start_index, 4u);
+  ASSERT_FALSE(polyline.contours()[1].is_closed);
+  ASSERT_EQ(polyline.points().size(), 7u);
+  ASSERT_EQ(polyline.points()[0], Point(50, 50));
+  ASSERT_EQ(polyline.points()[1], Point(100, 50));
+  ASSERT_EQ(polyline.points()[2], Point(100, 100));
+  ASSERT_EQ(polyline.points()[3], Point(50, 50));
+  ASSERT_EQ(polyline.points()[4], Point(50, 50));
+  ASSERT_EQ(polyline.points()[5], Point(0, 50));
+  ASSERT_EQ(polyline.points()[6], Point(0, 100));
 }
 
 TEST(GeometryTest, MatrixPrinting) {

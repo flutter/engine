@@ -49,7 +49,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 /// @brief Given a polyline created from a convex filled path, perform a
 /// tessellation.
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline);
+    const Path::Polyline& polyline);
 
 class Geometry {
  public:
