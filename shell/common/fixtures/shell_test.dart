@@ -538,9 +538,8 @@ List<int> getCurrentViewWidths() {
 @pragma('vm:external-name', 'NativeReportViewWidthsCallback')
 external void nativeReportViewWidthsCallback(List<int> viewWidthPacket);
 
-// This entrypoint reports whether there's an implicit view and the list of view
-// IDs using nativeReportViewIdsCallback on initialization and every
-// onMetricsChanged.
+// This entrypoint reports the list of views and their widths using
+// nativeReportViewWidthsCallback on initialization and every onMetricsChanged.
 @pragma('vm:entry-point')
 void testReportViewWidths() {
   nativeReportViewWidthsCallback(getCurrentViewWidths());

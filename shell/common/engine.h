@@ -679,8 +679,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Notify the Flutter application that a new view is available.
   ///
   ///             A view must be added before other methods can refer to it,
-  ///             including the implicit view. Adding a view that has been
-  ///             added triggers assertion.
+  ///             including the implicit view. Adding a view that already exists
+  ///             triggers an assertion.
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
@@ -691,11 +691,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Notify the Flutter application that a view is no
   ///             longer available.
   ///
-  ///             Removing a view that has not been not added triggers
-  ///             assertion.
+  ///             Removing a view that does not exist triggers an assertion.
   ///
   ///             The implicit view (kFlutterImplicitViewId) should never be
-  ///             removed. Doing so triggers assertion.
+  ///             removed. Doing so triggers an assertion.
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
