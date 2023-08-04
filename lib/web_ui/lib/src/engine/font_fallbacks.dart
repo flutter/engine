@@ -29,7 +29,10 @@ class FontFallbackManager {
     _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols'),
     notoTree = createNotoFontTree(fallbackFonts) {
       downloadQueue = FallbackFontDownloadQueue(this);
-    }
+      print('${codePointToFontSet.length} ranges');
+      print('${codePointToFontSet.length} ranges');
+      print('${fontSets.length} font sets, ${fontSets.last}');
+  }
 
   final FallbackFontRegistry registry;
 
@@ -61,9 +64,11 @@ class FontFallbackManager {
         <NotoFont, List<CodePointRange>>{};
 
     for (final NotoFont font in fallbackFonts) {
-      final List<CodePointRange> fontRanges =
-        ranges.putIfAbsent(font, () => <CodePointRange>[]);
-      fontRanges.addAll(font.computeUnicodeRanges());
+      if (font.enabled) {
+        final List<CodePointRange> fontRanges =
+            ranges.putIfAbsent(font, () => <CodePointRange>[]);
+        fontRanges.addAll(font.computeUnicodeRanges());
+      }
     }
 
     return IntervalTree<NotoFont>.createFromRanges(ranges);
@@ -154,7 +159,8 @@ class FontFallbackManager {
     }
     final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
-    findFontsForMissingCodePoints(codePoints);
+    //findFontsForMissingCodePoints(codePoints);
+    findFontsForMissingCodePoints2(codePoints);
   }
 
   void registerFallbackFont(String family) {
@@ -300,6 +306,276 @@ class FontFallbackManager {
       minimumFonts.add(bestFont);
     }
     return minimumFonts;
+  }
+
+  // New implementation.
+  
+  void findFontsForMissingCodePoints2(List<int> codePoints) {
+    Set<NotoFont> fonts = <NotoFont>{};
+    //final Set<int> coveredCodePoints = <int>{};
+    final Set<int> missingCodePoints = <int>{};
+
+    final List<NotoFontSet> candidateSets = [];
+    final List<NotoFont> candidateFonts = [];
+    
+    for (final int codePoint in codePoints) {
+      final _FontLink? link = codePointToFontSet.lookup(codePoint);
+      if (link == null) {
+        missingCodePoints.add(codePoint);
+      } else {
+        final NotoFontSet fontSet = link.fontSet;
+        if (fontSet.coverCount == 0) {
+          candidateSets.add(fontSet);
+        }
+        fontSet.coverCount++;
+      }
+    }
+
+    for (final NotoFontSet fontSet in candidateSets) {
+      for (final NotoFont font in fontSet.fonts) {
+        if (font.coverCount == 0) {
+          candidateFonts.add(font);
+        }
+        font.coverCount += fontSet.coverCount;
+        font.coverSets.add(fontSet);
+      }
+    }
+
+    List<NotoFont> selectedFonts = [];
+    
+    while (candidateFonts.isNotEmpty) {
+      NotoFont selectedFont = _selectFont(candidateFonts);
+      selectedFonts.add(selectedFont);
+      for (final NotoFontSet fontSet in selectedFont.coverSets) {
+        for (final NotoFont font in fontSet.fonts) {
+          font.coverCount -= fontSet.coverCount;
+          if (!identical(selectedFont, font)) font.coverSets.remove(fontSet);
+        }
+        // TODO(1): retain a list of fonts that need their fontsets cleaning.
+      }
+      assert(selectedFont.coverCount == 0);
+      selectedFont.coverSets.clear();
+      candidateFonts.removeWhere((font) => font.coverCount == 0);
+    }
+
+    selectedFonts.forEach(downloadQueue.add);
+
+    // We looked through the Noto font tree and didn't find any font families
+    // covering some code points.
+    if (missingCodePoints.isNotEmpty) {// || unmatchedCodePoints.isNotEmpty) {
+      if (!downloadQueue.isPending) {
+        printWarning('Could not find a set of Noto fonts to display all missing '
+            'characters. Please add a font asset for the missing characters.'
+            ' See: https://flutter.dev/docs/cookbook/design/fonts');
+        codePointsWithNoKnownFont.addAll(missingCodePoints);
+      }
+    }
+  }
+
+  /// Finds the minimum set of fonts which covers all of the [codePoints].
+  ///
+  /// Removes all code points covered by [fonts] from [codePoints]. The code
+  /// points remaining in the [codePoints] set after calling this function do not
+  /// have a font that covers them and can be omitted next time to avoid
+  /// searching for fonts unnecessarily.
+  ///
+  /// Since set cover is NP-complete, we approximate using a greedy algorithm
+  /// which finds the font which covers the most code points. If multiple CJK
+  /// fonts match the same number of code points, we choose one based on the user's
+  /// locale.
+  NotoFont _selectFont(List<NotoFont> fonts) {
+    int maxCodePointsCovered = -1;
+    final List<NotoFont> bestFonts = <NotoFont>[];
+    NotoFont? bestFont;
+    
+    for (final NotoFont font in fonts) {
+      if (font.coverCount > maxCodePointsCovered) {
+        bestFonts.clear();
+        bestFonts.add(font);
+        bestFont = font;
+        maxCodePointsCovered = font.coverCount;
+      } else if (font.coverCount == maxCodePointsCovered) {
+        bestFonts.add(font);
+        if (font.index < bestFont!.index) bestFont = font;
+      }
+    }
+
+    // If the list of best fonts are all CJK fonts, choose the best one based
+    // on locale. Otherwise just choose the first font.
+    if (bestFonts.length > 1) {
+      if (bestFonts.every((NotoFont font) =>
+          font == _notoSansSC ||
+          font == _notoSansTC ||
+          font == _notoSansHK ||
+          font == _notoSansJP ||
+          font == _notoSansKR
+      )) {
+        final String language = domWindow.navigator.language;
+        
+        if (language == 'zh-Hans' ||
+          language == 'zh-CN' ||
+          language == 'zh-SG' ||
+          language == 'zh-MY') {
+          if (bestFonts.contains(_notoSansSC)) {
+            bestFont = _notoSansSC;
+          }
+        } else if (language == 'zh-Hant' ||
+          language == 'zh-TW' ||
+          language == 'zh-MO') {
+          if (bestFonts.contains(_notoSansTC)) {
+            bestFont = _notoSansTC;
+          }
+        } else if (language == 'zh-HK') {
+          if (bestFonts.contains(_notoSansHK)) {
+            bestFont = _notoSansHK;
+          }
+        } else if (language == 'ja') {
+          if (bestFonts.contains(_notoSansJP)) {
+            bestFont = _notoSansJP;
+          }
+        } else if (language == 'ko') {
+          if (bestFonts.contains(_notoSansKR)) {
+            bestFont = _notoSansKR;
+          }
+        } else if (bestFonts.contains(_notoSansSC)) {
+          bestFont = _notoSansSC;
+        }
+      } else {
+        // To be predictable, if there is a tie for best font, choose a font
+        // from this list first, then just choose the first font.
+        if (bestFonts.contains(_notoSymbols)) {
+          bestFont = _notoSymbols;
+        } else if (bestFonts.contains(_notoSansSC)) {
+          bestFont = _notoSansSC;
+        }
+      }
+    }
+    return bestFont!;
+  }
+
+  late final List<_FontLink?> fontSets = _decodeFontSets(encodedFontSets);
+
+  late final _UnicodePropertyLookup<_FontLink?> codePointToFontSet =
+      _UnicodePropertyLookup<_FontLink?>.fromPackedData(encodedFontSetRanges, fontSets);
+
+  List<_FontLink?> _decodeFontSets(String data) {
+    final List<_FontLink?> result = [];
+    _FontLink? link;
+    _FontLink? previous; // Most recent font added or erased.
+    int prefix = 0;
+    int linkCount = 0;
+    for (int i = 0; i < data.length; i++) {
+      final int code = data.codeUnitAt(i);
+
+      if (kFontIndexDigit0 <= code &&
+          code < kFontIndexDigit0 + kFontIndexRadix) {
+        final int delta = prefix * kFontIndexRadix + (code - kFontIndexDigit0);
+        final int index = previous == null ? delta : previous.font.index + delta + 1;
+        previous = link = _FontLink(link, fallbackFonts[index]);
+        linkCount++;
+        prefix = 0;
+      } else if (kFontSetDefineDigit0 <= code && code < kFontSetDefineDigit0 + kFontSetDefineRadix) {
+        int erase = prefix * kFontSetDefineRadix + (code - kFontSetDefineDigit0);
+        result.add(link);
+        while (erase-- > 0) {
+          previous = link;
+          link = link!.previous;
+        }
+        prefix = 0;
+      } else if (code == kFontSetDefineAndReset) {
+        result.add(link);
+        previous = link = null;
+      //} else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
+      //  prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
+      } else if (kPrefixDigit.matches(code)) {
+        prefix = kPrefixDigit.combine(prefix, code);
+      } else {
+        throw StateError('Unreachable');
+      }
+    }
+    print('${linkCount} links');
+    return result;
+  }
+}
+
+class _FontLink {
+  _FontLink(this.previous, this.font);
+  final _FontLink? previous;
+  final NotoFont font;
+
+  late final NotoFontSet fontSet = NotoFontSet(_collect());
+
+  Iterable<NotoFont> _collect() {
+    final List<NotoFont> fonts = [];
+    _FontLink? link = this;
+    while (link != null) {
+      fonts.add(link.font);
+      link = link.previous;
+    }
+    return fonts.reversed;
+  }
+
+  
+}
+
+class _UnicodePropertyLookup<P> {
+  _UnicodePropertyLookup._(this._boundaries, this._values);
+
+  factory _UnicodePropertyLookup.fromPackedData(
+    String packedData,
+    List<P> propertyEnumValues,
+  ) {
+    List<int> boundaries = [];
+    List<P> values = [];
+
+    int start = 0;
+    int prefix = 0;
+    int size = 1;
+
+    for (int i = 0; i < packedData.length; i++) {
+      final int code = packedData.codeUnitAt(i);
+      if (kRangeSetDigit0 <= code && code < kRangeSetDigit0 + kRangeSetRadix) {
+        final int index = prefix * kRangeSetRadix + (code - kRangeSetDigit0);
+        final P value = propertyEnumValues[index];
+        start += size;
+        boundaries.add(start);
+        values.add(value);
+        prefix = 0;
+        size = 1;
+      } else if (kRangeSizeDigit0 <= code && code < kRangeSizeDigit0 + kRangeSizeRadix) {
+        size = prefix * kRangeSizeRadix + (code - kRangeSizeDigit0) + 2;
+        prefix = 0;
+      //} else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
+      //  prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
+      } else if (kPrefixDigit.matches(code)) {
+        prefix = kPrefixDigit.combine(prefix, code);
+      } else {
+        throw StateError('Unreachable');
+      }
+    }
+    if (start != kMaxCodePoint + 1) throw StateError('Bad map size: $start');
+
+    return _UnicodePropertyLookup<P>._(boundaries, values);
+  }
+
+  int get length => _boundaries.length;
+
+  final List<int> _boundaries;
+  final List<P> _values;
+
+  P lookup(int value) {
+    assert(0 <= value && value <= kMaxCodePoint);
+    assert(_boundaries.last == kMaxCodePoint + 1);
+    int start = 0, end = _boundaries.length;
+    while (true) {
+      if (start == end) return _values[start];
+      int mid = start + (end - start) ~/ 2;
+      if (value >= _boundaries[mid]) {
+        start = mid + 1;
+      } else {
+        end = mid;
+      }
+    }
   }
 }
 

@@ -4,6 +4,7 @@
 
 import 'dart:convert' show ByteConversionSink, jsonDecode, utf8;
 import 'dart:io' as io;
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:args/command_runner.dart';
@@ -11,6 +12,8 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+
+import '../lib/src/engine/noto_font_encoding.dart';
 
 import 'cipd.dart';
 import 'environment.dart';
@@ -122,6 +125,29 @@ class RollFallbackFontsCommand extends Command<bool>
 
     final StringBuffer sb = StringBuffer();
 
+    final List<_Font> fonts = [];
+
+    for (final String family in fallbackFonts) {
+      final List<int> starts = [];
+      final List<int> ends = [];
+      final String charset = charsetForFamily[family]!;
+      for (final String range in charset.split(' ')) {
+        // Range is one hexadecimal number or two, separated by `-`.
+        final List<String> parts = range.split('-');
+        if (parts.length < 1 || parts.length > 2) {
+          throw ToolExit('Malformed charset range "$range"');
+        }
+        int first = int.parse(parts.first, radix: 16);
+        int last = int.parse(parts.last, radix: 16);
+        starts.add(first);
+        ends.add(last);
+      }
+
+      fonts.add(_Font(family, fonts.length, starts, ends));
+    }
+
+    String fontSets = _computeFontSets(fonts);
+
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
         'that can be');
@@ -133,42 +159,35 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln();
     sb.writeln('List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[');
 
-    for (final String family in fallbackFonts) {
+    for (final _Font font in fonts) {
+      final String family = font.family;
+      String enabledArgument = '';
       if (family == 'Noto Emoji') {
-        sb.write(' if (!useColorEmoji)');
+        enabledArgument = 'enabled: !useColorEmoji, ';
       }
       if (family == 'Noto Color Emoji') {
-        sb.write(' if (useColorEmoji)');
+        enabledArgument = 'enabled: useColorEmoji, ';
       }
       final String urlString = urlForFamily[family]!.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
-        throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
+        throw ToolExit(
+            'Unexpected url format received from Google Fonts API: $urlString.');
       }
       final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
-      sb.writeln(" NotoFont('$family', '$urlSuffix',");
-      final List<String> starts = <String>[];
-      final List<String> ends = <String>[];
-      for (final String range in charsetForFamily[family]!.split(' ')) {
-        final List<String> parts = range.split('-');
-        if (parts.length == 1) {
-          starts.add(parts[0]);
-          ends.add(parts[0]);
-        } else {
-          starts.add(parts[0]);
-          ends.add(parts[1]);
-        }
-      }
+      sb.writeln(" NotoFont('$family', $enabledArgument'$urlSuffix',");
+      final List<int> starts = font.starts;
+      final List<int> ends = font.ends;
 
       // Print the unicode ranges in a readable format for easier review. This
       // shouldn't affect code size because comments are removed in release mode.
       sb.write('   // <int>[');
-      for (final String start in starts) {
-        sb.write('0x$start,');
+      for (final int start in starts) {
+        sb.write('0x${start.toRadixString(16)},');
       }
       sb.writeln('],');
       sb.write('   // <int>[');
-      for (final String end in ends) {
-        sb.write('0x$end,');
+      for (final int end in ends) {
+        sb.write('0x${end.toRadixString(16)},');
       }
       sb.writeln(']');
 
@@ -176,6 +195,8 @@ class RollFallbackFontsCommand extends Command<bool>
       sb.writeln(' ),');
     }
     sb.writeln('];');
+    sb.writeln();
+    sb.writeln(fontSets);
 
     final io.File fontDataFile = io.File(path.join(
       environment.webUiRootDir.path,
@@ -471,14 +492,14 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Zanabazar Square',
 ];
 
-String _packFontRanges(List<String> starts, List<String> ends) {
+String _packFontRanges(List<int> starts, List<int> ends) {
   assert(starts.length == ends.length);
 
   final StringBuffer sb = StringBuffer();
 
   for (int i = 0; i < starts.length; i++) {
-    final int start = int.parse(starts[i], radix: 16);
-    final int end = int.parse(ends[i], radix: 16);
+    final int start = starts[i];
+    final int end = ends[i];
 
     sb.write(start.toRadixString(36));
     sb.write('|');
@@ -508,4 +529,310 @@ bool _checkForLicenseAttribution(Uint8List fontBytes) {
     }
   }
   return false;
+}
+
+class _Boundary {
+  _Boundary(this.value, this.isStart, this.font);
+  final int value;  // inclusive start or exclusive end.
+  final bool isStart;
+  final _Font font;
+
+  static int compare(_Boundary a, _Boundary b) => a.value.compareTo(b.value);
+}
+
+class _Font {
+  final String family;
+  final int index;
+  final List<int> starts;
+  final List<int> ends; // inclusive ends
+
+  _Font(this.family, this.index, this.starts, this.ends);
+
+  static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
+
+  //String get shortName => '$_shortName.$index';
+  String get shortName =>
+      '$_shortName' +
+      String.fromCharCodes('$index'.codeUnits.map((ch) => ch - 48 + 0x2080));
+
+  String get _shortName => family.startsWith('Noto Sans ')
+      ? family.substring('Noto Sans '.length)
+      : family;
+}
+
+class _Range {
+  _Range(this.start, this.end, this.fontSet);
+  final int start;
+  final int end;
+  final _FontSet fontSet;
+
+  @override
+  String toString() {
+    return '[${start.toRadixString(16)}, ${end.toRadixString(16)}]'
+        ' (${end - start + 1})'
+        ' ${fontSet.description()}';
+  }
+}
+
+
+/// A canonical representative for a set of _Fonts. The fonts are stored in
+/// order of increasing `_Font.index`.
+class _FontSet {
+  _FontSet(this.fonts);
+
+  /// The number of [_Font]s in this set.
+  int get length => fonts.length;
+
+  /// The members of this set.
+  final List<_Font> fonts;
+
+  /// Number of unicode ranges that are supported by this set of fonts.
+  int rangeCount = 0;
+
+  /// The serialization order of this set. This index is assigned after building
+  /// all the sets.
+  late final int index;
+
+  static int orderByDecreasingRangeCount(_FontSet a, _FontSet b) {
+    int r = b.rangeCount.compareTo(a.rangeCount);
+    if (r != 0) return r;
+    return orderByLexicographicFontIndexes(a, b);
+  }
+
+  static int orderByLexicographicFontIndexes(_FontSet a, _FontSet b) {
+    for (int i = 0;; i++) {
+      if (i < a.length && i < b.length) {
+        final int r = _Font.compare(a.fonts[i], b.fonts[i]);
+        if (r != 0) return r;
+      } else {
+        assert(a.length != b.length); // _FontSets are canonical.
+        return a.length - b.length;
+      }
+    }
+  }
+
+  @override
+  String toString() {
+    return description();
+  }
+
+  String description() {
+    return fonts.map((font) => font.shortName).join(', ');
+  }
+}
+
+/// A trie node [1] used to find the canonical _FontSet.
+///
+/// [1]: https://en.wikipedia.org/wiki/Trie
+class _TrieNode {
+  Map<_Font, _TrieNode> _children = {};
+  _FontSet? fontSet;
+
+  _TrieNode insertAtRoot(Iterable<_Font> fonts) {
+    _TrieNode node = this;
+    for (_Font font in fonts) {
+      node = node._children[font] ??= _TrieNode();
+    }
+    return node;
+  }
+}
+
+String _computeFontSets(List<_Font> fonts) {
+  final List<_Range> ranges = [];
+  final List<_FontSet> allSets = [];
+
+  {
+    final List<_Boundary> boundaries = [];
+    for (final _Font font in fonts) {
+      for (final int start in font.starts) {
+        boundaries.add(_Boundary(start, true, font));
+      }
+      for (final int end in font.ends) {
+        boundaries.add(_Boundary(end + 1, false, font));
+      }
+    }
+    boundaries.sort(_Boundary.compare);
+
+    final _TrieNode trieRoot = _TrieNode();
+    final Set<_Font> currentElements = {};
+
+    void newRange(int start, int end) {
+      final List<_Font> fonts = List.of(currentElements)..sort(_Font.compare);
+      final _TrieNode node = trieRoot.insertAtRoot(fonts);
+      final _FontSet fontSet = node.fontSet ??= _FontSet(fonts);
+      if (fontSet.rangeCount == 0) allSets.add(fontSet);
+      fontSet.rangeCount++;
+      final _Range range = _Range(start, end, fontSet);
+      ranges.add(range);
+    }
+
+    int start = 0;
+    for (final _Boundary boundary in boundaries) {
+      final int value = boundary.value;
+      if (start < value) {
+        newRange(start, value - 1);
+        start = value;
+      }
+      if (boundary.isStart) {
+        currentElements.add(boundary.font);
+      } else {
+        currentElements.remove(boundary.font);
+      }
+    }
+    assert(currentElements.isEmpty);
+    if (start <= kMaxCodePoint) newRange(start, kMaxCodePoint);
+  }
+
+  print('${allSets.length} sets covering ${ranges.length} ranges');
+
+  // _FontSets are sorted by the number of ranges that map to that _FontSet, so
+  // that _FontSets that are referenced from many ranges have smaller indexes.
+  // This makes the range table encoding smaller.
+  allSets.sort(_FontSet.orderByDecreasingRangeCount);
+
+  // The FontSet encoding is most efficient when the _FontSets are in
+  // lexicographic order where the encoding can reuse the common prefix of
+  // adjacent _FontSets. This is is in tension with the larger range table where
+  // the most common _FontSets may be unrelated. A happy compromize is to use
+  // lexicographic order for blocks of _FontSets that have the same size
+  // encoding in the range table. In practice there are two or three such
+  // blocks.
+  for (int start = 0, next = kRangeSetRadix;
+      start < allSets.length;
+      start = next, next *= kPrefixRadix) {
+    final int end = math.min(next, allSets.length);
+    allSets.setRange(start, end,
+        allSets.sublist(start, end)
+          ..sort(_FontSet.orderByLexicographicFontIndexes));
+  }
+
+  for (int i = 0; i < allSets.length; i++) {
+    allSets[i].index = i;
+  }
+
+  final StringBuffer code = StringBuffer();
+
+  void describeFontSet(_FontSet fontSet) {
+    final int length = fontSet.fonts.length;
+    code.writeln(
+        '    // #${fontSet.index}: $length font${length == 1 ? '' : 's'}: '
+        '${fontSet.description()}');
+  }
+
+  final StringBuffer sb = StringBuffer();
+  int totalEncodedLength = 0;
+
+  void emitCurrentFragment() {
+    final String fragment = sb.toString();
+    sb.clear();
+    totalEncodedLength += fragment.length;
+    code.writeln("    '$fragment'");
+  }
+
+  void encode(int value, int radix, int firstDigitCode) {
+    final int prefix = value ~/ radix;
+    assert(kPrefixDigit0 == '0'.codeUnitAt(0) && kPrefixRadix == 10);
+    if (prefix != 0) sb.write(prefix);
+    sb.writeCharCode(firstDigitCode + value.remainder(radix));
+  }
+
+  int previousFontIndex = -1; // Index of previous font added or removed.
+
+  void encodeFontIndexes(_FontSet fontSet, int start) {
+    for (final _Font font in fontSet.fonts.skip(start)) {
+      final int fontIndexDelta = font.index - previousFontIndex;
+      previousFontIndex = font.index;
+      encode(fontIndexDelta - 1, kFontIndexRadix, kFontIndexDigit0);
+    }
+  }
+
+  _FontSet previous = allSets.first;
+  describeFontSet(previous);
+  encodeFontIndexes(previous, 0);
+
+  for (final _FontSet current in allSets.skip(1)) {
+    emitCurrentFragment();
+
+    // Emit an operation to define the previous _FontSet and erase some prefix
+    // of the previous _FontSet to make a basis for adding more fonts to create
+    // the next _FontSet.
+
+    // Erase fonts back to the common prefix with the previous set.
+    int i = 0;
+    while (i < previous.length &&
+        i < current.length &&
+        previous.fonts[i] == current.fonts[i]) {
+      i++;
+    }
+    final erase = previous.length - i;
+    if (erase > 0) {
+      previousFontIndex = previous.fonts[i].index;
+    }
+
+    if (i >= current.length || current.fonts[i].index <= previousFontIndex) {
+      // The two _FontSets are not in lexicographic order, so start from the beginning of the 
+      sb.writeCharCode(kFontSetDefineAndReset);
+      previousFontIndex = -1;
+      i = 0;
+    } else {
+      encode(erase, kFontSetDefineRadix, kFontSetDefineDigit0);
+    }
+
+    describeFontSet(current);
+    encodeFontIndexes(current, i);
+
+    previous = current;
+  }
+  emitCurrentFragment();
+  code.writeln('    // end');
+  sb.writeCharCode(kFontSetDefineAndReset);
+  emitCurrentFragment();
+
+  final StringBuffer declarations = StringBuffer();
+
+  declarations
+      ..writeln('// ${allSets.length} sets encoded in ${totalEncodedLength} characters')
+      ..writeln('const String encodedFontSets =')
+      ..write(code)
+      ..writeln('    ;');
+  
+      //print(code);
+
+  // Encode ranges.
+  code.clear();
+  int rangesTotalEncodedLength = 0;
+
+  // Encode <size><fontSet> or <fontSet>
+  for (final range in ranges) {
+    sb.clear();
+    final int start = range.start;
+    final int end = range.end;
+    final int index = range.fontSet.index;
+    final int size = end - start + 1;
+
+    if (size >= 2) encode(size - 2, kRangeSizeRadix, kRangeSizeDigit0);
+    encode(index, kRangeSetRadix, kRangeSetDigit0);
+
+    final String encoding = sb.toString();
+    rangesTotalEncodedLength += encoding.length;
+
+    String description = start.toRadixString(16);
+    if (end != start) description += '-' + end.toRadixString(16);
+    if (range.fontSet.fonts.isNotEmpty) {
+      description = description.padRight(12) + ' #$index';
+    }
+    final String encodingText = "'$encoding'".padRight(10);
+    code.writeln('    $encodingText // $description');
+  }
+  //print(code);
+  print('${ranges.length} ranges encoded in ${rangesTotalEncodedLength}');
+
+  declarations
+      ..writeln()
+      ..writeln('// ${ranges.length} ranges encoded in ${rangesTotalEncodedLength} characters')
+      ..writeln('const String encodedFontSetRanges =')
+      ..write(code)
+      ..writeln('    ;');
+
+  return declarations.toString();
 }

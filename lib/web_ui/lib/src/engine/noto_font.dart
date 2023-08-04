@@ -5,11 +5,20 @@
 import 'text/unicode_range.dart';
 
 class NotoFont {
-  NotoFont(this.name, this.url, this._packedRanges);
+  NotoFont(this.name, this.url, this._packedRanges, {this.enabled = true});
 
   final String name;
   final String url;
   final String _packedRanges;
+  final int index = _index++;
+  final bool enabled;
+
+  static int _index = 0;
+
+  // Variables for the font matching algorithm.
+  int coverCount = 0;
+  final List<NotoFontSet> coverSets = [];
+  
   // A sorted list of Unicode ranges.
   late final List<CodePointRange> _ranges = _unpackFontRange(_packedRanges);
 
@@ -37,6 +46,18 @@ class NotoFont {
     return false;
   }
 }
+
+class NotoFontSet {
+  NotoFontSet(Iterable<NotoFont> fonts)
+      : fonts = List<NotoFont>.unmodifiable(fonts);
+  final List<NotoFont> fonts;
+
+  bool get isEmpty => fonts.isEmpty;
+
+  int coverCount = 0;
+}
+
+
 
 class CodePointRange {
   const CodePointRange(this.start, this.end);

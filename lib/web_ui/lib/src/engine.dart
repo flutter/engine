@@ -115,6 +115,7 @@ export 'engine/layers.dart';
 export 'engine/mouse_cursor.dart';
 export 'engine/navigation/history.dart';
 export 'engine/noto_font.dart';
+export 'engine/noto_font_encoding.dart';
 export 'engine/onscreen_logging.dart';
 export 'engine/picture.dart';
 export 'engine/platform_dispatcher.dart';
