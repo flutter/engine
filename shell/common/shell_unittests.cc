@@ -4521,10 +4521,10 @@ static void ParseViewWidthsCallback(const Dart_NativeArguments& args,
   }
 }
 
-// Tests that PlatformView::SetViewportMetrics and Shell::AddView that are
-// dispatched before the engine is run are flushed to the Dart VM when the app
-// starts.
-TEST_F(ShellTest, ShellFlushesAccumulatedPlatformStates) {
+// Ensure that PlatformView::SetViewportMetrics and Shell::AddView that were
+// dispatched before the isolate is run have been flushed to the Dart VM when
+// the main function starts.
+TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   settings.enable_implicit_view = true;

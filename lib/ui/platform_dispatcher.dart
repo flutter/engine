@@ -116,9 +116,6 @@ class PlatformDispatcher {
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
     _setNeedsReportTimings = _nativeSetNeedsReportTimings;
-    if (_implicitViewId != null) {
-      _views[_implicitViewId!] = FlutterView._(_implicitViewId!, this, const _ViewConfiguration());
-    }
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -215,12 +212,27 @@ class PlatformDispatcher {
   ///   by the platform.
   FlutterView? get implicitView {
     final FlutterView? result = _views[_implicitViewId];
+    // Make sure [implicitView] agrees with `_implicitViewId`.
     assert((result != null) == (_implicitViewId != null),
       (_implicitViewId != null) ?
         'The implicit view ID is $_implicitViewId, but the implicit view does not exist.' :
         'The implicit view ID is null, but the implicit view exists.');
+    // Make sure [implicitView] never chages.
+    assert(() {
+      if (debugHasRecordedLastImplicitView) {
+        assert(identical(debugLastImplicitView, result),
+          'The implicitView has changed:\n'
+          'Last: $debugLastImplicitView\nCurrent: $result');
+      } else {
+        debugLastImplicitView = result;
+        debugHasRecordedLastImplicitView = true;
+      }
+      return true;
+    }());
     return result;
   }
+  FlutterView? debugLastImplicitView;
+  bool debugHasRecordedLastImplicitView = false;
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -254,14 +266,9 @@ class PlatformDispatcher {
   // the implicit view, then it's equivalent to _updateWindowMetrics.
   // Otherwise, the target view must not exist.
   void _addView(int id, _ViewConfiguration viewConfiguration) {
-    // The implicit view is added at construction.
-    if (id != _implicitViewId) {
-      assert(!_views.containsKey(id), 'View ID $id already exists.');
-      _views[id] = FlutterView._(id, this, viewConfiguration);
-      _invoke(onMetricsChanged, _onMetricsChangedZone);
-    } else {
-      _updateWindowMetrics(id, viewConfiguration);
-    }
+    assert(!_views.containsKey(id), 'View ID $id already exists.');
+    _views[id] = FlutterView._(id, this, viewConfiguration);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
   // Called from the engine, via hooks.dart
@@ -271,6 +278,9 @@ class PlatformDispatcher {
   // The target view must not be the implicit view, and must exist.
   void _removeView(int id) {
     assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
+    if (id == _implicitViewId) {
+      return;
+    }
     assert(_views.containsKey(id), 'View ID $id does not exist.');
     _views.remove(id);
     _invoke(onMetricsChanged, _onMetricsChangedZone);
