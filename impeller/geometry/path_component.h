@@ -8,6 +8,7 @@
 #include <variant>
 #include <vector>
 
+#include "impeller/geometry/local_array.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -36,7 +37,8 @@ struct LinearPathComponent {
 
   std::vector<Point> CreatePolyline() const;
 
-  std::vector<Point> Extrema() const;
+  typedef LocalArray<Point, 2> ExtremaType;
+  ExtremaType Extrema() const;
 
   bool operator==(const LinearPathComponent& other) const {
     return p1 == other.p1 && p2 == other.p2;
@@ -76,7 +78,8 @@ struct QuadraticPathComponent {
   void FillPointsForPolyline(std::vector<Point>& points,
                              Scalar scale_factor) const;
 
-  std::vector<Point> Extrema() const;
+  typedef LocalArray<Point, 8> ExtremaType;
+  ExtremaType Extrema() const;
 
   bool operator==(const QuadraticPathComponent& other) const {
     return p1 == other.p1 && cp == other.cp && p2 == other.p2;
@@ -114,7 +117,8 @@ struct CubicPathComponent {
   // See the note on QuadraticPathComponent::CreatePolyline for references.
   std::vector<Point> CreatePolyline(Scalar scale) const;
 
-  std::vector<Point> Extrema() const;
+  typedef LocalArray<Point, 8> ExtremaType;
+  ExtremaType Extrema() const;
 
   std::vector<QuadraticPathComponent> ToQuadraticPathComponents(
       Scalar accuracy) const;

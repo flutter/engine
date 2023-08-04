@@ -63,8 +63,11 @@ std::vector<Point> LinearPathComponent::CreatePolyline() const {
   return {p2};
 }
 
-std::vector<Point> LinearPathComponent::Extrema() const {
-  return {p1, p2};
+LinearPathComponent::ExtremaType LinearPathComponent::Extrema() const {
+  ExtremaType res;
+  res.push_back(p1);
+  res.push_back(p2);
+  return res;
 }
 
 std::optional<Vector2> LinearPathComponent::GetStartDirection() const {
@@ -148,7 +151,7 @@ void QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
   points.emplace_back(p2);
 }
 
-std::vector<Point> QuadraticPathComponent::Extrema() const {
+QuadraticPathComponent::ExtremaType QuadraticPathComponent::Extrema() const {
   CubicPathComponent elevated(*this);
   return elevated.Extrema();
 }
@@ -252,11 +255,13 @@ static inline bool NearZero(Scalar a) {
   return NearEqual(a, 0.0, 1e-12);
 }
 
-static void CubicPathBoundingPopulateValues(std::vector<Scalar>& values,
-                                            Scalar p1,
-                                            Scalar p2,
-                                            Scalar p3,
-                                            Scalar p4) {
+template <size_t Capacity>
+static void CubicPathBoundingPopulateValues(
+    LocalArray<Scalar, Capacity>& values,
+    Scalar p1,
+    Scalar p2,
+    Scalar p3,
+    Scalar p4) {
   const Scalar a = 3.0 * (-p1 + 3.0 * p2 - 3.0 * p3 + p4);
   const Scalar b = 6.0 * (p1 - 2.0 * p2 + p3);
   const Scalar c = 3.0 * (p2 - p1);
@@ -271,7 +276,7 @@ static void CubicPathBoundingPopulateValues(std::vector<Scalar>& values,
 
     Scalar t = -c / b;
     if (t >= 0.0 && t <= 1.0) {
-      values.emplace_back(t);
+      values.push_back(t);
     }
     return;
   }
@@ -295,31 +300,33 @@ static void CubicPathBoundingPopulateValues(std::vector<Scalar>& values,
   {
     Scalar t = q / a;
     if (t >= 0.0 && t <= 1.0) {
-      values.emplace_back(t);
+      values.push_back(t);
     }
   }
 
   {
     Scalar t = c / q;
     if (t >= 0.0 && t <= 1.0) {
-      values.emplace_back(t);
+      values.push_back(t);
     }
   }
 }
 
-std::vector<Point> CubicPathComponent::Extrema() const {
+CubicPathComponent::ExtremaType CubicPathComponent::Extrema() const {
   /*
    *  As described in: https://pomax.github.io/bezierinfo/#extremities
    */
-  std::vector<Scalar> values;
+  LocalArray<Scalar, 6> values;
 
   CubicPathBoundingPopulateValues(values, p1.x, cp1.x, cp2.x, p2.x);
   CubicPathBoundingPopulateValues(values, p1.y, cp1.y, cp2.y, p2.y);
 
-  std::vector<Point> points = {p1, p2};
+  ExtremaType points;
+  points.push_back(p1);
+  points.push_back(p2);
 
   for (const auto& value : values) {
-    points.emplace_back(Solve(value));
+    points.push_back(Solve(value));
   }
 
   return points;
