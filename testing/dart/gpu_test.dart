@@ -22,15 +22,16 @@ void main() {
     a.coolMethod(9847);
   });
 
-  test('getGpuContext throws exception for incompatible embedders', () async {
+  test('gpu.context throws exception for incompatible embedders', () async {
     try {
-      gpu.getGpuContext();
+      // ignore: unnecessary_statements
+      gpu.context; // Force the
       fail('Exception not thrown');
     } catch (e) {
       expect(
           e.toString(),
           contains(
-              'The GpuContext API requires the Impeller rendering backend to be enabled.'));
+              'Flutter GPU requires the Impeller rendering backend to be enabled.'));
     }
   });
 }

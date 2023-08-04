@@ -4,39 +4,23 @@
 
 part of gpu;
 
-class GpuContextException implements Exception {
-  GpuContextException(this.message);
-  String message;
-
-  @override
-  String toString() {
-    return 'GpuContextException: $message';
-  }
-}
-
 /// A handle to a graphics context. Used to create and manage GPU resources.
 ///
-/// To obtain the default graphics context, use [getGpuContext].
-class GpuContext extends NativeFieldWrapperClass1 {
+/// To obtain the default graphics context, use [getContext].
+class Context extends NativeFieldWrapperClass1 {
   /// Creates a new graphics context that corresponds to the default Impeller
   /// context.
-  GpuContext._createDefault() {
+  Context._createDefault() {
     final String error = _initializeDefault();
     if (error.isNotEmpty) {
-      throw GpuContextException(error);
+      throw Exception(error);
     }
   }
 
-  /// Associates the default Impeller context with this GpuContext.
+  /// Associates the default Impeller context with this Context.
   @Native<Handle Function(Handle)>(
-      symbol: 'InternalFlutterGpu_GpuContext_InitializeDefault')
+      symbol: 'InternalFlutterGpu_Context_InitializeDefault')
   external String _initializeDefault();
 }
 
-GpuContext? _defaultGpuContext;
-
-/// Returns the default graphics context.
-GpuContext getGpuContext() {
-  _defaultGpuContext ??= GpuContext._createDefault();
-  return _defaultGpuContext!;
-}
+final Context context = Context._createDefault();

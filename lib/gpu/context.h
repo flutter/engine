@@ -11,18 +11,18 @@
 
 namespace flutter {
 
-class GpuContext : public RefCountedDartWrappable<GpuContext> {
+class Context : public RefCountedDartWrappable<Context> {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(GpuContext);
+  FML_FRIEND_MAKE_REF_COUNTED(Context);
 
  public:
-  explicit GpuContext(std::shared_ptr<impeller::Context> context);
-  ~GpuContext() override;
+  explicit Context(std::shared_ptr<impeller::Context> context);
+  ~Context() override;
 
  private:
   std::shared_ptr<impeller::Context> context_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GpuContext);
+  FML_DISALLOW_COPY_AND_ASSIGN(Context);
 };
 
 }  // namespace flutter
@@ -34,7 +34,7 @@ class GpuContext : public RefCountedDartWrappable<GpuContext> {
 extern "C" {
 
 FLUTTER_GPU_EXPORT
-extern Dart_Handle InternalFlutterGpu_GpuContext_InitializeDefault(
+extern Dart_Handle InternalFlutterGpu_Context_InitializeDefault(
     Dart_Handle wrapper);
 
 }  // extern "C"
