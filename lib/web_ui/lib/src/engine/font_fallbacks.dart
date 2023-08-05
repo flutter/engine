@@ -26,12 +26,11 @@ class FontFallbackManager {
     _notoSansHK = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans HK'),
     _notoSansJP = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans JP'),
     _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR'),
-    _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols'),
-    notoTree = createNotoFontTree(fallbackFonts) {
+    _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols') {
       downloadQueue = FallbackFontDownloadQueue(this);
-      print('${codePointToFontSet.length} ranges');
-      print('${codePointToFontSet.length} ranges');
-      print('${fontSets.length} font sets, ${fontSets.last}');
+      //print('${codePointToFonts.length} ranges');
+      //print('${codePointToFonts.length} ranges');
+      //print('${fontSets.length} font sets, ${fontSets.last}');
   }
 
   final FallbackFontRegistry registry;
@@ -46,9 +45,6 @@ class FontFallbackManager {
 
   final List<NotoFont> fallbackFonts;
 
-  /// Index of all font families by code point range.
-  final IntervalTree<NotoFont> notoTree;
-
   final NotoFont _notoSansSC;
   final NotoFont _notoSansTC;
   final NotoFont _notoSansHK;
@@ -58,21 +54,6 @@ class FontFallbackManager {
   final NotoFont _notoSymbols;
 
   Future<void> _idleFuture = Future<void>.value();
-
-  static IntervalTree<NotoFont> createNotoFontTree(List<NotoFont> fallbackFonts) {
-    final Map<NotoFont, List<CodePointRange>> ranges =
-        <NotoFont, List<CodePointRange>>{};
-
-    for (final NotoFont font in fallbackFonts) {
-      if (font.enabled) {
-        final List<CodePointRange> fontRanges =
-            ranges.putIfAbsent(font, () => <CodePointRange>[]);
-        fontRanges.addAll(font.computeUnicodeRanges());
-      }
-    }
-
-    return IntervalTree<NotoFont>.createFromRanges(ranges);
-  }
 
   final List<String> globalFontFallbacks = <String>['Roboto'];
 
@@ -159,8 +140,7 @@ class FontFallbackManager {
     }
     final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
-    //findFontsForMissingCodePoints(codePoints);
-    findFontsForMissingCodePoints2(codePoints);
+    findFontsForMissingCodePoints(codePoints);
   }
 
   void registerFallbackFont(String family) {
@@ -177,139 +157,6 @@ class FontFallbackManager {
     }
   }
 
-  void findFontsForMissingCodePoints(List<int> codePoints) {
-    Set<NotoFont> fonts = <NotoFont>{};
-    final Set<int> coveredCodePoints = <int>{};
-    final Set<int> missingCodePoints = <int>{};
-    for (final int codePoint in codePoints) {
-      final List<NotoFont> fontsForPoint = notoTree.intersections(codePoint);
-      fonts.addAll(fontsForPoint);
-      if (fontsForPoint.isNotEmpty) {
-        coveredCodePoints.add(codePoint);
-      } else {
-        missingCodePoints.add(codePoint);
-      }
-    }
-
-    // The call to `findMinimumFontsForCodePoints` will remove all code points that
-    // were matched by `fonts` from `unmatchedCodePoints`.
-    final Set<int> unmatchedCodePoints = Set<int>.from(coveredCodePoints);
-    fonts = findMinimumFontsForCodePoints(unmatchedCodePoints, fonts);
-
-    fonts.forEach(downloadQueue.add);
-
-    // We looked through the Noto font tree and didn't find any font families
-    // covering some code points.
-    if (missingCodePoints.isNotEmpty || unmatchedCodePoints.isNotEmpty) {
-      if (!downloadQueue.isPending) {
-        printWarning('Could not find a set of Noto fonts to display all missing '
-            'characters. Please add a font asset for the missing characters.'
-            ' See: https://flutter.dev/docs/cookbook/design/fonts');
-        codePointsWithNoKnownFont.addAll(missingCodePoints);
-      }
-    }
-  }
-
-  /// Finds the minimum set of fonts which covers all of the [codePoints].
-  ///
-  /// Removes all code points covered by [fonts] from [codePoints]. The code
-  /// points remaining in the [codePoints] set after calling this function do not
-  /// have a font that covers them and can be omitted next time to avoid
-  /// searching for fonts unnecessarily.
-  ///
-  /// Since set cover is NP-complete, we approximate using a greedy algorithm
-  /// which finds the font which covers the most code points. If multiple CJK
-  /// fonts match the same number of code points, we choose one based on the user's
-  /// locale.
-  Set<NotoFont> findMinimumFontsForCodePoints(
-      Set<int> codePoints, Set<NotoFont> fonts) {
-    assert(fonts.isNotEmpty || codePoints.isEmpty);
-    final Set<NotoFont> minimumFonts = <NotoFont>{};
-    final List<NotoFont> bestFonts = <NotoFont>[];
-
-    final String language = domWindow.navigator.language;
-
-    while (codePoints.isNotEmpty) {
-      int maxCodePointsCovered = 0;
-      bestFonts.clear();
-      for (final NotoFont font in fonts) {
-        int codePointsCovered = 0;
-        for (final int codePoint in codePoints) {
-          if (font.contains(codePoint)) {
-            codePointsCovered++;
-          }
-        }
-        if (codePointsCovered > maxCodePointsCovered) {
-          bestFonts.clear();
-          bestFonts.add(font);
-          maxCodePointsCovered = codePointsCovered;
-        } else if (codePointsCovered == maxCodePointsCovered) {
-          bestFonts.add(font);
-        }
-      }
-      if (maxCodePointsCovered == 0) {
-        // Fonts cannot cover remaining unmatched characters.
-        break;
-      }
-      // If the list of best fonts are all CJK fonts, choose the best one based
-      // on locale. Otherwise just choose the first font.
-      NotoFont bestFont = bestFonts.first;
-      if (bestFonts.length > 1) {
-        if (bestFonts.every((NotoFont font) =>
-          font == _notoSansSC ||
-          font == _notoSansTC ||
-          font == _notoSansHK ||
-          font == _notoSansJP ||
-          font == _notoSansKR
-        )) {
-          if (language == 'zh-Hans' ||
-              language == 'zh-CN' ||
-              language == 'zh-SG' ||
-              language == 'zh-MY') {
-            if (bestFonts.contains(_notoSansSC)) {
-              bestFont = _notoSansSC;
-            }
-          } else if (language == 'zh-Hant' ||
-              language == 'zh-TW' ||
-              language == 'zh-MO') {
-            if (bestFonts.contains(_notoSansTC)) {
-              bestFont = _notoSansTC;
-            }
-          } else if (language == 'zh-HK') {
-            if (bestFonts.contains(_notoSansHK)) {
-              bestFont = _notoSansHK;
-            }
-          } else if (language == 'ja') {
-            if (bestFonts.contains(_notoSansJP)) {
-              bestFont = _notoSansJP;
-            }
-          } else if (language == 'ko') {
-            if (bestFonts.contains(_notoSansKR)) {
-              bestFont = _notoSansKR;
-            }
-          } else if (bestFonts.contains(_notoSansSC)) {
-            bestFont = _notoSansSC;
-          }
-        } else {
-          // To be predictable, if there is a tie for best font, choose a font
-          // from this list first, then just choose the first font.
-          if (bestFonts.contains(_notoSymbols)) {
-            bestFont = _notoSymbols;
-          } else if (bestFonts.contains(_notoSansSC)) {
-            bestFont = _notoSansSC;
-          }
-        }
-      }
-      codePoints.removeWhere((int codePoint) {
-        return bestFont.contains(codePoint);
-      });
-      minimumFonts.add(bestFont);
-    }
-    return minimumFonts;
-  }
-
-  // New implementation.
-  
   /// Finds the minimum set of fonts which covers all of the [codePoints].
   ///
   /// Since set cover is NP-complete, we approximate using a greedy algorithm
@@ -320,32 +167,32 @@ class FontFallbackManager {
   /// If a code point is not covered by any font, it is added to
   /// [codePointsWithNoKnownFont] so it can be omitted next time to avoid
   /// searching for fonts unnecessarily.
-  void findFontsForMissingCodePoints2(List<int> codePoints) {
+  void findFontsForMissingCodePoints(List<int> codePoints) {
     final List<int> missingCodePoints = [];
 
-    final List<NotoFontSet> candidateSets = [];
+    final List<FallbackFontBlock> candidateBlocks = [];
     final List<NotoFont> candidateFonts = [];
     
     for (final int codePoint in codePoints) {
-      final _FontLink? link = codePointToFontSet.lookup(codePoint);
+      final _FontLink? link = codePointToFonts.lookup(codePoint);
       if (link == null) {
         missingCodePoints.add(codePoint);
       } else {
-        final NotoFontSet fontSet = link.fontSet;
-        if (fontSet.coverCount == 0) {
-          candidateSets.add(fontSet);
+        final FallbackFontBlock block = link.block;
+        if (block.coverCount == 0) {
+          candidateBlocks.add(block);
         }
-        fontSet.coverCount++;
+        block.coverCount++;
       }
     }
 
-    for (final NotoFontSet fontSet in candidateSets) {
-      for (final NotoFont font in fontSet.fonts) {
+    for (final FallbackFontBlock block in candidateBlocks) {
+      for (final NotoFont font in block.fonts) {
         if (font.coverCount == 0) {
           candidateFonts.add(font);
         }
-        font.coverCount += fontSet.coverCount;
-        font.coverSets.add(fontSet);
+        font.coverCount += block.coverCount;
+        font.coverBlocks.add(block);
       }
     }
 
@@ -354,22 +201,22 @@ class FontFallbackManager {
     while (candidateFonts.isNotEmpty) {
       NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
-      for (final NotoFontSet fontSet in [...selectedFont.coverSets]) {
-        for (final NotoFont font in fontSet.fonts) {
-          font.coverCount -= fontSet.coverCount;
-          font.coverSets.remove(fontSet);
+      for (final FallbackFontBlock block in [...selectedFont.coverBlocks]) {
+        for (final NotoFont font in block.fonts) {
+          font.coverCount -= block.coverCount;
+          font.coverBlocks.remove(block);
         }
-        fontSet.coverCount = 0;
+        block.coverCount = 0;
       }
       selectedFont.coverCount == 0 || (throw 'bad count');
-      selectedFont.coverSets.isEmpty || (throw 'bad coverSets');
+      selectedFont.coverBlocks.isEmpty || (throw 'bad coverBlocks');
       candidateFonts.removeWhere((font) => font.coverCount == 0);
     }
 
     selectedFonts.forEach(downloadQueue.add);
 
-    // We looked through the Noto font tree and didn't find any font families
-    // covering some code points.
+    // Report code points not covered by any fallback font and ensure we don't
+    // process those code points again.
     if (missingCodePoints.isNotEmpty) {
       if (!downloadQueue.isPending) {
         printWarning('Could not find a set of Noto fonts to display all missing '
@@ -452,7 +299,7 @@ class FontFallbackManager {
 
   late final List<_FontLink?> fontSets = _decodeFontSets(encodedFontSets);
 
-  late final _UnicodePropertyLookup<_FontLink?> codePointToFontSet =
+  late final _UnicodePropertyLookup<_FontLink?> codePointToFonts =
       _UnicodePropertyLookup<_FontLink?>.fromPackedData(encodedFontSetRanges, fontSets);
 
   List<_FontLink?> _decodeFontSets(String data) {
@@ -500,23 +347,59 @@ class _FontLink {
   final _FontLink? previous;
   final NotoFont font;
 
-  late final NotoFontSet fontSet = NotoFontSet(_collect());
+  late final FallbackFontBlock block = _createBlock();
 
-  Iterable<NotoFont> _collect() {
+  FallbackFontBlock _createBlock() {
     final List<NotoFont> fonts = [];
     _FontLink? link = this;
     while (link != null) {
-      fonts.add(link.font);
+      if (link.font.enabled) {
+        fonts.add(link.font);
+      }
       link = link.previous;
     }
-    return fonts.reversed;
+    return FallbackFontBlock(List.unmodifiable(fonts.reversed));
   }
-
-  
 }
 
+/// A lookup structure from code point to a property type [P].
 class _UnicodePropertyLookup<P> {
   _UnicodePropertyLookup._(this._boundaries, this._values);
+
+  /// There are two parallel lists - one of boundaries between adjacent unicode
+  /// ranges and second of the values for the ranges.
+  ///
+  /// `_boundaries[i]` is the open-interval end of the `i`th range and the start
+  /// of the `i+1`th range. The implicit start of the 0th range is zero.
+  ///
+  /// `_values[i]` is the value for the range [`_boundaries[i-1]`, `_boundaries[i]`).
+  /// Default values are stored as explicit ranges.
+  ///
+  /// Example: the unicode range properies `[10-50]=>A`, `[100]=>B`, with
+  /// default value `X` would be represented as:
+  ///
+  ///     boundaries:  [10, 51, 100, 101, 1114112]
+  ///     values:      [ X,  A,   X,   B,       X]
+  final List<int> _boundaries;
+  final List<P> _values;
+
+
+  int get length => _boundaries.length;
+
+  P lookup(int value) {
+    assert(0 <= value && value <= kMaxCodePoint);
+    assert(_boundaries.last == kMaxCodePoint + 1);
+    int start = 0, end = _boundaries.length;
+    while (true) {
+      if (start == end) return _values[start];
+      int mid = start + (end - start) ~/ 2;
+      if (value >= _boundaries[mid]) {
+        start = mid + 1;
+      } else {
+        end = mid;
+      }
+    }
+  }
 
   factory _UnicodePropertyLookup.fromPackedData(
     String packedData,
@@ -553,26 +436,6 @@ class _UnicodePropertyLookup<P> {
     if (start != kMaxCodePoint + 1) throw StateError('Bad map size: $start');
 
     return _UnicodePropertyLookup<P>._(boundaries, values);
-  }
-
-  int get length => _boundaries.length;
-
-  final List<int> _boundaries;
-  final List<P> _values;
-
-  P lookup(int value) {
-    assert(0 <= value && value <= kMaxCodePoint);
-    assert(_boundaries.last == kMaxCodePoint + 1);
-    int start = 0, end = _boundaries.length;
-    while (true) {
-      if (start == end) return _values[start];
-      int mid = start + (end - start) ~/ 2;
-      if (value >= _boundaries[mid]) {
-        start = mid + 1;
-      } else {
-        end = mid;
-      }
-    }
   }
 }
 

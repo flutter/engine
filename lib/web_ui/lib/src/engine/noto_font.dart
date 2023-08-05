@@ -5,58 +5,28 @@
 import 'text/unicode_range.dart';
 
 class NotoFont {
-  NotoFont(this.name, this.url, this._packedRanges, {this.enabled = true});
+  NotoFont(this.name, this.url, {this.enabled = true});
 
   final String name;
   final String url;
-  final String _packedRanges;
-  final int index = _index++;
   final bool enabled;
 
+  final int index = _index++;
   static int _index = 0;
 
   /// During fallback font selection this is the number of missing code points
   /// that are covered by (i.e. in) this font.
   int coverCount = 0;
 
-  /// During fallback font selection this is a list of [NotoFontSet]s that
+  /// During fallback font selection this is a list of [FallbackFontBlock]s that
   /// contribute to this font's cover count.
-  final List<NotoFontSet> coverSets = [];
-  
-  // A sorted list of Unicode ranges.
-  late final List<CodePointRange> _ranges = _unpackFontRange(_packedRanges);
-
-  List<CodePointRange> computeUnicodeRanges() => _ranges;
-
-  // Returns `true` if this font has a glyph for the given [codeunit].
-  bool contains(int codeUnit) {
-    // Binary search through the unicode ranges to see if there
-    // is a range that contains the codeunit.
-    int min = 0;
-    int max = _ranges.length - 1;
-    while (min <= max) {
-      final int mid = (min + max) ~/ 2;
-      final CodePointRange range = _ranges[mid];
-      if (range.start > codeUnit) {
-        max = mid - 1;
-      } else {
-        // range.start <= codeUnit
-        if (range.end >= codeUnit) {
-          return true;
-        }
-        min = mid + 1;
-      }
-    }
-    return false;
-  }
+  final List<FallbackFontBlock> coverBlocks = [];
 }
 
-class NotoFontSet {
-  NotoFontSet(Iterable<NotoFont> fonts)
-      : fonts = List<NotoFont>.unmodifiable(fonts);
+// FallbackFontCodePointsPartitionComponent.
+class FallbackFontBlock {
+  FallbackFontBlock(this.fonts);
   final List<NotoFont> fonts;
-
-  //bool get isEmpty => fonts.isEmpty;
 
   /// During fallback font selection this is the number of missing code points
   /// that are covered by (i.e. in) the intersection of all [fonts].
@@ -89,47 +59,4 @@ class CodePointRange {
 
   @override
   String toString() => '[$start, $end]';
-}
-
-final int _kCharPipe = '|'.codeUnitAt(0);
-final int _kCharSemicolon = ';'.codeUnitAt(0);
-
-class MutableInt {
-  MutableInt(this.value);
-
-  int value;
-}
-
-List<CodePointRange> _unpackFontRange(String packedRange) {
-    final MutableInt i = MutableInt(0);
-    final List<CodePointRange> ranges = <CodePointRange>[];
-
-    while (i.value < packedRange.length) {
-      final int rangeStart = _consumeInt36(packedRange, i, until: _kCharPipe);
-      final int rangeLength = _consumeInt36(packedRange, i, until: _kCharSemicolon);
-      final int rangeEnd = rangeStart + rangeLength;
-      ranges.add(CodePointRange(rangeStart, rangeEnd));
-    }
-    return ranges;
-}
-
-int _consumeInt36(String packedData, MutableInt index, {required int until}) {
-  // The implementation is similar to:
-  //
-  // ```dart
-  // return int.tryParse(packedData.substring(index, indexOfUntil), radix: 36);
-  // ```
-  //
-  // But using substring is slow when called too many times. This custom
-  // implementation parses the integer without extra memory.
-
-  int result = 0;
-  while (true) {
-    final int charCode = packedData.codeUnitAt(index.value);
-    index.value++;
-    if (charCode == until) {
-      return result;
-    }
-    result = result * 36 + getIntFromCharCode(charCode);
-  }
 }

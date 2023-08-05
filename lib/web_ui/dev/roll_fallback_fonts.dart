@@ -146,7 +146,7 @@ class RollFallbackFontsCommand extends Command<bool>
       fonts.add(_Font(family, fonts.length, starts, ends));
     }
 
-    String fontSets = _computeFontSets(fonts);
+    String fontSets = _computeEncodedFontSets(fonts);
 
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
@@ -174,25 +174,7 @@ class RollFallbackFontsCommand extends Command<bool>
             'Unexpected url format received from Google Fonts API: $urlString.');
       }
       final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
-      sb.writeln(" NotoFont('$family', $enabledArgument'$urlSuffix',");
-      final List<int> starts = font.starts;
-      final List<int> ends = font.ends;
-
-      // Print the unicode ranges in a readable format for easier review. This
-      // shouldn't affect code size because comments are removed in release mode.
-      sb.write('   // <int>[');
-      for (final int start in starts) {
-        sb.write('0x${start.toRadixString(16)},');
-      }
-      sb.writeln('],');
-      sb.write('   // <int>[');
-      for (final int end in ends) {
-        sb.write('0x${end.toRadixString(16)},');
-      }
-      sb.writeln(']');
-
-      sb.writeln("   '${_packFontRanges(starts, ends)}',");
-      sb.writeln(' ),');
+      sb.writeln(" NotoFont('$family', $enabledArgument'$urlSuffix'),");
     }
     sb.writeln('];');
     sb.writeln();
@@ -492,26 +474,6 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Zanabazar Square',
 ];
 
-String _packFontRanges(List<int> starts, List<int> ends) {
-  assert(starts.length == ends.length);
-
-  final StringBuffer sb = StringBuffer();
-
-  for (int i = 0; i < starts.length; i++) {
-    final int start = starts[i];
-    final int end = ends[i];
-
-    sb.write(start.toRadixString(36));
-    sb.write('|');
-    if (start != end) {
-      sb.write((end - start).toRadixString(36));
-    }
-    sb.write(';');
-  }
-
-  return sb.toString();
-}
-
 bool _checkForLicenseAttribution(Uint8List fontBytes) {
   final ByteData fontData = fontBytes.buffer.asByteData();
   final int codePointCount = fontData.lengthInBytes ~/ 2;
@@ -531,15 +493,6 @@ bool _checkForLicenseAttribution(Uint8List fontBytes) {
   return false;
 }
 
-class _Boundary {
-  _Boundary(this.value, this.isStart, this.font);
-  final int value;  // inclusive start or exclusive end.
-  final bool isStart;
-  final _Font font;
-
-  static int compare(_Boundary a, _Boundary b) => a.value.compareTo(b.value);
-}
-
 class _Font {
   final String family;
   final int index;
@@ -550,7 +503,6 @@ class _Font {
 
   static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
 
-  //String get shortName => '$_shortName.$index';
   String get shortName =>
       '$_shortName' +
       String.fromCharCodes('$index'.codeUnits.map((ch) => ch - 48 + 0x2080));
@@ -558,6 +510,16 @@ class _Font {
   String get _shortName => family.startsWith('Noto Sans ')
       ? family.substring('Noto Sans '.length)
       : family;
+}
+
+/// The boundary of a range of a font.
+class _Boundary {
+  _Boundary(this.value, this.isStart, this.font);
+  final int value;  // inclusive start or exclusive end.
+  final bool isStart;
+  final _Font font;
+
+  static int compare(_Boundary a, _Boundary b) => a.value.compareTo(b.value);
 }
 
 class _Range {
@@ -600,15 +562,12 @@ class _FontSet {
   }
 
   static int orderByLexicographicFontIndexes(_FontSet a, _FontSet b) {
-    for (int i = 0;; i++) {
-      if (i < a.length && i < b.length) {
-        final int r = _Font.compare(a.fonts[i], b.fonts[i]);
-        if (r != 0) return r;
-      } else {
-        assert(a.length != b.length); // _FontSets are canonical.
-        return a.length - b.length;
-      }
+    for (int i = 0; i < a.length && i < b.length; i++) {
+      final int r = _Font.compare(a.fonts[i], b.fonts[i]);
+      if (r != 0) return r;
     }
+    assert(a.length != b.length); // _FontSets are canonical.
+    return a.length - b.length;
   }
 
   @override
@@ -637,11 +596,50 @@ class _TrieNode {
   }
 }
 
-String _computeFontSets(List<_Font> fonts) {
+/// Computes the Dart source code for the encoded data structures used by the
+/// fallback font selection algorithm.
+///
+/// The data structures allow the fallback font selection algorithm to quickly
+/// determine which fonts support a given code point. The structures are
+/// essentially a map from a code point to a set of fonts that support that code
+/// point.
+///
+/// The universe of code points is partitioned into a set of subsets, or
+/// components, where each component contains all the code points that are in
+/// exactly the same set of fonts. A font can be considered to be a union of
+/// some subset of the components and may share components with other fonts.  A
+/// `_FontSet` is used to represent a component and the set of fonts that use
+/// the component. One way to visualize this is as a Venn diagram. The fonts are
+/// the overlapping circles and the components are the spaces between the lines.
+///
+/// The emitted data structures are
+///
+///  (1) A list of sets of fonts.
+///  (2) A list of code point ranges mapping to an index of list (1).
+///
+/// The sets of fonts are represented as singly-linked lists of fonts, in
+/// reverse order, with structure sharing for the prefix. This is a forest of
+/// trees, where only the parent pointer is stored.
+///
+/// ...
+String _computeEncodedFontSets(List<_Font> fonts) {
+  
   final List<_Range> ranges = [];
   final List<_FontSet> allSets = [];
 
   {
+    // The fonts have their supported code points provided as list of inclusive
+    // [start, end] ranges. We want to intersect all of these ranges and find
+    // the fonts that overlap each intersected range.
+    //
+    // It is easier to work with the boundaries of the ranges rather than the
+    // ranges themselves. The bounaries of the intersected ranges is the union
+    // of the boundaries of the individual font ranges.  We scan the boundaries
+    // in increasing order, keeping track of the current set of fonts that are
+    // in the current intersected range.  Each time the boundary value changes,
+    // the current set of fonts is canonicalized and recorded.
+    //
+    // TODO: There has to be a wiki article for this algorithm.
     final List<_Boundary> boundaries = [];
     for (final _Font font in fonts) {
       for (final int start in font.starts) {
@@ -657,6 +655,7 @@ String _computeFontSets(List<_Font> fonts) {
     final Set<_Font> currentElements = {};
 
     void newRange(int start, int end) {
+      // Ensure we are using the canonical font order.
       final List<_Font> fonts = List.of(currentElements)..sort(_Font.compare);
       final _TrieNode node = trieRoot.insertAtRoot(fonts);
       final _FontSet fontSet = node.fontSet ??= _FontSet(fonts);
@@ -680,21 +679,22 @@ String _computeFontSets(List<_Font> fonts) {
       }
     }
     assert(currentElements.isEmpty);
+    // Ensure the ranges cover the whole unicode code point space.
     if (start <= kMaxCodePoint) newRange(start, kMaxCodePoint);
   }
 
   print('${allSets.length} sets covering ${ranges.length} ranges');
 
-  // _FontSets are sorted by the number of ranges that map to that _FontSet, so
-  // that _FontSets that are referenced from many ranges have smaller indexes.
-  // This makes the range table encoding smaller.
+  // Sort _FontSets by the number of ranges that map to that _FontSet, so that
+  // _FontSets that are referenced from many ranges have smaller indexes.  This
+  // makes the range table encoding smaller, by about half.
   allSets.sort(_FontSet.orderByDecreasingRangeCount);
 
   // The FontSet encoding is most efficient when the _FontSets are in
   // lexicographic order where the encoding can reuse the common prefix of
-  // adjacent _FontSets. This is is in tension with the larger range table where
-  // the most common _FontSets may be unrelated. A happy compromize is to use
-  // lexicographic order for blocks of _FontSets that have the same size
+  // adjacent _FontSets. This is is in tension with the (larger) range table
+  // where the most common _FontSets may be unrelated. A happy compromise is to
+  // use lexicographic order for blocks of _FontSets that have the same size
   // encoding in the range table. In practice there are two or three such
   // blocks.
   for (int start = 0, next = kRangeSetRadix;
@@ -769,8 +769,9 @@ String _computeFontSets(List<_Font> fonts) {
       previousFontIndex = previous.fonts[i].index;
     }
 
-    if (i >= current.length || current.fonts[i].index <= previousFontIndex) {
-      // The two _FontSets are not in lexicographic order, so start from the beginning of the 
+    if (i >= current.length || current.fonts[i].index <= previousFontIndex || true) {
+      // The two _FontSets are not in lexicographic order, so start afresh
+      // rather than relatibve to the previous _FontSet.
       sb.writeCharCode(kFontSetDefineAndReset);
       previousFontIndex = -1;
       i = 0;
@@ -791,12 +792,12 @@ String _computeFontSets(List<_Font> fonts) {
   final StringBuffer declarations = StringBuffer();
 
   declarations
-      ..writeln('// ${allSets.length} sets encoded in ${totalEncodedLength} characters')
+      ..writeln('// ${allSets.length} unique sets of fonts'
+          ' containing ${allSets.fold(0, (sum, set) => sum + set.length)} fonts'
+          ' encoded in ${totalEncodedLength} characters')
       ..writeln('const String encodedFontSets =')
       ..write(code)
       ..writeln('    ;');
-  
-      //print(code);
 
   // Encode ranges.
   code.clear();
@@ -824,8 +825,6 @@ String _computeFontSets(List<_Font> fonts) {
     final String encodingText = "'$encoding'".padRight(10);
     code.writeln('    $encodingText // $description');
   }
-  //print(code);
-  print('${ranges.length} ranges encoded in ${rangesTotalEncodedLength}');
 
   declarations
       ..writeln()
