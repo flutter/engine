@@ -2062,10 +2062,8 @@ void Shell::RemoveView(int64_t view_id) {
       << kFlutterImplicitViewId << ". This view should never be removed.";
 
   expected_frame_sizes_.erase(view_id);
-  fml::AutoResetWaitableEvent latch;
   task_runners_.GetUITaskRunner()->PostTask(
-      [&latch,                                  //
-           & task_runners = task_runners_,      //
+      [&task_runners = task_runners_,           //
        engine = engine_->GetWeakPtr(),          //
        rasterizer = rasterizer_->GetWeakPtr(),  //
        view_id                                  //
