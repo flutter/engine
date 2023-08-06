@@ -1720,13 +1720,13 @@ ORIGIN: ../../../flutter/impeller/typographer/text_run.h + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/typographer/typeface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/typeface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/context.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/gpu/context.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/export.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/export.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/gpu/gpu.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/gpu.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/src/context.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/src/smoketest.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/smoketest.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/gpu/smoketest.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/smoketest.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.h + ../../../flutter/LICENSE
@@ -4438,13 +4438,13 @@ FILE: ../../../flutter/impeller/typographer/text_run.h
 FILE: ../../../flutter/impeller/typographer/typeface.cc
 FILE: ../../../flutter/impeller/typographer/typeface.h
 FILE: ../../../flutter/lib/gpu/context.cc
-FILE: ../../../flutter/lib/gpu/context.dart
 FILE: ../../../flutter/lib/gpu/context.h
 FILE: ../../../flutter/lib/gpu/export.cc
 FILE: ../../../flutter/lib/gpu/export.h
-FILE: ../../../flutter/lib/gpu/gpu.dart
+FILE: ../../../flutter/lib/gpu/lib/gpu.dart
+FILE: ../../../flutter/lib/gpu/lib/src/context.dart
+FILE: ../../../flutter/lib/gpu/lib/src/smoketest.dart
 FILE: ../../../flutter/lib/gpu/smoketest.cc
-FILE: ../../../flutter/lib/gpu/smoketest.dart
 FILE: ../../../flutter/lib/gpu/smoketest.h
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
