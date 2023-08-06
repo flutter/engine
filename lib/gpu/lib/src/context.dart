@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of gpu;
+import 'dart:ffi';
+import 'dart:nativewrappers';
 
 /// A handle to a graphics context. Used to create and manage GPU resources.
 ///
@@ -23,4 +24,5 @@ class GpuContext extends NativeFieldWrapperClass1 {
   external String _initializeDefault();
 }
 
+/// The default graphics context.
 final GpuContext gpuContext = GpuContext._createDefault();

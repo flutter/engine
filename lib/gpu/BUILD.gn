@@ -30,14 +30,16 @@ source_set("gpu") {
     defines = []
   }
 
-  sources = [
-    "context.cc",
-    "context.h",
-    "export.cc",
-    "export.h",
-    "smoketest.cc",
-    "smoketest.h",
-  ]
+  if (!is_fuchsia) {
+    sources = [
+      "context.cc",
+      "context.h",
+      "export.cc",
+      "export.h",
+      "smoketest.cc",
+      "smoketest.h",
+    ]
+  }
   deps = [
     "//flutter/impeller",
     "//flutter/impeller/display_list:skia_conversions",

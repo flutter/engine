@@ -5,7 +5,7 @@
 // ignore_for_file: avoid_relative_lib_imports
 
 import 'package:litetest/litetest.dart';
-import '../../lib/gpu/gpu.dart' as gpu;
+import '../../lib/gpu/lib/gpu.dart' as gpu;
 
 void main() {
   // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
