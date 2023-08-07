@@ -2041,8 +2041,7 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   FML_DCHECK(view_id != kFlutterImplicitViewId)
       << "Unexpected request to add the implicit view #"
-      << kFlutterImplicitViewId
-      << ". This view should never be added. This call is no-op.";
+      << kFlutterImplicitViewId << ". This view should never be added.";
 
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              viewport_metrics,                //
@@ -2060,14 +2059,11 @@ void Shell::RemoveView(int64_t view_id) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   FML_DCHECK(view_id != kFlutterImplicitViewId)
       << "Unexpected request to remove the implicit view #"
-      << kFlutterImplicitViewId
-      << ". This view should never be removed. This call is no-op.";
+      << kFlutterImplicitViewId << ". This view should never be removed.";
 
   expected_frame_sizes_.erase(view_id);
-  fml::AutoResetWaitableEvent latch;
   task_runners_.GetUITaskRunner()->PostTask(
-      [&latch,                                  //
-           & task_runners = task_runners_,      //
+      [&task_runners = task_runners_,           //
        engine = engine_->GetWeakPtr(),          //
        rasterizer = rasterizer_->GetWeakPtr(),  //
        view_id                                  //
@@ -2084,10 +2080,7 @@ void Shell::RemoveView(int64_t view_id) {
             rasterizer->CollectView(view_id);
           }
         });
-        latch.Signal();
       });
-
-  latch.Wait();
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

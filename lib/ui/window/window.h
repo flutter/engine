@@ -30,7 +30,10 @@ class Window final {
 
   const ViewportMetrics& viewport_metrics() const { return viewport_metrics_; }
 
-  // Send an AddView message to Dart with the current view metrics.
+  // Called by PlatformConfiguration to send an AddView message to Dart with the
+  // current view metrics.
+  //
+  // This must not be called more than once per `window_id`.
   void AddView();
 
   // Update view metrics, and send an UpdateWindowMetrics message to Dart.

@@ -113,6 +113,9 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
+  FML_DCHECK(!has_flushed_runtime_state_)
+      << "FlushRuntimeStateToIsolate is called more than once somehow.";
+  has_flushed_runtime_state_ = true;
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
     if (!AddView(view_id, viewport_metrics)) {

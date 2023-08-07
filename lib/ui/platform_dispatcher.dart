@@ -219,20 +219,20 @@ class PlatformDispatcher {
         'The implicit view ID is null, but the implicit view exists.');
     // Make sure [implicitView] never chages.
     assert(() {
-      if (debugHasRecordedLastImplicitView) {
-        assert(identical(debugLastImplicitView, result),
+      if (_debugRecordedLastImplicitView) {
+        assert(identical(_debugLastImplicitView, result),
           'The implicitView has changed:\n'
-          'Last: $debugLastImplicitView\nCurrent: $result');
+          'Last: $_debugLastImplicitView\nCurrent: $result');
       } else {
-        debugLastImplicitView = result;
-        debugHasRecordedLastImplicitView = true;
+        _debugLastImplicitView = result;
+        _debugRecordedLastImplicitView = true;
       }
       return true;
     }());
     return result;
   }
-  FlutterView? debugLastImplicitView;
-  bool debugHasRecordedLastImplicitView = false;
+  FlutterView? _debugLastImplicitView;
+  bool _debugRecordedLastImplicitView = false;
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
