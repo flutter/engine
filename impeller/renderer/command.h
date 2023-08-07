@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -55,12 +54,77 @@ using BufferResource = Resource<BufferView>;
 using TextureResource = Resource<std::shared_ptr<const Texture>>;
 using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 
+/// Drop-in replacement for std::map that is implemented with an associative
+/// vector.
+///
+/// For small sized containers linear search outperforms hashing or binary
+/// search.  So this should be used only for small sizes.  This also occupies
+/// less memory than a Red-Black Tree or Hashtable.  It is also more cache
+/// friendly than a HashTable.
+///
+/// Insertion: O(n)
+/// Lookup: O(n)
+/// Delete: O(n)
+template <typename K, typename V>
+class AssociativeVector {
+ public:
+  using value_type = std::pair<K, V>;
+
+  V& at(const K& key) {
+    auto it = find(key);
+    FML_CHECK(it != data_.end());
+    return it->second;
+  }
+
+  const V& at(const K& key) const {
+    auto it = find(key);
+    FML_CHECK(it != data_.end());
+    return it->second;
+  }
+
+  V& operator[](const K& key) {
+    auto it = find(key);
+    if (it != data_.end()) {
+      return it->second;
+    } else {
+      data_.emplace_back(key, V{});  // Emplace default value if key not found.
+      return data_.back().second;
+    }
+  }
+
+  size_t size() const { return data_.size(); }
+
+  typename std::vector<value_type>::iterator find(const K& key) {
+    return std::find_if(
+        data_.begin(), data_.end(),
+        [&key](const value_type& kv) { return kv.first == key; });
+  }
+
+  typename std::vector<value_type>::const_iterator find(const K& key) const {
+    return std::find_if(
+        data_.begin(), data_.end(),
+        [&key](const value_type& kv) { return kv.first == key; });
+  }
+
+  typename std::vector<value_type>::iterator begin() { return data_.begin(); }
+  typename std::vector<value_type>::iterator end() { return data_.end(); }
+  typename std::vector<value_type>::const_iterator begin() const {
+    return data_.begin();
+  }
+  typename std::vector<value_type>::const_iterator end() const {
+    return data_.end();
+  }
+
+ private:
+  std::vector<value_type> data_;
+};
+
 struct Bindings {
-  std::map<size_t, ShaderUniformSlot> uniforms;
-  std::map<size_t, SampledImageSlot> sampled_images;
-  std::map<size_t, BufferResource> buffers;
-  std::map<size_t, TextureResource> textures;
-  std::map<size_t, SamplerResource> samplers;
+  AssociativeVector<size_t, ShaderUniformSlot> uniforms;
+  AssociativeVector<size_t, SampledImageSlot> sampled_images;
+  AssociativeVector<size_t, BufferResource> buffers;
+  AssociativeVector<size_t, TextureResource> textures;
+  AssociativeVector<size_t, SamplerResource> samplers;
 };
 
 //------------------------------------------------------------------------------
