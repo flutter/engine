@@ -40,7 +40,6 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import io.flutter.util.ViewUtils;
-import io.flutter.view.AccessibilityBridge.Flag;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -614,7 +613,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
-    Log.e(TAG, "virtualViewId " + virtualViewId + " stacktrace");
     setAccessibleNavigation(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
@@ -631,7 +629,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.addChild(rootAccessibilityView, ROOT_NODE_ID);
       }
       result.setImportantForAccessibility(false);
-      // Log.d("myapp", Log.getStackTraceString(new Exception()));
       return result;
     }
 
