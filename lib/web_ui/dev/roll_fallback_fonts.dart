@@ -617,11 +617,58 @@ class _TrieNode {
 ///  (1) A list of sets of fonts.
 ///  (2) A list of code point ranges mapping to an index of list (1).
 ///
-/// The sets of fonts are represented as singly-linked lists of fonts, in
-/// reverse order, with structure sharing for the prefix. This is a forest of
-/// trees, where only the parent pointer is stored.
+/// Each set of fonts is represented as a list of font indexes. The indexes are
+/// always increasing so the delta is stored. The stored value is biased by -1
+/// (i.e.  `delta - 1`) since a delta is never less than 1. The deltas are STMR
+/// encoded.
 ///
-/// ...
+/// The list of code point ranges is complete, covering every code point. There
+/// are no gaps bewteen ranges. Instead there is a range mapping the missing
+/// code points to the empty set of fonts. Each range is encoded as the size
+/// (number of code points) in the range followed by the value which the index
+/// of the corresponding set in the list of sets.
+///
+///
+/// STMR (Self terminating multiple radix) encoding
+/// ---
+///
+/// The separators between the numbers can be a significant proportion of the
+/// number of characters needed to encode a sequence of numbers as a string.
+/// Instead values are encoded with two kinds of digits: prefix digits and
+/// terminating digits. Each kind of digit uses a different set of characters,
+/// and the radix (number of digit characters) can differ between the different
+/// kinds of digit.  Lets say we use decimal digits `0`..`9` for prefix digits
+/// and `A`..`Z` as terminating digits.
+///
+///     M = ('M' - 'A') = 12
+///     38M = (3 * 10 + 8) * 26 + 12 = 38 * 26 + 12 = 1000
+///
+/// Choosing a large terminating radix is especially effective when most of the
+/// encoded values are small, as is the case with delta-encoding.
+///
+/// There can be multiple terminating digit kinds to represent different sorts
+/// of values. For the range table, the size uses a different terminating digit,
+/// 'a'..'z'. This allows the very common size of 1 (accounting over a third of
+/// the range) sizes to be omitted. A range is encoded as either
+/// `<size><value>`, or `<value>` with an implicit size of 1.  Since the size 1
+/// can be implicit, it is always implicit, and the stored sizes are biased by
+/// -2.
+///
+/// | encoding | value | size |
+/// | :---     | ---:  | ---: |
+/// | A        | 0     | 1    |
+/// | B        | 1     | 1    |
+/// | 38M      | 1000  | 1    |
+/// | aA       | 0     | 2    |
+/// | bB       | 1     | 3    |
+/// | zZ       | 25    | 27   |
+/// | 1a1A     | 26    | 28   |
+/// | 38a38M   | 1000  | 1002 |
+///
+/// STMR-encoded strings are decoded efficiently by a simple loop that updates
+/// the current value and performs some additional operation for a terminating
+/// digit, e.g. recording the optional size, or creating a range.
+
 String _computeEncodedFontSets(List<_Font> fonts) {
   
   final List<_Range> ranges = [];
