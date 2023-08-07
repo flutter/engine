@@ -12,8 +12,8 @@ class GpuContext extends NativeFieldWrapperClass1 {
   /// Creates a new graphics context that corresponds to the default Impeller
   /// context.
   GpuContext._createDefault() {
-    final String error = _initializeDefault();
-    if (error.isNotEmpty) {
+    final String? error = _initializeDefault();
+    if (error != null) {
       throw Exception(error);
     }
   }
