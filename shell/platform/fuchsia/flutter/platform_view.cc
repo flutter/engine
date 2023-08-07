@@ -331,7 +331,7 @@ void PlatformView::OnGetLayout(fuchsia::ui::composition::LayoutInfo info) {
                         static_cast<float>(info.logical_size().height)};
 
   if (info.has_device_pixel_ratio()) {
-    // Flatland returns a Vec2 for DPR but both values should be identical.
+    // Both values should be identical for the Vec2 for DPR.
     FML_DCHECK(info.device_pixel_ratio().x == info.device_pixel_ratio().y);
     view_pixel_ratio_ = info.device_pixel_ratio().x;
   }
@@ -439,7 +439,7 @@ void PlatformView::OnCreateView(ViewCallback on_view_created,
          watcher_handle = std::move(child_view_watcher_handle)]() mutable {
           if (!weak) {
             FML_LOG(WARNING)
-                << "Flatland View bound to PlatformView after PlatformView was "
+                << "View bound to PlatformView after PlatformView was "
                    "destroyed; ignoring.";
             return;
           }
@@ -456,7 +456,7 @@ void PlatformView::OnCreateView(ViewCallback on_view_created,
                 << "Child disconnected. ChildViewWatcher status: " << status;
 
             if (!weak) {
-              FML_LOG(WARNING) << "Flatland View bound to PlatformView after "
+              FML_LOG(WARNING) << "View bound to PlatformView after "
                                   "PlatformView was "
                                   "destroyed; ignoring.";
               return;
@@ -501,7 +501,7 @@ void PlatformView::OnDisposeView(int64_t view_id_raw) {
         platform_task_runner->PostTask([weak, content_id, view_id_raw]() {
           if (!weak) {
             FML_LOG(WARNING)
-                << "Flatland View unbound from PlatformView after PlatformView"
+                << "View unbound from PlatformView after PlatformView"
                    "was destroyed; ignoring.";
             return;
           }
@@ -1119,11 +1119,11 @@ bool PlatformView::HandleFuchsiaChildViewChannelPlatformMessage(
   if (message->data().GetSize() != 1 ||
       (message->data().GetMapping()[0] != '1')) {
     FML_LOG(ERROR) << kFuchsiaChildViewChannel
-                   << " data must be singularly '1' (for flatland).";
+                   << " data must be singularly '1'.";
     return false;
   }
 
-  bool flatland = message->data().GetMapping()[0] == '1';
+  FML_DCHECK(message->data().GetMapping()[0] == '1');
 
   if (!message->response()) {
     FML_LOG(ERROR) << kFuchsiaChildViewChannel
