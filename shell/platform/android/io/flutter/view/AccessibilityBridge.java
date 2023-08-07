@@ -40,6 +40,8 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import io.flutter.util.ViewUtils;
+import io.flutter.view.AccessibilityBridge.Flag;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -576,6 +578,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   @VisibleForTesting
+  public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView) {
+    return AccessibilityNodeInfo.obtain(rootView);
+  }
+
+  @VisibleForTesting
   public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
     return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
   }
@@ -608,6 +615,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
+    Log.e(TAG, "virtualViewId " + virtualViewId + " stacktrace");
     setAccessibleNavigation(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
@@ -616,13 +624,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     if (virtualViewId == View.NO_ID) {
-      AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(rootAccessibilityView);
+      AccessibilityNodeInfo result = obtainAccessibilityNodeInfo(rootAccessibilityView);
       rootAccessibilityView.onInitializeAccessibilityNodeInfo(result);
       // TODO(mattcarroll): what does it mean for the semantics tree to contain or not contain
       //                    the root node ID?
       if (flutterSemanticsTree.containsKey(ROOT_NODE_ID)) {
         result.addChild(rootAccessibilityView, ROOT_NODE_ID);
       }
+      result.setImportantForAccessibility(false);
+      // Log.d("myapp", Log.getStackTraceString(new Exception()));
       return result;
     }
 
@@ -653,6 +663,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     AccessibilityNodeInfo result =
         obtainAccessibilityNodeInfo(rootAccessibilityView, virtualViewId);
+
+    // Accessibility Scanner uses isImportantForAccessibility to decide whether to check
+    // or skip this node.
+    result.setImportantForAccessibility(isImportant(semanticsNode));
+
     // Work around for https://github.com/flutter/flutter/issues/2101
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
@@ -981,6 +996,19 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.addChild(rootAccessibilityView, child.id);
     }
     return result;
+  }
+
+  private boolean isImportant(SemanticsNode node) {
+    if (node.hasFlag(Flag.SCOPES_ROUTE)) {
+      return false;
+    }
+
+    if (node.getValueLabelHint() != null) {
+      return true;
+    }
+
+    // Return ture if has any user action.
+    return (node.actions & ~systemAction) != 0;
   }
 
   /**
@@ -2140,6 +2168,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       this.value = value;
     }
   }
+
+  // Actions that are triggered by Android OS, as oppsite to user-triggered actions.
+  static int systemAction = Action.DID_GAIN_ACCESSIBILITY_FOCUS.value &
+   Action.DID_LOSE_ACCESSIBILITY_FOCUS.value &
+   Action.SHOW_ON_SCREEN.value;
 
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/main/lib/ui/semantics.dart
