@@ -753,8 +753,7 @@ def run_impeller_cmake(args):
   return cmake_call_result
 
 
-def parse_args(args):
-  args = args[1:]
+def init_parser():
   parser = argparse.ArgumentParser(description='A script to run `gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
@@ -1173,6 +1172,12 @@ def parse_args(args):
       help='Forces glfw to use swiftshader.',
   )
 
+  return parser
+
+
+def parse_args(argv):
+  args = argv[1:]
+  parser = init_parser()
   return parser.parse_args(args)
 
 
@@ -1196,10 +1201,8 @@ def validate_args(args):
     sys.exit(-1)
 
 
-def main(argv):
-  args = parse_args(argv)
+def run(args):
   validate_args(args)
-
   if args.impeller_cmake_example:
     return run_impeller_cmake(args)
 
@@ -1247,6 +1250,11 @@ def main(argv):
     sys.exit(1)
 
   return gn_call_result
+
+
+def main(argv):
+  args = parse_args(argv)
+  return run(args)
 
 
 if __name__ == '__main__':

@@ -8,8 +8,10 @@
 import os
 import importlib.machinery, importlib.util
 import curses
-from curses import wrapper, initscr, endwin
+from curses import initscr, endwin
 from signal import signal, SIGWINCH
+import sys
+import threading
 
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 loader = importlib.machinery.SourceFileLoader('gn', TOOLS_DIR + '/gn')
@@ -17,11 +19,14 @@ spec = importlib.util.spec_from_loader(loader.name, loader)
 gn = importlib.util.module_from_spec(spec)
 loader.exec_module(gn)
 
-# Set DRY_RUN to 0 to see what commands will be run without actually executing them, 1 otherwise
-DRY_RUN = 1
+# Set DRY_RUN to 'True' to see what commands will be run without
+# actually executing them, 'False' otherwise
+DRY_RUN = False
 PATH_TO_ENGINE = os.environ.get("FLUTTER_ENGINE")
-goma = ""
+
+goma = False
 jflag = ""
+stdscr = None
 
 opts = ["1", "2", "3", "4", "5", "6", "7"]
 builds = [
@@ -36,35 +41,32 @@ desc = [
     "for iOS simulators on arm64 Mac"
 ]
 selections = [" ", " ", " ", " ", " ", " ", " "]
-gnargs = [
-    " --android", " --android --android-cpu arm64",
-    " --android --android-cpu x86", " --android --android-cpu x64", " --ios",
-    " --ios --simulator", " --ios --simulator --simulator-cpu=arm64"
-]
 
 row = 0
 col = 0
-header = "========================================================================="
+HEADER = "=" * 72
 
-stdscr = None
+t_pick = None
 
 
 def resize(signum, frame):
   global stdscr
-  stdscr.erase()
-  endwin()
-  stdscr = initscr()
-  show_menu(stdscr)
-  prompt(stdscr)
+  curses.endwin()
+  stdscr = curses.initscr()
+  show_menu()
+  show_prompt()
 
 
 # When the terminal window is resized, screen.getkey sometimes throws
 # an error. The error should be handled safely instead of terminating.
 def safe_getkey(stdscr):
-  c = stdscr.getch()
-  if c == -1:
+  try:
+    c = stdscr.getch()
+    if c == -1:
+      return ''
+    return curses.keyname(c).decode('UTF-8')
+  except:
     return ''
-  return curses.keyname(c).decode('UTF-8')
 
 
 # When the terminal window is too small to advance the cursor,
@@ -80,15 +82,18 @@ def safe_addstr(stdscr, row, col, text, attr=None):
     pass
 
 
-def show_menu(stdscr):
-  global row, col
+def show_menu():
+  global stdscr, row, col
 
   curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
   stdscr.clear()
+  
+  # center the menu 
   row = curses.LINES // 2 - 5
   col = curses.COLS // 2
-  col = col - len(header) // 2
-  safe_addstr(stdscr, row, col, header)
+  col = col - len(HEADER) // 2
+
+  safe_addstr(stdscr, row, col, HEADER)
   row += 2
   col += 1
   safe_addstr(stdscr, row, col, "Select local engine build(s):")
@@ -128,8 +133,8 @@ def toggle(i, stdscr):
   stdscr.refresh()
 
 
-def prompt(stdscr):
-  global row, header
+def show_prompt():
+  global stdscr, row, HEADER, resized
 
   newrow = row + len(opts) + 1
   safe_addstr(
@@ -138,7 +143,43 @@ def prompt(stdscr):
   )
   stdscr.refresh()
   newrow += 2
-  safe_addstr(stdscr, newrow, col - 1, header)
+  safe_addstr(stdscr, newrow, col - 1, HEADER)
+
+
+def init_screen():
+  global stdscr
+  stdscr = curses.initscr()
+  curses.start_color()
+  curses.cbreak()
+  curses.noecho()
+  stdscr.keypad(True)
+  curses.curs_set(False)
+
+
+def restore_terminal():
+  global stdscr
+  curses.nocbreak()
+  curses.echo()
+  stdscr.keypad(False)
+  curses.curs_set(True)
+  curses.endwin()
+
+
+def build():
+  selected = False
+
+  for i, selection in enumerate(selections):
+    if selection == 'X':
+      selected = True
+      gn_args = build_gn_args(i)
+      if not DRY_RUN:
+        gn.run(gn_args)
+
+  if not selected:
+    print('Nothing selected. Exiting.')
+
+
+def pick():
   choice = ""
   enter = '^J'
   while choice != enter:
@@ -146,16 +187,72 @@ def prompt(stdscr):
     if choice in opts:
       toggle(opts.index(choice), stdscr)
 
-
-def main(screen):
-  global stdscr
-
-  stdscr = screen
-  curses.curs_set(False)
-  # Handle resize events
-  signal(SIGWINCH, resize)
-  show_menu(stdscr)
-  prompt(stdscr)
+  if choice == enter:
+    restore_terminal()
+    build()
 
 
-wrapper(main)
+def build_gn_args(i):
+  parser = gn.init_parser()
+  args = parser.parse_args()
+  args.unoptimized = True
+
+  if goma:
+    args.goma = True
+    args.xcode_symlinks = True
+
+  command = './flutter/tools/gn --unoptimized'
+  args.unoptimized = True
+
+  if goma:
+    command += ' --goma'
+
+  match i:
+    case 0:
+      print(command + ' --android')
+      args.target_os = 'android'
+    case 1:
+      print(command + ' --android --android-cpu arm64')
+      args.target_os = 'android'
+      args.android_cpu = 'arm64'
+    case 2:
+      print(command + ' --android --android-cpu x86')
+      args.target_os = 'android'
+      args.android_cpu = 'x86'
+    case 3:
+      print(command + ' --android --android-cpu x64')
+      args.target_os = 'android'
+      args.android_cpu = 'x64'
+    case 4:
+      print(command + ' --ios\n')
+      args.target_os = 'ios'
+    case 5:
+      print(command + ' --ios --simulator')
+      args.target_os = 'ios'
+      args.simulator = True
+    case 6:
+      print(command + ' --ios --simulator --simulator-cpu=arm64')
+      args.target_os = 'ios'
+      args.simulator = True
+      args.simulator_cpu = 'arm64'
+
+  return args
+
+
+def main(argv):
+  try:
+    init_screen()
+    # Handle resize events
+    signal(SIGWINCH, resize)
+    # TODO: check for goma from flags
+    show_menu()
+    show_prompt()
+    t_pick = threading.Thread(target=pick)
+    t_pick.start()
+    t_pick.join()
+  except:
+    restore_terminal()
+
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv))
