@@ -387,6 +387,12 @@ sk_sp<DlImage> Rasterizer::MakeRasterSnapshot(sk_sp<DisplayList> display_list,
   return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size);
 }
 
+sk_sp<DlImage> Rasterizer::MakeRasterSnapshot(
+    const std::shared_ptr<const impeller::Picture>& picture,
+    SkISize picture_size) {
+  return snapshot_controller_->MakeRasterSnapshot(picture, picture_size);
+}
+
 sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   return snapshot_controller_->ConvertToRasterImage(image);
@@ -401,7 +407,8 @@ RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<flutter::LayerTree> layer_tree,
     float device_pixel_ratio) {
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
-                                "Rasterizer::DoDraw");
+                                "Rasterizer::DoDraw", /*flow_id_count=*/0,
+                                /*flow_ids=*/nullptr);
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());

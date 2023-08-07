@@ -32,6 +32,7 @@
 ../../../flutter/display_list/benchmarking/dl_complexity_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
+../../../flutter/display_list/dl_op_spy_unittests.cc
 ../../../flutter/display_list/dl_paint_unittests.cc
 ../../../flutter/display_list/dl_vertices_unittests.cc
 ../../../flutter/display_list/effects/dl_color_filter_unittests.cc
@@ -173,6 +174,8 @@
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
+../../../flutter/lib/gpu/analysis_options.yaml
+../../../flutter/lib/gpu/pubspec.yaml
 ../../../flutter/lib/snapshot/libraries.json
 ../../../flutter/lib/snapshot/libraries.yaml
 ../../../flutter/lib/snapshot/pubspec.yaml
@@ -215,7 +218,6 @@
 ../../../flutter/runtime/type_conversions_unittests.cc
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
-../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
 ../../../flutter/shell/common/fixtures
 ../../../flutter/shell/common/input_events_unittests.cc
@@ -352,7 +354,6 @@
 ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
 ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 ../../../flutter/shell/platform/windows/window_unittests.cc
-../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
@@ -2664,6 +2665,7 @@
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
@@ -2837,7 +2839,6 @@
 ../../../third_party/skia/src/sksl/README.md
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
-../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 ../../../third_party/skia/src/sksl/tracing/BUILD.bazel

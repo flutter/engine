@@ -1183,14 +1183,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
+
   g_image_get_hardware_buffer_method =
       env->GetMethodID(g_image_class->obj(), "getHardwareBuffer",
                        "()Landroid/hardware/HardwareBuffer;");
 
   if (g_image_get_hardware_buffer_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate getHardwareBuffer on "
-                      "Image class";
-    return false;
+    // Continue on as this method may not exist at API <= 29.
+    fml::jni::ClearException(env, true);
   }
 
   g_image_close_method = env->GetMethodID(g_image_class->obj(), "close", "()V");
@@ -1200,18 +1202,21 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
   g_hardware_buffer_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/hardware/HardwareBuffer"));
-  if (g_hardware_buffer_class->is_null()) {
-    FML_LOG(ERROR) << "Could not locate android.hardware.HardwareBuffer class";
-    return false;
-  }
 
-  g_hardware_buffer_close_method =
-      env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
-  if (g_hardware_buffer_close_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate close on HardwareBuffer class";
-    return false;
+  if (!g_hardware_buffer_class->is_null()) {
+    g_hardware_buffer_close_method =
+        env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
+    if (g_hardware_buffer_close_method == nullptr) {
+      // Continue on as this class may not exist at API <= 26.
+      fml::jni::ClearException(env, true);
+    }
+  } else {
+    // Continue on as this class may not exist at API <= 26.
+    fml::jni::ClearException(env, true);
   }
 
   g_compute_platform_resolved_locale_method = env->GetMethodID(
@@ -1536,6 +1541,7 @@ JavaLocalRef PlatformViewAndroidJNIImpl::ImageTextureEntryAcquireLatestImage(
 
 JavaLocalRef PlatformViewAndroidJNIImpl::ImageGetHardwareBuffer(
     JavaLocalRef image) {
+  FML_CHECK(g_image_get_hardware_buffer_method != nullptr);
   JNIEnv* env = fml::jni::AttachCurrentThread();
   if (image.is_null()) {
     // Return null.
@@ -1559,6 +1565,7 @@ void PlatformViewAndroidJNIImpl::ImageClose(JavaLocalRef image) {
 
 void PlatformViewAndroidJNIImpl::HardwareBufferClose(
     JavaLocalRef hardware_buffer) {
+  FML_CHECK(g_hardware_buffer_close_method != nullptr);
   JNIEnv* env = fml::jni::AttachCurrentThread();
   if (hardware_buffer.is_null()) {
     return;

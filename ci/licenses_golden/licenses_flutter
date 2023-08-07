@@ -731,6 +731,8 @@ ORIGIN: ../../../flutter/display_list/dl_op_receiver.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/display_list/dl_op_receiver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_spy.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_spy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_paint.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_paint.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_sampling_options.h + ../../../flutter/LICENSE
@@ -787,6 +789,8 @@ ORIGIN: ../../../flutter/flow/instrumentation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/instrumentation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/layer_snapshot_store.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/layer_snapshot_store.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/flow/layers/aiks_layer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/flow/layers/aiks_layer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/layers/backdrop_filter_layer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/layers/backdrop_filter_layer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/layers/cacheable_layer.cc + ../../../flutter/LICENSE
@@ -1153,6 +1157,8 @@ ORIGIN: ../../../flutter/impeller/core/texture_descriptor.cc + ../../../flutter/
 ORIGIN: ../../../flutter/impeller/core/texture_descriptor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/vertex_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/core/vertex_buffer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_aiks_canvas.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/dl_aiks_canvas.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/dl_dispatcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/dl_dispatcher.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/dl_image_impeller.cc + ../../../flutter/LICENSE
@@ -1201,6 +1207,8 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/placeholder_filter_input.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/placeholder_filter_input.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc + ../../../flutter/LICENSE
@@ -1717,6 +1725,15 @@ ORIGIN: ../../../flutter/impeller/typographer/text_run.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/impeller/typographer/text_run.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/typeface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/typeface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/context.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/context.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/export.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/export.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/gpu.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/src/context.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/src/smoketest.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/smoketest.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/smoketest.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/snapshot/snapshot.h + ../../../flutter/LICENSE
@@ -1738,8 +1755,6 @@ ORIGIN: ../../../flutter/lib/ui/experiments/setup_hooks.dart + ../../../flutter/
 ORIGIN: ../../../flutter/lib/ui/experiments/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/floating_point.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/geometry.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/gpu/context.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/gpu/context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hash_codes.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/io_manager.cc + ../../../flutter/LICENSE
@@ -2205,8 +2220,6 @@ ORIGIN: ../../../flutter/shell/common/display.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display_manager.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/display_manager.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/dl_op_spy.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/common/dl_op_spy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/engine.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/engine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/pipeline.cc + ../../../flutter/LICENSE
@@ -2558,6 +2571,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterC
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelayTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm + ../../../flutter/LICENSE
@@ -2567,6 +2583,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterSt
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterTestUtils.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterTestUtils.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h + ../../../flutter/LICENSE
@@ -2586,9 +2604,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterView
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegateTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelayTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannelKeyResponder.h + ../../../flutter/LICENSE
@@ -2667,6 +2682,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_I
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/VsyncWaiterIosTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.mm + ../../../flutter/LICENSE
@@ -3433,6 +3451,8 @@ FILE: ../../../flutter/display_list/dl_op_receiver.cc
 FILE: ../../../flutter/display_list/dl_op_receiver.h
 FILE: ../../../flutter/display_list/dl_op_records.cc
 FILE: ../../../flutter/display_list/dl_op_records.h
+FILE: ../../../flutter/display_list/dl_op_spy.cc
+FILE: ../../../flutter/display_list/dl_op_spy.h
 FILE: ../../../flutter/display_list/dl_paint.cc
 FILE: ../../../flutter/display_list/dl_paint.h
 FILE: ../../../flutter/display_list/dl_sampling_options.h
@@ -3489,6 +3509,8 @@ FILE: ../../../flutter/flow/instrumentation.cc
 FILE: ../../../flutter/flow/instrumentation.h
 FILE: ../../../flutter/flow/layer_snapshot_store.cc
 FILE: ../../../flutter/flow/layer_snapshot_store.h
+FILE: ../../../flutter/flow/layers/aiks_layer.cc
+FILE: ../../../flutter/flow/layers/aiks_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/cacheable_layer.cc
@@ -3855,6 +3877,8 @@ FILE: ../../../flutter/impeller/core/texture_descriptor.cc
 FILE: ../../../flutter/impeller/core/texture_descriptor.h
 FILE: ../../../flutter/impeller/core/vertex_buffer.cc
 FILE: ../../../flutter/impeller/core/vertex_buffer.h
+FILE: ../../../flutter/impeller/display_list/dl_aiks_canvas.cc
+FILE: ../../../flutter/impeller/display_list/dl_aiks_canvas.h
 FILE: ../../../flutter/impeller/display_list/dl_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/dl_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/dl_image_impeller.cc
@@ -3903,6 +3927,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_f
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/inputs/placeholder_filter_input.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/inputs/placeholder_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
@@ -4423,6 +4449,15 @@ FILE: ../../../flutter/impeller/typographer/text_run.cc
 FILE: ../../../flutter/impeller/typographer/text_run.h
 FILE: ../../../flutter/impeller/typographer/typeface.cc
 FILE: ../../../flutter/impeller/typographer/typeface.h
+FILE: ../../../flutter/lib/gpu/context.cc
+FILE: ../../../flutter/lib/gpu/context.h
+FILE: ../../../flutter/lib/gpu/export.cc
+FILE: ../../../flutter/lib/gpu/export.h
+FILE: ../../../flutter/lib/gpu/lib/gpu.dart
+FILE: ../../../flutter/lib/gpu/lib/src/context.dart
+FILE: ../../../flutter/lib/gpu/lib/src/smoketest.dart
+FILE: ../../../flutter/lib/gpu/smoketest.cc
+FILE: ../../../flutter/lib/gpu/smoketest.h
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries_experimental.json
@@ -4445,8 +4480,6 @@ FILE: ../../../flutter/lib/ui/experiments/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/experiments/ui.dart
 FILE: ../../../flutter/lib/ui/floating_point.h
 FILE: ../../../flutter/lib/ui/geometry.dart
-FILE: ../../../flutter/lib/ui/gpu/context.cc
-FILE: ../../../flutter/lib/ui/gpu/context.h
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
 FILE: ../../../flutter/lib/ui/io_manager.cc
@@ -4912,8 +4945,6 @@ FILE: ../../../flutter/shell/common/display.cc
 FILE: ../../../flutter/shell/common/display.h
 FILE: ../../../flutter/shell/common/display_manager.cc
 FILE: ../../../flutter/shell/common/display_manager.h
-FILE: ../../../flutter/shell/common/dl_op_spy.cc
-FILE: ../../../flutter/shell/common/dl_op_spy.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/pipeline.cc
@@ -5275,6 +5306,9 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCod
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.mm
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelayTest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm
@@ -5284,6 +5318,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.cc
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterTestUtils.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h
@@ -5304,9 +5340,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegateTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelayTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannelKeyResponder.h
@@ -5385,6 +5418,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_Int
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/VsyncWaiterIosTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.mm
