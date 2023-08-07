@@ -484,12 +484,12 @@ Future<void> testMain() async {
     const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
     final Matrix4 transform = Matrix4.identity()
-      ..translate(100, 150)
+      ..translate(50, 50)
       ..scale(0.3, 0.7)
       ..rotateZ(0.5);
 
     final GradientLinear linearGradient = GradientLinear(
-      const Offset(50, 50),
+      const Offset(5, 5),
       const Offset(200, 130),
       colors,
       stops,
@@ -597,13 +597,13 @@ Future<void> testMain() async {
     const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
     final Matrix4 transform = Matrix4.identity()
-      ..translate(100, 150)
+      ..translate(50, 50)
       ..scale(0.3, 0.7)
       ..rotateZ(0.5);
 
     final GradientRadial radialGradient = GradientRadial(
       const Offset(0.5, 0.5),
-      50,
+      400,
       colors,
       stops,
       TileMode.clamp,
