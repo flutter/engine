@@ -18,18 +18,19 @@ class NotoFont {
   /// that are covered by (i.e. in) this font.
   int coverCount = 0;
 
-  /// During fallback font selection this is a list of [FallbackFontBlock]s that
-  /// contribute to this font's cover count.
-  final List<FallbackFontBlock> coverBlocks = [];
+  /// During fallback font selection this is a list of [FallbackFontComponent]s
+  /// from this font that are required to cover some of the missing code
+  /// points. The cover count for the font is the sum of the cover counts for
+  /// the components that make up the font.
+  final List<FallbackFontComponent> coverComponents = [];
 }
 
-// FallbackFontCodePointsPartitionComponent.
-class FallbackFontBlock {
-  FallbackFontBlock(this.fonts);
+class FallbackFontComponent {
+  FallbackFontComponent(this.fonts);
   final List<NotoFont> fonts;
 
   /// During fallback font selection this is the number of missing code points
-  /// that are covered by (i.e. in) the intersection of all [fonts].
+  /// that are covered by this component, i.e. the intersection of all [fonts].
   int coverCount = 0;
 }
 

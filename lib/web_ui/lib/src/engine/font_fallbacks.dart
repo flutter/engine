@@ -170,29 +170,28 @@ class FontFallbackManager {
   void findFontsForMissingCodePoints(List<int> codePoints) {
     final List<int> missingCodePoints = [];
 
-    final List<FallbackFontBlock> candidateBlocks = [];
+    final List<FallbackFontComponent> requiredComponents = [];
     final List<NotoFont> candidateFonts = [];
     
     for (final int codePoint in codePoints) {
-      final _FontLink? link = codePointToFonts.lookup(codePoint);
-      if (link == null) {
+      final FallbackFontComponent component = codePointToFonts.lookup(codePoint);
+      if (component.fonts.isEmpty) {
         missingCodePoints.add(codePoint);
       } else {
-        final FallbackFontBlock block = link.block;
-        if (block.coverCount == 0) {
-          candidateBlocks.add(block);
+        if (component.coverCount == 0) {
+          requiredComponents.add(component);
         }
-        block.coverCount++;
+        component.coverCount++;
       }
     }
 
-    for (final FallbackFontBlock block in candidateBlocks) {
-      for (final NotoFont font in block.fonts) {
+    for (final FallbackFontComponent component in requiredComponents) {
+      for (final NotoFont font in component.fonts) {
         if (font.coverCount == 0) {
           candidateFonts.add(font);
         }
-        font.coverCount += block.coverCount;
-        font.coverBlocks.add(block);
+        font.coverCount += component.coverCount;
+        font.coverComponents.add(component);
       }
     }
 
@@ -201,15 +200,15 @@ class FontFallbackManager {
     while (candidateFonts.isNotEmpty) {
       NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
-      for (final FallbackFontBlock block in [...selectedFont.coverBlocks]) {
-        for (final NotoFont font in block.fonts) {
-          font.coverCount -= block.coverCount;
-          font.coverBlocks.remove(block);
+      for (final FallbackFontComponent component in [...selectedFont.coverComponents]) {
+        for (final NotoFont font in component.fonts) {
+          font.coverCount -= component.coverCount;
+          font.coverComponents.remove(component);
         }
-        block.coverCount = 0;
+        component.coverCount = 0;
       }
       selectedFont.coverCount == 0 || (throw 'bad count');
-      selectedFont.coverBlocks.isEmpty || (throw 'bad coverBlocks');
+      selectedFont.coverComponents.isEmpty || (throw 'bad coverComponents');
       candidateFonts.removeWhere((font) => font.coverCount == 0);
     }
 
@@ -297,68 +296,39 @@ class FontFallbackManager {
     return bestFont!;
   }
 
-  late final List<_FontLink?> fontSets = _decodeFontSets(encodedFontSets);
+  late final List<FallbackFontComponent> fontSets = _decodeFontSets(encodedFontSets);
 
-  late final _UnicodePropertyLookup<_FontLink?> codePointToFonts =
-      _UnicodePropertyLookup<_FontLink?>.fromPackedData(encodedFontSetRanges, fontSets);
+  late final _UnicodePropertyLookup<FallbackFontComponent> codePointToFonts =
+      _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(encodedFontSetRanges, fontSets);
 
-  List<_FontLink?> _decodeFontSets(String data) {
-    final List<_FontLink?> result = [];
-    _FontLink? link;
-    _FontLink? previous; // Most recent font added or erased.
+  List<FallbackFontComponent> _decodeFontSets(String data) {
+    return <FallbackFontComponent>[
+      for (final String componentData in data.split(','))
+        FallbackFontComponent(_decodeFontSet(componentData))
+    ];
+  }
+
+  List<NotoFont> _decodeFontSet(String data) {
+    final List<NotoFont> result = [];
+    int previousIndex = -1;
     int prefix = 0;
-    int linkCount = 0;
     for (int i = 0; i < data.length; i++) {
       final int code = data.codeUnitAt(i);
 
       if (kFontIndexDigit0 <= code &&
           code < kFontIndexDigit0 + kFontIndexRadix) {
         final int delta = prefix * kFontIndexRadix + (code - kFontIndexDigit0);
-        final int index = previous == null ? delta : previous.font.index + delta + 1;
-        previous = link = _FontLink(link, fallbackFonts[index]);
-        linkCount++;
+        final int index = previousIndex + delta + 1;
+        result.add(fallbackFonts[index]);
+        previousIndex = index;
         prefix = 0;
-      } else if (kFontSetDefineDigit0 <= code && code < kFontSetDefineDigit0 + kFontSetDefineRadix) {
-        int erase = prefix * kFontSetDefineRadix + (code - kFontSetDefineDigit0);
-        result.add(link);
-        while (erase-- > 0) {
-          previous = link;
-          link = link!.previous;
-        }
-        prefix = 0;
-      } else if (code == kFontSetDefineAndReset) {
-        result.add(link);
-        previous = link = null;
-      //} else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
-      //  prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
-      } else if (kPrefixDigit.matches(code)) {
-        prefix = kPrefixDigit.combine(prefix, code);
+      } else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
+        prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
       } else {
         throw StateError('Unreachable');
       }
     }
-    print('${linkCount} links');
     return result;
-  }
-}
-
-class _FontLink {
-  _FontLink(this.previous, this.font);
-  final _FontLink? previous;
-  final NotoFont font;
-
-  late final FallbackFontBlock block = _createBlock();
-
-  FallbackFontBlock _createBlock() {
-    final List<NotoFont> fonts = [];
-    _FontLink? link = this;
-    while (link != null) {
-      if (link.font.enabled) {
-        fonts.add(link.font);
-      }
-      link = link.previous;
-    }
-    return FallbackFontBlock(List.unmodifiable(fonts.reversed));
   }
 }
 
@@ -414,8 +384,8 @@ class _UnicodePropertyLookup<P> {
 
     for (int i = 0; i < packedData.length; i++) {
       final int code = packedData.codeUnitAt(i);
-      if (kRangeSetDigit0 <= code && code < kRangeSetDigit0 + kRangeSetRadix) {
-        final int index = prefix * kRangeSetRadix + (code - kRangeSetDigit0);
+      if (kRangeValueDigit0 <= code && code < kRangeValueDigit0 + kRangeValueRadix) {
+        final int index = prefix * kRangeValueRadix + (code - kRangeValueDigit0);
         final P value = propertyEnumValues[index];
         start += size;
         boundaries.add(start);
@@ -425,10 +395,8 @@ class _UnicodePropertyLookup<P> {
       } else if (kRangeSizeDigit0 <= code && code < kRangeSizeDigit0 + kRangeSizeRadix) {
         size = prefix * kRangeSizeRadix + (code - kRangeSizeDigit0) + 2;
         prefix = 0;
-      //} else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
-      //  prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
-      } else if (kPrefixDigit.matches(code)) {
-        prefix = kPrefixDigit.combine(prefix, code);
+      } else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
+        prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
       } else {
         throw StateError('Unreachable');
       }

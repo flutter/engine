@@ -690,22 +690,6 @@ String _computeEncodedFontSets(List<_Font> fonts) {
   // makes the range table encoding smaller, by about half.
   allSets.sort(_FontSet.orderByDecreasingRangeCount);
 
-  // The FontSet encoding is most efficient when the _FontSets are in
-  // lexicographic order where the encoding can reuse the common prefix of
-  // adjacent _FontSets. This is is in tension with the (larger) range table
-  // where the most common _FontSets may be unrelated. A happy compromise is to
-  // use lexicographic order for blocks of _FontSets that have the same size
-  // encoding in the range table. In practice there are two or three such
-  // blocks.
-  for (int start = 0, next = kRangeSetRadix;
-      start < allSets.length;
-      start = next, next *= kPrefixRadix) {
-    final int end = math.min(next, allSets.length);
-    allSets.setRange(start, end,
-        allSets.sublist(start, end)
-          ..sort(_FontSet.orderByLexicographicFontIndexes));
-  }
-
   for (int i = 0; i < allSets.length; i++) {
     allSets[i].index = i;
   }
@@ -722,13 +706,6 @@ String _computeEncodedFontSets(List<_Font> fonts) {
   final StringBuffer sb = StringBuffer();
   int totalEncodedLength = 0;
 
-  void emitCurrentFragment() {
-    final String fragment = sb.toString();
-    sb.clear();
-    totalEncodedLength += fragment.length;
-    code.writeln("    '$fragment'");
-  }
-
   void encode(int value, int radix, int firstDigitCode) {
     final int prefix = value ~/ radix;
     assert(kPrefixDigit0 == '0'.codeUnitAt(0) && kPrefixRadix == 10);
@@ -736,58 +713,24 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     sb.writeCharCode(firstDigitCode + value.remainder(radix));
   }
 
-  int previousFontIndex = -1; // Index of previous font added or removed.
-
-  void encodeFontIndexes(_FontSet fontSet, int start) {
-    for (final _Font font in fontSet.fonts.skip(start)) {
+  for (final _FontSet fontSet in allSets) {
+    int previousFontIndex = -1;
+    for (final _Font font in fontSet.fonts) {
       final int fontIndexDelta = font.index - previousFontIndex;
       previousFontIndex = font.index;
       encode(fontIndexDelta - 1, kFontIndexRadix, kFontIndexDigit0);
     }
+    if (fontSet != allSets.last) sb.write(',');
+    final int length = fontSet.fonts.length;
+    code.writeln(
+        '    // #${fontSet.index}: $length font${length == 1 ? '' : 's'}: '
+        '${fontSet.description()}');
+
+    final String fragment = sb.toString();
+    sb.clear();
+    totalEncodedLength += fragment.length;
+    code.writeln("    '$fragment'");
   }
-
-  _FontSet previous = allSets.first;
-  describeFontSet(previous);
-  encodeFontIndexes(previous, 0);
-
-  for (final _FontSet current in allSets.skip(1)) {
-    emitCurrentFragment();
-
-    // Emit an operation to define the previous _FontSet and erase some prefix
-    // of the previous _FontSet to make a basis for adding more fonts to create
-    // the next _FontSet.
-
-    // Erase fonts back to the common prefix with the previous set.
-    int i = 0;
-    while (i < previous.length &&
-        i < current.length &&
-        previous.fonts[i] == current.fonts[i]) {
-      i++;
-    }
-    final erase = previous.length - i;
-    if (erase > 0) {
-      previousFontIndex = previous.fonts[i].index;
-    }
-
-    if (i >= current.length || current.fonts[i].index <= previousFontIndex || true) {
-      // The two _FontSets are not in lexicographic order, so start afresh
-      // rather than relatibve to the previous _FontSet.
-      sb.writeCharCode(kFontSetDefineAndReset);
-      previousFontIndex = -1;
-      i = 0;
-    } else {
-      encode(erase, kFontSetDefineRadix, kFontSetDefineDigit0);
-    }
-
-    describeFontSet(current);
-    encodeFontIndexes(current, i);
-
-    previous = current;
-  }
-  emitCurrentFragment();
-  code.writeln('    // end');
-  sb.writeCharCode(kFontSetDefineAndReset);
-  emitCurrentFragment();
 
   final StringBuffer declarations = StringBuffer();
 
@@ -801,21 +744,21 @@ String _computeEncodedFontSets(List<_Font> fonts) {
 
   // Encode ranges.
   code.clear();
-  int rangesTotalEncodedLength = 0;
+  totalEncodedLength = 0;
 
-  // Encode <size><fontSet> or <fontSet>
   for (final range in ranges) {
-    sb.clear();
     final int start = range.start;
     final int end = range.end;
     final int index = range.fontSet.index;
     final int size = end - start + 1;
 
+    // Encode <size><index> or <index> for unit ranges.
     if (size >= 2) encode(size - 2, kRangeSizeRadix, kRangeSizeDigit0);
-    encode(index, kRangeSetRadix, kRangeSetDigit0);
+    encode(index, kRangeValueRadix, kRangeValueDigit0);
 
     final String encoding = sb.toString();
-    rangesTotalEncodedLength += encoding.length;
+    sb.clear();
+    totalEncodedLength += encoding.length;
 
     String description = start.toRadixString(16);
     if (end != start) description += '-' + end.toRadixString(16);
@@ -828,7 +771,7 @@ String _computeEncodedFontSets(List<_Font> fonts) {
 
   declarations
       ..writeln()
-      ..writeln('// ${ranges.length} ranges encoded in ${rangesTotalEncodedLength} characters')
+      ..writeln('// ${ranges.length} ranges encoded in ${totalEncodedLength} characters')
       ..writeln('const String encodedFontSetRanges =')
       ..write(code)
       ..writeln('    ;');
