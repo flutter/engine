@@ -213,7 +213,7 @@ class GradientLinear extends EngineGradient {
   @override
   Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
-    if (matrix4 == null && (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal)) {
+    if (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
       return _createGlGradient(ctx, shaderBounds, density);

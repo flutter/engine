@@ -603,7 +603,7 @@ Future<void> testMain() async {
 
     final GradientRadial radialGradient = GradientRadial(
       const Offset(0.5, 0.5),
-      0.5,
+      50,
       colors,
       stops,
       TileMode.clamp,
