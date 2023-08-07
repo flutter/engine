@@ -5,11 +5,14 @@
 #pragma once
 
 #include <stdint.h>
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <ostream>
 #include <type_traits>
+
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/type_traits.h"
 
 #define IMPELLER_FOR_EACH_BLEND_MODE(V) \
   V(Clear)                              \
@@ -54,7 +57,7 @@ enum class YUVColorSpace { kBT601LimitedRange, kBT601FullRange };
 enum class BlendMode {
   // The following blend modes are able to be used as pipeline blend modes or
   // via `BlendFilterContents`.
-  kClear,
+  kClear = 0,
   kSource,
   kDestination,
   kSourceOver,
@@ -89,6 +92,28 @@ enum class BlendMode {
   kLuminosity,
 
   kLast = kLuminosity,
+};
+
+const char* BlendModeToString(BlendMode blend_mode);
+
+/// 4x5 matrix for transforming the color and alpha components of a Bitmap.
+///
+///   [ a, b, c, d, e,
+///     f, g, h, i, j,
+///     k, l, m, n, o,
+///     p, q, r, s, t ]
+///
+/// When applied to a color [R, G, B, A], the resulting color is computed as:
+///
+///    R’ = a*R + b*G + c*B + d*A + e;
+///    G’ = f*R + g*G + h*B + i*A + j;
+///    B’ = k*R + l*G + m*B + n*A + o;
+///    A’ = p*R + q*G + r*B + s*A + t;
+///
+/// That resulting color [R’, G’, B’, A’] then has each channel clamped to the 0
+/// to 1 range.
+struct ColorMatrix {
+  Scalar array[20];
 };
 
 /**
@@ -139,9 +164,49 @@ struct Color {
            0xFFFFFFFF;
   }
 
-  constexpr bool operator==(const Color& c) const {
+  constexpr inline bool operator==(const Color& c) const {
     return ScalarNearlyEqual(red, c.red) && ScalarNearlyEqual(green, c.green) &&
            ScalarNearlyEqual(blue, c.blue) && ScalarNearlyEqual(alpha, c.alpha);
+  }
+
+  constexpr inline Color operator+(const Color& c) const {
+    return {red + c.red, green + c.green, blue + c.blue, alpha + c.alpha};
+  }
+
+  template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+  constexpr inline Color operator+(T value) const {
+    auto v = static_cast<Scalar>(value);
+    return {red + v, green + v, blue + v, alpha + v};
+  }
+
+  constexpr inline Color operator-(const Color& c) const {
+    return {red - c.red, green - c.green, blue - c.blue, alpha - c.alpha};
+  }
+
+  template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+  constexpr inline Color operator-(T value) const {
+    auto v = static_cast<Scalar>(value);
+    return {red - v, green - v, blue - v, alpha - v};
+  }
+
+  constexpr inline Color operator*(const Color& c) const {
+    return {red * c.red, green * c.green, blue * c.blue, alpha * c.alpha};
+  }
+
+  template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+  constexpr inline Color operator*(T value) const {
+    auto v = static_cast<Scalar>(value);
+    return {red * v, green * v, blue * v, alpha * v};
+  }
+
+  constexpr inline Color operator/(const Color& c) const {
+    return {red * c.red, green * c.green, blue * c.blue, alpha * c.alpha};
+  }
+
+  template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+  constexpr inline Color operator/(T value) const {
+    auto v = static_cast<Scalar>(value);
+    return {red / v, green / v, blue / v, alpha / v};
   }
 
   constexpr Color Premultiply() const {
@@ -157,17 +222,20 @@ struct Color {
 
   /**
    * @brief Return a color that is linearly interpolated between colors a
-   * and b, according to the value of t.
+   *        and b, according to the value of t.
    *
    * @param a The lower color.
    * @param b The upper color.
    * @param t A value between 0.0f and 1.0f, inclusive.
    * @return constexpr Color
    */
-  constexpr static Color lerp(Color a, Color b, Scalar t) {
-    Scalar tt = 1.0f - t;
-    return {a.red * tt + b.red * t, a.green * tt + b.green * t,
-            a.blue * tt + b.blue * t, a.alpha * tt + b.alpha * t};
+  constexpr static Color Lerp(Color a, Color b, Scalar t) {
+    return a + (b - a) * t;
+  }
+
+  constexpr Color Clamp01() const {
+    return Color(std::clamp(red, 0.0f, 1.0f), std::clamp(green, 0.0f, 1.0f),
+                 std::clamp(blue, 0.0f, 1.0f), std::clamp(alpha, 0.0f, 1.0f));
   }
 
   /**
@@ -778,24 +846,61 @@ struct Color {
     };
   }
 
-  static Color BlendColor(const Color& src,
-                          const Color& dst,
-                          BlendMode blend_mode);
+  /// @brief Blends an unpremultiplied destination color into a given
+  ///        unpremultiplied source color to form a new unpremultiplied color.
+  ///
+  ///        If either the source or destination are premultiplied, the result
+  ///        will be incorrect.
+  Color Blend(Color source, BlendMode blend_mode) const;
 
-  Color operator*(const Color& c) const {
-    return Color(red * c.red, green * c.green, blue * c.blue, alpha * c.alpha);
-  }
+  /// @brief A color filter that transforms colors through a 4x5 color matrix.
+  ///
+  ///        This filter can be used to change the saturation of pixels, convert
+  ///        from YUV to RGB, etc.
+  ///
+  ///        Each channel of the output color is clamped to the 0 to 1 range.
+  ///
+  /// @see   `ColorMatrix`
+  Color ApplyColorMatrix(const ColorMatrix& color_matrix) const;
 
-  Color operator+(const Color& c) const;
+  /// @brief Convert the color from linear space to sRGB space.
+  ///
+  ///        The color is assumed to be unpremultiplied. If the color is
+  ///        premultipled, the conversion output will be incorrect.
+  Color LinearToSRGB() const;
 
-  Color operator-(const Color& c) const;
-
-  Color operator*(Scalar value) const;
+  /// @brief Convert the color from sRGB space to linear space.
+  ///
+  ///        The color is assumed to be unpremultiplied. If the color is
+  ///        premultipled, the conversion output will be incorrect.
+  Color SRGBToLinear() const;
 
   constexpr bool IsTransparent() const { return alpha == 0.0f; }
 
   constexpr bool IsOpaque() const { return alpha == 1.0f; }
 };
+
+template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr inline Color operator+(T value, const Color& c) {
+  return c + static_cast<Scalar>(value);
+}
+
+template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr inline Color operator-(T value, const Color& c) {
+  auto v = static_cast<Scalar>(value);
+  return {v - c.red, v - c.green, v - c.blue, v - c.alpha};
+}
+
+template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr inline Color operator*(T value, const Color& c) {
+  return c * static_cast<Scalar>(value);
+}
+
+template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr inline Color operator/(T value, const Color& c) {
+  auto v = static_cast<Scalar>(value);
+  return {v / c.red, v / c.green, v / c.blue, v / c.alpha};
+}
 
 std::string ColorToString(const Color& color);
 

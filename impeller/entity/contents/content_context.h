@@ -27,6 +27,8 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/clip.frag.h"
+#include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
@@ -179,8 +181,7 @@ using PorterDuffBlendPipeline =
     RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
-using ClipPipeline =
-    RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
@@ -296,7 +297,7 @@ struct ContentContextOptions {
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  std::optional<PixelFormat> color_attachment_pixel_format;
+  PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_stencil_attachment = true;
   bool wireframe = false;
 
@@ -679,9 +680,6 @@ class ContentContext {
 
   std::shared_ptr<Context> GetContext() const;
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
-      GlyphAtlas::Type type) const;
-
   const Capabilities& GetDeviceCapabilities() const;
 
   void SetWireframe(bool wireframe);
@@ -696,8 +694,13 @@ class ContentContext {
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
 
+  std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
+    return lazy_glyph_atlas_;
+  }
+
  private:
   std::shared_ptr<Context> context_;
+  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
   template <class T>
   using Variants = std::unordered_map<ContentContextOptions,
@@ -803,6 +806,12 @@ class ContentContext {
       point_field_compute_pipelines_;
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       uv_compute_pipelines_;
+  // The values for the default context options must be cached on
+  // initial creation. In the presence of wide gamut and platform views,
+  // it is possible that secondary surfaces will have a different default
+  // pixel format, which would cause the prototype check in GetPipeline
+  // below to fail.
+  ContentContextOptions default_options_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -820,7 +829,7 @@ class ContentContext {
       return found->second->WaitAndGet();
     }
 
-    auto prototype = container.find({});
+    auto prototype = container.find(default_options_);
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());
@@ -844,8 +853,6 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> alpha_glyph_atlas_context_;
-  std::shared_ptr<GlyphAtlasContext> color_glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 

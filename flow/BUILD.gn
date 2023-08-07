@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
@@ -21,6 +22,8 @@ source_set("flow") {
     "instrumentation.h",
     "layer_snapshot_store.cc",
     "layer_snapshot_store.h",
+    "layers/aiks_layer.cc",
+    "layers/aiks_layer.h",
     "layers/backdrop_filter_layer.cc",
     "layers/backdrop_filter_layer.h",
     "layers/cacheable_layer.cc",
@@ -75,8 +78,6 @@ source_set("flow") {
     "raster_cache_key.h",
     "raster_cache_util.cc",
     "raster_cache_util.h",
-    "rtree.cc",
-    "rtree.h",
     "skia_gpu_object.h",
     "surface.cc",
     "surface.h",
@@ -85,18 +86,19 @@ source_set("flow") {
   ]
 
   public_configs = [ "//flutter:config" ]
-  if (shell_enable_vulkan) {
-    public_configs += [ "//flutter/vulkan:vulkan_config" ]
-  }
 
-  deps = [
+  public_deps = [
     "//flutter/common",
     "//flutter/common/graphics",
+    "//flutter/display_list",
     "//flutter/fml",
-    "//third_party/skia",
   ]
 
-  public_deps = [ "//flutter/display_list" ]
+  deps = [ "//third_party/skia" ]
+
+  if (impeller_supports_rendering) {
+    deps += [ "//flutter/impeller" ]
+  }
 }
 
 if (enable_unittests) {
@@ -166,7 +168,6 @@ if (enable_unittests) {
       "layers/transform_layer_unittests.cc",
       "mutators_stack_unittests.cc",
       "raster_cache_unittests.cc",
-      "rtree_unittests.cc",
       "skia_gpu_object_unittests.cc",
       "surface_frame_unittests.cc",
       "testing/mock_layer_unittests.cc",

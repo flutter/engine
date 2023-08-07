@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/color_source.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -25,8 +26,6 @@ struct Paint {
       FilterInput::Ref,
       const Matrix& effect_transform,
       bool is_subpass)>;
-  using ColorFilterProc =
-      std::function<std::shared_ptr<ColorFilterContents>(FilterInput::Ref)>;
   using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       bool is_solid_color,
@@ -52,6 +51,7 @@ struct Paint {
 
   Color color = Color::Black();
   ColorSource color_source;
+  bool dither = false;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
@@ -61,8 +61,8 @@ struct Paint {
   BlendMode blend_mode = BlendMode::kSourceOver;
   bool invert_colors = false;
 
-  std::optional<ImageFilterProc> image_filter;
-  std::optional<ColorFilterProc> color_filter;
+  ImageFilterProc image_filter = nullptr;
+  std::shared_ptr<ColorFilter> color_filter;
   std::optional<MaskBlurDescriptor> mask_blur_descriptor;
 
   /// @brief      Wrap this paint's configured filters to the given contents.

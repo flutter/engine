@@ -32,8 +32,8 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 /// framework and should not be propagated further.
 typedef KeyDataCallback = bool Function(KeyData data);
 
-/// Signature for [PlatformDispatcher.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
+/// Signature for [PlatformDispatcher.onSemanticsActionEvent].
+typedef SemanticsActionEventCallback = void Function(SemanticsActionEvent action);
 
 /// Signature for responses to platform messages.
 ///
@@ -41,8 +41,13 @@ typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction acti
 /// [PlatformDispatcher.onPlatformMessage].
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
+/// Deprecated. Migrate to [ChannelBuffers.setListener] instead.
+///
 /// Signature for [PlatformDispatcher.onPlatformMessage].
-// TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
+@Deprecated(
+  'Migrate to ChannelBuffers.setListener instead. '
+  'This feature was deprecated after v3.11.0-20.0.pre.',
+)
 typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
 // Signature for _setNeedsReportTimings.
@@ -60,6 +65,14 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
+
+// The view ID of PlatformDispatcher.implicitView. This is an
+// implementation detail that may change at any time. Apps
+// should always use PlatformDispatcher.implicitView to determine
+// the current implicit view, if any.
+//
+// Keep this in sync with kImplicitViewId in window/platform_configuration.cc.
+const int _kImplicitViewId = 0;
 
 // A message channel to receive KeyData from the platform.
 //
@@ -174,10 +187,11 @@ class PlatformDispatcher {
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
   Iterable<FlutterView> get views => _views.values;
-  final Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  final Map<int, FlutterView> _views = <int, FlutterView>{};
 
-  // A map of opaque platform view identifiers to view configurations.
-  final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
+  /// Returns the [FlutterView] with the provided ID if one exists, or null
+  /// otherwise.
+  FlutterView? view({required int id}) => _views[id];
 
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
@@ -204,7 +218,7 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+  FlutterView? get implicitView => _implicitViewEnabled() ? _views[_kImplicitViewId] : null;
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
   external static bool _implicitViewEnabled();
@@ -250,7 +264,7 @@ class PlatformDispatcher {
   //
   // Updates the metrics of the window with the given id.
   void _updateWindowMetrics(
-    Object id,
+    int id,
     double devicePixelRatio,
     double width,
     double height,
@@ -272,13 +286,7 @@ class PlatformDispatcher {
     List<int> displayFeaturesState,
     int displayId,
   ) {
-    final _ViewConfiguration previousConfiguration =
-        _viewConfigurations[id] ?? const _ViewConfiguration();
-    if (!_views.containsKey(id)) {
-      _views[id] = FlutterView._(id, this);
-    }
-    _viewConfigurations[id] = previousConfiguration.copyWith(
-      view: _views[id],
+    final _ViewConfiguration viewConfiguration = _ViewConfiguration(
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: ViewPadding._(
@@ -305,7 +313,6 @@ class PlatformDispatcher {
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
       ),
-      // -1 is used as a sentinel for an undefined touch slop
       gestureSettings: GestureSettings(
         physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
@@ -317,6 +324,17 @@ class PlatformDispatcher {
       ),
       displayId: displayId,
     );
+
+    final FlutterView? view = _views[id];
+    if (id == _kImplicitViewId && view == null) {
+      // TODO(goderbauer): Remove the implicit creation of the implicit view
+      //   when we have an addView API and the implicit view is added via that.
+      _views[id] = FlutterView._(id, this, viewConfiguration);
+    } else {
+      assert(view != null);
+      view!._viewConfiguration = viewConfiguration;
+    }
+
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
@@ -436,6 +454,7 @@ class PlatformDispatcher {
     for (int i = 0; i < length; ++i) {
       int offset = i * _kPointerDataFieldCount;
       data.add(PointerData(
+        // TODO(goderbauer): Wire up viewId.
         embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
         change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
@@ -646,6 +665,8 @@ class PlatformDispatcher {
   @Native<Void Function(Int64)>(symbol: 'PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
 
+  /// Deprecated. Migrate to [ChannelBuffers.setListener] instead.
+  ///
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.
   ///
@@ -659,11 +680,17 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
-  // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
-  // to using channel buffers exclusively.
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
   PlatformMessageCallback? _onPlatformMessage;
   Zone _onPlatformMessageZone = Zone.root;
+  @Deprecated(
+    'Migrate to ChannelBuffers.setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   set onPlatformMessage(PlatformMessageCallback? callback) {
     _onPlatformMessage = callback;
     _onPlatformMessageZone = Zone.current;
@@ -1150,12 +1177,12 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => _onSemanticsAction;
-  SemanticsActionCallback? _onSemanticsAction;
-  Zone _onSemanticsActionZone = Zone.root;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    _onSemanticsAction = callback;
-    _onSemanticsActionZone = Zone.current;
+  SemanticsActionEventCallback? get onSemanticsActionEvent => _onSemanticsActionEvent;
+  SemanticsActionEventCallback? _onSemanticsActionEvent;
+  Zone _onSemanticsActionEventZone = Zone.root;
+  set onSemanticsActionEvent(SemanticsActionEventCallback? callback) {
+    _onSemanticsActionEvent = callback;
+    _onSemanticsActionEventZone = Zone.current;
   }
 
   // Called from the engine via hooks.dart.
@@ -1183,12 +1210,15 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _dispatchSemanticsAction(int nodeId, int action, ByteData? args) {
-    _invoke3<int, SemanticsAction, ByteData?>(
-      onSemanticsAction,
-      _onSemanticsActionZone,
-      nodeId,
-      SemanticsAction.fromIndex(action)!,
-      args,
+    _invoke1<SemanticsActionEvent>(
+      onSemanticsActionEvent,
+      _onSemanticsActionEventZone,
+      SemanticsActionEvent(
+        type: SemanticsAction.fromIndex(action)!,
+        nodeId: nodeId,
+        viewId: 0, // TODO(goderbauer): Wire up the real view ID.
+        arguments: args,
+      ),
     );
   }
 
@@ -1341,10 +1371,8 @@ class _PlatformConfiguration {
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
-    this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
-    this.visible = false,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1353,37 +1381,6 @@ class _ViewConfiguration {
     this.displayFeatures = const <DisplayFeature>[],
     this.displayId = 0,
   });
-
-  /// Copy this configuration with some fields replaced.
-  _ViewConfiguration copyWith({
-    FlutterView? view,
-    double? devicePixelRatio,
-    Rect? geometry,
-    bool? visible,
-    ViewPadding? viewInsets,
-    ViewPadding? viewPadding,
-    ViewPadding? systemGestureInsets,
-    ViewPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
-    int? displayId,
-  }) {
-    return _ViewConfiguration(
-      view: view ?? this.view,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      viewInsets: viewInsets ?? this.viewInsets,
-      viewPadding: viewPadding ?? this.viewPadding,
-      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
-      padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gestureSettings,
-      displayFeatures: displayFeatures ?? this.displayFeatures,
-      displayId: displayId ?? this.displayId,
-    );
-  }
-
-  final FlutterView?  view;
 
   /// The identifier for a display for this view, in
   /// [PlatformDispatcher._displays].
@@ -1395,9 +1392,6 @@ class _ViewConfiguration {
   /// The geometry requested for the view on the screen or within its parent
   /// window, in logical pixels.
   final Rect geometry;
-
-  /// Whether or not the view is currently visible on the screen.
-  final bool visible;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1467,7 +1461,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[geometry: $geometry]';
   }
 }
 
@@ -2321,8 +2315,9 @@ class Locale {
     if (scriptCode != null && scriptCode!.isNotEmpty) {
       out.write('$separator$scriptCode');
     }
-    if (_countryCode != null && _countryCode!.isNotEmpty) {
-      out.write('$separator$countryCode');
+    final String? countryCode = _countryCode;
+    if (countryCode != null && countryCode.isNotEmpty) {
+      out.write('$separator${this.countryCode}');
     }
     return out.toString();
   }
@@ -2349,4 +2344,50 @@ enum DartPerformanceMode {
   /// Optimize for low memory, at the expensive of throughput and latency by more
   /// frequently performing work.
   memory,
+}
+
+/// An event to request a [SemanticsAction] of [type] to be performed on the
+/// [SemanticsNode] identified by [nodeId] owned by the [FlutterView] identified
+/// by [viewId].
+///
+/// Used by [SemanticsBinding.performSemanticsAction].
+class SemanticsActionEvent {
+  /// Creates a [SemanticsActionEvent].
+  const SemanticsActionEvent({
+    required this.type,
+    required this.viewId,
+    required this.nodeId,
+    this.arguments,
+  });
+
+  /// The type of action to be performed.
+  final SemanticsAction type;
+
+  /// The id of the [FlutterView] the [SemanticsNode] identified by [nodeId] is
+  /// associated with.
+  final int viewId;
+
+  /// The id of the [SemanticsNode] on which the action is to be performed.
+  final int nodeId;
+
+  /// Optional arguments for the action.
+  final Object? arguments;
+
+  static const Object _noArgumentPlaceholder = Object();
+
+  /// Create a clone of the [SemanticsActionEvent] but with provided parameters
+  /// replaced.
+  SemanticsActionEvent copyWith({
+    SemanticsAction? type,
+    int? viewId,
+    int? nodeId,
+    Object? arguments = _noArgumentPlaceholder,
+  }) {
+    return SemanticsActionEvent(
+      type: type ?? this.type,
+      viewId: viewId ?? this.viewId,
+      nodeId: nodeId ?? this.nodeId,
+      arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
+    );
+  }
 }

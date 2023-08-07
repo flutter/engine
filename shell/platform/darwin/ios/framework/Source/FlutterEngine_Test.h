@@ -4,6 +4,7 @@
 
 #import "flutter/shell/common/shell.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -31,4 +32,12 @@ class ThreadHost;
                        entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs;
 - (const flutter::ThreadHost&)threadHost;
 - (void)updateDisplays;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+               performAction:(FlutterTextInputAction)action
+                  withClient:(int)client;
+- (void)sceneWillEnterForeground:(NSNotification*)notification API_AVAILABLE(ios(13.0));
+- (void)sceneDidEnterBackground:(NSNotification*)notification API_AVAILABLE(ios(13.0));
+- (void)applicationWillEnterForeground:(NSNotification*)notification;
+- (void)applicationDidEnterBackground:(NSNotification*)notification;
+
 @end

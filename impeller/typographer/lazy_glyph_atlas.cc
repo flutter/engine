@@ -6,28 +6,34 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/typographer/text_render_context.h"
-#include "lazy_glyph_atlas.h"
 
 #include <utility>
 
 namespace impeller {
 
-LazyGlyphAtlas::LazyGlyphAtlas() = default;
+LazyGlyphAtlas::LazyGlyphAtlas()
+    : alpha_context_(std::make_shared<GlyphAtlasContext>()),
+      color_context_(std::make_shared<GlyphAtlasContext>()) {}
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
-void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame) {
+void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame, Scalar scale) {
   FML_DCHECK(atlas_map_.empty());
   if (frame.GetAtlasType() == GlyphAtlas::Type::kAlphaBitmap) {
-    alpha_frames_.emplace_back(frame);
+    frame.CollectUniqueFontGlyphPairs(alpha_set_, scale);
   } else {
-    color_frames_.emplace_back(frame);
+    frame.CollectUniqueFontGlyphPairs(color_set_, scale);
   }
+}
+
+void LazyGlyphAtlas::ResetTextFrames() {
+  alpha_set_.clear();
+  color_set_.clear();
+  atlas_map_.clear();
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     GlyphAtlas::Type type,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
     std::shared_ptr<Context> context) const {
   {
     auto atlas_it = atlas_map_.find(type);
@@ -40,19 +46,10 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
   if (!text_context || !text_context->IsValid()) {
     return nullptr;
   }
-  size_t i = 0;
-  auto frames =
-      type == GlyphAtlas::Type::kAlphaBitmap ? alpha_frames_ : color_frames_;
-  TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
-    if (i >= frames.size()) {
-      return nullptr;
-    }
-    const auto& result = frames[i];
-    i++;
-    return &result;
-  };
-  auto atlas =
-      text_context->CreateGlyphAtlas(type, std::move(atlas_context), iterator);
+  auto& set = type == GlyphAtlas::Type::kAlphaBitmap ? alpha_set_ : color_set_;
+  auto atlas_context =
+      type == GlyphAtlas::Type::kAlphaBitmap ? alpha_context_ : color_context_;
+  auto atlas = text_context->CreateGlyphAtlas(type, atlas_context, set);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;

@@ -540,7 +540,6 @@ class BrowserPlatform extends PlatformPlugin {
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
-
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
@@ -550,6 +549,8 @@ class BrowserPlatform extends PlatformPlugin {
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
               canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>
@@ -1010,7 +1011,8 @@ class BrowserManager {
           );
 
           final Map<String, Uri> packageMap = <String, Uri>{
-            for (Package p in packageConfig.packages) p.name: p.packageUriRoot
+            for (final Package p in packageConfig.packages)
+              p.name: p.packageUriRoot
           };
           final JSStackTraceMapper mapper = JSStackTraceMapper(
             await File(mapPath).readAsString(),

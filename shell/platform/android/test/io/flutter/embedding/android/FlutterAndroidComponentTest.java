@@ -352,12 +352,6 @@ public class FlutterAndroidComponentTest {
 
     @Nullable
     @Override
-    public SplashScreen provideSplashScreen() {
-      return null;
-    }
-
-    @Nullable
-    @Override
     public FlutterEngine provideFlutterEngine(@NonNull Context context) {
       return cachedEngine;
     }
@@ -417,5 +411,8 @@ public class FlutterAndroidComponentTest {
     public boolean popSystemNavigator() {
       return false;
     }
+
+    @Override
+    public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {}
   }
 }

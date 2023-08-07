@@ -9,6 +9,7 @@ import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
+import io.flutter.embedding.engine.systemchannels.KeyboardChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.InputConnectionAdaptor;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -41,7 +42,8 @@ import java.util.Map;
  *       encounter.
  * </ul>
  */
-public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate {
+public class KeyboardManager
+    implements InputConnectionAdaptor.KeyboardDelegate, KeyboardChannel.KeyboardMethodHandler {
   private static final String TAG = "KeyboardManager";
 
   /**
@@ -120,6 +122,8 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
           new KeyEmbedderResponder(viewDelegate.getBinaryMessenger()),
           new KeyChannelResponder(new KeyEventChannel(viewDelegate.getBinaryMessenger())),
         };
+    final KeyboardChannel keyboardChannel = new KeyboardChannel(viewDelegate.getBinaryMessenger());
+    keyboardChannel.setKeyboardMethodHandler(this);
   }
 
   /**
@@ -260,7 +264,7 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
    * @return A map whose keys are physical keyboard key IDs and values are the corresponding logical
    *     keyboard key IDs.
    */
-  public Map<Long, Long> getPressedState() {
+  public Map<Long, Long> getKeyboardState() {
     KeyEmbedderResponder embedderResponder = (KeyEmbedderResponder) responders[0];
     return embedderResponder.getPressedState();
   }

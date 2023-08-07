@@ -5,22 +5,29 @@
 #ifndef FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 #define FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 
+#include <memory>
 #include <vector>
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/core/SkSurface.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
+#include "flutter/impeller/renderer/context.h"   // nogncheck
+#else                                            // IMPELLER_SUPPORTS_RENDERING
+namespace impeller {
+class Context;
+class AiksContext;
+}  // namespace impeller
+#endif                                           // !IMPELLER_SUPPORTS_RENDERING
 
 class GrDirectContext;
 
@@ -260,12 +267,10 @@ class EmbeddedViewParams {
 
   EmbeddedViewParams(SkMatrix matrix,
                      SkSize size_points,
-                     MutatorsStack mutators_stack,
-                     bool display_list_enabled = false)
+                     MutatorsStack mutators_stack)
       : matrix_(matrix),
         size_points_(size_points),
-        mutators_stack_(mutators_stack),
-        display_list_enabled_(display_list_enabled) {
+        mutators_stack_(mutators_stack) {
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(size_points);
     path.addRect(starting_rect);
@@ -295,10 +300,6 @@ class EmbeddedViewParams {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
   }
 
-  // Whether the embedder should construct DisplayList objects to hold the
-  // rendering commands for each between-view slice of the layer tree.
-  bool display_list_enabled() const { return display_list_enabled_; }
-
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
@@ -311,7 +312,6 @@ class EmbeddedViewParams {
   SkSize size_points_;
   MutatorsStack mutators_stack_;
   SkRect final_bounding_rect_;
-  bool display_list_enabled_;
 };
 
 enum class PostPrerollResult {
@@ -340,11 +340,33 @@ class EmbedderViewSlice {
   virtual std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const = 0;
   virtual void render_into(DlCanvas* canvas) = 0;
+  virtual bool recording_ended() = 0;
+  virtual bool renders_anything() = 0;
 };
+
+#if IMPELLER_SUPPORTS_RENDERING
+class ImpellerEmbedderViewSlice : public EmbedderViewSlice {
+ public:
+  explicit ImpellerEmbedderViewSlice(SkRect view_bounds);
+  ~ImpellerEmbedderViewSlice() override = default;
+
+  DlCanvas* canvas() override;
+  void end_recording() override;
+  std::list<SkRect> searchNonOverlappingDrawnRects(
+      const SkRect& query) const override;
+  void render_into(DlCanvas* canvas) override;
+  bool recording_ended() override;
+  bool renders_anything() override;
+
+ private:
+  std::unique_ptr<impeller::DlAiksCanvas> canvas_;
+  std::shared_ptr<const impeller::Picture> picture_;
+};
+#endif
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
  public:
-  DisplayListEmbedderViewSlice(SkRect view_bounds);
+  explicit DisplayListEmbedderViewSlice(SkRect view_bounds);
   ~DisplayListEmbedderViewSlice() override = default;
 
   DlCanvas* canvas() override;
@@ -352,9 +374,9 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const override;
   void render_into(DlCanvas* canvas) override;
-  void dispatch(DlOpReceiver& receiver);
   bool is_empty();
-  bool recording_ended();
+  bool recording_ended() override;
+  bool renders_anything() override;
 
  private:
   std::unique_ptr<DisplayListBuilder> builder_;
@@ -414,8 +436,10 @@ class ExternalViewEmbedder {
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
-  virtual void SubmitFrame(GrDirectContext* context,
-                           std::unique_ptr<SurfaceFrame> frame);
+  virtual void SubmitFrame(
+      GrDirectContext* context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after
   // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`

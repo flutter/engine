@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "common/graphics/texture.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
@@ -16,6 +17,7 @@
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
 #endif
@@ -51,16 +53,9 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
       }
     case AndroidRenderingAPI::kVulkan:
       FML_DCHECK(enable_impeller_);
-      // TODO(kaushikiska@): Enable this after wiring a preference for Vulkan
-      // backend.
-#if false
-    return std::make_unique<AndroidSurfaceVulkanImpeller>(
+      return std::make_unique<AndroidSurfaceVulkanImpeller>(
           std::static_pointer_cast<AndroidContextVulkanImpeller>(
               android_context_));
-#else
-      return std::make_unique<AndroidSurfaceGLImpeller>(
-          std::static_pointer_cast<AndroidContextGLImpeller>(android_context_));
-#endif
     default:
       FML_DCHECK(false);
       return nullptr;
@@ -70,22 +65,45 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     uint8_t msaa_samples,
     bool enable_impeller,
+    const std::optional<std::string>& impeller_backend,
     bool enable_vulkan_validation) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   if (enable_impeller) {
-    // TODO(kaushikiska@): Enable this after wiring a preference for Vulkan
-    // backend.
-#if false
-    return std::make_unique<AndroidContextVulkanImpeller>(enable_vulkan_validation, std::move(worker_task_runner));
-#else
-    return std::make_unique<AndroidContextGLImpeller>(
-        std::make_unique<impeller::egl::Display>());
-#endif
+    // Default value is Vulkan with GLES fallback.
+    AndroidRenderingAPI backend = AndroidRenderingAPI::kAutoselect;
+    if (impeller_backend.has_value()) {
+      if (impeller_backend.value() == "opengles") {
+        backend = AndroidRenderingAPI::kOpenGLES;
+      } else if (impeller_backend.value() == "vulkan") {
+        backend = AndroidRenderingAPI::kVulkan;
+      } else {
+        FML_CHECK(impeller_backend.value() == "vulkan" ||
+                  impeller_backend.value() == "opengles");
+      }
+    }
+    switch (backend) {
+      case AndroidRenderingAPI::kOpenGLES:
+        return std::make_unique<AndroidContextGLImpeller>(
+            std::make_unique<impeller::egl::Display>());
+      case AndroidRenderingAPI::kVulkan:
+        return std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation);
+      case AndroidRenderingAPI::kAutoselect: {
+        auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation);
+        if (!vulkan_backend->IsValid()) {
+          return std::make_unique<AndroidContextGLImpeller>(
+              std::make_unique<impeller::egl::Display>());
+        }
+        return vulkan_backend;
+      }
+      default:
+        FML_UNREACHABLE();
+    }
   }
   return std::make_unique<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES,               //
@@ -98,7 +116,6 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool use_software_rendering,
     uint8_t msaa_samples)
@@ -109,9 +126,9 @@ PlatformViewAndroid::PlatformViewAndroid(
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
-              worker_task_runner,
               msaa_samples,
               delegate.OnPlatformViewGetSettings().enable_impeller,
+              delegate.OnPlatformViewGetSettings().impeller_backend,
               delegate.OnPlatformViewGetSettings().enable_vulkan_validation)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -289,6 +306,18 @@ void PlatformViewAndroid::RegisterExternalTexture(
   }
 }
 
+void PlatformViewAndroid::RegisterImageTexture(
+    int64_t texture_id,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry) {
+  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
+    RegisterTexture(std::make_shared<HardwareBufferExternalTextureGL>(
+        std::static_pointer_cast<AndroidContextGLSkia>(android_context_),
+        texture_id, image_texture_entry, jni_facade_));
+  } else {
+    FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
+  }
+}
+
 // |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
   return std::make_unique<VsyncWaiterAndroid>(task_runners_);
@@ -307,7 +336,8 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 std::shared_ptr<ExternalViewEmbedder>
 PlatformViewAndroid::CreateExternalViewEmbedder() {
   return std::make_shared<AndroidExternalViewEmbedder>(
-      *android_context_, jni_facade_, surface_factory_, task_runners_);
+      *android_context_, jni_facade_, surface_factory_, task_runners_,
+      delegate_.OnPlatformViewGetSettings().enable_impeller);
 }
 
 // |PlatformView|

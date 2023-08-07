@@ -8,7 +8,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -266,30 +265,34 @@ constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
   FML_UNREACHABLE();
 }
 
+constexpr vk::DescriptorType ToVKDescriptorType(DescriptorType type) {
+  switch (type) {
+    case DescriptorType::kSampledImage:
+      return vk::DescriptorType::eCombinedImageSampler;
+      break;
+    case DescriptorType::kUniformBuffer:
+      return vk::DescriptorType::eUniformBuffer;
+      break;
+    case DescriptorType::kStorageBuffer:
+      return vk::DescriptorType::eStorageBuffer;
+      break;
+    case DescriptorType::kImage:
+      return vk::DescriptorType::eSampledImage;
+      break;
+    case DescriptorType::kSampler:
+      return vk::DescriptorType::eSampler;
+      break;
+  }
+
+  FML_UNREACHABLE();
+}
+
 constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
     const DescriptorSetLayout& layout) {
   vk::DescriptorSetLayoutBinding binding;
   binding.binding = layout.binding;
   binding.descriptorCount = 1u;
-  vk::DescriptorType desc_type = vk::DescriptorType();
-  switch (layout.descriptor_type) {
-    case DescriptorType::kSampledImage:
-      desc_type = vk::DescriptorType::eCombinedImageSampler;
-      break;
-    case DescriptorType::kUniformBuffer:
-      desc_type = vk::DescriptorType::eUniformBuffer;
-      break;
-    case DescriptorType::kStorageBuffer:
-      desc_type = vk::DescriptorType::eStorageBuffer;
-      break;
-    case DescriptorType::kImage:
-      desc_type = vk::DescriptorType::eSampledImage;
-      break;
-    case DescriptorType::kSampler:
-      desc_type = vk::DescriptorType::eSampler;
-      break;
-  }
-  binding.descriptorType = desc_type;
+  binding.descriptorType = ToVKDescriptorType(layout.descriptor_type);
   binding.stageFlags = ToVkShaderStage(layout.shader_stage);
   return binding;
 }
@@ -462,7 +465,7 @@ constexpr vk::AttachmentDescription CreateAttachmentDescription(
   switch (kind) {
     case AttachmentKind::kColor:
       vk_attachment.initialLayout = current_layout;
-      vk_attachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+      vk_attachment.finalLayout = vk::ImageLayout::eGeneral;
       break;
     case AttachmentKind::kDepth:
     case AttachmentKind::kStencil:
@@ -640,14 +643,5 @@ constexpr vk::ImageAspectFlags ToImageAspectFlags(PixelFormat format) {
   }
   FML_UNREACHABLE();
 }
-
-struct LayoutTransition {
-  vk::CommandBuffer cmd_buffer = {};
-  vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;
-  vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags src_access = vk::AccessFlagBits::eNone;
-  vk::PipelineStageFlags dst_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags dst_access = vk::AccessFlagBits::eNone;
-};
 
 }  // namespace impeller

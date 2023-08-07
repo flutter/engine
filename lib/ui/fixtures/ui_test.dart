@@ -538,6 +538,11 @@ void hooksTests() async {
     expectEquals(x.countryCode, y.countryCode);
   });
 
+  await test('PlatformDispatcher.view getter returns view with provided ID', () {
+    const int viewId = 0;
+    expectEquals(PlatformDispatcher.instance.view(id: viewId)?.viewId, viewId);
+  });
+
   await test('View padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
@@ -602,7 +607,7 @@ void hooksTests() async {
     expectEquals(window.systemGestureInsets.bottom, 44.0);
   });
 
-   await test('Window physical touch slop', () {
+  await test('Window physical touch slop', () {
     _callHook(
       '_updateWindowMetrics',
       21,
@@ -795,25 +800,23 @@ void hooksTests() async {
     expectEquals(enabled, newValue);
   });
 
-  await test('onSemanticsAction preserves callback zone', () {
+  await test('onSemanticsActionEvent preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
-    late int id;
-    late int action;
+    late SemanticsActionEvent action;
 
     runZoned(() {
       innerZone = Zone.current;
-      window.onSemanticsAction = (int i, SemanticsAction a, ByteData? _) {
+      PlatformDispatcher.instance.onSemanticsActionEvent = (SemanticsActionEvent actionEvent) {
         runZone = Zone.current;
-        action = a.index;
-        id = i;
+        action = actionEvent;
       };
     });
 
     _callHook('_dispatchSemanticsAction', 3, 1234, 4, null);
     expectIdentical(runZone, innerZone);
-    expectEquals(id, 1234);
-    expectEquals(action, 4);
+    expectEquals(action.nodeId, 1234);
+    expectEquals(action.type.index, 4);
   });
 
   await test('onPlatformMessage preserves callback zone', () {

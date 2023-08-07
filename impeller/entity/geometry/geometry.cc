@@ -4,11 +4,14 @@
 
 #include "impeller/entity/geometry/geometry.h"
 
+#include <optional>
+
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -56,9 +59,9 @@ ComputeUVGeometryCPU(
        &texture_origin](SolidFillVertexShader::PerVertexData old_vtx) {
         TextureFillVertexShader::PerVertexData data;
         data.position = old_vtx.position;
-        auto coverage_coords =
-            (old_vtx.position - texture_origin) / texture_coverage;
-        data.texture_coords = effect_transform * coverage_coords;
+        data.texture_coords = effect_transform *
+                              (old_vtx.position - texture_origin) /
+                              texture_coverage;
         vertex_builder.AppendVertex(data);
       });
   return vertex_builder;
@@ -76,8 +79,8 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
   auto points = source_rect.GetPoints();
   for (auto i = 0u, j = 0u; i < 8; i += 2, j++) {
     data[i] = points[j];
-    data[i + 1] = effect_transform * ((points[j] - texture_coverage.origin) /
-                                      texture_coverage.size);
+    data[i + 1] = effect_transform * (points[j] - texture_coverage.origin) /
+                  texture_coverage.size;
   }
 
   return GeometryResult{
@@ -107,8 +110,10 @@ GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
   return {};
 }
 
-std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
-  return std::make_unique<FillPathGeometry>(path);
+std::unique_ptr<Geometry> Geometry::MakeFillPath(
+    const Path& path,
+    std::optional<Rect> inner_rect) {
+  return std::make_unique<FillPathGeometry>(path, inner_rect);
 }
 
 std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
@@ -136,6 +141,10 @@ std::unique_ptr<Geometry> Geometry::MakeCover() {
 
 std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
   return std::make_unique<RectGeometry>(rect);
+}
+
+bool Geometry::CoversArea(const Matrix& transform, const Rect& rect) const {
+  return false;
 }
 
 }  // namespace impeller

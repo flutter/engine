@@ -7,9 +7,11 @@
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
+#include "impeller/typographer/rectangle_packer.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -20,6 +22,17 @@ namespace testing {
 
 using TypographerTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(TypographerTest);
+
+static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
+    const TextRenderContext* context,
+    GlyphAtlas::Type type,
+    Scalar scale,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    const TextFrame& frame) {
+  FontGlyphPair::Set set;
+  frame.CollectUniqueFontGlyphPairs(set, scale);
+  return context->CreateGlyphAtlas(type, atlas_context, set);
+}
 
 TEST_P(TypographerTest, CanConvertTextBlob) {
   SkFont font;
@@ -47,8 +60,8 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
   auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
   ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kAlphaBitmap);
@@ -100,22 +113,20 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   LazyGlyphAtlas lazy_atlas;
 
-  lazy_atlas.AddTextFrame(frame);
+  lazy_atlas.AddTextFrame(frame, 1.0f);
 
   frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("😀 ", emoji_font));
 
   ASSERT_TRUE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
-  lazy_atlas.AddTextFrame(frame);
+  lazy_atlas.AddTextFrame(frame, 1.0f);
 
   // Creates different atlases for color and alpha bitmap.
-  auto color_context = std::make_shared<GlyphAtlasContext>();
-  auto bitmap_context = std::make_shared<GlyphAtlasContext>();
   auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kColorBitmap, color_context, GetContext());
+      GlyphAtlas::Type::kColorBitmap, GetContext());
 
   auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kAlphaBitmap, bitmap_context, GetContext());
+      GlyphAtlas::Type::kAlphaBitmap, GetContext());
 
   ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
@@ -128,8 +139,8 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
   ASSERT_TRUE(blob);
   auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
@@ -145,8 +156,8 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
   ASSERT_TRUE(blob);
   auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
   ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
@@ -154,8 +165,8 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   // now attempt to re-create an atlas with the same text blob.
 
   auto next_atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   ASSERT_EQ(atlas, next_atlas);
   ASSERT_EQ(atlas_context->GetGlyphAtlas(), atlas);
 }
@@ -164,7 +175,6 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   auto context = TextRenderContext::Create(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
 
   const char* test_string =
       "QWERTYUIOPASDFGHJKLZXCVBNMqewrtyuiopasdfghjklzxcvbnm,.<>[]{};':"
@@ -172,22 +182,17 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
       "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
       "* Í˝ */¸˛Ç◊ı˜Â¯˘¿";
 
+  SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
   ASSERT_TRUE(blob);
 
-  TextFrame frame;
-  size_t count = 0;
-  const int size_count = 8;
-  TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
-    if (count < size_count) {
-      count++;
-      frame = TextFrameFromTextBlob(blob, 0.6 * count);
-      return &frame;
-    }
-    return nullptr;
+  FontGlyphPair::Set set;
+  size_t size_count = 8;
+  for (size_t index = 0; index < size_count; index += 1) {
+    TextFrameFromTextBlob(blob).CollectUniqueFontGlyphPairs(set, 0.6 * index);
   };
   auto atlas = context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap,
-                                         atlas_context, iterator);
+                                         std::move(atlas_context), set);
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
@@ -215,8 +220,8 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   auto old_packer = atlas_context->GetRectPacker();
 
   ASSERT_NE(atlas, nullptr);
@@ -229,8 +234,8 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 
   auto blob2 = SkTextBlob::MakeFromString("spooky 2", sk_font);
   auto next_atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob2));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob2));
   ASSERT_EQ(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
 
@@ -248,8 +253,8 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob));
   auto old_packer = atlas_context->GetRectPacker();
 
   ASSERT_NE(atlas, nullptr);
@@ -263,8 +268,8 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
 
   auto blob2 = SkTextBlob::MakeFromString("spooky 1", sk_font);
   auto next_atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kColorBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob2));
+      CreateGlyphAtlas(context.get(), GlyphAtlas::Type::kColorBitmap, 1.0f,
+                       atlas_context, TextFrameFromTextBlob(blob2));
   ASSERT_NE(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
 
@@ -304,9 +309,51 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
 
   auto frame_2 =
       TextFrameFromTextBlob(SkTextBlob::MakeFromString("123456789", sk_font));
-  // Characters probably have overlap due to low fidelity text metrics, but this
-  // could be fixed.
-  ASSERT_TRUE(frame_2.MaybeHasOverlapping());
+  ASSERT_FALSE(frame_2.MaybeHasOverlapping());
+}
+
+TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
+  auto packer = RectanglePacker::Factory(200, 100);
+  ASSERT_NE(packer, nullptr);
+  ASSERT_EQ(packer->percentFull(), 0);
+
+  const SkIRect packer_area = SkIRect::MakeXYWH(0, 0, 200, 100);
+
+  IPoint16 first_output = {-1, -1};  // Fill with sentinel values
+  ASSERT_TRUE(packer->addRect(20, 20, &first_output));
+  // Make sure the rectangle is placed such that it is inside the bounds of
+  // the packer's area.
+  const SkIRect first_rect =
+      SkIRect::MakeXYWH(first_output.x(), first_output.y(), 20, 20);
+  ASSERT_TRUE(SkIRect::Intersects(packer_area, first_rect));
+
+  // Initial area was 200 x 100 = 20_000
+  // We added 20x20 = 400. 400 / 20_000 == 0.02 == 2%
+  ASSERT_TRUE(flutter::testing::NumberNear(packer->percentFull(), 0.02));
+
+  IPoint16 second_output = {-1, -1};
+  ASSERT_TRUE(packer->addRect(140, 90, &second_output));
+  const SkIRect second_rect =
+      SkIRect::MakeXYWH(second_output.x(), second_output.y(), 140, 90);
+  // Make sure the rectangle is placed such that it is inside the bounds of
+  // the packer's area but not in the are of the first rectangle.
+  ASSERT_TRUE(SkIRect::Intersects(packer_area, second_rect));
+  ASSERT_FALSE(SkIRect::Intersects(first_rect, second_rect));
+
+  // We added another 90 x 140 = 12_600 units, now taking us to 13_000
+  // 13_000 / 20_000 == 0.65 == 65%
+  ASSERT_TRUE(flutter::testing::NumberNear(packer->percentFull(), 0.65));
+
+  // There's enough area to add this rectangle, but no space big enough for
+  // the 50 units of width.
+  IPoint16 output;
+  ASSERT_FALSE(packer->addRect(50, 50, &output));
+  // Should be unchanged.
+  ASSERT_TRUE(flutter::testing::NumberNear(packer->percentFull(), 0.65));
+
+  packer->reset();
+  // Should be empty now.
+  ASSERT_EQ(packer->percentFull(), 0);
 }
 
 }  // namespace testing

@@ -82,7 +82,8 @@ class FrameDamage {
   // but the paint region of layer_tree will be calculated so that it can be
   // used for diffing of subsequent frames.
   std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree,
-                                        bool has_raster_cache);
+                                        bool has_raster_cache,
+                                        bool impeller_enabled);
 
   // See Damage::frame_damage.
   std::optional<SkIRect> GetFrameDamage() const {
@@ -123,16 +124,11 @@ class CompositorContext {
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-                DisplayListBuilder* display_list_builder,
                 impeller::AiksContext* aiks_context);
 
     virtual ~ScopedFrame();
 
     DlCanvas* canvas() { return canvas_; }
-
-    DisplayListBuilder* display_list_builder() const {
-      return display_list_builder_;
-    }
 
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
@@ -165,7 +161,6 @@ class CompositorContext {
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     DlCanvas* canvas_;
-    DisplayListBuilder* display_list_builder_;
     impeller::AiksContext* aiks_context_;
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
@@ -190,7 +185,6 @@ class CompositorContext {
       bool instrumentation_enabled,
       bool surface_supports_readback,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-      DisplayListBuilder* display_list_builder,
       impeller::AiksContext* aiks_context);
 
   void OnGrContextCreated();

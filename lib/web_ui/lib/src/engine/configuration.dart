@@ -55,14 +55,38 @@ FlutterConfiguration get configuration =>
   _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
-/// Sets the given configuration as the current one.
+/// Overrides the initial test configuration with new values coming from `newConfig`.
+///
+/// The initial test configuration (AKA `_jsConfiguration`) is set in the
+/// `test_platform.dart` file. See: `window.flutterConfiguration` in `_testBootstrapHandler`.
+///
+/// The result of calling this method each time is:
+///
+///     [configuration] = _jsConfiguration + newConfig
+///
+/// Subsequent calls to this method don't *add* more to an already overridden
+/// configuration; this method always starts from an original `_jsConfiguration`,
+/// and adds `newConfig` to it.
+///
+/// If `newConfig` is null, [configuration] resets to the initial `_jsConfiguration`.
 ///
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
 @visibleForTesting
-void debugSetConfiguration(FlutterConfiguration configuration) {
-  _configuration = configuration;
+void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
+  if (newConfig != null) {
+    final JSObject newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _jsConfiguration.jsify(),
+      newConfig.jsify(),
+    );
+    _configuration = FlutterConfiguration()
+        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
+    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+  } else {
+    _configuration = null;
+  }
 }
 
 /// Supplies Web Engine configuration properties.
@@ -269,6 +293,11 @@ class FlutterConfiguration {
   /// to render, or `null` if the user hasn't specified anything.
   DomElement? get hostElement => _configuration?.hostElement;
 
+  /// Returns a `nonce` to allowlist the inline styles that Flutter web needs.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce
+  String? get nonce => _configuration?.nonce;
+
   /// Returns the [requestedRendererType] to be used with the current Flutter
   /// application, normally 'canvaskit' or 'auto'.
   ///
@@ -312,13 +341,17 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
 
   @JS('canvasKitMaximumSurfaces')
   external JSNumber? get _canvasKitMaximumSurfaces;
-  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDart;
+  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDartDouble;
 
   @JS('debugShowSemanticsNodes')
   external JSBoolean? get _debugShowSemanticsNodes;
   bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
 
   external DomElement? get hostElement;
+
+  @JS('nonce')
+  external JSString? get _nonce;
+  String? get nonce => _nonce?.toDart;
 
   @JS('renderer')
   external JSString? get _renderer;

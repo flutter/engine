@@ -3,11 +3,9 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Linux"
+                "os=Linux",
+                "cores=32"
             ],
-            "gclient_variables": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "debug",
@@ -62,6 +60,11 @@
                         "out/host_debug_unopt/flutter_tester",
                         "flutter/shell/testing/observatory/empty_main.dart"
                     ]
+                },
+                {
+                    "language": "dart",
+                    "name": "test: Lint android host",
+                    "script": "flutter/tools/android_lint/bin/main.dart"
                 }
             ]
         },

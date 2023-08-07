@@ -5,7 +5,6 @@
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/backend/gles/surface_gles.h"
 #include "flutter/impeller/renderer/renderer.h"
 
@@ -61,7 +60,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
                         delegate = delegate_]() -> bool {
     if (weak) {
       GLPresentInfo present_info = {
-          .fbo_id = 0,
+          .fbo_id = 0u,
           .frame_damage = std::nullopt,
           // TODO (https://github.com/flutter/flutter/issues/105597): wire-up
           // presentation time to impeller backend.
@@ -80,10 +79,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     return nullptr;
   }
 
+  GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
+                            static_cast<uint32_t>(size.height())};
+  const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
   auto surface = impeller::SurfaceGLES::WrapFBO(
       impeller_context_,                            // context
       swap_callback,                                // swap_callback
-      0u,                                           // fbo
+      fbo_info.fbo_id,                              // fbo
       impeller::PixelFormat::kR8G8B8A8UNormInt,     // color_format
       impeller::ISize{size.width(), size.height()}  // fbo_size
   );
@@ -97,32 +99,24 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
           return false;
         }
 
-        auto display_list = surface_frame.BuildDisplayList();
-        if (!display_list) {
-          FML_LOG(ERROR) << "Could not build display list for surface frame.";
-          return false;
-        }
-
-        impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
+        auto picture = surface_frame.GetImpellerPicture();
 
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(*picture, render_target);
                 }));
       });
 
   return std::make_unique<SurfaceFrame>(
-      nullptr,                          // surface
-      SurfaceFrame::FramebufferInfo{},  // framebuffer info
-      submit_callback,                  // submit callback
-      size,                             // frame size
-      std::move(context_switch),        // context result
-      true                              // display list fallback
+      nullptr,                                // surface
+      delegate_->GLContextFramebufferInfo(),  // framebuffer info
+      submit_callback,                        // submit callback
+      size,                                   // frame size
+      std::move(context_switch),              // context result
+      true                                    // display list fallback
   );
 }
 

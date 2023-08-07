@@ -3,9 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/display_list/skia_conversions.h"
-
-// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
-// NOLINTBEGIN(bugprone-unchecked-optional-access)
+#include "display_list/dl_color.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 namespace impeller {
 namespace skia_conversions {
@@ -24,7 +23,7 @@ std::optional<Rect> ToRect(const SkRect* rect) {
 std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
-    result.push_back(ToRect(&tex[i]).value());
+    result.push_back(ToRect(tex[i]));
   }
   return result;
 }
@@ -136,12 +135,12 @@ Point ToPoint(const SkPoint& point) {
   return Point::MakeXY(point.fX, point.fY);
 }
 
-Color ToColor(const SkColor& color) {
+Color ToColor(const flutter::DlColor& color) {
   return {
-      static_cast<Scalar>(SkColorGetR(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetG(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetB(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetA(color) / 255.0)   //
+      static_cast<Scalar>(color.getRedF()),    //
+      static_cast<Scalar>(color.getGreenF()),  //
+      static_cast<Scalar>(color.getBlueF()),   //
+      static_cast<Scalar>(color.getAlphaF())   //
   };
 }
 
@@ -162,6 +161,14 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
   return result;
 }
 
+Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob) {
+  if (!blob) {
+    return {};
+  }
+
+  return ToPath(skia::textlayout::Paragraph::GetPath(blob.get()));
+}
+
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   switch (type) {
     case kRGBA_8888_SkColorType:
@@ -180,5 +187,3 @@ std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 
 }  // namespace skia_conversions
 }  // namespace impeller
-
-// NOLINTEND(bugprone-unchecked-optional-access)

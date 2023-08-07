@@ -14,6 +14,8 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
 
 namespace flutter_runner {
 namespace {
@@ -231,6 +233,7 @@ void GfxExternalViewEmbedder::EndFrame(
 
 void GfxExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<flutter::SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "GfxExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
@@ -616,7 +619,10 @@ void GfxExternalViewEmbedder::SubmitFrame(
       canvas->setMatrix(SkMatrix::I());
       canvas->clear(SK_ColorTRANSPARENT);
       canvas->drawPicture(layer->second.picture);
-      canvas->flush();
+      if (GrDirectContext* direct_context =
+              GrAsDirectContext(canvas->recordingContext())) {
+        direct_context->flushAndSubmit();
+      }
     }
   }
 

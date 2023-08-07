@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
+#include "flutter/flow/layers/aiks_layer.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
@@ -44,7 +45,7 @@ SceneBuilder::~SceneBuilder() = default;
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
                                  tonic::Float64List& matrix4,
                                  const fml::RefPtr<EngineLayer>& oldLayer) {
-  SkMatrix sk_matrix = ToSkMatrix(matrix4);
+  SkM44 sk_matrix = ToSkM44(matrix4);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
@@ -225,6 +226,15 @@ void SceneBuilder::addPicture(double dx,
     auto layer = std::make_unique<flutter::DisplayListLayer>(
         SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)), picture->display_list(),
         !!(hints & 1), !!(hints & 2));
+    AddLayer(std::move(layer));
+    return;
+  }
+
+  auto impeller_picture = picture->impeller_picture();
+  if (impeller_picture) {
+    auto layer = std::make_unique<flutter::AiksLayer>(
+        SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)),
+        std::move(impeller_picture));
     AddLayer(std::move(layer));
   }
 }

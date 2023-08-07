@@ -5,15 +5,14 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/renderer/renderer.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/surface.h"
 
 namespace flutter {
 
 GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
-    std::shared_ptr<impeller::Context> context)
-    : weak_factory_(this) {
+    std::shared_ptr<impeller::Context> context) {
   if (!context || !context->IsValid()) {
     return;
   }
@@ -55,7 +54,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     return nullptr;
   }
 
-  auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
+  auto& context_vk = impeller::SurfaceContextVK::Cast(*impeller_context_);
   std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
 
   SurfaceFrame::SubmitCallback submit_callback =
@@ -67,22 +66,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
           return false;
         }
 
-        auto display_list = surface_frame.BuildDisplayList();
-        if (!display_list) {
-          FML_LOG(ERROR) << "Could not build display list for surface frame.";
-          return false;
-        }
-
-        impeller::DlDispatcher impeller_dispatcher;
-        display_list->Dispatch(impeller_dispatcher);
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
+        auto picture = surface_frame.GetImpellerPicture();
 
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(*picture, render_target);
                 }));
       });
 

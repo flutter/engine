@@ -13,13 +13,17 @@ impeller_component("skia_conversions") {
   public_deps = [
     "../core",
     "../geometry",
+    "//flutter/display_list",
     "//flutter/fml",
     "//third_party/skia",
+    "//third_party/skia/modules/skparagraph",
   ]
 }
 
 impeller_component("display_list") {
   sources = [
+    "dl_aiks_canvas.cc",
+    "dl_aiks_canvas.h",
     "dl_dispatcher.cc",
     "dl_dispatcher.h",
     "dl_image_impeller.cc",
@@ -66,4 +70,15 @@ impeller_component("display_list_unittests") {
   if (impeller_enable_3d) {
     defines += [ "IMPELLER_ENABLE_3D" ]
   }
+}
+
+impeller_component("skia_conversions_unittests") {
+  testonly = true
+
+  sources = [ "skia_conversions_unittests.cc" ]
+
+  deps = [
+    ":skia_conversions",
+    "//flutter/testing:testing_lib",
+  ]
 }

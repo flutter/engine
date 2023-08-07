@@ -53,6 +53,7 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
 
   void SubmitFrame(GrDirectContext* context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
@@ -88,6 +89,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
+      int64_t view_id,
       const flutter::ViewportMetrics& metrics) {
     metrics_ = metrics;
   }

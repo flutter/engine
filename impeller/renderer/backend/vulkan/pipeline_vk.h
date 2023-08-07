@@ -50,8 +50,6 @@ class PipelineVK final
   // |Pipeline|
   bool IsValid() const override;
 
-  std::unique_ptr<PipelineVK> CreatePipeline(const PipelineDescriptor& desc);
-
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineVK);
 };
 

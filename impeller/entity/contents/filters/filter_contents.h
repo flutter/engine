@@ -29,11 +29,6 @@ class FilterContents : public Contents {
     kInner,
   };
 
-  // Domain is kRGBA, we may decide to support more color modes later.
-  struct ColorMatrix {
-    float array[20];
-  };
-
   enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
@@ -121,6 +116,11 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
+  void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale) override;
+
+  // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
@@ -132,6 +132,15 @@ class FilterContents : public Contents {
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
+
+  /// @brief  Returns `true` if this filter does not have any `FilterInput`
+  ///         children.
+  bool IsLeaf() const;
+
+  /// @brief  Replaces the leaf of all leaf `FilterContents` with a new set
+  ///         of `inputs`.
+  /// @see    `FilterContents::IsLeaf`
+  void SetLeafInputs(const FilterInput::Vector& inputs);
 
  private:
   virtual std::optional<Rect> GetFilterCoverage(

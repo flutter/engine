@@ -45,7 +45,7 @@ SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
 pushd .
 cd $SCENARIO_PATH
 
-RESULT_BUNDLE_FOLDER="ios_scenario_xcresult"
+RESULT_BUNDLE_FOLDER=$(mktemp -d ios_scenario_xcresult_XXX)
 RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
 
 # Zip and upload xcresult to luci.
@@ -60,8 +60,6 @@ zip_and_upload_xcresult_to_luci () {
 
 echo "Running simulator tests with Skia"
 echo ""
-
-mktemp -d $RESULT_BUNDLE_PATH
 
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
@@ -80,13 +78,14 @@ echo "Running simulator tests with Impeller"
 echo ""
 
 # Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
+# Skip golden tests that use software rendering: https://github.com/flutter/flutter/issues/131888
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
+  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont,ScenarioUITests/PlatformViewMutationLargeClipRRectWithTransformTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsTest/testPlatformView,ScenarioUITests/PlatformViewWithOtherBackdropFilterTests/testPlatformView,ScenarioUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewGestureRecognizerTests/testRejectPolicyUtilTouchesEnded,ScenarioUITests/NonFullScreenFlutterViewPlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipPathTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsBackgroundForegroundTest/testPlatformView,ScenarioUITests/PlatformViewMutationOpacityTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView,ScenarioUITests/SpawnEngineTest/testSpawnEngineWorks,ScenarioUITests/PlatformViewRotation/testPlatformView,ScenarioUITests/TwoPlatformViewClipRRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipRectTests/testPlatformView,ScenarioUITests/RenderingSelectionTest/testSoftwareRendering,ScenarioUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays,ScenarioUITests/UnobstructedPlatformViewTests/testNoOverlay,ScenarioUITests/PlatformViewMutationTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationLargeClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewWithNegativeOtherBackDropFilterTests/testPlatformView" \
   INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
   echo "test success."
 else

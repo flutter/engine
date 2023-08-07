@@ -39,6 +39,8 @@ source_set("display_list") {
     "dl_op_receiver.h",
     "dl_op_records.cc",
     "dl_op_records.h",
+    "dl_op_spy.cc",
+    "dl_op_spy.h",
     "dl_paint.cc",
     "dl_paint.h",
     "dl_sampling_options.h",
@@ -57,6 +59,8 @@ source_set("display_list") {
     "effects/dl_path_effect.h",
     "effects/dl_runtime_effect.cc",
     "effects/dl_runtime_effect.h",
+    "geometry/dl_region.cc",
+    "geometry/dl_region.h",
     "geometry/dl_rtree.cc",
     "geometry/dl_rtree.h",
     "image/dl_image.cc",
@@ -105,6 +109,7 @@ if (enable_unittests) {
       "benchmarking/dl_complexity_unittests.cc",
       "display_list_unittests.cc",
       "dl_color_unittests.cc",
+      "dl_op_spy_unittests.cc",
       "dl_paint_unittests.cc",
       "dl_vertices_unittests.cc",
       "effects/dl_color_filter_unittests.cc",
@@ -112,6 +117,7 @@ if (enable_unittests) {
       "effects/dl_image_filter_unittests.cc",
       "effects/dl_mask_filter_unittests.cc",
       "effects/dl_path_effect_unittests.cc",
+      "geometry/dl_region_unittests.cc",
       "geometry/dl_rtree_unittests.cc",
       "skia/dl_sk_conversions_unittests.cc",
       "skia/dl_sk_paint_dispatcher_unittests.cc",
@@ -148,6 +154,7 @@ if (enable_unittests) {
     deps = [
       ":display_list",
       ":display_list_fixtures",
+      "//flutter/common/graphics",
       "//flutter/display_list/testing:display_list_surface_provider",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
@@ -178,6 +185,18 @@ if (enable_unittests) {
       ":display_list_fixtures",
       "//flutter/benchmarking",
       "//flutter/display_list/testing:display_list_testing",
+      "//flutter/testing:testing_lib",
+    ]
+  }
+
+  executable("display_list_region_benchmarks") {
+    testonly = true
+
+    sources = [ "benchmarking/dl_region_benchmarks.cc" ]
+
+    deps = [
+      ":display_list_fixtures",
+      "//flutter/benchmarking",
       "//flutter/testing:testing_lib",
     ]
   }

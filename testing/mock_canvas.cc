@@ -7,7 +7,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/testing/display_list_testing.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -192,6 +191,14 @@ void MockCanvas::DrawImage(const sk_sp<DlImage>& image,
         DrawCall{current_layer_,
                  DrawImageDataNoPaint{image, point.fX, point.fY, options}});
   }
+}
+
+void MockCanvas::DrawImpellerPicture(
+    const std::shared_ptr<const impeller::Picture>& picture,
+    SkScalar opacity) {
+  draw_calls_.emplace_back(
+      DrawCall{.layer = current_layer_,
+               .data = DrawImpellerPictureData{picture, opacity}});
 }
 
 void MockCanvas::DrawDisplayList(const sk_sp<DisplayList> display_list,
@@ -461,6 +468,16 @@ std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::DrawImageDataNoPaint& data) {
   return os << data.image << " " << data.x << " " << data.y << " "
             << data.options;
+}
+
+bool operator==(const MockCanvas::DrawImpellerPictureData& a,
+                const MockCanvas::DrawImpellerPictureData& b) {
+  return a.picture == b.picture && a.opacity == b.opacity;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const MockCanvas::DrawImpellerPictureData& data) {
+  return os << "[Impeller picture] " << data.opacity;
 }
 
 bool operator==(const MockCanvas::DrawDisplayListData& a,

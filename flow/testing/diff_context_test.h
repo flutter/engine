@@ -9,8 +9,6 @@
 #include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/testing/layer_test.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 namespace testing {
@@ -43,11 +41,13 @@ class DiffContextTest : public LayerTest {
                        const SkIRect& additional_damage = SkIRect::MakeEmpty(),
                        int horizontal_clip_alignment = 0,
                        int vertical_alignment = 0,
-                       bool use_raster_cache = true);
+                       bool use_raster_cache = true,
+                       bool impeller_enabled = false);
 
   // Create display list consisting of filled rect with given color; Being able
   // to specify different color is useful to test deep comparison of pictures
-  sk_sp<DisplayList> CreateDisplayList(const SkRect& bounds, uint32_t color);
+  sk_sp<DisplayList> CreateDisplayList(const SkRect& bounds,
+                                       DlColor color = DlColor::kBlack());
 
   std::shared_ptr<DisplayListLayer> CreateDisplayListLayer(
       const sk_sp<DisplayList>& display_list,

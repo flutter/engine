@@ -44,6 +44,13 @@ bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
+// TODO(jonahwilliams): FragmentProgram API is not fully wired up on Android.
+// Disable until this is complete so that integration tests and benchmarks can
+// run m3 applications.
+#ifdef FML_OS_ANDROID
+  return true;
+#endif
+
   auto context = renderer.GetContext();
   auto library = context->GetShaderLibrary();
 
@@ -118,9 +125,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
                                                ShaderStage::kFragment));
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  if (!vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs)) {
-    VALIDATION_LOG << "Failed to set stage inputs for runtime effect pipeline.";
-  }
+  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
+                                    VS::kInterleavedBufferLayout);
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
       0u, {.format = color_attachment_format, .blending_enabled = true});

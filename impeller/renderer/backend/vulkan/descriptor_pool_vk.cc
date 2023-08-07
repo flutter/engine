@@ -6,11 +6,12 @@
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
+#include "impeller/base/validation.h"
 
 namespace impeller {
 
 DescriptorPoolVK::DescriptorPoolVK(
-    std::weak_ptr<const DeviceHolder> device_holder)
+    const std::weak_ptr<const DeviceHolder>& device_holder)
     : device_holder_(device_holder) {
   FML_DCHECK(device_holder.lock());
 }
@@ -23,10 +24,7 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
   std::vector<vk::DescriptorPoolSize> pools = {
       {vk::DescriptorType::eCombinedImageSampler, pool_count},
       {vk::DescriptorType::eUniformBuffer, pool_count},
-      {vk::DescriptorType::eStorageBuffer, pool_count},
-      {vk::DescriptorType::eSampledImage, pool_count},
-      {vk::DescriptorType::eSampler, pool_count},
-  };
+      {vk::DescriptorType::eStorageBuffer, pool_count}};
 
   vk::DescriptorPoolCreateInfo pool_info;
   pool_info.setMaxSets(pools.size() * pool_count);
@@ -37,6 +35,15 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
     VALIDATION_LOG << "Unable to create a descriptor pool";
   }
   return std::move(pool);
+}
+
+std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
+    const vk::DescriptorSetLayout& layout,
+    size_t command_count) {
+  if (pools_.empty()) {
+    pool_size_ = command_count;
+  }
+  return AllocateDescriptorSet(layout);
 }
 
 std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(

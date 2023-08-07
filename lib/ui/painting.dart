@@ -544,6 +544,12 @@ enum BlendMode {
   ///
   /// This corresponds to the "Source plus Destination" Porter-Duff operator.
   ///
+  /// This is the right blend mode for cross-fading between two images. Consider
+  /// two images A and B, and an interpolation time variable _t_ (from 0.0 to
+  /// 1.0). To cross fade between them, A should be drawn with opacity 1.0 - _t_
+  /// into a new layer using [BlendMode.srcOver], and B should be drawn on top
+  /// of it, at opacity _t_, into the same layer, using [BlendMode.plus].
+  ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_plus.png)
   plus,
 
@@ -3589,10 +3595,11 @@ class ColorFilter implements ImageFilter {
         }
         return _ColorFilter.mode(this);
       case _kTypeMatrix:
-        if (_matrix == null) {
+        final List<double>? matrix = _matrix;
+        if (matrix == null) {
           return null;
         }
-        assert(_matrix!.length == 20, 'Color Matrix must have 20 entries.');
+        assert(matrix.length == 20, 'Color Matrix must have 20 entries.');
         return _ColorFilter.matrix(this);
       case _kTypeLinearToSrgbGamma:
         return _ColorFilter.linearToSrgbGamma(this);
@@ -3616,7 +3623,10 @@ class ColorFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(_color, _blendMode, _matrix == null ? null : Object.hashAll(_matrix!), _type);
+  int get hashCode {
+    final List<double>? matrix = _matrix;
+    return Object.hash(_color, _blendMode, matrix == null ? null : Object.hashAll(matrix), _type);
+  }
 
   @override
   String get _shortDescription {
@@ -5193,7 +5203,7 @@ abstract class Canvas {
 
   /// Returns the conservative bounds of the combined result of all clip methods
   /// executed within the current save stack of this [Canvas] object, as measured
-  /// in the local coordinate space under which rendering operations are curretnly
+  /// in the local coordinate space under which rendering operations are currently
   /// performed.
   ///
   /// The combined clip results are rounded out to an integer pixel boundary before
@@ -5442,8 +5452,8 @@ abstract class Canvas {
   /// specified in the `vertices` using the `blendMode` parameter. For the
   /// purposes of this blending, the colors from the `paint` parameter are
   /// considered the source, and the colors from the `vertices` are considered
-  /// the destination. [BlendMode.dstOver] ignores the `paint` and uses only the
-  /// colors of the `vertices`; [BlendMode.srcOver] ignores the colors of the
+  /// the destination. [BlendMode.dst] ignores the `paint` and uses only the
+  /// colors of the `vertices`; [BlendMode.src] ignores the colors of the
   /// `vertices` and uses only the colors in the `paint`.
   ///
   /// All parameters must not be null.
@@ -5511,7 +5521,7 @@ abstract class Canvas {
   ///   void paint(Canvas canvas, Size size) {
   ///     Paint paint = Paint();
   ///     canvas.drawAtlas(spriteAtlas, <RSTransform>[
-  ///       for (Sprite sprite in allSprites)
+  ///       for (final Sprite sprite in allSprites)
   ///         RSTransform.fromComponents(
   ///           rotation: 0.0,
   ///           scale: 1.0,
@@ -5523,7 +5533,7 @@ abstract class Canvas {
   ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
-  ///       for (Sprite sprite in allSprites)
+  ///       for (final Sprite sprite in allSprites)
   ///         Rect.fromLTWH(sprite.index * 10.0, 0.0, 10.0, 10.0),
   ///     ], null, null, null, paint);
   ///   }
@@ -5554,7 +5564,7 @@ abstract class Canvas {
   ///   void paint(Canvas canvas, Size size) {
   ///     Paint paint = Paint();
   ///     canvas.drawAtlas(spriteAtlas, <RSTransform>[
-  ///       for (Sprite sprite in allSprites)
+  ///       for (final Sprite sprite in allSprites)
   ///         RSTransform.fromComponents(
   ///           rotation: sprite.rotation,
   ///           scale: 1.0,
@@ -5566,10 +5576,10 @@ abstract class Canvas {
   ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
-  ///       for (Sprite sprite in allSprites)
+  ///       for (final Sprite sprite in allSprites)
   ///         Rect.fromLTWH(sprite.index * 10.0, 0.0, 10.0, 10.0),
   ///     ], <Color>[
-  ///       for (Sprite sprite in allSprites)
+  ///       for (final Sprite sprite in allSprites)
   ///         Colors.white.withAlpha(sprite.alpha),
   ///     ], BlendMode.srcIn, null, paint);
   ///   }
@@ -6933,10 +6943,10 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool sync = true;
+  bool isSync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      if (sync) {
+      if (isSync) {
         throw Exception('operation failed');
       } else {
         completer.completeError(Exception('operation failed'));
@@ -6945,7 +6955,7 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  sync = false;
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }

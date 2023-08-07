@@ -14,7 +14,6 @@ namespace flutter {
 
 static std::shared_ptr<impeller::Context> CreateImpellerContext(
     const fml::RefPtr<vulkan::VulkanProcTable>& proc_table,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
     bool enable_vulkan_validation) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
@@ -32,18 +31,18 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
   settings.proc_address_callback = instance_proc_addr;
   settings.shader_libraries_data = std::move(shader_mappings);
   settings.cache_directory = fml::paths::GetCachesDirectory();
-  settings.worker_task_runner = std::move(worker_task_runner);
   settings.enable_validation = enable_vulkan_validation;
+
+  FML_LOG(ERROR) << "Using the Impeller rendering backend (Vulkan).";
+
   return impeller::ContextVK::Create(std::move(settings));
 }
 
 AndroidContextVulkanImpeller::AndroidContextVulkanImpeller(
-    bool enable_validation,
-    std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
+    bool enable_validation)
     : AndroidContext(AndroidRenderingAPI::kVulkan),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
-  auto impeller_context = CreateImpellerContext(
-      proc_table_, std::move(worker_task_runner), enable_validation);
+  auto impeller_context = CreateImpellerContext(proc_table_, enable_validation);
   SetImpellerContext(impeller_context);
   is_valid_ =
       proc_table_->HasAcquiredMandatoryProcAddresses() && impeller_context;

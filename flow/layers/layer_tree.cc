@@ -8,15 +8,12 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layer_snapshot_store.h"
-#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
-#include "include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 namespace flutter {
 
@@ -63,8 +60,8 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
+      .impeller_enabled              = !frame.gr_context(),
       .raster_cached_entries         = &raster_cache_items_,
-      .display_list_enabled          = frame.display_list_builder() != nullptr,
       // clang-format on
   };
 
@@ -143,6 +140,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .raster_cache                  = cache,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
+      .impeller_enabled              = !!frame.aiks_context(),
       .aiks_context                  = frame.aiks_context(),
       // clang-format on
   };
@@ -155,6 +153,69 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);
   }
+}
+
+std::shared_ptr<const impeller::Picture> LayerTree::FlattenToImpellerPicture(
+    const SkRect& bounds,
+    const std::shared_ptr<TextureRegistry>& texture_registry) {
+#if IMPELLER_SUPPORTS_RENDERING
+  TRACE_EVENT0("flutter", "LayerTree::FlattenToImpellerPicture");
+
+  impeller::DlAiksCanvas canvas(bounds);
+
+  const FixedRefreshRateStopwatch unused_stopwatch;
+
+  LayerStateStack preroll_state_stack;
+  // No root surface transformation. So assume identity.
+  preroll_state_stack.set_preroll_delegate(bounds);
+  PrerollContext preroll_context{
+      // clang-format off
+      .raster_cache                  = nullptr,
+      .gr_context                    = nullptr,
+      .view_embedder                 = nullptr,
+      .state_stack                   = preroll_state_stack,
+      .dst_color_space               = nullptr,
+      .surface_needs_readback        = false,
+      .raster_time                   = unused_stopwatch,
+      .ui_time                       = unused_stopwatch,
+      .texture_registry              = texture_registry,
+      // clang-format on
+  };
+
+  LayerStateStack paint_state_stack;
+  paint_state_stack.set_delegate(&canvas);
+  PaintContext paint_context = {
+      // clang-format off
+      .state_stack                   = paint_state_stack,
+      .canvas                        = &canvas,
+      .gr_context                    = nullptr,
+      .dst_color_space               = nullptr,
+      .view_embedder                 = nullptr,
+      .raster_time                   = unused_stopwatch,
+      .ui_time                       = unused_stopwatch,
+      .texture_registry              = texture_registry,
+      .raster_cache                  = nullptr,
+      .layer_snapshot_store          = nullptr,
+      .enable_leaf_layer_tracing     = false,
+      // clang-format on
+  };
+
+  // Even if we don't have a root layer, we still need to create an empty
+  // picture.
+  if (root_layer_) {
+    root_layer_->Preroll(&preroll_context);
+
+    // The needs painting flag may be set after the preroll. So check it after.
+    if (root_layer_->needs_painting(paint_context)) {
+      root_layer_->Paint(paint_context);
+    }
+  }
+
+  return std::make_shared<const impeller::Picture>(
+      canvas.EndRecordingAsPicture());
+#else   // IMPELLER_SUPPORTS_RENDERING
+  return nullptr;
+#endif  // !IMPELLER_SUPPORTS_RENDERING
 }
 
 sk_sp<DisplayList> LayerTree::Flatten(

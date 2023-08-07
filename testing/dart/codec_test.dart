@@ -177,6 +177,70 @@ void main() {
     expect(imageData.buffer.asUint8List(), goldenData);
 
   });
+
+  test('Animated apng can reuse pre-pre-frame', () async {
+    // https://github.com/flutter/engine/pull/42153
+
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', '2_dispose_op_restore_previous.apng'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // Capture the 67,68,69 frames of animation and then compare the pixels.
+    late ui.FrameInfo frameInfo;
+    for (int i = 0; i < 70; i++) {
+      frameInfo = await codec.getNextFrame();
+      if (i >= 67) {
+        final ui.Image image = frameInfo.image;
+        final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+
+        final Uint8List goldenData = File(
+          path.join('flutter', 'lib', 'ui', 'fixtures', '2_dispose_op_restore_previous.apng.$i.png'),
+        ).readAsBytesSync();
+
+        expect(imageData.buffer.asUint8List(), goldenData);
+      }
+    }
+  });
+
+  test('Animated apng alpha type handling', () async {
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'alpha_animated.apng'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // The test image contains two frames of solid red.  The first has
+    // alpha=0.2, and the second has alpha=0.6.
+    ui.Image image = (await codec.getNextFrame()).image;
+    ByteData imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(0), 0x33000033);
+    image = (await codec.getNextFrame()).image;
+    imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(0), 0x99000099);
+  });
+
+  test('Animated apng background color restore', () async {
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'dispose_op_background.apng'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // First frame is solid red
+    ui.Image image = (await codec.getNextFrame()).image;
+    ByteData imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(0), 0xFF0000FF);
+
+    // Third frame is blue in the lower right corner.
+    await codec.getNextFrame();
+    image = (await codec.getNextFrame()).image;
+    imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(imageData.lengthInBytes - 4), 0x0000FFFF);
+
+    // Fourth frame is transparent in the lower right corner
+    image = (await codec.getNextFrame()).image;
+    imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(imageData.lengthInBytes - 4), 0x00000000);
+  });
 }
 
 /// Returns a File handle to a file in the skia/resources directory.

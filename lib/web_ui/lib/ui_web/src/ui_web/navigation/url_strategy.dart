@@ -8,9 +8,10 @@ import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../testing.dart';
 import 'platform_location.dart';
 
-UrlStrategy _realDefaultUrlStrategy = ui.debugEmulateFlutterTesterEnvironment
+UrlStrategy _realDefaultUrlStrategy = debugEmulateFlutterTesterEnvironment
       ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
       : const HashUrlStrategy();
 
@@ -83,10 +84,6 @@ typedef PopStateListener = void Function(Object? state);
 /// By default, the [HashUrlStrategy] subclass is used if the app doesn't
 /// specify one.
 abstract class UrlStrategy {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const UrlStrategy();
-
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
   ui.VoidCallback addPopStateListener(PopStateListener fn);
@@ -139,7 +136,7 @@ abstract class UrlStrategy {
 /// // Somewhere before calling `runApp()` do:
 /// setUrlStrategy(const HashUrlStrategy());
 /// ```
-class HashUrlStrategy extends UrlStrategy {
+class HashUrlStrategy implements UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
@@ -183,8 +180,17 @@ class HashUrlStrategy extends UrlStrategy {
     // if the empty URL is pushed it won't replace any existing fragment. So
     // when the hash path is empty, we still return the location's path and
     // query.
-    return '${_platformLocation.pathname}${_platformLocation.search}'
-        '${internalUrl.isEmpty ? '' : '#$internalUrl'}';
+    final String hash;
+    if (internalUrl.isEmpty || internalUrl == '/') {
+      // Let's not add the hash at all when the app is in the home page. That
+      // way, the URL of the home page is cleaner.
+      //
+      // See: https://github.com/flutter/flutter/issues/127608
+      hash = '';
+    } else {
+      hash = '#$internalUrl';
+    }
+    return '${_platformLocation.pathname}${_platformLocation.search}$hash';
   }
 
   @override

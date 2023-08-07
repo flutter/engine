@@ -292,8 +292,9 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
 }
 
-void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
-  runtime_controller_->SetViewportMetrics(metrics);
+void Engine::SetViewportMetrics(int64_t view_id,
+                                const ViewportMetrics& metrics) {
+  runtime_controller_->SetViewportMetrics(view_id, metrics);
   ScheduleFrame();
 }
 
@@ -417,7 +418,9 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
 void Engine::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet,
     uint64_t trace_flow_id) {
-  TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
+  TRACE_EVENT0_WITH_FLOW_IDS("flutter", "Engine::DispatchPointerDataPacket",
+                             /*flow_id_count=*/1,
+                             /*flow_ids=*/&trace_flow_id);
   TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }

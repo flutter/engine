@@ -8,9 +8,8 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/dom.dart'
-    show DomEvent, createDomPopStateEvent;
-import 'package:ui/src/engine/navigation.dart';
+import 'package:ui/src/engine/dom.dart' show DomEvent, createDomPopStateEvent;
+import 'package:ui/src/engine/navigation/history.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
 import 'package:ui/ui_web/src/ui_web.dart';
@@ -661,6 +660,23 @@ void testMain() {
       expect(
         strategy.prepareExternalUrl(internalUrl),
         '/main?foo=bar#/menu?foo=bar',
+      );
+    });
+
+    test('removes /#/ from the home page', () {
+      const String internalUrl = '/';
+      final HashUrlStrategy strategy = HashUrlStrategy(location);
+
+      location.pathname = '/';
+      expect(strategy.prepareExternalUrl(internalUrl), '/');
+
+      location.pathname = '/main';
+      expect(strategy.prepareExternalUrl(internalUrl), '/main');
+
+      location.search = '?foo=bar';
+      expect(
+        strategy.prepareExternalUrl(internalUrl),
+        '/main?foo=bar',
       );
     });
 

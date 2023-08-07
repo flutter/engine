@@ -26,6 +26,9 @@ std::optional<Snapshot> ContentsFilterInput::GetSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
     std::optional<Rect> coverage_limit) const {
+  if (!coverage_limit.has_value() && entity.GetContents()) {
+    coverage_limit = entity.GetContents()->GetCoverageHint();
+  }
   if (!snapshot_.has_value()) {
     snapshot_ = contents_->RenderToSnapshot(
         renderer,        // renderer
@@ -41,6 +44,12 @@ std::optional<Snapshot> ContentsFilterInput::GetSnapshot(
 std::optional<Rect> ContentsFilterInput::GetCoverage(
     const Entity& entity) const {
   return contents_->GetCoverage(entity);
+}
+
+void ContentsFilterInput::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {
+  contents_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
 }
 
 }  // namespace impeller

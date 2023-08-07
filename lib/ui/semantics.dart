@@ -283,6 +283,8 @@ class SemanticsFlag {
   static const int _kIsSliderIndex = 1 << 23;
   static const int _kIsKeyboardKeyIndex = 1 << 24;
   static const int _kIsCheckStateMixedIndex = 1 << 25;
+  static const int _kHasExpandedStateIndex = 1 << 26;
+  static const int _kIsExpandedIndex = 1 << 27;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail. Also,
   // please update the Flag enum in
@@ -527,6 +529,27 @@ class SemanticsFlag {
   /// navigate to the next page when reaching the end of the current one.
   static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex, 'hasImplicitScrolling');
 
+  /// The semantics node has the quality of either being "expanded" or "collapsed".
+  ///
+  /// For example, a [SubmenuButton] widget has expanded state.
+  ///
+  /// See also:
+  ///
+  ///   * [SemanticsFlag.isExpanded], which controls whether the node is "expanded" or "collapsed".
+  static const SemanticsFlag hasExpandedState = SemanticsFlag._(_kHasExpandedStateIndex, 'hasExpandedState');
+
+  /// Whether a semantics node is expanded.
+  ///
+  /// If true, the semantics node is "expanded". If false, the semantics node is
+  /// "collapsed".
+  ///
+  /// For example, if a [SubmenuButton] shows its children, [isExpanded] is true.
+  ///
+  /// See also:
+  ///
+  ///   * [SemanticsFlag.hasExpandedState], which enables an expanded/collapsed state.
+  static const SemanticsFlag isExpanded = SemanticsFlag._(_kIsExpandedIndex, 'isExpanded');
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -557,6 +580,8 @@ class SemanticsFlag {
     _kIsSliderIndex: isSlider,
     _kIsKeyboardKeyIndex: isKeyboardKey,
     _kIsCheckStateMixedIndex: isCheckStateMixed,
+    _kHasExpandedStateIndex: hasExpandedState,
+    _kIsExpandedIndex: isExpanded,
   };
 
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
@@ -699,10 +724,11 @@ abstract class SemanticsUpdateBuilder {
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
-  /// node, the [PlatformDispatcher.onSemanticsAction] will be called with `id`
-  /// and one of the possible [SemanticsAction]s. Because the semantics tree is
-  /// maintained asynchronously, the [PlatformDispatcher.onSemanticsAction]
-  /// callback might be called with an action that is no longer possible.
+  /// node, the [PlatformDispatcher.onSemanticsActionEvent] will be called with
+  /// a [SemanticsActionEvent] specifying the action to be performed. Because
+  /// the semantics tree is maintained asynchronously, the
+  /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
+  /// an action that is no longer possible.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`

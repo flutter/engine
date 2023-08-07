@@ -16,8 +16,10 @@ namespace flutter {
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
     bool avoid_backing_store_cache,
     const CreateRenderTargetCallback& create_render_target_callback,
-    const PresentCallback& present_callback)
-    : avoid_backing_store_cache_(avoid_backing_store_cache),
+    const PresentCallback& present_callback,
+    bool enable_impeller)
+    : enable_impeller_(enable_impeller),
+      avoid_backing_store_cache_(avoid_backing_store_cache),
       create_render_target_callback_(create_render_target_callback),
       present_callback_(present_callback) {
   FML_DCHECK(create_render_target_callback_);
@@ -65,7 +67,7 @@ void EmbedderExternalViewEmbedder::BeginFrame(
       EmbedderExternalView::ViewIdentifier{};
 
   pending_views_[kRootViewIdentifier] = std::make_unique<EmbedderExternalView>(
-      pending_frame_size_, pending_surface_transformation_);
+      pending_frame_size_, pending_surface_transformation_, enable_impeller_);
   composition_order_.push_back(kRootViewIdentifier);
 }
 
@@ -80,7 +82,8 @@ void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
       pending_frame_size_,              // frame size
       pending_surface_transformation_,  // surface xformation
       vid,                              // view identifier
-      std::move(params)                 // embedded view params
+      std::move(params),                // embedded view params
+      enable_impeller_                  // enable_impeller
   );
   composition_order_.push_back(vid);
 }
@@ -125,6 +128,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -172,8 +176,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     // the context must be reset.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    auto render_target =
-        create_render_target_callback_(context, backing_store_config);
+    auto render_target = create_render_target_callback_(context, aiks_context,
+                                                        backing_store_config);
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";

@@ -50,7 +50,7 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
 
   void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWindows>
                     node_delegate) override {
-    focused_nodes_.push_back(node_delegate->GetAXNode()->id());
+    focused_nodes_.push_back(std::move(node_delegate));
   }
 
   void ResetRecords() {
@@ -62,11 +62,24 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
     return dispatched_events_;
   }
 
-  const std::vector<int32_t> focused_nodes() const { return focused_nodes_; }
+  const std::vector<int32_t> focused_nodes() const {
+    std::vector<int32_t> ids;
+    std::transform(focused_nodes_.begin(), focused_nodes_.end(),
+                   std::back_inserter(ids),
+                   [](std::shared_ptr<FlutterPlatformNodeDelegate> node) {
+                     return node->GetAXNode()->id();
+                   });
+    return ids;
+  }
+
+ protected:
+  std::weak_ptr<FlutterPlatformNodeDelegate> GetFocusedNode() override {
+    return focused_nodes_.back();
+  }
 
  private:
   std::vector<MsaaEvent> dispatched_events_;
-  std::vector<int32_t> focused_nodes_;
+  std::vector<std::shared_ptr<FlutterPlatformNodeDelegate>> focused_nodes_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeWindowsSpy);
 };
@@ -165,9 +178,9 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
 }
 
 std::shared_ptr<AccessibilityBridgeWindowsSpy> GetAccessibilityBridgeSpy(
-    FlutterWindowsEngine* engine) {
+    FlutterWindowsView& view) {
   return std::static_pointer_cast<AccessibilityBridgeWindowsSpy>(
-      engine->accessibility_bridge().lock());
+      view.accessibility_bridge().lock());
 }
 
 void ExpectWinEventFromAXEvent(int32_t node_id,
@@ -179,7 +192,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = GetAccessibilityBridgeSpy(view.GetEngine());
+  auto bridge = GetAccessibilityBridgeSpy(view);
   PopulateAXTree(bridge);
 
   bridge->ResetRecords();
@@ -187,6 +200,32 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
                                 {ax_event, ax::mojom::EventFrom::kNone, {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
   EXPECT_EQ(bridge->dispatched_events()[0].event_type, expected_event);
+}
+
+void ExpectWinEventFromAXEventOnFocusNode(int32_t node_id,
+                                          ui::AXEventGenerator::Event ax_event,
+                                          ax::mojom::Event expected_event,
+                                          int32_t focus_id) {
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  FlutterWindowsViewSpy view(std::move(window_binding_handler));
+  view.SetEngine(GetTestEngine());
+  view.OnUpdateSemanticsEnabled(true);
+
+  auto bridge = GetAccessibilityBridgeSpy(view);
+  PopulateAXTree(bridge);
+
+  bridge->ResetRecords();
+  auto focus_delegate =
+      bridge->GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
+  bridge->SetFocus(std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+      focus_delegate));
+  bridge->OnAccessibilityEvent({AXNodeFromID(bridge, node_id),
+                                {ax_event, ax::mojom::EventFrom::kNone, {}}});
+  ASSERT_EQ(bridge->dispatched_events().size(), 1);
+  EXPECT_EQ(bridge->dispatched_events()[0].event_type, expected_event);
+  EXPECT_EQ(bridge->dispatched_events()[0].node_delegate->GetAXNode()->id(),
+            focus_id);
 }
 
 }  // namespace
@@ -198,7 +237,7 @@ TEST(AccessibilityBridgeWindows, GetParent) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  auto bridge = view.accessibility_bridge().lock();
   PopulateAXTree(bridge);
 
   auto node0_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -214,7 +253,7 @@ TEST(AccessibilityBridgeWindows, GetParentOnRootRetunsNullptr) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  auto bridge = view.accessibility_bridge().lock();
   PopulateAXTree(bridge);
 
   auto node0_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -228,7 +267,7 @@ TEST(AccessibilityBridgeWindows, DispatchAccessibilityAction) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  auto bridge = view.accessibility_bridge().lock();
   PopulateAXTree(bridge);
 
   FlutterSemanticsAction actual_action = kFlutterSemanticsActionTap;
@@ -264,7 +303,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = GetAccessibilityBridgeSpy(view.GetEngine());
+  auto bridge = GetAccessibilityBridgeSpy(view);
   PopulateAXTree(bridge);
 
   bridge->ResetRecords();
@@ -342,9 +381,9 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityStateChanged) {
 }
 
 TEST(AccessibilityBridgeWindows, OnDocumentSelectionChanged) {
-  ExpectWinEventFromAXEvent(
+  ExpectWinEventFromAXEventOnFocusNode(
       1, ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED,
-      ax::mojom::Event::kDocumentSelectionChanged);
+      ax::mojom::Event::kDocumentSelectionChanged, 2);
 }
 
 }  // namespace testing

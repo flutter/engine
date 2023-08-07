@@ -25,12 +25,13 @@ class ConicalGradientContents final : public ColorSourceContents {
   ~ConicalGradientContents() override;
 
   // |Contents|
-  bool IsOpaque() const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
   void SetCenterAndRadius(Point center, Scalar radius);
 
@@ -59,6 +60,7 @@ class ConicalGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
   std::optional<Point> focus_;
   Scalar focus_radius_ = 0.0f;
 

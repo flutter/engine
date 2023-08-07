@@ -254,7 +254,7 @@ class DisplayList : public SkRefCnt {
   const SkRect& bounds() const { return bounds_; }
 
   bool has_rtree() const { return rtree_ != nullptr; }
-  sk_sp<const DlRTree> rtree() const { return rtree_; }
+  std::shared_ptr<const DlRTree> rtree() const { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
@@ -265,6 +265,19 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
   bool isUIThreadSafe() const { return is_ui_thread_safe_; }
 
+  /// @brief     Indicates if there are any rendering operations in this
+  ///            DisplayList that will modify a surface of transparent black
+  ///            pixels.
+  ///
+  /// This condition can be used to determine whether to create a cleared
+  /// surface, render a DisplayList into it, and then composite the
+  /// result into a scene. It is not uncommon for code in the engine to
+  /// come across such degenerate DisplayList objects when slicing up a
+  /// frame between platform views.
+  bool modifies_transparent_black() const {
+    return modifies_transparent_black_;
+  }
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -274,7 +287,8 @@ class DisplayList : public SkRefCnt {
               const SkRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
-              sk_sp<const DlRTree> rtree);
+              bool modifies_transparent_black,
+              std::shared_ptr<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
 
@@ -292,7 +306,9 @@ class DisplayList : public SkRefCnt {
 
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
-  const sk_sp<const DlRTree> rtree_;
+  const bool modifies_transparent_black_;
+
+  const std::shared_ptr<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,
                 uint8_t* ptr,

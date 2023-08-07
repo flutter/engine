@@ -14,8 +14,6 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 class GrDirectContext;
 
@@ -55,6 +53,10 @@ class LayerTree {
       const SkRect& bounds,
       const std::shared_ptr<TextureRegistry>& texture_registry = nullptr,
       GrDirectContext* gr_context = nullptr);
+
+  std::shared_ptr<const impeller::Picture> FlattenToImpellerPicture(
+      const SkRect& bounds,
+      const std::shared_ptr<TextureRegistry>& texture_registry);
 
   Layer* root_layer() const { return root_layer_.get(); }
   const SkISize& frame_size() const { return frame_size_; }

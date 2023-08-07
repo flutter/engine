@@ -125,8 +125,8 @@ void Playground::SetupContext(PlaygroundBackend backend) {
 
 void Playground::SetupWindow() {
   if (!context_) {
-    FML_LOG(WARNING)
-        << "Asked to setup a window with no context (call SetupContext first).";
+    FML_LOG(WARNING) << "Asked to set up a window with no context (call "
+                        "SetupContext first).";
     return;
   }
   auto renderer = std::make_unique<Renderer>(context_);
@@ -139,6 +139,9 @@ void Playground::SetupWindow() {
 }
 
 void Playground::TeardownWindow() {
+  if (context_) {
+    context_->Shutdown();
+  }
   context_.reset();
   renderer_.reset();
   impl_.reset();
@@ -383,7 +386,7 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     DecompressedImage& decompressed_image,
     bool enable_mipmapping) {
   // TODO(https://github.com/flutter/flutter/issues/123468): copying buffers to
-  // textures is not implemented for GLES/Vulkan.
+  // textures is not implemented for GLES.
   if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
     impeller::TextureDescriptor texture_descriptor;
     texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;

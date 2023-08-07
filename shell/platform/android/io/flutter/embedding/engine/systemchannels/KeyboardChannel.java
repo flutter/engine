@@ -6,7 +6,7 @@ package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
@@ -19,38 +19,40 @@ import java.util.Map;
  * <p>Receives asynchronous messages from the framework to query the engine known pressed state.
  */
 public class KeyboardChannel {
-  private static final String TAG = "KeyboardChannel";
-
   public final MethodChannel channel;
   private KeyboardMethodHandler keyboardMethodHandler;
 
   @NonNull
   public final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
+        Map<Long, Long> pressedState = new HashMap<>();
+
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (keyboardMethodHandler == null) {
-            return;
-          }
-          switch (call.method) {
-            case "getKeyboardState":
-              Map<Long, Long> pressedState = new HashMap<>();
-              try {
-                pressedState = keyboardMethodHandler.getKeyboardState();
-              } catch (IllegalStateException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              result.success(pressedState);
-              break;
-            default:
-              result.notImplemented();
-              break;
+            // Returns an empty pressed state when the engine did not get a chance to register
+            // a method handler for this channel.
+            result.success(pressedState);
+          } else {
+            switch (call.method) {
+              case "getKeyboardState":
+                try {
+                  pressedState = keyboardMethodHandler.getKeyboardState();
+                } catch (IllegalStateException exception) {
+                  result.error("error", exception.getMessage(), null);
+                }
+                result.success(pressedState);
+                break;
+              default:
+                result.notImplemented();
+                break;
+            }
           }
         }
       };
 
-  public KeyboardChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, "flutter/keyboard", StandardMethodCodec.INSTANCE);
+  public KeyboardChannel(@NonNull BinaryMessenger messenger) {
+    channel = new MethodChannel(messenger, "flutter/keyboard", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 

@@ -23,7 +23,10 @@ sk_sp<SkImage> DrawSnapshot(
   }
 
   draw_callback(surface->getCanvas());
-  surface->getCanvas()->flush();
+  auto dContext = GrAsDirectContext(surface->recordingContext());
+  if (dContext) {
+    dContext->flushAndSubmit();
+  }
 
   sk_sp<SkImage> device_snapshot;
   {
@@ -132,6 +135,13 @@ sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
   return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
     DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
   });
+}
+
+sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
+    const std::shared_ptr<const impeller::Picture>& picture,
+    SkISize size) {
+  FML_DCHECK(false);
+  return sk_sp<DlImage>();
 }
 
 sk_sp<SkImage> SnapshotControllerSkia::ConvertToRasterImage(

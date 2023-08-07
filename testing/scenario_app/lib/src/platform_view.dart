@@ -112,7 +112,6 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario
   }
 }
 
-
 /// A platform view that is larger than the display size.
 /// This is only applicable on Android while using virtual displays.
 /// Related issue: https://github.com/flutter/flutter/issues/28978.
@@ -423,6 +422,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     required this.secondId,
   }) {
     _nextFrame = _firstFrame;
+    channelBuffers.setListener('flutter/lifecycle', _onPlatformMessage);
   }
 
   /// The platform view identifier to use for the first platform view.
@@ -505,15 +505,10 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
 
   String _lastLifecycleState = '';
 
-  @override
-  void onPlatformMessage(
-    String name,
+  void _onPlatformMessage(
     ByteData? data,
     PlatformMessageResponseCallback? callback,
   ) {
-    if (name != 'flutter/lifecycle') {
-      return;
-    }
     final String message = utf8.decode(data!.buffer.asUint8List());
     if (_lastLifecycleState == 'AppLifecycleState.inactive' &&
         message == 'AppLifecycleState.resumed') {
@@ -522,6 +517,12 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     }
 
     _lastLifecycleState = message;
+  }
+
+  @override
+  void unmount() {
+    channelBuffers.clearListener('flutter/lifecycle');
+    super.unmount();
   }
 }
 
@@ -576,7 +577,7 @@ class PlatformViewClipRectAfterMovedScenario extends Scenario with _BasePlatform
       ..pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
 
     addPlatformView(
-      _numberOfFrames == 10? 10000:id,
+      _numberOfFrames == 10? 10000: id,
       dispatcher: view.platformDispatcher,
       sceneBuilder: builder,
     );
@@ -638,7 +639,6 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
     finishBuilder(builder);
   }
 }
-
 
 /// Platform view with clip rrect.
 /// The bounding rect of the rrect is the same as PlatformView and only the corner radii clips the PlatformView.
@@ -878,6 +878,187 @@ class PlatformViewClipPathWithTransformScenario extends PlatformViewScenario {
   }
 }
 
+/// Two platform views, both have clip rects
+class TwoPlatformViewClipRect extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  TwoPlatformViewClipRect(
+    super.view, {
+    required this.firstId,
+    required this.secondId,
+  });
+
+  /// The platform view identifier to use for the first platform view.
+  final int firstId;
+
+  /// The platform view identifier to use for the second platform view.
+  final int secondId;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0, 600);
+    builder.pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
+
+    addPlatformView(
+      firstId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 1',
+    );
+
+    builder.pop();
+    builder.pop();
+
+    // Use a different rect to differentiate from the 1st clip rect.
+    builder.pushClipRect(const Rect.fromLTRB(100, 100, 300, 300));
+
+    addPlatformView(
+      secondId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 2',
+    );
+
+    builder.pop();
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
+/// Two platform views, both have clip rrects
+class TwoPlatformViewClipRRect extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  TwoPlatformViewClipRRect(
+    super.view, {
+    required this.firstId,
+    required this.secondId,
+  });
+
+  /// The platform view identifier to use for the first platform view.
+  final int firstId;
+
+  /// The platform view identifier to use for the second platform view.
+  final int secondId;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0, 600);
+    builder.pushClipRRect(
+      RRect.fromLTRBAndCorners(
+        0,
+        0,
+        500,
+        500,
+        topLeft: const Radius.circular(15),
+        topRight: const Radius.circular(50),
+        bottomLeft: const Radius.circular(50),
+      ),
+    );
+
+    addPlatformView(
+      firstId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 1',
+    );
+
+    builder.pop();
+    builder.pop();
+
+    // Use a different rrect to differentiate from the 1st clip rrect.
+    builder.pushClipRRect(
+      RRect.fromLTRBAndCorners(
+        0,
+        0,
+        500,
+        500,
+        topLeft: const Radius.circular(100),
+        topRight: const Radius.circular(50),
+        bottomLeft: const Radius.circular(50),
+      ),
+    );
+
+    addPlatformView(
+      secondId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 2',
+    );
+
+    builder.pop();
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
+/// Two platform views, both have clip path
+class TwoPlatformViewClipPath extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  TwoPlatformViewClipPath(
+    super.view, {
+    required this.firstId,
+    required this.secondId,
+  });
+
+  /// The platform view identifier to use for the first platform view.
+  final int firstId;
+
+  /// The platform view identifier to use for the second platform view.
+  final int secondId;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0, 600);
+    final Path path = Path()
+      ..moveTo(100, 100)
+      ..quadraticBezierTo(50, 250, 100, 400)
+      ..lineTo(350, 400)
+      ..cubicTo(400, 300, 300, 200, 350, 100)
+      ..close();
+
+    builder.pushClipPath(path);
+
+    addPlatformView(
+      firstId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 1',
+    );
+
+    builder.pop();
+    builder.pop();
+
+    // Use a different path to differentiate from the 1st clip path.
+    final Path path2 = Path()
+      ..moveTo(100, 100)
+      ..quadraticBezierTo(100, 150, 100, 400)
+      ..lineTo(350, 350)
+      ..cubicTo(400, 300, 300, 200, 350, 200)
+      ..close();
+
+    builder.pushClipPath(path2);
+
+    addPlatformView(
+      secondId,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      text: 'platform view 2',
+    );
+
+    builder.pop();
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
@@ -1044,10 +1225,10 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
 
   /// Creates the PlatformViewForOverlappingPlatformViewsScenario.
   PlatformViewForOverlappingPlatformViewsScenario(
-      super.view, {
-        required this.foregroundId,
-        required this.backgroundId,
-      }) {
+    super.view, {
+    required this.foregroundId,
+    required this.backgroundId,
+  }) {
     _nextFrame = _firstFrame;
   }
 
@@ -1151,7 +1332,7 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
       view.platformDispatcher.sendPlatformMessage(
         'flutter/platform_views',
         message.buffer.asByteData(),
-            (ByteData? response) {},
+        (ByteData? response) {},
       );
     }
   }
@@ -1262,8 +1443,6 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
 /// A simple platform view for testing backDropFilter with a platform view in the scene.
 ///
 /// The stack would look like: picture 1 -> pv1 -> picture 2 -> filter -> pv2 - > picture 3.
-/// Because backdrop filter on platform views has not been implemented(see: https://github.com/flutter/flutter/issues/43902),
-/// the result will not including a filtered pv1.
 class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Constructs the scenario.
@@ -1352,6 +1531,68 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
   }
 }
 
+/// A simple platform view for testing backDropFilter with a platform view in the scene.
+///
+/// The backdrop filter sigma value is negative, which tries to reproduce a crash, see:
+/// https://github.com/flutter/flutter/issues/127095
+class PlatformViewWithNegativeBackDropFilter extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Constructs the scenario.
+  PlatformViewWithNegativeBackDropFilter(
+    super.view, {
+    required int id,
+  }) : _id = id;
+
+  final int _id;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // This is just a background picture to make the result more viewable.
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 600, 1000),
+      Paint()..color = const Color(0xFFFF0000),
+    );
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 300, 300),
+      Paint()..color = const Color(0xFF00FF00),
+    );
+    final Picture picture1 = recorder.endRecording();
+    builder.addPicture(Offset.zero, picture1);
+
+    builder.pushOffset(0, 200);
+
+    addPlatformView(
+      _id,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+      width: 100,
+      height: 100,
+      text: 'platform view 1'
+    );
+
+    final PictureRecorder recorder2 = PictureRecorder();
+    final Canvas canvas2 = Canvas(recorder2);
+    canvas2.drawCircle(
+      const Offset(200, 100),
+      50,
+      Paint()..color = const Color(0xFF0000EF),
+    );
+    final Picture picture2 = recorder2.endRecording();
+    builder.addPicture(const Offset(100, 100), picture2);
+
+    final ImageFilter filter = ImageFilter.blur(sigmaX: -8, sigmaY: 8);
+    builder.pushBackdropFilter(filter);
+
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
 /// Builds a scenario where many platform views are scrolling and pass under a picture.
 class PlatformViewScrollingUnderWidget extends Scenario
     with _BasePlatformViewScenarioMixin {
@@ -1360,7 +1601,7 @@ class PlatformViewScrollingUnderWidget extends Scenario
     super.view, {
     required int firstPlatformViewId,
     required int lastPlatformViewId,
-  }) : _firstPlatformViewId = firstPlatformViewId,
+  }) :  _firstPlatformViewId = firstPlatformViewId,
        _lastPlatformViewId = lastPlatformViewId;
 
   final int _firstPlatformViewId;
@@ -1430,6 +1671,92 @@ class PlatformViewScrollingUnderWidget extends Scenario
   }
 }
 
+/// Builds a scenario where many platform views with clips scrolling.
+class PlatformViewsWithClipsScrolling extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  PlatformViewsWithClipsScrolling(
+    super.view, {
+    required int firstPlatformViewId,
+    required int lastPlatformViewId,
+  }) :  _firstPlatformViewId = firstPlatformViewId,
+       _lastPlatformViewId = lastPlatformViewId;
+
+  final int _firstPlatformViewId;
+
+  final int _lastPlatformViewId;
+
+  double _offset = 0;
+
+  bool _movingUp = true;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    _buildOneFrame(_offset);
+  }
+
+  @override
+  void onDrawFrame() {
+    // Scroll up until -1000, then scroll down until -1.
+    if (_offset < -500) {
+      _movingUp = false;
+    } else if (_offset > -1) {
+      _movingUp = true;
+    }
+
+    if (_movingUp) {
+      _offset -= 100;
+    } else {
+      _offset += 100;
+    }
+    view.platformDispatcher.scheduleFrame();
+    super.onDrawFrame();
+  }
+
+  Future<void> _buildOneFrame(double offset) async {
+    const double cellWidth = 1000;
+    double localOffset = offset;
+    final SceneBuilder builder = SceneBuilder();
+    const double cellHeight = 300;
+    for (int i = _firstPlatformViewId; i <= _lastPlatformViewId; i++) {
+      // Build a list view with platform views.
+      builder.pushOffset(0, localOffset);
+      bool addedClipRRect = false;
+      if (localOffset > -1) {
+        addedClipRRect = true;
+        builder.pushClipRRect(
+          RRect.fromLTRBAndCorners(
+            100,
+            100,
+            400,
+            400,
+            topLeft: const Radius.circular(15),
+            topRight: const Radius.circular(50),
+            bottomLeft: const Radius.circular(50),
+          ),
+        );
+      }
+      addPlatformView(
+        i,
+        dispatcher: view.platformDispatcher,
+        sceneBuilder: builder,
+        text: 'platform view $i',
+        width: cellWidth,
+        height: cellHeight,
+      );
+      if (addedClipRRect) {
+        builder.pop();
+      }
+      builder.pop();
+      localOffset += cellHeight;
+    }
+
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
 final Map<String, int> _createdPlatformViews = <String, int> {};
 
 /// Adds the platform view to the scene.
@@ -1450,7 +1777,6 @@ void addPlatformView(
   }
 
   final String platformViewKey = '$viewType-$id';
-
   if (_createdPlatformViews.containsKey(platformViewKey)) {
     addPlatformViewToSceneBuilder(
       id,
@@ -1473,7 +1799,6 @@ void addPlatformView(
   const int valueString = 7;
   const int valueUint8List = 8;
   const int valueMap = 13;
-
   final Uint8List message = Uint8List.fromList(<int>[
     valueString,
     ..._encodeString('create'),
