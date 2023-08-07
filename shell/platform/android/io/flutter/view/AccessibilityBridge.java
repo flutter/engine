@@ -2165,7 +2165,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
-  // Actions that are triggered by Android OS, as oppsite to user-triggered actions.
+  // Actions that are triggered by Android OS, as opposite to user-triggered actions.
   static int systemAction =
       Action.DID_GAIN_ACCESSIBILITY_FOCUS.value
           & Action.DID_LOSE_ACCESSIBILITY_FOCUS.value
