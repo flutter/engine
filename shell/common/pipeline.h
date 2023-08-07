@@ -257,11 +257,11 @@ class Pipeline {
 };
 
 struct FrameItem {
-  FrameItem(std::vector<LayerTreeTask> tasks,
+  FrameItem(std::list<LayerTreeTask> tasks,
             std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
       : tasks(std::move(tasks)),
         frame_timings_recorder(std::move(frame_timings_recorder)) {}
-  std::vector<LayerTreeTask> tasks;
+  std::list<LayerTreeTask> tasks;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
 };
 

@@ -207,28 +207,27 @@ RasterStatus Rasterizer::Draw(
                  ->RunsTasksOnCurrentThread());
 
   RasterStatus raster_status = RasterStatus::kFailed;
-  LayerTreePipeline::Consumer consumer =
-      [&](std::unique_ptr<FrameItem> item) {
-        // TODO(dkwingsmt): The rasterizer only supports rendering a single view
-        // and that view must be the implicit view. Properly support multi-view
-        // in the future.
-        FML_DCHECK(item->tasks.size() <= 1u);
-        if (item->tasks.empty()) {
-          return;
-        }
-        auto& task = item->tasks.front();
-        FML_DCHECK(task.view_id == kFlutterImplicitViewId);
-        std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
-        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
-            std::move(item->frame_timings_recorder);
-        float device_pixel_ratio = task.device_pixel_ratio;
-        if (discard_callback(task.view_id, *layer_tree.get())) {
-          raster_status = RasterStatus::kDiscarded;
-        } else {
-          raster_status = DoDraw(std::move(frame_timings_recorder),
-                                 std::move(layer_tree), device_pixel_ratio);
-        }
-      };
+  LayerTreePipeline::Consumer consumer = [&](std::unique_ptr<FrameItem> item) {
+    // TODO(dkwingsmt): The rasterizer only supports rendering a single view
+    // and that view must be the implicit view. Properly support multi-view
+    // in the future.
+    FML_DCHECK(item->tasks.size() <= 1u);
+    if (item->tasks.empty()) {
+      return;
+    }
+    auto& task = item->tasks.front();
+    FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+    std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+        std::move(item->frame_timings_recorder);
+    float device_pixel_ratio = task.device_pixel_ratio;
+    if (discard_callback(task.view_id, *layer_tree.get())) {
+      raster_status = RasterStatus::kDiscarded;
+    } else {
+      raster_status = DoDraw(std::move(frame_timings_recorder),
+                             std::move(layer_tree), device_pixel_ratio);
+    }
+  };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
@@ -239,9 +238,8 @@ RasterStatus Rasterizer::Draw(
 
   bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
-    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_),
-        resubmitted_pixel_ratio_);
+    auto resubmitted_layer_tree_item = std::make_unique<FrameItem>(
+        std::move(resubmitted_tasks_), std::move(resubmitted_recorder_));
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult result =
         front_continuation.Complete(std::move(resubmitted_layer_tree_item));
@@ -421,8 +419,10 @@ RasterStatus Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
-    resubmitted_pixel_ratio_ = device_pixel_ratio;
-    resubmitted_layer_tree_ = std::move(layer_tree);
+    // TODO(dkwingsmt): Properly record all tasks to resubmit when Rasterizer
+    // supports multiple views.
+    resubmitted_tasks_.emplace_back(kFlutterImplicitViewId,
+                                    std::move(layer_tree), device_pixel_ratio);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
     return raster_status;

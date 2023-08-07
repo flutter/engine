@@ -103,6 +103,21 @@ void Animator::BeginFrame(
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 
+  // Commit the pending continuation.
+  PipelineProduceResult result =
+      producer_continuation_.Complete(std::make_unique<FrameItem>(
+          std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
+
+  if (!result.success) {
+    FML_DLOG(INFO) << "Failed to commit to the pipeline";
+  } else if (!result.is_first_item) {
+    // Do nothing. It has been successfully pushed to the pipeline but not as
+    // the first item. Eventually the 'Rasterizer' will consume it, so we don't
+    // need to notify the delegate.
+  } else {
+    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
+  }
+
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
     // This is a heuristic that is meant to avoid giving false positives to the
@@ -128,10 +143,10 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+void Animator::Render(int64_t view_id,
+                      std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
   has_rendered_ = true;
-  last_layer_tree_size_ = layer_tree->frame_size();
 
   if (!frame_timings_recorder_) {
     // Framework can directly call render with a built scene.
@@ -148,26 +163,8 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), std::move(frame_timings_recorder_),
-      device_pixel_ratio);
-  // Commit the pending continuation.
-  PipelineProduceResult result =
-      producer_continuation_.Complete(std::move(layer_tree_item));
-
-  if (!result.success) {
-    FML_DLOG(INFO) << "No pending continuation to commit";
-    return;
-  }
-
-  if (!result.is_first_item) {
-    // It has been successfully pushed to the pipeline but not as the first
-    // item. Eventually the 'Rasterizer' will consume it, so we don't need to
-    // notify the delegate.
-    return;
-  }
-
-  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
+  layer_trees_tasks_.emplace_back(view_id, std::move(layer_tree),
+                                  device_pixel_ratio);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {

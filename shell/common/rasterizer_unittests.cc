@@ -33,11 +33,11 @@ namespace {
 constexpr int64_t kImplicitViewId = 0;
 constexpr float kDevicePixelRatio = 2.0f;
 
-std::vector<LayerTreeTask> SingleLayerTreeMap(
+std::list<LayerTreeTask> SingleLayerTreeMap(
     int64_t view_id,
     std::unique_ptr<LayerTree> layer_tree,
     float pixel_ratio) {
-  std::vector<LayerTreeTask> tasks;
+  std::list<LayerTreeTask> tasks;
   tasks.emplace_back(view_id, std::move(layer_tree), pixel_ratio);
   return tasks;
 }
@@ -84,10 +84,9 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                PostPrerollResult(
                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
   MOCK_METHOD1(CompositeEmbeddedView, DlCanvas*(int64_t view_id));
-  MOCK_METHOD4(SubmitFrame,
+  MOCK_METHOD3(SubmitFrame,
                void(GrDirectContext* context,
                     const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                    int64_t view_id,
                     std::unique_ptr<SurfaceFrame> frame));
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,
@@ -435,8 +434,7 @@ TEST(RasterizerTest,
 
   // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
-  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder(),
-                                kDevicePixelRatio);
+  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
