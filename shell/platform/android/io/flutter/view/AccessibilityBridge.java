@@ -41,7 +41,6 @@ import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge.Flag;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -2170,9 +2169,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   // Actions that are triggered by Android OS, as oppsite to user-triggered actions.
-  static int systemAction = Action.DID_GAIN_ACCESSIBILITY_FOCUS.value &
-   Action.DID_LOSE_ACCESSIBILITY_FOCUS.value &
-   Action.SHOW_ON_SCREEN.value;
+  static int systemAction =
+      Action.DID_GAIN_ACCESSIBILITY_FOCUS.value
+          & Action.DID_LOSE_ACCESSIBILITY_FOCUS.value
+          & Action.SHOW_ON_SCREEN.value;
 
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/main/lib/ui/semantics.dart

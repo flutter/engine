@@ -344,8 +344,7 @@ public class AccessibilityBridgeTest {
     AccessibilityBridge spyAccessibilityBridge = spy(accessibilityBridge);
     AccessibilityNodeInfo mockNodeInfo = mock(AccessibilityNodeInfo.class);
 
-    when(spyAccessibilityBridge.obtainAccessibilityNodeInfo(mockRootView))
-        .thenReturn(mockNodeInfo);
+    when(spyAccessibilityBridge.obtainAccessibilityNodeInfo(mockRootView)).thenReturn(mockNodeInfo);
     spyAccessibilityBridge.createAccessibilityNodeInfo(View.NO_ID);
     verify(mockNodeInfo, times(1)).setImportantForAccessibility(eq(false));
   }
