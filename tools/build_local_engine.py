@@ -87,8 +87,8 @@ def show_menu():
 
   curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
   stdscr.clear()
-  
-  # center the menu 
+
+  # center the menu
   row = curses.LINES // 2 - 5
   col = curses.COLS // 2
   col = col - len(HEADER) // 2
@@ -207,34 +207,33 @@ def build_gn_args(i):
   if goma:
     command += ' --goma'
 
-  match i:
-    case 0:
-      print(command + ' --android')
-      args.target_os = 'android'
-    case 1:
-      print(command + ' --android --android-cpu arm64')
-      args.target_os = 'android'
-      args.android_cpu = 'arm64'
-    case 2:
-      print(command + ' --android --android-cpu x86')
-      args.target_os = 'android'
-      args.android_cpu = 'x86'
-    case 3:
-      print(command + ' --android --android-cpu x64')
-      args.target_os = 'android'
-      args.android_cpu = 'x64'
-    case 4:
-      print(command + ' --ios\n')
-      args.target_os = 'ios'
-    case 5:
-      print(command + ' --ios --simulator')
-      args.target_os = 'ios'
-      args.simulator = True
-    case 6:
-      print(command + ' --ios --simulator --simulator-cpu=arm64')
-      args.target_os = 'ios'
-      args.simulator = True
-      args.simulator_cpu = 'arm64'
+  if i == 0:
+    print(command + ' --android')
+    args.target_os = 'android'
+  elif i == 1:
+    print(command + ' --android --android-cpu arm64')
+    args.target_os = 'android'
+    args.android_cpu = 'arm64'
+  elif i == 2:
+    print(command + ' --android --android-cpu x86')
+    args.target_os = 'android'
+    args.android_cpu = 'x86'
+  elif i == 3:
+    print(command + ' --android --android-cpu x64')
+    args.target_os = 'android'
+    args.android_cpu = 'x64'
+  elif i == 4:
+    print(command + ' --ios\n')
+    args.target_os = 'ios'
+  elif i == 5:
+    print(command + ' --ios --simulator')
+    args.target_os = 'ios'
+    args.simulator = True
+  elif i == 6:
+    print(command + ' --ios --simulator --simulator-cpu=arm64')
+    args.target_os = 'ios'
+    args.simulator = True
+    args.simulator_cpu = 'arm64'
 
   return args
 
