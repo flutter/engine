@@ -24,8 +24,8 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
+#include "external_view_embedder.h"
 #include "flatland_connection.h"
-#include "flatland_external_view_embedder.h"
 #include "flutter_runner_product_configuration.h"
 #include "isolate_configurator.h"
 #include "surface_producer.h"
@@ -101,17 +101,16 @@ class Engine final : public fuchsia::memorypressure::Watcher {
   void Terminate();
 
   void DebugWireframeSettingsChanged(bool enabled);
-  void CreateFlatlandView(int64_t view_id,
-                          ViewCallback on_view_created,
-                          FlatlandViewCreatedCallback on_view_bound,
-                          bool hit_testable,
-                          bool focusable);
+  void CreateView(int64_t view_id,
+                  ViewCallback on_view_created,
+                  ViewCreatedCallback on_view_bound,
+                  bool hit_testable,
+                  bool focusable);
   void UpdateView(int64_t view_id,
                   SkRect occlusion_hint,
                   bool hit_testable,
                   bool focusable);
-  void DestroyFlatlandView(int64_t view_id,
-                           FlatlandViewIdCallback on_view_unbound);
+  void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
 
   // |fuchsia::memorypressure::Watcher|
   void OnLevelChanged(fuchsia::memorypressure::Level level,
@@ -131,7 +130,7 @@ class Engine final : public fuchsia::memorypressure::Watcher {
   std::shared_ptr<FlatlandConnection>
       flatland_connection_;  // Must come before surface_producer_
   std::shared_ptr<SurfaceProducer> surface_producer_;
-  std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
+  std::shared_ptr<ExternalViewEmbedder> view_embedder_;
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;

@@ -100,7 +100,7 @@ class SoftwareSurface final : public SurfaceProducerSurface {
   // `SoftwareSurfaceProducer` to re-use the surface.
   std::function<void()> surface_read_finished_callback_;
   // Called when the surface is destroyed, to allow
-  // `FlatlandExternalViewEmbedder` to release the associated Flatland image.
+  // `ExternalViewEmbedder` to release the associated Flatland image.
   ReleaseImageCallback release_image_callback_;
 
   // Allows Flatland to associate this surface with a Flatland Image.

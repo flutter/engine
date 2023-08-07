@@ -30,9 +30,9 @@
 
 #include "../runtime/dart/utils/files.h"
 #include "../runtime/dart/utils/root_inspect_node.h"
-#include "flatland_platform_view.h"
 #include "focus_delegate.h"
 #include "fuchsia_intl.h"
+#include "platform_view.h"
 #include "software_surface_producer.h"
 #include "surface.h"
 #include "vsync_waiter.h"
@@ -254,11 +254,11 @@ void Engine::Initialize(
   fuchsia::ui::pointer::TouchSourceHandle touch_source;
   fuchsia::ui::pointer::MouseSourceHandle mouse_source;
 
-  fuchsia::ui::composition::ViewBoundProtocols flatland_view_protocols;
-  flatland_view_protocols.set_view_focuser(focuser.NewRequest());
-  flatland_view_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
-  flatland_view_protocols.set_touch_source(touch_source.NewRequest());
-  flatland_view_protocols.set_mouse_source(mouse_source.NewRequest());
+  fuchsia::ui::composition::ViewBoundProtocols view_protocols;
+  view_protocols.set_view_focuser(focuser.NewRequest());
+  view_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
+  view_protocols.set_touch_source(touch_source.NewRequest());
+  view_protocols.set_mouse_source(mouse_source.NewRequest());
 
   // Connect to Flatland.
   fuchsia::ui::composition::FlatlandHandle flatland;
@@ -350,7 +350,7 @@ void Engine::Initialize(
        flatland = std::move(flatland),
        session_error_callback = std::move(session_error_callback),
        view_creation_token = std::move(view_creation_token_),
-       flatland_view_protocols = std::move(flatland_view_protocols),
+       view_protocols = std::move(view_protocols),
        request = parent_viewport_watcher.NewRequest(),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
@@ -370,11 +370,10 @@ void Engine::Initialize(
         fuchsia::ui::views::ViewIdentityOnCreation view_identity = {
             .view_ref = std::move(view_ref_pair.view_ref),
             .view_ref_control = std::move(view_ref_pair.control_ref)};
-        flatland_view_embedder_ =
-            std::make_shared<FlatlandExternalViewEmbedder>(
-                std::move(view_creation_token), std::move(view_identity),
-                std::move(flatland_view_protocols), std::move(request),
-                flatland_connection_, surface_producer_, intercept_all_input_);
+        view_embedder_ = std::make_shared<ExternalViewEmbedder>(
+            std::move(view_creation_token), std::move(view_identity),
+            std::move(view_protocols), std::move(request), flatland_connection_,
+            surface_producer_, intercept_all_input_);
 
         view_embedder_latch.Signal();
       }));
@@ -408,23 +407,21 @@ void Engine::Initialize(
       dart_utils::RootInspectNode::CreateRootChild(
           std::move(accessibility_inspect_name)));
 
-  OnEnableWireframe on_enable_wireframe_callback = std::bind(
+  OnEnableWireframeCallback on_enable_wireframe_callback = std::bind(
       &Engine::DebugWireframeSettingsChanged, this, std::placeholders::_1);
 
-  OnCreateFlatlandView on_create_flatland_view_callback =
-      std::bind(&Engine::CreateFlatlandView, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3,
-                std::placeholders::_4, std::placeholders::_5);
+  OnCreateViewCallback on_create_view_callback = std::bind(
+      &Engine::CreateView, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 
-  OnUpdateView on_update_view_callback = std::bind(
+  OnUpdateViewCallback on_update_view_callback = std::bind(
       &Engine::UpdateView, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3, std::placeholders::_4);
 
-  OnDestroyFlatlandView on_destroy_flatland_view_callback =
-      std::bind(&Engine::DestroyFlatlandView, this, std::placeholders::_1,
-                std::placeholders::_2);
+  OnDestroyViewCallback on_destroy_view_callback = std::bind(
+      &Engine::DestroyView, this, std::placeholders::_1, std::placeholders::_2);
 
-  OnCreateSurface on_create_surface_callback =
+  OnCreateSurfaceCallback on_create_surface_callback =
       std::bind(&Engine::CreateSurface, this);
 
   // SessionListener has a OnScenicError method; invoke this callback on the
@@ -449,12 +446,12 @@ void Engine::Initialize(
       settings, task_runners.GetIOTaskRunner());
   run_configuration.SetEntrypointArgs(std::move(dart_entrypoint_args));
 
-  OnSemanticsNodeUpdate on_semantics_node_update_callback =
+  OnSemanticsNodeUpdateCallback on_semantics_node_update_callback =
       [this](flutter::SemanticsNodeUpdates updates, float pixel_ratio) {
         accessibility_bridge_->AddSemanticsNodeUpdate(updates, pixel_ratio);
       };
 
-  OnRequestAnnounce on_request_announce_callback =
+  OnRequestAnnounceCallback on_request_announce_callback =
       [this](const std::string& message) {
         accessibility_bridge_->RequestAnnounce(message);
       };
@@ -474,11 +471,9 @@ void Engine::Initialize(
                std::move(on_session_listener_error_callback),
            on_enable_wireframe_callback =
                std::move(on_enable_wireframe_callback),
-           on_create_flatland_view_callback =
-               std::move(on_create_flatland_view_callback),
+           on_create_view_callback = std::move(on_create_view_callback),
            on_update_view_callback = std::move(on_update_view_callback),
-           on_destroy_flatland_view_callback =
-               std::move(on_destroy_flatland_view_callback),
+           on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
            on_semantics_node_update_callback =
                std::move(on_semantics_node_update_callback),
@@ -494,11 +489,11 @@ void Engine::Initialize(
                  flatland_connection_->AwaitVsyncForSecondaryCallback(cb);
                },
            product_config, svc](flutter::Shell& shell) mutable {
-            OnShaderWarmup on_shader_warmup = nullptr;
+            OnShaderWarmupCallback on_shader_warmup_callback = nullptr;
             if (product_config.enable_shader_warmup()) {
               FML_DCHECK(surface_producer_);
               if (product_config.enable_shader_warmup_dart_hooks()) {
-                on_shader_warmup =
+                on_shader_warmup_callback =
                     [this, &shell](
                         const std::vector<std::string>& skp_names,
                         std::function<void(uint32_t)> completion_callback,
@@ -527,7 +522,7 @@ void Engine::Initialize(
               }
             }
 
-            return std::make_unique<flutter_runner::FlatlandPlatformView>(
+            return std::make_unique<flutter_runner::PlatformView>(
                 shell, shell.GetTaskRunners(), std::move(view_ref),
                 std::move(external_view_embedder), std::move(ime_service),
                 std::move(keyboard), std::move(touch_source),
@@ -535,13 +530,14 @@ void Engine::Initialize(
                 std::move(view_ref_focused), std::move(parent_viewport_watcher),
                 std::move(pointerinjector_registry),
                 std::move(on_enable_wireframe_callback),
-                std::move(on_create_flatland_view_callback),
+                std::move(on_create_view_callback),
                 std::move(on_update_view_callback),
-                std::move(on_destroy_flatland_view_callback),
+                std::move(on_destroy_view_callback),
                 std::move(on_create_surface_callback),
                 std::move(on_semantics_node_update_callback),
                 std::move(on_request_announce_callback),
-                std::move(on_shader_warmup), std::move(await_vsync_callback),
+                std::move(on_shader_warmup_callback),
+                std::move(await_vsync_callback),
                 std::move(await_vsync_for_secondary_callback_callback),
                 std::move(svc));
           });
@@ -712,7 +708,7 @@ Engine::~Engine() {
   fml::AutoResetWaitableEvent view_embedder_latch;
   thread_host_.raster_thread->GetTaskRunner()->PostTask(
       fml::MakeCopyable([this, &view_embedder_latch]() mutable {
-        flatland_view_embedder_.reset();
+        view_embedder_.reset();
         flatland_connection_.reset();
         surface_producer_.reset();
         view_embedder_latch.Signal();
@@ -765,21 +761,21 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
   });
 }
 
-void Engine::CreateFlatlandView(int64_t view_id,
-                                ViewCallback on_view_created,
-                                FlatlandViewCreatedCallback on_view_bound,
-                                bool hit_testable,
-                                bool focusable) {
+void Engine::CreateView(int64_t view_id,
+                        ViewCallback on_view_created,
+                        ViewCreatedCallback on_view_bound,
+                        bool hit_testable,
+                        bool focusable) {
   FML_CHECK(shell_);
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, hit_testable, focusable,
        on_view_created = std::move(on_view_created),
        on_view_bound = std::move(on_view_bound)]() {
-        FML_CHECK(flatland_view_embedder_);
-        flatland_view_embedder_->CreateView(view_id, std::move(on_view_created),
-                                            std::move(on_view_bound));
-        flatland_view_embedder_->SetViewProperties(view_id, SkRect::MakeEmpty(),
-                                                   hit_testable, focusable);
+        FML_CHECK(view_embedder_);
+        view_embedder_->CreateView(view_id, std::move(on_view_created),
+                                   std::move(on_view_bound));
+        view_embedder_->SetViewProperties(view_id, SkRect::MakeEmpty(),
+                                          hit_testable, focusable);
       });
 }
 
@@ -790,21 +786,19 @@ void Engine::UpdateView(int64_t view_id,
   FML_CHECK(shell_);
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, occlusion_hint, hit_testable, focusable]() {
-        FML_CHECK(flatland_view_embedder_);
-        flatland_view_embedder_->SetViewProperties(view_id, occlusion_hint,
-                                                   hit_testable, focusable);
+        FML_CHECK(view_embedder_);
+        view_embedder_->SetViewProperties(view_id, occlusion_hint, hit_testable,
+                                          focusable);
       });
 }
 
-void Engine::DestroyFlatlandView(int64_t view_id,
-                                 FlatlandViewIdCallback on_view_unbound) {
+void Engine::DestroyView(int64_t view_id, ViewIdCallback on_view_unbound) {
   FML_CHECK(shell_);
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, on_view_unbound = std::move(on_view_unbound)]() {
-        FML_CHECK(flatland_view_embedder_);
-        flatland_view_embedder_->DestroyView(view_id,
-                                             std::move(on_view_unbound));
+        FML_CHECK(view_embedder_);
+        view_embedder_->DestroyView(view_id, std::move(on_view_unbound));
       });
 }
 
@@ -815,8 +809,8 @@ std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
 
 std::shared_ptr<flutter::ExternalViewEmbedder>
 Engine::GetExternalViewEmbedder() {
-  FML_CHECK(flatland_view_embedder_);
-  return flatland_view_embedder_;
+  FML_CHECK(view_embedder_);
+  return view_embedder_;
 }
 
 #if !defined(DART_PRODUCT)

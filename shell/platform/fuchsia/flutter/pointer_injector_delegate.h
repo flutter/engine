@@ -43,7 +43,7 @@ class PointerInjectorDelegate {
       fml::RefPtr<flutter::PlatformMessageResponse> response);
 
   // Adds an endpoint for |view_id| in |valid_views_| for lifecycle management.
-  // Called in |FlatlandPlatformView::OnChildViewViewRef()|.
+  // Called in |PlatformView::OnChildViewViewRef()|.
   void OnCreateView(
       uint64_t view_id,
       std::optional<fuchsia::ui::views::ViewRef> view_ref = std::nullopt);
