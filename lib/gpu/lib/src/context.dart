@@ -21,7 +21,7 @@ class GpuContext extends NativeFieldWrapperClass1 {
   /// Associates the default Impeller context with this Context.
   @Native<Handle Function(Handle)>(
       symbol: 'InternalFlutterGpu_Context_InitializeDefault')
-  external String _initializeDefault();
+  external String? _initializeDefault();
 }
 
 /// The default graphics context.
