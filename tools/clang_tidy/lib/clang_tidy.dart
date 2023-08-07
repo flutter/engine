@@ -62,27 +62,25 @@ class ClangTidy {
     bool fix = false,
     StringSink? outSink,
     StringSink? errSink,
-  }) :
-    options = Options(
-      buildCommandsPath: buildCommandsPath,
-      checksArg: checksArg,
-      lintAll: lintAll,
-      lintHead: lintHead,
-      fix: fix,
-      errSink: errSink,
-    ),
-    _outSink = outSink ?? io.stdout,
-    _errSink = errSink ?? io.stderr;
+  })  : options = Options(
+          buildCommandsPath: buildCommandsPath,
+          checksArg: checksArg,
+          lintAll: lintAll,
+          lintHead: lintHead,
+          fix: fix,
+          errSink: errSink,
+        ),
+        _outSink = outSink ?? io.stdout,
+        _errSink = errSink ?? io.stderr;
 
   /// Builds an instance of [ClangTidy] from a command line.
   ClangTidy.fromCommandLine(
     List<String> args, {
     StringSink? outSink,
     StringSink? errSink,
-  }) :
-    options = Options.fromCommandLine(args, errSink: errSink),
-    _outSink = outSink ?? io.stdout,
-    _errSink = errSink ?? io.stderr;
+  })  : options = Options.fromCommandLine(args, errSink: errSink),
+        _outSink = outSink ?? io.stdout,
+        _errSink = errSink ?? io.stderr;
 
   /// The [Options] that specify how this [ClangTidy] operates.
   final Options options;
@@ -132,7 +130,8 @@ class ClangTidy {
         .map((io.File file) =>
             jsonDecode(file.readAsStringSync()) as List<Object?>)
         .toList();
-    final List<Command> changedFileBuildCommands = await getLintCommandsForFiles(
+    final List<Command> changedFileBuildCommands =
+        await getLintCommandsForFiles(
       buildCommandsData,
       filesOfInterest,
       shardBuildCommandsData,
@@ -178,9 +177,9 @@ class ClangTidy {
   Future<List<io.File>> computeFilesOfInterest() async {
     if (options.lintAll) {
       return options.repoPath
-        .listSync(recursive: true)
-        .whereType<io.File>()
-        .toList();
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .toList();
     }
 
     final GitRepo repo = GitRepo(
@@ -217,6 +216,7 @@ class ClangTidy {
       }
       return true;
     }
+
     for (final Command command in items) {
       if (allSetsContain(command)) {
         yield _SetStatusCommand(_SetStatus.Intersection, command);
@@ -266,8 +266,8 @@ class ClangTidy {
       // since we are not sure if there is a defined order in the json file.
       intersection
           .sort((Command x, Command y) => x.filePath.compareTo(y.filePath));
-      totalCommands.addAll(
-          _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
+      totalCommands.addAll(_takeShard(
+          intersection, shardId!, 1 + sharedBuildCommandsData.length));
     } else {
       totalCommands.addAll(<Command>[
         for (final Object? data in buildCommandsData)
@@ -330,7 +330,7 @@ class ClangTidy {
         isPrintingError = true;
         yield line;
       } else if (line == ':') {
-          isPrintingError = false;
+        isPrintingError = false;
       } else if (isPrintingError) {
         yield line;
       }
@@ -344,11 +344,23 @@ class ClangTidy {
 
   Future<int> _runJobs(List<WorkerJob> jobs) async {
     int result = 0;
-    final Set<String> pendingJobs = <String>{for (final WorkerJob job in jobs) job.name};
+    final Set<String> pendingJobs = <String>{
+      for (final WorkerJob job in jobs) job.name
+    };
 
-    void reporter(int totalJobs, int completed, int inProgress, int pending, int failed) {
-      return _logWithTimestamp(ProcessPool.defaultReportToString(
-        totalJobs, completed, inProgress, pending, failed));
+    void reporter(
+        int totalJobs, int completed, int inProgress, int pending, int failed) {
+      final String percent = totalJobs == 0
+          ? '100'
+          : ((100 * (completed + failed)) ~/ totalJobs).toString().padLeft(3);
+      final String completedStr = completed.toString().padLeft(3);
+      final String totalStr = totalJobs.toString().padRight(3);
+      final String inProgressStr = inProgress.toString().padLeft(2);
+      final String pendingStr = pending.toString().padLeft(3);
+      final String failedStr = failed.toString().padLeft(3);
+
+      return _logWithTimestamp(
+          'Jobs: $percent% done, $completedStr/$totalStr completed, $inProgressStr in progress, $pendingStr pending, $failedStr failed.    \r');
     }
 
     final ProcessPool pool = ProcessPool(printReport: reporter);
@@ -377,7 +389,8 @@ class ClangTidy {
 
   void _logWithTimestamp(String message) {
     final Duration elapsedTime = DateTime.now().difference(_startTime);
-    final String seconds = (elapsedTime.inSeconds % 60).toString().padLeft(2, '0');
+    final String seconds =
+        (elapsedTime.inSeconds % 60).toString().padLeft(2, '0');
     _outSink.writeln('[${elapsedTime.inMinutes}:$seconds] $message');
   }
 }
