@@ -48,6 +48,8 @@ static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInpu
 static NSString* const kUpdateConfigMethod = @"TextInput.updateConfig";
 static NSString* const kOnInteractiveKeyboardPointerMoveMethod =
     @"TextInput.onPointerMoveForInteractiveKeyboard";
+static NSString* const kOnInteractiveKeyboardPointerUpMethod =
+    @"TextInput.onPointerUpForInteractiveKeyboard";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -762,6 +764,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, copy) NSString* autofillId;
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
+@property(nonatomic, assign) BOOL isTemporaryFlutterTextDesync;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
 @property(nonatomic, assign) int textInputClient;
@@ -781,6 +784,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   CGRect _cachedFirstRect;
   FlutterScribbleInteractionStatus _scribbleInteractionStatus;
   BOOL _hasPlaceholder;
+  BOOL _isTemporaryFlutterTextDesync;
   // Whether to show the system keyboard when this view
   // becomes the first responder. Typically set to false
   // when the app shows its own in-flutter keyboard.
@@ -799,6 +803,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _textInputPlugin = textInputPlugin;
     _textInputClient = 0;
     _selectionAffinity = kTextAffinityUpstream;
+    _isTemporaryFlutterTextDesync = NO;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
@@ -1092,8 +1097,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (BOOL)resignFirstResponder {
   BOOL success = [super resignFirstResponder];
   if (success) {
-    [self.textInputDelegate flutterTextInputView:self
-        didResignFirstResponderWithTextInputClient:_textInputClient];
+    if (!_isTemporaryFlutterTextDesync) {
+      [self.textInputDelegate flutterTextInputView:self
+          didResignFirstResponderWithTextInputClient:_textInputClient];
+    }
   }
   return success;
 }
@@ -2319,22 +2326,66 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     CGFloat pointerY = (CGFloat)[args[@"pointerY"] doubleValue];
     [self handlePointerMove:pointerY];
     result(nil);
+  } else if ([method isEqualToString:kOnInteractiveKeyboardPointerUpMethod]) {
+    CGFloat pointerY = (CGFloat)[args[@"pointerY"] doubleValue];
+    [self handlePointerUp:pointerY];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
+- (void)handlePointerUp:(CGFloat)pointerY {
+  // View must be loaded at this point.
+  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+  CGFloat screenHeight = screen.bounds.size.height;
+  CGFloat keyboardHeight = _keyboardRect.size.height;
+  BOOL pointerBelowMiddleY = (screenHeight - (keyboardHeight / 2)) < pointerY;
+  [UIView animateWithDuration:0.3f
+      animations:^{
+        double keyboardDestination =
+            pointerBelowMiddleY ? screenHeight : screenHeight - keyboardHeight;
+        _keyboardViewContainer.frame = CGRectMake(
+            0, keyboardDestination, _viewController.flutterScreenIfViewLoaded.bounds.size.width,
+            _keyboardViewContainer.frame.size.height);
+      }
+      completion:^(BOOL finished) {
+        if (pointerBelowMiddleY) {
+          [self.textInputDelegate flutterTextInputView:self.activeView
+              didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
+          [self dismissScreenshot];
+        } else {
+          [self showKeyboardRemoveScreenshot];
+        }
+      }];
+}
+
+- (void)dismissScreenshot {
+  for (UIView* subView in _keyboardViewContainer.subviews) {
+    [subView removeFromSuperview];
+  }
+}
+
+- (void)showKeyboardRemoveScreenshot {
+  [UIView setAnimationsEnabled:NO];
+  [_cachedFirstResponder becomeFirstResponder];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.6 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    [UIView setAnimationsEnabled:YES];
+    [self dismissScreenshot];
+  });
+}
+
 - (void)handlePointerMove:(CGFloat)pointerY {
   // View must be loaded at this point.
   UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
-  double screenHeight = screen.bounds.size.height;
-  double keyboardHeight = _keyboardRect.size.height;
+  CGFloat screenHeight = screen.bounds.size.height;
+  CGFloat keyboardHeight = _keyboardRect.size.height;
   if (screenHeight - keyboardHeight <= pointerY) {
     // If the pointer is within the bounds of the keyboard.
     if (_keyboardView.superview == nil) {
       // If no screenshot has been taken.
       [self takeKeyboardScreenshotAndDisplay];
-      [self hideKeyboardWithoutAnimation];
+      [self hideKeyboardWithoutAnimation:YES];
     } else {
       [self setKeyboardContainerHeight:pointerY];
     }
@@ -2352,10 +2403,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   _keyboardViewContainer.frame = frameRect;
 }
 
-- (void)hideKeyboardWithoutAnimation {
+- (void)hideKeyboardWithoutAnimation:(BOOL)isDesync {
   [UIView setAnimationsEnabled:NO];
   _cachedFirstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  _activeView.isTemporaryFlutterTextDesync = isDesync;
   [_cachedFirstResponder resignFirstResponder];
+  _activeView.isTemporaryFlutterTextDesync = !isDesync;
   [UIView setAnimationsEnabled:YES];
 }
 
