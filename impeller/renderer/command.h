@@ -54,10 +54,11 @@ struct Resource {
 using BufferResource = Resource<BufferView>;
 using TextureResource = Resource<std::shared_ptr<const Texture>>;
 using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
+using Slots =
+    std::map<size_t, std::variant<ShaderUniformSlot, SampledImageSlot>>;
 
 struct Bindings {
-  std::map<size_t, ShaderUniformSlot> uniforms;
-  std::map<size_t, SampledImageSlot> sampled_images;
+  Slots slots;
   std::map<size_t, BufferResource> buffers;
   std::map<size_t, TextureResource> textures;
   std::map<size_t, SamplerResource> samplers;

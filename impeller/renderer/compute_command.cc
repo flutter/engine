@@ -23,7 +23,8 @@ bool ComputeCommand::BindResource(ShaderStage stage,
     return false;
   }
 
-  bindings.uniforms[slot.ext_res_0] = slot;
+  FML_DCHECK(bindings.slots.find(slot.ext_res_0) == bindings.slots.end());
+  bindings.slots[slot.ext_res_0] = slot;
   bindings.buffers[slot.ext_res_0] = {&metadata, view};
   return true;
 }

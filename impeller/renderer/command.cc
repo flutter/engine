@@ -12,6 +12,12 @@
 
 namespace impeller {
 
+// Care should be taken when increasing the size of Command since many are
+// allocated per frame.
+#if FML_OS_MACOSX
+static_assert(sizeof(Command) == 392);
+#endif
+
 bool Command::BindVertices(const VertexBuffer& buffer) {
   if (buffer.index_type == IndexType::kUnknown) {
     VALIDATION_LOG << "Cannot bind vertex buffer with an unknown index type.";
@@ -61,11 +67,15 @@ bool Command::DoBindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.uniforms[slot.ext_res_0] = slot;
+      FML_DCHECK(vertex_bindings.slots.find(slot.ext_res_0) ==
+                 vertex_bindings.slots.end());
+      vertex_bindings.slots[slot.ext_res_0] = slot;
       vertex_bindings.buffers[slot.ext_res_0] = BufferResource(metadata, view);
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.uniforms[slot.ext_res_0] = slot;
+      FML_DCHECK(fragment_bindings.slots.find(slot.ext_res_0) ==
+                 fragment_bindings.slots.end());
+      fragment_bindings.slots[slot.ext_res_0] = slot;
       fragment_bindings.buffers[slot.ext_res_0] =
           BufferResource(metadata, view);
       return true;
@@ -125,11 +135,15 @@ bool Command::BindResource(ShaderStage stage,
   switch (stage) {
     case ShaderStage::kVertex:
       vertex_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
-      vertex_bindings.sampled_images[slot.sampler_index] = slot;
+      FML_DCHECK(vertex_bindings.slots.find(slot.sampler_index) ==
+                 vertex_bindings.slots.end());
+      vertex_bindings.slots[slot.sampler_index] = slot;
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
-      fragment_bindings.sampled_images[slot.sampler_index] = slot;
+      FML_DCHECK(fragment_bindings.slots.find(slot.sampler_index) ==
+                 fragment_bindings.slots.end());
+      fragment_bindings.slots[slot.sampler_index] = slot;
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
