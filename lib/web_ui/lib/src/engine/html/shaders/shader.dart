@@ -186,9 +186,11 @@ class GradientLinear extends EngineGradient {
         assert(offsetIsValid(to)),
         matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
-    if (assertionsEnabled) {
+    // ignore: prefer_asserts_in_initializer_lists
+    assert(() {
       validateColorStops(colors, colorStops);
-    }
+      return true;
+    }());
   }
 
   final ui.Offset from;
@@ -407,13 +409,13 @@ void _addColorStopsToCanvasGradient(DomCanvasGradient gradient,
   }
   if (colorStops == null) {
     assert(colors.length == 2);
-    gradient.addColorStop(offset, colorToCssString(colors[0])!);
-    gradient.addColorStop(1 - offset, colorToCssString(colors[1])!);
+    gradient.addColorStop(offset, colors[0].toCssString());
+    gradient.addColorStop(1 - offset, colors[1].toCssString());
   } else {
     for (int i = 0; i < colors.length; i++) {
       final double colorStop = colorStops[i].clamp(0.0, 1.0);
       gradient.addColorStop(
-          colorStop * scale + offset, colorToCssString(colors[i])!);
+          colorStop * scale + offset, colors[i].toCssString());
     }
   }
   if (isDecal) {
@@ -841,7 +843,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
     if (blendMode == ui.BlendMode.saturation ||
         blendMode == ui.BlendMode.multiply ||
         blendMode == ui.BlendMode.modulate) {
-          filterElement!.style.backgroundColor = colorToCssString(color)!;
+          filterElement!.style.backgroundColor = color.toCssString();
     }
     return svgFilter.element;
   }

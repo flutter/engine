@@ -76,6 +76,13 @@ class RenderTarget final {
 
   bool IsValid() const;
 
+  void SetupStencilAttachment(const Context& context,
+                              ISize size,
+                              bool msaa,
+                              const std::string& label = "Offscreen",
+                              AttachmentConfig stencil_attachment_config =
+                                  kDefaultStencilAttachmentConfig);
+
   SampleCount GetSampleCount() const;
 
   bool HasColorAttachment(size_t index) const;
@@ -108,6 +115,8 @@ class RenderTarget final {
 
   void IterateAllAttachments(
       const std::function<bool(const Attachment& attachment)>& iterator) const;
+
+  std::string ToString() const;
 
  private:
   std::map<size_t, ColorAttachment> colors_;

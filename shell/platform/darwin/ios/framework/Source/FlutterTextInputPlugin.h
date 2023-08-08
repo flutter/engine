@@ -54,7 +54,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element.
  */
-- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
+- (void)setUpIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
 - (void)resetViewResponder;
 
 @end
@@ -63,9 +63,11 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 @interface FlutterTextPosition : UITextPosition
 
 @property(nonatomic, readonly) NSUInteger index;
+@property(nonatomic, readonly) UITextStorageDirection affinity;
 
 + (instancetype)positionWithIndex:(NSUInteger)index;
-- (instancetype)initWithIndex:(NSUInteger)index;
++ (instancetype)positionWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity;
+- (instancetype)initWithIndex:(NSUInteger)index affinity:(UITextStorageDirection)affinity;
 
 @end
 
@@ -100,6 +102,10 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 
 + (instancetype)selectionRectWithRect:(CGRect)rect position:(NSUInteger)position;
 
++ (instancetype)selectionRectWithRect:(CGRect)rect
+                             position:(NSUInteger)position
+                     writingDirection:(NSWritingDirection)writingDirection;
+
 - (instancetype)initWithRectAndInfo:(CGRect)rect
                            position:(NSUInteger)position
                    writingDirection:(NSWritingDirection)writingDirection
@@ -108,6 +114,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
                          isVertical:(BOOL)isVertical;
 
 - (instancetype)init NS_UNAVAILABLE;
+
+- (BOOL)isRTL;
 @end
 
 API_AVAILABLE(ios(13.0)) @interface FlutterTextPlaceholder : UITextPlaceholder
@@ -125,6 +133,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, strong) UITextRange* markedTextRange;
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, weak) id<UITextInputDelegate> inputDelegate;
+@property(nonatomic, strong) NSMutableArray* pendingDeltas;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
@@ -156,4 +165,9 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
 @end
+
+@interface UIView (FindFirstResponder)
+@property(nonatomic, readonly) id flutterFirstResponder;
+@end
+
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

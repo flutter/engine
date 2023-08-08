@@ -12,6 +12,8 @@
 
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 namespace testing {
@@ -20,7 +22,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                      GrDirectContext* context) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(layer.size.width, layer.size.height);
-  auto surface = context ? SkSurface::MakeRenderTarget(
+  auto surface = context ? SkSurfaces::RenderTarget(
                                context,                   // context
                                skgpu::Budgeted::kNo,      // budgeted
                                image_info,                // image info
@@ -30,7 +32,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                false                      // mipmaps
 
                                )
-                         : SkSurface::MakeRaster(image_info);
+                         : SkSurfaces::Raster(image_info);
   FML_CHECK(surface != nullptr);
   return surface;
 }
@@ -136,7 +138,7 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
     return false;
   }
 
-  auto data = image->encodeToData();
+  auto data = SkPngEncoder::Encode(nullptr, image.get(), {});
 
   if (!data) {
     return false;
@@ -166,6 +168,7 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
   FML_CHECK(scene_image) << "Invalid scene image.";
 
   auto scene_image_subset = scene_image->makeSubset(
+      nullptr,
       SkIRect::MakeWH(fixture_image->width(), fixture_image->height()));
 
   FML_CHECK(scene_image_subset)

@@ -27,8 +27,7 @@ class FlutterPlatformNodeDelegateWindows;
 class AccessibilityBridgeWindows : public AccessibilityBridge,
                                    public ui::AXFragmentRootDelegateWin {
  public:
-  AccessibilityBridgeWindows(FlutterWindowsEngine* engine,
-                             FlutterWindowsView* view);
+  AccessibilityBridgeWindows(FlutterWindowsView* view);
   virtual ~AccessibilityBridgeWindows() = default;
 
   // |AccessibilityBridge|
@@ -69,8 +68,10 @@ class AccessibilityBridgeWindows : public AccessibilityBridge,
   std::shared_ptr<FlutterPlatformNodeDelegate>
   CreateFlutterPlatformNodeDelegate() override;
 
+  // Retrieve the focused node for accessibility events.
+  virtual std::weak_ptr<FlutterPlatformNodeDelegate> GetFocusedNode();
+
  private:
-  FlutterWindowsEngine* engine_;
   FlutterWindowsView* view_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeWindows);

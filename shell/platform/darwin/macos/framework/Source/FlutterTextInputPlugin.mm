@@ -61,6 +61,9 @@ static NSString* const kAutofillHints = @"hints";
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
 static NSString* const kTextAffinityUpstream = @"TextAffinity.upstream";
 
+// TextInputAction types
+static NSString* const kInputActionNewline = @"TextInputAction.newline";
+
 #pragma mark - Enums
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
@@ -445,19 +448,6 @@ static char markerKey;
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     NSDictionary* state = call.arguments;
     [self setEditingState:state];
-
-    // Close the loop, since the framework state could have been updated by the
-    // engine since it sent this update, and needs to now be made to match the
-    // engine's version of the state.
-    if (!_enableDeltaModel) {
-      [self updateEditState];
-    } else {
-      // Send an "empty" delta. The client can compare the old_text with their
-      // current text and update with that if the race condition described above
-      // occurs.
-      [self updateEditStateWithDelta:flutter::TextEditingDelta(_activeModel->GetText().c_str(),
-                                                               flutter::TextRange(0, 0), "")];
-    }
   } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
     NSDictionary* state = call.arguments;
     [self setEditableTransform:state[kTransformKey]];
@@ -546,7 +536,7 @@ static char markerKey;
     kSelectionIsDirectionalKey : @NO,
     kComposingBaseKey : @(composingBase),
     kComposingExtentKey : @(composingExtent),
-    kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()]
+    kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()] ?: [NSNull null],
   };
 }
 
@@ -820,7 +810,8 @@ static char markerKey;
     _activeModel->CommitComposing();
     _activeModel->EndComposing();
   }
-  if ([self.inputType isEqualToString:kMultilineInputType]) {
+  if ([self.inputType isEqualToString:kMultilineInputType] &&
+      [self.inputAction isEqualToString:kInputActionNewline]) {
     [self insertText:@"\n" replacementRange:self.selectedRange];
   }
   [_channel invokeMethod:kPerformAction arguments:@[ self.clientID, self.inputAction ]];

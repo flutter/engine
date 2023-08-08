@@ -29,7 +29,6 @@ class GPUSurfaceVulkanImpeller final : public Surface {
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   bool is_valid_ = false;
-  fml::WeakPtrFactory<GPUSurfaceVulkanImpeller> weak_factory_;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
@@ -47,7 +46,7 @@ class GPUSurfaceVulkanImpeller final : public Surface {
   bool EnableRasterCache() const override;
 
   // |Surface|
-  impeller::AiksContext* GetAiksContext() const override;
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkanImpeller);
 };

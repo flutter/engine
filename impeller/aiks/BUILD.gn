@@ -10,6 +10,10 @@ impeller_component("aiks") {
     "aiks_context.h",
     "canvas.cc",
     "canvas.h",
+    "color_filter.cc",
+    "color_filter.h",
+    "color_source.cc",
+    "color_source.h",
     "image.cc",
     "image.h",
     "paint.cc",
@@ -45,7 +49,13 @@ impeller_component("aiks_playground") {
 
 impeller_component("aiks_unittests") {
   testonly = true
-  sources = [ "aiks_unittests.cc" ]
+  sources = [
+    "aiks_unittests.cc",
+    "canvas_unittests.cc",
+    "testing/context_mock.h",
+    "testing/context_spy.cc",
+    "testing/context_spy.h",
+  ]
   deps = [
     ":aiks",
     ":aiks_playground",
@@ -59,9 +69,17 @@ impeller_component("aiks_unittests") {
 impeller_component("aiks_unittests_golden") {
   testonly = true
 
-  defines = [ "IMPELLER_GOLDEN_TESTS" ]
+  defines = [
+    "IMPELLER_GOLDEN_TESTS",
+    "IMPELLER_ENABLE_VALIDATION=1",
+  ]
 
-  sources = [ "aiks_unittests.cc" ]
+  sources = [
+    "aiks_unittests.cc",
+    "testing/context_mock.h",
+    "testing/context_spy.cc",
+    "testing/context_spy.h",
+  ]
   deps = [
     ":aiks",
     ":aiks_playground",

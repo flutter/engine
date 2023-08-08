@@ -10,8 +10,8 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
-#include "include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
 
 namespace impeller {
 class Texture;
@@ -66,6 +66,16 @@ class DlImage : public SkRefCnt {
   virtual bool isOpaque() const = 0;
 
   virtual bool isTextureBacked() const = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      If the underlying platform image held by this object has no
+  ///             threading requirements for the release of that image (or if
+  ///             arrangements have already been made to forward that image to
+  ///             the correct thread upon deletion), this method returns true.
+  ///
+  /// @return     True if the underlying image is held in a thread-safe manner.
+  ///
+  virtual bool isUIThreadSafe() const = 0;
 
   //----------------------------------------------------------------------------
   /// @return     The dimensions of the pixel grid.

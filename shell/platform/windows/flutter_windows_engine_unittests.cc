@@ -223,6 +223,41 @@ TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEUsesSoftware) {
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
 }
 
+TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEOnImpellerFailsToStart) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetSwitches({"--enable-impeller=true"});
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+  EngineModifier modifier(engine.get());
+
+  modifier.embedder_api().NotifyDisplayUpdate =
+      MOCK_ENGINE_PROC(NotifyDisplayUpdate,
+                       ([engine_instance = engine.get()](
+                            FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+                            const FlutterEngineDisplaysUpdateType update_type,
+                            const FlutterEngineDisplay* embedder_displays,
+                            size_t display_count) { return kSuccess; }));
+
+  // Accessibility updates must do nothing when the embedder engine is mocked
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
+
+  // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
+  // initialized engine instance.
+  modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
+      UpdateLocales, ([](auto engine, const FlutterLocale** locales,
+                         size_t locales_count) { return kSuccess; }));
+  modifier.embedder_api().SendPlatformMessage =
+      MOCK_ENGINE_PROC(SendPlatformMessage,
+                       ([](auto engine, auto message) { return kSuccess; }));
+
+  // Set the AngleSurfaceManager to nullptr to test software fallback path.
+  modifier.SetSurfaceManager(nullptr);
+
+  EXPECT_FALSE(engine->Run());
+}
+
 TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithoutResponse) {
   FlutterWindowsEngineBuilder builder{GetContext()};
   std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
@@ -657,6 +692,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(1);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnApplicationLifecycleEnabled();
 
   engine->Run();
 
@@ -693,6 +729,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() { return true; });
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnApplicationLifecycleEnabled();
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
@@ -753,6 +790,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
                 hwnd, msg, wparam, lparam);
           });
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnApplicationLifecycleEnabled();
 
   engine->Run();
 
@@ -803,6 +841,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   // Quit should not be called when there is more than one window.
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
+  engine->OnApplicationLifecycleEnabled();
 
   engine->Run();
 
@@ -812,6 +851,48 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   while (!finished) {
     engine->task_runner()->ProcessTasks();
   }
+}
+
+TEST_F(FlutterWindowsEngineTest, LifecycleManagerDisabledByDefault) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(0);
+  modifier.SetLifecycleManager(std::move(handler));
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
+}
+
+TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
+    return false;
+  });
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
+  modifier.SetLifecycleManager(std::move(handler));
+  engine->OnApplicationLifecycleEnabled();
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
 }
 
 }  // namespace testing

@@ -1,7 +1,6 @@
 {
     "builds": [
         {
-            "archives": [],
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
@@ -16,13 +15,15 @@
             ],
             "name": "ios_debug_sim",
             "ninja": {
-                "config": "ios_debug_sim",
-                "targets": []
+                "config": "ios_debug_sim"
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14e300c"
+                }
+            }
         },
         {
-            "archives": [],
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
@@ -38,19 +39,15 @@
             ],
             "name": "ios_debug_sim_arm64",
             "ninja": {
-                "config": "ios_debug_sim_arm64",
-                "targets": []
+                "config": "ios_debug_sim_arm64"
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14e300c"
+                }
+            }
         },
         {
-            "archives": [
-                {
-                    "base_path": "out/ios_debug/zip_archives/",
-                    "include_paths": [],
-                    "name": "ios_debug"
-                }
-            ],
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
@@ -68,10 +65,13 @@
                     "flutter/shell/platform/darwin/ios:flutter_framework"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14e300c"
+                }
+            }
         },
-	{
-            "archives": [],
+        {
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
@@ -90,10 +90,13 @@
                     "flutter/lib/snapshot:generate_snapshot_bin"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14e300c"
+                }
+            }
         },
-	{
-            "archives": [],
+        {
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
@@ -112,10 +115,13 @@
                     "flutter/lib/snapshot:generate_snapshot_bin"
                 ]
             },
-            "tests": []
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "14e300c"
+                }
+            }
         }
     ],
-    "tests": [],
     "generators": {
         "tasks": [
             {
@@ -133,7 +139,7 @@
                 "script": "flutter/sky/tools/create_full_ios_framework.py",
                 "language": "python3"
             },
-	    {
+            {
                 "name": "Profile-ios-Flutter.xcframework",
                 "parameters": [
                     "--dst",
@@ -155,7 +161,7 @@
                 ],
                 "script": "flutter/tools/gen_objcdoc.sh"
             },
-	    {
+            {
                 "name": "Release-ios-Flutter.xcframework",
                 "parameters": [
                     "--dst",
@@ -182,29 +188,42 @@
                 ],
                 "script": "flutter/sky/tools/create_macos_gen_snapshots.py",
                 "language": "python3"
+            },
+            {
+                "name": "Verify-export-symbols-release-binaries",
+                "parameters": [
+                    "src/out"
+                ],
+                "script": "flutter/testing/symbols/verify_exported.dart",
+                "language": "dart"
             }
         ]
     },
     "archives": [
         {
             "source": "out/debug/artifacts.zip",
-            "destination": "ios/artifacts.zip"
+            "destination": "ios/artifacts.zip",
+            "realm": "production"
         },
-	{
+        {
             "source": "out/profile/artifacts.zip",
-            "destination": "ios-profile/artifacts.zip"
+            "destination": "ios-profile/artifacts.zip",
+            "realm": "production"
         },
         {
             "source": "out/debug/ios-objcdoc.zip",
-            "destination": "ios-objcdoc.zip"
+            "destination": "ios-objcdoc.zip",
+            "realm": "production"
         },
-	{
+        {
             "source": "out/release/artifacts.zip",
-            "destination": "ios-release/artifacts.zip"
+            "destination": "ios-release/artifacts.zip",
+            "realm": "production"
         },
         {
             "source": "out/release/Flutter.dSYM.zip",
-            "destination": "ios-release/Flutter.dSYM.zip"
+            "destination": "ios-release/Flutter.dSYM.zip",
+            "realm": "production"
         }
     ]
 }

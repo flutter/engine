@@ -59,6 +59,23 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (JavaLocalRef surface_texture, SkMatrix& transform),
               (override));
 
+  MOCK_METHOD(JavaLocalRef,
+              ImageTextureEntryAcquireLatestImage,
+              (JavaLocalRef image_texture_entry),
+              (override));
+
+  MOCK_METHOD(JavaLocalRef,
+              ImageGetHardwareBuffer,
+              (JavaLocalRef image),
+              (override));
+
+  MOCK_METHOD(void, ImageClose, (JavaLocalRef image), (override));
+
+  MOCK_METHOD(void,
+              HardwareBufferClose,
+              (JavaLocalRef hardware_buffer),
+              (override));
+
   MOCK_METHOD(void,
               SurfaceTextureDetachFromGLContext,
               (JavaLocalRef surface_texture),
@@ -98,6 +115,9 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (override));
 
   MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
+  MOCK_METHOD(double, GetDisplayWidth, (), (override));
+  MOCK_METHOD(double, GetDisplayHeight, (), (override));
+  MOCK_METHOD(double, GetDisplayDensity, (), (override));
 
   MOCK_METHOD(bool,
               RequestDartDeferredLibrary,

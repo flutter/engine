@@ -6,11 +6,12 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 
 namespace impeller {
 
-BlitPassVK::BlitPassVK(std::weak_ptr<CommandEncoderVK> encoder)
-    : encoder_(std::move(encoder)) {}
+BlitPassVK::BlitPassVK(std::weak_ptr<CommandBufferVK> command_buffer)
+    : command_buffer_(std::move(command_buffer)) {}
 
 BlitPassVK::~BlitPassVK() = default;
 
@@ -35,7 +36,11 @@ bool BlitPassVK::EncodeCommands(
     return false;
   }
 
-  auto encoder = encoder_.lock();
+  auto command_buffer = command_buffer_.lock();
+  if (!command_buffer) {
+    return false;
+  }
+  auto encoder = command_buffer->GetEncoder();
   if (!encoder) {
     return false;
   }
@@ -81,6 +86,23 @@ bool BlitPassVK::OnCopyTextureToBufferCommand(
   command->destination = std::move(destination);
   command->source_region = source_region;
   command->destination_offset = destination_offset;
+  command->label = std::move(label);
+
+  commands_.push_back(std::move(command));
+  return true;
+}
+
+// |BlitPass|
+bool BlitPassVK::OnCopyBufferToTextureCommand(
+    BufferView source,
+    std::shared_ptr<Texture> destination,
+    IPoint destination_origin,
+    std::string label) {
+  auto command = std::make_unique<BlitCopyBufferToTextureCommandVK>();
+
+  command->source = std::move(source);
+  command->destination = std::move(destination);
+  command->destination_origin = destination_origin;
   command->label = std::move(label);
 
   commands_.push_back(std::move(command));

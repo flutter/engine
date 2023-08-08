@@ -65,13 +65,18 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             .SetHasThreadingRestrictions(true)
             .SetSupportsOffscreenMSAA(false)
             .SetSupportsSSBO(false)
+            .SetSupportsBufferToTextureBlits(false)
             .SetSupportsTextureToTextureBlits(
                 reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
             .SetSupportsFramebufferFetch(false)
-            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
+            .SetDefaultColorFormat(PixelFormat::kR8G8B8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-            .SetSupportsCompute(false, false)
+            .SetSupportsCompute(false)
+            .SetSupportsComputeSubgroups(false)
             .SetSupportsReadFromResolve(false)
+            .SetSupportsReadFromOnscreenTexture(false)
+            .SetSupportsDecalTileMode(false)
+            .SetSupportsMemorylessTextures(false)
             .Build();
   }
 
@@ -79,6 +84,10 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
 }
 
 ContextGLES::~ContextGLES() = default;
+
+Context::BackendType ContextGLES::GetBackendType() const {
+  return Context::BackendType::kOpenGLES;
+}
 
 const ReactorGLES::Ref& ContextGLES::GetReactor() const {
   return reactor_;
@@ -101,6 +110,13 @@ bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
 
 bool ContextGLES::IsValid() const {
   return is_valid_;
+}
+
+void ContextGLES::Shutdown() {}
+
+// |Context|
+std::string ContextGLES::DescribeGpuModel() const {
+  return reactor_->GetProcTable().GetDescription()->GetString();
 }
 
 // |Context|

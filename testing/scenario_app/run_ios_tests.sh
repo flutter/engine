@@ -41,25 +41,57 @@ fi
 # Can also be set via Simulator app Device > Rotate Device Automatically
 defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
-cd $SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+pushd .
+cd $SCENARIO_PATH
+
+RESULT_BUNDLE_FOLDER=$(mktemp -d ios_scenario_xcresult_XXX)
+RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
+
+# Zip and upload xcresult to luci.
+# First parameter ($1) is the zip output name.
+zip_and_upload_xcresult_to_luci () {
+  # We don't want the zip to contain the abusolute path,
+  # so use relative path (./$RESULT_BUNDLE_FOLDER) instead.
+  zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
+  mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
+  exit 1
+}
 
 echo "Running simulator tests with Skia"
 echo ""
 
-set -o pipefail && xcodebuild -sdk iphonesimulator \
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
-  -destination 'platform=iOS Simulator,OS=16.0,name=iPhone 8' \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
+  -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"
+  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  echo "test success."
+else
+  echo "test failed."
+  zip_and_upload_xcresult_to_luci "ios_scenario_xcresult.zip"
+fi
+rm -rf $RESULT_BUNDLE_PATH
 
 echo "Running simulator tests with Impeller"
 echo ""
 
 # Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
-set -o pipefail && xcodebuild -sdk iphonesimulator \
+# Skip golden tests that use software rendering: https://github.com/flutter/flutter/issues/131888
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
-  -destination 'platform=iOS Simulator,OS=16.0,name=iPhone 8' \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
+  -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
-  INFOPLIST_FILE="Scenarios/Info_Impeller.plist" # Plist with FLTEnableImpeller=YES
+  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont,ScenarioUITests/PlatformViewMutationLargeClipRRectWithTransformTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsTest/testPlatformView,ScenarioUITests/PlatformViewWithOtherBackdropFilterTests/testPlatformView,ScenarioUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewGestureRecognizerTests/testRejectPolicyUtilTouchesEnded,ScenarioUITests/NonFullScreenFlutterViewPlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipPathTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsBackgroundForegroundTest/testPlatformView,ScenarioUITests/PlatformViewMutationOpacityTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView,ScenarioUITests/SpawnEngineTest/testSpawnEngineWorks,ScenarioUITests/PlatformViewRotation/testPlatformView,ScenarioUITests/TwoPlatformViewClipRRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipRectTests/testPlatformView,ScenarioUITests/RenderingSelectionTest/testSoftwareRendering,ScenarioUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays,ScenarioUITests/UnobstructedPlatformViewTests/testNoOverlay,ScenarioUITests/PlatformViewMutationTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationLargeClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewWithNegativeOtherBackDropFilterTests/testPlatformView" \
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
+  echo "test success."
+else
+  echo "test failed."
+  zip_and_upload_xcresult_to_luci "ios_scenario_impeller_xcresult.zip"
+fi
+rm -rf $RESULT_BUNDLE_PATH
+
+popd

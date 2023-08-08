@@ -10,21 +10,20 @@
 namespace flutter {
 namespace testing {
 
-DiffContextTest::DiffContextTest()
-    : unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
-          GetCurrentTaskRunner(),
-          fml::TimeDelta::FromSeconds(0))) {}
+DiffContextTest::DiffContextTest() {}
 
 Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,
                                       const SkIRect& additional_damage,
                                       int horizontal_clip_alignment,
                                       int vertical_clip_alignment,
-                                      bool use_raster_cache) {
+                                      bool use_raster_cache,
+                                      bool impeller_enabled) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 
-  DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
-                 old_layer_tree.paint_region_map(), use_raster_cache);
+  DiffContext dc(layer_tree.size(), layer_tree.paint_region_map(),
+                 old_layer_tree.paint_region_map(), use_raster_cache,
+                 impeller_enabled);
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
@@ -33,18 +32,16 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
 }
 
 sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
-                                                      SkColor color) {
+                                                      DlColor color) {
   DisplayListBuilder builder;
   builder.DrawRect(bounds, DlPaint().setColor(color));
   return builder.Build();
 }
 
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
-    sk_sp<DisplayList> display_list,
+    const sk_sp<DisplayList>& display_list,
     const SkPoint& offset) {
-  return std::make_shared<DisplayListLayer>(
-      offset, SkiaGPUObject(std::move(display_list), unref_queue()), false,
-      false);
+  return std::make_shared<DisplayListLayer>(offset, display_list, false, false);
 }
 
 std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(

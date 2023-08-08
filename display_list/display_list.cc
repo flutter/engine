@@ -21,7 +21,9 @@ DisplayList::DisplayList()
       nested_op_count_(0),
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
-      can_apply_group_opacity_(true) {}
+      can_apply_group_opacity_(true),
+      is_ui_thread_safe_(true),
+      modifies_transparent_black_(false) {}
 
 DisplayList::DisplayList(DisplayListStorage&& storage,
                          size_t byte_count,
@@ -30,6 +32,8 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
                          unsigned int nested_op_count,
                          const SkRect& bounds,
                          bool can_apply_group_opacity,
+                         bool is_ui_thread_safe,
+                         bool modifies_transparent_black,
                          sk_sp<const DlRTree> rtree)
     : storage_(std::move(storage)),
       byte_count_(byte_count),
@@ -39,6 +43,8 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
       unique_id_(next_unique_id()),
       bounds_(bounds),
       can_apply_group_opacity_(can_apply_group_opacity),
+      is_ui_thread_safe_(is_ui_thread_safe),
+      modifies_transparent_black_(modifies_transparent_black),
       rtree_(std::move(rtree)) {}
 
 DisplayList::~DisplayList() {
@@ -135,6 +141,11 @@ class VectorCuller final : public Culler {
 void DisplayList::Dispatch(DlOpReceiver& receiver) const {
   uint8_t* ptr = storage_.get();
   Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
+}
+
+void DisplayList::Dispatch(DlOpReceiver& receiver,
+                           const SkIRect& cull_rect) const {
+  Dispatch(receiver, SkRect::Make(cull_rect));
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,

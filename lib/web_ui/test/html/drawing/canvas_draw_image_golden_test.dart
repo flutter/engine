@@ -11,9 +11,11 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -21,12 +23,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-
-  setUp(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-  });
-
-  setUpStableTestFonts();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Paints image', () async {
     final RecordingCanvas rc =
@@ -320,7 +319,7 @@ Future<void> testMain() async {
   // Cyan text should be above everything.
   test('Paints text above and below image', () async {
     // Use a non-Ahem font so that text is visible.
-    debugEmulateFlutterTesterEnvironment = false;
+    ui_web.debugEmulateFlutterTesterEnvironment = false;
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
@@ -383,7 +382,7 @@ Future<void> testMain() async {
           region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
+      // screenshot.
       sceneElement.remove();
     }
   });
@@ -422,7 +421,7 @@ Future<void> testMain() async {
           region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
+      // screenshot.
       sceneElement.remove();
     }
   });

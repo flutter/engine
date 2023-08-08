@@ -14,7 +14,9 @@ namespace impeller {
 
 class SwapchainImageVK final : public TextureSourceVK {
  public:
-  SwapchainImageVK(TextureDescriptor desc, vk::Device device, vk::Image image);
+  SwapchainImageVK(TextureDescriptor desc,
+                   const vk::Device& device,
+                   vk::Image image);
 
   // |TextureSourceVK|
   ~SwapchainImageVK() override;
@@ -28,12 +30,19 @@ class SwapchainImageVK final : public TextureSourceVK {
   // |TextureSourceVK|
   vk::Image GetImage() const override;
 
+  std::shared_ptr<Texture> GetMSAATexture() const;
+
+  bool HasMSAATexture() const;
+
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
+
+  void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;
   vk::UniqueImageView image_view_ = {};
+  std::shared_ptr<Texture> msaa_tex_;
   bool is_valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SwapchainImageVK);

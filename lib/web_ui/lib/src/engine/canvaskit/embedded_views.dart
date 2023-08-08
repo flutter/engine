@@ -16,6 +16,7 @@ import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
+import 'picture.dart';
 import 'picture_recorder.dart';
 import 'renderer.dart';
 import 'surface.dart';
@@ -139,7 +140,6 @@ class HtmlViewEmbedder {
     if (needNewOverlay && hasAvailableOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
       _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
     }
 
@@ -422,9 +422,10 @@ class HtmlViewEmbedder {
       if (_overlays[viewId] != null) {
         final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
         final CkCanvas canvas = frame.skiaCanvas;
-        canvas.drawPicture(
-          _context.pictureRecorders[pictureRecorderIndex].endRecording(),
-        );
+        final CkPicture ckPicture =
+            _context.pictureRecorders[pictureRecorderIndex].endRecording();
+        canvas.clear(const ui.Color(0x00000000));
+        canvas.drawPicture(ckPicture);
         pictureRecorderIndex++;
         frame.submit();
       }
@@ -464,13 +465,19 @@ class HtmlViewEmbedder {
       }
 
       for (final int viewId in diffResult.viewsToAdd) {
-        if (assertionsEnabled) {
-          if (!platformViewManager.knowsViewId(viewId)) {
+        bool isViewInvalid = false;
+        assert(() {
+          isViewInvalid = !platformViewManager.knowsViewId(viewId);
+          if (isViewInvalid) {
             debugInvalidViewIds ??= <int>[];
-            debugInvalidViewIds.add(viewId);
-            continue;
+            debugInvalidViewIds!.add(viewId);
           }
+          return true;
+        }());
+        if (isViewInvalid) {
+          continue;
         }
+
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
@@ -511,12 +518,17 @@ class HtmlViewEmbedder {
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
 
-        if (assertionsEnabled) {
-          if (!platformViewManager.knowsViewId(viewId)) {
+        bool isViewInvalid = false;
+        assert(() {
+          isViewInvalid = !platformViewManager.knowsViewId(viewId);
+          if (isViewInvalid) {
             debugInvalidViewIds ??= <int>[];
-            debugInvalidViewIds.add(viewId);
-            continue;
+            debugInvalidViewIds!.add(viewId);
           }
+          return true;
+        }());
+        if (isViewInvalid) {
+          continue;
         }
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
@@ -534,14 +546,11 @@ class HtmlViewEmbedder {
 
     disposeViews(unusedViews);
 
-    if (assertionsEnabled) {
-      if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
-        throw AssertionError(
-          'Cannot render platform views: ${debugInvalidViewIds.join(', ')}. '
-          'These views have not been created, or they have been deleted.',
-        );
-      }
-    }
+    assert(
+      debugInvalidViewIds == null || debugInvalidViewIds!.isEmpty,
+      'Cannot render platform views: ${debugInvalidViewIds!.join(', ')}. '
+      'These views have not been created, or they have been deleted.',
+    );
   }
 
   void disposeViews(Set<int> viewsToDispose) {

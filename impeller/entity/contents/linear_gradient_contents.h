@@ -26,9 +26,16 @@ class LinearGradientContents final : public ColorSourceContents {
   ~LinearGradientContents() override;
 
   // |Contents|
+  bool IsOpaque() const override;
+
+  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
   void SetEndPoints(Point start_point, Point end_point);
 
@@ -41,6 +48,8 @@ class LinearGradientContents final : public ColorSourceContents {
   const std::vector<Scalar>& GetStops() const;
 
   void SetTileMode(Entity::TileMode tile_mode);
+
+  void SetDither(bool dither);
 
  private:
   bool RenderTexture(const ContentContext& renderer,
@@ -56,6 +65,8 @@ class LinearGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
+  bool dither_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
 };

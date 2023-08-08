@@ -9,10 +9,15 @@
 #extension GL_AMD_gpu_shader_half_float_fetch : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
+#ifdef IMPELLER_TARGET_OPENGLES
+#define IMPELLER_MAYBE_FLAT
+#else
+#define IMPELLER_MAYBE_FLAT flat
+#endif
+
 #ifndef IMPELLER_TARGET_METAL_IOS
 
 precision mediump sampler2D;
-precision mediump float;
 
 #define float16_t float
 #define f16vec2 vec2

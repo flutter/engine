@@ -12,6 +12,8 @@
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/fml/logging.h"
 
+#include "third_party/skia/include/core/SkColorFilter.h"
+
 namespace flutter {
 
 // clang-format off
@@ -51,7 +53,7 @@ void DlSkPaintDispatchHelper::setStrokeCap(DlStrokeCap cap) {
 void DlSkPaintDispatchHelper::setStrokeJoin(DlStrokeJoin join) {
   paint_.setStrokeJoin(ToSk(join));
 }
-void DlSkPaintDispatchHelper::setStyle(DlDrawStyle style) {
+void DlSkPaintDispatchHelper::setDrawStyle(DlDrawStyle style) {
   paint_.setStyle(ToSk(style));
 }
 void DlSkPaintDispatchHelper::setStrokeWidth(SkScalar width) {

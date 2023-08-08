@@ -11,14 +11,16 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
-#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 namespace testing {
 
 /**
  * @brief A RasterCacheResult implementation that represents a cached Layer or
- * SkPicture without the overhead of storage.
+ * DisplayList without the overhead of storage.
  *
  * This implementation is used by MockRasterCache only for testing proper usage
  * of the RasterCache in layer unit tests.
@@ -27,7 +29,9 @@ class MockRasterCacheResult : public RasterCacheResult {
  public:
   explicit MockRasterCacheResult(SkRect device_rect);
 
-  void draw(DlCanvas& canvas, const DlPaint* paint = nullptr) const override{};
+  void draw(DlCanvas& canvas,
+            const DlPaint* paint = nullptr,
+            bool preserve_rtree = false) const override{};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
@@ -46,7 +50,7 @@ static std::vector<RasterCacheItem*> raster_cache_items_;
 
 /**
  * @brief A RasterCache implementation that simulates the act of rendering a
- * Layer or SkPicture without the overhead of rasterization or pixel storage.
+ * Layer or DisplayList without the overhead of rasterization or pixel storage.
  * This implementation is used only for testing proper usage of the RasterCache
  * in layer unit tests.
  */
@@ -85,7 +89,6 @@ class MockRasterCache : public RasterCache {
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,
       .texture_registry              = texture_registry_,
-      .frame_device_pixel_ratio      = 1.0f,
       .has_platform_view             = false,
       .has_texture_layer             = false,
       .raster_cached_entries         = &raster_cache_items_
@@ -103,7 +106,6 @@ class MockRasterCache : public RasterCache {
       .ui_time                       = ui_time_,
       .texture_registry              = texture_registry_,
       .raster_cache                  = nullptr,
-      .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };
 };

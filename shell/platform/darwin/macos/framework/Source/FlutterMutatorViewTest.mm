@@ -13,6 +13,8 @@
 
 @end
 
+static constexpr float kMaxErr = 1e-10;
+
 namespace {
 void ApplyFlutterLayer(FlutterMutatorView* view,
                        FlutterSize size,
@@ -38,6 +40,32 @@ void ApplyFlutterLayer(FlutterMutatorView* view,
   layer.platform_view = &flutterPlatformView;
 
   [view applyFlutterLayer:&layer];
+}
+
+// Expect that each element within two CATransform3Ds is within an error bound.
+//
+// In order to avoid architecture-specific floating point differences we don't check for exact
+// equality using, for example, CATransform3DEqualToTransform.
+void ExpectTransform3DEqual(const CATransform3D& t, const CATransform3D& u) {
+  EXPECT_NEAR(t.m11, u.m11, kMaxErr);
+  EXPECT_NEAR(t.m12, u.m12, kMaxErr);
+  EXPECT_NEAR(t.m13, u.m13, kMaxErr);
+  EXPECT_NEAR(t.m14, u.m14, kMaxErr);
+
+  EXPECT_NEAR(t.m21, u.m21, kMaxErr);
+  EXPECT_NEAR(t.m22, u.m22, kMaxErr);
+  EXPECT_NEAR(t.m23, u.m23, kMaxErr);
+  EXPECT_NEAR(t.m24, u.m24, kMaxErr);
+
+  EXPECT_NEAR(t.m31, u.m31, kMaxErr);
+  EXPECT_NEAR(t.m32, u.m32, kMaxErr);
+  EXPECT_NEAR(t.m33, u.m33, kMaxErr);
+  EXPECT_NEAR(t.m34, u.m34, kMaxErr);
+
+  EXPECT_NEAR(t.m41, u.m41, kMaxErr);
+  EXPECT_NEAR(t.m42, u.m42, kMaxErr);
+  EXPECT_NEAR(t.m43, u.m43, kMaxErr);
+  EXPECT_NEAR(t.m44, u.m44, kMaxErr);
 }
 }  // namespace
 
@@ -111,9 +139,9 @@ TEST(FlutterMutatorViewTest, TransformedFrameIsCorrect) {
   ApplyFlutterLayer(mutatorView, FlutterSize{30 * 2, 20 * 2}, mutations);
   EXPECT_TRUE(CGRectEqualToRect(mutatorView.frame, CGRectMake(92.5, 45, 45, 30)));
   EXPECT_TRUE(CGRectEqualToRect(platformView.frame, CGRectMake(0, 0, 30, 20)));
-  EXPECT_TRUE(
-      CATransform3DEqualToTransform(mutatorView.platformViewContainer.layer.sublayerTransform,
-                                    CATransform3DMakeScale(1.5, 1.5, 1)));
+
+  ExpectTransform3DEqual(mutatorView.platformViewContainer.layer.sublayerTransform,
+                         CATransform3DMakeScale(1.5, 1.5, 1));
 }
 
 TEST(FlutterMutatorViewTest, FrameWithLooseClipIsCorrect) {
@@ -273,6 +301,81 @@ TEST(FlutterMutatorViewTest, RoundRectClipsToSimpleRectangle) {
   EXPECT_EQ(mutatorView.pathClipViews.count, 0ul);
 }
 
+// Ensure that the mutator view, clip views, and container all use a flipped y axis. The transforms
+// sent from the framework assume this, and so aside from the consistency with every other embedder,
+// we can avoid a lot of extra math.
+TEST(FlutterMutatorViewTest, ViewsSetIsFlipped) {
+  NSView* platformView = [[NSView alloc] init];
+  FlutterMutatorView* mutatorView = [[FlutterMutatorView alloc] initWithPlatformView:platformView];
+
+  std::vector<FlutterPlatformViewMutation> mutations{
+      {
+          .type = kFlutterPlatformViewMutationTypeClipRoundedRect,
+          .clip_rounded_rect =
+              FlutterRoundedRect{
+                  .rect = FlutterRect{110, 60, 150, 150},
+                  .upper_left_corner_radius = FlutterSize{10, 10},
+                  .upper_right_corner_radius = FlutterSize{10, 10},
+                  .lower_right_corner_radius = FlutterSize{10, 10},
+                  .lower_left_corner_radius = FlutterSize{10, 10},
+              },
+      },
+      {
+          .type = kFlutterPlatformViewMutationTypeTransformation,
+          .transformation =
+              FlutterTransformation{
+                  .scaleX = 1,
+                  .transX = 100,
+                  .scaleY = 1,
+                  .transY = 50,
+              },
+      },
+  };
+
+  ApplyFlutterLayer(mutatorView, FlutterSize{30, 20}, mutations);
+
+  EXPECT_TRUE(mutatorView.isFlipped);
+  ASSERT_EQ(mutatorView.pathClipViews.count, 1ul);
+  EXPECT_TRUE(mutatorView.pathClipViews.firstObject.isFlipped);
+  EXPECT_TRUE(mutatorView.platformViewContainer.isFlipped);
+}
+
+TEST(FlutterMutatorViewTest, RectsClipsToPathWhenRotated) {
+  NSView* platformView = [[NSView alloc] init];
+  FlutterMutatorView* mutatorView = [[FlutterMutatorView alloc] initWithPlatformView:platformView];
+  std::vector<FlutterPlatformViewMutation> mutations{
+      {
+          .type = kFlutterPlatformViewMutationTypeTransformation,
+          // Roation M_PI / 8
+          .transformation =
+              FlutterTransformation{
+                  .scaleX = 0.9238795325112867,
+                  .skewX = -0.3826834323650898,
+                  .skewY = 0.3826834323650898,
+                  .scaleY = 0.9238795325112867,
+              },
+      },
+      {
+          .type = kFlutterPlatformViewMutationTypeClipRect,
+          .clip_rect = FlutterRect{110, 60, 150, 150},
+      },
+      {
+          .type = kFlutterPlatformViewMutationTypeTransformation,
+          .transformation =
+              FlutterTransformation{
+                  .scaleX = 1,
+                  .transX = 100,
+                  .scaleY = 1,
+                  .transY = 50,
+              },
+      },
+  };
+  ApplyFlutterLayer(mutatorView, FlutterSize{30, 20}, mutations);
+  EXPECT_EQ(mutatorView.pathClipViews.count, 1ul);
+  EXPECT_NEAR(mutatorView.platformViewContainer.frame.size.width, 35.370054622640396, kMaxErr);
+  EXPECT_NEAR(mutatorView.platformViewContainer.frame.size.height, 29.958093621178421, kMaxErr);
+}
+
 TEST(FlutterMutatorViewTest, RoundRectClipsToPath) {
   NSView* platformView = [[NSView alloc] init];
   FlutterMutatorView* mutatorView = [[FlutterMutatorView alloc] initWithPlatformView:platformView];
@@ -308,9 +411,8 @@ TEST(FlutterMutatorViewTest, RoundRectClipsToPath) {
       CGRectEqualToRect(mutatorView.subviews.firstObject.frame, CGRectMake(-10, -10, 30, 20)));
   EXPECT_TRUE(CGRectEqualToRect(platformView.frame, CGRectMake(0, 0, 30, 20)));
   EXPECT_EQ(mutatorView.pathClipViews.count, 1ul);
-  EXPECT_TRUE(
-      CATransform3DEqualToTransform(mutatorView.pathClipViews.firstObject.layer.mask.transform,
-                                    CATransform3DMakeTranslation(-100, -50, 0)));
+  ExpectTransform3DEqual(mutatorView.pathClipViews.firstObject.layer.mask.transform,
+                         CATransform3DMakeTranslation(-100, -50, 0));
 }
 
 TEST(FlutterMutatorViewTest, PathClipViewsAreAddedAndRemoved) {

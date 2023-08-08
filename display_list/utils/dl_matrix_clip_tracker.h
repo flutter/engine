@@ -27,6 +27,21 @@ class DisplayListMatrixClipTracker {
   DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkMatrix& matrix);
   DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkM44& matrix);
 
+  // This method should almost never be used as it breaks the encapsulation
+  // of the enclosing clips. However it is needed for practical purposes in
+  // some rare cases - such as when a saveLayer is collecting rendering
+  // operations prior to applying a filter on the entire layer bounds and
+  // some of those operations fall outside the enclosing clip, but their
+  // filtered content will spread out from where they were rendered on the
+  // layer into the enclosing clipped area.
+  // Omitting the |cull_rect| argument, or passing nullptr, will restore the
+  // cull rect to the initial value it had when the tracker was constructed.
+  void resetCullRect(const SkRect* cull_rect = nullptr) {
+    current_->resetBounds(cull_rect ? *cull_rect : original_cull_rect_);
+  }
+
+  static bool is_3x3(const SkM44& m44);
+
   SkRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
 
   bool using_4x4_matrix() const { return current_->is_4x4(); }
@@ -38,10 +53,16 @@ class DisplayListMatrixClipTracker {
   bool content_culled(const SkRect& content_bounds) const {
     return current_->content_culled(content_bounds);
   }
+  bool is_cull_rect_empty() const { return current_->is_cull_rect_empty(); }
 
   void save();
   void restore();
-  int getSaveCount() { return saved_.size(); }
+  void reset();
+  int getSaveCount() {
+    // saved_[0] is always the untouched initial conditions
+    // saved_[1] is the first editable stack entry
+    return saved_.size() - 1;
+  }
   void restoreToCount(int restore_count);
 
   void translate(SkScalar tx, SkScalar ty) { current_->translate(tx, ty); }
@@ -81,9 +102,10 @@ class DisplayListMatrixClipTracker {
     virtual SkMatrix matrix_3x3() const = 0;
     virtual SkM44 matrix_4x4() const = 0;
 
-    virtual SkRect device_cull_rect() const { return cull_rect_; }
+    SkRect device_cull_rect() const { return cull_rect_; }
     virtual SkRect local_cull_rect() const = 0;
     virtual bool content_culled(const SkRect& content_bounds) const;
+    bool is_cull_rect_empty() const { return cull_rect_.isEmpty(); }
 
     virtual void translate(SkScalar tx, SkScalar ty) = 0;
     virtual void scale(SkScalar sx, SkScalar sy) = 0;
@@ -99,6 +121,8 @@ class DisplayListMatrixClipTracker {
 
     virtual void clipBounds(const SkRect& clip, ClipOp op, bool is_aa);
 
+    virtual void resetBounds(const SkRect& cull_rect);
+
    protected:
     Data(const SkRect& rect) : cull_rect_(rect) {}
 
@@ -109,6 +133,7 @@ class DisplayListMatrixClipTracker {
   friend class Data3x3;
   friend class Data4x4;
 
+  SkRect original_cull_rect_;
   Data* current_;
   std::vector<std::unique_ptr<Data>> saved_;
 };

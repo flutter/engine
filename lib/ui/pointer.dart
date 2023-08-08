@@ -133,35 +133,15 @@ enum PointerSignalKind {
   /// A pointer-generated scale event (e.g. trackpad pinch).
   scale,
 
-  /// A stylus generated action (e.g. double tap on Apple Pencil 2)
-  stylusAuxiliaryAction,
-
   /// An unknown pointer signal kind.
   unknown
-}
-
-  /// The preferred action for stylus action
-enum PointerPreferredStylusAuxiliaryAction {
-  /// Ignore pointer input
-  ignore,
-
-  /// Show colour palette if available
-  showColorPalette,
-
-  /// Switch to eraser if available
-  switchEraser,
-
-  /// Switch to previous tool
-  switchPrevious,
-
-  /// unknown preferred action
-  unknown,
 }
 
 /// Information about the state of a pointer.
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
+    this.viewId = 0,
     this.embedderId = 0,
     this.timeStamp = Duration.zero,
     this.change = PointerChange.cancel,
@@ -197,14 +177,18 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
-    this.preferredStylusAuxiliaryAction = PointerPreferredStylusAuxiliaryAction.ignore,
   });
 
-  /// Unique identifier that ties the [PointerEvent] to embedder event created it.
+  /// The ID of the [FlutterView] this [PointerEvent] originated from.
+  final int viewId;
+
+  /// Unique identifier that ties the [PointerEvent] to the embedder
+  /// event that created it.
+  /// it.
   ///
-  /// No two pointer events can have the same [embedderId]. This is different from
-  /// [pointerIdentifier] - used for hit-testing, whereas [embedderId] is used to
-  /// identify the platform event.
+  /// No two pointer events can have the same [embedderId]. This is different
+  /// from [pointerIdentifier] - used for hit-testing, whereas [embedderId] is
+  /// used to identify the platform event.
   final int embedderId;
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -396,11 +380,6 @@ class PointerData {
   /// The current angle of the pan/zoom in radians, with 0.0 as the initial angle.
   final double rotation;
 
-  /// For events with signal kind of stylusAuxiliaryAction
-  ///
-  /// The current preferred action for stylusAuxiliaryAction, with ignore as the default.
-  final PointerPreferredStylusAuxiliaryAction preferredStylusAuxiliaryAction;
-
   @override
   String toString() => 'PointerData(x: $physicalX, y: $physicalY)';
 
@@ -440,8 +419,7 @@ class PointerData {
              'panDeltaX: $panDeltaX, '
              'panDeltaY: $panDeltaY, '
              'scale: $scale, '
-             'rotation: $rotation, '
-             'preferredStylusAuxiliaryAction: $preferredStylusAuxiliaryAction'
+             'rotation: $rotation'
            ')';
   }
 }

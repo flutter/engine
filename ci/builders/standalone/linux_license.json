@@ -1,0 +1,18 @@
+{
+    "drone_dimensions": [
+        "device_type=none",
+        "os=Linux"
+    ],
+    "cas_archive": false,
+    "gclient_variables": {
+        "download_android_deps": false
+    },
+    "name": "licenses",
+    "tests": [
+        {
+            "name": "licenses check",
+	    "max_attempts": 1,
+            "script": "flutter/ci/licenses.sh"
+        }
+    ]
+}

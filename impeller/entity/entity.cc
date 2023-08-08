@@ -12,6 +12,7 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 
@@ -101,7 +102,33 @@ BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 
-/// @brief  Returns true if the blend mode is "destrictive", meaning that even
+bool Entity::CanInheritOpacity() const {
+  if (!contents_) {
+    return false;
+  }
+  if (!((blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) ||
+        blend_mode_ == BlendMode::kSourceOver)) {
+    return false;
+  }
+  return contents_->CanInheritOpacity(*this);
+}
+
+bool Entity::SetInheritedOpacity(Scalar alpha) {
+  if (!CanInheritOpacity()) {
+    return false;
+  }
+  if (blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) {
+    blend_mode_ = BlendMode::kSourceOver;
+  }
+  contents_->SetInheritedOpacity(alpha);
+  return true;
+}
+
+std::optional<Color> Entity::AsBackgroundColor(ISize target_size) const {
+  return contents_->AsBackgroundColor(*this, target_size);
+}
+
+/// @brief  Returns true if the blend mode is "destructive", meaning that even
 ///         fully transparent source colors would result in the destination
 ///         getting changed.
 ///
@@ -131,7 +158,16 @@ bool Entity::Render(const ContentContext& renderer,
     return true;
   }
 
+  if (!contents_->GetCoverageHint().has_value()) {
+    contents_->SetCoverageHint(
+        Rect::MakeSize(parent_pass.GetRenderTargetSize()));
+  }
+
   return contents_->Render(renderer, *this, parent_pass);
+}
+
+Scalar Entity::DeriveTextScale() const {
+  return GetTransformation().GetMaxBasisLengthXY();
 }
 
 }  // namespace impeller

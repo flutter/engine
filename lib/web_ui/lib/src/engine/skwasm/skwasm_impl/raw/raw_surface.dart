@@ -21,10 +21,13 @@ external SurfaceHandle surfaceCreateFromCanvas(
   Pointer<Int8> querySelector
 );
 
+@Native<UnsignedLong Function(SurfaceHandle)>(symbol: 'surface_getThreadId', isLeaf: true)
+external int surfaceGetThreadId(SurfaceHandle handle);
+
 @Native<Void Function(SurfaceHandle, OnRenderCallbackHandle)>(
-  symbol: 'surface_setOnRenderCallback',
+  symbol: 'surface_setCallbackHandler',
   isLeaf: true)
-external void surfaceSetOnRenderCallback(
+external void surfaceSetCallbackHandler(
   SurfaceHandle surface,
   OnRenderCallbackHandle callback,
 );
@@ -47,3 +50,14 @@ external void surfaceSetCanvasSize(
   symbol: 'surface_renderPicture',
   isLeaf: true)
 external int surfaceRenderPicture(SurfaceHandle surface, PictureHandle picture);
+
+@Native<Int32 Function(
+  SurfaceHandle,
+  ImageHandle,
+  Int
+)>(symbol: 'surface_rasterizeImage', isLeaf: true)
+external int surfaceRasterizeImage(
+  SurfaceHandle handle,
+  ImageHandle image,
+  int format,
+);

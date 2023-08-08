@@ -94,8 +94,12 @@ bool ImGui_ImplImpeller_Init(
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    desc->ClearStencilAttachments();
-    desc->ClearDepthAttachment();
+    IM_ASSERT(desc.has_value() && "Could not create Impeller pipeline");
+    if (desc.has_value()) {  // Needed to silence clang-tidy check
+                             // bugprone-unchecked-optional-access.
+      desc->ClearStencilAttachments();
+      desc->ClearDepthAttachment();
+    }
 
     bd->pipeline =
         context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
@@ -256,7 +260,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             .range = impeller::Range(
                 index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
-        vertex_buffer.index_count = pcmd->ElemCount;
+        vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;

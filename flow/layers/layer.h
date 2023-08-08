@@ -63,7 +63,6 @@ struct PrerollContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
   // presence of a platform view during Preroll.
@@ -71,6 +70,8 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
+
+  bool impeller_enabled = false;
 
   // The list of flags that describe which rendering state attributes
   // (such as opacity, ColorFilter, ImageFilter) a given layer can
@@ -83,12 +84,6 @@ struct PrerollContext {
   int renderable_state_flags = 0;
 
   std::vector<RasterCacheItem*>* raster_cached_entries;
-
-  // This flag will be set to true iff the frame will be constructing
-  // a DisplayList for the layer tree. This flag is mostly of note to
-  // the embedders that must decide between creating SkPicture or
-  // DisplayList objects for the inter-view slices of the layer tree.
-  bool display_list_enabled = false;
 };
 
 struct PaintContext {
@@ -107,6 +102,11 @@ struct PaintContext {
   LayerStateStack& state_stack;
   DlCanvas* canvas;
 
+  // Whether current canvas is an overlay canvas. Used to determine if the
+  // raster cache is painting to a surface that will be displayed above a
+  // platform view, in which case it will attempt to preserve the R-Tree.
+  bool rendering_above_platform_view = false;
+
   GrDirectContext* gr_context;
   SkColorSpace* dst_color_space;
   ExternalViewEmbedder* view_embedder;
@@ -114,12 +114,12 @@ struct PaintContext {
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
   const RasterCache* raster_cache;
-  const float frame_device_pixel_ratio = 1.0f;
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
   // only when leaf layer tracing is enabled.
   LayerSnapshotStore* layer_snapshot_store = nullptr;
   bool enable_leaf_layer_tracing = false;
+  bool impeller_enabled = false;
   impeller::AiksContext* aiks_context;
 };
 

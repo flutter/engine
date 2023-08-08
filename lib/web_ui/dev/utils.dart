@@ -10,6 +10,7 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'felt_config.dart';
@@ -353,7 +354,7 @@ mixin ArgUtils<T> on Command<T> {
 
 io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) =>
   switch (runtimeMode) {
-    RuntimeMode.debug => environment.wasmDebugOutDir,
+    RuntimeMode.debug => environment.wasmDebugUnoptOutDir,
     RuntimeMode.profile => environment.wasmProfileOutDir,
     RuntimeMode.release => environment.wasmReleaseOutDir,
   };
@@ -428,7 +429,13 @@ io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
 }
 
 extension AnsiColors on String {
-  static bool shouldEscape = io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+  static bool shouldEscape = () {
+    if (isLuci) {
+      // Produce clean output on LUCI.
+      return false;
+    }
+    return io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+  }();
 
   static const String _noColorCode = '\u001b[39m';
 

@@ -14,7 +14,7 @@
 namespace flutter {
 
 WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
-    : engine_(engine) {}
+    : engine_(engine), process_close_(false) {}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
@@ -48,7 +48,10 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
     // send a request to the framework to see if the app should exit. If it
     // is, we re-dispatch a new WM_CLOSE message. In order to allow the new
     // message to reach other delegates, we ignore it here.
-    case WM_CLOSE:
+    case WM_CLOSE: {
+      if (!process_close_) {
+        return false;
+      }
       auto key = std::make_tuple(hwnd, wpar, lpar);
       auto itr = sent_close_messages_.find(key);
       if (itr != sent_close_messages_.end()) {
@@ -64,6 +67,13 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                         AppExitType::cancelable);
         return true;
       }
+      break;
+    }
+
+    // DWM composition can be disabled on Windows 7.
+    // Notify the engine as this can result in screen tearing.
+    case WM_DWMCOMPOSITIONCHANGED:
+      engine_->OnDwmCompositionChanged();
       break;
   }
   return false;
@@ -147,6 +157,10 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   } while (thread_snapshot.GetNextThread(thread));
 
   return num_windows <= 1;
+}
+
+void WindowsLifecycleManager::BeginProcessingClose() {
+  process_close_ = true;
 }
 
 }  // namespace flutter

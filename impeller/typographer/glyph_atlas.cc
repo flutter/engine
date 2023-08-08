@@ -26,7 +26,7 @@ std::shared_ptr<SkBitmap> GlyphAtlasContext::GetBitmap() const {
   return bitmap_;
 }
 
-std::shared_ptr<skgpu::Rectanizer> GlyphAtlasContext::GetRectPacker() const {
+std::shared_ptr<RectanglePacker> GlyphAtlasContext::GetRectPacker() const {
   return rect_packer_;
 }
 
@@ -41,7 +41,7 @@ void GlyphAtlasContext::UpdateBitmap(std::shared_ptr<SkBitmap> bitmap) {
 }
 
 void GlyphAtlasContext::UpdateRectPacker(
-    std::shared_ptr<skgpu::Rectanizer> rect_packer) {
+    std::shared_ptr<RectanglePacker> rect_packer) {
   rect_packer_ = std::move(rect_packer);
 }
 
@@ -72,7 +72,7 @@ void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
 
 std::optional<Rect> GlyphAtlas::FindFontGlyphBounds(
     const FontGlyphPair& pair) const {
-  auto found = positions_.find(pair);
+  const auto& found = positions_.find(pair);
   if (found == positions_.end()) {
     return std::nullopt;
   }
@@ -98,17 +98,6 @@ size_t GlyphAtlas::IterateGlyphs(
     }
   }
   return count;
-}
-
-FontGlyphPair::Vector GlyphAtlas::HasSamePairs(
-    const FontGlyphPair::Vector& new_glyphs) {
-  std::vector<FontGlyphPair> new_pairs;
-  for (auto pair : new_glyphs) {
-    if (positions_.find(pair) == positions_.end()) {
-      new_pairs.push_back(pair);
-    }
-  }
-  return new_pairs;
 }
 
 }  // namespace impeller

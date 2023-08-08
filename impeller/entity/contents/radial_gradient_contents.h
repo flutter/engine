@@ -25,9 +25,16 @@ class RadialGradientContents final : public ColorSourceContents {
   ~RadialGradientContents() override;
 
   // |Contents|
+  bool IsOpaque() const override;
+
+  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
   void SetCenterAndRadius(Point center, Scalar radius);
 
@@ -54,6 +61,7 @@ class RadialGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
 
   FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
 };

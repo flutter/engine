@@ -39,6 +39,8 @@
 
 namespace flutter {
 
+static constexpr int64_t kImplicitViewId = 0ll;
+
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override { return nullptr; }
@@ -101,7 +103,7 @@ class TesterPlatformView : public PlatformView,
     SkImageInfo info =
         SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
                              SkColorSpace::MakeSRGB());
-    sk_surface_ = SkSurface::MakeRaster(info, nullptr);
+    sk_surface_ = SkSurfaces::Raster(info, nullptr);
 
     if (sk_surface_ == nullptr) {
       FML_LOG(ERROR)
@@ -339,11 +341,21 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
+  auto device_pixel_ratio = 3.0;
+  auto physical_width = 2400.0;   // 800 at 3x resolution.
+  auto physical_height = 1800.0;  // 600 at 3x resolution.
+
+  std::vector<std::unique_ptr<Display>> displays;
+  displays.push_back(std::make_unique<Display>(
+      0, 60, physical_width, physical_height, device_pixel_ratio));
+  shell->OnDisplayUpdates(std::move(displays));
+
   flutter::ViewportMetrics metrics{};
-  metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400.0;   // 800 at 3x resolution.
-  metrics.physical_height = 1800.0;  // 600 at 3x resolution.
-  shell->GetPlatformView()->SetViewportMetrics(metrics);
+  metrics.device_pixel_ratio = device_pixel_ratio;
+  metrics.physical_width = physical_width;
+  metrics.physical_height = physical_height;
+  metrics.display_id = 0;
+  shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId, metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
@@ -386,6 +398,8 @@ int main(int argc, char* argv[]) {
     FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
+
+  settings.leak_vm = false;
 
   if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";

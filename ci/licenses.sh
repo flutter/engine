@@ -4,7 +4,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-set -e
+# Do not exit when a non-zero return value is encountered to output all errors.
+# See: https://github.com/flutter/flutter/issues/131680
+# set -e
 shopt -s nullglob
 
 # Needed because if it is set, cd may print the path it changed to.
@@ -65,17 +67,22 @@ dart --version
 # Runs the tests for the license script.
 function run_tests() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  find -name "*_test.dart" | xargs -n 1 dart --enable-asserts
+  find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
 )
 
 # Collects the license information from the repo.
 # Runs in a subshell.
 function collect_licenses() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  dart --enable-asserts lib/main.dart         \
-    --src ../../..                            \
-    --out ../../../out/license_script_output  \
-    --golden ../../ci/licenses_golden \
+  # `--interpret_irregexp`` tells dart to use interpreter mode for running
+  # the regexp matching, rather than generating machine code for it.
+  # For very large RegExps that are currently used in license script using
+  # interpreter is faster than using unoptimized machine code, which has
+  # no chance of being optimized(due to its size).
+  dart --enable-asserts --interpret_irregexp lib/main.dart \
+    --src ../../..                                         \
+    --out ../../../out/license_script_output               \
+    --golden ../../ci/licenses_golden                      \
     "${QUIET}"
 )
 
@@ -86,7 +93,7 @@ function verify_licenses() (
   cd "$SRC_DIR"
 
   # These files trip up the script on Mac OS X.
-  find . -name ".DS_Store" -exec rm {} \;
+  find . -name ".DS_Store" -exec rm -f {} \;
 
   collect_licenses
 

@@ -12,6 +12,7 @@
 #include "display_list/utils/dl_matrix_clip_tracker.h"
 #include "flutter/flow/paint_region.h"
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
 
@@ -43,10 +44,10 @@ using PaintRegionMap = std::map<uint64_t, PaintRegion>;
 class DiffContext {
  public:
   explicit DiffContext(SkISize frame_size,
-                       double device_pixel_aspect_ratio,
                        PaintRegionMap& this_frame_paint_region_map,
                        const PaintRegionMap& last_frame_paint_region_map,
-                       bool has_raster_cache);
+                       bool has_raster_cache,
+                       bool impeller_enabled);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -71,6 +72,7 @@ class DiffContext {
 
   // Pushes additional transform for current subtree
   void PushTransform(const SkMatrix& transform);
+  void PushTransform(const SkM44& transform);
 
   // Pushes cull rect for current subtree
   bool PushCullRect(const SkRect& clip);
@@ -141,8 +143,6 @@ class DiffContext {
                        int horizontal_clip_alignment = 0,
                        int vertical_clip_alignment = 0) const;
 
-  double frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; };
-
   // Adds the region to current damage. Used for removed layers, where instead
   // of diffing the layer its paint region is direcly added to damage.
   void AddDamage(const PaintRegion& damage);
@@ -161,6 +161,8 @@ class DiffContext {
   // all transformations to physical pixels if the layer may be raster
   // cached.
   bool has_raster_cache() const { return has_raster_cache_; }
+
+  bool impeller_enabled() const { return impeller_enabled_; }
 
   class Statistics {
    public:
@@ -234,7 +236,6 @@ class DiffContext {
   std::shared_ptr<std::vector<SkRect>> rects_;
   State state_;
   SkISize frame_size_;
-  double frame_device_pixel_ratio_;
   std::vector<State> state_stack_;
   std::vector<FilterBoundsAdjustment> filter_bounds_adjustment_stack_;
 
@@ -247,6 +248,7 @@ class DiffContext {
   PaintRegionMap& this_frame_paint_region_map_;
   const PaintRegionMap& last_frame_paint_region_map_;
   bool has_raster_cache_;
+  bool impeller_enabled_;
 
   void AddDamage(const SkRect& rect);
 

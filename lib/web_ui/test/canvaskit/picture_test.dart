@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../common/matchers.dart';
 import 'common.dart';
 
 void main() {
@@ -20,19 +21,17 @@ void testMain() {
   group('CkPicture', () {
     setUpCanvasKitTest();
 
-    group('in browsers that do not support FinalizationRegistry', () {
+    group('lifecycle', () {
       test('can be disposed of manually', () {
-        browserSupportsFinalizationRegistry = false;
-
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder);
         canvas.drawPaint(ui.Paint());
         final CkPicture picture = recorder.endRecording() as CkPicture;
-        expect(picture.rawSkiaObject, isNotNull);
+        expect(picture.skiaObject, isNotNull);
         expect(picture.debugDisposed, isFalse);
         picture.debugCheckNotDisposed('Test.'); // must not throw
         picture.dispose();
-        expect(picture.rawSkiaObject, isNull);
+        expect(() => picture.skiaObject, throwsA(isAssertionError));
         expect(picture.debugDisposed, isTrue);
 
         StateError? actualError;
@@ -45,41 +44,11 @@ void testMain() {
         expect(actualError, isNotNull);
 
         // TODO(yjbanov): cannot test precise message due to https://github.com/flutter/flutter/issues/96298
-        expect('$actualError', startsWith(
-            'Bad state: Test.\n'
-            'The picture has been disposed. '
-            'When the picture was disposed the stack trace was:\n'
-        ));
-
-        // Emulate SkiaObjectCache deleting the picture
-        picture.delete();
-        picture.didDelete();
-        expect(picture.rawSkiaObject, isNull);
-
-        // A Picture that's been disposed of can no longer be resurrected
-        expect(() => picture.resurrect(), throwsStateError);
-        expect(() => picture.toImage(10, 10), throwsStateError);
-        expect(() => picture.dispose(), throwsStateError);
-      });
-
-      test('can be deleted by SkiaObjectCache', () {
-        browserSupportsFinalizationRegistry = false;
-
-        final ui.PictureRecorder recorder = ui.PictureRecorder();
-        final ui.Canvas canvas = ui.Canvas(recorder);
-        canvas.drawPaint(ui.Paint());
-        final CkPicture picture = recorder.endRecording() as CkPicture;
-        expect(picture.rawSkiaObject, isNotNull);
-
-        // Emulate SkiaObjectCache deleting the picture
-        picture.delete();
-        picture.didDelete();
-        expect(picture.rawSkiaObject, isNull);
-
-        // Deletion is softer than disposal. An object may still be resurrected
-        // if it was deleted prematurely.
-        expect(picture.debugDisposed, isFalse);
-        expect(picture.resurrect(), isNotNull);
+        expect(
+            '$actualError',
+            startsWith('Bad state: Test.\n'
+                'The picture has been disposed. '
+                'When the picture was disposed the stack trace was:\n'));
       });
     });
 
@@ -99,6 +68,76 @@ void testMain() {
       expect(data!.lengthInBytes, 10 * 15 * 4);
       expect(data.buffer.asUint32List().first, color.value);
     });
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+
+    test('cullRect bounds are tight', () async {
+      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
+      const ui.Color green = ui.Color.fromRGBO(0, 255, 0, 1);
+      const ui.Color blue = ui.Color.fromRGBO(0, 0, 255, 1);
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawRRect(
+        ui.RRect.fromRectXY(const ui.Rect.fromLTRB(20, 20, 150, 300), 15, 15),
+        ui.Paint()..color = red,
+      );
+      canvas.drawCircle(
+        const ui.Offset(200, 200),
+        100,
+        ui.Paint()..color = green,
+      );
+      canvas.drawOval(
+        const ui.Rect.fromLTRB(210, 40, 268, 199),
+        ui.Paint()..color = blue,
+      );
+
+      final CkPicture picture = recorder.endRecording() as CkPicture;
+      final ui.Rect bounds = picture.cullRect;
+      // Top left bounded by the red rrect, right bounded by right edge
+      // of red rrect, bottom bounded by bottom of green circle.
+      expect(bounds, equals(const ui.Rect.fromLTRB(20, 20, 300, 300)));
+    });
+
+    test('cullRect bounds with infinite size draw', () async {
+      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawColor(red, ui.BlendMode.src);
+
+      final CkPicture picture = recorder.endRecording() as CkPicture;
+      final ui.Rect bounds = picture.cullRect;
+      // Since the drawColor command fills the entire canvas, the computed
+      // bounds default to the cullRect that is passed in when the
+      // PictureRecorder is created, ie ui.Rect.largest.
+      expect(bounds, equals(ui.Rect.largest));
+    });
+
+    test('approximateBytesUsed', () async {
+      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
+      const ui.Color green = ui.Color.fromRGBO(0, 255, 0, 1);
+      const ui.Color blue = ui.Color.fromRGBO(0, 0, 255, 1);
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawRRect(
+        ui.RRect.fromRectXY(const ui.Rect.fromLTRB(20, 20, 150, 300), 15, 15),
+        ui.Paint()..color = red,
+      );
+      canvas.drawCircle(
+        const ui.Offset(200, 200),
+        100,
+        ui.Paint()..color = green,
+      );
+      canvas.drawOval(
+        const ui.Rect.fromLTRB(210, 40, 268, 199),
+        ui.Paint()..color = blue,
+      );
+
+      final CkPicture picture = recorder.endRecording() as CkPicture;
+      final int bytesUsed = picture.approximateBytesUsed;
+      // Sanity check: the picture should use more than 20 bytes of memory.
+      expect(bytesUsed, greaterThan(20));
+    });
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

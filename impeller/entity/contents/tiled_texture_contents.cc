@@ -6,10 +6,10 @@
 
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -55,21 +55,27 @@ void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
-void TiledTextureContents::SetColorFilter(
-    std::optional<ColorFilterProc> color_filter) {
+void TiledTextureContents::SetColorFilter(ColorFilterProc color_filter) {
   color_filter_ = std::move(color_filter);
 }
 
-std::optional<std::shared_ptr<Texture>>
-TiledTextureContents::CreateFilterTexture(
+std::shared_ptr<Texture> TiledTextureContents::CreateFilterTexture(
     const ContentContext& renderer) const {
-  const ColorFilterProc& filter = color_filter_.value();
-  auto color_filter_contents = filter(FilterInput::Make(texture_));
-  auto snapshot = color_filter_contents->RenderToSnapshot(renderer, Entity());
+  if (!color_filter_) {
+    return nullptr;
+  }
+  auto color_filter_contents = color_filter_(FilterInput::Make(texture_));
+  auto snapshot = color_filter_contents->RenderToSnapshot(
+      renderer,                          // renderer
+      Entity(),                          // entity
+      std::nullopt,                      // coverage_limit
+      std::nullopt,                      // sampler_descriptor
+      true,                              // msaa_enabled
+      "TiledTextureContents Snapshot");  // label
   if (snapshot.has_value()) {
     return snapshot.value().texture;
   }
-  return std::nullopt;
+  return nullptr;
 }
 
 SamplerDescriptor TiledTextureContents::CreateDescriptor(
@@ -88,8 +94,20 @@ SamplerDescriptor TiledTextureContents::CreateDescriptor(
 
 bool TiledTextureContents::UsesEmulatedTileMode(
     const Capabilities& capabilities) const {
-  return TileModeToAddressMode(x_tile_mode_, capabilities).has_value() &&
-         TileModeToAddressMode(y_tile_mode_, capabilities).has_value();
+  return !TileModeToAddressMode(x_tile_mode_, capabilities).has_value() ||
+         !TileModeToAddressMode(y_tile_mode_, capabilities).has_value();
+}
+
+// |Contents|
+bool TiledTextureContents::IsOpaque() const {
+  if (GetOpacityFactor() < 1 || x_tile_mode_ == Entity::TileMode::kDecal ||
+      y_tile_mode_ == Entity::TileMode::kDecal) {
+    return false;
+  }
+  if (color_filter_) {
+    return false;
+  }
+  return texture_->IsOpaque();
 }
 
 bool TiledTextureContents::Render(const ContentContext& renderer,
@@ -99,7 +117,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  using VS = TiledTextureFillVertexShader;
+  using VS = TextureFillVertexShader;
   using FS = TiledTextureFillFragmentShader;
 
   const auto texture_size = texture_->GetSize();
@@ -109,9 +127,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  auto bounds_origin = GetGeometry()->GetCoverage(Matrix())->origin;
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect(bounds_origin, Size(texture_size)), GetInverseMatrix(), renderer,
+      Rect({0, 0}, Size(texture_size)), GetInverseEffectTransform(), renderer,
       entity, pass);
   bool uses_emulated_tile_mode =
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
@@ -119,9 +136,10 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+  frame_info.alpha = GetOpacityFactor();
 
   Command cmd;
-  cmd.label = "TiledTextureFill";
+  cmd.label = uses_emulated_tile_mode ? "TiledTextureFill" : "TextureFill";
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
@@ -141,22 +159,16 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     FS::FragInfo frag_info;
     frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
     frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    frag_info.alpha = GetOpacity();
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  } else {
-    TextureFillFragmentShader::FragInfo frag_info;
-    frag_info.alpha = GetOpacity();
-    TextureFillFragmentShader::BindFragInfo(
-        cmd, host_buffer.EmplaceUniform(frag_info));
   }
 
-  if (color_filter_.has_value()) {
+  if (color_filter_) {
     auto filtered_texture = CreateFilterTexture(renderer);
-    if (!filtered_texture.has_value()) {
+    if (!filtered_texture) {
       return false;
     }
     FS::BindTextureSampler(
-        cmd, filtered_texture.value(),
+        cmd, filtered_texture,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             CreateDescriptor(renderer.GetDeviceCapabilities())));
   } else {
@@ -176,6 +188,31 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     return restore.Render(renderer, entity, pass);
   }
   return true;
+}
+
+std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
+    const ContentContext& renderer,
+    const Entity& entity,
+    std::optional<Rect> coverage_limit,
+    const std::optional<SamplerDescriptor>& sampler_descriptor,
+    bool msaa_enabled,
+    const std::string& label) const {
+  if (GetInverseEffectTransform().IsIdentity()) {
+    return Snapshot{
+        .texture = texture_,
+        .transform = entity.GetTransformation(),
+        .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
+        .opacity = GetOpacityFactor(),
+    };
+  }
+
+  return Contents::RenderToSnapshot(
+      renderer,                                          // renderer
+      entity,                                            // entity
+      std::nullopt,                                      // coverage_limit
+      sampler_descriptor.value_or(sampler_descriptor_),  // sampler_descriptor
+      true,                                              // msaa_enabled
+      label);                                            // label
 }
 
 }  // namespace impeller

@@ -52,6 +52,10 @@ struct Vector3 {
     return ((x * other.x) + (y * other.y) + (z * other.z));
   }
 
+  constexpr Vector3 Abs() const {
+    return {std::fabs(x), std::fabs(y), std::fabs(z)};
+  }
+
   constexpr Vector3 Cross(const Vector3& other) const {
     return {
         (y * other.z) - (z * other.y),  //
@@ -142,6 +146,14 @@ struct Vector3 {
     return Vector3(x - v.x, y - v.y, z - v.z);
   }
 
+  constexpr Vector3 operator+(Scalar s) const {
+    return Vector3(x + s, y + s, z + s);
+  }
+
+  constexpr Vector3 operator-(Scalar s) const {
+    return Vector3(x - s, y - s, z - s);
+  }
+
   constexpr Vector3 operator*(const Vector3& v) const {
     return Vector3(x * v.x, y * v.y, z * v.z);
   }
@@ -193,6 +205,16 @@ struct Vector3 {
 template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
 constexpr Vector3 operator*(U s, const Vector3& p) {
   return p * s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator+(U s, const Vector3& p) {
+  return p + s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator-(U s, const Vector3& p) {
+  return -p + s;
 }
 
 template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>

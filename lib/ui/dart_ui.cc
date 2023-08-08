@@ -77,7 +77,7 @@ typedef CanvasPath Path;
   V(Gradient::Create, 1)                                              \
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
-  V(ParagraphBuilder::Create, 9)                                      \
+  V(ParagraphBuilder::Create, 10)                                     \
   V(PathMeasure::Create, 3)                                           \
   V(Path::Create, 1)                                                  \
   V(PictureRecorder::Create, 1)                                       \
@@ -286,7 +286,6 @@ typedef CanvasPath Path;
   V(SceneBuilder, pushImageFilter, 4)                  \
   V(SceneBuilder, pushOffset, 5)                       \
   V(SceneBuilder, pushOpacity, 6)                      \
-  V(SceneBuilder, pushPhysicalShape, 8)                \
   V(SceneBuilder, pushShaderMask, 10)                  \
   V(SceneBuilder, pushTransformHandle, 4)              \
   V(SceneBuilder, setCheckerboardOffscreenLayers, 2)   \
@@ -344,6 +343,7 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+
 #ifdef IMPELLER_ENABLE_3D
   FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)

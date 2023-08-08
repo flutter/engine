@@ -14,11 +14,9 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/typographer/font_glyph_pair.h"
+#include "impeller/typographer/rectangle_packer.h"
 
 class SkBitmap;
-namespace skgpu {
-class Rectanizer;
-}
 
 namespace impeller {
 
@@ -32,13 +30,6 @@ class GlyphAtlas {
   //----------------------------------------------------------------------------
   /// @brief      Describes how the glyphs are represented in the texture.
   enum class Type {
-    //--------------------------------------------------------------------------
-    /// The glyphs are represented at a fixed size in an 8-bit grayscale texture
-    /// where the value of each pixel represents a signed-distance field that
-    /// stores the glyph outlines.
-    ///
-    kSignedDistanceField,
-
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
     /// alpha channel.
@@ -121,17 +112,6 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
 
-  //----------------------------------------------------------------------------
-  /// @brief      whether this atlas contains all of the same font-glyph pairs
-  ///             as the vector.
-  ///
-  /// @param[in]  new_glyphs  The full set of new glyphs
-  ///
-  /// @return     A vector containing the glyphs from new_glyphs that are not
-  ///             present in the existing atlas. May be empty of there are none.
-  ///
-  FontGlyphPair::Vector HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
-
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;
@@ -168,7 +148,7 @@ class GlyphAtlasContext {
 
   //----------------------------------------------------------------------------
   /// @brief      Retrieve the previous (if any) rect packer.
-  std::shared_ptr<skgpu::Rectanizer> GetRectPacker() const;
+  std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
@@ -176,13 +156,13 @@ class GlyphAtlasContext {
 
   void UpdateBitmap(std::shared_ptr<SkBitmap> bitmap);
 
-  void UpdateRectPacker(std::shared_ptr<skgpu::Rectanizer> rect_packer);
+  void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
 
  private:
   std::shared_ptr<GlyphAtlas> atlas_;
   ISize atlas_size_;
   std::shared_ptr<SkBitmap> bitmap_;
-  std::shared_ptr<skgpu::Rectanizer> rect_packer_;
+  std::shared_ptr<RectanglePacker> rect_packer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
 };

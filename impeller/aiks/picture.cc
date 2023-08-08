@@ -56,9 +56,28 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   auto impeller_context = context.GetContext();
   RenderTarget target;
   if (impeller_context->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(*impeller_context, size);
+    target = RenderTarget::CreateOffscreenMSAA(
+        *impeller_context,        // context
+        size,                     // size
+        "Picture Snapshot MSAA",  // label
+        RenderTarget::
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
+        ,
+        std::nullopt  // stencil_attachment_config
+#endif                // FML_OS_ANDROID
+    );
   } else {
-    target = RenderTarget::CreateOffscreen(*impeller_context, size);
+    target = RenderTarget::CreateOffscreen(
+        *impeller_context,                           // context
+        size,                                        // size
+        "Picture Snapshot",                          // label
+        RenderTarget::kDefaultColorAttachmentConfig  // color_attachment_config
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
+        ,
+        std::nullopt  // stencil_attachment_config
+#endif                // FML_OS_ANDROID
+    );
   }
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";

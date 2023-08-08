@@ -85,16 +85,6 @@ class SemanticsAction {
 
   static SemanticsAction? fromIndex(int index) => _kActionById[index];
 
-  /// Temporary API until [values] return a list.
-  /// https://github.com/flutter/flutter/issues/123346
-  @Deprecated('This getter is temporary and will be removed shortly.')
-  static List<SemanticsAction> get doNotUseWillBeDeletedWithoutWarningValuesAsList => values;
-
-  /// Temporary API until [values] return a list.
-  /// https://github.com/flutter/flutter/issues/123346
-  @Deprecated('This getter is temporary and will be removed shortly.')
-  static Iterable<int> get doNotUseWillBeDeletedWithoutWarningKeys => _kActionById.keys;
-
   @override
   String toString() => 'SemanticsAction.$name';
 }
@@ -131,6 +121,8 @@ class SemanticsFlag {
   static const int _kIsSliderIndex = 1 << 23;
   static const int _kIsKeyboardKeyIndex = 1 << 24;
   static const int _kIsCheckStateMixedIndex = 1 << 25;
+  static const int _kHasExpandedStateIndex = 1 << 26;
+  static const int _kIsExpandedIndex = 1 << 27;
 
   static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex, 'hasCheckedState');
   static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex, 'isChecked');
@@ -158,6 +150,8 @@ class SemanticsFlag {
   static const SemanticsFlag isToggled = SemanticsFlag._(_kIsToggledIndex, 'isToggled');
   static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex, 'hasImplicitScrolling');
   static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex, 'isCheckStateMixed');
+  static const SemanticsFlag hasExpandedState = SemanticsFlag._(_kHasExpandedStateIndex, 'hasExpandedState');
+  static const SemanticsFlag isExpanded = SemanticsFlag._(_kIsExpandedIndex, 'isExpanded');
 
   static const Map<int, SemanticsFlag> _kFlagById = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
@@ -186,21 +180,13 @@ class SemanticsFlag {
     _kIsSliderIndex: isSlider,
     _kIsKeyboardKeyIndex: isKeyboardKey,
     _kIsCheckStateMixedIndex: isCheckStateMixed,
+    _kHasExpandedStateIndex: hasExpandedState,
+    _kIsExpandedIndex: isExpanded,
   };
 
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
 
   static SemanticsFlag? fromIndex(int index) => _kFlagById[index];
-
-  /// Temporary API until [values] return a list.
-  /// https://github.com/flutter/flutter/issues/123346
-  @Deprecated('This getter is temporary and will be removed shortly.')
-  static List<SemanticsFlag> get doNotUseWillBeDeletedWithoutWarningValuesAsList => values;
-
-  /// Temporary API until [values] return a list.
-  /// https://github.com/flutter/flutter/issues/123346
-  @Deprecated('This getter is temporary and will be removed shortly.')
-  static Iterable<int> get doNotUseWillBeDeletedWithoutWarningKeys => _kFlagById.keys;
 
   @override
   String toString() => 'SemanticsFlag.$name';

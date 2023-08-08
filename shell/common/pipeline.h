@@ -112,12 +112,14 @@ class Pipeline {
         std::function<PipelineProduceResult(ResourcePtr, size_t)>;
 
     Continuation continuation_;
-    size_t trace_id_;
+    uint64_t trace_id_;
 
-    ProducerContinuation(const Continuation& continuation, size_t trace_id)
+    ProducerContinuation(const Continuation& continuation, uint64_t trace_id)
         : continuation_(continuation), trace_id_(trace_id) {
+      TRACE_EVENT_ASYNC_BEGIN0_WITH_FLOW_IDS("flutter", "PipelineItem",
+                                             trace_id_, /*flow_id_count=*/1,
+                                             /*flow_ids=*/&trace_id);
       TRACE_FLOW_BEGIN("flutter", "PipelineItem", trace_id_);
-      TRACE_EVENT_ASYNC_BEGIN0("flutter", "PipelineItem", trace_id_);
       TRACE_EVENT_ASYNC_BEGIN0("flutter", "PipelineProduce", trace_id_);
     }
 
@@ -252,12 +254,15 @@ class Pipeline {
 };
 
 struct LayerTreeItem {
-  LayerTreeItem(std::shared_ptr<LayerTree> layer_tree,
-                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
+  LayerTreeItem(std::unique_ptr<LayerTree> layer_tree,
+                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+                float device_pixel_ratio)
       : layer_tree(std::move(layer_tree)),
-        frame_timings_recorder(std::move(frame_timings_recorder)) {}
-  std::shared_ptr<LayerTree> layer_tree;
+        frame_timings_recorder(std::move(frame_timings_recorder)),
+        device_pixel_ratio(device_pixel_ratio) {}
+  std::unique_ptr<LayerTree> layer_tree;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
+  float device_pixel_ratio;
 };
 
 using LayerTreePipeline = Pipeline<LayerTreeItem>;

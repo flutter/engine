@@ -9,8 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -20,7 +21,7 @@ class Path;
 class HostBuffer;
 struct VertexBuffer;
 
-class SolidColorContents final : public Contents {
+class SolidColorContents final : public ColorSourceContents {
  public:
   SolidColorContents();
 
@@ -29,35 +30,30 @@ class SolidColorContents final : public Contents {
   static std::unique_ptr<SolidColorContents> Make(const Path& path,
                                                   Color color);
 
-  void SetGeometry(std::shared_ptr<Geometry> geometry);
-
   void SetColor(Color color);
 
   Color GetColor() const;
 
-  // | Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // | Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
+  // |Contents|
+  bool IsOpaque() const override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
- private:
-  std::shared_ptr<Geometry> geometry_;
+  std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                         ISize target_size) const override;
 
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
+ private:
   Color color_;
-  Scalar inherited_opacity_ = 1.0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SolidColorContents);
 };

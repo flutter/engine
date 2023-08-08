@@ -53,7 +53,8 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   using VS = BorderMaskBlurPipeline::VertexShader;
   using FS = BorderMaskBlurPipeline::FragmentShader;
 
@@ -65,7 +66,8 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  auto input_snapshot =
+      inputs[0]->GetSnapshot("BorderMaskBlur", renderer, entity);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -115,7 +117,8 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     cmd.stencil_reference = entity.GetStencilDepth();
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation();
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
@@ -136,7 +139,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage;
+    return coverage.TransformBounds(entity.GetTransformation());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
@@ -144,7 +147,6 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetStencilDepth(entity.GetStencilDepth());
-  sub_entity.SetTransformation(entity.GetTransformation());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

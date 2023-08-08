@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/geometry/path_builder.h"
@@ -52,23 +53,28 @@ class GoldenTests : public ::testing::Test {
 
   MetalScreenshoter& Screenshoter() { return *screenshoter_; }
 
+  void SetUp() override {
+    testing::GoldenDigest::Instance()->AddDimension(
+        "gpu_string",
+        Screenshoter().GetContext().GetContext()->DescribeGpuModel());
+  }
+
  private:
+  // This must be placed before any other members that may use the
+  // autorelease pool.
+  fml::ScopedNSAutoreleasePool autorelease_pool_;
+
   std::unique_ptr<MetalScreenshoter> screenshoter_;
 };
 
 TEST_F(GoldenTests, ConicalGradient) {
   Canvas canvas;
   Paint paint;
-  paint.color_source_type = Paint::ColorSourceType::kConicalGradient;
-  paint.color_source = []() {
-    auto result = std::make_shared<ConicalGradientContents>();
-    result->SetCenterAndRadius(Point(125, 125), 125);
-    result->SetColors({Color(1.0, 0.0, 0.0, 1.0), Color(0.0, 0.0, 1.0, 1.0)});
-    result->SetStops({0, 1});
-    result->SetFocus(Point(180, 180), 0);
-    result->SetTileMode(Entity::TileMode::kClamp);
-    return result;
-  };
+
+  paint.color_source = ColorSource::MakeConicalGradient(
+      {125, 125}, 125, {Color(1.0, 0.0, 0.0, 1.0), Color(0.0, 0.0, 1.0, 1.0)},
+      {0, 1}, {180, 180}, 0, Entity::TileMode::kClamp, {});
+
   paint.stroke_width = 0.0;
   paint.style = Paint::Style::kFill;
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);

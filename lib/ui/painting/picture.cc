@@ -14,6 +14,7 @@
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -25,16 +26,16 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
-fml::RefPtr<Picture> Picture::Create(
-    Dart_Handle dart_handle,
-    flutter::SkiaGPUObject<DisplayList> display_list) {
+fml::RefPtr<Picture> Picture::Create(Dart_Handle dart_handle,
+                                     sk_sp<DisplayList> display_list) {
+  FML_DCHECK(display_list->isUIThreadSafe());
   auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(display_list));
 
   canvas_picture->AssociateWithDartWrapper(dart_handle);
   return canvas_picture;
 }
 
-Picture::Picture(flutter::SkiaGPUObject<DisplayList> display_list)
+Picture::Picture(sk_sp<DisplayList> display_list)
     : display_list_(std::move(display_list)) {}
 
 Picture::~Picture() = default;
@@ -42,19 +43,17 @@ Picture::~Picture() = default;
 Dart_Handle Picture::toImage(uint32_t width,
                              uint32_t height,
                              Dart_Handle raw_image_callback) {
-  if (!display_list_.skia_object()) {
+  if (!display_list_) {
     return tonic::ToDart("Picture is null");
   }
-  return RasterizeToImage(display_list_.skia_object(), width, height,
-                          raw_image_callback);
+  return RasterizeToImage(display_list_, width, height, raw_image_callback);
 }
 
 void Picture::toImageSync(uint32_t width,
                           uint32_t height,
                           Dart_Handle raw_image_handle) {
-  FML_DCHECK(display_list_.skia_object());
-  RasterizeToImageSync(display_list_.skia_object(), width, height,
-                       raw_image_handle);
+  FML_DCHECK(display_list_);
+  RasterizeToImageSync(display_list_, width, height, raw_image_handle);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
@@ -108,8 +107,8 @@ void Picture::dispose() {
 }
 
 size_t Picture::GetAllocationSize() const {
-  if (auto display_list = display_list_.skia_object()) {
-    return display_list->bytes() + sizeof(Picture);
+  if (display_list_) {
+    return display_list_->bytes() + sizeof(Picture);
   } else {
     return sizeof(Picture);
   }
@@ -119,24 +118,27 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
-  return RasterizeToImage(display_list, nullptr, width, height,
-                          raw_image_callback);
+  return DoRasterizeToImage(display_list, nullptr, width, height,
+                            raw_image_callback);
 }
 
 Dart_Handle Picture::RasterizeLayerTreeToImage(
-    std::shared_ptr<LayerTree> layer_tree,
-    uint32_t width,
-    uint32_t height,
+    std::unique_ptr<LayerTree> layer_tree,
     Dart_Handle raw_image_callback) {
-  return RasterizeToImage(nullptr, std::move(layer_tree), width, height,
-                          raw_image_callback);
+  FML_DCHECK(layer_tree != nullptr);
+  auto frame_size = layer_tree->frame_size();
+  return DoRasterizeToImage(nullptr, std::move(layer_tree), frame_size.width(),
+                            frame_size.height(), raw_image_callback);
 }
 
-Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
-                                      std::shared_ptr<LayerTree> layer_tree,
-                                      uint32_t width,
-                                      uint32_t height,
-                                      Dart_Handle raw_image_callback) {
+Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
+                                        std::unique_ptr<LayerTree> layer_tree,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        Dart_Handle raw_image_callback) {
+  // Either display_list or layer_tree should be provided.
+  FML_DCHECK((display_list == nullptr) != (layer_tree == nullptr));
+
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
     return tonic::ToDart("Image callback was invalid");
   }
@@ -158,8 +160,6 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
   // thread owns the sole reference to the layer tree. So we do it in the
   // raster thread.
 
-  auto picture_bounds = SkISize::Make(width, height);
-
   auto ui_task =
       // The static leak checker gets confused by the use of fml::MakeCopyable.
       // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -177,7 +177,9 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
           return;
         }
 
-        if (image->skia_image()) {
+        if (!image->isUIThreadSafe()) {
+          // All images with impeller textures should already be safe.
+          FML_DCHECK(image->impeller_texture() == nullptr);
           image =
               DlImageGPU::Make({image->skia_image(), std::move(unref_queue)});
         }
@@ -197,14 +199,17 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [ui_task_runner, snapshot_delegate, display_list, picture_bounds, ui_task,
-       layer_tree = std::move(layer_tree)] {
+      fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list, width,
+                         height, ui_task,
+                         layer_tree = std::move(layer_tree)]() mutable {
+        auto picture_bounds = SkISize::Make(width, height);
         sk_sp<DlImage> image;
         if (layer_tree) {
-          auto display_list = layer_tree->Flatten(
-              SkRect::MakeWH(picture_bounds.width(), picture_bounds.height()),
-              snapshot_delegate->GetTextureRegistry(),
-              snapshot_delegate->GetGrContext());
+          FML_DCHECK(picture_bounds == layer_tree->frame_size());
+          auto display_list =
+              layer_tree->Flatten(SkRect::MakeWH(width, height),
+                                  snapshot_delegate->GetTextureRegistry(),
+                                  snapshot_delegate->GetGrContext());
 
           image = snapshot_delegate->MakeRasterSnapshot(display_list,
                                                         picture_bounds);
@@ -215,7 +220,7 @@ Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
 
         fml::TaskRunner::RunNowOrPostTask(
             ui_task_runner, [ui_task, image]() { ui_task(image); });
-      });
+      }));
 
   return Dart_Null();
 }

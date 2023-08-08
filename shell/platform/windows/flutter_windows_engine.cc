@@ -156,12 +156,9 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(
-    const FlutterProjectBundle& project,
-    std::unique_ptr<WindowsRegistry> registry)
+FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
-      windows_registry_(std::move(registry)),
       lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
@@ -202,7 +199,13 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
-  surface_manager_ = AngleSurfaceManager::Create();
+
+  // Check for impeller support.
+  auto& switches = project_->GetSwitches();
+  enable_impeller_ = std::find(switches.begin(), switches.end(),
+                               "--enable-impeller=true") != switches.end();
+
+  surface_manager_ = AngleSurfaceManager::Create(enable_impeller_);
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
   window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(
       [](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data,
@@ -342,19 +345,27 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                        void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    auto view = host->view();
+    if (!view) {
+      return;
+    }
+
+    auto accessibility_bridge = view->accessibility_bridge().lock();
+    if (!accessibility_bridge) {
+      return;
+    }
 
     for (size_t i = 0; i < update->node_count; i++) {
       const FlutterSemanticsNode2* node = update->nodes[i];
-      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(*node);
+      accessibility_bridge->AddFlutterSemanticsNodeUpdate(*node);
     }
 
     for (size_t i = 0; i < update->custom_action_count; i++) {
       const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
-      host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-          *action);
+      accessibility_bridge->AddFlutterSemanticsCustomActionUpdate(*action);
     }
 
-    host->accessibility_bridge_->CommitUpdates();
+    accessibility_bridge->CommitUpdates();
   };
   args.root_isolate_create_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
@@ -369,9 +380,21 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     args.aot_data = aot_data_.get();
   }
 
-  FlutterRendererConfig renderer_config = surface_manager_
-                                              ? GetOpenGLRendererConfig()
-                                              : GetSoftwareRendererConfig();
+  FlutterRendererConfig renderer_config;
+
+  if (enable_impeller_) {
+    // Impeller does not support a Software backend. Avoid falling back and
+    // confusing the engine on which renderer is selected.
+    if (!surface_manager_) {
+      FML_LOG(ERROR) << "Could not create surface manager. Impeller backend "
+                        "does not support software rendering.";
+      return false;
+    }
+    renderer_config = GetOpenGLRendererConfig();
+  } else {
+    renderer_config = surface_manager_ ? GetOpenGLRendererConfig()
+                                       : GetSoftwareRendererConfig();
+  }
 
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
@@ -394,6 +417,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                                     displays.data(), displays.size());
 
   SendSystemLocales();
+  SetLifecycleState(flutter::AppLifecycleState::kResumed);
 
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
@@ -559,9 +583,16 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
       this);
 }
 
+void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
+  const char* state_name = flutter::AppLifecycleStateToString(state);
+  SendPlatformMessage("flutter/lifecycle",
+                      reinterpret_cast<const uint8_t*>(state_name),
+                      strlen(state_name), nullptr, nullptr);
+}
+
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages =
-      GetPreferredLanguageInfo(*windows_registry_);
+      GetPreferredLanguageInfo(windows_proc_table_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -667,19 +698,8 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
-
-    if (!semantics_enabled_ && accessibility_bridge_) {
-      accessibility_bridge_.reset();
-    } else if (semantics_enabled_ && !accessibility_bridge_) {
-      accessibility_bridge_ = CreateAccessibilityBridge(this, view());
-    }
+    view_->UpdateSemanticsEnabled(enabled);
   }
-}
-
-std::shared_ptr<AccessibilityBridgeWindows>
-FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine,
-                                                FlutterWindowsView* view) {
-  return std::make_shared<AccessibilityBridgeWindows>(engine, view);
 }
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
@@ -687,14 +707,6 @@ void FlutterWindowsEngine::OnPreEngineRestart() {
   if (view_) {
     InitializeKeyboard();
   }
-}
-
-gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeViewAccessible() {
-  if (!accessibility_bridge_) {
-    return nullptr;
-  }
-
-  return accessibility_bridge_->GetChildOfAXFragmentRoot();
 }
 
 std::string FlutterWindowsEngine::GetExecutableName() const {
@@ -774,6 +786,14 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
                                   std::optional<LPARAM> lparam,
                                   UINT exit_code) {
   lifecycle_manager_->Quit(hwnd, wparam, lparam, exit_code);
+}
+
+void FlutterWindowsEngine::OnDwmCompositionChanged() {
+  view_->OnDwmCompositionChanged();
+}
+
+void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
+  lifecycle_manager_->BeginProcessingClose();
 }
 
 }  // namespace flutter

@@ -235,6 +235,7 @@ class DisplayList : public SkRefCnt {
 
   void Dispatch(DlOpReceiver& ctx) const;
   void Dispatch(DlOpReceiver& ctx, const SkRect& cull_rect) const;
+  void Dispatch(DlOpReceiver& ctx, const SkIRect& cull_rect) const;
 
   // From historical behavior, SkPicture always included nested bytes,
   // but nested ops are only included if requested. The defaults used
@@ -257,13 +258,25 @@ class DisplayList : public SkRefCnt {
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
-  bool Equals(sk_sp<const DisplayList> other) const {
+  bool Equals(const sk_sp<const DisplayList>& other) const {
     return Equals(other.get());
   }
 
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
+  bool isUIThreadSafe() const { return is_ui_thread_safe_; }
 
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  /// @brief     Indicates if there are any rendering operations in this
+  ///            DisplayList that will modify a surface of transparent black
+  ///            pixels.
+  ///
+  /// This condition can be used to determine whether to create a cleared
+  /// surface, render a DisplayList into it, and then composite the
+  /// result into a scene. It is not uncommon for code in the engine to
+  /// come across such degenerate DisplayList objects when slicing up a
+  /// frame between platform views.
+  bool modifies_transparent_black() const {
+    return modifies_transparent_black_;
+  }
 
  private:
   DisplayList(DisplayListStorage&& ptr,
@@ -273,9 +286,13 @@ class DisplayList : public SkRefCnt {
               unsigned int nested_op_count,
               const SkRect& bounds,
               bool can_apply_group_opacity,
+              bool is_ui_thread_safe,
+              bool modifies_transparent_black,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
+
+  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
   const DisplayListStorage storage_;
   const size_t byte_count_;
@@ -288,6 +305,9 @@ class DisplayList : public SkRefCnt {
   const SkRect bounds_;
 
   const bool can_apply_group_opacity_;
+  const bool is_ui_thread_safe_;
+  const bool modifies_transparent_black_;
+
   const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,

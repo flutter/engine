@@ -19,6 +19,7 @@ struct FrameSynchronizer {
   vk::UniqueFence acquire;
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
+  std::shared_ptr<CommandBuffer> final_cmd_buffer;
   bool is_valid = false;
 
   explicit FrameSynchronizer(const vk::Device& device) {
@@ -123,19 +124,21 @@ static std::optional<vk::Queue> ChoosePresentQueue(
 std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
+    bool was_rotated,
     vk::SwapchainKHR old_swapchain) {
-  return std::shared_ptr<SwapchainImplVK>(
-      new SwapchainImplVK(context, std::move(surface), old_swapchain));
+  return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
+      context, std::move(surface), was_rotated, old_swapchain));
 }
 
 SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                                  vk::UniqueSurfaceKHR surface,
+                                 bool was_rotated,
                                  vk::SwapchainKHR old_swapchain) {
   if (!context) {
     return;
   }
 
-  const auto& vk_context = ContextVK::Cast(*context);
+  auto& vk_context = ContextVK::Cast(*context);
 
   auto [caps_result, caps] =
       vk_context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface);
@@ -159,6 +162,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
     VALIDATION_LOG << "Swapchain has no supported formats.";
     return;
   }
+  vk_context.SetOffscreenFormat(ToPixelFormat(format.value().format));
 
   const auto composite =
       ChooseAlphaCompositionMode(caps.supportedCompositeAlpha);
@@ -194,8 +198,11 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                                : caps.maxImageCount  // max zero means no limit
   );
   swapchain_info.imageArrayLayers = 1u;
-  swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
-  swapchain_info.preTransform = caps.currentTransform;
+  // Swapchain images are primarily used as color attachments (via resolve) or
+  // blit targets.
+  swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
+                              vk::ImageUsageFlagBits::eTransferDst;
+  swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back
   // from the buffer. This is analogous to [CAMetalLayer framebufferOnly] in
@@ -271,6 +278,8 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
   is_valid_ = true;
+  was_rotated_ = was_rotated;
+  is_rotated_ = was_rotated;
 }
 
 SwapchainImplVK::~SwapchainImplVK() {
@@ -312,6 +321,10 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
     return {};
   }
 
+  if (was_rotated_ != is_rotated_) {
+    return AcquireResult{true /* out of date */};
+  }
+
   const auto& context = ContextVK::Cast(*context_strong);
 
   current_frame_ = (current_frame_ + 1u) % synchronizers_.size();
@@ -330,14 +343,18 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   /// Get the next image index.
   ///
   auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
-      *swapchain_,                           // swapchain
-      std::numeric_limits<uint64_t>::max(),  // timeout (nanoseconds)
-      *sync->render_ready,                   // signal semaphore
-      nullptr                                // fence
+      *swapchain_,          // swapchain
+      1'000'000'000,        // timeout (ns) 1000ms
+      *sync->render_ready,  // signal semaphore
+      nullptr               // fence
   );
 
-  if (acq_result == vk::Result::eSuboptimalKHR ||
-      acq_result == vk::Result::eErrorOutOfDateKHR) {
+  if (acq_result == vk::Result::eSuboptimalKHR) {
+    is_rotated_ = true;
+    return AcquireResult{true /* out of date */};
+  }
+
+  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
     return AcquireResult{true /* out of date */};
   }
 
@@ -375,83 +392,97 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
+  context.GetConcurrentWorkerTaskRunner()->PostTask(
+      [&, index, image, current_frame = current_frame_] {
+        auto context_strong = context_.lock();
+        if (!context_strong) {
+          return;
+        }
+        const auto& context = ContextVK::Cast(*context_strong);
+        const auto& sync = synchronizers_[current_frame];
 
-  const auto& sync = synchronizers_[current_frame_];
+        //----------------------------------------------------------------------------
+        /// Transition the image to color-attachment-optimal.
+        ///
+        sync->final_cmd_buffer = context.CreateCommandBuffer();
+        if (!sync->final_cmd_buffer) {
+          return;
+        }
 
-  //----------------------------------------------------------------------------
-  /// Transition the image to color-attachment-optimal.
-  ///
-  {
-    auto cmd_buffer = context.CreateCommandBuffer();
-    if (!cmd_buffer) {
-      return false;
-    }
+        auto vk_final_cmd_buffer =
+            CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                .GetEncoder()
+                ->GetCommandBuffer();
+        {
+          BarrierVK barrier;
+          barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+          barrier.cmd_buffer = vk_final_cmd_buffer;
+          barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+          barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          barrier.dst_access = {};
+          barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
 
-    auto vk_cmd_buffer =
-        CommandBufferVK::Cast(*cmd_buffer).GetEncoder()->GetCommandBuffer();
+          if (!image->SetLayout(barrier)) {
+            return;
+          }
 
-    LayoutTransition transition;
-    transition.new_layout = vk::ImageLayout::ePresentSrcKHR;
-    transition.cmd_buffer = vk_cmd_buffer;
-    transition.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-    transition.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    transition.dst_access = {};
-    transition.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+          if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+            return;
+          }
+        }
 
-    if (!image->SetLayout(transition)) {
-      return false;
-    }
+        //----------------------------------------------------------------------------
+        /// Signal that the presentation semaphore is ready.
+        ///
+        {
+          vk::SubmitInfo submit_info;
+          vk::PipelineStageFlags wait_stage =
+              vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          submit_info.setWaitDstStageMask(wait_stage);
+          submit_info.setWaitSemaphores(*sync->render_ready);
+          submit_info.setSignalSemaphores(*sync->present_ready);
+          submit_info.setCommandBuffers(vk_final_cmd_buffer);
+          auto result =
+              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+          if (result != vk::Result::eSuccess) {
+            VALIDATION_LOG << "Could not wait on render semaphore: "
+                           << vk::to_string(result);
+            return;
+          }
+        }
 
-    if (!cmd_buffer->SubmitCommands()) {
-      return false;
-    }
-  }
+        //----------------------------------------------------------------------------
+        /// Present the image.
+        ///
+        uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-  //----------------------------------------------------------------------------
-  /// Signal that the presentation semaphore is ready.
-  ///
-  {
-    vk::SubmitInfo submit_info;
-    vk::PipelineStageFlags wait_stage =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    submit_info.setWaitDstStageMask(wait_stage);
-    submit_info.setWaitSemaphores(*sync->render_ready);
-    submit_info.setSignalSemaphores(*sync->present_ready);
-    auto result =
-        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not wait on render semaphore: "
-                     << vk::to_string(result);
-      return false;
-    }
-  }
+        vk::PresentInfoKHR present_info;
+        present_info.setSwapchains(*swapchain_);
+        present_info.setImageIndices(indices);
+        present_info.setWaitSemaphores(*sync->present_ready);
 
-  //----------------------------------------------------------------------------
-  /// Present the image.
-  ///
-  uint32_t indices[] = {static_cast<uint32_t>(index)};
-
-  vk::PresentInfoKHR present_info;
-  present_info.setSwapchains(*swapchain_);
-  present_info.setImageIndices(indices);
-  present_info.setWaitSemaphores(*sync->present_ready);
-
-  switch (auto result = present_queue_.presentKHR(present_info)) {
-    case vk::Result::eErrorOutOfDateKHR:
-      // Caller will recreate the impl on acquisition, not submission.
-      [[fallthrough]];
-    case vk::Result::eErrorSurfaceLostKHR:
-      // Vulkan guarantees that the set of queue operations will still complete
-      // successfully.
-      [[fallthrough]];
-    case vk::Result::eSuccess:
-      return true;
-    default:
-      VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-      return false;
-  }
-  FML_UNREACHABLE();
-  return false;
+        switch (auto result = present_queue_.presentKHR(present_info)) {
+          case vk::Result::eErrorOutOfDateKHR:
+            // Caller will recreate the impl on acquisition, not submission.
+            [[fallthrough]];
+          case vk::Result::eErrorSurfaceLostKHR:
+            // Vulkan guarantees that the set of queue operations will still
+            // complete successfully.
+            [[fallthrough]];
+          case vk::Result::eSuccess:
+            is_rotated_ = false;
+            return;
+          case vk::Result::eSuboptimalKHR:
+            is_rotated_ = true;
+            return;
+          default:
+            VALIDATION_LOG << "Could not present queue: "
+                           << vk::to_string(result);
+            return;
+        }
+        FML_UNREACHABLE();
+      });
+  return true;
 }
 
 }  // namespace impeller

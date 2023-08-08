@@ -17,7 +17,6 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -25,7 +24,7 @@ import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
-export 'package:js/js.dart' show allowInterop;
+export 'package:js/js_util.dart' show allowInterop;
 
 
 /// Returns true if [object] has property [name], false otherwise.
@@ -247,7 +246,7 @@ extension ImageDecoderExtension on ImageDecoder {
 class ImageDecoderOptions {
   external factory ImageDecoderOptions({
     required JSString type,
-    required JSUint8Array data,
+    required JSAny data,
     required JSString premultiplyAlpha,
     JSNumber? desiredWidth,
     JSNumber? desiredHeight,
@@ -303,7 +302,7 @@ class VideoFrame implements DomCanvasImageSource {}
 extension VideoFrameExtension on VideoFrame {
   @JS('allocationSize')
   external JSNumber _allocationSize();
-  double allocationSize() => _allocationSize().toDart;
+  double allocationSize() => _allocationSize().toDartDouble;
 
   @JS('copyTo')
   external JsPromise _copyTo(JSAny destination);
@@ -315,23 +314,23 @@ extension VideoFrameExtension on VideoFrame {
 
   @JS('codedWidth')
   external JSNumber get _codedWidth;
-  double get codedWidth => _codedWidth.toDart;
+  double get codedWidth => _codedWidth.toDartDouble;
 
   @JS('codedHeight')
   external JSNumber get _codedHeight;
-  double get codedHeight => _codedHeight.toDart;
+  double get codedHeight => _codedHeight.toDartDouble;
 
   @JS('displayWidth')
   external JSNumber get _displayWidth;
-  double get displayWidth => _displayWidth.toDart;
+  double get displayWidth => _displayWidth.toDartDouble;
 
   @JS('displayHeight')
   external JSNumber get _displayHeight;
-  double get displayHeight => _displayHeight.toDart;
+  double get displayHeight => _displayHeight.toDartDouble;
 
   @JS('duration')
   external JSNumber? get _duration;
-  double? get duration => _duration?.toDart;
+  double? get duration => _duration?.toDartDouble;
 
   external VideoFrame clone();
   external JSVoid close();
@@ -365,11 +364,11 @@ class ImageTrack {}
 extension ImageTrackExtension on ImageTrack {
   @JS('repetitionCount')
   external JSNumber get _repetitionCount;
-  double get repetitionCount => _repetitionCount.toDart;
+  double get repetitionCount => _repetitionCount.toDartDouble;
 
   @JS('frameCount')
   external JSNumber get _frameCount;
-  double get frameCount => _frameCount.toDart;
+  double get frameCount => _frameCount.toDartDouble;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {
@@ -1056,5 +1055,8 @@ class OffScreenCanvas {
 
   /// Feature detects OffscreenCanvas.
   static bool get supported => _supported ??=
-      js_util.hasProperty(domWindow, 'OffscreenCanvas');
+      // Safari 16.4 implements OffscreenCanvas, but without WebGL support. So
+      // it's not really supported in a way that is useful to us.
+      !isSafari
+      && js_util.hasProperty(domWindow, 'OffscreenCanvas');
 }

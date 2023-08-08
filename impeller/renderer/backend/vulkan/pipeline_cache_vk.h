@@ -6,16 +6,19 @@
 
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
-#include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend/vulkan/device_holder.h"
 
 namespace impeller {
 
 class PipelineCacheVK {
  public:
+  // The [device] is passed in directly so that it can be used in the
+  // constructor directly. The [device_holder] isn't guaranteed to be valid
+  // at the time of executing `PipelineCacheVK` because of how `ContextVK` does
+  // initialization.
   explicit PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
-                           vk::Device device,
+                           std::shared_ptr<DeviceHolder> device_holder,
                            fml::UniqueFD cache_directory);
 
   ~PipelineCacheVK();
@@ -24,14 +27,17 @@ class PipelineCacheVK {
 
   vk::UniquePipeline CreatePipeline(const vk::GraphicsPipelineCreateInfo& info);
 
+  vk::UniquePipeline CreatePipeline(const vk::ComputePipelineCreateInfo& info);
+
+  const CapabilitiesVK* GetCapabilities() const;
+
   void PersistCacheToDisk() const;
 
  private:
   const std::shared_ptr<const Capabilities> caps_;
-  const vk::Device device_;
+  std::weak_ptr<DeviceHolder> device_holder_;
   const fml::UniqueFD cache_directory_;
-  mutable Mutex cache_mutex_;
-  vk::UniquePipelineCache cache_ IPLR_GUARDED_BY(cache_mutex_);
+  vk::UniquePipelineCache cache_;
   bool is_valid_ = false;
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;

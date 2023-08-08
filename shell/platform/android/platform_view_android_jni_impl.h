@@ -52,6 +52,15 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void SurfaceTextureDetachFromGLContext(JavaLocalRef surface_texture) override;
 
+  JavaLocalRef ImageTextureEntryAcquireLatestImage(
+      JavaLocalRef image_texture_entry) override;
+
+  JavaLocalRef ImageGetHardwareBuffer(JavaLocalRef image) override;
+
+  void ImageClose(JavaLocalRef image) override;
+
+  void HardwareBufferClose(JavaLocalRef hardware_buffer) override;
+
   void FlutterViewOnDisplayPlatformView(int view_id,
                                         int x,
                                         int y,
@@ -81,6 +90,12 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
       std::vector<std::string> supported_locales_data) override;
 
   double GetDisplayRefreshRate() override;
+
+  double GetDisplayWidth() override;
+
+  double GetDisplayHeight() override;
+
+  double GetDisplayDensity() override;
 
   bool RequestDartDeferredLibrary(int loading_unit_id) override;
 

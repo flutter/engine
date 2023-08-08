@@ -17,7 +17,11 @@
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -349,17 +353,17 @@ sk_sp<SkSurface> TestGLSurface::GetOnscreenSurface() {
   framebuffer_info.fFormat = 0x93A1;  // GL_BGRA8;
 #endif
 
-  GrBackendRenderTarget backend_render_target(
-      width,            // width
-      height,           // height
-      1,                // sample count
-      8,                // stencil bits
-      framebuffer_info  // framebuffer info
-  );
+  auto backend_render_target =
+      GrBackendRenderTargets::MakeGL(width,            // width
+                                     height,           // height
+                                     1,                // sample count
+                                     8,                // stencil bits
+                                     framebuffer_info  // framebuffer info
+      );
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto surface = SkSurface::MakeFromBackendRenderTarget(
+  auto surface = SkSurfaces::WrapBackendRenderTarget(
       GetGrContext().get(),         // context
       backend_render_target,        // backend render target
       kBottomLeft_GrSurfaceOrigin,  // surface origin

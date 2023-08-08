@@ -279,6 +279,10 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
 }
 
 gfx::NativeViewAccessible FlutterWindow::GetNativeViewAccessible() {
+  if (binding_handler_delegate_ == nullptr) {
+    return nullptr;
+  }
+
   return binding_handler_delegate_->GetNativeViewAccessible();
 }
 
@@ -310,6 +314,18 @@ AlertPlatformNodeDelegate* FlutterWindow::GetAlertDelegate() {
 ui::AXPlatformNodeWin* FlutterWindow::GetAlert() {
   CreateAxFragmentRoot();
   return alert_node_.get();
+}
+
+bool FlutterWindow::NeedsVSync() {
+  // If the Desktop Window Manager composition is enabled,
+  // the system itself synchronizes with v-sync.
+  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
+  BOOL composition_enabled;
+  if (SUCCEEDED(::DwmIsCompositionEnabled(&composition_enabled))) {
+    return !composition_enabled;
+  }
+
+  return true;
 }
 
 }  // namespace flutter

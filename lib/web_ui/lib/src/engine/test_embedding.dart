@@ -10,31 +10,6 @@ import 'dart:async';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../engine.dart';
-
-Future<void>? _platformInitializedFuture;
-
-Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {
-  // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
-  ensureFlutterViewEmbedderInitialized();
-
-  // The following parameters are hard-coded in Flutter's test embedder. Since
-  // we don't have an embedder yet this is the lowest-most layer we can put
-  // this stuff in.
-  window.debugOverrideDevicePixelRatio(devicePixelRatio);
-  window.webOnlyDebugPhysicalSizeOverride =
-      ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
-  scheduleFrameCallback = () {};
-  ui.debugEmulateFlutterTesterEnvironment = true;
-
-  // Initialize platform once and reuse across all tests.
-  if (_platformInitializedFuture != null) {
-    return _platformInitializedFuture!;
-  }
-  return _platformInitializedFuture =
-      initializeEngine(assetManager: WebOnlyMockAssetManager());
-}
-
 const bool _debugLogHistoryActions = false;
 
 class TestHistoryEntry {
@@ -55,7 +30,7 @@ class TestHistoryEntry {
 ///
 /// It keeps a list of history entries and event listeners in memory and
 /// manipulates them in order to achieve the desired functionality.
-class TestUrlStrategy extends ui_web.UrlStrategy {
+class TestUrlStrategy implements ui_web.UrlStrategy {
   /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
   factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));

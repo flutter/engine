@@ -16,6 +16,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
@@ -36,7 +37,7 @@
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
 #include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
-#include "flutter/shell/platform/windows/windows_registry.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
@@ -76,13 +77,8 @@ static void WindowsPlatformThreadPrioritySetter(
 // run in headless mode.
 class FlutterWindowsEngine {
  public:
-  // Creates a new Flutter engine with an injectible windows registry.
-  FlutterWindowsEngine(const FlutterProjectBundle& project,
-                       std::unique_ptr<WindowsRegistry> windows_registry);
-
   // Creates a new Flutter engine object configured to run |project|.
-  explicit FlutterWindowsEngine(const FlutterProjectBundle& project)
-      : FlutterWindowsEngine(project, std::make_unique<WindowsRegistry>()) {}
+  explicit FlutterWindowsEngine(const FlutterProjectBundle& project);
 
   virtual ~FlutterWindowsEngine();
 
@@ -109,7 +105,7 @@ class FlutterWindowsEngine {
   // Stops the engine. This invalidates the pointer returned by engine().
   //
   // Returns false if stopping the engine fails, or if it was not running.
-  bool Stop();
+  virtual bool Stop();
 
   // Sets the view that is displaying this engine's content.
   void SetView(FlutterWindowsView* view);
@@ -144,10 +140,6 @@ class FlutterWindowsEngine {
   // The ANGLE surface manager object. If this is nullptr, then we are
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
-
-  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
-    return accessibility_bridge_;
-  }
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -232,10 +224,6 @@ class FlutterWindowsEngine {
   // Returns true if the high contrast feature is enabled.
   bool high_contrast_enabled() const { return high_contrast_enabled_; }
 
-  // Returns the native accessibility root node, or nullptr if one does not
-  // exist.
-  gfx::NativeViewAccessible GetNativeViewAccessible();
-
   // Register a root isolate create callback.
   //
   // The root isolate create callback is invoked at creation of the root Dart
@@ -267,6 +255,13 @@ class FlutterWindowsEngine {
                               LPARAM lparam,
                               AppExitType exit_type);
 
+  // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
+  void OnDwmCompositionChanged();
+
+  // Called in response to the framework registering a ServiceBindings.
+  // Registers the top level handler for the WM_CLOSE window message.
+  void OnApplicationLifecycleEnabled();
+
  protected:
   // Creates the keyboard key handler.
   //
@@ -284,14 +279,6 @@ class FlutterWindowsEngine {
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
 
-  // Creates an accessibility bridge with the provided parameters.
-  //
-  // By default this method calls AccessibilityBridge's constructor. Exposing
-  // this method allows unit tests to override in order to capture information.
-  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
-      FlutterWindowsEngine* engine,
-      FlutterWindowsView* view);
-
   // Invoked by the engine right before the engine is restarted.
   //
   // This should reset necessary states to as if the engine has just been
@@ -307,6 +294,9 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  // Sends the current lifecycle state to the framework.
+  void SetLifecycleState(flutter::AppLifecycleState state);
 
   // Create the keyboard & text input sub-systems.
   //
@@ -394,7 +384,7 @@ class FlutterWindowsEngine {
 
   bool high_contrast_enabled_ = false;
 
-  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
+  bool enable_impeller_ = false;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;
@@ -405,11 +395,10 @@ class FlutterWindowsEngine {
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
 
-  // Wrapper providing Windows registry access.
-  std::unique_ptr<WindowsRegistry> windows_registry_;
-
   // Handler for top level window messages.
   std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
+
+  WindowsProcTable windows_proc_table_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 #include <impeller/color.glsl>
 #include <impeller/types.glsl>
 
@@ -16,13 +18,13 @@ uniform FragInfo {
 }
 frag_info;
 
-in highp vec2 texture_coords;
+in highp vec2 v_texture_coords;
 
 out f16vec4 frag_color;
 
 void main() {
   f16vec4 input_color =
-      texture(input_texture, texture_coords) * frag_info.input_alpha;
+      texture(input_texture, v_texture_coords) * frag_info.input_alpha;
 
   f16vec4 color = IPHalfUnpremultiply(input_color);
   for (int i = 0; i < 3; i++) {

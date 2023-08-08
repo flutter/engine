@@ -182,14 +182,13 @@ ComponentV2::ComponentV2(
     return;
   }
 
-  // Setup /tmp to be mapped to the process-local memfs.
-  dart_utils::RunnerTemp::SetupComponent(fdio_ns_.get());
+  dart_utils::BindTemp(fdio_ns_.get());
 
   // ComponentStartInfo::ns (optional)
   if (start_info.has_ns()) {
     for (auto& entry : *start_info.mutable_ns()) {
-      // /tmp/ is mapped separately to the process-level memfs, so we ignore it
-      // here.
+      // /tmp/ is mapped separately to to a process-local virtual filesystem,
+      // so we ignore it here.
       const auto& path = entry.path();
       if (path == kTmpPath) {
         continue;
@@ -626,16 +625,6 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.
   }
-}
-
-void ComponentV2::CreateView(
-    zx::eventpair token,
-    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> /*incoming_services*/,
-    fidl::InterfaceHandle<
-        fuchsia::sys::ServiceProvider> /*outgoing_services*/) {
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  CreateViewWithViewRef(std::move(token), std::move(view_ref_pair.control_ref),
-                        std::move(view_ref_pair.view_ref));
 }
 
 void ComponentV2::CreateViewWithViewRef(

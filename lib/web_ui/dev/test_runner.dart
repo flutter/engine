@@ -82,8 +82,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'debug',
-        help:
-            'Use artifacts from the debug build instead of release.'
+        help: 'Use artifacts from the debug build instead of release.'
+      )
+      ..addFlag(
+        'dwarf',
+        help: 'Debug wasm modules using embedded DWARF data.'
       )
       ..addFlag(
         'require-skia-gold',
@@ -329,7 +332,14 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final List<TestBundle> bundles = _filterBundlesForSuites(filteredSuites);
     final ArtifactDependencies artifacts = _artifactsForSuites(filteredSuites);
     if (boolArg('generate-builder-json')) {
-      print(generateBuilderJson(config));
+      final String configString = generateBuilderJson(config);
+      final io.File configFile = io.File(path.join(
+        environment.flutterDirectory.path,
+        'ci',
+        'builders',
+        'linux_web_engine.json',
+      ));
+      configFile.writeAsStringSync(configString);
       return true;
     }
     if (isList || isVerbose) {
@@ -387,6 +397,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             requireSkiaGold: requireSkiaGold,
             overridePathToCanvasKit: overridePathToCanvasKit,
             testFiles: testFiles,
+            useDwarf: boolArg('dwarf'),
           ),
     ]);
 

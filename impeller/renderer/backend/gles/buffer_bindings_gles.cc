@@ -23,17 +23,12 @@ BufferBindingsGLES::~BufferBindingsGLES() = default;
 
 bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
-    const std::vector<ShaderStageIOSlot>& p_inputs) {
-  // Attrib locations have to be iterated over in order of location because we
-  // will be calculating offsets later.
-  auto inputs = p_inputs;
-  std::sort(inputs.begin(), inputs.end(), [](const auto& lhs, const auto& rhs) {
-    return lhs.location < rhs.location;
-  });
-
+    const std::vector<ShaderStageIOSlot>& p_inputs,
+    const std::vector<ShaderStageBufferLayout>& layouts) {
   std::vector<VertexAttribPointer> vertex_attrib_arrays;
-  size_t offset = 0u;
-  for (const auto& input : inputs) {
+  for (auto i = 0u; i < p_inputs.size(); i++) {
+    const auto& input = p_inputs[i];
+    const auto& layout = layouts[input.binding];
     VertexAttribPointer attrib;
     attrib.index = input.location;
     // Component counts must be 1, 2, 3 or 4. Do that validation now.
@@ -47,12 +42,9 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     }
     attrib.type = type.value();
     attrib.normalized = GL_FALSE;
-    attrib.offset = offset;
-    offset += (input.bit_width * input.vec_size) / 8;
+    attrib.offset = input.offset;
+    attrib.stride = layout.stride;
     vertex_attrib_arrays.emplace_back(attrib);
-  }
-  for (auto& array : vertex_attrib_arrays) {
-    array.stride = offset;
   }
   vertex_attrib_arrays_ = std::move(vertex_attrib_arrays);
   return true;
@@ -184,7 +176,7 @@ bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) const {
-  const auto* metadata = buffer.isa;
+  const auto* metadata = buffer.GetMetadata();
   if (metadata == nullptr) {
     // Vertex buffer bindings don't have metadata as those definitions are
     // already handled by vertex attrib pointers. Keep going.
@@ -315,12 +307,13 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
   size_t active_index = 0;
   for (const auto& texture : bindings.textures) {
     const auto& texture_gles = TextureGLES::Cast(*texture.second.resource);
-    if (texture.second.isa == nullptr) {
+    if (texture.second.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";
       return false;
     }
 
-    const auto uniform_key = CreateUniformMemberKey(texture.second.isa->name);
+    const auto uniform_key =
+        CreateUniformMemberKey(texture.second.GetMetadata()->name);
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
