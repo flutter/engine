@@ -146,7 +146,7 @@ class TextInputTest : public PortableUITest,
     // Get the display dimensions.
     FML_LOG(INFO)
         << "Waiting for display info from fuchsia.ui.display.singleton.Info";
-    fuchsia::ui::display::singleton::InfoSyncPtr display_info =
+    fuchsia::ui::display::singleton::InfoPtr display_info =
         realm_root()
             ->component()
             .Connect<fuchsia::ui::display::singleton::Info>();
