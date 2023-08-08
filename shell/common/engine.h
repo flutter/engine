@@ -306,7 +306,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                                 use for computing the scaled font size.
     ///
     /// @return     The scaled font size in logical pixels, or -1 when the given
-    ///             configuration_id did not a valid configuration.
+    ///             configuration_id did not match a valid configuration.
     ///
     virtual double GetScaledFontSize(double unscaled_font_size,
                                      int configuration_id) const = 0;

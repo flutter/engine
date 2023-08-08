@@ -1478,7 +1478,7 @@ class _PlatformConfiguration {
   /// invocation of platform APIs). This field is always null if the platform
   /// does not use nonlinear text scaling, or when dart:ui has not received any
   /// configuration updates from the embedder yet. The _getScaledFontSize
-  /// function should not be called in either cases.
+  /// function should not be called in either case.
   final int? configurationId;
 }
 
