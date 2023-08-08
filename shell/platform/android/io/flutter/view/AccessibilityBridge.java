@@ -1003,7 +1003,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return true;
     }
 
-    // Return true if it has any user action.
+    // Return true if the node has had any user action (not including system actions) 
     return (node.actions & ~systemAction) != 0;
   }
 
@@ -2165,7 +2165,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
-  // Actions that are triggered by Android OS, as opposite to user-triggered actions.
+  // Actions that are triggered by Android OS, as opposed to user-triggered actions.
+  //
+  // This int is intended to be use in a bitwise comparison. 
   static int systemAction =
       Action.DID_GAIN_ACCESSIBILITY_FOCUS.value
           & Action.DID_LOSE_ACCESSIBILITY_FOCUS.value
