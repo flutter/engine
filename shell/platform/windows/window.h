@@ -240,6 +240,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
+  // Release OS resources associated with window.
+  void Destroy();
+
   // Handles running DirectManipulation on the window to receive trackpad
   // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
@@ -253,13 +256,7 @@ class Window : public KeyboardManager::WindowDelegate {
   // Accessibility node that represents an alert.
   std::unique_ptr<ui::AXPlatformNodeWin> alert_node_;
 
-  // Guard against posthumous vtable access;
-  bool vtable_is_alive = true;
-
  private:
-  // Release OS resources associated with window.
-  void Destroy();
-
   // Activates tracking for a "mouse leave" event.
   void TrackMouseLeaveEvent(HWND hwnd);
 

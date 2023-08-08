@@ -76,16 +76,16 @@ FlutterWindow::FlutterWindow(int width, int height)
 
 FlutterWindow::~FlutterWindow() {
   OnWindowStateEvent(WindowStateEvent::kHide);
-  vtable_is_alive = false;
+  Destroy();
 }
 
 void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
   direct_manipulation_owner_->SetBindingHandlerDelegate(window);
-  if (restored_) {
+  if (restored_ && window) {
     OnWindowStateEvent(WindowStateEvent::kShow);
   }
-  if (focused_) {
+  if (focused_ && window) {
     OnWindowStateEvent(WindowStateEvent::kFocus);
   }
 }

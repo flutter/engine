@@ -163,7 +163,7 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
 
   // |Window|
-  void OnWindowStateEvent(WindowStateEvent event) override;
+  virtual void OnWindowStateEvent(WindowStateEvent event) override;
 
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine

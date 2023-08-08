@@ -81,9 +81,7 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
   keyboard_manager_ = std::make_unique<KeyboardManager>(this);
 }
 
-Window::~Window() {
-  Destroy();
-}
+Window::~Window() {}
 
 void Window::InitializeChild(const char* title,
                              unsigned int width,
@@ -353,10 +351,8 @@ Window::HandleMessage(UINT const message,
       current_height_ = height;
       HandleResize(width, height);
 
-      if (vtable_is_alive) {
-        OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide
-                                                     : WindowStateEvent::kShow);
-      }
+      OnWindowStateEvent(width == 0 && height == 0 ? WindowStateEvent::kHide
+                                                   : WindowStateEvent::kShow);
       break;
     case WM_PAINT:
       OnPaint();
@@ -435,15 +431,11 @@ Window::HandleMessage(UINT const message,
       break;
     }
     case WM_SETFOCUS:
-      if (vtable_is_alive) {
-        OnWindowStateEvent(WindowStateEvent::kFocus);
-      }
+      OnWindowStateEvent(WindowStateEvent::kFocus);
       ::CreateCaret(window_handle_, nullptr, 1, 1);
       break;
     case WM_KILLFOCUS:
-      if (vtable_is_alive) {
-        OnWindowStateEvent(WindowStateEvent::kUnfocus);
-      }
+      OnWindowStateEvent(WindowStateEvent::kUnfocus);
       ::DestroyCaret();
       break;
     case WM_LBUTTONDOWN:
