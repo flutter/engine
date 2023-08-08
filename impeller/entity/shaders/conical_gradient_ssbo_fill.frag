@@ -5,6 +5,7 @@
 precision mediump float;
 
 #include <impeller/color.glsl>
+#include <impeller/dithering.glsl>
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
