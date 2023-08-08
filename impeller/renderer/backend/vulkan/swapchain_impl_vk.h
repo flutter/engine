@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -31,7 +32,9 @@ class SwapchainImplVK final
   static std::shared_ptr<SwapchainImplVK> Create(
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
-      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE);
+      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE,
+      vk::SurfaceTransformFlagBitsKHR last_transform =
+          vk::SurfaceTransformFlagBitsKHR::eIdentity);
 
   ~SwapchainImplVK();
 
@@ -51,6 +54,8 @@ class SwapchainImplVK final
 
   vk::Format GetSurfaceFormat() const;
 
+  vk::SurfaceTransformFlagBitsKHR GetLastTransform() const;
+
   std::shared_ptr<Context> GetContext() const;
 
   std::pair<vk::UniqueSurfaceKHR, vk::UniqueSwapchainKHR> DestroySwapchain();
@@ -65,10 +70,13 @@ class SwapchainImplVK final
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers_;
   size_t current_frame_ = 0u;
   bool is_valid_ = false;
+  size_t current_transform_poll_count_ = 0u;
+  vk::SurfaceTransformFlagBitsKHR transform_if_changed_discard_swapchain_;
 
   SwapchainImplVK(const std::shared_ptr<Context>& context,
                   vk::UniqueSurfaceKHR surface,
-                  vk::SwapchainKHR old_swapchain);
+                  vk::SwapchainKHR old_swapchain,
+                  vk::SurfaceTransformFlagBitsKHR last_transform);
 
   bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
 
