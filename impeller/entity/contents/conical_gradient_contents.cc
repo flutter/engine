@@ -76,6 +76,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.decal_border_color = decal_border_color_;
   frag_info.alpha = GetOpacityFactor();
+  frag_info.dither = dither_;
   if (focus_) {
     frag_info.focus = focus_.value();
     frag_info.focus_radius = focus_radius_;
