@@ -491,9 +491,10 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
             // complete successfully.
             [[fallthrough]];
           case vk::Result::eSuboptimalKHR:
-            // In theory we shouldn't receive this (because we're polling above)
-            // but we shouldn't handle it as a validation error if we do receive
-            // it.
+            // Even though we're handling rotation changes via polling, we
+            // still need to handle the case where the swapchain signals that
+            // it's suboptimal (i.e. every frame when we are rotated given we
+            // aren't doing Vulkan pre-rotation).
             [[fallthrough]];
           case vk::Result::eSuccess:
             return;
