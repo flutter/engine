@@ -2369,8 +2369,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (void)showKeyboardAndRemoveScreenshot {
   [UIView setAnimationsEnabled:NO];
   [_cachedFirstResponder becomeFirstResponder];
-  [UIView setAnimationsEnabled:YES];
-  [self dismissKeyboardScreenshot];
+  // UIKit does not immediately access the areAnimationsEnabled Boolean so a delay is needed before
+  // returned
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    [UIView setAnimationsEnabled:YES];
+    [self dismissKeyboardScreenshot];
+  });
 }
 
 - (void)handlePointerMove:(CGFloat)pointerY {
