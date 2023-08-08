@@ -335,6 +335,11 @@ class PlatformView {
 
   // The bounds of this platform view, in the layer's local coordinate space.
   ui.Rect rect;
+
+  @override
+  String toString() {
+    return 'PlatformView(id: $viewId, rect: $rect)';
+  }
 }
 
 sealed class LayerSlice {
@@ -354,6 +359,11 @@ class PlatformViewSlice implements LayerSlice {
   void dispose() {}
 
   // TODO: Probably add some styling stuff in here
+
+  @override
+  String toString() {
+    return 'PlatformViewSlice($views)';
+  }
 }
 
 class PictureSlice implements LayerSlice {
@@ -363,6 +373,11 @@ class PictureSlice implements LayerSlice {
 
   @override
   void dispose() => picture.dispose();
+
+  @override
+  String toString() {
+    return 'PictureSlice(${picture.cullRect})';
+  }
 }
 
 mixin PictureLayer implements ui.EngineLayer {
@@ -395,6 +410,26 @@ class PictureDrawCommand {
   ui.Picture picture;
 }
 
+class PlatformViewPosition {
+  ui.Offset? offset;
+  Matrix4? transform;
+
+  static PlatformViewPosition combine(PlatformViewPosition outer, PlatformViewPosition inner) {
+    // Implement this
+    return outer;
+  }
+}
+
+class PlatformViewClip {
+
+}
+
+class PlatformViewStyling {
+  PlatformViewPosition? position;
+  PlatformViewClip? clip;
+  double? opacity;
+}
+
 class LayerBuilder {
   factory LayerBuilder.rootLayer() {
     return LayerBuilder._(null, RootLayer(), null);
@@ -417,11 +452,12 @@ class LayerBuilder {
   final PictureLayer layer;
   final LayerOperation? operation;
   final List<PictureDrawCommand> pendingPictures = <PictureDrawCommand>[];
-  final List<PlatformView> pendingPlatformViews = <PlatformView>[];
+  List<PlatformView> pendingPlatformViews = <PlatformView>[];
   ui.Rect? picturesRect;
   ui.Rect? platformViewRect;
 
   void flushSlices() {
+    print('Flushing slices');
     if (pendingPictures.isNotEmpty) {
       final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
       final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
@@ -442,6 +478,7 @@ class LayerBuilder {
       operation?.post(canvas, rect);
       final ui.Picture picture = recorder.endRecording();
       layer.slices.add(PictureSlice(picture as ScenePicture));
+      print('adding picture slice');
     }
 
     if (pendingPlatformViews.isNotEmpty) {
@@ -450,11 +487,12 @@ class LayerBuilder {
         occlusionRect = operation!.inverseMapRect(occlusionRect);
       }
       layer.slices.add(PlatformViewSlice(pendingPlatformViews, occlusionRect));
+      print('adding platform view slice with views: $pendingPlatformViews');
       // TODO: attach styling information
     }
 
     pendingPictures.clear();
-    pendingPlatformViews.clear();
+    pendingPlatformViews = <PlatformView>[];
     picturesRect = null;
     platformViewRect = null;
   }
@@ -486,22 +524,26 @@ class LayerBuilder {
   }
 
   void mergeLayer(PictureLayer layer) {
+    print('merging layer');
     for (final LayerSlice slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
+          print('adding picture from merged layer slice with bounds: ${slice.picture.cullRect}');
           addPicture(ui.Offset.zero, slice.picture);
         case PlatformViewSlice():
           final ui.Rect? occlusionRect = slice.occlusionRect;
           if (occlusionRect != null) {
             platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
           }
-          slice.views.addAll(pendingPlatformViews);
+          print('adding views from merged platform view slice: ${slice.views}');
+          pendingPlatformViews.addAll(slice.views);
       }
     }
   }
 
   PictureLayer build() {
     flushSlices();
+    print('built layer with slices: ${layer.slices}');
     return layer;
   }
 }

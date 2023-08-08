@@ -31,6 +31,10 @@ wasm_lib("skwasm") {
     "wrappers.h",
   ]
 
+  cflags = [
+    "-mreference-types",
+  ]
+
   ldflags = [
     "-std=c++20",
     "-lGL",

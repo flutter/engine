@@ -7,7 +7,8 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 const String kCanvasContainerTag = 'flt-canvas-container';
-const String kPlatformViewContainerTag = 'flt-platform-view';
+const String kPlatformViewSliceContainerTag = 'flt-platform-view-slice';
+const String kPlatformViewContainerTag = 'flt-platform-view-container';
 
 sealed class SliceContainer {
   DomElement get container;
@@ -72,7 +73,7 @@ final class PlatformViewSliceContainer extends SliceContainer {
   List<PlatformView> _views;
 
   @override
-  final DomElement container = domDocument.createElement(kPlatformViewContainerTag);
+  final DomElement container = domDocument.createElement(kPlatformViewSliceContainerTag);
 
   set views(List<PlatformView> views) {
     if (_views != views) {
@@ -82,7 +83,32 @@ final class PlatformViewSliceContainer extends SliceContainer {
 
   @override
   void updateContents() {
-    // TODO: Actually add the views needed
+    DomElement? currentContainer = container.firstElementChild;
+    for (final PlatformView view in _views) {
+      final DomElement platformView = platformViewManager.getViewById(view.viewId);
+      final DomElement viewContainer;
+      if (currentContainer != null && currentContainer.firstElementChild == platformView) {
+        viewContainer = currentContainer;
+        currentContainer = currentContainer.nextElementSibling;
+      } else {
+        viewContainer = domDocument.createElement(kPlatformViewContainerTag);
+        if (currentContainer != null) {
+          container.insertBefore(viewContainer, currentContainer);
+        } else {
+          container.appendChild(viewContainer);
+        }
+        viewContainer.appendChild(platformView);
+      }
+      // TODO: set all the styling here instead of just the position
+      final DomCSSStyleDeclaration style = viewContainer.style;
+      final double logicalWidth = view.rect.width / window.devicePixelRatio;
+      final double logicalHeight = view.rect.height / window.devicePixelRatio;
+      style.width = '${logicalWidth}px';
+      style.height = '${logicalHeight}px';
+      style.position = 'absolute';
+      style.left = '${view.rect.left}px';
+      style.top = '${view.rect.top}px';
+    }
   }
 }
 
@@ -109,6 +135,17 @@ class SkwasmSceneView {
     queuedRenders += 1;
 
     final List<LayerSlice> slices = scene.rootLayer.slices;
+    print('Rendering scene with slices: ${slices.map((LayerSlice slice) {
+      if (slice is PictureSlice) {
+        return 'PictureSlice(${slice.picture.cullRect})';
+      } else if (slice is PlatformViewSlice) {
+        return 'PlatformViewSlice(${slice.views.map((PlatformView view) {
+          return 'PlatformView(${view.viewId}, ${view.rect})';
+        })})';
+      } else {
+        return 'Unknown';
+      }
+    })}');
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
           PlatformViewSlice() => null,
@@ -174,7 +211,7 @@ class SkwasmSceneView {
       }
     }
 
-    // Remove any other
+    // Remove any other unused containers
     while (currentElement != null) {
       final DomElement? sibling = currentElement.nextElementSibling;
       sceneElement.removeChild(currentElement);
