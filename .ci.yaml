@@ -329,7 +329,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:114.0"},
+          {"dependency": "chrome_and_driver", "version": "version:115.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
@@ -472,3 +472,5 @@ targets:
   - name: Linux ci_yaml engine roller
     bringup: true
     recipe: infra/ci_yaml
+    properties:
+      backfill: "false"

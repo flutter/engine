@@ -193,6 +193,14 @@ std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
   return GetLocalCoverage(entity_with_local_transform);
 }
 
+void FilterContents::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {
+  for (auto& input : inputs_) {
+    input->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
+  }
+}
+
 std::optional<Rect> FilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
     const Entity& entity,
@@ -267,6 +275,25 @@ Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
+}
+
+bool FilterContents::IsLeaf() const {
+  for (auto& input : inputs_) {
+    if (!input->IsLeaf()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void FilterContents::SetLeafInputs(const FilterInput::Vector& inputs) {
+  if (IsLeaf()) {
+    inputs_ = inputs;
+    return;
+  }
+  for (auto& input : inputs_) {
+    input->SetLeafInputs(inputs);
+  }
 }
 
 }  // namespace impeller

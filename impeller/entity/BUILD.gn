@@ -34,6 +34,8 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
     "shaders/border_mask_blur.vert",
+    "shaders/clip.frag",
+    "shaders/clip.vert",
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
     "shaders/conical_gradient_fill.frag",
@@ -173,6 +175,8 @@ impeller_component("entity") {
     "contents/filters/inputs/filter_contents_filter_input.h",
     "contents/filters/inputs/filter_input.cc",
     "contents/filters/inputs/filter_input.h",
+    "contents/filters/inputs/placeholder_filter_input.cc",
+    "contents/filters/inputs/placeholder_filter_input.h",
     "contents/filters/inputs/texture_filter_input.cc",
     "contents/filters/inputs/texture_filter_input.h",
     "contents/filters/linear_to_srgb_filter_contents.cc",
@@ -268,6 +272,7 @@ impeller_component("entity_unittests") {
     "entity_playground.cc",
     "entity_playground.h",
     "entity_unittests.cc",
+    "geometry/geometry_unittests.cc",
   ]
 
   deps = [

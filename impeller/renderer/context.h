@@ -9,7 +9,9 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/pool.h"
 
 namespace impeller {
 
@@ -43,10 +45,31 @@ class Allocator;
 ///             `//impeller/renderer/backend`.
 class Context {
  public:
+  enum class BackendType {
+    kMetal,
+    kOpenGLES,
+    kVulkan,
+  };
+
   //----------------------------------------------------------------------------
   /// @brief      Destroys an Impeller context.
   ///
   virtual ~Context();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the graphics backend of an Impeller context.
+  ///
+  ///             This is useful for cases where a renderer needs to track and
+  ///             lookup backend-specific resources, like shaders or uniform
+  ///             layout information.
+  ///
+  ///             It's not recommended to use this as a substitute for
+  ///             per-backend capability checking. Instead, check for specific
+  ///             capabilities via `GetCapabilities()`.
+  ///
+  /// @return     The graphics backend of the `Context`.
+  ///
+  virtual BackendType GetBackendType() const = 0;
 
   // TODO(129920): Refactor and move to capabilities.
   virtual std::string DescribeGpuModel() const = 0;
@@ -137,10 +160,16 @@ class Context {
   ///
   virtual void Shutdown() = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief Accessor for a pool of HostBuffers.
+  Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
+
  protected:
   Context();
 
  private:
+  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
+
   FML_DISALLOW_COPY_AND_ASSIGN(Context);
 };
 

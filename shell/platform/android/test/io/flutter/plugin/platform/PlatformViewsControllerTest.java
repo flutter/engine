@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
+import android.media.Image;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -232,6 +233,36 @@ public class PlatformViewsControllerTest {
 
     // Trigger the callback to ensure that it doesn't crash.
     resizeCallbackCaptor.getValue().run();
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  public void virtualDisplay_ensureDisposeVirtualDisplayController() {
+    final int platformViewId = 0;
+    FlutterView fakeFlutterView = new FlutterView(ApplicationProvider.getApplicationContext());
+    VirtualDisplayController fakeVdController = mock(VirtualDisplayController.class);
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+    platformViewsController.attachToView(fakeFlutterView);
+
+    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    PlatformView platformView = mock(PlatformView.class);
+    Context context = ApplicationProvider.getApplicationContext();
+    View androidView = new View(context);
+    when(platformView.getView()).thenReturn(androidView);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+    createPlatformView(
+        jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
+
+    platformViewsController.vdControllers.put(platformViewId, fakeVdController);
+
+    // Simulate dispose call from the framework.
+    disposePlatformView(jni, platformViewsController, platformViewId);
+
+    // Ensure VirtualDisplayController.dispose() is called
+    verify(fakeVdController, times(1)).dispose();
   }
 
   @Test
@@ -1534,6 +1565,27 @@ public class PlatformViewsControllerTest {
 
               @Override
               public void release() {}
+            };
+          }
+
+          @Override
+          public ImageTextureEntry createImageTexture() {
+            return new ImageTextureEntry() {
+              @Override
+              public long id() {
+                return 0;
+              }
+
+              @Override
+              public void release() {}
+
+              @Override
+              public void pushImage(Image image) {}
+
+              @Override
+              public Image acquireLatestImage() {
+                return null;
+              }
             };
           }
         };

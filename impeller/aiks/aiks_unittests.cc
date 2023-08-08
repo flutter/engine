@@ -420,6 +420,36 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
 }
 
 namespace {
+void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
+                                          bool use_dithering) {
+  Canvas canvas;
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // 0xffcccccc --> 0xff333333, taken from
+  // https://github.com/flutter/flutter/issues/118073#issue-1521699748
+  std::vector<Color> colors = {Color{0.8, 0.8, 0.8, 1.0},
+                               Color{0.2, 0.2, 0.2, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {800, 500}, std::move(colors), std::move(stops),
+      Entity::TileMode::kClamp, {});
+  paint.dither = use_dithering;
+  canvas.DrawRect({0, 0, 800, 500}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderLinearGradientWithDitheringDisabled) {
+  CanRenderLinearGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
+  CanRenderLinearGradientWithDithering(this, true);
+}  // namespace
+
+namespace {
 void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
                                                  Entity::TileMode tile_mode) {
   Canvas canvas;
@@ -1979,7 +2009,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
       ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Blue());
 
   // Paint has color filter, can't elide.
-  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   paint.color_filter = nullptr;
@@ -1991,14 +2021,14 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   };
 
   // Paint has image filter, can't elide.
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   paint.image_filter = nullptr;
   paint.color = Color::Red();
 
   // Paint has no alpha, can't elide;
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   // Positive test.
@@ -2008,7 +2038,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   entity_pass->AddEntity(entity);
   paint.color = Color::Red().WithAlpha(0.5);
 
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
+  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
   ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 }
 
@@ -2114,6 +2144,30 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
 }
 
+TEST_P(AiksTest, ClipRectElidesNoOpClips) {
+  Canvas canvas(Rect(0, 0, 100, 100));
+  canvas.ClipRect(Rect(0, 0, 100, 100));
+  canvas.ClipRect(Rect(-100, -100, 300, 300));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  auto expected = Color::Red().Blend(Color::CornflowerBlue().WithAlpha(0.75),
+                                     BlendMode::kSourceOver);
+  ASSERT_EQ(picture.pass->GetClearColor(), expected);
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
   Canvas canvas;
   canvas.DrawPaint(
@@ -2121,6 +2175,23 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
   canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
   canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
                     .blend_mode = BlendMode::kSourceOver});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
+  // Bug: https://github.com/flutter/flutter/issues/131576
+  Canvas canvas;
+  canvas.DrawPaint(
+      {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
+  canvas.SaveLayer({}, {},
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeGaussianBlur(input, Sigma(20.0),
+                                                             Sigma(20.0));
+                   });
+  canvas.DrawPaint(
+      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSourceOver});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -2906,17 +2977,61 @@ TEST_P(AiksTest, DrawPictureWithText) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, MatrixSaveLayerFilter) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.SaveLayer({}, std::nullopt);
+  {
+    canvas.DrawCircle(Point(200, 200), 100,
+                      {.color = Color::Green().WithAlpha(0.5),
+                       .blend_mode = BlendMode::kPlus});
+    // Should render a second circle, centered on the bottom-right-most edge of
+    // the circle.
+    canvas.SaveLayer({.image_filter =
+                          [](const FilterInput::Ref& input,
+                             const Matrix& effect_transform, bool is_subpass) {
+                            Matrix matrix =
+                                Matrix::MakeTranslation(
+                                    Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
+                                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                                Matrix::MakeTranslation(Vector2(-100, -100));
+                            return FilterContents::MakeMatrixFilter(
+                                input, matrix, {}, Matrix(), true);
+                          }},
+                     std::nullopt);
+    canvas.DrawCircle(Point(200, 200), 100,
+                      {.color = Color::Green().WithAlpha(0.5),
+                       .blend_mode = BlendMode::kPlus});
+    canvas.Restore();
+  }
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, MatrixBackdropFilter) {
   Canvas canvas;
-  canvas.SaveLayer({}, std::nullopt,
-                   [](const FilterInput::Ref& input,
-                      const Matrix& effect_transform, bool is_subpass) {
-                     return FilterContents::MakeMatrixFilter(
-                         input, Matrix::MakeTranslation(Vector2(100, 100)), {},
-                         Matrix(), true);
-                   });
-  canvas.DrawCircle(Point(100, 100), 100,
-                    {.color = Color::Green(), .blend_mode = BlendMode::kPlus});
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.SaveLayer({}, std::nullopt);
+  {
+    canvas.DrawCircle(Point(200, 200), 100,
+                      {.color = Color::Green().WithAlpha(0.5),
+                       .blend_mode = BlendMode::kPlus});
+    // Should render a second circle, centered on the bottom-right-most edge of
+    // the circle.
+    canvas.SaveLayer({}, std::nullopt,
+                     [](const FilterInput::Ref& input,
+                        const Matrix& effect_transform, bool is_subpass) {
+                       Matrix matrix =
+                           Matrix::MakeTranslation(Vector2(1, 1) *
+                                                   (100 + 100 * k1OverSqrt2)) *
+                           Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                           Matrix::MakeTranslation(Vector2(-100, -100));
+                       return FilterContents::MakeMatrixFilter(
+                           input, matrix, {}, Matrix(), true);
+                     });
+    canvas.Restore();
+  }
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

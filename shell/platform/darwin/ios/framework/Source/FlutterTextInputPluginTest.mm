@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
@@ -60,6 +60,9 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, readonly) UIView* keyboardViewContainer;
+@property(nonatomic, readonly) UIView* keyboardView;
+@property(nonatomic, readonly) CGRect keyboardRect;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
@@ -131,6 +134,20 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
+}
+
+- (void)flushScheduledAsyncBlocks {
+  __block bool done = false;
+  XCTestExpectation* expectation =
+      [[XCTestExpectation alloc] initWithDescription:@"Testing on main queue"];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    done = true;
+  });
+  dispatch_async(dispatch_get_main_queue(), ^{
+    XCTAssertTrue(done);
+    [expectation fulfill];
+  });
+  [self waitForExpectations:@[ expectation ] timeout:10];
 }
 
 - (NSMutableDictionary*)mutableTemplateCopy {
@@ -299,15 +316,22 @@ FLUTTER_ASSERT_ARC
   XCTAssertNil(textInputPlugin.activeView.inputViewController);
 }
 
-- (void)testAutocorrectionPromptRectAppears {
+- (void)testAutocorrectionPromptRectAppearsBeforeIOS17AndDoesNotAppearAfterIOS17 {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
 
-  // Verify behavior.
-  OCMVerify([engine flutterTextInputView:inputView
-      showAutocorrectionPromptRectForStart:0
-                                       end:1
-                                withClient:0]);
+  if (@available(iOS 17.0, *)) {
+    // Auto-correction prompt is disabled in iOS 17+.
+    OCMVerify(never(), [engine flutterTextInputView:inputView
+                           showAutocorrectionPromptRectForStart:0
+                                                            end:1
+                                                     withClient:0]);
+  } else {
+    OCMVerify([engine flutterTextInputView:inputView
+        showAutocorrectionPromptRectForStart:0
+                                         end:1
+                                  withClient:0]);
+  }
 }
 
 - (void)testIgnoresSelectionChangeIfSelectionIsDisabled {
@@ -339,6 +363,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
+  // Auto-correction prompt is disabled in iOS 17+.
+  if (@available(iOS 17.0, *)) {
+    return;
+  }
+
   if (@available(iOS 14.0, *)) {
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
@@ -707,102 +736,164 @@ FLUTTER_ASSERT_ARC
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
-  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withDelta:[OCMArg isNotNil]])
+
+  [inputView insertText:@"text to insert"];
+  OCMExpect(
+      [engine
+          flutterTextInputView:inputView
+           updateEditingClient:0
+                     withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                       return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                  isEqualToString:@""]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                  isEqualToString:@"text to insert"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                     }]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
       });
+  XCTAssertEqual(updateCount, 0);
 
-  [inputView insertText:@"text to insert"];
+  [self flushScheduledAsyncBlocks];
+
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
 
-  // Verify correct delta is generated.
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"text to insert"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
-                 }]]);
-
   [inputView deleteBackward];
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"text to insert"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@""]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == 13) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == 14);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 2);
 
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to insert"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
-                 }]]);
-
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"text to inser"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@""]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == -1) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == -1);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 3);
-
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  OCMExpect(
+      [engine
+          flutterTextInputView:inputView
+           updateEditingClient:0
+                     withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                       return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                  isEqualToString:@"text to inser"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                  isEqualToString:@"replace text"]) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                              ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
+                     }]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 4);
 
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"text to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"replace text"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
-                 }]]);
-
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                            isEqualToString:@"replace textext to inser"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                            isEqualToString:@"marked text"]) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"]
+                                             intValue] == 12) &&
+                                        ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"]
+                                             intValue] == 12);
+                               }]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 5);
 
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"replace textext to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@"marked text"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
-                 }]]);
-
   [inputView unmarkText];
-  XCTAssertEqual(updateCount, 6);
+  OCMExpect([engine
+                flutterTextInputView:inputView
+                 updateEditingClient:0
+                           withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                             return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
+                                        isEqualToString:@"replace textmarked textext to inser"]) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
+                                        isEqualToString:@""]) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                                     -1) &&
+                                    ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] ==
+                                     -1);
+                           }]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+  [self flushScheduledAsyncBlocks];
 
-  OCMVerify([engine
-      flutterTextInputView:inputView
-       updateEditingClient:0
-                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                              isEqualToString:@"replace textmarked textext to inser"]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                              isEqualToString:@""]) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
-                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
-                 }]]);
+  XCTAssertEqual(updateCount, 6);
+  OCMVerifyAll(engine);
+}
+
+- (void)testTextEditingDeltasAreBatchedAndForwardedToFramework {
+  // Setup
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  inputView.enableDeltaModel = YES;
+
+  // Expected call.
+  OCMExpect([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                 NSArray* deltas = state[@"deltas"];
+                                 NSDictionary* firstDelta = deltas[0];
+                                 NSDictionary* secondDelta = deltas[1];
+                                 NSDictionary* thirdDelta = deltas[2];
+                                 return [firstDelta[@"oldText"] isEqualToString:@""] &&
+                                        [firstDelta[@"deltaText"] isEqualToString:@"-"] &&
+                                        [firstDelta[@"deltaStart"] intValue] == 0 &&
+                                        [firstDelta[@"deltaEnd"] intValue] == 0 &&
+                                        [secondDelta[@"oldText"] isEqualToString:@"-"] &&
+                                        [secondDelta[@"deltaText"] isEqualToString:@""] &&
+                                        [secondDelta[@"deltaStart"] intValue] == 0 &&
+                                        [secondDelta[@"deltaEnd"] intValue] == 1 &&
+                                        [thirdDelta[@"oldText"] isEqualToString:@""] &&
+                                        [thirdDelta[@"deltaText"] isEqualToString:@"—"] &&
+                                        [thirdDelta[@"deltaStart"] intValue] == 0 &&
+                                        [thirdDelta[@"deltaEnd"] intValue] == 0;
+                               }]]);
+
+  // Simulate user input.
+  [inputView insertText:@"-"];
+  [inputView deleteBackward];
+  [inputView insertText:@"—"];
+
+  [self flushScheduledAsyncBlocks];
+  OCMVerifyAll(engine);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
@@ -821,11 +912,10 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
   OCMVerify([engine
       flutterTextInputView:inputView
        updateEditingClient:0
@@ -837,6 +927,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  [self flushScheduledAsyncBlocks];
+  XCTAssertEqual(updateCount, 2);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
@@ -850,16 +942,16 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 0);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"text." selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
   OCMVerify([engine
       flutterTextInputView:inputView
        updateEditingClient:0
@@ -871,6 +963,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  [self flushScheduledAsyncBlocks];
+  XCTAssertEqual(updateCount, 2);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
@@ -884,16 +978,16 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"Some initial text"];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 0);
 
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   [inputView setMarkedText:@"tex" selectedRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 2);
-
   OCMVerify([engine
       flutterTextInputView:inputView
        updateEditingClient:0
@@ -905,6 +999,8 @@ FLUTTER_ASSERT_ARC
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                           ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                  }]]);
+  [self flushScheduledAsyncBlocks];
+  XCTAssertEqual(updateCount, 2);
 }
 
 #pragma mark - EditingState tests
@@ -950,23 +1046,29 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView insertText:@"text to insert"];
+  [self flushScheduledAsyncBlocks];
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
 
   [inputView deleteBackward];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 3);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 6);
 }
 
@@ -1021,33 +1123,44 @@ FLUTTER_ASSERT_ARC
       });
 
   [inputView.text setString:@"BEFORE"];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 0);
 
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   // Text changes don't trigger an update.
   XCTAssertEqual(updateCount, 1);
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
+
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   // Selection changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
+
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 
   // Composing region changes don't trigger an update.
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
+
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+  [self flushScheduledAsyncBlocks];
   XCTAssertEqual(updateCount, 1);
 }
 
@@ -2313,6 +2426,221 @@ FLUTTER_ASSERT_ARC
                            result:^(id _Nullable result){
                            }];
   XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
+}
+
+- (void)testInteractiveKeyboardAfterUserScrollWillResignFirstResponder {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [inputView becomeFirstResponder];
+  XCTAssert(inputView.isFirstResponder);
+
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* onPointerMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssertFalse(inputView.isFirstResponder);
+}
+
+- (void)testInteractiveKeyboardAfterUserScrollToTopOfKeyboardWillTakeScreenshot {
+  NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
+
+  [viewController loadView];
+
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [inputView becomeFirstResponder];
+
+  if (textInputPlugin.keyboardView.superview != nil) {
+    for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
+      [subView removeFromSuperview];
+    }
+  }
+  XCTAssert(textInputPlugin.keyboardView.superview == nil);
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* onPointerMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(510)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssertFalse(textInputPlugin.keyboardView.superview == nil);
+  for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
+    [subView removeFromSuperview];
+  }
+}
+
+- (void)testInteractiveKeyboardScreenshotWillBeMovedDownAfterUserScroll {
+  NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
+
+  [viewController loadView];
+
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [inputView becomeFirstResponder];
+
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* onPointerMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(510)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssert(textInputPlugin.keyboardView.superview != nil);
+
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, keyboardFrame.origin.y);
+
+  FlutterMethodCall* onPointerMoveCallMove =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(600)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCallMove
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssert(textInputPlugin.keyboardView.superview != nil);
+
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, 600.0);
+
+  for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
+    [subView removeFromSuperview];
+  }
+}
+
+- (void)testInteractiveKeyboardScreenshotWillBeMovedToOrginalPositionAfterUserScroll {
+  NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
+
+  [viewController loadView];
+
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [inputView becomeFirstResponder];
+
+  CGRect keyboardFrame = CGRectMake(0, 500, 500, 500);
+  [NSNotificationCenter.defaultCenter
+      postNotificationName:UIKeyboardWillShowNotification
+                    object:nil
+                  userInfo:@{UIKeyboardFrameEndUserInfoKey : @(keyboardFrame)}];
+  FlutterMethodCall* onPointerMoveCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(500)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssert(textInputPlugin.keyboardView.superview != nil);
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, keyboardFrame.origin.y);
+
+  FlutterMethodCall* onPointerMoveCallMove =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(600)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCallMove
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssert(textInputPlugin.keyboardView.superview != nil);
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, 600.0);
+
+  FlutterMethodCall* onPointerMoveCallBackUp =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.onPointerMoveForInteractiveKeyboard"
+                                        arguments:@{@"pointerY" : @(10)}];
+  [textInputPlugin handleMethodCall:onPointerMoveCallBackUp
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssert(textInputPlugin.keyboardView.superview != nil);
+  XCTAssertEqual(textInputPlugin.keyboardViewContainer.frame.origin.y, keyboardFrame.origin.y);
+  for (UIView* subView in textInputPlugin.keyboardViewContainer.subviews) {
+    [subView removeFromSuperview];
+  }
+}
+
+- (void)testInteractiveKeyboardFindFirstResponderRecursive {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [inputView becomeFirstResponder];
+
+  UIView* firstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  XCTAssertEqualObjects(inputView, firstResponder);
+}
+
+- (void)testInteractiveKeyboardFindFirstResponderRecursiveInMultipleSubviews {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  FlutterTextInputView* subInputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  FlutterTextInputView* otherSubInputView =
+      [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  FlutterTextInputView* subFirstResponderInputView =
+      [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [subInputView addSubview:subFirstResponderInputView];
+  [inputView addSubview:subInputView];
+  [inputView addSubview:otherSubInputView];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+  [subInputView setTextInputClient:123];
+  [subInputView reloadInputViews];
+  [otherSubInputView setTextInputClient:123];
+  [otherSubInputView reloadInputViews];
+  [subFirstResponderInputView setTextInputClient:123];
+  [subFirstResponderInputView reloadInputViews];
+  [subFirstResponderInputView becomeFirstResponder];
+
+  UIView* firstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  XCTAssertEqualObjects(subFirstResponderInputView, firstResponder);
+}
+
+- (void)testInteractiveKeyboardFindFirstResponderIsNilRecursive {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+  [inputView setTextInputClient:123];
+  [inputView reloadInputViews];
+
+  UIView* firstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  XCTAssertNil(firstResponder);
 }
 
 @end
