@@ -1003,7 +1003,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return true;
     }
 
-    // Return true if has any user action.
+    // Return true if it has any user action.
     return (node.actions & ~systemAction) != 0;
   }
 
