@@ -173,6 +173,8 @@
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
+../../../flutter/lib/gpu/analysis_options.yaml
+../../../flutter/lib/gpu/pubspec.yaml
 ../../../flutter/lib/snapshot/libraries.json
 ../../../flutter/lib/snapshot/libraries.yaml
 ../../../flutter/lib/snapshot/pubspec.yaml
@@ -352,7 +354,6 @@
 ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
 ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 ../../../flutter/shell/platform/windows/window_unittests.cc
-../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
@@ -2664,6 +2665,7 @@
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
@@ -2689,6 +2691,10 @@
 ../../../third_party/skia/include/utils/BUILD.bazel
 ../../../third_party/skia/include/utils/mac/BUILD.bazel
 ../../../third_party/skia/infra
+../../../third_party/skia/modules/bentleyottmann/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/include/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/src/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/tests
 ../../../third_party/skia/modules/canvaskit/.gitignore
 ../../../third_party/skia/modules/canvaskit/BUILD.bazel
 ../../../third_party/skia/modules/canvaskit/CHANGELOG.md
@@ -2837,7 +2843,6 @@
 ../../../third_party/skia/src/sksl/README.md
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
-../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
