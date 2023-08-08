@@ -50,7 +50,7 @@ class Allocator {
   /// allocation pools.
   virtual void DidAcquireSurfaceFrame() {
     for (auto& td : data_to_recycle_) {
-       td.used_this_frame = false;
+      td.used_this_frame = false;
     }
   }
 
@@ -58,12 +58,13 @@ class Allocator {
     std::vector<TextureData> retain;
 
     for (auto td : data_to_recycle_) {
-        if (td.used_this_frame) {
-            retain.push_back(td);
-        }
+      if (td.used_this_frame) {
+        retain.push_back(td);
+      }
     }
     data_to_recycle_.clear();
-    data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(), retain.end());
+    data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
+                            retain.end());
     FML_LOG(ERROR) << "retained: " << data_to_recycle_.size();
   }
 
@@ -77,13 +78,13 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
-    struct TextureData {
-        bool used_this_frame;
-        TextureDescriptor descriptor;
-        std::shared_ptr<Texture> texture;
-    };
+  struct TextureData {
+    bool used_this_frame;
+    TextureDescriptor descriptor;
+    std::shared_ptr<Texture> texture;
+  };
 
-    std::vector<TextureData> data_to_recycle_;
+  std::vector<TextureData> data_to_recycle_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };

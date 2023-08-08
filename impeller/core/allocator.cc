@@ -66,13 +66,11 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
         return td.texture;
       }
     }
-    auto result =  OnCreateTexture(desc);
+    auto result = OnCreateTexture(desc);
     TextureDescriptor descriptor_2 = desc;
-    data_to_recycle_.push_back({
-      .used_this_frame = true,
-      .descriptor = descriptor_2,
-      .texture = result
-    });
+    data_to_recycle_.push_back({.used_this_frame = true,
+                                .descriptor = descriptor_2,
+                                .texture = result});
     return result;
   }
 
