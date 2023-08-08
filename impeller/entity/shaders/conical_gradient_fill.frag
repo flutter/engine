@@ -22,7 +22,6 @@ uniform FragInfo {
   vec2 half_texel;
   vec2 focus;
   float focus_radius;
-  bool dither;
 }
 frag_info;
 
@@ -47,8 +46,4 @@ void main() {
                                  frag_info.tile_mode,                      //
                                  frag_info.decal_border_color);
   frag_color = IPPremultiply(frag_color) * frag_info.alpha;
-
-  if (frag_info.dither) {
-    frag_color = IPOrderedDither8x8(frag_color, v_position);
-  }
 }
