@@ -173,6 +173,8 @@
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
+../../../flutter/lib/gpu/analysis_options.yaml
+../../../flutter/lib/gpu/pubspec.yaml
 ../../../flutter/lib/snapshot/libraries.json
 ../../../flutter/lib/snapshot/libraries.yaml
 ../../../flutter/lib/snapshot/pubspec.yaml
@@ -2664,6 +2666,7 @@
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
@@ -2837,7 +2840,6 @@
 ../../../third_party/skia/src/sksl/README.md
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
-../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
