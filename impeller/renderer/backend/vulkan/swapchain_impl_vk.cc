@@ -486,6 +486,11 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
             // Vulkan guarantees that the set of queue operations will still
             // complete successfully.
             [[fallthrough]];
+          case vk::Result::eSuboptimalKHR:
+            // In theory we shouldn't receive this (because we're polling above)
+            // but we shouldn't handle it as a validation error if we do receive
+            // it.
+            [[fallthrough]];
           case vk::Result::eSuccess:
             return;
           default:
