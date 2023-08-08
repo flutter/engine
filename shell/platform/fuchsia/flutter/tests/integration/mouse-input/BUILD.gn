@@ -36,7 +36,6 @@ executable("mouse-input-test-bin") {
     "$fuchsia_sdk_root/fidl:fuchsia.ui.display.singleton",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.pointerinjector",
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.input",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.scene",
     "$fuchsia_sdk_root/fidl:fuchsia.web",
