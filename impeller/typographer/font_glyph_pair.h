@@ -42,10 +42,9 @@ struct FontGlyphPair {
         size_t nScale = *reinterpret_cast<const uint32_t*>(fScale);
         size_t index_type_scale = nScale << 32 | index << 16 | type;
         return fml::HashCombine(p.font.GetHash(), index_type_scale);
-      } else {
-        size_t index_type = index << 16 | type;
-        return fml::HashCombine(p.font.GetHash(), index_type, p.scale);
       }
+      size_t index_type = index << 16 | type;
+      return fml::HashCombine(p.font.GetHash(), index_type, p.scale);
     }
   };
   struct Equal {
