@@ -62,19 +62,19 @@ using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 /// less memory than a Red-Black Tree or Hashtable.  It is also more cache
 /// friendly than a HashTable.
 ///
-/// Insertion: O(n) / O(1) with `insert`.
+/// Insertion: O(1).
 /// Lookup: O(n)
-/// Delete: O(n)
 template <typename K, typename V>
 class AssociativeVector {
  public:
   using value_type = std::pair<K, V>;
 
   /// A O(1) insertion that assumes you never insert the same key twice.
-  typename std::vector<value_type>::iterator insert(const value_type& val) {
+  std::pair<typename std::vector<value_type>::iterator, bool> insert(
+      value_type&& val) {
     FML_DCHECK(find(val.first) == end());
-    data_.push_back(val);
-    return data_.end()--;
+    data_.emplace_back(std::move(val));
+    return {data_.end()--, true};
   }
 
   V& at(const K& key) {
@@ -87,16 +87,6 @@ class AssociativeVector {
     auto it = find(key);
     FML_CHECK(it != data_.end());
     return it->second;
-  }
-
-  V& operator[](const K& key) {
-    auto it = find(key);
-    if (it != data_.end()) {
-      return it->second;
-    } else {
-      data_.emplace_back(key, V{});  // Emplace default value if key not found.
-      return data_.back().second;
-    }
   }
 
   size_t size() const { return data_.size(); }

@@ -18,8 +18,9 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
     return false;
   }
 
-  vertex_bindings.buffers[VertexDescriptor::kReservedVertexBufferIndex] = {
-      nullptr, buffer.vertex_buffer};
+  vertex_bindings.buffers.insert(
+      std::make_pair(VertexDescriptor::kReservedVertexBufferIndex,
+                     BufferResource{nullptr, buffer.vertex_buffer}));
   index_buffer = buffer.index_buffer;
   vertex_count = buffer.vertex_count;
   index_type = buffer.index_type;
@@ -95,10 +96,12 @@ bool Command::BindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.textures[slot.texture_index] = {&metadata, texture};
+      vertex_bindings.textures.insert(std::make_pair(
+          slot.texture_index, TextureResource{&metadata, texture}));
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.textures[slot.texture_index] = {&metadata, texture};
+      fragment_bindings.textures.insert(std::make_pair(
+          slot.texture_index, TextureResource{&metadata, texture}));
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
@@ -125,12 +128,16 @@ bool Command::BindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
-      vertex_bindings.sampled_images[slot.sampler_index] = slot;
+      vertex_bindings.samplers.insert(std::make_pair(
+          slot.sampler_index, SamplerResource{&metadata, sampler}));
+      vertex_bindings.sampled_images.insert(
+          std::make_pair(slot.sampler_index, slot));
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
-      fragment_bindings.sampled_images[slot.sampler_index] = slot;
+      fragment_bindings.samplers.insert(std::make_pair(
+          slot.sampler_index, SamplerResource{&metadata, sampler}));
+      fragment_bindings.sampled_images.insert(
+          std::make_pair(slot.sampler_index, slot));
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";

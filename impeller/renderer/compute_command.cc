@@ -23,8 +23,9 @@ bool ComputeCommand::BindResource(ShaderStage stage,
     return false;
   }
 
-  bindings.uniforms[slot.ext_res_0] = slot;
-  bindings.buffers[slot.ext_res_0] = {&metadata, view};
+  bindings.uniforms.insert(std::make_pair(slot.ext_res_0, slot));
+  bindings.buffers.insert(
+      std::make_pair(slot.ext_res_0, BufferResource{&metadata, view}));
   return true;
 }
 
@@ -45,7 +46,8 @@ bool ComputeCommand::BindResource(
     return true;
   }
 
-  bindings.textures[slot.texture_index] = {&metadata, texture};
+  bindings.textures.insert(
+      std::make_pair(slot.texture_index, TextureResource{&metadata, texture}));
   return true;
 }
 
@@ -66,7 +68,8 @@ bool ComputeCommand::BindResource(
     return true;
   }
 
-  bindings.samplers[slot.sampler_index] = {&metadata, sampler};
+  bindings.samplers.insert(
+      std::make_pair(slot.sampler_index, SamplerResource{&metadata, sampler}));
   return true;
 }
 
