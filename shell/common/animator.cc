@@ -142,14 +142,8 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
   has_rendered_ = true;
   last_layer_tree_size_ = layer_tree->frame_size();
 
-  if (!frame_timings_recorder_) {
-    // Framework can directly call render with a built scene.
-    frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
-    const fml::TimePoint placeholder_time = fml::TimePoint::Now();
-    frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
-    frame_timings_recorder_->RecordBuildStart(placeholder_time);
-  }
-
+  FML_DCHECK(frame_timings_recorder_)
+      << "Render called outside of BeginFrame().";
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);

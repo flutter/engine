@@ -158,6 +158,10 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
         ASSERT_FALSE(delegate.notify_idle_called_);
         auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                       SkISize::Make(600, 800));
+        std::unique_ptr<FrameTimingsRecorder> recorder =
+            std::make_unique<FrameTimingsRecorder>();
+        recorder->RecordVsync(fml::TimePoint::Now(), fml::TimePoint::Now());
+        animator->BeginFrame(std::move(recorder));
         animator->Render(std::move(layer_tree), 1.0);
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },

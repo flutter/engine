@@ -82,9 +82,9 @@ class Animator final {
   // rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
- private:
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
+ private:
   bool CanReuseLastLayerTree();
 
   void DrawLastLayerTree(

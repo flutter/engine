@@ -172,16 +172,26 @@ void ShellTest::NotifyIdle(Shell* shell, fml::TimeDelta deadline) {
   latch.Wait();
 }
 
+void ShellTest::PumpOneFrameWithoutHelp(Shell* shell,
+                                        double width,
+                                        double height,
+                                        LayerTreeBuilder builder) {
+  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder),
+               /*animator_render=*/false);
+}
+
 void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
+  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder),
+               /*animator_render=*/true);
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
                              const flutter::ViewportMetrics& viewport_metrics,
-                             LayerTreeBuilder builder) {
+                             LayerTreeBuilder builder,
+                             bool animator_render) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
@@ -199,6 +209,10 @@ void ShellTest::PumpOneFrame(Shell* shell,
         latch.Signal();
       });
   latch.Wait();
+
+  if (!animator_render) {
+    return;
+  }
 
   latch.Reset();
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|

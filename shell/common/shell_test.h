@@ -81,13 +81,18 @@ class ShellTest : public FixtureTest {
   static void SetViewportMetrics(Shell* shell, double width, double height);
   static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
 
+  static void PumpOneFrameWithoutHelp(Shell* shell,
+                                      double width = 1,
+                                      double height = 1,
+                                      LayerTreeBuilder = {});
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
   static void PumpOneFrame(Shell* shell,
                            const flutter::ViewportMetrics& viewport_metrics,
-                           LayerTreeBuilder = {});
+                           LayerTreeBuilder = {},
+                           bool animator_render = true);
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
