@@ -219,7 +219,8 @@ class FlutterTapTestBase : public PortableUITest, public ::testing::Test {
 
     // Get the display information using the
     // |fuchsia.ui.display.singleton.Info|.
-    FML_LOG(INFO) << "Waiting for scenic display info";
+    FML_LOG(INFO)
+        << "Waiting for display info from fuchsia.ui.display.singleton.Info";
     std::optional<bool> display_metrics_obtained;
     fuchsia::ui::display::singleton::InfoPtr display_info =
         realm_root()
@@ -343,7 +344,8 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
 
     // Get the display information using the
     // |fuchsia.ui.display.singleton.Info|.
-    FML_LOG(INFO) << "Waiting for scenic display info";
+    FML_LOG(INFO)
+        << "Waiting for display info from fuchsia.ui.display.singleton.Info";
     std::optional<bool> display_metrics_obtained;
     fuchsia::ui::display::singleton::InfoPtr display_info =
         realm_root()
