@@ -765,7 +765,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
 // Disables the cursor from dismissing when firstResponder is resigned
-@property(nonatomic, assign) BOOL resignFirstResponderCallTempDisabled;
+@property(nonatomic, assign) BOOL preventCursorDismissWhenResignFirstResponder;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
 @property(nonatomic, assign) int textInputClient;
@@ -803,7 +803,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _textInputPlugin = textInputPlugin;
     _textInputClient = 0;
     _selectionAffinity = kTextAffinityUpstream;
-    _resignFirstResponderCallTempDisabled = NO;
+    _preventCursorDismissWhenResignFirstResponder = NO;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
@@ -1097,7 +1097,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (BOOL)resignFirstResponder {
   BOOL success = [super resignFirstResponder];
   if (success) {
-    if (!_resignFirstResponderCallTempDisabled) {
+    if (!_preventCursorDismissWhenResignFirstResponder) {
       [self.textInputDelegate flutterTextInputView:self
           didResignFirstResponderWithTextInputClient:_textInputClient];
     }
@@ -2383,7 +2383,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     if (_keyboardView.superview == nil) {
       // If no screenshot has been taken.
       [self takeKeyboardScreenshotAndDisplay];
-      [self hideKeyboardWithoutAnimationAndCursorNotDismissed];
+      [self hideKeyboardWithoutAnimationAndAvoidCursorDismissUpdate];
     } else {
       [self setKeyboardContainerHeight:pointerY];
     }
@@ -2401,12 +2401,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   _keyboardViewContainer.frame = frameRect;
 }
 
-- (void)hideKeyboardWithoutAnimationAndCursorNotDismissed:{
+- (void)hideKeyboardWithoutAnimationAndAvoidCursorDismissUpdate {
   [UIView setAnimationsEnabled:NO];
   _cachedFirstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
-  _activeView.resignFirstResponderCallTempDisabled = YES;
+  _activeView.preventCursorDismissWhenResignFirstResponder = YES;
   [_cachedFirstResponder resignFirstResponder];
-  _activeView.resignFirstResponderCallTempDisabled = NO;
+  _activeView.preventCursorDismissWhenResignFirstResponder = NO;
   [UIView setAnimationsEnabled:YES];
 }
 
