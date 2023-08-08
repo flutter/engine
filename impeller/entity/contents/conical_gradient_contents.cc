@@ -29,6 +29,10 @@ void ConicalGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
+void ConicalGradientContents::SetDither(bool dither) {
+  dither_ = dither;
+}
+
 void ConicalGradientContents::SetColors(std::vector<Color> colors) {
   colors_ = std::move(colors);
 }
