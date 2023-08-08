@@ -2147,9 +2147,9 @@
               "varying"
             ],
             "shortest_path_cycles": [
-              0.21875,
+              0.1875,
               0.0625,
-              0.21875,
+              0.1875,
               0.0,
               0.0,
               0.25,
@@ -2159,10 +2159,10 @@
               "load_store"
             ],
             "total_cycles": [
-              1.4874999523162842,
-              0.875,
-              1.4874999523162842,
-              0.875,
+              1.3125,
+              0.8125,
+              1.3125,
+              0.375,
               4.0,
               0.25,
               0.0
@@ -2170,8 +2170,8 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 46,
-          "work_registers_used": 20
+          "uniform_registers_used": 36,
+          "work_registers_used": 15
         }
       }
     }
