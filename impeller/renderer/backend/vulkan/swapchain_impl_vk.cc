@@ -15,6 +15,10 @@
 namespace impeller {
 
 static constexpr size_t kMaxFramesInFlight = 3u;
+
+// Number of frames to poll for orientation changes. For example `1u` means
+// that the orientation will be polled every frame, while `2u` means that the
+// orientation will be polled every other frame.
 static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct FrameSynchronizer {
