@@ -2340,17 +2340,17 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
   CGFloat screenHeight = screen.bounds.size.height;
   CGFloat keyboardHeight = _keyboardRect.size.height;
-  BOOL pointerBelowMiddleY = (screenHeight - (keyboardHeight / 2)) < pointerY;
+  BOOL shouldDismissKeyboard = (screenHeight - (keyboardHeight / 2)) < pointerY;
   [UIView animateWithDuration:0.3f
       animations:^{
         double keyboardDestination =
-            pointerBelowMiddleY ? screenHeight : screenHeight - keyboardHeight;
+            shouldDismissKeyboard ? screenHeight : screenHeight - keyboardHeight;
         _keyboardViewContainer.frame = CGRectMake(
             0, keyboardDestination, _viewController.flutterScreenIfViewLoaded.bounds.size.width,
             _keyboardViewContainer.frame.size.height);
       }
       completion:^(BOOL finished) {
-        if (pointerBelowMiddleY) {
+        if (shouldDismissKeyboard) {
           [self.textInputDelegate flutterTextInputView:self.activeView
               didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
           [self dismissKeyboardScreenshot];
