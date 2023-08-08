@@ -23,7 +23,8 @@ static constexpr int32_t kDefaultPointerDeviceId = 0;
 
 class MockFlutterWindow : public FlutterWindow {
  public:
-  MockFlutterWindow(bool reset_view_on_exit = true) : FlutterWindow(800, 600), reset_view_on_exit_(reset_view_on_exit) {
+  MockFlutterWindow(bool reset_view_on_exit = true)
+      : FlutterWindow(800, 600), reset_view_on_exit_(reset_view_on_exit) {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindow::GetDpiScale()));
   }
@@ -347,9 +348,10 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
       .WillByDefault([&last_event](HWND hwnd, WindowStateEvent event) {
         last_event = event;
       });
-  ON_CALL(win32window, OnWindowStateEvent).WillByDefault([&](WindowStateEvent event) {
-    win32window.FlutterWindow::OnWindowStateEvent(event);
-  });
+  ON_CALL(win32window, OnWindowStateEvent)
+      .WillByDefault([&](WindowStateEvent event) {
+        win32window.FlutterWindow::OnWindowStateEvent(event);
+      });
 
   win32window.InjectWindowMessage(WM_SIZE, 0, 0);
   EXPECT_EQ(last_event, WindowStateEvent::kHide);
@@ -369,9 +371,10 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   ON_CALL(win32window, GetPlatformWindow).WillByDefault([]() {
     return reinterpret_cast<HWND>(1);
   });
-  ON_CALL(win32window, OnWindowStateEvent).WillByDefault([&](WindowStateEvent event) {
-    win32window.FlutterWindow::OnWindowStateEvent(event);
-  });
+  ON_CALL(win32window, OnWindowStateEvent)
+      .WillByDefault([&](WindowStateEvent event) {
+        win32window.FlutterWindow::OnWindowStateEvent(event);
+      });
 
   // Restore
   win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
@@ -400,18 +403,18 @@ TEST(FlutterWindowTest, PosthumousWindowMessage) {
   MockWindowBindingHandlerDelegate delegate;
   int msg_count = 0;
   HWND hwnd;
-  ON_CALL(delegate, OnWindowStateEvent).WillByDefault([&](HWND hwnd, WindowStateEvent event) {
-    msg_count++;
-  });
+  ON_CALL(delegate, OnWindowStateEvent)
+      .WillByDefault([&](HWND hwnd, WindowStateEvent event) { msg_count++; });
 
   {
     MockFlutterWindow win32window(false);
     ON_CALL(win32window, GetPlatformWindow).WillByDefault([&]() {
       return win32window.FlutterWindow::GetPlatformWindow();
     });
-    ON_CALL(win32window, OnWindowStateEvent).WillByDefault([&](WindowStateEvent event) {
-      win32window.FlutterWindow::OnWindowStateEvent(event);
-    });
+    ON_CALL(win32window, OnWindowStateEvent)
+        .WillByDefault([&](WindowStateEvent event) {
+          win32window.FlutterWindow::OnWindowStateEvent(event);
+        });
     win32window.SetView(&delegate);
     win32window.InitializeChild("Title", 1, 1);
     hwnd = win32window.GetPlatformWindow();
