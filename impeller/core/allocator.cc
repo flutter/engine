@@ -55,13 +55,16 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
                    << " exceeds maximum supported size of " << max_size;
     return nullptr;
   }
-  if (desc.storage_mode == StorageMode::kDeviceTransient ||
-      desc.storage_mode == StorageMode::kDevicePrivate) {
+  if ((desc.storage_mode == StorageMode::kDeviceTransient ||
+       desc.storage_mode == StorageMode::kDevicePrivate) &&
+      (desc.usage &
+       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget))) {
     for (auto& td : data_to_recycle_) {
       if (!td.used_this_frame && desc.size.width == td.descriptor.size.width &&
           desc.size.height == td.descriptor.size.height &&
           desc.storage_mode == td.descriptor.storage_mode &&
-          desc.format == td.descriptor.format) {
+          desc.format == td.descriptor.format &&
+          desc.usage == td.descriptor.usage) {
         td.used_this_frame = true;
         return td.texture;
       }
