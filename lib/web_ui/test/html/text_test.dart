@@ -100,18 +100,21 @@ Future<void> testMain() async {
       addTearDown(() => ParagraphBuilder.setDisableRoundingHack(false));
     }
     assert(ParagraphBuilder.shouldDisableRoundingHack);
-    const double fontSize = 1.25;
+    const double fontSize = 1;
     const String text = '12345';
-    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    const double letterSpacing = 0.25;
+    const double expectedIntrinsicWidth = text.length * (fontSize + letterSpacing);
+    assert(expectedIntrinsicWidth.truncate() != expectedIntrinsicWidth);
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'));
+    builder.pushStyle(TextStyle(letterSpacing: letterSpacing));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
-      ..layout(const ParagraphConstraints(width: text.length * fontSize));
+      ..layout(const ParagraphConstraints(width: expectedIntrinsicWidth));
 
-    expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
+    expect(paragraph.maxIntrinsicWidth, expectedIntrinsicWidth);
     switch (paragraph.computeLineMetrics()) {
       case [LineMetrics(width: final double width)]:
-        expect(width, text.length * fontSize);
+        expect(width, expectedIntrinsicWidth);
       case final List<LineMetrics> metrics:
         expect(metrics, hasLength(1));
     }
