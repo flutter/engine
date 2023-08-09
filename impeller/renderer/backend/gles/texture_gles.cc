@@ -7,7 +7,6 @@
 #include <optional>
 #include <utility>
 
-#include "GLES2/gl2ext.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
