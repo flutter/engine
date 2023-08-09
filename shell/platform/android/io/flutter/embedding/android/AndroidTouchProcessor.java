@@ -1,9 +1,11 @@
 package io.flutter.embedding.android;
 
+import android.content.Context;
 import android.graphics.Matrix;
 import android.os.Build;
 import android.view.InputDevice;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -138,7 +140,8 @@ public class AndroidTouchProcessor {
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
-      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+      addPointerForIndex(
+          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet, null);
     } else if (updateForMultiplePointers) {
       // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
       // We are converting these updates to move events here in order to preserve this data.
@@ -147,18 +150,25 @@ public class AndroidTouchProcessor {
       for (int p = 0; p < pointerCount; p++) {
         if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
           addPointerForIndex(
-              event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, transformMatrix, packet);
+              event,
+              p,
+              PointerChange.MOVE,
+              POINTER_DATA_FLAG_BATCHED,
+              transformMatrix,
+              packet,
+              null);
         }
       }
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
-      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+      addPointerForIndex(
+          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet, null);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
       // ignore 0-deltas if desired.
       for (int p = 0; p < pointerCount; p++) {
-        addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet);
+        addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet, null);
       }
     }
 
@@ -183,7 +193,7 @@ public class AndroidTouchProcessor {
    * @param event The generic motion event being processed.
    * @return True if the event was handled.
    */
-  public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
+  public boolean onGenericMotionEvent(@NonNull MotionEvent event, Context context) {
     // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
     // Mouse hover support is not implemented for API < 18.
     boolean isPointerEvent =
@@ -203,7 +213,8 @@ public class AndroidTouchProcessor {
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
     // ACTION_HOVER_MOVE always applies to a single pointer only.
-    addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, IDENTITY_TRANSFORM, packet);
+    addPointerForIndex(
+        event, event.getActionIndex(), pointerChange, 0, IDENTITY_TRANSFORM, packet, context);
     if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
       throw new AssertionError("Packet position is not on field boundary.");
     }
@@ -219,7 +230,8 @@ public class AndroidTouchProcessor {
       int pointerChange,
       int pointerData,
       Matrix transformMatrix,
-      ByteBuffer packet) {
+      ByteBuffer packet,
+      Context context) {
     if (pointerChange == -1) {
       return;
     }
@@ -335,11 +347,17 @@ public class AndroidTouchProcessor {
     packet.putLong(pointerData); // platformData
 
     if (signalKind == PointerSignalKind.SCROLL) {
-      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
-      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
+      double verticalScaleFactor = 1.0;
+      if (context != null) {
+        verticalScaleFactor = ViewConfiguration.get(context).getScaledVerticalScrollFactor();
+      }
+      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_X, pointerIndex)); // scroll_delta_x
+      packet.putDouble(
+          verticalScaleFactor
+              * -event.getAxisValue(MotionEvent.AXIS_Y, pointerIndex)); // scroll_delta_y
     } else {
       packet.putDouble(0.0); // scroll_delta_x
-      packet.putDouble(0.0); // scroll_delta_x
+      packet.putDouble(0.0); // scroll_delta_y
     }
 
     if (isTrackpadPan) {
