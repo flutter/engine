@@ -1582,8 +1582,7 @@ flutter::PlatformViewEmbedder::UpdateSemanticsCallback
 CreateEmbedderSemanticsUpdateCallback(const FlutterProjectArgs* args,
                                       void* user_data) {
   // There are three variants for the embedder API's semantic update callbacks.
-  // Register an engine callback that maps the engine's semantic updates to the
-  // embedder's desired semantic update API.
+  // Create a callback that maps to the embedder's desired semantic update API.
   //
   // Handle the case where the embedder registered the callback
   // 'updated_semantics_callback2'
