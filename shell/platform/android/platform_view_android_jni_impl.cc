@@ -1193,10 +1193,8 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
                        "()Landroid/hardware/HardwareBuffer;");
 
   if (g_image_get_hardware_buffer_method == nullptr) {
-    FML_LOG(WARNING) << "Could not locate getHardwareBuffer on "
-                        "android.media.Image";
     // Continue on as this method may not exist at API <= 29.
-    fml::jni::ClearException(env);
+    fml::jni::ClearException(env, true);
   }
 
   g_image_close_method = env->GetMethodID(g_image_class->obj(), "close", "()V");
@@ -1211,14 +1209,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   g_hardware_buffer_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/hardware/HardwareBuffer"));
 
-  if (g_hardware_buffer_class != nullptr) {
+  if (!g_hardware_buffer_class->is_null()) {
     g_hardware_buffer_close_method =
         env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
+    if (g_hardware_buffer_close_method == nullptr) {
+      // Continue on as this class may not exist at API <= 26.
+      fml::jni::ClearException(env, true);
+    }
   } else {
-    FML_LOG(WARNING)
-        << "Could not locate android.hardware.HardwareBuffer class";
     // Continue on as this class may not exist at API <= 26.
-    fml::jni::ClearException(env);
+    fml::jni::ClearException(env, true);
   }
 
   g_compute_platform_resolved_locale_method = env->GetMethodID(
