@@ -743,13 +743,6 @@ String _computeEncodedFontSets(List<_Font> fonts) {
 
   final StringBuffer code = StringBuffer();
 
-  void describeFontSet(_FontSet fontSet) {
-    final int length = fontSet.fonts.length;
-    code.writeln(
-        '    // #${fontSet.index}: $length font${length == 1 ? '' : 's'}: '
-        '${fontSet.description()}');
-  }
-
   final StringBuffer sb = StringBuffer();
   int totalEncodedLength = 0;
 
@@ -768,22 +761,25 @@ String _computeEncodedFontSets(List<_Font> fonts) {
       encode(fontIndexDelta - 1, kFontIndexRadix, kFontIndexDigit0);
     }
     if (fontSet != allSets.last) sb.write(',');
-    final int length = fontSet.fonts.length;
-    code.writeln(
-        '    // #${fontSet.index}: $length font${length == 1 ? '' : 's'}: '
-        '${fontSet.description()}');
-
     final String fragment = sb.toString();
     sb.clear();
     totalEncodedLength += fragment.length;
+
+    final int length = fontSet.fonts.length;
+    code.write('    // #${fontSet.index}: $length font');
+    if (length != 1) code.write('s');
+    if (length > 0) code.write(': ${fontSet.description()}');
+    code.writeln('.');
+
     code.writeln("    '$fragment'");
   }
 
   final StringBuffer declarations = StringBuffer();
 
+  final int references = allSets.fold(0, (sum, set) => sum + set.length);
   declarations
       ..writeln('// ${allSets.length} unique sets of fonts'
-          ' containing ${allSets.fold(0, (sum, set) => sum + set.length)} fonts'
+          ' containing ${references} font references'
           ' encoded in ${totalEncodedLength} characters')
       ..writeln('const String encodedFontSets =')
       ..write(code)
