@@ -16,6 +16,8 @@
 namespace impeller {
 namespace compiler {
 
+const std::string kExternalTexturePrefix = "SAMPLER_EXTERNAL_";
+
 enum class SourceType {
   kUnknown,
   kVertexShader,

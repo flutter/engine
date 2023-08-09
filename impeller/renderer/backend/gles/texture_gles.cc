@@ -7,6 +7,7 @@
 #include <optional>
 #include <utility>
 
+#include "GLES2/gl2ext.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
@@ -246,6 +247,10 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       texture_type = GL_TEXTURE_CUBE_MAP;
       texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + slice;
       break;
+    case TextureType::kTextureExternalOES:
+      texture_type = GL_TEXTURE_EXTERNAL_OES;
+      texture_target = GL_TEXTURE_EXTERNAL_OES;
+      break;
   }
 
   auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
@@ -439,6 +444,8 @@ bool TextureGLES::GenerateMipmap() {
                         "supported in the GLES backend.";
       return false;
     case TextureType::kTextureCube:
+      break;
+    case TextureType::kTextureExternalOES:
       break;
   }
 
