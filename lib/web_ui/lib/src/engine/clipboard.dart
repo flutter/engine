@@ -85,7 +85,8 @@ class ClipboardMessageHandler {
         });
         return;
       }
-      _reportGetDataFailure(callback, codec, error);
+      final Map<String, dynamic> map = <String, dynamic>{'value': false};
+      callback!(codec.encodeSuccessEnvelope(map));
     });
   }
 
