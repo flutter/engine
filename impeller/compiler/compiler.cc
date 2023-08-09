@@ -14,10 +14,10 @@
 #include "flutter/fml/paths.h"
 #include "impeller/base/allocation.h"
 #include "impeller/compiler/compiler_backend.h"
+#include "impeller/compiler/constants.h"
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/logger.h"
 #include "impeller/compiler/spirv_compiler.h"
-#include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
 
