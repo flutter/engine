@@ -55,6 +55,14 @@ class BuildLocalEngineTestCase(unittest.TestCase):
     self.assertEqual(gn_args.target_os, 'ios')
     self.assertEqual(gn_args.simulator_cpu, 'arm64')
 
+  def test_toggle_selection(self):
+    build.selections[0] = ""
+    build.selections[1] = "X"
+    build.toggle_selection(0)
+    build.toggle_selection(1)
+    self.assertEqual(build.selections[0], "X")
+    self.assertEqual(build.selections[1], " ")
+
 
 if __name__ == '__main__':
   unittest.main()
