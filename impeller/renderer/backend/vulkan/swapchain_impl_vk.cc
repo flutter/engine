@@ -443,45 +443,43 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
   context_strong->GetResourceAllocator()->DidFinishSurfaceFrame();
 
-  context.GetConcurrentWorkerTaskRunner()->PostTask(
-      [&, index, image] {
-        auto context_strong = context_.lock();
-        if (!context_strong) {
-          return;
-        }
-        const auto& context = ContextVK::Cast(*context_strong);
+  context.GetConcurrentWorkerTaskRunner()->PostTask([&, index, image] {
+    auto context_strong = context_.lock();
+    if (!context_strong) {
+      return;
+    }
+    const auto& context = ContextVK::Cast(*context_strong);
 
-        //----------------------------------------------------------------------------
-        /// Present the image.
-        ///
-        uint32_t indices[] = {static_cast<uint32_t>(index)};
+    //----------------------------------------------------------------------------
+    /// Present the image.
+    ///
+    uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-        vk::PresentInfoKHR present_info;
-        present_info.setSwapchains(*swapchain_);
-        present_info.setImageIndices(indices);
-        present_info.setWaitSemaphores(*sync->present_ready);
+    vk::PresentInfoKHR present_info;
+    present_info.setSwapchains(*swapchain_);
+    present_info.setImageIndices(indices);
+    present_info.setWaitSemaphores(*sync->present_ready);
 
-        switch (auto result = present_queue_.presentKHR(present_info)) {
-          case vk::Result::eErrorOutOfDateKHR:
-            // Caller will recreate the impl on acquisition, not submission.
-            [[fallthrough]];
-          case vk::Result::eErrorSurfaceLostKHR:
-            // Vulkan guarantees that the set of queue operations will still
-            // complete successfully.
-            [[fallthrough]];
-          case vk::Result::eSuccess:
-            is_rotated_ = false;
-            return;
-          case vk::Result::eSuboptimalKHR:
-            is_rotated_ = true;
-            return;
-          default:
-            VALIDATION_LOG << "Could not present queue: "
-                           << vk::to_string(result);
-            return;
-        }
-        FML_UNREACHABLE();
-      });
+    switch (auto result = present_queue_.presentKHR(present_info)) {
+      case vk::Result::eErrorOutOfDateKHR:
+        // Caller will recreate the impl on acquisition, not submission.
+        [[fallthrough]];
+      case vk::Result::eErrorSurfaceLostKHR:
+        // Vulkan guarantees that the set of queue operations will still
+        // complete successfully.
+        [[fallthrough]];
+      case vk::Result::eSuccess:
+        is_rotated_ = false;
+        return;
+      case vk::Result::eSuboptimalKHR:
+        is_rotated_ = true;
+        return;
+      default:
+        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
+        return;
+    }
+    FML_UNREACHABLE();
+  });
   return true;
 }
 
