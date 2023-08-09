@@ -4,11 +4,13 @@
 
 #include "impeller/compiler/compiler.h"
 
+#include <cstring>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "flutter/fml/paths.h"
@@ -206,6 +208,30 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
   return compiler;
 }
 
+/// Check if the source mapping contains a `#version` define.
+static bool SourceMappingOverridesVersionProfile(
+    const std::shared_ptr<const fml::Mapping>& source_mapping) {
+  const std::string kVersion = "#version ";
+
+  for (size_t source_i = 0; source_i < source_mapping->GetSize(); source_i++) {
+    if (source_i + kVersion.size() > source_mapping->GetSize()) {
+      return false;
+    }
+
+    for (size_t version_i = 0; version_i < kVersion.size(); version_i++) {
+      uint8_t other = kVersion[version_i];
+      if (source_mapping->GetMapping()[source_i + version_i] != other) {
+        goto mismatch;
+      }
+    }
+
+    return true;
+
+  mismatch:;
+  }
+  return false;
+}
+
 Compiler::Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
                    const SourceOptions& source_options,
                    Reflector::Options reflector_options)
@@ -233,10 +259,12 @@ Compiler::Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
       // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
       spirv_options.source_langauge =
           shaderc_source_language::shaderc_source_language_glsl;
-      spirv_options.source_profile = SPIRVCompilerSourceProfile{
-          shaderc_profile::shaderc_profile_core,  //
-          460,                                    //
-      };
+      if (!SourceMappingOverridesVersionProfile(source_mapping)) {
+        spirv_options.source_profile = SPIRVCompilerSourceProfile{
+            shaderc_profile::shaderc_profile_core,  //
+            460,                                    //
+        };
+      }
       break;
     case SourceLanguage::kHLSL:
       spirv_options.source_langauge =
