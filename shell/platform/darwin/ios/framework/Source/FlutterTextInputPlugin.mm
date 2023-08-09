@@ -22,7 +22,7 @@ static const char kTextAffinityUpstream[] = "TextAffinity.upstream";
 static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
 
 // A delay before reenabling the UIView areAnimationsEnabled to YES
-// in order for becomeFirstResponder to recieve the proper value
+// in order for becomeFirstResponder to receive the proper value
 static const NSTimeInterval kKeyboardAnimationDelaySeconds = 0.1;
 
 // The "canonical" invalid CGRect, similar to CGRectNull, used to
