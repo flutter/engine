@@ -32,7 +32,6 @@
 ../../../flutter/display_list/benchmarking/dl_complexity_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
-../../../flutter/display_list/dl_op_spy_unittests.cc
 ../../../flutter/display_list/dl_paint_unittests.cc
 ../../../flutter/display_list/dl_vertices_unittests.cc
 ../../../flutter/display_list/effects/dl_color_filter_unittests.cc
@@ -174,6 +173,8 @@
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
+../../../flutter/lib/gpu/analysis_options.yaml
+../../../flutter/lib/gpu/pubspec.yaml
 ../../../flutter/lib/snapshot/libraries.json
 ../../../flutter/lib/snapshot/libraries.yaml
 ../../../flutter/lib/snapshot/pubspec.yaml
@@ -216,6 +217,7 @@
 ../../../flutter/runtime/type_conversions_unittests.cc
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
+../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
 ../../../flutter/shell/common/fixtures
 ../../../flutter/shell/common/input_events_unittests.cc
@@ -2615,6 +2617,7 @@
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gm/BUILD.bazel
 ../../../third_party/skia/gm/android_gm_test.bzl
+../../../third_party/skia/gm/png_codec.bzl
 ../../../third_party/skia/gm/surface_manager/BUILD.bazel
 ../../../third_party/skia/gm/vias/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
@@ -2689,6 +2692,10 @@
 ../../../third_party/skia/include/utils/BUILD.bazel
 ../../../third_party/skia/include/utils/mac/BUILD.bazel
 ../../../third_party/skia/infra
+../../../third_party/skia/modules/bentleyottmann/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/include/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/src/BUILD.bazel
+../../../third_party/skia/modules/bentleyottmann/tests
 ../../../third_party/skia/modules/canvaskit/.gitignore
 ../../../third_party/skia/modules/canvaskit/BUILD.bazel
 ../../../third_party/skia/modules/canvaskit/CHANGELOG.md
