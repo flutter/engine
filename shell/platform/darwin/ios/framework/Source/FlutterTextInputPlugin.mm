@@ -1625,10 +1625,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
+    UIView* hostView = _textInputPlugin.hostView;
+    NSAssert(hostView == nil || [self isDescendantOfView:hostView], @"%@ is not a descendant of %@",
+             self, hostView);
     // The candidates view can't be shown if the framework has not sent the
     // first caret rect.
     if (CGRectEqualToRect(kInvalidFirstRect, _markedRect)) {
-      return kInvalidFirstRect;
+      return hostView ? [hostView convertRect:kInvalidFirstRect toView:self] : kInvalidFirstRect;
     }
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
@@ -1642,9 +1645,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
-    UIView* hostView = _textInputPlugin.hostView;
-    NSAssert(hostView == nil || [self isDescendantOfView:hostView], @"%@ is not a descendant of %@",
-             self, hostView);
     return hostView ? [hostView convertRect:_cachedFirstRect toView:self] : _cachedFirstRect;
   }
 
@@ -2461,6 +2461,16 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _activeView.frame =
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
+  } else {
+    // View must be loaded at this point.
+    UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+
+    // Position FlutterTextInputView outside of the screen (if scribble is disabled).
+    // This is to fix a bug where native auto-correction highlight is displayed on
+    // top left corner of the screen (See: https://github.com/flutter/flutter/issues/131695)
+    // and a bug where the native auto-correction suggestion menu displayed (See:
+    // https://github.com/flutter/flutter/issues/130818).
+    _inputHider.frame = CGRectMake(0, -screen.bounds.size.height, 0, 0);
   }
 }
 

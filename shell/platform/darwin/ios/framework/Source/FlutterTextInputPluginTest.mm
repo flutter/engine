@@ -61,6 +61,7 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, readonly) UIView* inputHider;
 @property(nonatomic, readonly) UIView* keyboardViewContainer;
 @property(nonatomic, readonly) UIView* keyboardView;
 @property(nonatomic, assign) UIView* cachedFirstResponder;
@@ -1426,44 +1427,53 @@ FLUTTER_ASSERT_ARC
     @(-6.0), @(3.0), @(9.0), @(1.0)
   ];
 
+  CGRect kInvalidFirstRectRelative =
+      [textInputPlugin.viewController.view convertRect:kInvalidFirstRect toView:inputView];
+
   // Invalid since we don't have the transform or the rect.
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
 
   [inputView setEditableTransform:yOffsetMatrix];
   // Invalid since we don't have the rect.
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
 
   // Valid rect and transform.
   CGRect testRect = CGRectMake(0, 0, 100, 100);
   [inputView setMarkedRect:testRect];
 
   CGRect finalRect = CGRectOffset(testRect, 0, 200);
-  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+  CGRect finalRectRelative = [textInputPlugin.viewController.view convertRect:finalRect
+                                                                       toView:inputView];
+  XCTAssertTrue(CGRectEqualToRect(finalRectRelative, [inputView firstRectForRange:range]));
   // Idempotent.
-  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(finalRectRelative, [inputView firstRectForRange:range]));
 
   // Use an invalid matrix:
   [inputView setEditableTransform:zeroMatrix];
   // Invalid matrix is invalid.
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
 
   // Revert the invalid matrix change.
   [inputView setEditableTransform:yOffsetMatrix];
   [inputView setMarkedRect:testRect];
-  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(finalRectRelative, [inputView firstRectForRange:range]));
 
   // Use an invalid rect:
   [inputView setMarkedRect:kInvalidFirstRect];
   // Invalid marked rect is invalid.
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
-  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRectRelative, [inputView firstRectForRange:range]));
 
   // Use a 3d affine transform that does 3d-scaling, z-index rotating and 3d translation.
   [inputView setEditableTransform:affineMatrix];
   [inputView setMarkedRect:testRect];
-  XCTAssertTrue(
-      CGRectEqualToRect(CGRectMake(-306, 3, 300, 300), [inputView firstRectForRange:range]));
+
+  CGRect relativeRect =
+      [textInputPlugin.viewController.view convertRect:CGRectMake(-306, 3, 300, 300)
+                                                toView:inputView];
+
+  XCTAssertTrue(CGRectEqualToRect(relativeRect, [inputView firstRectForRange:range]));
 
   NSAssert(inputView.superview, @"inputView is not in the view hierarchy!");
   const CGPoint offset = CGPointMake(113, 119);
@@ -1472,8 +1482,8 @@ FLUTTER_ASSERT_ARC
   inputView.frame = currentFrame;
   // Moving the input view within the FlutterView shouldn't affect the coordinates,
   // since the framework sends us global coordinates.
-  XCTAssertTrue(CGRectEqualToRect(CGRectMake(-306 - 113, 3 - 119, 300, 300),
-                                  [inputView firstRectForRange:range]));
+  CGRect target = CGRectOffset(relativeRect, -113, -119);
+  XCTAssertTrue(CGRectEqualToRect(target, [inputView firstRectForRange:range]));
 }
 
 - (void)testFirstRectForRangeReturnsCorrectSelectionRect {
@@ -2293,6 +2303,76 @@ FLUTTER_ASSERT_ARC
   // the dummy "activeView" we use should never have access to
   // its textInputDelegate.
   XCTAssertNil(textInputPlugin.activeView.textInputDelegate);
+}
+
+- (void)testInputHiderIsOffScreenWhenScribbleIsDisabled {
+  FlutterTextInputPlugin* myInputPlugin =
+      [[FlutterTextInputPlugin alloc] initWithDelegate:OCMClassMock([FlutterEngine class])];
+  myInputPlugin.viewController = viewController;
+
+  NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
+  XCTAssertEqual(scenes.count, 1UL, @"There must only be 1 scene for test");
+  UIScene* scene = scenes.anyObject;
+  XCTAssert([scene isKindOfClass:[UIWindowScene class]], @"Must be a window scene for test");
+  UIWindowScene* windowScene = (UIWindowScene*)scene;
+  XCTAssert(windowScene.windows.count > 0, @"There must be at least 1 window for test");
+  UIWindow* window = windowScene.windows[0];
+  [window addSubview:viewController.view];
+  [viewController loadView];
+  UIScreen* screen = viewController.flutterScreenIfViewLoaded;
+  XCTAssertNotNil(screen, @"Screen must be present at this point");
+
+  FlutterMethodCall* setClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                        arguments:@[ @(123), self.mutableTemplateCopy ]];
+  [myInputPlugin handleMethodCall:setClientCall
+                           result:^(id _Nullable result){
+                           }];
+
+  FlutterTextInputView* mockInputView = OCMPartialMock(myInputPlugin.activeView);
+  OCMStub([mockInputView isScribbleAvailable]).andReturn(NO);
+
+  // yOffset = 200.
+  NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
+
+  FlutterMethodCall* setPlatformViewClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                                        arguments:@{@"transform" : yOffsetMatrix}];
+  [myInputPlugin handleMethodCall:setPlatformViewClientCall
+                           result:^(id _Nullable result){
+                           }];
+
+  CGRect offScreenRect = CGRectMake(0, -screen.bounds.size.height, 0, 0);
+  XCTAssert(CGRectEqualToRect(myInputPlugin.inputHider.frame, offScreenRect),
+            @"The input hider should stay offScreen if scribble is disabled.");
+}
+
+- (void)testInputHiderIsOnScreenWhenScribbleIsEnabled {
+  FlutterTextInputPlugin* myInputPlugin =
+      [[FlutterTextInputPlugin alloc] initWithDelegate:OCMClassMock([FlutterEngine class])];
+
+  FlutterMethodCall* setClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                        arguments:@[ @(123), self.mutableTemplateCopy ]];
+  [myInputPlugin handleMethodCall:setClientCall
+                           result:^(id _Nullable result){
+                           }];
+
+  FlutterTextInputView* mockInputView = OCMPartialMock(myInputPlugin.activeView);
+  OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
+
+  // yOffset = 200.
+  NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
+
+  FlutterMethodCall* setPlatformViewClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                                        arguments:@{@"transform" : yOffsetMatrix}];
+  [myInputPlugin handleMethodCall:setPlatformViewClientCall
+                           result:^(id _Nullable result){
+                           }];
+
+  XCTAssertEqual(myInputPlugin.inputHider.frame.origin.y, 200,
+                 @"The input hider should be brought on screen if scribble is enabled");
 }
 
 #pragma mark - Accessibility - Tests
