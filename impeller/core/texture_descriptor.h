@@ -46,6 +46,7 @@ struct TextureDescriptor {
       static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
   SampleCount sample_count = SampleCount::kCount1;
   CompressionType compression_type = CompressionType::kLossless;
+  bool ignore_cache = false;
 
   constexpr size_t GetByteSizeOfBaseMipLevel() const {
     if (!IsValid()) {

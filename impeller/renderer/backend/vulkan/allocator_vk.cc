@@ -434,6 +434,7 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 void AllocatorVK::DidAcquireSurfaceFrame() {
   frame_count_++;
   raster_thread_id_ = std::this_thread::get_id();
+  Allocator::DidAcquireSurfaceFrame();
 }
 
 // |Allocator|

@@ -10,6 +10,7 @@
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/geometry/size.h"
 
 namespace impeller {
 
@@ -47,7 +48,24 @@ class Allocator {
 
   /// @brief Increment an internal frame used to cycle through a ring buffer of
   /// allocation pools.
-  virtual void DidAcquireSurfaceFrame();
+  virtual void DidAcquireSurfaceFrame() {
+    for (auto& td : data_to_recycle_) {
+      td.used_this_frame = false;
+    }
+  }
+
+  virtual void DidFinishSurfaceFrame() {
+    std::vector<TextureData> retain;
+
+    for (auto td : data_to_recycle_) {
+      if (td.used_this_frame) {
+        retain.push_back(td);
+      }
+    }
+    data_to_recycle_.clear();
+    data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
+                            retain.end());
+  }
 
  protected:
   Allocator();
@@ -59,6 +77,13 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
+  struct TextureData {
+    bool used_this_frame;
+    std::shared_ptr<Texture> texture;
+  };
+
+  std::vector<TextureData> data_to_recycle_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };
 

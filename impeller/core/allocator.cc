@@ -53,6 +53,29 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
                    << " exceeds maximum supported size of " << max_size;
     return nullptr;
   }
+  if (desc.ignore_cache) {
+      return OnCreateTexture(desc);
+  }
+  if (desc.storage_mode != StorageMode::kHostVisible) {
+    for (auto& td : data_to_recycle_) {
+      const auto other_desc = td.texture->GetTextureDescriptor();
+      if (!td.used_this_frame &&
+          desc.size.width == other_desc.size.width &&
+          desc.size.height == other_desc.size.height &&
+          desc.storage_mode == other_desc.storage_mode &&
+          desc.format == other_desc.format &&
+          desc.usage == other_desc.usage &&
+          desc.sample_count == other_desc.sample_count &&
+          desc.type == other_desc.type) {
+        td.used_this_frame = true;
+        return td.texture;
+      }
+    }
+    auto result = OnCreateTexture(desc);
+    data_to_recycle_.push_back({.used_this_frame = true,
+                                .texture = result});
+    return result;
+  }
 
   return OnCreateTexture(desc);
 }
@@ -60,7 +83,5 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
 uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
   return BytesPerPixelForPixelFormat(format);
 }
-
-void Allocator::DidAcquireSurfaceFrame() {}
 
 }  // namespace impeller
