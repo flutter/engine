@@ -133,11 +133,11 @@ using namespace flutter;
 
 - (void)showShareViewController:(NSString*)content {
   UIViewController* engineViewController = [_engine.get() viewController];
-  NSArray *itemsToShare = @[content];
-  UIActivityViewController *activityViewController = [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare applicationActivities:nil] autorelease];
-  [engineViewController presentViewController:activityViewController
-                                     animated:YES
-                                   completion:nil];
+  NSArray* itemsToShare = @[ content ];
+  UIActivityViewController* activityViewController =
+      [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
+                                         applicationActivities:nil] autorelease];
+  [engineViewController presentViewController:activityViewController animated:YES completion:nil];
 }
 
 - (void)searchWeb:(NSString*)searchTerm {
