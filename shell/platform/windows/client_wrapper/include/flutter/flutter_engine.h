@@ -86,10 +86,9 @@ class FlutterEngine : public PluginRegistry {
   void SetNextFrameCallback(std::function<void()> callback);
 
   // Called to pass an external window message to the engine for lifecycle
-  // state updates. Non-Flutter
-  // windows must call this method in their WndProc in order to be included in
-  // the logic for application lifecycle state updates. Returns a result if
-  // the message should be consumed.
+  // state updates. Non-Flutter windows must call this method in their WndProc
+  // in order to be included in the logic for application lifecycle state
+  // updates. Returns a result if the message should be consumed.
   std::optional<LRESULT> ProcessExternalWindowMessage(HWND hwnd,
                                                       UINT message,
                                                       WPARAM wparam,
