@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERBINARYMESSENGERRELAY_H_
+#define SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERBINARYMESSENGERRELAY_H_
+
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
@@ -9,6 +12,8 @@
 FLUTTER_DARWIN_EXPORT
 #endif
 @interface FlutterBinaryMessengerRelay : NSObject <FlutterBinaryMessenger>
-@property(nonatomic, assign) NSObject<FlutterBinaryMessenger>* parent;
+@property(nonatomic, weak) NSObject<FlutterBinaryMessenger>* parent;
 - (instancetype)initWithParent:(NSObject<FlutterBinaryMessenger>*)parent;
 @end
+
+#endif  // SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERBINARYMESSENGERRELAY_H_
