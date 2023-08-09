@@ -665,10 +665,20 @@ template("_impeller_shaders_vk") {
 #    Whether to analyze shaders with malioc. Defaults to false. Shaders will
 #    only be analyzed if the GN argument "impeller_malioc_path" is defined.
 #
+# @param[optional] enable_metal
+#
+#    Whether to compile the shaders for the Metal backend. Defaults to the
+#    value of the GN argument "impeller_enable_metal".
+#
 # @param[optional] enable_opengles
 #
 #    Whether to compile the shaders for the OpenGL ES backend. Defaults to the
 #    value of the GN argument "impeller_enable_opengles".
+#
+# @param[optional] enable_vulkan
+#
+#    Whether to compile the shaders for the Vulkan backend. Defaults to the
+#    value of the GN argument "impeller_enable_vulkan".
 #
 # @param[optional] gles_language_version
 #
@@ -702,12 +712,22 @@ template("impeller_shaders") {
                "use_half_textures",
              ])
 
+  enable_metal = impeller_enable_metal
+  if (defined(invoker.enable_metal)) {
+    enable_metal = invoker.enable_metal
+  }
+
   enable_opengles = impeller_enable_opengles
   if (defined(invoker.enable_opengles)) {
     enable_opengles = invoker.enable_opengles
   }
 
-  if (impeller_enable_metal) {
+  enable_vulkan = impeller_enable_vulkan
+  if (defined(invoker.enable_vulkan)) {
+    enable_vulkan = invoker.enable_vulkan
+  }
+
+  if (enable_metal) {
     if (!defined(metal_version)) {
       metal_version = "1.2"
     }
@@ -741,7 +761,7 @@ template("impeller_shaders") {
     }
   }
 
-  if (impeller_enable_vulkan) {
+  if (enable_vulkan) {
     analyze = true
     if (defined(invoker.analyze) && !invoker.analyze) {
       analyze = false
@@ -763,7 +783,7 @@ template("impeller_shaders") {
 
   group(target_name) {
     public_deps = []
-    if (impeller_enable_metal) {
+    if (enable_metal) {
       public_deps += [ ":$mtl_shaders" ]
     }
 
@@ -771,7 +791,7 @@ template("impeller_shaders") {
       public_deps += [ ":$gles_shaders" ]
     }
 
-    if (impeller_enable_vulkan) {
+    if (enable_vulkan) {
       public_deps += [ ":$vk_shaders" ]
     }
   }
