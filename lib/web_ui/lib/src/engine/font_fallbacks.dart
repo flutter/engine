@@ -28,9 +28,6 @@ class FontFallbackManager {
     _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR'),
     _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols') {
       downloadQueue = FallbackFontDownloadQueue(this);
-      //print('${codePointToFonts.length} ranges');
-      //print('${codePointToFonts.length} ranges');
-      //print('${fontSets.length} font sets, ${fontSets.last}');
   }
 
   final FallbackFontRegistry registry;
@@ -109,7 +106,7 @@ class FontFallbackManager {
 
     final List<int> codePoints = runesToCheck.toList();
     final List<int> missingCodePoints =
-      registry.getMissingCodePoints(codePoints, fontFamilies);
+        registry.getMissingCodePoints(codePoints, fontFamilies);
 
     if (missingCodePoints.isNotEmpty) {
       addMissingCodePoints(codePoints);
@@ -138,7 +135,8 @@ class FontFallbackManager {
     if (_codePointsToCheckAgainstFallbackFonts.isEmpty) {
       return;
     }
-    final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
+    final List<int> codePoints =
+        _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
     findFontsForMissingCodePoints(codePoints);
   }
@@ -168,13 +166,15 @@ class FontFallbackManager {
   /// [codePointsWithNoKnownFont] so it can be omitted next time to avoid
   /// searching for fonts unnecessarily.
   void findFontsForMissingCodePoints(List<int> codePoints) {
-    final List<int> missingCodePoints = [];
+    final List<int> missingCodePoints = <int>[];
 
-    final List<FallbackFontComponent> requiredComponents = [];
-    final List<NotoFont> candidateFonts = [];
+    final List<FallbackFontComponent> requiredComponents =
+        <FallbackFontComponent>[];
+    final List<NotoFont> candidateFonts = <NotoFont>[];
 
     for (final int codePoint in codePoints) {
-      final FallbackFontComponent component = codePointToFonts.lookup(codePoint);
+      final FallbackFontComponent component =
+          codePointToFonts.lookup(codePoint);
       if (component.fonts.isEmpty) {
         missingCodePoints.add(codePoint);
       } else {
@@ -195,21 +195,23 @@ class FontFallbackManager {
       }
     }
 
-    List<NotoFont> selectedFonts = [];
+    final List<NotoFont> selectedFonts = <NotoFont>[];
 
     while (candidateFonts.isNotEmpty) {
-      NotoFont selectedFont = _selectFont(candidateFonts);
+      final NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
-      for (final FallbackFontComponent component in [...selectedFont.coverComponents]) {
+      for (final FallbackFontComponent component in <FallbackFontComponent>[
+        ...selectedFont.coverComponents
+      ]) {
         for (final NotoFont font in component.fonts) {
           font.coverCount -= component.coverCount;
           font.coverComponents.remove(component);
         }
         component.coverCount = 0;
       }
-      selectedFont.coverCount == 0 || (throw 'bad count');
-      selectedFont.coverComponents.isEmpty || (throw 'bad coverComponents');
-      candidateFonts.removeWhere((font) => font.coverCount == 0);
+      assert(selectedFont.coverCount == 0);
+      assert(selectedFont.coverComponents.isEmpty);
+      candidateFonts.removeWhere((NotoFont font) => font.coverCount == 0);
     }
 
     selectedFonts.forEach(downloadQueue.add);
@@ -218,7 +220,8 @@ class FontFallbackManager {
     // process those code points again.
     if (missingCodePoints.isNotEmpty) {
       if (!downloadQueue.isPending) {
-        printWarning('Could not find a set of Noto fonts to display all missing '
+        printWarning(
+            'Could not find a set of Noto fonts to display all missing '
             'characters. Please add a font asset for the missing characters.'
             ' See: https://flutter.dev/docs/cookbook/design/fonts');
         codePointsWithNoKnownFont.addAll(missingCodePoints);
@@ -239,7 +242,9 @@ class FontFallbackManager {
         maxCodePointsCovered = font.coverCount;
       } else if (font.coverCount == maxCodePointsCovered) {
         bestFonts.add(font);
-        if (font.index < bestFont!.index) bestFont = font;
+        if (font.index < bestFont!.index) {
+          bestFont = font;
+        }
       }
     }
 
@@ -251,20 +256,19 @@ class FontFallbackManager {
           font == _notoSansTC ||
           font == _notoSansHK ||
           font == _notoSansJP ||
-          font == _notoSansKR
-      )) {
+          font == _notoSansKR)) {
         final String language = domWindow.navigator.language;
 
         if (language == 'zh-Hans' ||
-          language == 'zh-CN' ||
-          language == 'zh-SG' ||
-          language == 'zh-MY') {
+            language == 'zh-CN' ||
+            language == 'zh-SG' ||
+            language == 'zh-MY') {
           if (bestFonts.contains(_notoSansSC)) {
             bestFont = _notoSansSC;
           }
         } else if (language == 'zh-Hant' ||
-          language == 'zh-TW' ||
-          language == 'zh-MO') {
+            language == 'zh-TW' ||
+            language == 'zh-MO') {
           if (bestFonts.contains(_notoSansTC)) {
             bestFont = _notoSansTC;
           }
@@ -296,10 +300,12 @@ class FontFallbackManager {
     return bestFont!;
   }
 
-  late final List<FallbackFontComponent> fontSets = _decodeFontSets(encodedFontSets);
+  late final List<FallbackFontComponent> fontSets =
+      _decodeFontSets(encodedFontSets);
 
   late final _UnicodePropertyLookup<FallbackFontComponent> codePointToFonts =
-      _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(encodedFontSetRanges, fontSets);
+      _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(
+          encodedFontSetRanges, fontSets);
 
   List<FallbackFontComponent> _decodeFontSets(String data) {
     return <FallbackFontComponent>[
@@ -309,7 +315,7 @@ class FontFallbackManager {
   }
 
   List<NotoFont> _decodeFontSet(String data) {
-    final List<NotoFont> result = [];
+    final List<NotoFont> result = <NotoFont>[];
     int previousIndex = -1;
     int prefix = 0;
     for (int i = 0; i < data.length; i++) {
@@ -336,6 +342,46 @@ class FontFallbackManager {
 class _UnicodePropertyLookup<P> {
   _UnicodePropertyLookup._(this._boundaries, this._values);
 
+  factory _UnicodePropertyLookup.fromPackedData(
+    String packedData,
+    List<P> propertyEnumValues,
+  ) {
+    final List<int> boundaries = <int>[];
+    final List<P> values = <P>[];
+
+    int start = 0;
+    int prefix = 0;
+    int size = 1;
+
+    for (int i = 0; i < packedData.length; i++) {
+      final int code = packedData.codeUnitAt(i);
+      if (kRangeValueDigit0 <= code &&
+          code < kRangeValueDigit0 + kRangeValueRadix) {
+        final int index =
+            prefix * kRangeValueRadix + (code - kRangeValueDigit0);
+        final P value = propertyEnumValues[index];
+        start += size;
+        boundaries.add(start);
+        values.add(value);
+        prefix = 0;
+        size = 1;
+      } else if (kRangeSizeDigit0 <= code &&
+          code < kRangeSizeDigit0 + kRangeSizeRadix) {
+        size = prefix * kRangeSizeRadix + (code - kRangeSizeDigit0) + 2;
+        prefix = 0;
+      } else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
+        prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
+      } else {
+        throw StateError('Unreachable');
+      }
+    }
+    if (start != kMaxCodePoint + 1) {
+      throw StateError('Bad map size: $start');
+    }
+
+    return _UnicodePropertyLookup<P>._(boundaries, values);
+  }
+
   /// There are two parallel lists - one of boundaries between adjacent unicode
   /// ranges and second of the values for the ranges.
   ///
@@ -353,7 +399,6 @@ class _UnicodePropertyLookup<P> {
   final List<int> _boundaries;
   final List<P> _values;
 
-
   int get length => _boundaries.length;
 
   P lookup(int value) {
@@ -361,49 +406,16 @@ class _UnicodePropertyLookup<P> {
     assert(_boundaries.last == kMaxCodePoint + 1);
     int start = 0, end = _boundaries.length;
     while (true) {
-      if (start == end) return _values[start];
-      int mid = start + (end - start) ~/ 2;
+      if (start == end) {
+        return _values[start];
+      }
+      final int mid = start + (end - start) ~/ 2;
       if (value >= _boundaries[mid]) {
         start = mid + 1;
       } else {
         end = mid;
       }
     }
-  }
-
-  factory _UnicodePropertyLookup.fromPackedData(
-    String packedData,
-    List<P> propertyEnumValues,
-  ) {
-    List<int> boundaries = [];
-    List<P> values = [];
-
-    int start = 0;
-    int prefix = 0;
-    int size = 1;
-
-    for (int i = 0; i < packedData.length; i++) {
-      final int code = packedData.codeUnitAt(i);
-      if (kRangeValueDigit0 <= code && code < kRangeValueDigit0 + kRangeValueRadix) {
-        final int index = prefix * kRangeValueRadix + (code - kRangeValueDigit0);
-        final P value = propertyEnumValues[index];
-        start += size;
-        boundaries.add(start);
-        values.add(value);
-        prefix = 0;
-        size = 1;
-      } else if (kRangeSizeDigit0 <= code && code < kRangeSizeDigit0 + kRangeSizeRadix) {
-        size = prefix * kRangeSizeRadix + (code - kRangeSizeDigit0) + 2;
-        prefix = 0;
-      } else if (kPrefixDigit0 <= code && code < kPrefixDigit0 + kPrefixRadix) {
-        prefix = prefix * kPrefixRadix + (code - kPrefixDigit0);
-      } else {
-        throw StateError('Unreachable');
-      }
-    }
-    if (start != kMaxCodePoint + 1) throw StateError('Bad map size: $start');
-
-    return _UnicodePropertyLookup<P>._(boundaries, values);
   }
 }
 
@@ -412,9 +424,11 @@ class FallbackFontDownloadQueue {
 
   final FontFallbackManager fallbackManager;
 
-  static const String _defaultFallbackFontsUrlPrefix = 'https://fonts.gstatic.com/s/';
+  static const String _defaultFallbackFontsUrlPrefix =
+      'https://fonts.gstatic.com/s/';
   String? fallbackFontUrlPrefixOverride;
-  String get fallbackFontUrlPrefix => fallbackFontUrlPrefixOverride ?? _defaultFallbackFontsUrlPrefix;
+  String get fallbackFontUrlPrefix =>
+      fallbackFontUrlPrefixOverride ?? _defaultFallbackFontsUrlPrefix;
 
   final Set<NotoFont> downloadedFonts = <NotoFont>{};
   final Map<String, NotoFont> pendingFonts = <String, NotoFont>{};
@@ -435,8 +449,7 @@ class FallbackFontDownloadQueue {
   }
 
   void add(NotoFont font) {
-    if (downloadedFonts.contains(font) ||
-        pendingFonts.containsKey(font.url)) {
+    if (downloadedFonts.contains(font) || pendingFonts.containsKey(font.url)) {
       return;
     }
     final bool firstInBatch = pendingFonts.isEmpty;
@@ -479,9 +492,8 @@ class FallbackFontDownloadQueue {
     }
 
     if (pendingFonts.isEmpty) {
-      fallbackManager.registry.updateFallbackFontFamilies(
-          fallbackManager.globalFontFallbacks
-      );
+      fallbackManager.registry
+          .updateFallbackFontFamilies(fallbackManager.globalFontFallbacks);
       sendFontChangeMessage();
       final Completer<void> idleCompleter = _idleCompleter!;
       _idleCompleter = null;

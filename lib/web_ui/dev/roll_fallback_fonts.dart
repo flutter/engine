@@ -4,7 +4,6 @@
 
 import 'dart:convert' show ByteConversionSink, jsonDecode, utf8;
 import 'dart:io' as io;
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:args/command_runner.dart';
@@ -13,6 +12,7 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+// ignore: avoid_relative_lib_imports
 import '../lib/src/engine/noto_font_encoding.dart';
 
 import 'cipd.dart';
@@ -106,7 +106,8 @@ class RollFallbackFontsCommand extends Command<bool>
 
       final Uint8List bodyBytes = fontResponse.bodyBytes;
       if (!_checkForLicenseAttribution(bodyBytes)) {
-        throw ToolExit('Expected license attribution not found in file: $urlString');
+        throw ToolExit(
+            'Expected license attribution not found in file: $urlString');
       }
       hasher.add(utf8.encode(urlSuffix));
       hasher.add(bodyBytes);
@@ -125,20 +126,20 @@ class RollFallbackFontsCommand extends Command<bool>
 
     final StringBuffer sb = StringBuffer();
 
-    final List<_Font> fonts = [];
+    final List<_Font> fonts = <_Font>[];
 
     for (final String family in fallbackFonts) {
-      final List<int> starts = [];
-      final List<int> ends = [];
+      final List<int> starts = <int>[];
+      final List<int> ends = <int>[];
       final String charset = charsetForFamily[family]!;
       for (final String range in charset.split(' ')) {
         // Range is one hexadecimal number or two, separated by `-`.
         final List<String> parts = range.split('-');
-        if (parts.length < 1 || parts.length > 2) {
+        if (parts.length != 1 && parts.length != 2) {
           throw ToolExit('Malformed charset range "$range"');
         }
-        int first = int.parse(parts.first, radix: 16);
-        int last = int.parse(parts.last, radix: 16);
+        final int first = int.parse(parts.first, radix: 16);
+        final int last = int.parse(parts.last, radix: 16);
         starts.add(first);
         ends.add(last);
       }
@@ -146,7 +147,7 @@ class RollFallbackFontsCommand extends Command<bool>
       fonts.add(_Font(family, fonts.length, starts, ends));
     }
 
-    String fontSets = _computeEncodedFontSets(fonts);
+    final String fontSetsCode = _computeEncodedFontSets(fonts);
 
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
@@ -178,7 +179,7 @@ class RollFallbackFontsCommand extends Command<bool>
     }
     sb.writeln('];');
     sb.writeln();
-    sb.writeln(fontSets);
+    sb.write(fontSetsCode);
 
     final io.File fontDataFile = io.File(path.join(
       environment.webUiRootDir.path,
@@ -477,7 +478,8 @@ const List<String> fallbackFonts = <String>[
 bool _checkForLicenseAttribution(Uint8List fontBytes) {
   final ByteData fontData = fontBytes.buffer.asByteData();
   final int codePointCount = fontData.lengthInBytes ~/ 2;
-  const String attributionString = 'This Font Software is licensed under the SIL Open Font License, Version 1.1.';
+  const String attributionString =
+      'This Font Software is licensed under the SIL Open Font License, Version 1.1.';
   for (int i = 0; i < codePointCount - attributionString.length; i++) {
     bool match = true;
     for (int j = 0; j < attributionString.length; j++) {
@@ -494,18 +496,19 @@ bool _checkForLicenseAttribution(Uint8List fontBytes) {
 }
 
 class _Font {
+  _Font(this.family, this.index, this.starts, this.ends);
+
   final String family;
   final int index;
   final List<int> starts;
   final List<int> ends; // inclusive ends
 
-  _Font(this.family, this.index, this.starts, this.ends);
-
   static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
 
   String get shortName =>
-      '$_shortName' +
-      String.fromCharCodes('$index'.codeUnits.map((ch) => ch - 48 + 0x2080));
+      _shortName +
+      String.fromCharCodes(
+          '$index'.codeUnits.map((int ch) => ch - 48 + 0x2080));
 
   String get _shortName => family.startsWith('Noto Sans ')
       ? family.substring('Noto Sans '.length)
@@ -515,7 +518,7 @@ class _Font {
 /// The boundary of a range of a font.
 class _Boundary {
   _Boundary(this.value, this.isStart, this.font);
-  final int value;  // inclusive start or exclusive end.
+  final int value; // inclusive start or exclusive end.
   final bool isStart;
   final _Font font;
 
@@ -536,7 +539,6 @@ class _Range {
   }
 }
 
-
 /// A canonical representative for a set of _Fonts. The fonts are stored in
 /// order of increasing `_Font.index`.
 class _FontSet {
@@ -556,15 +558,19 @@ class _FontSet {
   late final int index;
 
   static int orderByDecreasingRangeCount(_FontSet a, _FontSet b) {
-    int r = b.rangeCount.compareTo(a.rangeCount);
-    if (r != 0) return r;
+    final int r = b.rangeCount.compareTo(a.rangeCount);
+    if (r != 0) {
+      return r;
+    }
     return orderByLexicographicFontIndexes(a, b);
   }
 
   static int orderByLexicographicFontIndexes(_FontSet a, _FontSet b) {
     for (int i = 0; i < a.length && i < b.length; i++) {
       final int r = _Font.compare(a.fonts[i], b.fonts[i]);
-      if (r != 0) return r;
+      if (r != 0) {
+        return r;
+      }
     }
     assert(a.length != b.length); // _FontSets are canonical.
     return a.length - b.length;
@@ -576,7 +582,7 @@ class _FontSet {
   }
 
   String description() {
-    return fonts.map((font) => font.shortName).join(', ');
+    return fonts.map((_Font font) => font.shortName).join(', ');
   }
 }
 
@@ -584,12 +590,12 @@ class _FontSet {
 ///
 /// [1]: https://en.wikipedia.org/wiki/Trie
 class _TrieNode {
-  Map<_Font, _TrieNode> _children = {};
+  final Map<_Font, _TrieNode> _children = <_Font, _TrieNode>{};
   _FontSet? fontSet;
 
   _TrieNode insertAtRoot(Iterable<_Font> fonts) {
     _TrieNode node = this;
-    for (_Font font in fonts) {
+    for (final _Font font in fonts) {
       node = node._children[font] ??= _TrieNode();
     }
     return node;
@@ -670,9 +676,8 @@ class _TrieNode {
 /// digit, e.g. recording the optional size, or creating a range.
 
 String _computeEncodedFontSets(List<_Font> fonts) {
-
-  final List<_Range> ranges = [];
-  final List<_FontSet> allSets = [];
+  final List<_Range> ranges = <_Range>[];
+  final List<_FontSet> allSets = <_FontSet>[];
 
   {
     // The fonts have their supported code points provided as list of inclusive
@@ -686,8 +691,8 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     // in the current intersected range.  Each time the boundary value changes,
     // the current set of fonts is canonicalized and recorded.
     //
-    // TODO: There has to be a wiki article for this algorithm.
-    final List<_Boundary> boundaries = [];
+    // There has to be a wiki article for this algorithm but I didn't find one.
+    final List<_Boundary> boundaries = <_Boundary>[];
     for (final _Font font in fonts) {
       for (final int start in font.starts) {
         boundaries.add(_Boundary(start, true, font));
@@ -699,14 +704,17 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     boundaries.sort(_Boundary.compare);
 
     final _TrieNode trieRoot = _TrieNode();
-    final Set<_Font> currentElements = {};
+    final Set<_Font> currentElements = <_Font>{};
 
     void newRange(int start, int end) {
       // Ensure we are using the canonical font order.
-      final List<_Font> fonts = List.of(currentElements)..sort(_Font.compare);
+      final List<_Font> fonts = List<_Font>.of(currentElements)
+        ..sort(_Font.compare);
       final _TrieNode node = trieRoot.insertAtRoot(fonts);
       final _FontSet fontSet = node.fontSet ??= _FontSet(fonts);
-      if (fontSet.rangeCount == 0) allSets.add(fontSet);
+      if (fontSet.rangeCount == 0) {
+        allSets.add(fontSet);
+      }
       fontSet.rangeCount++;
       final _Range range = _Range(start, end, fontSet);
       ranges.add(range);
@@ -727,7 +735,9 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     }
     assert(currentElements.isEmpty);
     // Ensure the ranges cover the whole unicode code point space.
-    if (start <= kMaxCodePoint) newRange(start, kMaxCodePoint);
+    if (start <= kMaxCodePoint) {
+      newRange(start, kMaxCodePoint);
+    }
   }
 
   print('${allSets.length} sets covering ${ranges.length} ranges');
@@ -749,7 +759,9 @@ String _computeEncodedFontSets(List<_Font> fonts) {
   void encode(int value, int radix, int firstDigitCode) {
     final int prefix = value ~/ radix;
     assert(kPrefixDigit0 == '0'.codeUnitAt(0) && kPrefixRadix == 10);
-    if (prefix != 0) sb.write(prefix);
+    if (prefix != 0) {
+      sb.write(prefix);
+    }
     sb.writeCharCode(firstDigitCode + value.remainder(radix));
   }
 
@@ -760,15 +772,21 @@ String _computeEncodedFontSets(List<_Font> fonts) {
       previousFontIndex = font.index;
       encode(fontIndexDelta - 1, kFontIndexRadix, kFontIndexDigit0);
     }
-    if (fontSet != allSets.last) sb.write(',');
+    if (fontSet != allSets.last) {
+      sb.write(',');
+    }
     final String fragment = sb.toString();
     sb.clear();
     totalEncodedLength += fragment.length;
 
     final int length = fontSet.fonts.length;
     code.write('    // #${fontSet.index}: $length font');
-    if (length != 1) code.write('s');
-    if (length > 0) code.write(': ${fontSet.description()}');
+    if (length != 1) {
+      code.write('s');
+    }
+    if (length > 0) {
+      code.write(': ${fontSet.description()}');
+    }
     code.writeln('.');
 
     code.writeln("    '$fragment'");
@@ -776,27 +794,30 @@ String _computeEncodedFontSets(List<_Font> fonts) {
 
   final StringBuffer declarations = StringBuffer();
 
-  final int references = allSets.fold(0, (sum, set) => sum + set.length);
+  final int references =
+      allSets.fold(0, (int sum, _FontSet set) => sum + set.length);
   declarations
-      ..writeln('// ${allSets.length} unique sets of fonts'
-          ' containing ${references} font references'
-          ' encoded in ${totalEncodedLength} characters')
-      ..writeln('const String encodedFontSets =')
-      ..write(code)
-      ..writeln('    ;');
+    ..writeln('// ${allSets.length} unique sets of fonts'
+        ' containing $references font references'
+        ' encoded in $totalEncodedLength characters')
+    ..writeln('const String encodedFontSets =')
+    ..write(code)
+    ..writeln('    ;');
 
   // Encode ranges.
   code.clear();
   totalEncodedLength = 0;
 
-  for (final range in ranges) {
+  for (final _Range range in ranges) {
     final int start = range.start;
     final int end = range.end;
     final int index = range.fontSet.index;
     final int size = end - start + 1;
 
     // Encode <size><index> or <index> for unit ranges.
-    if (size >= 2) encode(size - 2, kRangeSizeRadix, kRangeSizeDigit0);
+    if (size >= 2) {
+      encode(size - 2, kRangeSizeRadix, kRangeSizeDigit0);
+    }
     encode(index, kRangeValueRadix, kRangeValueDigit0);
 
     final String encoding = sb.toString();
@@ -804,20 +825,23 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     totalEncodedLength += encoding.length;
 
     String description = start.toRadixString(16);
-    if (end != start) description += '-' + end.toRadixString(16);
+    if (end != start) {
+      description = '$description-${end.toRadixString(16)}';
+    }
     if (range.fontSet.fonts.isNotEmpty) {
-      description = description.padRight(12) + ' #$index';
+      description = '${description.padRight(12)} #$index';
     }
     final String encodingText = "'$encoding'".padRight(10);
     code.writeln('    $encodingText // $description');
   }
 
   declarations
-      ..writeln()
-      ..writeln('// ${ranges.length} ranges encoded in ${totalEncodedLength} characters')
-      ..writeln('const String encodedFontSetRanges =')
-      ..write(code)
-      ..writeln('    ;');
+    ..writeln()
+    ..writeln(
+        '// ${ranges.length} ranges encoded in $totalEncodedLength characters')
+    ..writeln('const String encodedFontSetRanges =')
+    ..write(code)
+    ..writeln('    ;');
 
   return declarations.toString();
 }

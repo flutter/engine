@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'text/unicode_range.dart';
-
 class NotoFont {
   NotoFont(this.name, this.url, {this.enabled = true});
 
@@ -22,7 +20,7 @@ class NotoFont {
   /// from this font that are required to cover some of the missing code
   /// points. The cover count for the font is the sum of the cover counts for
   /// the components that make up the font.
-  final List<FallbackFontComponent> coverComponents = [];
+  final List<FallbackFontComponent> coverComponents = <FallbackFontComponent>[];
 }
 
 class FallbackFontComponent {
@@ -33,8 +31,6 @@ class FallbackFontComponent {
   /// that are covered by this component, i.e. the intersection of all [fonts].
   int coverCount = 0;
 }
-
-
 
 class CodePointRange {
   const CodePointRange(this.start, this.end);
