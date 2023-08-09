@@ -670,7 +670,7 @@ class _TrieNode {
 /// digit, e.g. recording the optional size, or creating a range.
 
 String _computeEncodedFontSets(List<_Font> fonts) {
-  
+
   final List<_Range> ranges = [];
   final List<_FontSet> allSets = [];
 

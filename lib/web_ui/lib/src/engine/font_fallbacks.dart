@@ -172,7 +172,7 @@ class FontFallbackManager {
 
     final List<FallbackFontComponent> requiredComponents = [];
     final List<NotoFont> candidateFonts = [];
-    
+
     for (final int codePoint in codePoints) {
       final FallbackFontComponent component = codePointToFonts.lookup(codePoint);
       if (component.fonts.isEmpty) {
@@ -196,7 +196,7 @@ class FontFallbackManager {
     }
 
     List<NotoFont> selectedFonts = [];
-    
+
     while (candidateFonts.isNotEmpty) {
       NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
@@ -230,7 +230,7 @@ class FontFallbackManager {
     int maxCodePointsCovered = -1;
     final List<NotoFont> bestFonts = <NotoFont>[];
     NotoFont? bestFont;
-    
+
     for (final NotoFont font in fonts) {
       if (font.coverCount > maxCodePointsCovered) {
         bestFonts.clear();
@@ -254,7 +254,7 @@ class FontFallbackManager {
           font == _notoSansKR
       )) {
         final String language = domWindow.navigator.language;
-        
+
         if (language == 'zh-Hans' ||
           language == 'zh-CN' ||
           language == 'zh-SG' ||
