@@ -275,7 +275,10 @@ Future<void> runFlutter(
 }) async {
   final String executable =
       useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
-  arguments.add('--local-engine=host_debug_unopt');
+  arguments.addAll(<String>[
+    '--local-engine=host_debug_unopt', 
+    '--local-engine-host=host_debug_unopt',
+  ]);
   final int exitCode = await runProcess(
     executable,
     arguments,
