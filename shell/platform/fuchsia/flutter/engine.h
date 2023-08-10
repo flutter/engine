@@ -14,7 +14,6 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/service_directory.h>
-#include <lib/ui/scenic/cpp/id.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
 #include "flutter/flow/embedded_views.h"

@@ -6,7 +6,6 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_ISOLATE_CONFIGURATOR_H_
 
 #include <fuchsia/sys/cpp/fidl.h>
-#include <fuchsia/ui/scenic/cpp/fidl.h>
 
 #include "flutter/fml/macros.h"
 #include "unique_fdio_ns.h"

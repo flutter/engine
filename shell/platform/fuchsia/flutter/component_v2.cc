@@ -13,7 +13,6 @@
 #include <lib/fdio/io.h>
 #include <lib/fdio/namespace.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
-#include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
