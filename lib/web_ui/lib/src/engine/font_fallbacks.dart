@@ -106,7 +106,7 @@ class FontFallbackManager {
 
     final List<int> codePoints = runesToCheck.toList();
     final List<int> missingCodePoints =
-        registry.getMissingCodePoints(codePoints, fontFamilies);
+      registry.getMissingCodePoints(codePoints, fontFamilies);
 
     if (missingCodePoints.isNotEmpty) {
       addMissingCodePoints(codePoints);
@@ -135,8 +135,7 @@ class FontFallbackManager {
     if (_codePointsToCheckAgainstFallbackFonts.isEmpty) {
       return;
     }
-    final List<int> codePoints =
-        _codePointsToCheckAgainstFallbackFonts.toList();
+    final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
     findFontsForMissingCodePoints(codePoints);
   }
@@ -174,7 +173,7 @@ class FontFallbackManager {
 
     for (final int codePoint in codePoints) {
       final FallbackFontComponent component =
-          codePointToFonts.lookup(codePoint);
+          codePointToComponents.lookup(codePoint);
       if (component.fonts.isEmpty) {
         missingCodePoints.add(codePoint);
       } else {
@@ -303,7 +302,7 @@ class FontFallbackManager {
   late final List<FallbackFontComponent> fontSets =
       _decodeFontSets(encodedFontSets);
 
-  late final _UnicodePropertyLookup<FallbackFontComponent> codePointToFonts =
+  late final _UnicodePropertyLookup<FallbackFontComponent> codePointToComponents =
       _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(
           encodedFontSetRanges, fontSets);
 
@@ -415,6 +414,16 @@ class _UnicodePropertyLookup<P> {
       } else {
         end = mid;
       }
+    }
+  }
+
+  void forEachRange(void Function(int start, int end, P value) action) {
+    int start = 0;
+    for (int i = 0; i < _boundaries.length; i++) {
+      final int end = _boundaries[i];
+      final P value = _values[i];
+      action(start, end, value);
+      start = end;
     }
   }
 }
