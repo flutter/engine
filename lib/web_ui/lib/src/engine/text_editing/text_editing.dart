@@ -1361,6 +1361,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   @override
   void setEditingState(EditingState? editingState) {
     lastEditingState = editingState;
+    _editingDeltaState = null;
     if (!isEnabled || !editingState!.isValid) {
       return;
     }
