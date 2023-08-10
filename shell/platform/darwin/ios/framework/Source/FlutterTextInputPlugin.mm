@@ -2234,6 +2234,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, strong) UIView* keyboardView;
 @property(nonatomic, strong) UIView* cachedFirstResponder;
 @property(nonatomic, assign) CGRect keyboardRect;
+@property(nonatomic, assign) CGFloat previousPointerYPosition;
+@property(nonatomic, assign) CGFloat pointerYVelocity;
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -2340,28 +2342,32 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)handlePointerUp:(CGFloat)pointerY {
-  // View must be loaded at this point.
-  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
-  CGFloat screenHeight = screen.bounds.size.height;
-  CGFloat keyboardHeight = _keyboardRect.size.height;
-  BOOL shouldDismissKeyboard = (screenHeight - (keyboardHeight / 2)) < pointerY;
-  [UIView animateWithDuration:0.3f
-      animations:^{
-        double keyboardDestination =
-            shouldDismissKeyboard ? screenHeight : screenHeight - keyboardHeight;
-        _keyboardViewContainer.frame = CGRectMake(
-            0, keyboardDestination, _viewController.flutterScreenIfViewLoaded.bounds.size.width,
-            _keyboardViewContainer.frame.size.height);
-      }
-      completion:^(BOOL finished) {
-        if (shouldDismissKeyboard) {
-          [self.textInputDelegate flutterTextInputView:self.activeView
-              didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
-          [self dismissKeyboardScreenshot];
-        } else {
-          [self showKeyboardAndRemoveScreenshot];
+  if (_keyboardView.superview != nil) {
+    // Done to avoid the issue of a pointer up done without a screenshot
+    //  View must be loaded at this point.
+    UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+    CGFloat screenHeight = screen.bounds.size.height;
+    CGFloat keyboardHeight = _keyboardRect.size.height;
+    // Negative velocity indicates a downward movement
+    BOOL shouldDismissKeyboardBasedOnVelocity = _pointerYVelocity < 0;
+    [UIView animateWithDuration:0.3f
+        animations:^{
+          double keyboardDestination =
+              shouldDismissKeyboardBasedOnVelocity ? screenHeight : screenHeight - keyboardHeight;
+          _keyboardViewContainer.frame = CGRectMake(
+              0, keyboardDestination, _viewController.flutterScreenIfViewLoaded.bounds.size.width,
+              _keyboardViewContainer.frame.size.height);
         }
-      }];
+        completion:^(BOOL finished) {
+          if (shouldDismissKeyboardBasedOnVelocity) {
+            [self.textInputDelegate flutterTextInputView:self.activeView
+                didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
+            [self dismissKeyboardScreenshot];
+          } else {
+            [self showKeyboardAndRemoveScreenshot];
+          }
+        }];
+  }
 }
 
 - (void)dismissKeyboardScreenshot {
@@ -2395,13 +2401,17 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       [self hideKeyboardWithoutAnimationAndAvoidCursorDismissUpdate];
     } else {
       [self setKeyboardContainerHeight:pointerY];
+      _pointerYVelocity = _previousPointerYPosition - pointerY;
+      NSLog(@"%f", _pointerYVelocity);
     }
   } else {
     if (_keyboardView.superview != nil) {
       // Keeps keyboard at proper height.
       _keyboardViewContainer.frame = _keyboardRect;
+      _pointerYVelocity = _previousPointerYPosition - pointerY;
     }
   }
+  _previousPointerYPosition = pointerY;
 }
 
 - (void)setKeyboardContainerHeight:(CGFloat)pointerY {
