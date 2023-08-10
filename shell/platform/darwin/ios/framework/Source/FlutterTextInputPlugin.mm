@@ -22,8 +22,11 @@ static const char kTextAffinityUpstream[] = "TextAffinity.upstream";
 static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
 
 // A delay before reenabling the UIView areAnimationsEnabled to YES
-// in order for becomeFirstResponder to receive the proper value
+// in order for becomeFirstResponder to receive the proper value.
 static const NSTimeInterval kKeyboardAnimationDelaySeconds = 0.1;
+
+// A time set for the screenshot to animate back to the assigned position.
+static const NSTimeInterval kKeyboardAnimationTimeToCompleteion = 0.3;
 
 // The "canonical" invalid CGRect, similar to CGRectNull, used to
 // indicate a CGRect involved in firstRectForRange calculation is
@@ -2344,13 +2347,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (void)handlePointerUp:(CGFloat)pointerY {
   if (_keyboardView.superview != nil) {
     // Done to avoid the issue of a pointer up done without a screenshot
-    //  View must be loaded at this point.
+    // View must be loaded at this point.
     UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
     CGFloat screenHeight = screen.bounds.size.height;
     CGFloat keyboardHeight = _keyboardRect.size.height;
     // Negative velocity indicates a downward movement
     BOOL shouldDismissKeyboardBasedOnVelocity = _pointerYVelocity < 0;
-    [UIView animateWithDuration:0.3f
+    [UIView animateWithDuration:kKeyboardAnimationTimeToCompleteion
         animations:^{
           double keyboardDestination =
               shouldDismissKeyboardBasedOnVelocity ? screenHeight : screenHeight - keyboardHeight;
@@ -2402,7 +2405,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     } else {
       [self setKeyboardContainerHeight:pointerY];
       _pointerYVelocity = _previousPointerYPosition - pointerY;
-      NSLog(@"%f", _pointerYVelocity);
     }
   } else {
     if (_keyboardView.superview != nil) {
