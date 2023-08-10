@@ -79,6 +79,26 @@ INSTANTIATE_PLAYGROUND_SUITE(RendererDartTest);
 
 TEST_P(RendererDartTest, CanRunDartInPlaygroundFrame) {
   auto isolate = GetIsolate();
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    ImGui::Begin("Dart test", nullptr);
+    ImGui::Text(
+        "This test executes Dart code during the playground frame callback.");
+    ImGui::End();
+
+    return isolate->RunInIsolateScope([]() -> bool {
+      if (tonic::CheckAndHandleError(::Dart_Invoke(
+              Dart_RootLibrary(), tonic::ToDart("sayHi"), 0, nullptr))) {
+        return false;
+      }
+      return true;
+    });
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
+  auto isolate = GetIsolate();
   bool result = isolate->RunInIsolateScope([]() -> bool {
     if (tonic::CheckAndHandleError(::Dart_Invoke(
             Dart_RootLibrary(), tonic::ToDart("instantiateDefaultContext"), 0,
