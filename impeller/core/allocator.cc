@@ -6,6 +6,7 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/range.h"
 
 namespace impeller {
@@ -53,18 +54,21 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
                    << " exceeds maximum supported size of " << max_size;
     return nullptr;
   }
+  total_count_++;
   if (desc.ignore_cache) {
     return OnCreateTexture(desc);
   }
   if (desc.storage_mode != StorageMode::kHostVisible) {
     for (auto& td : data_to_recycle_) {
       const auto other_desc = td.texture->GetTextureDescriptor();
-      if (!td.used_this_frame && desc.size.width == other_desc.size.width &&
+      if (!td.used_this_frame &&
+          desc.size.width == other_desc.size.width &&
           desc.size.height == other_desc.size.height &&
           desc.storage_mode == other_desc.storage_mode &&
           desc.format == other_desc.format && desc.usage == other_desc.usage &&
           desc.sample_count == other_desc.sample_count &&
           desc.type == other_desc.type) {
+        hit_count_++;
         td.used_this_frame = true;
         return td.texture;
       }

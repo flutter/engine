@@ -65,6 +65,9 @@ class Allocator {
     data_to_recycle_.clear();
     data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
                             retain.end());
+    FML_LOG(ERROR) << "" << hit_count_ << " / " << total_count_;
+    hit_count_ = 0;
+    total_count_ = 0;
   }
 
  protected:
@@ -83,6 +86,8 @@ class Allocator {
   };
 
   std::vector<TextureData> data_to_recycle_;
+  size_t hit_count_ = 0;
+  size_t total_count_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };
