@@ -167,7 +167,11 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   is_valid_ = true;
 }
 
-AllocatorVK::~AllocatorVK() = default;
+AllocatorVK::~AllocatorVK() {
+  // The set of cached textures must be cleared before the VMA allocator is
+  // destructed.
+  data_to_recycle_.clear();
+}
 
 // |Allocator|
 bool AllocatorVK::IsValid() const {

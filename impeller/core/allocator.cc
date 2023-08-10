@@ -58,7 +58,9 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
   if (desc.ignore_cache) {
     return OnCreateTexture(desc);
   }
-  if (desc.storage_mode != StorageMode::kHostVisible) {
+  if (desc.storage_mode != StorageMode::kHostVisible &&
+      (desc.usage &
+       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget))) {
     for (auto& td : data_to_recycle_) {
       const auto other_desc = td.texture->GetTextureDescriptor();
       if (!td.used_this_frame && desc.size.width == other_desc.size.width &&

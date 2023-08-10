@@ -11,6 +11,7 @@
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/geometry/size.h"
+#include "impeller/core/texture.h"
 
 namespace impeller {
 
@@ -73,6 +74,13 @@ class Allocator {
  protected:
   Allocator();
 
+  struct TextureData {
+    bool used_this_frame;
+    std::shared_ptr<Texture> texture;
+  };
+
+  std::vector<TextureData> data_to_recycle_;
+
   virtual std::shared_ptr<DeviceBuffer> OnCreateBuffer(
       const DeviceBufferDescriptor& desc) = 0;
 
@@ -80,12 +88,6 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
-  struct TextureData {
-    bool used_this_frame;
-    std::shared_ptr<Texture> texture;
-  };
-
-  std::vector<TextureData> data_to_recycle_;
   size_t hit_count_ = 0;
   size_t total_count_ = 0;
 
