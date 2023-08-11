@@ -1054,6 +1054,7 @@ TEST(RasterizerTest, TeardownNoSurface) {
 TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   GTEST_SKIP() << "eglPresentationTime is disabled due to "
                   "https://github.com/flutter/flutter/issues/112503";
+#if false
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -1136,11 +1137,13 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     latch.Signal();
   });
   latch.Wait();
+#endif  // false
 }
 
 TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   GTEST_SKIP() << "eglPresentationTime is disabled due to "
                   "https://github.com/flutter/flutter/issues/112503";
+#if false
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -1214,6 +1217,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
     latch.Signal();
   });
   latch.Wait();
+#endif  // false
 }
 
 }  // namespace flutter
