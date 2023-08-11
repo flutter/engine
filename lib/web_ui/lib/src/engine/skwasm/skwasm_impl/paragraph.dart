@@ -615,12 +615,7 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
       return;
     }
 
-    // TODO(jacksongardner): We could make a subclass of `List<int>` here to
-    // avoid this copy.
-    final List<int> codeUnitList = List<int>.generate(
-      outSize.value,
-      (int index) => utf8Data[index]
-    );
+    final List<int> codeUnitList = FfiUint8PointerList(utf8Data, outSize.value);
     final String text = utf8.decode(codeUnitList);
     final JSString jsText = _utf8Decoder.decode(
       // In an ideal world we would just use a subview of wasm memory rather

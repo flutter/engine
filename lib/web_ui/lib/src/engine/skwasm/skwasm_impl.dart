@@ -47,4 +47,5 @@ export 'skwasm_impl/renderer.dart';
 export 'skwasm_impl/scene_builder.dart';
 export 'skwasm_impl/shaders.dart';
 export 'skwasm_impl/surface.dart';
+export 'skwasm_impl/util.dart';
 export 'skwasm_impl/vertices.dart';
